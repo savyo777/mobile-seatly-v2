@@ -1,0 +1,38 @@
+import React from 'react';
+import { View, StatusBar, ScrollView, KeyboardAvoidingView, Platform } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { colors } from '@/lib/theme';
+
+interface ScreenWrapperProps {
+  children: React.ReactNode;
+  scrollable?: boolean;
+  withKeyboardAvoiding?: boolean;
+  padded?: boolean;
+}
+
+export function ScreenWrapper({ children, scrollable = false, withKeyboardAvoiding = false, padded = true }: ScreenWrapperProps) {
+  const insets = useSafeAreaInsets();
+
+  const content = (
+    <View style={{ flex: 1, backgroundColor: colors.bgBase, paddingTop: insets.top, paddingBottom: insets.bottom, paddingHorizontal: padded ? 20 : 0 }}>
+      <StatusBar barStyle="light-content" backgroundColor={colors.bgBase} />
+      {scrollable ? (
+        <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 24 }}>
+          {children}
+        </ScrollView>
+      ) : (
+        children
+      )}
+    </View>
+  );
+
+  if (withKeyboardAvoiding) {
+    return (
+      <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
+        {content}
+      </KeyboardAvoidingView>
+    );
+  }
+
+  return content;
+}

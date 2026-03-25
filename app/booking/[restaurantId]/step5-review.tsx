@@ -1,0 +1,133 @@
+import React, { useState } from 'react';
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView, TextInput } from 'react-native';
+import { useLocalSearchParams, useRouter } from 'expo-router';
+import { Ionicons } from '@expo/vector-icons';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useTranslation } from 'react-i18next';
+import { Button, Card } from '@/components/ui';
+import { mockRestaurants } from '@/lib/mock/restaurants';
+import { formatCurrency } from '@/lib/utils/formatCurrency';
+import { colors, borderRadius } from '@/lib/theme';
+
+const OCCASIONS = ['None', 'Birthday', 'Anniversary', 'Date Night', 'Business Dinner', 'Celebration', 'Other'];
+
+export default function Step5Review() {
+  const { restaurantId, date, time, partySize, tableId, cartTotal, cartCount } = useLocalSearchParams<{ restaurantId: string; date: string; time: string; partySize: string; tableId: string; cartTotal: string; cartCount: string }>();
+  const router = useRouter();
+  const insets = useSafeAreaInsets();
+  const { t } = useTranslation();
+  const [specialRequest, setSpecialRequest] = useState('');
+  const [occasion, setOccasion] = useState('None');
+  const progress = 5 / 7;
+
+  const restaurant = mockRestaurants.find((r) => r.id === restaurantId);
+  const parsedDate = date ? new Date(date) : new Date();
+  const preorderTotal = parseFloat(cartTotal || '0');
+  const preorderCount = parseInt(cartCount || '0', 10);
+
+  return (
+    <View style={[styles.container, { paddingTop: insets.top }]}>
+      <View style={styles.header}>
+        <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
+          <Ionicons name="chevron-back" size={24} color={colors.textPrimary} />
+        </TouchableOpacity>
+        <Text style={styles.stepLabel}>Step 5 of 7</Text>
+        <View style={{ width: 40 }} />
+      </View>
+
+      <View style={styles.progressBar}>
+        <View style={[styles.progressFill, { width: `${progress * 100}%` }]} />
+      </View>
+
+      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
+        <Text style={styles.title}>{t('booking.step5Title')}</Text>
+
+        <Card style={styles.summaryCard}>
+          <Text style={styles.restaurantName}>{restaurant?.name}</Text>
+          <View style={styles.detailRow}>
+            <Ionicons name="calendar-outline" size={18} color={colors.gold} />
+            <Text style={styles.detailText}>
+              {parsedDate.toLocaleDateString('en-CA', { weekday: 'long', month: 'long', day: 'numeric' })}
+            </Text>
+          </View>
+          <View style={styles.detailRow}>
+            <Ionicons name="time-outline" size={18} color={colors.gold} />
+            <Text style={styles.detailText}>{time}</Text>
+          </View>
+          <View style={styles.detailRow}>
+            <Ionicons name="people-outline" size={18} color={colors.gold} />
+            <Text style={styles.detailText}>{partySize} {t('booking.guests')}</Text>
+          </View>
+          {tableId && tableId !== 'auto' && (
+            <View style={styles.detailRow}>
+              <Ionicons name="grid-outline" size={18} color={colors.gold} />
+              <Text style={styles.detailText}>Table {tableId.replace('t', 'T')}</Text>
+            </View>
+          )}
+          {preorderCount > 0 && (
+            <View style={[styles.detailRow, styles.preorderRow]}>
+              <Ionicons name="restaurant-outline" size={18} color={colors.gold} />
+              <Text style={styles.detailText}>{preorderCount} pre-order items · {formatCurrency(preorderTotal)}</Text>
+            </View>
+          )}
+        </Card>
+
+        <Text style={styles.sectionTitle}>{t('booking.occasion')}</Text>
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.occasionScroll}>
+          <View style={styles.occasionRow}>
+            {OCCASIONS.map((occ) => (
+              <TouchableOpacity
+                key={occ}
+                onPress={() => setOccasion(occ)}
+                style={[styles.occasionChip, occasion === occ && styles.occasionChipActive]}
+              >
+                <Text style={[styles.occasionText, occasion === occ && styles.occasionTextActive]}>{occ}</Text>
+              </TouchableOpacity>
+            ))}
+          </View>
+        </ScrollView>
+
+        <Text style={styles.sectionTitle}>{t('booking.specialRequest')}</Text>
+        <TextInput
+          style={styles.textArea}
+          placeholder="Any special requests or dietary needs..."
+          placeholderTextColor={colors.textMuted}
+          multiline
+          numberOfLines={4}
+          textAlignVertical="top"
+          value={specialRequest}
+          onChangeText={setSpecialRequest}
+        />
+      </ScrollView>
+
+      <View style={[styles.footer, { paddingBottom: insets.bottom + 16 }]}>
+        <Button title={t('common.next')} onPress={() => router.push(`/booking/${restaurantId}/step6-payment?date=${date}&time=${time}&partySize=${partySize}&tableId=${tableId}&cartTotal=${cartTotal}&occasion=${occasion}`)} />
+      </View>
+    </View>
+  );
+}
+
+const styles = StyleSheet.create({
+  container: { flex: 1, backgroundColor: colors.bgBase },
+  header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 20, paddingVertical: 12 },
+  backBtn: { width: 40, height: 40, alignItems: 'center', justifyContent: 'center' },
+  stepLabel: { fontSize: 13, color: colors.textMuted, fontWeight: '500' },
+  progressBar: { height: 3, backgroundColor: colors.border, marginHorizontal: 20 },
+  progressFill: { height: 3, backgroundColor: colors.gold, borderRadius: 2 },
+  scrollContent: { paddingHorizontal: 20, paddingBottom: 120 },
+  title: { fontSize: 24, fontWeight: '700', color: colors.textPrimary, marginTop: 24, marginBottom: 20 },
+  summaryCard: { padding: 20, gap: 14 },
+  restaurantName: { fontSize: 18, fontWeight: '700', color: colors.textPrimary, marginBottom: 4 },
+  detailRow: { flexDirection: 'row', alignItems: 'center', gap: 12 },
+  detailText: { fontSize: 15, color: colors.textPrimary },
+  preorderRow: { marginTop: 4, paddingTop: 12, borderTopWidth: 1, borderTopColor: colors.border },
+  sectionTitle: { fontSize: 16, fontWeight: '600', color: colors.textPrimary, marginTop: 24, marginBottom: 12 },
+  occasionScroll: { marginBottom: 8 },
+  occasionRow: { flexDirection: 'row', gap: 8 },
+  occasionChip: { paddingHorizontal: 16, paddingVertical: 10, borderRadius: 999, backgroundColor: colors.bgSurface, borderWidth: 1, borderColor: colors.border },
+  occasionChipActive: { backgroundColor: 'rgba(201, 168, 76, 0.15)', borderColor: colors.gold },
+  occasionText: { fontSize: 13, color: colors.textSecondary, fontWeight: '500' },
+  occasionTextActive: { color: colors.gold },
+  textArea: { backgroundColor: colors.bgSurface, borderWidth: 1, borderColor: colors.border, borderRadius: borderRadius.md, padding: 16, color: colors.textPrimary, fontSize: 15, minHeight: 100 },
+  footer: { position: 'absolute', bottom: 0, left: 0, right: 0, paddingHorizontal: 20, paddingTop: 16, backgroundColor: colors.bgBase, borderTopWidth: 1, borderTopColor: colors.border },
+});

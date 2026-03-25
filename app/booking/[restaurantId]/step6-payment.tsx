@@ -1,0 +1,152 @@
+import React, { useState } from 'react';
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Platform } from 'react-native';
+import { useLocalSearchParams, useRouter } from 'expo-router';
+import { Ionicons } from '@expo/vector-icons';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useTranslation } from 'react-i18next';
+import { Button, Card } from '@/components/ui';
+import { formatCurrency } from '@/lib/utils/formatCurrency';
+import { colors, borderRadius } from '@/lib/theme';
+
+type PaymentMethod = 'card' | 'apple_pay' | 'google_pay';
+
+export default function Step6Payment() {
+  const { restaurantId, date, time, partySize, tableId, cartTotal, occasion } = useLocalSearchParams<{ restaurantId: string; date: string; time: string; partySize: string; tableId: string; cartTotal: string; occasion: string }>();
+  const router = useRouter();
+  const insets = useSafeAreaInsets();
+  const { t } = useTranslation();
+  const [selectedMethod, setSelectedMethod] = useState<PaymentMethod>('card');
+  const progress = 6 / 7;
+
+  const preorderTotal = parseFloat(cartTotal || '0');
+  const depositAmount = 25.00;
+  const hasPreorder = preorderTotal > 0;
+  const totalDue = hasPreorder ? preorderTotal + depositAmount : depositAmount;
+  const taxAmount = preorderTotal * 0.13;
+
+  const paymentMethods: { id: PaymentMethod; label: string; icon: keyof typeof Ionicons.glyphMap; platform?: string }[] = [
+    { id: 'card', label: 'Credit / Debit Card', icon: 'card-outline' },
+    ...(Platform.OS === 'ios' ? [{ id: 'apple_pay' as const, label: 'Apple Pay', icon: 'logo-apple' as const }] : []),
+    ...(Platform.OS === 'android' ? [{ id: 'google_pay' as const, label: 'Google Pay', icon: 'logo-google' as const }] : []),
+  ];
+
+  return (
+    <View style={[styles.container, { paddingTop: insets.top }]}>
+      <View style={styles.header}>
+        <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
+          <Ionicons name="chevron-back" size={24} color={colors.textPrimary} />
+        </TouchableOpacity>
+        <Text style={styles.stepLabel}>Step 6 of 7</Text>
+        <View style={{ width: 40 }} />
+      </View>
+
+      <View style={styles.progressBar}>
+        <View style={[styles.progressFill, { width: `${progress * 100}%` }]} />
+      </View>
+
+      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
+        <Text style={styles.title}>{t('booking.step6Title')}</Text>
+
+        <Card style={styles.breakdownCard}>
+          <View style={styles.lineItem}>
+            <Text style={styles.lineLabel}>{t('booking.deposit')}</Text>
+            <Text style={styles.lineValue}>{formatCurrency(depositAmount)}</Text>
+          </View>
+          {hasPreorder && (
+            <>
+              <View style={styles.lineItem}>
+                <Text style={styles.lineLabel}>Pre-Order Subtotal</Text>
+                <Text style={styles.lineValue}>{formatCurrency(preorderTotal)}</Text>
+              </View>
+              <View style={styles.lineItem}>
+                <Text style={styles.lineLabel}>{t('orders.tax')} (13%)</Text>
+                <Text style={styles.lineValue}>{formatCurrency(taxAmount)}</Text>
+              </View>
+            </>
+          )}
+          <View style={[styles.lineItem, styles.totalLine]}>
+            <Text style={styles.totalLabel}>{t('orders.total')}</Text>
+            <Text style={styles.totalValue}>{formatCurrency(hasPreorder ? totalDue + taxAmount : totalDue)}</Text>
+          </View>
+        </Card>
+
+        <Text style={styles.sectionTitle}>Payment Method</Text>
+        {paymentMethods.map((method) => (
+          <TouchableOpacity
+            key={method.id}
+            onPress={() => setSelectedMethod(method.id)}
+            style={[styles.methodCard, selectedMethod === method.id && styles.methodCardSelected]}
+          >
+            <Ionicons name={method.icon} size={24} color={selectedMethod === method.id ? colors.gold : colors.textSecondary} />
+            <Text style={[styles.methodLabel, selectedMethod === method.id && styles.methodLabelSelected]}>
+              {method.label}
+            </Text>
+            <View style={[styles.radio, selectedMethod === method.id && styles.radioSelected]}>
+              {selectedMethod === method.id && <View style={styles.radioInner} />}
+            </View>
+          </TouchableOpacity>
+        ))}
+
+        {selectedMethod === 'card' && (
+          <Card style={styles.cardForm}>
+            <View style={styles.mockCardInput}>
+              <Ionicons name="card" size={20} color={colors.textMuted} />
+              <Text style={styles.mockCardText}>•••• •••• •••• 4242</Text>
+            </View>
+            <View style={styles.cardRow}>
+              <View style={[styles.mockCardInput, { flex: 1 }]}>
+                <Text style={styles.mockCardText}>12/28</Text>
+              </View>
+              <View style={[styles.mockCardInput, { flex: 1 }]}>
+                <Text style={styles.mockCardText}>•••</Text>
+              </View>
+            </View>
+          </Card>
+        )}
+
+        <Text style={styles.secureText}>
+          <Ionicons name="lock-closed" size={12} color={colors.textMuted} /> Secured by Stripe. Your payment information is encrypted.
+        </Text>
+      </ScrollView>
+
+      <View style={[styles.footer, { paddingBottom: insets.bottom + 16 }]}>
+        <Button
+          title={`${t('booking.confirmBooking')} · ${formatCurrency(hasPreorder ? totalDue + taxAmount : totalDue)}`}
+          onPress={() => router.push(`/booking/${restaurantId}/step7-confirmation?date=${date}&time=${time}&partySize=${partySize}`)}
+        />
+      </View>
+    </View>
+  );
+}
+
+const styles = StyleSheet.create({
+  container: { flex: 1, backgroundColor: colors.bgBase },
+  header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 20, paddingVertical: 12 },
+  backBtn: { width: 40, height: 40, alignItems: 'center', justifyContent: 'center' },
+  stepLabel: { fontSize: 13, color: colors.textMuted, fontWeight: '500' },
+  progressBar: { height: 3, backgroundColor: colors.border, marginHorizontal: 20 },
+  progressFill: { height: 3, backgroundColor: colors.gold, borderRadius: 2 },
+  scrollContent: { paddingHorizontal: 20, paddingBottom: 120 },
+  title: { fontSize: 24, fontWeight: '700', color: colors.textPrimary, marginTop: 24, marginBottom: 20 },
+  breakdownCard: { padding: 20, gap: 12 },
+  lineItem: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
+  lineLabel: { fontSize: 14, color: colors.textSecondary },
+  lineValue: { fontSize: 14, color: colors.textPrimary, fontWeight: '500' },
+  totalLine: { marginTop: 8, paddingTop: 12, borderTopWidth: 1, borderTopColor: colors.border },
+  totalLabel: { fontSize: 16, fontWeight: '700', color: colors.textPrimary },
+  totalValue: { fontSize: 18, fontWeight: '700', color: colors.gold },
+  sectionTitle: { fontSize: 16, fontWeight: '600', color: colors.textPrimary, marginTop: 24, marginBottom: 12 },
+  methodCard: { flexDirection: 'row', alignItems: 'center', padding: 16, backgroundColor: colors.bgSurface, borderRadius: borderRadius.md, borderWidth: 1, borderColor: colors.border, marginBottom: 10, gap: 14 },
+  methodCardSelected: { borderColor: colors.gold, backgroundColor: 'rgba(201, 168, 76, 0.08)' },
+  methodLabel: { flex: 1, fontSize: 15, color: colors.textPrimary },
+  methodLabelSelected: { color: colors.gold },
+  radio: { width: 22, height: 22, borderRadius: 11, borderWidth: 2, borderColor: colors.border, alignItems: 'center', justifyContent: 'center' },
+  radioSelected: { borderColor: colors.gold },
+  radioInner: { width: 12, height: 12, borderRadius: 6, backgroundColor: colors.gold },
+  cardForm: { padding: 16, marginTop: 8, gap: 12 },
+  mockCardInput: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingHorizontal: 14, paddingVertical: 14, backgroundColor: colors.bgElevated, borderRadius: borderRadius.sm, borderWidth: 1, borderColor: colors.border },
+  mockCardText: { fontSize: 15, color: colors.textSecondary, fontFamily: Platform.OS === 'ios' ? 'Menlo' : 'monospace' },
+  cardRow: { flexDirection: 'row', gap: 12 },
+  secureText: { fontSize: 12, color: colors.textMuted, textAlign: 'center', marginTop: 20, lineHeight: 18 },
+  footer: { position: 'absolute', bottom: 0, left: 0, right: 0, paddingHorizontal: 20, paddingTop: 16, backgroundColor: colors.bgBase, borderTopWidth: 1, borderTopColor: colors.border },
+});

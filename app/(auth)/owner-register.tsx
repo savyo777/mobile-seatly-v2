@@ -1,0 +1,229 @@
+import React from 'react';
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView } from 'react-native';
+import { useRouter } from 'expo-router';
+import { useTranslation } from 'react-i18next';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { Ionicons } from '@expo/vector-icons';
+import { colors, spacing, typography, borderRadius } from '@/lib/theme';
+import { Input, Button } from '@/components/ui';
+
+export default function OwnerRegisterScreen() {
+  const { t } = useTranslation();
+  const router = useRouter();
+  const insets = useSafeAreaInsets();
+
+  return (
+    <View style={[styles.root, { paddingTop: insets.top }]}>
+      <ScrollView
+        contentContainerStyle={[styles.scroll, { paddingBottom: Math.max(insets.bottom + spacing['3xl'], 48) }]}
+        showsVerticalScrollIndicator={false}
+        keyboardShouldPersistTaps="handled"
+      >
+        <TouchableOpacity
+          onPress={() => router.push('/(auth)/owner-login')}
+          style={styles.backBtn}
+          activeOpacity={0.7}
+          hitSlop={12}
+        >
+          <Ionicons name="arrow-back" size={20} color={colors.textSecondary} />
+          <Text style={styles.backText}>{t('auth.backToWelcome')}</Text>
+        </TouchableOpacity>
+
+        <Text style={styles.logo}>{t('common.appName')}</Text>
+
+        <View style={styles.badgeRow}>
+          <View style={styles.badge}>
+            <Ionicons name="storefront-outline" size={14} color={colors.bgBase} />
+            <Text style={styles.badgeText}>{t('auth.restaurantOwner')}</Text>
+          </View>
+        </View>
+
+        <Text style={styles.heading}>{t('auth.registerRestaurant')}</Text>
+        <Text style={styles.tagline}>{t('auth.restaurantOwnerTagline')}</Text>
+
+        <View style={styles.sectionLabel}>
+          <Ionicons name="person-circle-outline" size={16} color={colors.gold} />
+          <Text style={styles.sectionLabelText}>Your Account</Text>
+        </View>
+
+        <Input
+          icon="person-outline"
+          placeholder={t('auth.fullName')}
+          autoCapitalize="words"
+          autoCorrect={false}
+        />
+        <Input
+          icon="mail-outline"
+          placeholder={t('auth.email')}
+          keyboardType="email-address"
+          autoCapitalize="none"
+          autoCorrect={false}
+        />
+        <Input
+          icon="call-outline"
+          placeholder={t('auth.phone')}
+          keyboardType="phone-pad"
+        />
+        <Input
+          icon="lock-closed-outline"
+          placeholder={t('auth.password')}
+          isPassword
+        />
+
+        <View style={styles.divider} />
+
+        <View style={styles.sectionLabel}>
+          <Ionicons name="storefront-outline" size={16} color={colors.gold} />
+          <Text style={styles.sectionLabelText}>Your Restaurant</Text>
+        </View>
+
+        <Input
+          icon="business-outline"
+          placeholder={t('auth.restaurantName')}
+          autoCapitalize="words"
+          autoCorrect={false}
+        />
+        <Input
+          icon="restaurant-outline"
+          placeholder={t('auth.cuisineType')}
+          autoCapitalize="words"
+          autoCorrect={false}
+        />
+
+        <View style={styles.termsRow}>
+          <Ionicons name="shield-checkmark-outline" size={14} color={colors.textMuted} />
+          <Text style={styles.termsText}>
+            By creating an account you agree to our{' '}
+            <Text style={styles.termsLink}>Terms of Service</Text> and{' '}
+            <Text style={styles.termsLink}>Privacy Policy</Text>.
+          </Text>
+        </View>
+
+        <Button
+          title={t('auth.createAccount')}
+          onPress={() => router.replace('/(staff)')}
+          size="lg"
+          style={styles.ctaBtn}
+        />
+
+        <View style={styles.footerRow}>
+          <Text style={styles.footerMuted}>{t('auth.alreadyHaveAccount')} </Text>
+          <TouchableOpacity
+            onPress={() => router.push('/(auth)/owner-login')}
+            activeOpacity={0.7}
+          >
+            <Text style={styles.footerLink}>{t('auth.ownerSignIn')}</Text>
+          </TouchableOpacity>
+        </View>
+      </ScrollView>
+    </View>
+  );
+}
+
+const styles = StyleSheet.create({
+  root: {
+    flex: 1,
+    backgroundColor: colors.bgBase,
+  },
+  scroll: {
+    paddingHorizontal: spacing['2xl'],
+    paddingTop: spacing.md,
+  },
+  backBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.xs,
+    marginBottom: spacing['2xl'],
+  },
+  backText: {
+    ...typography.body,
+    color: colors.textSecondary,
+  },
+  logo: {
+    fontSize: 36,
+    fontWeight: '700',
+    color: colors.gold,
+    letterSpacing: 8,
+    textAlign: 'center',
+    marginBottom: spacing.lg,
+  },
+  badgeRow: {
+    alignItems: 'center',
+    marginBottom: spacing['2xl'],
+  },
+  badge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.xs,
+    backgroundColor: colors.gold,
+    paddingVertical: spacing.xs,
+    paddingHorizontal: spacing.md,
+    borderRadius: borderRadius.full,
+  },
+  badgeText: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: colors.bgBase,
+    letterSpacing: 0.5,
+  },
+  heading: {
+    ...typography.h2,
+    color: colors.textPrimary,
+    marginBottom: spacing.sm,
+  },
+  tagline: {
+    ...typography.body,
+    color: colors.textSecondary,
+    marginBottom: spacing['2xl'],
+  },
+  sectionLabel: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+    marginBottom: spacing.lg,
+  },
+  sectionLabelText: {
+    ...typography.label,
+    color: colors.gold,
+  },
+  divider: {
+    height: StyleSheet.hairlineWidth,
+    backgroundColor: colors.border,
+    marginVertical: spacing['2xl'],
+  },
+  termsRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: spacing.sm,
+    marginTop: spacing.md,
+    marginBottom: spacing['2xl'],
+  },
+  termsText: {
+    ...typography.bodySmall,
+    color: colors.textMuted,
+    flex: 1,
+    lineHeight: 18,
+  },
+  termsLink: {
+    color: colors.gold,
+    fontWeight: '600',
+  },
+  ctaBtn: {
+    marginBottom: spacing.lg,
+  },
+  footerRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'center',
+    marginTop: spacing.sm,
+  },
+  footerMuted: {
+    ...typography.body,
+    color: colors.textSecondary,
+  },
+  footerLink: {
+    ...typography.body,
+    color: colors.gold,
+    fontWeight: '600',
+  },
+});
