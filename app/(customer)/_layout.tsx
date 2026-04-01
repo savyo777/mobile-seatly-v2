@@ -36,24 +36,24 @@ export default function CustomerTabsLayout() {
         }}
       />
       <Tabs.Screen
-        name="bookings"
+        name="activity"
         options={{
-          title: t('tabs.bookings'),
-          tabBarIcon: ({ color, size }) => <Ionicons name="calendar-outline" size={size} color={color} />,
-        }}
-      />
-      <Tabs.Screen
-        name="orders"
-        options={{
-          title: t('tabs.orders'),
+          title: t('tabs.activity'),
           tabBarIcon: ({ color, size }) => <Ionicons name="receipt-outline" size={size} color={color} />,
         }}
       />
       <Tabs.Screen
-        name="loyalty"
+        name="ai-chat"
         options={{
-          title: t('tabs.loyalty'),
-          tabBarIcon: ({ color, size }) => <Ionicons name="star-outline" size={size} color={color} />,
+          title: t('tabs.ai'),
+          tabBarIcon: ({ color, size }) => <Ionicons name="sparkles-outline" size={size} color={color} />,
+        }}
+      />
+      <Tabs.Screen
+        name="map"
+        options={{
+          title: t('tabs.map'),
+          tabBarIcon: ({ color, size }) => <Ionicons name="map-outline" size={size} color={color} />,
         }}
       />
       <Tabs.Screen
@@ -63,8 +63,10 @@ export default function CustomerTabsLayout() {
           tabBarIcon: ({ color, size }) => <Ionicons name="person-outline" size={size} color={color} />,
         }}
       />
-      <Tabs.Screen name="ai-chat" options={{ href: null }} />
       <Tabs.Screen name="index" options={{ href: null }} />
+      <Tabs.Screen name="bookings" options={{ href: null }} />
+      <Tabs.Screen name="orders" options={{ href: null }} />
+      <Tabs.Screen name="loyalty" options={{ href: null }} />
     </Tabs>
   );
 }

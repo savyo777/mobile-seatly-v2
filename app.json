@@ -30,7 +30,13 @@
     },
     "plugins": [
       "expo-router",
-      "expo-font"
+      "expo-font",
+      [
+        "expo-location",
+        {
+          "locationAlwaysAndWhenInUsePermission": "Allow Seatly to use your location to show nearby restaurants on the map."
+        }
+      ]
     ]
   }
 }

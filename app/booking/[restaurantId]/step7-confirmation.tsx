@@ -78,7 +78,7 @@ export default function Step7Confirmation() {
           <View style={styles.buttons}>
             <Button title={t('booking.addToCalendar')} variant="outlined" onPress={() => {}} />
             <View style={{ height: 12 }} />
-            <Button title={t('booking.viewBooking')} onPress={() => router.replace('/(customer)/bookings')} />
+            <Button title={t('booking.viewBooking')} onPress={() => router.replace('/(customer)/activity')} />
           </View>
         </Animated.View>
       </View>
