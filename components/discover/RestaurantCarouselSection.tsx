@@ -1,6 +1,6 @@
 import React, { useMemo } from 'react';
 import { Dimensions, FlatList, Pressable, StyleSheet, Text, View } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
+import { ChevronGlyph } from '@/components/ui/ChevronGlyph';
 import { colors, spacing, typography } from '@/lib/theme';
 import { Restaurant } from '@/lib/mock/restaurants';
 import { RestaurantBrowseCard } from './RestaurantBrowseCard';
@@ -28,7 +28,7 @@ export function RestaurantCarouselSection({
         <Text style={styles.title}>{title}</Text>
         <Pressable onPress={onPressSeeAll} style={styles.seeAllBtn}>
           <Text style={styles.seeAllText}>See all</Text>
-          <Ionicons name="chevron-forward" size={14} color={colors.gold} />
+          <ChevronGlyph color={colors.gold} size={15} />
         </Pressable>
       </View>
 

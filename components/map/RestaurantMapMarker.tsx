@@ -1,7 +1,6 @@
 import React, { memo } from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { Marker } from 'react-native-maps';
-import { Ionicons } from '@expo/vector-icons';
 import { colors, borderRadius, shadows } from '@/lib/theme';
 
 type Props = {
@@ -35,7 +34,9 @@ function RestaurantMapMarkerComponent({
         <View style={[styles.glow, selected && styles.glowSelected]} />
         <View style={[styles.pin, selected && styles.pinSelected]}>
           <View style={styles.contentRow}>
-            <Ionicons name="star" size={11} color={selected ? colors.bgBase : colors.gold} />
+            <Text style={[styles.starGlyph, selected && styles.starGlyphSelected]} accessible={false}>
+              ★
+            </Text>
             <View style={styles.gap} />
             <Text style={[styles.ratingText, selected && styles.ratingTextSelected]}>{rating.toFixed(1)}</Text>
             <Text style={[styles.dot, selected && styles.dotSelected]}>•</Text>
@@ -117,5 +118,14 @@ const styles = StyleSheet.create({
   },
   gap: {
     width: 3,
+  },
+  starGlyph: {
+    fontSize: 11,
+    lineHeight: 13,
+    color: colors.gold,
+    fontWeight: '700',
+  },
+  starGlyphSelected: {
+    color: colors.bgBase,
   },
 });

@@ -3,6 +3,7 @@ import { View, Text, StyleSheet, Pressable, Alert } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useTranslation } from 'react-i18next';
 import { Ionicons } from '@expo/vector-icons';
+import { ChevronGlyph } from '@/components/ui/ChevronGlyph';
 import { ProfileStackScreen } from '@/components/profile/ProfileStackScreen';
 import { ProfileSectionTitle } from '@/components/profile/ProfileSectionTitle';
 import { Card, Button, Badge } from '@/components/ui';
@@ -108,7 +109,7 @@ export default function PaymentScreen() {
         <Text style={styles.addressLine}>Canada</Text>
         <Pressable style={styles.editAddr} onPress={() => {}}>
           <Text style={styles.linkText}>Edit billing address</Text>
-          <Ionicons name="chevron-forward" size={16} color={colors.gold} />
+          <ChevronGlyph color={colors.gold} size={16} />
         </Pressable>
       </Card>
     </ProfileStackScreen>

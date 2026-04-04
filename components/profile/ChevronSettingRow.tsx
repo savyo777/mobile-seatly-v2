@@ -1,6 +1,7 @@
 import React from 'react';
 import { View, Text, StyleSheet, Pressable } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { ChevronGlyph } from '@/components/ui/ChevronGlyph';
 import { colors, spacing, typography } from '@/lib/theme';
 
 type Props = {
@@ -37,7 +38,7 @@ export function ChevronSettingRow({
         <Text style={[styles.title, destructive && styles.titleDestructive]}>{title}</Text>
         {subtitle ? <Text style={styles.subtitle}>{subtitle}</Text> : null}
       </View>
-      {showChevron ? <Ionicons name="chevron-forward" size={18} color={colors.textMuted} /> : null}
+      {showChevron ? <ChevronGlyph color={colors.textMuted} size={18} /> : null}
     </Pressable>
   );
 }

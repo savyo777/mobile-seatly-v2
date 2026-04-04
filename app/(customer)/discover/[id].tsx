@@ -1,7 +1,6 @@
 import React, { useMemo } from 'react';
 import { View, Text, StyleSheet, ScrollView, Image, Pressable } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { Ionicons } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Button, Card, Badge, ScreenWrapper } from '@/components/ui';
@@ -59,7 +58,9 @@ export default function RestaurantDetailScreen() {
             style={[styles.backBtn, { top: insets.top + spacing.sm }]}
             hitSlop={12}
           >
-            <Ionicons name="chevron-back" size={28} color={colors.textPrimary} />
+            <Text style={styles.backChevron} accessible={false}>
+              ←
+            </Text>
           </Pressable>
         </View>
 
@@ -68,7 +69,9 @@ export default function RestaurantDetailScreen() {
           <View style={styles.badgesRow}>
             <Badge label={restaurant.cuisineType} variant="gold" />
             <View style={styles.ratingBlock}>
-              <Ionicons name="star" size={16} color={colors.gold} />
+              <Text style={styles.starGlyph} accessible={false}>
+                ★
+              </Text>
               <Text style={styles.ratingText}>
                 {restaurant.avgRating.toFixed(1)} · {t('discover.reviewsCount', { count: restaurant.totalReviews })}
               </Text>
@@ -77,7 +80,9 @@ export default function RestaurantDetailScreen() {
           </View>
 
           <View style={styles.addressRow}>
-            <Ionicons name="location-outline" size={18} color={colors.textSecondary} />
+            <Text style={styles.addressPin} accessible={false}>
+              ●
+            </Text>
             <Text style={styles.address}>
               {restaurant.address}, {restaurant.city}, {restaurant.province}
             </Text>
@@ -144,6 +149,26 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(0,0,0,0.45)',
     alignItems: 'center',
     justifyContent: 'center',
+  },
+  backChevron: {
+    fontSize: 28,
+    lineHeight: 30,
+    color: colors.textPrimary,
+    fontWeight: '400',
+  },
+  starGlyph: {
+    fontSize: 15,
+    lineHeight: 18,
+    color: colors.gold,
+    fontWeight: '700',
+  },
+  addressPin: {
+    fontSize: 10,
+    lineHeight: 18,
+    color: colors.gold,
+    marginTop: 3,
+    width: 12,
+    textAlign: 'center',
   },
   body: {
     paddingHorizontal: spacing.lg,

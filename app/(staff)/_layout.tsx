@@ -1,62 +1,79 @@
 import React from 'react';
-import { StyleSheet } from 'react-native';
+import { Platform, StyleSheet } from 'react-native';
 import { Tabs } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
-import { colors } from '@/lib/theme';
+import { ownerColors } from '@/lib/theme/ownerTheme';
+
+function TabIon({ name, focused }: { name: keyof typeof Ionicons.glyphMap; focused: boolean }) {
+  return (
+    <Ionicons name={name} size={24} color={focused ? ownerColors.gold : ownerColors.textMuted} />
+  );
+}
 
 export default function StaffTabsLayout() {
   const { t } = useTranslation();
 
   return (
     <Tabs
-      initialRouteName="dashboard"
+      initialRouteName="home"
       screenOptions={{
         headerShown: false,
-        tabBarActiveTintColor: colors.gold,
-        tabBarInactiveTintColor: colors.textMuted,
+        tabBarActiveTintColor: ownerColors.gold,
+        tabBarInactiveTintColor: ownerColors.textMuted,
         tabBarStyle: {
-          backgroundColor: colors.bgSurface,
-          borderTopColor: colors.border,
+          backgroundColor: ownerColors.bg,
+          borderTopColor: ownerColors.border,
           borderTopWidth: StyleSheet.hairlineWidth,
-          height: 85,
-          paddingBottom: 28,
-          paddingTop: 8,
+          height: Platform.OS === 'ios' ? 88 : 72,
+          paddingBottom: Platform.OS === 'ios' ? 28 : 12,
+          paddingTop: 10,
         },
         tabBarLabelStyle: {
           fontSize: 11,
-          fontWeight: '600',
+          fontWeight: '700',
+          letterSpacing: 0.2,
         },
       }}
     >
       <Tabs.Screen
-        name="dashboard"
+        name="home"
         options={{
-          title: t('staff.dashboard'),
-          tabBarIcon: ({ color, size }) => <Ionicons name="grid-outline" size={size} color={color} />,
+          title: t('owner.tabHome'),
+          tabBarIcon: ({ focused }) => <TabIon name="home-outline" focused={focused} />,
         }}
       />
       <Tabs.Screen
         name="floor"
         options={{
-          title: t('staff.floor'),
-          tabBarIcon: ({ color, size }) => <Ionicons name="map-outline" size={size} color={color} />,
+          title: t('owner.tabFloor'),
+          tabBarIcon: ({ focused }) => <TabIon name="grid-outline" focused={focused} />,
         }}
       />
       <Tabs.Screen
-        name="schedule"
+        name="reservations"
         options={{
-          title: t('staff.schedule'),
-          tabBarIcon: ({ color, size }) => <Ionicons name="time-outline" size={size} color={color} />,
+          title: t('owner.tabReservations'),
+          tabBarIcon: ({ focused }) => <TabIon name="calendar-outline" focused={focused} />,
         }}
       />
       <Tabs.Screen
-        name="notifications"
+        name="analytics"
         options={{
-          title: t('staff.notifications'),
-          tabBarIcon: ({ color, size }) => <Ionicons name="notifications-outline" size={size} color={color} />,
+          title: t('owner.tabAnalytics'),
+          tabBarIcon: ({ focused }) => <TabIon name="bar-chart-outline" focused={focused} />,
         }}
       />
+      <Tabs.Screen
+        name="ai"
+        options={{
+          title: t('owner.tabAi'),
+          tabBarIcon: ({ focused }) => <TabIon name="sparkles-outline" focused={focused} />,
+        }}
+      />
+      <Tabs.Screen name="dashboard" options={{ href: null }} />
+      <Tabs.Screen name="schedule" options={{ href: null }} />
+      <Tabs.Screen name="notifications" options={{ href: null }} />
       <Tabs.Screen name="index" options={{ href: null }} />
     </Tabs>
   );

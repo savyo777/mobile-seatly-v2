@@ -36,7 +36,7 @@ export const mockReservations: Reservation[] = [
   {
     id: 'res2',
     restaurantId: 'r2',
-    restaurantName: 'Sakura Sushi',
+    restaurantName: 'Sakura Omakase',
     guestId: 'g1',
     partySize: 4,
     reservedAt: '2026-04-02T18:30:00-04:00',

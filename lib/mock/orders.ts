@@ -51,7 +51,7 @@ export const mockOrders: Order[] = [
   {
     id: 'ord2',
     restaurantId: 'r2',
-    restaurantName: 'Sakura Sushi',
+    restaurantName: 'Sakura Omakase',
     reservationId: 'res2',
     isPreorder: true,
     status: 'pending',

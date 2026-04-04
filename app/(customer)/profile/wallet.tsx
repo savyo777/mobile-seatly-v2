@@ -3,6 +3,7 @@ import { View, Text, StyleSheet, Pressable } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import { Ionicons } from '@expo/vector-icons';
+import { ChevronGlyph } from '@/components/ui/ChevronGlyph';
 import { ProfileStackScreen } from '@/components/profile/ProfileStackScreen';
 import { ProfileSectionTitle } from '@/components/profile/ProfileSectionTitle';
 import { Card, Badge, Button } from '@/components/ui';
@@ -87,7 +88,7 @@ export default function WalletScreen() {
         ))}
         <Pressable style={styles.managePay} onPress={() => router.push('/(customer)/profile/payment')}>
           <Text style={styles.managePayText}>Manage payment methods</Text>
-          <Ionicons name="chevron-forward" size={18} color={colors.gold} />
+          <ChevronGlyph color={colors.gold} size={18} />
         </Pressable>
       </Card>
 

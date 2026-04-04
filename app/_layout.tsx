@@ -4,12 +4,14 @@ import { StatusBar } from 'expo-status-bar';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import '@/lib/i18n';
+import { AuthProvider } from '@/lib/auth/AuthContext';
 import { colors } from '@/lib/theme';
 
 export default function RootLayout() {
   return (
     <GestureHandlerRootView style={{ flex: 1, backgroundColor: colors.bgBase }}>
       <SafeAreaProvider>
+        <AuthProvider>
         <StatusBar style="light" backgroundColor={colors.bgBase} />
         <Stack
           screenOptions={{
@@ -25,6 +27,7 @@ export default function RootLayout() {
           <Stack.Screen name="(staff)" />
           <Stack.Screen name="booking" />
         </Stack>
+        </AuthProvider>
       </SafeAreaProvider>
     </GestureHandlerRootView>
   );

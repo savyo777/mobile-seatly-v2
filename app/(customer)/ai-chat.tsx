@@ -12,7 +12,6 @@ import {
   ListRenderItem,
 } from 'react-native';
 import { useTranslation } from 'react-i18next';
-import { Ionicons } from '@expo/vector-icons';
 import { ScreenWrapper } from '@/components/ui';
 import { colors, spacing, borderRadius, typography, shadows } from '@/lib/theme';
 import { useRouter } from 'expo-router';
@@ -182,7 +181,9 @@ export default function AiChatScreen() {
                       {r.cuisine}
                     </Text>
                     <View style={styles.cardFooter}>
-                      <Ionicons name="star" size={12} color={colors.gold} />
+                      <Text style={styles.cardStar} accessible={false}>
+                        ★
+                      </Text>
                       <Text style={styles.cardRating}>{r.rating.toFixed(1)}</Text>
                       <Text style={styles.cardDistance}>· {r.distance}</Text>
                     </View>
@@ -216,7 +217,6 @@ export default function AiChatScreen() {
       <View style={styles.flex}>
         <View style={styles.top}>
           <View style={styles.header}>
-            <Ionicons name="sparkles" size={22} color={colors.gold} style={styles.headerIcon} />
             <Text style={styles.title}>{t('aiChat.title')}</Text>
           </View>
           {chips}
@@ -251,9 +251,9 @@ export default function AiChatScreen() {
             style={styles.sendBtn}
             activeOpacity={0.85}
             accessibilityRole="button"
-            accessibilityLabel={t('common.confirm')}
+            accessibilityLabel={t('aiChat.send')}
           >
-            <Ionicons name="send" size={22} color={colors.bgBase} />
+            <Text style={styles.sendBtnLabel}>{t('aiChat.send')}</Text>
           </TouchableOpacity>
         </View>
       </View>
@@ -273,12 +273,7 @@ const styles = StyleSheet.create({
     flexShrink: 0,
   },
   header: {
-    flexDirection: 'row',
-    alignItems: 'center',
     marginBottom: spacing.md,
-  },
-  headerIcon: {
-    marginRight: spacing.sm,
   },
   title: {
     ...typography.h1,
@@ -396,6 +391,12 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: spacing.xs,
   },
+  cardStar: {
+    fontSize: 12,
+    lineHeight: 14,
+    color: colors.gold,
+    fontWeight: '700',
+  },
   cardRating: {
     ...typography.bodySmall,
     color: colors.textPrimary,
@@ -430,13 +431,19 @@ const styles = StyleSheet.create({
     ...typography.body,
   },
   sendBtn: {
-    width: 48,
-    height: 48,
+    minWidth: 64,
+    minHeight: 48,
+    paddingHorizontal: spacing.md,
     borderRadius: borderRadius.lg,
     backgroundColor: colors.gold,
     alignItems: 'center',
     justifyContent: 'center',
     marginBottom: 2,
     ...shadows.goldGlow,
+  },
+  sendBtnLabel: {
+    ...typography.bodySmall,
+    fontWeight: '700',
+    color: colors.bgBase,
   },
 });

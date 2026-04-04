@@ -1,10 +1,9 @@
 import React, { useMemo, useState } from 'react';
 import { View, Text, StyleSheet, FlatList, Pressable } from 'react-native';
-import { useRouter } from 'expo-router';
-import { Ionicons } from '@expo/vector-icons';
+import { useRouter, Href } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { ScreenWrapper, Card, Badge } from '@/components/ui';
+import { ScreenWrapper, Card, Badge, ChevronGlyph } from '@/components/ui';
 import { mockReservations, type Reservation } from '@/lib/mock/reservations';
 import { mockOrders, type Order } from '@/lib/mock/orders';
 import { formatCurrency } from '@/lib/utils/formatCurrency';
@@ -73,28 +72,15 @@ function isUpcomingReservation(r: Reservation): boolean {
 }
 
 function isUpcomingOrder(o: Order): boolean {
-  // Orders are "upcoming" only while still in progress.
   const inProgress = ['pending', 'confirmed', 'preparing', 'ready'].includes(o.status);
   if (!inProgress) return false;
   return new Date(o.createdAt).getTime() >= Date.now();
 }
 
-function HighlightRow({
-  icon,
-  title,
-  sub,
-  last,
-}: {
-  icon: keyof typeof Ionicons.glyphMap;
-  title: string;
-  sub: string;
-  last?: boolean;
-}) {
+function HighlightRow({ title, sub, last }: { title: string; sub: string; last?: boolean }) {
   return (
     <View style={[styles.hlRow, !last && styles.hlRowBorder]}>
-      <View style={styles.hlIcon}>
-        <Ionicons name={icon} size={18} color={colors.gold} />
-      </View>
+      <View style={styles.hlAccent} />
       <View style={styles.hlText}>
         <Text style={styles.hlTitle}>{title}</Text>
         <Text style={styles.hlSub}>{sub}</Text>
@@ -127,7 +113,7 @@ export default function ActivityScreen() {
         const whenIso = r.reservedAt;
         return {
           id: r.id,
-          type: 'booking',
+          type: 'booking' as const,
           restaurantName: r.restaurantName,
           whenIso,
           statusLabel: t(`status.reservation.${r.status}`),
@@ -141,7 +127,7 @@ export default function ActivityScreen() {
       const itemCount = o.items.reduce((sum, it) => sum + it.quantity, 0);
       return {
         id: o.id,
-        type: 'order',
+        type: 'order' as const,
         restaurantName: o.restaurantName,
         whenIso: o.createdAt,
         statusLabel: t(`status.order.${o.status}`),
@@ -156,7 +142,6 @@ export default function ActivityScreen() {
   }, [t]);
 
   const segmentItems = useMemo(() => {
-    const now = Date.now();
     const filtered = items.filter((item) => {
       if (item.type === 'booking') {
         const res = mockReservations.find((r) => r.id === item.id);
@@ -178,48 +163,60 @@ export default function ActivityScreen() {
 
   const emptyCopy = segment === 'upcoming' ? t('bookings.noUpcoming') : t('bookings.noPast');
 
+  const openDetail = (item: ActivityItem) => {
+    if (item.type === 'booking') router.push(`/bookings/${item.id}` as Href);
+    else router.push(`/orders/${item.id}` as Href);
+  };
+
+  const openReceipt = (item: ActivityItem) => {
+    router.push(`/(customer)/activity/receipt/${item.type}/${item.id}` as Href);
+  };
+
   const renderItem = ({ item }: { item: ActivityItem }) => {
     const when = formatWhen(item.whenIso, i18n.language);
-    const iconName = item.type === 'booking' ? 'calendar-outline' : 'receipt-outline';
-    const iconBg = item.type === 'booking' ? 'rgba(201,168,76,0.12)' : 'rgba(201,168,76,0.08)';
-
     const subLine =
       item.type === 'booking'
         ? t('bookings.partyOf', { count: item.partySize ?? 0 })
         : `${item.itemCount ?? 0} items • ${formatCurrency(item.totalAmount ?? 0, 'cad')}`;
 
     return (
-      <Card
-        onPress={() => {
-          if (item.type === 'booking') router.push(`/bookings/${item.id}`);
-          else router.push(`/orders/${item.id}`);
-        }}
-        style={styles.itemCard}
-      >
-        <View style={styles.itemTop}>
-          <View style={styles.iconWrap}>
-            <View style={[styles.iconBg, { backgroundColor: iconBg }]}>
-              <Ionicons name={iconName} size={18} color={colors.gold} />
+      <View style={[styles.itemCard, shadows.card]}>
+        <Pressable
+          onPress={() => openDetail(item)}
+          style={({ pressed }) => [styles.itemCardInner, pressed && styles.itemCardPressed]}
+        >
+          <View style={styles.itemTop}>
+            <View style={styles.itemAccent} />
+            <View style={styles.itemMain}>
+              <Text style={styles.itemRestaurant} numberOfLines={1}>
+                {item.restaurantName}
+              </Text>
+              <Text style={styles.itemWhen}>{when}</Text>
             </View>
+            <Badge label={item.statusLabel} variant={item.badgeVariant} />
           </View>
-          <View style={styles.itemMain}>
-            <Text style={styles.itemRestaurant} numberOfLines={1}>
-              {item.restaurantName}
-            </Text>
-            <Text style={styles.itemWhen}>{when}</Text>
-          </View>
-          <Badge label={item.statusLabel} variant={item.badgeVariant} />
-        </View>
 
-        <View style={styles.itemBottom}>
-          <Text style={styles.itemTypeLine}>
-            {item.type === 'booking' ? 'Booking' : 'Order'} • {subLine}
-          </Text>
-          <Text style={styles.itemRef} numberOfLines={1}>
-            Ref: {item.referenceId}
-          </Text>
+          <View style={styles.itemBottom}>
+            <Text style={styles.itemTypeLine}>
+              {item.type === 'booking' ? t('receipt.kindBooking') : t('receipt.kindOrder')} • {subLine}
+            </Text>
+            <Text style={styles.itemRef} numberOfLines={1}>
+              {t('receipt.refLabel')} {item.referenceId}
+            </Text>
+          </View>
+        </Pressable>
+
+        <View style={styles.receiptBar}>
+          <Pressable
+            onPress={() => openReceipt(item)}
+            style={({ pressed }) => [styles.receiptBtn, pressed && styles.receiptBtnPressed]}
+            hitSlop={6}
+          >
+            <Text style={styles.receiptBtnLabel}>{t('receipt.viewReceipt')}</Text>
+            <ChevronGlyph color={colors.gold} size={20} />
+          </Pressable>
         </View>
-      </Card>
+      </View>
     );
   };
 
@@ -244,9 +241,9 @@ export default function ActivityScreen() {
 
       <Card style={styles.highlights}>
         <Text style={styles.highlightsTitle}>Recent highlights</Text>
-        <HighlightRow icon="calendar" title="Booked Nova Ristorante" sub="Sat, Mar 8 · Party of 2" />
-        <HighlightRow icon="trophy" title="Earned 120 loyalty points" sub="Posted after your visit" />
-        <HighlightRow icon="gift-outline" title="Redeemed free dessert" sub="Mar 1 · Nova Ristorante" last />
+        <HighlightRow title="Booked Nova Ristorante" sub="Sat, Mar 8 · Party of 2" />
+        <HighlightRow title="Earned 120 loyalty points" sub="Posted after your visit" />
+        <HighlightRow title="Redeemed free dessert" sub="Mar 1 · Nova Ristorante" last />
       </Card>
     </View>
   );
@@ -263,7 +260,9 @@ export default function ActivityScreen() {
         showsVerticalScrollIndicator={false}
         ListEmptyComponent={
           <View style={styles.empty}>
-            <Ionicons name={segment === 'upcoming' ? 'calendar-outline' : 'archive-outline'} size={48} color={colors.textMuted} />
+            <Text style={styles.emptyMark} accessible={false}>
+              —
+            </Text>
             <Text style={styles.emptyText}>{emptyCopy}</Text>
           </View>
         }
@@ -292,7 +291,7 @@ const styles = StyleSheet.create({
   },
   hlRow: {
     flexDirection: 'row',
-    alignItems: 'flex-start',
+    alignItems: 'center',
     gap: spacing.md,
     paddingVertical: spacing.sm,
   },
@@ -301,13 +300,12 @@ const styles = StyleSheet.create({
     borderBottomColor: colors.border,
     marginBottom: spacing.xs,
   },
-  hlIcon: {
-    width: 36,
-    height: 36,
-    borderRadius: borderRadius.md,
-    backgroundColor: 'rgba(201, 168, 76, 0.1)',
-    alignItems: 'center',
-    justifyContent: 'center',
+  hlAccent: {
+    width: 3,
+    alignSelf: 'stretch',
+    minHeight: 36,
+    borderRadius: 2,
+    backgroundColor: 'rgba(201, 168, 76, 0.55)',
   },
   hlText: {
     flex: 1,
@@ -354,9 +352,18 @@ const styles = StyleSheet.create({
   },
   itemCard: {
     marginBottom: spacing.md,
-    ...shadows.card,
+    backgroundColor: colors.bgSurface,
+    borderRadius: borderRadius.lg,
+    borderWidth: 1,
+    borderColor: colors.border,
+    overflow: 'hidden',
   },
-  itemCardBooking: {},
+  itemCardInner: {
+    padding: spacing.lg,
+  },
+  itemCardPressed: {
+    opacity: 0.92,
+  },
   itemTop: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -364,15 +371,12 @@ const styles = StyleSheet.create({
     gap: spacing.sm,
     marginBottom: spacing.sm,
   },
-  iconWrap: {
-    width: 36,
-  },
-  iconBg: {
-    width: 28,
-    height: 28,
-    borderRadius: borderRadius.lg,
-    alignItems: 'center',
-    justifyContent: 'center',
+  itemAccent: {
+    width: 3,
+    alignSelf: 'stretch',
+    minHeight: 44,
+    borderRadius: 2,
+    backgroundColor: 'rgba(201, 168, 76, 0.45)',
   },
   itemMain: { flex: 1 },
   itemRestaurant: {
@@ -397,10 +401,37 @@ const styles = StyleSheet.create({
     ...typography.bodySmall,
     color: colors.textMuted,
   },
+  receiptBar: {
+    borderTopWidth: StyleSheet.hairlineWidth,
+    borderTopColor: colors.border,
+    paddingVertical: spacing.sm,
+    paddingHorizontal: spacing.lg,
+    backgroundColor: 'rgba(201, 168, 76, 0.04)',
+  },
+  receiptBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    width: '100%',
+  },
+  receiptBtnPressed: {
+    opacity: 0.75,
+  },
+  receiptBtnLabel: {
+    ...typography.bodySmall,
+    color: colors.gold,
+    fontWeight: '700',
+  },
   empty: {
     alignItems: 'center',
     paddingVertical: spacing['5xl'],
     gap: spacing.md,
+  },
+  emptyMark: {
+    fontSize: 40,
+    lineHeight: 44,
+    color: colors.textMuted,
+    fontWeight: '300',
   },
   emptyText: {
     ...typography.body,
@@ -408,4 +439,3 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
 });
-

@@ -6,6 +6,9 @@
     "paths": {
       "@/*": [
         "./*"
+      ],
+      "@seatly/types": [
+        "./packages/types/index.ts"
       ]
     }
   },

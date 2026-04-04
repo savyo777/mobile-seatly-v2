@@ -137,7 +137,9 @@ export function RestaurantMapDetailSheet({
               </Text>
               <View style={styles.statsRow}>
                 <View style={styles.stat}>
-                  <Ionicons name="star" size={14} color={colors.gold} />
+                  <Text style={styles.starGlyph} accessible={false}>
+                    ★
+                  </Text>
                   <Text style={styles.statText}>
                     {restaurant.avgRating.toFixed(1)} ({restaurant.totalReviews})
                   </Text>
@@ -280,6 +282,12 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginTop: spacing.sm,
     gap: spacing.xs,
+  },
+  starGlyph: {
+    fontSize: 14,
+    lineHeight: 16,
+    color: colors.gold,
+    fontWeight: '700',
   },
   stat: {
     flexDirection: 'row',

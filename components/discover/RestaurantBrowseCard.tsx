@@ -1,6 +1,5 @@
 import React from 'react';
 import { Image, Pressable, StyleSheet, Text, View } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
 import { borderRadius, colors, shadows, spacing, typography } from '@/lib/theme';
 import { Restaurant } from '@/lib/mock/restaurants';
 
@@ -26,7 +25,9 @@ export function RestaurantBrowseCard({ restaurant, width, onPress }: RestaurantB
         </Text>
         <View style={styles.infoRow}>
           <View style={styles.ratingRow}>
-            <Ionicons name="star" size={13} color={colors.gold} />
+            <Text style={styles.starGlyph} accessible={false}>
+              ★
+            </Text>
             <Text style={styles.rating}>{restaurant.avgRating.toFixed(1)}</Text>
             <Text style={styles.reviews}>({restaurant.totalReviews})</Text>
           </View>
@@ -95,6 +96,12 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 4,
+  },
+  starGlyph: {
+    fontSize: 13,
+    lineHeight: 15,
+    color: colors.gold,
+    fontWeight: '700',
   },
   rating: {
     ...typography.bodySmall,

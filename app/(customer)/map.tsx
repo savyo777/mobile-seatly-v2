@@ -196,7 +196,9 @@ export default function MapScreen() {
               {item.cuisineType} · {item.area}
             </Text>
             <View style={styles.restaurantStats}>
-              <Ionicons name="star" size={12} color={colors.gold} />
+              <Text style={styles.restaurantStar} accessible={false}>
+                ★
+              </Text>
               <Text style={styles.restaurantStatText}>{item.avgRating.toFixed(1)}</Text>
               <Text style={styles.restaurantDot}>·</Text>
               <Text style={styles.restaurantStatText}>{formatDistanceMeters(item.distanceMeters)}</Text>
@@ -466,6 +468,12 @@ const styles = StyleSheet.create({
     ...typography.bodySmall,
     color: colors.textSecondary,
     marginTop: 2,
+  },
+  restaurantStar: {
+    fontSize: 12,
+    lineHeight: 14,
+    color: colors.gold,
+    fontWeight: '700',
   },
   restaurantStats: {
     flexDirection: 'row',

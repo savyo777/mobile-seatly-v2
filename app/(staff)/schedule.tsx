@@ -1,5 +1,6 @@
 import React, { useMemo, useState } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView } from 'react-native';
+import { ChevronGlyph } from '@/components/ui/ChevronGlyph';
 import { useTranslation } from 'react-i18next';
 import { Ionicons } from '@expo/vector-icons';
 import { ScreenWrapper, Card } from '@/components/ui';
@@ -76,7 +77,9 @@ export default function StaffScheduleScreen() {
           hitSlop={12}
           accessibilityRole="button"
         >
-          <Ionicons name="chevron-back" size={22} color={colors.gold} />
+          <Text style={styles.weekNavChevron} accessible={false}>
+            ‹
+          </Text>
         </TouchableOpacity>
         <View style={styles.weekCenter}>
           <Text style={styles.weekBadge}>{t('staff.thisWeekLabel')}</Text>
@@ -88,7 +91,7 @@ export default function StaffScheduleScreen() {
           hitSlop={12}
           accessibilityRole="button"
         >
-          <Ionicons name="chevron-forward" size={22} color={colors.gold} />
+          <ChevronGlyph color={colors.gold} size={22} />
         </TouchableOpacity>
       </View>
 
@@ -138,6 +141,13 @@ const styles = StyleSheet.create({
     backgroundColor: colors.bgSurface,
     alignItems: 'center',
     justifyContent: 'center',
+  },
+  weekNavChevron: {
+    fontSize: 26,
+    lineHeight: 28,
+    color: colors.gold,
+    fontWeight: '300',
+    marginTop: -2,
   },
   weekCenter: {
     alignItems: 'center',

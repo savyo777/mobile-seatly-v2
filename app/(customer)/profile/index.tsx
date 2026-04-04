@@ -7,6 +7,7 @@ import { ProfileQuickActions } from '@/components/profile/ProfileQuickActions';
 import { colors, spacing, typography, borderRadius } from '@/lib/theme';
 import { useRouter, type Href } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
+import { ChevronGlyph } from '@/components/ui/ChevronGlyph';
 
 type SettingsRowDef = {
   icon: keyof typeof Ionicons.glyphMap;
@@ -155,7 +156,7 @@ function renderRow(
         <Text style={styles.rowTitle}>{t(`profile.${row.titleKey}`)}</Text>
         {row.subtitleKey ? <Text style={styles.rowSub}>{t(`profile.${row.subtitleKey}`)}</Text> : null}
       </View>
-      <Ionicons name="chevron-forward" size={18} color={colors.textMuted} />
+      <ChevronGlyph color={colors.textMuted} size={18} />
     </Pressable>
   );
 }

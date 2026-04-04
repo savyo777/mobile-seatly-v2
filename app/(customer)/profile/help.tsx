@@ -2,6 +2,7 @@ import React, { useMemo, useState } from 'react';
 import { View, Text, StyleSheet, TextInput, Pressable, LayoutAnimation, Platform, UIManager } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { Ionicons } from '@expo/vector-icons';
+import { ChevronGlyph } from '@/components/ui/ChevronGlyph';
 import { ProfileStackScreen } from '@/components/profile/ProfileStackScreen';
 import { ProfileSectionTitle } from '@/components/profile/ProfileSectionTitle';
 import { Card } from '@/components/ui';
@@ -63,7 +64,7 @@ export default function HelpScreen() {
             <Text style={styles.contactTitle}>Live chat</Text>
             <Text style={styles.contactSub}>Avg. reply under 4 min · 9am–11pm ET</Text>
           </View>
-          <Ionicons name="chevron-forward" size={18} color={colors.textMuted} />
+          <ChevronGlyph color={colors.textMuted} size={18} />
         </View>
         <View style={styles.divider} />
         <View style={styles.contactRow}>
@@ -72,7 +73,7 @@ export default function HelpScreen() {
             <Text style={styles.contactTitle}>Contact support</Text>
             <Text style={styles.contactSub}>help@seatly.app</Text>
           </View>
-          <Ionicons name="chevron-forward" size={18} color={colors.textMuted} />
+          <ChevronGlyph color={colors.textMuted} size={18} />
         </View>
       </Card>
 

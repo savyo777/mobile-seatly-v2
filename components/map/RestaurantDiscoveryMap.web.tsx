@@ -1,6 +1,6 @@
 import React from 'react';
 import { View, Text, StyleSheet, ScrollView, Image, Pressable } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
+import { ChevronGlyph } from '@/components/ui/ChevronGlyph';
 import { formatDistanceMeters } from '@/lib/map/geo';
 import type { RestaurantDiscoveryMapProps } from '@/components/map/restaurantMapTypes';
 import { colors, spacing, borderRadius, typography, shadows } from '@/lib/theme';
@@ -21,7 +21,9 @@ export function RestaurantDiscoveryMap({
   return (
     <View style={styles.shell}>
       <View style={styles.banner}>
-        <Ionicons name="map-outline" size={20} color={colors.gold} />
+        <Text style={styles.bannerIcon} accessible={false}>
+          ◎
+        </Text>
         <Text style={styles.bannerText}>
           Live map is available on iOS and Android. Browse nearby picks below.
         </Text>
@@ -48,13 +50,15 @@ export function RestaurantDiscoveryMap({
                   {r.cuisineType} · {r.area}
                 </Text>
                 <View style={styles.rowStats}>
-                  <Ionicons name="star" size={14} color={colors.gold} />
+                  <Text style={styles.rowStar} accessible={false}>
+                    ★
+                  </Text>
                   <Text style={styles.rowStatText}>{r.avgRating.toFixed(1)}</Text>
                   <Text style={styles.dot}>·</Text>
                   <Text style={styles.rowStatText}>{formatDistanceMeters(r.distanceMeters)}</Text>
                 </View>
               </View>
-              <Ionicons name="chevron-forward" size={20} color={colors.textMuted} />
+              <ChevronGlyph color={colors.textMuted} size={20} />
             </Pressable>
           );
         })}
@@ -81,6 +85,11 @@ const styles = StyleSheet.create({
     backgroundColor: colors.bgElevated,
     borderBottomWidth: 1,
     borderBottomColor: colors.border,
+  },
+  bannerIcon: {
+    fontSize: 18,
+    color: colors.gold,
+    fontWeight: '600',
   },
   bannerText: {
     ...typography.bodySmall,
@@ -135,6 +144,12 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 4,
     marginTop: 6,
+  },
+  rowStar: {
+    fontSize: 14,
+    lineHeight: 16,
+    color: colors.gold,
+    fontWeight: '700',
   },
   rowStatText: {
     ...typography.bodySmall,

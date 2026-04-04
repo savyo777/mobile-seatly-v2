@@ -36,6 +36,14 @@
         {
           "locationAlwaysAndWhenInUsePermission": "Allow Seatly to use your location to show nearby restaurants on the map."
         }
+      ],
+      "expo-sharing",
+      [
+        "expo-speech-recognition",
+        {
+          "microphonePermission": "Allow Seatly to use the microphone for voice commands in the AI assistant.",
+          "speechRecognitionPermission": "Allow Seatly to transcribe your speech for the AI assistant."
+        }
       ]
     ]
   }
