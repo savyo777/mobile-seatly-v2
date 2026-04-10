@@ -13,6 +13,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Input, ScreenWrapper } from '@/components/ui';
 import { DiscoverHeroFeatured } from '@/components/discover/DiscoverHeroFeatured';
 import { DiscoverHorizontalSection } from '@/components/discover/DiscoverHorizontalSection';
+import { SnapEntryButton } from '@/components/discover/SnapEntryButton';
 import { DISCOVER_USER_FIRST_NAME } from '@/lib/constants/personalization';
 import type { DiscoverCategorySlug } from '@/lib/discover/discoverCategories';
 import { getTorontoGreetingPeriod } from '@/lib/discover/torontoTime';
@@ -192,15 +193,7 @@ export default function DiscoverScreen() {
         <View style={styles.headerBlock}>
           <View style={styles.topRow}>
             <Text style={styles.logo}>{t('common.appName')}</Text>
-            <Pressable
-              accessibilityRole="button"
-              accessibilityLabel={t('tabs.ai')}
-              onPress={() => router.push('/(customer)/ai-chat')}
-              hitSlop={12}
-              style={({ pressed }) => [styles.aiBtn, pressed && styles.pressed]}
-            >
-              <Text style={styles.aiMark}>AI</Text>
-            </Pressable>
+            <SnapEntryButton onPress={() => router.push('/(customer)/discover/post-review')} />
           </View>
 
           <Input
@@ -350,19 +343,6 @@ const styles = StyleSheet.create({
     color: colors.gold,
     letterSpacing: 4,
     fontWeight: '700',
-  },
-  aiBtn: {
-    paddingHorizontal: spacing.sm,
-    paddingVertical: spacing.xs,
-    minWidth: 44,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  aiMark: {
-    color: colors.gold,
-    fontSize: 14,
-    fontWeight: '800',
-    letterSpacing: 2,
   },
   pressed: {
     opacity: 0.7,

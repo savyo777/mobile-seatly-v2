@@ -32,6 +32,18 @@
       "expo-router",
       "expo-font",
       [
+        "expo-camera",
+        {
+          "cameraPermission": "Allow Seatly to access your camera so you can capture and post restaurant review snaps."
+        }
+      ],
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "Allow Seatly to access your photos so you can choose a test image when camera preview is unavailable."
+        }
+      ],
+      [
         "expo-location",
         {
           "locationAlwaysAndWhenInUsePermission": "Allow Seatly to use your location to show nearby restaurants on the map."

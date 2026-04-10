@@ -44,13 +44,6 @@ export default function StaffTabsLayout() {
         }}
       />
       <Tabs.Screen
-        name="floor"
-        options={{
-          title: t('owner.tabFloor'),
-          tabBarIcon: ({ focused }) => <TabIon name="grid-outline" focused={focused} />,
-        }}
-      />
-      <Tabs.Screen
         name="reservations"
         options={{
           title: t('owner.tabReservations'),
@@ -58,23 +51,42 @@ export default function StaffTabsLayout() {
         }}
       />
       <Tabs.Screen
-        name="analytics"
+        name="floor"
         options={{
-          title: t('owner.tabAnalytics'),
-          tabBarIcon: ({ focused }) => <TabIon name="bar-chart-outline" focused={focused} />,
+          title: t('owner.tabFloor'),
+          tabBarIcon: ({ focused }) => <TabIon name="grid-outline" focused={focused} />,
         }}
       />
       <Tabs.Screen
-        name="ai"
+        name="menu"
         options={{
-          title: t('owner.tabAi'),
-          tabBarIcon: ({ focused }) => <TabIon name="sparkles-outline" focused={focused} />,
+          title: t('owner.tabMenu'),
+          tabBarIcon: ({ focused }) => <TabIon name="restaurant-outline" focused={focused} />,
         }}
       />
+      <Tabs.Screen
+        name="more"
+        options={{
+          title: t('owner.tabMore'),
+          tabBarIcon: ({ focused }) => <TabIon name="ellipsis-horizontal" focused={focused} />,
+        }}
+      />
+
+      <Tabs.Screen name="analytics" options={{ href: null }} />
+      <Tabs.Screen name="ai" options={{ href: null }} />
       <Tabs.Screen name="dashboard" options={{ href: null }} />
       <Tabs.Screen name="schedule" options={{ href: null }} />
       <Tabs.Screen name="notifications" options={{ href: null }} />
       <Tabs.Screen name="index" options={{ href: null }} />
+      <Tabs.Screen name="waitlist" options={{ href: null }} />
+      <Tabs.Screen name="ordersKds" options={{ href: null }} />
+      <Tabs.Screen name="staff" options={{ href: null }} />
+      <Tabs.Screen name="crm" options={{ href: null }} />
+      <Tabs.Screen name="expenses" options={{ href: null }} />
+      <Tabs.Screen name="events" options={{ href: null }} />
+      <Tabs.Screen name="export" options={{ href: null }} />
+      <Tabs.Screen name="promotions" options={{ href: null }} />
+      <Tabs.Screen name="settings" options={{ href: null }} />
     </Tabs>
   );
 }

@@ -70,12 +70,18 @@ export default function OwnerHomeScreen() {
       <GlassCard style={styles.promoCard}>
         <Text style={styles.promoTitle}>{MARKETING_ACTIVE.title}</Text>
         <Text style={styles.promoSub}>{MARKETING_ACTIVE.subtitle}</Text>
-        <Pressable style={({ pressed }) => [styles.promoBtn, pressed && styles.pressed]}>
+        <Pressable
+          onPress={() => router.push('/(staff)/promotions')}
+          style={({ pressed }) => [styles.promoBtn, pressed && styles.pressed]}
+        >
           <Text style={styles.promoBtnText}>{t('owner.marketingEdit')}</Text>
         </Pressable>
       </GlassCard>
 
-      <Pressable style={({ pressed }) => [styles.receiptRow, pressed && styles.pressed]}>
+      <Pressable
+        onPress={() => router.push('/(staff)/export')}
+        style={({ pressed }) => [styles.receiptRow, pressed && styles.pressed]}
+      >
         <Text style={styles.receiptText}>{RECEIPTS_EXPORT_HINT}</Text>
         <Text style={styles.receiptArrow}>›</Text>
       </Pressable>

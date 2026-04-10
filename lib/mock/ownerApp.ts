@@ -247,3 +247,88 @@ export const AI_SUGGESTIONS = [
   'Offer 10% off 5:00 PM tonight to lift dead hour.',
   'Merge 15-minute buffers on Fri–Sat to reduce gaps.',
 ];
+
+/** Kitchen / bar ticket — mirrors web KDS rows */
+export interface KdsTicket {
+  id: string;
+  station: 'Kitchen' | 'Bar' | 'Dessert';
+  table: string;
+  items: string;
+  status: 'fired' | 'in_progress' | 'ready';
+  mins: number;
+}
+
+export const KDS_TICKETS: KdsTicket[] = [
+  { id: 'k1', station: 'Kitchen', table: 'T4', items: '2× Tagliatelle · 1× Branzino', status: 'in_progress', mins: 6 },
+  { id: 'k2', station: 'Kitchen', table: 'T9', items: '1× Steak Frites · 1× Soup', status: 'fired', mins: 2 },
+  { id: 'k3', station: 'Bar', table: 'T2', items: '3× Negroni · 1× Old Fashioned', status: 'ready', mins: 0 },
+  { id: 'k4', station: 'Dessert', table: 'T1', items: '2× Tiramisu', status: 'in_progress', mins: 4 },
+];
+
+export interface StaffRosterMember {
+  id: string;
+  name: string;
+  role: string;
+  shift: string;
+  onClock: boolean;
+}
+
+export const STAFF_ROSTER: StaffRosterMember[] = [
+  { id: 'st1', name: 'Maya Chen', role: 'Floor manager', shift: '4:00 PM – close', onClock: true },
+  { id: 'st2', name: 'Jordan Lee', role: 'Host', shift: '5:00 PM – 11:00 PM', onClock: true },
+  { id: 'st3', name: 'Sam Rivera', role: 'Server', shift: 'Off tonight', onClock: false },
+  { id: 'st4', name: 'Priya Singh', role: 'Bar', shift: '5:30 PM – 1:00 AM', onClock: true },
+];
+
+export interface ExpenseLine {
+  id: string;
+  label: string;
+  amount: number;
+  period: string;
+}
+
+export const EXPENSE_LINES: ExpenseLine[] = [
+  { id: 'e1', label: 'Food & beverage COGS', amount: 8420, period: 'This week' },
+  { id: 'e2', label: 'Labor (scheduled)', amount: 6120, period: 'This week' },
+  { id: 'e3', label: 'Utilities & occupancy', amount: 1840, period: 'This month' },
+];
+
+export interface OwnerEventRow {
+  id: string;
+  title: string;
+  dateLabel: string;
+  rsvp: number;
+  status: 'draft' | 'live' | 'sold_out';
+}
+
+export const OWNER_EVENTS: OwnerEventRow[] = [
+  { id: 'ev1', title: 'Wine dinner · 5 courses', dateLabel: 'Sat Mar 22 · 6:30 PM', rsvp: 28, status: 'live' },
+  { id: 'ev2', title: 'Jazz brunch', dateLabel: 'Sun Mar 23 · 11:00 AM', rsvp: 14, status: 'live' },
+  { id: 'ev3', title: 'Chef counter takeover', dateLabel: 'Thu Apr 3 · 7:00 PM', rsvp: 0, status: 'draft' },
+];
+
+export interface ExportOptionRow {
+  id: string;
+  title: string;
+  subtitle: string;
+}
+
+export const EXPORT_OPTIONS: ExportOptionRow[] = [
+  { id: 'x1', title: 'Nightly close report', subtitle: 'PDF · sales, comps, voids' },
+  { id: 'x2', title: 'Weekly P&L snapshot', subtitle: 'CSV + PDF' },
+  { id: 'x3', title: 'Reservations export', subtitle: 'ICS / CSV for date range' },
+  { id: 'x4', title: 'Guest CRM export', subtitle: 'VIP & tags · CSV' },
+];
+
+export interface OwnerPromoRow {
+  id: string;
+  title: string;
+  subtitle: string;
+  active: boolean;
+}
+
+export const OWNER_PROMO_ROWS: OwnerPromoRow[] = [
+  { id: 'p1', title: '10% off early seating', subtitle: '5:00–5:45 PM · in-app only', active: true },
+  { id: 'p2', title: 'Birthday dessert comp', subtitle: 'Auto-apply for tagged guests', active: true },
+  { id: 'p3', title: 'Bar high-top happy hour', subtitle: 'Thu–Sun · 4–6 PM', active: false },
+];
