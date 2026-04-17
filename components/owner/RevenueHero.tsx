@@ -4,9 +4,10 @@ import Animated, { useAnimatedStyle, useSharedValue, withSpring } from 'react-na
 import type { RevenuePeriod } from '@/lib/mock/ownerApp';
 import { REVENUE_DATA } from '@/lib/mock/ownerApp';
 import { formatCurrency } from '@/lib/utils/formatCurrency';
-import { ownerColors, ownerRadii } from '@/lib/theme/ownerTheme';
+import { ownerColors, ownerRadii, ownerSpace } from '@/lib/theme/ownerTheme';
 import { PeriodToggle } from './PeriodToggle';
 import { GlassCard } from './GlassCard';
+import { OwnerSectionLabel } from './OwnerSectionLabel';
 
 type Props = {
   period: RevenuePeriod;
@@ -47,9 +48,9 @@ export function RevenueHero({ period, onPeriodChange }: Props) {
 
   return (
     <View style={styles.wrap}>
-      <Text style={styles.sectionLabel}>Revenue</Text>
+      <OwnerSectionLabel marginBottom={ownerSpace.xs}>Revenue</OwnerSectionLabel>
       <PeriodToggle value={period} onChange={onPeriodChange} />
-      <GlassCard style={styles.card}>
+      <GlassCard variant="primary" elevated style={styles.card}>
         <View style={styles.rowTop}>
           <View>
             <Text style={styles.bigNum}>{formatCurrency(animatedTotal, 'cad')}</Text>
@@ -103,22 +104,14 @@ function ChartBar({ value, max, fillColor }: { value: number; max: number; fillC
 
 const styles = StyleSheet.create({
   wrap: {
-    marginBottom: 28,
-  },
-  sectionLabel: {
-    fontSize: 13,
-    fontWeight: '700',
-    color: ownerColors.textMuted,
-    letterSpacing: 1.2,
-    textTransform: 'uppercase',
-    marginBottom: 12,
+    marginBottom: ownerSpace.md,
   },
   card: {
-    padding: 22,
-    marginTop: 14,
+    padding: ownerSpace.md,
+    marginTop: ownerSpace.sm,
   },
   rowTop: {
-    marginBottom: 20,
+    marginBottom: ownerSpace.md,
   },
   bigNum: {
     fontSize: 38,

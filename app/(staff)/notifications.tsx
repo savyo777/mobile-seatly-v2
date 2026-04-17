@@ -3,6 +3,7 @@ import { View, Text, StyleSheet, FlatList, TouchableOpacity, ListRenderItem } fr
 import { useTranslation } from 'react-i18next';
 import { Ionicons } from '@expo/vector-icons';
 import { ScreenWrapper } from '@/components/ui';
+import { SubpageHeader } from '@/components/owner/SubpageHeader';
 import { colors, spacing, borderRadius, typography } from '@/lib/theme';
 import { mockStaffNotifications, type AppNotification } from '@/lib/mock/notifications';
 
@@ -73,7 +74,7 @@ export default function StaffNotificationsScreen() {
 
   return (
     <ScreenWrapper scrollable={false} padded>
-      <Text style={styles.screenTitle}>{t('staff.notifications')}</Text>
+      <SubpageHeader title={t('staff.notifications')} fallbackTab="more" />
       <FlatList
         data={mockStaffNotifications}
         keyExtractor={(item) => item.id}
@@ -86,11 +87,6 @@ export default function StaffNotificationsScreen() {
 }
 
 const styles = StyleSheet.create({
-  screenTitle: {
-    ...typography.h1,
-    color: colors.textPrimary,
-    marginBottom: spacing.lg,
-  },
   list: {
     paddingBottom: spacing['4xl'],
   },

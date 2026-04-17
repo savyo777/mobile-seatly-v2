@@ -1,7 +1,7 @@
 import React from 'react';
 import { View, StyleSheet, ScrollView, ScrollViewProps } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
-import { ownerColors } from '@/lib/theme/ownerTheme';
+import { ownerColors, ownerSpace } from '@/lib/theme/ownerTheme';
 
 /** Space below last scroll item so content clears the tab bar (bar + home indicator + scroll past). */
 const TAB_BAR_SCROLL_PADDING = 110;
@@ -35,7 +35,12 @@ export function OwnerScreen({ children, scrollable = true, contentContainerStyle
 
   return (
     <SafeAreaView style={styles.safe} edges={['top', 'left', 'right']}>
-      <View style={[styles.flexFill, { paddingBottom: contentBottomPadding, paddingHorizontal: 20, paddingTop: 8 }]}>
+      <View
+        style={[
+          styles.flexFill,
+          { paddingBottom: contentBottomPadding, paddingHorizontal: ownerSpace.md, paddingTop: ownerSpace.xs },
+        ]}
+      >
         {children}
       </View>
     </SafeAreaView>
@@ -51,7 +56,7 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   scrollContent: {
-    paddingHorizontal: 20,
-    paddingTop: 8,
+    paddingHorizontal: ownerSpace.md,
+    paddingTop: ownerSpace.xs,
   },
 });

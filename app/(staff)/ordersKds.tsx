@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 import { OwnerScreen } from '@/components/owner/OwnerScreen';
 import { GlassCard } from '@/components/owner/GlassCard';
+import { SubpageHeader } from '@/components/owner/SubpageHeader';
 import { KDS_TICKETS, LIVE_FEED, type KdsTicket } from '@/lib/mock/ownerApp';
 import { ownerColors, ownerRadii } from '@/lib/theme/ownerTheme';
 
@@ -24,8 +25,11 @@ export default function OwnerOrdersKdsScreen() {
 
   return (
     <OwnerScreen>
-      <Text style={styles.title}>{t('owner.ordersKdsTitle')}</Text>
-      <Text style={styles.sub}>{t('owner.ordersKdsSubtitle')}</Text>
+      <SubpageHeader
+        title={t('owner.ordersKdsTitle')}
+        subtitle={t('owner.ordersKdsSubtitle')}
+        fallbackTab="reservations"
+      />
 
       <Text style={styles.section}>{t('owner.kdsTicketsTitle')}</Text>
       {KDS_TICKETS.map((ticket, i) => (
@@ -59,17 +63,6 @@ export default function OwnerOrdersKdsScreen() {
 }
 
 const styles = StyleSheet.create({
-  title: {
-    fontSize: 28,
-    fontWeight: '800',
-    color: ownerColors.text,
-    marginBottom: 6,
-  },
-  sub: {
-    fontSize: 15,
-    color: ownerColors.textMuted,
-    marginBottom: 16,
-  },
   section: {
     fontSize: 13,
     fontWeight: '800',

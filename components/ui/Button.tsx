@@ -23,8 +23,8 @@ export function Button({ title, onPress, variant = 'primary', size = 'md', loadi
   const s = sizeStyles[size];
 
   const variantStyles: Record<string, ViewStyle> = {
-    primary: { backgroundColor: colors.gold, ...shadows.goldGlow },
-    outlined: { backgroundColor: 'transparent', borderWidth: 1.5, borderColor: colors.gold },
+    primary: { backgroundColor: colors.gold, ...shadows.card },
+    outlined: { backgroundColor: 'transparent', borderWidth: StyleSheet.hairlineWidth, borderColor: colors.gold },
     danger: { backgroundColor: colors.danger },
     dangerSoft: { backgroundColor: 'rgba(220, 90, 90, 0.22)', borderWidth: 1, borderColor: 'rgba(220, 90, 90, 0.35)' },
     ghost: { backgroundColor: 'transparent' },

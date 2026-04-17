@@ -1,0 +1,128 @@
+import { mockCustomer } from '@/lib/mock/users';
+import { mockRestaurants } from '@/lib/mock/restaurants';
+
+export type SnapUser = {
+  id: string;
+  username: string;
+  avatarUrl: string;
+};
+
+export type SnapPost = {
+  id: string;
+  user_id: string;
+  restaurant_id: string;
+  image: string;
+  caption: string;
+  rating?: 1 | 2 | 3 | 4 | 5;
+  timestamp: string;
+};
+
+export const snapUsers: SnapUser[] = [
+  { id: mockCustomer.id, username: 'alexj', avatarUrl: mockCustomer.avatarUrl ?? '' },
+  { id: 'u3', username: 'maria.eats', avatarUrl: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=300' },
+  { id: 'u4', username: 'jayonthego', avatarUrl: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=300' },
+  { id: 'u5', username: 'nina.city', avatarUrl: 'https://images.unsplash.com/photo-1487412720507-e7ab37603c6f?w=300' },
+  { id: 'u6', username: 'foodwithleo', avatarUrl: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=300' },
+  { id: 'u7', username: 'samplates', avatarUrl: 'https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?w=300' },
+  { id: 'u8', username: 'goldenforks', avatarUrl: 'https://images.unsplash.com/photo-1531123897727-8f129e1688ce?w=300' },
+  { id: 'u9', username: 'liadines', avatarUrl: 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=300' },
+  { id: 'u10', username: 'derekbites', avatarUrl: 'https://images.unsplash.com/photo-1463453091185-61582044d556?w=300' },
+  { id: 'u11', username: 'sofiastories', avatarUrl: 'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=300' },
+];
+
+const snapRestaurantIds = ['r1', 'r2', 'r3', 'r5', 'r10'] as const;
+export const snapRestaurants = mockRestaurants.filter((restaurant) =>
+  snapRestaurantIds.includes(restaurant.id as (typeof snapRestaurantIds)[number]),
+);
+
+const foodImages = [
+  'https://images.unsplash.com/photo-1473093295043-cdd812d0e601?w=1200',
+  'https://images.unsplash.com/photo-1504674900247-0877df9cc836?w=1200',
+  'https://images.unsplash.com/photo-1482049016688-2d3e1b311543?w=1200',
+  'https://images.unsplash.com/photo-1512621776951-a57141f2eefd?w=1200',
+  'https://images.unsplash.com/photo-1540189549336-e6e99c3679fe?w=1200',
+  'https://images.unsplash.com/photo-1565299624946-b28f40a0ae38?w=1200',
+  'https://images.unsplash.com/photo-1544025162-d76694265947?w=1200',
+  'https://images.unsplash.com/photo-1528605248644-14dd04022da1?w=1200',
+];
+
+const captionPool = [
+  'this pasta was insane 🔥',
+  'date night vibes',
+  'lowkey best spot in the city',
+  'worth the wait every time',
+  'that sauce was unreal',
+  'new favorite dinner place',
+  'came for drinks, stayed for dessert',
+  'perfect spot for a late night bite',
+];
+
+const hourOffsets = [
+  1, 2, 3, 5, 7, 9, 12, 16, 20, 24, 28, 33, 40, 48, 55, 63, 72, 80, 96, 110, 128, 140, 156, 180,
+  210, 240, 280, 320,
+];
+
+const initialMockPosts: SnapPost[] = hourOffsets.map((offset, index) => {
+  const user = snapUsers[index % snapUsers.length];
+  const restaurant = snapRestaurants[index % snapRestaurants.length];
+  const image = foodImages[index % foodImages.length];
+  const caption = captionPool[index % captionPool.length];
+  const timestamp = new Date(Date.now() - offset * 60 * 60 * 1000).toISOString();
+  return {
+    id: `snap-${index + 1}`,
+    user_id: user.id,
+    restaurant_id: restaurant.id,
+    image,
+    caption,
+    rating: ((index % 5) + 1) as 1 | 2 | 3 | 4 | 5,
+    timestamp,
+  };
+});
+
+let snapPosts: SnapPost[] = [...initialMockPosts];
+let snapIdCounter = initialMockPosts.length + 1;
+
+export function listSnapPosts(): SnapPost[] {
+  return [...snapPosts].sort((a, b) => +new Date(b.timestamp) - +new Date(a.timestamp));
+}
+
+export function listSnapPostsByUser(userId: string): SnapPost[] {
+  return listSnapPosts().filter((post) => post.user_id === userId);
+}
+
+export function listSnapPostsByRestaurant(restaurantId: string): SnapPost[] {
+  return listSnapPosts().filter((post) => post.restaurant_id === restaurantId);
+}
+
+export function createSnapPost(input: Omit<SnapPost, 'id' | 'timestamp'>): SnapPost {
+  const created: SnapPost = {
+    id: `snap-${snapIdCounter++}`,
+    ...input,
+    timestamp: new Date().toISOString(),
+  };
+  snapPosts = [created, ...snapPosts];
+  return created;
+}
+
+export function getSnapUser(userId: string): SnapUser | undefined {
+  return snapUsers.find((user) => user.id === userId);
+}
+
+export function getSnapRestaurantName(restaurantId: string): string {
+  return snapRestaurants.find((restaurant) => restaurant.id === restaurantId)?.name ?? 'Restaurant';
+}
+
+export function getSnapPostById(snapId: string): SnapPost | undefined {
+  return snapPosts.find((post) => post.id === snapId);
+}
+
+export function timeAgoLabel(timestamp: string): string {
+  const diffMs = Date.now() - +new Date(timestamp);
+  const minutes = Math.max(1, Math.floor(diffMs / (1000 * 60)));
+  if (minutes < 60) return `${minutes}m ago`;
+  const hours = Math.floor(minutes / 60);
+  if (hours < 24) return `${hours}h ago`;
+  if (hours < 48) return 'yesterday';
+  const days = Math.floor(hours / 24);
+  return `${days}d ago`;
+}

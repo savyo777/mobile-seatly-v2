@@ -99,7 +99,25 @@ export default function ProfileScreen() {
               <Text style={styles.editLinkText}>{t('profile.editProfile')}</Text>
             </Pressable>
           </View>
+          <Pressable
+            onPress={() => router.push('/(customer)/discover/post-review/camera')}
+            style={({ pressed }) => [styles.snapPlusBtn, pressed && styles.snapPlusPressed]}
+            accessibilityRole="button"
+            accessibilityLabel="Create a snap"
+          >
+            <Ionicons name="add" size={20} color={colors.goldLight} />
+          </Pressable>
         </View>
+
+        <Pressable
+          onPress={() => router.push('/(customer)/profile/my-snaps' as Href)}
+          style={({ pressed }) => [styles.mySnapsNav, pressed && styles.mySnapsNavPressed]}
+          accessibilityRole="button"
+          accessibilityLabel={t('profile.mySnaps')}
+        >
+          <Text style={styles.mySnapsNavText}>{t('profile.mySnaps')}</Text>
+          <Ionicons name="chevron-forward" size={18} color={colors.goldLight} />
+        </Pressable>
 
         <ProfileQuickActions onNavigate={(href) => router.push(href)} />
 
@@ -169,8 +187,43 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: spacing.md,
-    marginBottom: spacing.xl,
+    marginBottom: spacing.md,
     paddingTop: spacing.xs,
+  },
+  mySnapsNav: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    width: '100%',
+    paddingVertical: 14,
+    paddingHorizontal: spacing.md,
+    marginBottom: spacing.lg,
+    borderRadius: borderRadius.lg,
+    backgroundColor: 'rgba(255,255,255,0.06)',
+  },
+  mySnapsNavPressed: {
+    backgroundColor: 'rgba(255,255,255,0.09)',
+  },
+  mySnapsNavText: {
+    ...typography.body,
+    fontSize: 16,
+    fontWeight: '600',
+    color: colors.goldLight,
+  },
+  snapPlusBtn: {
+    width: 38,
+    height: 38,
+    borderRadius: borderRadius.full,
+    borderWidth: 1,
+    borderColor: 'rgba(201, 168, 76, 0.8)',
+    backgroundColor: 'rgba(201, 168, 76, 0.14)',
+    alignItems: 'center',
+    justifyContent: 'center',
+    alignSelf: 'flex-start',
+    marginTop: spacing.sm,
+  },
+  snapPlusPressed: {
+    opacity: 0.78,
   },
   avatar: {
     width: 72,

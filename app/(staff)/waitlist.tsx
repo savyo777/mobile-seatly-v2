@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 import { OwnerScreen } from '@/components/owner/OwnerScreen';
 import { GlassCard } from '@/components/owner/GlassCard';
+import { SubpageHeader } from '@/components/owner/SubpageHeader';
 import { WAITLIST_ENTRIES, WALKIN_QUEUE } from '@/lib/mock/ownerApp';
 import { ownerColors, ownerRadii } from '@/lib/theme/ownerTheme';
 
@@ -12,8 +13,11 @@ export default function OwnerWaitlistScreen() {
 
   return (
     <OwnerScreen>
-      <Text style={styles.title}>{t('owner.waitlistScreenTitle')}</Text>
-      <Text style={styles.sub}>{t('owner.waitlistScreenSubtitle')}</Text>
+      <SubpageHeader
+        title={t('owner.waitlistScreenTitle')}
+        subtitle={t('owner.waitlistScreenSubtitle')}
+        fallbackTab="reservations"
+      />
 
       <Text style={styles.section}>{t('owner.walkInQueue')}</Text>
       <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.queueRow}>
@@ -46,17 +50,6 @@ export default function OwnerWaitlistScreen() {
 }
 
 const styles = StyleSheet.create({
-  title: {
-    fontSize: 28,
-    fontWeight: '800',
-    color: ownerColors.text,
-    marginBottom: 6,
-  },
-  sub: {
-    fontSize: 15,
-    color: ownerColors.textMuted,
-    marginBottom: 16,
-  },
   section: {
     fontSize: 13,
     fontWeight: '800',

@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 import { OwnerScreen } from '@/components/owner/OwnerScreen';
 import { GlassCard } from '@/components/owner/GlassCard';
+import { SubpageHeader } from '@/components/owner/SubpageHeader';
 import { EXPORT_OPTIONS } from '@/lib/mock/ownerApp';
 import { ownerColors } from '@/lib/theme/ownerTheme';
 
@@ -12,8 +13,11 @@ export default function OwnerExportScreen() {
 
   return (
     <OwnerScreen>
-      <Text style={styles.title}>{t('owner.exportTitle')}</Text>
-      <Text style={styles.sub}>{t('owner.exportSubtitle')}</Text>
+      <SubpageHeader
+        title={t('owner.exportTitle')}
+        subtitle={t('owner.exportSubtitle')}
+        fallbackTab="more"
+      />
 
       {EXPORT_OPTIONS.map((row, i) => (
         <Animated.View key={row.id} entering={FadeInDown.delay(i * 40)}>
@@ -34,17 +38,6 @@ export default function OwnerExportScreen() {
 }
 
 const styles = StyleSheet.create({
-  title: {
-    fontSize: 28,
-    fontWeight: '800',
-    color: ownerColors.text,
-    marginBottom: 6,
-  },
-  sub: {
-    fontSize: 15,
-    color: ownerColors.textMuted,
-    marginBottom: 16,
-  },
   card: {
     padding: 16,
     marginBottom: 10,

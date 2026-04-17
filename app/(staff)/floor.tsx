@@ -7,6 +7,7 @@ import { FloorCanvas } from '@/components/owner/FloorCanvas';
 import { TableDetailSheet } from '@/components/owner/TableDetailSheet';
 import { OWNER_FLOOR_TABLES, type OwnerFloorTable } from '@/lib/mock/ownerApp';
 import { ownerColors } from '@/lib/theme/ownerTheme';
+import { ownerSpace } from '@/lib/theme/ownerTheme';
 
 export default function OwnerFloorScreen() {
   const { t } = useTranslation();
@@ -54,10 +55,11 @@ const styles = StyleSheet.create({
   sub: {
     fontSize: 15,
     color: ownerColors.textMuted,
-    marginBottom: 16,
+    marginBottom: ownerSpace.md,
+    fontWeight: '500',
   },
   flex: {
     flex: 1,
-    minHeight: 360,
+    minHeight: 380,
   },
 });

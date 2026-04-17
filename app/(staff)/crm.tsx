@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 import { OwnerScreen } from '@/components/owner/OwnerScreen';
 import { GlassCard } from '@/components/owner/GlassCard';
+import { SubpageHeader } from '@/components/owner/SubpageHeader';
 import { CRM_SPOTLIGHT } from '@/lib/mock/ownerApp';
 import { formatCurrency } from '@/lib/utils/formatCurrency';
 import { ownerColors, ownerRadii } from '@/lib/theme/ownerTheme';
@@ -13,8 +14,11 @@ export default function OwnerCrmScreen() {
 
   return (
     <OwnerScreen>
-      <Text style={styles.title}>{t('owner.crmScreenTitle')}</Text>
-      <Text style={styles.sub}>{t('owner.crmScreenSubtitle')}</Text>
+      <SubpageHeader
+        title={t('owner.crmScreenTitle')}
+        subtitle={t('owner.crmScreenSubtitle')}
+        fallbackTab="more"
+      />
 
       {CRM_SPOTLIGHT.map((c, i) => (
         <Animated.View key={c.id} entering={FadeInDown.delay(i * 45)}>
@@ -43,17 +47,6 @@ export default function OwnerCrmScreen() {
 }
 
 const styles = StyleSheet.create({
-  title: {
-    fontSize: 28,
-    fontWeight: '800',
-    color: ownerColors.text,
-    marginBottom: 6,
-  },
-  sub: {
-    fontSize: 15,
-    color: ownerColors.textMuted,
-    marginBottom: 16,
-  },
   card: {
     padding: 16,
     marginBottom: 10,

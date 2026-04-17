@@ -4,6 +4,7 @@ import { ChevronGlyph } from '@/components/ui/ChevronGlyph';
 import { useTranslation } from 'react-i18next';
 import { Ionicons } from '@expo/vector-icons';
 import { ScreenWrapper, Card } from '@/components/ui';
+import { SubpageHeader } from '@/components/owner/SubpageHeader';
 import { colors, spacing, borderRadius, typography, shadows } from '@/lib/theme';
 
 interface MockShift {
@@ -68,7 +69,7 @@ export default function StaffScheduleScreen() {
 
   return (
     <ScreenWrapper scrollable={false} padded>
-      <Text style={styles.screenTitle}>{t('staff.mySchedule')}</Text>
+      <SubpageHeader title={t('staff.mySchedule')} fallbackTab="more" />
 
       <View style={styles.weekNav}>
         <TouchableOpacity
@@ -121,11 +122,6 @@ export default function StaffScheduleScreen() {
 }
 
 const styles = StyleSheet.create({
-  screenTitle: {
-    ...typography.h1,
-    color: colors.textPrimary,
-    marginBottom: spacing.lg,
-  },
   weekNav: {
     flexDirection: 'row',
     alignItems: 'center',

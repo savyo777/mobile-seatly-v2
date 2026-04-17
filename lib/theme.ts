@@ -1,27 +1,31 @@
+import { appPalette } from '@/lib/theme/appPalette';
+
 export const colors = {
-  gold: '#C9A84C',
-  goldLight: '#F5E6C8',
-  goldDark: '#A8873A',
+  gold: appPalette.gold,
+  /** Soft highlight text / icons on dark */
+  goldLight: '#DDD5C4',
+  goldDark: '#A38630',
 
-  bgBase: '#0A0A0A',
-  bgSurface: '#1A1A1A',
-  bgElevated: '#242424',
-  border: '#2E2E2E',
+  bgBase: appPalette.bgBase,
+  bgSurface: appPalette.bgSurface,
+  bgElevated: appPalette.bgElevated,
+  border: appPalette.border,
 
-  textPrimary: '#FFFFFF',
-  textSecondary: '#AAAAAA',
-  textMuted: '#666666',
+  textPrimary: appPalette.textPrimary,
+  textSecondary: appPalette.textSecondary,
+  textMuted: appPalette.textMuted,
 
   success: '#22C55E',
-  warning: '#F59E0B',
+  warning: '#D4A574',
   danger: '#EF4444',
-  info: '#3B82F6',
+  /** No blue chrome — neutral “info” */
+  info: '#71717A',
 
   tableEmpty: '#22C55E',
-  tableReserved: '#C9A84C',
+  tableReserved: appPalette.gold,
   tableOccupied: '#EF4444',
-  tableCleaning: '#6B7280',
-  tableBlocked: '#374151',
+  tableCleaning: '#71717A',
+  tableBlocked: '#52525C',
 } as const;
 
 export const spacing = {
@@ -53,26 +57,27 @@ export const typography = {
 } as const;
 
 export const borderRadius = {
-  sm: 6,
-  md: 10,
+  sm: 8,
+  md: 12,
   lg: 14,
-  xl: 20,
+  xl: 18,
   full: 9999,
 } as const;
 
+/** Soft elevation only — no gold halos */
 export const shadows = {
   goldGlow: {
-    shadowColor: '#C9A84C',
-    shadowOpacity: 0.25,
-    shadowRadius: 12,
-    shadowOffset: { width: 0, height: 0 },
-    elevation: 8,
+    shadowColor: '#000000',
+    shadowOpacity: 0.35,
+    shadowRadius: 10,
+    shadowOffset: { width: 0, height: 3 },
+    elevation: 4,
   },
   card: {
     shadowColor: '#000000',
-    shadowOpacity: 0.15,
-    shadowRadius: 8,
-    shadowOffset: { width: 0, height: 2 },
-    elevation: 4,
+    shadowOpacity: 0.25,
+    shadowRadius: 12,
+    shadowOffset: { width: 0, height: 4 },
+    elevation: 3,
   },
 } as const;

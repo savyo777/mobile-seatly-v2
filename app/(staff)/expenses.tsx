@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 import { OwnerScreen } from '@/components/owner/OwnerScreen';
 import { GlassCard } from '@/components/owner/GlassCard';
+import { SubpageHeader } from '@/components/owner/SubpageHeader';
 import { EXPENSE_LINES } from '@/lib/mock/ownerApp';
 import { formatCurrency } from '@/lib/utils/formatCurrency';
 import { ownerColors } from '@/lib/theme/ownerTheme';
@@ -13,8 +14,11 @@ export default function OwnerExpensesScreen() {
 
   return (
     <OwnerScreen>
-      <Text style={styles.title}>{t('owner.expensesTitle')}</Text>
-      <Text style={styles.sub}>{t('owner.expensesSubtitle')}</Text>
+      <SubpageHeader
+        title={t('owner.expensesTitle')}
+        subtitle={t('owner.expensesSubtitle')}
+        fallbackTab="more"
+      />
 
       {EXPENSE_LINES.map((line, i) => (
         <Animated.View key={line.id} entering={FadeInDown.delay(i * 40)}>
@@ -35,17 +39,6 @@ export default function OwnerExpensesScreen() {
 }
 
 const styles = StyleSheet.create({
-  title: {
-    fontSize: 28,
-    fontWeight: '800',
-    color: ownerColors.text,
-    marginBottom: 6,
-  },
-  sub: {
-    fontSize: 15,
-    color: ownerColors.textMuted,
-    marginBottom: 16,
-  },
   card: {
     padding: 16,
     marginBottom: 10,

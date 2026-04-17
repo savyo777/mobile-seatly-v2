@@ -5,6 +5,7 @@ import Animated, { FadeInUp } from 'react-native-reanimated';
 import { OwnerScreen } from '@/components/owner/OwnerScreen';
 import { PeriodToggle } from '@/components/owner/PeriodToggle';
 import { GlassCard } from '@/components/owner/GlassCard';
+import { SubpageHeader } from '@/components/owner/SubpageHeader';
 import {
   ANALYTICS_INSIGHTS,
   ANALYTICS_METRICS,
@@ -43,7 +44,7 @@ export default function OwnerAnalyticsScreen() {
 
   return (
     <OwnerScreen>
-      <Text style={styles.title}>{t('owner.analyticsTitle')}</Text>
+      <SubpageHeader title={t('owner.analyticsTitle')} fallbackTab="more" />
       <PeriodToggle value={period} onChange={setPeriod} />
 
       <Animated.View entering={FadeInUp.delay(80)} style={styles.grid}>
@@ -159,12 +160,6 @@ function MetricTile({
 }
 
 const styles = StyleSheet.create({
-  title: {
-    fontSize: 28,
-    fontWeight: '800',
-    color: ownerColors.text,
-    marginBottom: 16,
-  },
   grid: {
     flexDirection: 'row',
     flexWrap: 'wrap',

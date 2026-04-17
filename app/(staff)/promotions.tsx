@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 import { OwnerScreen } from '@/components/owner/OwnerScreen';
 import { GlassCard } from '@/components/owner/GlassCard';
+import { SubpageHeader } from '@/components/owner/SubpageHeader';
 import { MARKETING_ACTIVE, OWNER_PROMO_ROWS } from '@/lib/mock/ownerApp';
 import { ownerColors, ownerRadii } from '@/lib/theme/ownerTheme';
 
@@ -12,8 +13,11 @@ export default function OwnerPromotionsScreen() {
 
   return (
     <OwnerScreen>
-      <Text style={styles.title}>{t('owner.promotionsTitle')}</Text>
-      <Text style={styles.sub}>{t('owner.promotionsSubtitle')}</Text>
+      <SubpageHeader
+        title={t('owner.promotionsTitle')}
+        subtitle={t('owner.promotionsSubtitle')}
+        fallbackTab="more"
+      />
 
       <Text style={styles.section}>{t('owner.promotionsActive')}</Text>
       <GlassCard style={styles.heroCard}>
@@ -41,17 +45,6 @@ export default function OwnerPromotionsScreen() {
 }
 
 const styles = StyleSheet.create({
-  title: {
-    fontSize: 28,
-    fontWeight: '800',
-    color: ownerColors.text,
-    marginBottom: 6,
-  },
-  sub: {
-    fontSize: 15,
-    color: ownerColors.textMuted,
-    marginBottom: 16,
-  },
   section: {
     fontSize: 13,
     fontWeight: '800',

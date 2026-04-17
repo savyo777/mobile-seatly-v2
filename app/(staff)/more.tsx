@@ -3,7 +3,7 @@ import { View, Text, StyleSheet, Pressable } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { OwnerScreen } from '@/components/owner/OwnerScreen';
-import { GlassCard } from '@/components/owner/GlassCard';
+import { OwnerSectionLabel } from '@/components/owner/OwnerSectionLabel';
 import {
   KDS_TICKETS,
   OWNER_EVENTS,
@@ -12,6 +12,7 @@ import {
   WAITLIST_ENTRIES,
 } from '@/lib/mock/ownerApp';
 import { ownerColors, ownerRadii } from '@/lib/theme/ownerTheme';
+import { ownerSpace } from '@/lib/theme/ownerTheme';
 
 type CommandItem = {
   key: string;
@@ -22,58 +23,34 @@ type CommandItem = {
   badge?: string;
 };
 
-function FeatureRow({
+function Row({
   item,
   onPress,
+  showDivider,
 }: {
   item: CommandItem;
   onPress: (href: string) => void;
+  showDivider?: boolean;
 }) {
   return (
-    <Pressable onPress={() => onPress(item.href)} style={({ pressed }) => [styles.row, pressed && styles.pressed]}>
-      <View style={styles.rowLeft}>
-        <View style={styles.iconWrap}>
-          <Ionicons name={item.icon} size={18} color={ownerColors.gold} />
-        </View>
+    <>
+      {showDivider ? <View style={styles.divider} /> : null}
+      <Pressable onPress={() => onPress(item.href)} style={({ pressed }) => [styles.row, pressed && styles.pressed]}>
+        <Ionicons name={item.icon} size={20} color={ownerColors.textSecondary} style={styles.rowIcon} />
         <View style={styles.rowText}>
           <Text style={styles.rowLabel}>{item.label}</Text>
           {item.subtitle ? <Text style={styles.rowSubtitle}>{item.subtitle}</Text> : null}
         </View>
-      </View>
-      <View style={styles.rowRight}>
-        {item.badge ? (
-          <View style={styles.badge}>
-            <Text style={styles.badgeText}>{item.badge}</Text>
-          </View>
-        ) : null}
-        <Ionicons name="chevron-forward" size={18} color={ownerColors.textMuted} />
-      </View>
-    </Pressable>
-  );
-}
-
-function PriorityCard({
-  item,
-  onPress,
-}: {
-  item: CommandItem;
-  onPress: (href: string) => void;
-}) {
-  return (
-    <Pressable onPress={() => onPress(item.href)} style={({ pressed }) => [styles.priorityCard, pressed && styles.pressed]}>
-      <View style={styles.priorityTop}>
-        <View style={styles.priorityIcon}>
-          <Ionicons name={item.icon} size={20} color={ownerColors.gold} />
+        <View style={styles.rowRight}>
+          {item.badge ? (
+            <Text style={styles.badgeMuted} numberOfLines={1}>
+              {item.badge}
+            </Text>
+          ) : null}
+          <Ionicons name="chevron-forward" size={18} color={ownerColors.textMuted} />
         </View>
-        {item.badge ? (
-          <View style={styles.badge}>
-            <Text style={styles.badgeText}>{item.badge}</Text>
-          </View>
-        ) : null}
-      </View>
-      <Text style={styles.priorityTitle}>{item.label}</Text>
-      {item.subtitle ? <Text style={styles.prioritySub}>{item.subtitle}</Text> : null}
-    </Pressable>
+      </Pressable>
+    </>
   );
 }
 
@@ -197,241 +174,161 @@ export default function OwnerMoreScreen() {
     },
   ];
 
+  const push = (href: string) => router.push(href as never);
+
   return (
     <OwnerScreen>
       <Text style={styles.title}>Command Center</Text>
       <Text style={styles.sub}>Operations, guests, and business tools</Text>
 
-      <GlassCard style={styles.summary}>
-        <View style={styles.summaryCell}>
-          <Text style={styles.summaryValue}>{waitlistCount}</Text>
-          <Text style={styles.summaryLabel}>Waitlist</Text>
+      <View style={styles.statsRow}>
+        <View style={styles.stat}>
+          <Text style={styles.statValue}>{waitlistCount}</Text>
+          <Text style={styles.statLabel}>Waitlist</Text>
         </View>
-        <View style={styles.summaryDivider} />
-        <View style={styles.summaryCell}>
-          <Text style={styles.summaryValue}>{openOrdersCount}</Text>
-          <Text style={styles.summaryLabel}>Open orders</Text>
+        <View style={styles.statSep} />
+        <View style={styles.stat}>
+          <Text style={styles.statValue}>{openOrdersCount}</Text>
+          <Text style={styles.statLabel}>Open orders</Text>
         </View>
-        <View style={styles.summaryDivider} />
-        <View style={styles.summaryCell}>
-          <Text style={styles.summaryValue}>{onShiftCount}</Text>
-          <Text style={styles.summaryLabel}>On shift</Text>
+        <View style={styles.statSep} />
+        <View style={styles.stat}>
+          <Text style={styles.statValue}>{onShiftCount}</Text>
+          <Text style={styles.statLabel}>On shift</Text>
         </View>
-      </GlassCard>
+      </View>
 
-      <Text style={styles.sectionTitle}>Tonight</Text>
-      <Text style={styles.sectionSub}>Urgent operations first</Text>
-      <View style={styles.priorityGrid}>
-        {tonight.slice(0, 2).map((item) => (
-          <PriorityCard key={item.key} item={item} onPress={(href) => router.push(href as never)} />
+      <OwnerSectionLabel marginTop={ownerSpace.md}>Tonight</OwnerSectionLabel>
+      <View style={styles.list}>
+        {tonight.map((item, i) => (
+          <Row key={item.key} item={item} onPress={push} showDivider={i > 0} />
         ))}
       </View>
-      <GlassCard style={styles.groupCard}>
-        <FeatureRow item={tonight[2]} onPress={(href) => router.push(href as never)} />
-      </GlassCard>
 
-      <Text style={styles.sectionTitle}>Guests & Team</Text>
-      <GlassCard style={styles.groupCard}>
-        {guestsTeam.map((item, index) => (
-          <View key={item.key}>
-            <FeatureRow item={item} onPress={(href) => router.push(href as never)} />
-            {index < guestsTeam.length - 1 ? <View style={styles.separator} /> : null}
-          </View>
+      <OwnerSectionLabel marginTop={ownerSpace.lg}>Guests & team</OwnerSectionLabel>
+      <View style={styles.list}>
+        {guestsTeam.map((item, i) => (
+          <Row key={item.key} item={item} onPress={push} showDivider={i > 0} />
         ))}
-      </GlassCard>
+      </View>
 
-      <Text style={styles.sectionTitle}>Business</Text>
-      <GlassCard style={styles.groupCard}>
-        {business.map((item, index) => (
-          <View key={item.key}>
-            <FeatureRow item={item} onPress={(href) => router.push(href as never)} />
-            {index < business.length - 1 ? <View style={styles.separator} /> : null}
-          </View>
+      <OwnerSectionLabel marginTop={ownerSpace.lg}>Business</OwnerSectionLabel>
+      <View style={styles.list}>
+        {business.map((item, i) => (
+          <Row key={item.key} item={item} onPress={push} showDivider={i > 0} />
         ))}
-      </GlassCard>
+      </View>
 
-      <Text style={styles.sectionTitle}>System</Text>
-      <GlassCard style={styles.groupCard}>
-        {system.map((item, index) => (
-          <View key={item.key}>
-            <FeatureRow item={item} onPress={(href) => router.push(href as never)} />
-            {index < system.length - 1 ? <View style={styles.separator} /> : null}
-          </View>
+      <OwnerSectionLabel marginTop={ownerSpace.lg}>System</OwnerSectionLabel>
+      <View style={styles.list}>
+        {system.map((item, i) => (
+          <Row key={item.key} item={item} onPress={push} showDivider={i > 0} />
         ))}
-      </GlassCard>
+      </View>
+
+      <View style={{ height: ownerSpace.md }} />
     </OwnerScreen>
   );
 }
 
 const styles = StyleSheet.create({
   title: {
-    fontSize: 28,
+    fontSize: 26,
     fontWeight: '800',
     color: ownerColors.text,
     marginBottom: 6,
+    letterSpacing: -0.4,
   },
   sub: {
     fontSize: 15,
     color: ownerColors.textMuted,
-    marginBottom: 14,
+    marginBottom: ownerSpace.md,
+    fontWeight: '500',
   },
-  summary: {
+  statsRow: {
     flexDirection: 'row',
-    paddingHorizontal: 14,
-    paddingVertical: 14,
-    marginBottom: 18,
-    borderColor: 'rgba(212, 175, 55, 0.22)',
-    backgroundColor: '#101115',
+    alignItems: 'stretch',
+    marginBottom: ownerSpace.sm,
+    paddingVertical: ownerSpace.sm,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: ownerColors.border,
   },
-  summaryCell: {
+  stat: {
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
+    paddingVertical: ownerSpace.xs,
   },
-  summaryValue: {
-    color: ownerColors.gold,
-    fontSize: 22,
-    fontWeight: '800',
-    lineHeight: 26,
-  },
-  summaryLabel: {
-    color: ownerColors.textMuted,
-    fontSize: 12,
-    fontWeight: '700',
-    marginTop: 4,
-    textTransform: 'uppercase',
-    letterSpacing: 0.7,
-  },
-  summaryDivider: {
-    width: 1,
+  statSep: {
+    width: StyleSheet.hairlineWidth,
     backgroundColor: ownerColors.border,
-    marginVertical: 4,
   },
-  sectionTitle: {
-    fontSize: 14,
-    fontWeight: '800',
+  statValue: {
+    fontSize: 22,
+    fontWeight: '700',
     color: ownerColors.text,
-    marginBottom: 3,
-    letterSpacing: 0.3,
+    letterSpacing: -0.5,
   },
-  sectionSub: {
-    fontSize: 12,
+  statLabel: {
+    fontSize: 11,
     fontWeight: '600',
     color: ownerColors.textMuted,
-    marginBottom: 10,
+    marginTop: 4,
+    textTransform: 'uppercase',
+    letterSpacing: 0.6,
   },
-  priorityGrid: {
-    flexDirection: 'row',
-    gap: 10,
-    marginBottom: 10,
+  list: {
+    borderRadius: ownerRadii.md,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: ownerColors.border,
+    backgroundColor: ownerColors.bgElevated,
+    overflow: 'hidden',
+    marginBottom: ownerSpace.xs,
   },
-  priorityCard: {
-    flex: 1,
-    borderRadius: ownerRadii.xl,
-    borderWidth: 1,
-    borderColor: 'rgba(212, 175, 55, 0.28)',
-    backgroundColor: '#111215',
-    padding: 12,
-  },
-  priorityTop: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    marginBottom: 10,
-  },
-  priorityIcon: {
-    width: 34,
-    height: 34,
-    borderRadius: ownerRadii.xl,
-    backgroundColor: ownerColors.goldSubtle,
-    borderWidth: 1,
-    borderColor: 'rgba(212, 175, 55, 0.35)',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  priorityTitle: {
-    fontSize: 15,
-    fontWeight: '800',
-    color: ownerColors.text,
-    marginBottom: 4,
-  },
-  prioritySub: {
-    fontSize: 12,
-    color: ownerColors.textMuted,
-    lineHeight: 17,
-  },
-  groupCard: {
-    marginBottom: 16,
-    paddingVertical: 4,
-    backgroundColor: '#101115',
-    borderColor: 'rgba(255,255,255,0.08)',
+  divider: {
+    height: StyleSheet.hairlineWidth,
+    backgroundColor: ownerColors.border,
+    marginLeft: ownerSpace.md + 20 + ownerSpace.sm,
   },
   row: {
-    minHeight: 64,
-    paddingHorizontal: 12,
-    paddingVertical: 10,
+    minHeight: 56,
+    paddingHorizontal: ownerSpace.md,
+    paddingVertical: ownerSpace.sm,
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
   },
-  rowLeft: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-    flex: 1,
-  },
-  iconWrap: {
-    width: 36,
-    height: 36,
-    borderRadius: ownerRadii.xl,
-    backgroundColor: ownerColors.goldSubtle,
-    borderWidth: 1,
-    borderColor: 'rgba(212, 175, 55, 0.35)',
-    alignItems: 'center',
-    justifyContent: 'center',
+  rowIcon: {
+    marginRight: ownerSpace.sm,
+    width: 24,
   },
   rowText: {
     flex: 1,
     minWidth: 0,
   },
   rowLabel: {
-    fontSize: 15,
-    fontWeight: '700',
+    fontSize: 16,
+    fontWeight: '600',
     color: ownerColors.text,
   },
   rowSubtitle: {
-    fontSize: 12,
+    fontSize: 13,
     color: ownerColors.textMuted,
     marginTop: 2,
+    fontWeight: '500',
   },
   rowRight: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 10,
-    marginLeft: 8,
+    gap: ownerSpace.sm,
+    marginLeft: ownerSpace.sm,
   },
-  badge: {
-    minWidth: 24,
-    height: 24,
-    paddingHorizontal: 8,
-    borderRadius: ownerRadii.xl,
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderWidth: 1,
-    borderColor: 'rgba(212, 175, 55, 0.45)',
-    backgroundColor: ownerColors.goldSubtle,
-  },
-  badgeText: {
-    fontSize: 11,
-    fontWeight: '800',
-    color: ownerColors.gold,
-  },
-  separator: {
-    height: 1,
-    backgroundColor: ownerColors.border,
-    marginHorizontal: 12,
+  badgeMuted: {
+    fontSize: 13,
+    fontWeight: '700',
+    color: ownerColors.textMuted,
   },
   pressed: {
     opacity: 0.88,
+    backgroundColor: ownerColors.bgGlass,
   },
 });

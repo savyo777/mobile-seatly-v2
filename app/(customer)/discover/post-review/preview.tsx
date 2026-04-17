@@ -1,316 +1,263 @@
 import React, { useCallback, useMemo, useState } from 'react';
-import { Image, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
-import { useLocalSearchParams, useRouter } from 'expo-router';
-import { useFocusEffect } from '@react-navigation/native';
+import { Dimensions, Image, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { useLocalSearchParams, useRouter, type Href } from 'expo-router';
+import { LinearGradient } from 'expo-linear-gradient';
+import { Ionicons } from '@expo/vector-icons';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Button, ScreenWrapper } from '@/components/ui';
-import { currentRestaurants, pastRestaurants, snapFilters } from '@/lib/mock/reviewSnap';
-import {
-  clearPendingSnapPlatformSelection,
-  getPendingSnapPlatformSelection,
-  getSnapPlatformConnections,
-  setPendingSnapPlatformSelection,
-  type SnapPlatform,
-  type SnapPlatformConnections,
-} from '@/lib/storage/snapShareConnections';
+import { snapFilters } from '@/lib/mock/reviewSnap';
 import { borderRadius, colors, spacing, typography } from '@/lib/theme';
+import { getSnapRestaurantName } from '@/lib/mock/snaps';
 
-type ShareTarget = 'seatly' | SnapPlatform;
-
-function platformLabel(platform: ShareTarget): string {
-  if (platform === 'seatly') return 'Seatly Post';
-  if (platform === 'instagram') return 'Instagram';
-  if (platform === 'facebook') return 'Facebook';
-  return 'Google Review';
-}
+const TAB_BAR_EXTRA = 72;
 
 export default function ReviewPreviewScreen() {
   const router = useRouter();
+  const insets = useSafeAreaInsets();
   const { restaurantId, photoUri, filter } = useLocalSearchParams<{
-    restaurantId: string;
-    photoUri: string;
-    filter: string;
+    restaurantId?: string;
+    photoUri?: string;
+    filter?: string;
   }>();
 
-  const [caption, setCaption] = useState('');
-  const [rating, setRating] = useState(5);
-  const [connections, setConnections] = useState<SnapPlatformConnections>({
-    instagram: false,
-    facebook: false,
-    google: false,
-  });
-  const [selected, setSelected] = useState<Record<ShareTarget, boolean>>({
-    seatly: true,
-    instagram: false,
-    facebook: false,
-    google: false,
-  });
+  const [navigating, setNavigating] = useState(false);
+  const [navError, setNavError] = useState<string | null>(null);
 
-  const restaurants = useMemo(() => [...currentRestaurants, ...pastRestaurants], []);
-  const selectedRestaurant = useMemo(
-    () => restaurants.find((restaurant) => restaurant.id === restaurantId),
-    [restaurants, restaurantId],
-  );
   const activeFilter = useMemo(
     () => snapFilters.find((filterOption) => filterOption.id === filter) ?? snapFilters[0],
     [filter],
   );
-  const decodedUri = useMemo(() => (photoUri ? decodeURIComponent(photoUri) : ''), [photoUri]);
 
-  useFocusEffect(
-    useCallback(() => {
-      let mounted = true;
-      const syncConnectionState = async () => {
-        const savedConnections = await getSnapPlatformConnections();
-        const pending = await getPendingSnapPlatformSelection();
-        if (!mounted) return;
-        setConnections(savedConnections);
+  const decodedUri = useMemo(() => {
+    if (!photoUri) return '';
+    try {
+      return decodeURIComponent(photoUri);
+    } catch {
+      return photoUri;
+    }
+  }, [photoUri]);
 
-        if (pending && savedConnections[pending]) {
-          setSelected((prev) => ({ ...prev, [pending]: true }));
-        }
+  const hasImage = decodedUri.length > 0;
 
-        if (pending) {
-          await clearPendingSnapPlatformSelection();
-        }
-      };
-      void syncConnectionState();
-      return () => {
-        mounted = false;
-      };
-    }, []),
+  const restaurantName = useMemo(
+    () => (restaurantId ? getSnapRestaurantName(restaurantId) : 'Restaurant'),
+    [restaurantId],
   );
 
-  const toggleTarget = async (target: ShareTarget) => {
-    if (target === 'seatly') {
-      setSelected((prev) => ({ ...prev, seatly: !prev.seatly }));
+  const maxPreviewHeight = useMemo(() => {
+    const { width: w, height: h } = Dimensions.get('window');
+    const contentW = w - spacing.lg * 2;
+    const byAspect = contentW * (16 / 9);
+    return Math.min(byAspect, h * 0.48);
+  }, []);
+
+  const goToPostDetails = useCallback(() => {
+    if (!hasImage || !restaurantId) {
+      setNavError('Something went wrong. Go back and try again.');
+      if (__DEV__) console.warn('[SnapPreview] blocked: missing image or restaurantId', { hasImage, restaurantId });
       return;
     }
 
-    if (connections[target]) {
-      setSelected((prev) => ({ ...prev, [target]: !prev[target] }));
-      return;
+    setNavError(null);
+    setNavigating(true);
+
+    if (__DEV__) {
+      console.log('[SnapPreview] Next pressed → navigating to post-review/details', {
+        restaurantId,
+        filter: filter ?? snapFilters[0].id,
+        uriLength: decodedUri.length,
+      });
     }
 
-    await setPendingSnapPlatformSelection(target);
-    router.push(`/(customer)/discover/post-review/connect?platform=${target}`);
-  };
-
-  const submitReviewFlow = () => {
-    const selectedTargets = Object.entries(selected)
-      .filter(([, isSelected]) => isSelected)
-      .map(([key]) => key as ShareTarget);
-    const selectedLabel = selectedTargets.map(platformLabel).join(', ');
-    router.push(
-      `/(customer)/discover/post-review/reward?points=25&restaurantName=${encodeURIComponent(selectedRestaurant?.name ?? 'Restaurant')}&targets=${encodeURIComponent(selectedLabel)}`,
-    );
-  };
-
-  const hasSelectedTargets = Object.values(selected).some(Boolean);
+    try {
+      const href: Href = {
+        pathname: '/(customer)/discover/post-review/details',
+        params: {
+          photoUri: encodeURIComponent(decodedUri),
+          restaurantId,
+          filter: filter ?? snapFilters[0].id,
+        },
+      };
+      router.push(href);
+    } catch (e) {
+      if (__DEV__) console.error('[SnapPreview] navigation error', e);
+      setNavError('Something went wrong, try again.');
+    } finally {
+      setTimeout(() => setNavigating(false), 400);
+    }
+  }, [decodedUri, filter, hasImage, restaurantId, router]);
 
   return (
     <ScreenWrapper scrollable={false} padded={false}>
-      <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
-        <View style={styles.photoWrap}>
-          {decodedUri ? <Image source={{ uri: decodedUri }} style={styles.photo} /> : null}
-          <View
-            style={[
-              styles.filterOverlay,
-              { backgroundColor: activeFilter.overlayColor, opacity: activeFilter.overlayOpacity },
-            ]}
-          />
+      <View style={styles.screen}>
+        <View style={[styles.topBar, { paddingTop: insets.top + spacing.sm }]}>
+          <Pressable
+            onPress={() => router.back()}
+            style={({ pressed }) => [styles.backBtn, pressed && styles.pressed]}
+            accessibilityRole="button"
+            accessibilityLabel="Back"
+          >
+            <Ionicons name="chevron-back" size={22} color={colors.textPrimary} />
+          </Pressable>
+          <Text style={styles.headerTitle} numberOfLines={1}>
+            Preview your snap
+          </Text>
+          <View style={styles.headerSpacer} />
         </View>
 
-        <View style={styles.body}>
-          <Text style={styles.title}>Share your experience</Text>
-          <Text style={styles.subtitle}>{selectedRestaurant?.name ?? 'Selected restaurant'}</Text>
+        <ScrollView
+          style={styles.scroll}
+          contentContainerStyle={styles.scrollContent}
+          showsVerticalScrollIndicator={false}
+          keyboardShouldPersistTaps="handled"
+        >
+          <Text style={styles.subtitle}>Make sure this moment looks right, then continue to add your caption.</Text>
 
-          <View style={styles.ratingRow}>
-            <Text style={styles.sectionLabel}>Rating</Text>
-            <View style={styles.stars}>
-              {[1, 2, 3, 4, 5].map((value) => (
-                <Pressable key={value} onPress={() => setRating(value)}>
-                  <Text style={[styles.star, value <= rating && styles.starFilled]}>★</Text>
-                </Pressable>
-              ))}
-            </View>
+          <View style={[styles.photoWrap, { maxHeight: maxPreviewHeight }]}>
+            {hasImage ? (
+              <Image source={{ uri: decodedUri }} style={styles.photo} resizeMode="cover" />
+            ) : (
+              <View style={styles.photoPlaceholder}>
+                <Text style={styles.placeholderText}>No image loaded</Text>
+              </View>
+            )}
+            <LinearGradient colors={['transparent', 'rgba(0,0,0,0.45)']} style={styles.depthOverlay} />
+            <View
+              pointerEvents="none"
+              style={[
+                styles.filterOverlay,
+                { backgroundColor: activeFilter.overlayColor, opacity: activeFilter.overlayOpacity },
+              ]}
+            />
           </View>
 
-          <Text style={styles.sectionLabel}>Caption</Text>
-          <TextInput
-            value={caption}
-            onChangeText={setCaption}
-            placeholder="What made this spot memorable tonight?"
-            placeholderTextColor={colors.textMuted}
-            multiline
-            style={styles.captionInput}
+          <Text style={styles.postingTo}>Posting to {restaurantName}</Text>
+
+          {navError ? <Text style={styles.errorText}>{navError}</Text> : null}
+
+          <Pressable onPress={() => router.back()} style={styles.retakeLink}>
+            <Text style={styles.retakeLinkText}>Retake or choose another photo</Text>
+          </Pressable>
+        </ScrollView>
+
+        <View
+          style={[
+            styles.footer,
+            {
+              paddingBottom: Math.max(insets.bottom, spacing.md) + TAB_BAR_EXTRA,
+              paddingHorizontal: spacing.lg,
+            },
+          ]}
+        >
+          <Button
+            title="Next"
+            onPress={goToPostDetails}
+            disabled={!hasImage || !restaurantId || navigating}
+            loading={navigating}
+            size="lg"
           />
-
-          <View style={styles.section}>
-            <Text style={styles.sectionHeading}>Share socially</Text>
-            <View style={styles.platformGrid}>
-              <Pressable
-                onPress={() => toggleTarget('instagram')}
-                style={({ pressed }) => [
-                  styles.platformCard,
-                  selected.instagram && styles.platformCardSelected,
-                  pressed && styles.platformCardPressed,
-                ]}
-              >
-                <Text style={styles.platformTitle}>Instagram</Text>
-                <Text style={styles.platformHint}>
-                  {connections.instagram ? 'Connected' : 'Connect account'}
-                </Text>
-              </Pressable>
-              <Pressable
-                onPress={() => toggleTarget('facebook')}
-                style={({ pressed }) => [
-                  styles.platformCard,
-                  selected.facebook && styles.platformCardSelected,
-                  pressed && styles.platformCardPressed,
-                ]}
-              >
-                <Text style={styles.platformTitle}>Facebook</Text>
-                <Text style={styles.platformHint}>
-                  {connections.facebook ? 'Connected' : 'Connect account'}
-                </Text>
-              </Pressable>
-            </View>
-          </View>
-
-          <View style={styles.section}>
-            <Text style={styles.sectionHeading}>Reviews</Text>
-            <View style={styles.platformGrid}>
-              <Pressable
-                onPress={() => toggleTarget('seatly')}
-                style={({ pressed }) => [
-                  styles.platformCard,
-                  selected.seatly && styles.platformCardSelected,
-                  pressed && styles.platformCardPressed,
-                ]}
-              >
-                <Text style={styles.platformTitle}>Post to Seatly</Text>
-                <Text style={styles.platformHint}>Default and fastest</Text>
-              </Pressable>
-              <Pressable
-                onPress={() => toggleTarget('google')}
-                style={({ pressed }) => [
-                  styles.platformCard,
-                  selected.google && styles.platformCardSelected,
-                  pressed && styles.platformCardPressed,
-                ]}
-              >
-                <Text style={styles.platformTitle}>Google Review</Text>
-                <Text style={styles.platformHint}>{connections.google ? 'Connected' : 'Login with Google'}</Text>
-              </Pressable>
-            </View>
-          </View>
-
-          <Button title="Post and earn points" onPress={submitReviewFlow} disabled={!hasSelectedTargets} />
         </View>
-      </ScrollView>
+      </View>
     </ScreenWrapper>
   );
 }
 
 const styles = StyleSheet.create({
-  content: {
-    paddingBottom: spacing['3xl'],
+  screen: {
+    flex: 1,
   },
-  photoWrap: {
-    height: 340,
-    backgroundColor: colors.bgElevated,
-    position: 'relative',
+  topBar: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: spacing.md,
+    paddingBottom: spacing.sm,
+    gap: spacing.sm,
   },
-  photo: {
-    width: '100%',
-    height: '100%',
+  backBtn: {
+    width: 40,
+    height: 40,
+    borderRadius: borderRadius.full,
+    borderWidth: 1,
+    borderColor: colors.border,
+    backgroundColor: colors.bgSurface,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
-  filterOverlay: {
-    ...StyleSheet.absoluteFillObject,
+  pressed: {
+    opacity: 0.85,
   },
-  body: {
-    paddingHorizontal: spacing.lg,
-    paddingTop: spacing.lg,
-    gap: spacing.lg,
-  },
-  title: {
-    ...typography.h2,
+  headerTitle: {
+    flex: 1,
+    ...typography.h3,
     color: colors.textPrimary,
+    textAlign: 'center',
+  },
+  headerSpacer: {
+    width: 40,
+  },
+  scroll: {
+    flex: 1,
+  },
+  scrollContent: {
+    paddingHorizontal: spacing.lg,
+    paddingBottom: spacing.sm,
+    gap: spacing.md,
   },
   subtitle: {
     ...typography.body,
     color: colors.textSecondary,
   },
-  ratingRow: {
-    gap: spacing.sm,
+  photoWrap: {
+    borderRadius: borderRadius.xl,
+    overflow: 'hidden',
+    backgroundColor: colors.bgElevated,
+    width: '100%',
+    minHeight: 200,
   },
-  sectionLabel: {
+  photo: {
+    width: '100%',
+    height: '100%',
+    minHeight: 200,
+  },
+  photoPlaceholder: {
+    minHeight: 200,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: colors.bgElevated,
+  },
+  placeholderText: {
     ...typography.bodySmall,
-    color: colors.textSecondary,
-    fontWeight: '700',
-    letterSpacing: 0.4,
+    color: colors.textMuted,
   },
-  stars: {
-    flexDirection: 'row',
-    gap: spacing.sm,
+  filterOverlay: {
+    ...StyleSheet.absoluteFillObject,
   },
-  star: {
-    fontSize: 28,
-    color: colors.border,
+  depthOverlay: {
+    ...StyleSheet.absoluteFillObject,
   },
-  starFilled: {
-    color: colors.gold,
-  },
-  captionInput: {
-    minHeight: 110,
-    borderRadius: borderRadius.lg,
-    borderWidth: 1,
-    borderColor: colors.border,
-    backgroundColor: colors.bgSurface,
-    padding: spacing.md,
+  postingTo: {
     ...typography.body,
-    color: colors.textPrimary,
-    textAlignVertical: 'top',
+    color: colors.goldLight,
+    fontWeight: '600',
   },
-  section: {
-    gap: spacing.md,
-    borderRadius: borderRadius.lg,
-    borderWidth: 1,
-    borderColor: 'rgba(201, 168, 76, 0.15)',
-    padding: spacing.md,
-    backgroundColor: '#121212',
-  },
-  sectionHeading: {
-    ...typography.body,
-    color: colors.textPrimary,
-    fontWeight: '700',
-  },
-  platformGrid: {
-    gap: spacing.sm,
-  },
-  platformCard: {
-    borderRadius: borderRadius.lg,
-    borderWidth: 1,
-    borderColor: colors.border,
-    backgroundColor: colors.bgSurface,
-    paddingVertical: spacing.md,
-    paddingHorizontal: spacing.md,
-    gap: 2,
-  },
-  platformCardSelected: {
-    borderColor: 'rgba(201, 168, 76, 0.8)',
-    backgroundColor: 'rgba(201, 168, 76, 0.14)',
-  },
-  platformCardPressed: {
-    opacity: 0.82,
-  },
-  platformTitle: {
-    ...typography.body,
-    color: colors.textPrimary,
-    fontWeight: '700',
-  },
-  platformHint: {
+  errorText: {
     ...typography.bodySmall,
-    color: colors.textSecondary,
+    color: colors.danger,
+  },
+  retakeLink: {
+    alignSelf: 'flex-start',
+    paddingVertical: spacing.xs,
+  },
+  retakeLinkText: {
+    ...typography.bodySmall,
+    color: colors.textMuted,
+    textDecorationLine: 'underline',
+  },
+  footer: {
+    borderTopWidth: StyleSheet.hairlineWidth,
+    borderTopColor: colors.border,
+    backgroundColor: colors.bgBase,
+    paddingTop: spacing.md,
+    gap: spacing.sm,
   },
 });

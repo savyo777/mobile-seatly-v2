@@ -220,7 +220,7 @@ const styles = StyleSheet.create({
   actionPrimaryText: {
     fontSize: 16,
     fontWeight: '800',
-    color: '#080B16',
+    color: ownerColors.bg,
   },
   pressed: {
     opacity: 0.9,

@@ -1,39 +1,61 @@
-import React from 'react';
-import { StyleSheet, Text, View } from 'react-native';
+import React, { useEffect, useRef } from 'react';
+import { Animated, StyleSheet, Text, View } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Button, ScreenWrapper } from '@/components/ui';
 import { borderRadius, colors, spacing, typography } from '@/lib/theme';
 
 export default function ReviewRewardScreen() {
   const router = useRouter();
-  const { points, restaurantName, targets } = useLocalSearchParams<{
+  const { points, restaurantName, restaurantId } = useLocalSearchParams<{
     points: string;
     restaurantName: string;
-    targets: string;
+    restaurantId?: string;
   }>();
+  const pulse = useRef(new Animated.Value(0.9)).current;
+  const actionFade = useRef(new Animated.Value(0)).current;
 
   const numericPoints = Number(points ?? 25);
   const decodedName = restaurantName ? decodeURIComponent(restaurantName) : 'Restaurant';
-  const decodedTargets = targets ? decodeURIComponent(targets) : 'Seatly Post';
+
+  useEffect(() => {
+    Animated.parallel([
+      Animated.spring(pulse, {
+        toValue: 1,
+        useNativeDriver: true,
+        friction: 5,
+        tension: 55,
+      }),
+      Animated.timing(actionFade, {
+        toValue: 1,
+        duration: 450,
+        delay: 120,
+        useNativeDriver: true,
+      }),
+    ]).start();
+  }, [pulse, actionFade]);
 
   return (
     <ScreenWrapper scrollable={false}>
       <View style={styles.container}>
-        <View style={styles.badge}>
+        <Animated.View style={[styles.badge, { transform: [{ scale: pulse }] }]}>
           <Text style={styles.badgeText}>+{numericPoints}</Text>
-        </View>
-        <Text style={styles.title}>You earned {numericPoints} Seatly points</Text>
-        <Text style={styles.subtitle}>Your review for {decodedName} has been posted successfully.</Text>
-        <Text style={styles.targets}>Sent to: {decodedTargets}</Text>
-
-        <View style={styles.actions}>
-          <Button title="Back to Discover" onPress={() => router.push('/(customer)/discover')} />
+        </Animated.View>
+        <Text style={styles.title}>+{numericPoints} points earned</Text>
+        <Text style={styles.subtitle}>Your snap at {decodedName} is now live on your profile and restaurant page.</Text>
+        <Animated.View style={[styles.actions, { opacity: actionFade }]}>
           <Button
-            title="Create another Snap"
-            onPress={() => router.push('/(customer)/discover/post-review')}
+            title="Go to Restaurant"
+            onPress={() =>
+              restaurantId ? router.replace(`/(customer)/discover/${restaurantId}`) : router.replace('/(customer)/discover')
+            }
+          />
+          <Button title="Go to Dashboard" onPress={() => router.replace('/(customer)/discover')} variant="outlined" />
+          <Button
+            title="View My Snaps"
+            onPress={() => router.push('/(customer)/profile')}
             variant="outlined"
           />
-        </View>
+        </Animated.View>
       </View>
     </ScreenWrapper>
   );
@@ -73,12 +95,6 @@ const styles = StyleSheet.create({
     color: colors.textSecondary,
     textAlign: 'center',
     maxWidth: 320,
-  },
-  targets: {
-    ...typography.bodySmall,
-    color: colors.goldLight,
-    fontWeight: '700',
-    textAlign: 'center',
   },
   actions: {
     width: '100%',

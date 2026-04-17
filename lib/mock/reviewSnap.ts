@@ -68,10 +68,12 @@ export const pastRestaurants: ReviewRestaurantOption[] = [
 
 export const snapFilters: SnapFilterOption[] = [
   { id: 'none', name: 'Natural', overlayColor: '#000000', overlayOpacity: 0 },
-  { id: 'warm-glow', name: 'Warm Glow', overlayColor: '#D9A24F', overlayOpacity: 0.12 },
-  { id: 'soft-skin', name: 'Soft Skin', overlayColor: '#F2C8BE', overlayOpacity: 0.08 },
-  { id: 'night-out', name: 'Night Out', overlayColor: '#384A75', overlayOpacity: 0.16 },
-  { id: 'food-pop', name: 'Food Pop', overlayColor: '#D88A3D', overlayOpacity: 0.1 },
+  { id: 'warm', name: 'Warm', overlayColor: '#D9A24F', overlayOpacity: 0.13 },
+  { id: 'cool', name: 'Cool', overlayColor: '#4A7EA8', overlayOpacity: 0.1 },
+  { id: 'vibrant', name: 'Vibrant', overlayColor: '#D88A3D', overlayOpacity: 0.11 },
+  { id: 'night', name: 'Night', overlayColor: '#2B3554', overlayOpacity: 0.18 },
+  { id: 'film', name: 'Film', overlayColor: '#8A6F55', overlayOpacity: 0.12 },
+  { id: 'soft-glow', name: 'Soft Glow', overlayColor: '#F2C8BE', overlayOpacity: 0.1 },
+  { id: 'contrast', name: 'High Contrast', overlayColor: '#6D7A8A', overlayOpacity: 0.14 },
   { id: 'golden-hour', name: 'Golden Hour', overlayColor: '#E3B458', overlayOpacity: 0.14 },
-  { id: 'crisp', name: 'Crisp', overlayColor: '#7BA4C6', overlayOpacity: 0.09 },
 ];

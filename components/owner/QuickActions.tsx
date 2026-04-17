@@ -1,7 +1,9 @@
 import React from 'react';
 import { View, Text, Pressable, StyleSheet } from 'react-native';
 import { useTranslation } from 'react-i18next';
-import { ownerColors, ownerRadii, ownerShadow } from '@/lib/theme/ownerTheme';
+import { ownerColors, ownerRadii } from '@/lib/theme/ownerTheme';
+import { ownerSpace } from '@/lib/theme/ownerTheme';
+import { OwnerSectionLabel } from './OwnerSectionLabel';
 
 type Action = { key: string; label: string; onPress: () => void };
 
@@ -13,7 +15,7 @@ export function QuickActions({ actions }: Props) {
   const { t } = useTranslation();
   return (
     <View style={styles.wrap}>
-      <Text style={styles.sectionLabel}>{t('owner.quickActionsTitle')}</Text>
+      <OwnerSectionLabel>{t('owner.quickActionsTitle')}</OwnerSectionLabel>
       <View style={styles.grid}>
         {actions.map((a) => (
           <Pressable
@@ -31,40 +33,30 @@ export function QuickActions({ actions }: Props) {
 
 const styles = StyleSheet.create({
   wrap: {
-    marginBottom: 28,
-  },
-  sectionLabel: {
-    fontSize: 13,
-    fontWeight: '700',
-    color: ownerColors.textMuted,
-    letterSpacing: 1.2,
-    textTransform: 'uppercase',
-    marginBottom: 12,
+    marginBottom: ownerSpace.md,
   },
   grid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: 12,
+    gap: ownerSpace.xs,
   },
   btn: {
-    width: '47%',
-    minWidth: '45%',
+    width: '48%',
     flexGrow: 1,
-    paddingVertical: 22,
-    paddingHorizontal: 16,
-    borderRadius: ownerRadii['2xl'],
-    backgroundColor: ownerColors.bgElevated,
-    borderWidth: 1,
+    minWidth: '45%',
+    paddingVertical: ownerSpace.md,
+    paddingHorizontal: ownerSpace.sm,
+    borderRadius: ownerRadii.md,
+    backgroundColor: ownerColors.bgSurface,
+    borderWidth: StyleSheet.hairlineWidth,
     borderColor: ownerColors.border,
-    ...ownerShadow.card,
   },
   pressed: {
     opacity: 0.88,
-    transform: [{ scale: 0.98 }],
   },
   btnText: {
-    fontSize: 16,
-    fontWeight: '700',
+    fontSize: 14,
+    fontWeight: '600',
     color: ownerColors.text,
     textAlign: 'center',
   },

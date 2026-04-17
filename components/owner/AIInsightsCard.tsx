@@ -1,67 +1,82 @@
 import React from 'react';
-import { View, Text, StyleSheet } from 'react-native';
+import { View, Text, StyleSheet, Pressable } from 'react-native';
 import { ownerColors, ownerRadii } from '@/lib/theme/ownerTheme';
-import { GlassCard } from './GlassCard';
+import { ownerSpace } from '@/lib/theme/ownerTheme';
+import { OwnerSectionLabel } from './OwnerSectionLabel';
 
 type Props = {
   title: string;
-  bullets: string[];
+  insight: string;
+  onSeeMore?: () => void;
+  seeMoreLabel?: string;
 };
 
-export function AIInsightsCard({ title, bullets }: Props) {
+/** Dashboard teaser: one short line + optional link to full AI */
+export function AIInsightsCard({ title, insight, onSeeMore, seeMoreLabel = 'See more' }: Props) {
+  if (!insight.trim()) return null;
+
   return (
     <View style={styles.wrap}>
-      <Text style={styles.sectionLabel}>{title}</Text>
-      <GlassCard style={styles.card}>
-        {bullets.map((line, i) => (
-          <View key={i} style={[styles.row, i > 0 && styles.rowBorder]}>
-            <View style={styles.dot} />
-            <Text style={styles.text}>{line}</Text>
-          </View>
-        ))}
-      </GlassCard>
+      <OwnerSectionLabel marginBottom={ownerSpace.xs}>{title}</OwnerSectionLabel>
+      <View style={styles.shell}>
+        <Text style={[styles.text, onSeeMore ? styles.textWithLink : styles.textSolo]}>{insight}</Text>
+        {onSeeMore ? (
+          <Pressable onPress={onSeeMore} style={({ pressed }) => [styles.seeMoreRow, pressed && styles.pressed]}>
+            <Text style={styles.seeMoreText}>{seeMoreLabel}</Text>
+            <Text style={styles.seeMoreChevron}>›</Text>
+          </Pressable>
+        ) : null}
+      </View>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
   wrap: {
-    marginBottom: 28,
+    marginBottom: ownerSpace.md,
   },
-  sectionLabel: {
+  shell: {
+    borderRadius: ownerRadii.md,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: ownerColors.border,
+    backgroundColor: ownerColors.bgElevated,
+    overflow: 'hidden',
+  },
+  text: {
+    fontSize: 15,
+    lineHeight: 22,
+    fontWeight: '500',
+    color: ownerColors.textSecondary,
+    paddingHorizontal: ownerSpace.md,
+    paddingTop: ownerSpace.sm,
+  },
+  textSolo: {
+    paddingBottom: ownerSpace.sm,
+  },
+  textWithLink: {
+    paddingBottom: ownerSpace.xs,
+  },
+  seeMoreRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'flex-end',
+    gap: 4,
+    paddingHorizontal: ownerSpace.md,
+    paddingBottom: ownerSpace.sm,
+    paddingTop: 2,
+  },
+  seeMoreText: {
     fontSize: 13,
     fontWeight: '700',
     color: ownerColors.gold,
-    letterSpacing: 1.2,
-    textTransform: 'uppercase',
-    marginBottom: 12,
   },
-  card: {
-    paddingVertical: 8,
-    paddingHorizontal: 18,
-  },
-  row: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    gap: 12,
-    paddingVertical: 14,
-  },
-  rowBorder: {
-    borderTopWidth: StyleSheet.hairlineWidth,
-    borderTopColor: ownerColors.border,
-  },
-  dot: {
-    width: 8,
-    height: 8,
-    borderRadius: ownerRadii.xl,
-    backgroundColor: ownerColors.gold,
-    marginTop: 6,
-  },
-  text: {
-    flex: 1,
-    fontSize: 16,
-    lineHeight: 24,
+  seeMoreChevron: {
+    fontSize: 18,
     fontWeight: '600',
-    color: ownerColors.textSecondary,
+    color: ownerColors.gold,
+    marginTop: -1,
+  },
+  pressed: {
+    opacity: 0.85,
   },
 });

@@ -1,9 +1,8 @@
 import React, { useMemo, useState } from 'react';
 import { View, Text, StyleSheet, Pressable, ScrollView, Alert } from 'react-native';
 import { useTranslation } from 'react-i18next';
-import Animated, { FadeInDown } from 'react-native-reanimated';
 import { OwnerScreen } from '@/components/owner/OwnerScreen';
-import { GlassCard } from '@/components/owner/GlassCard';
+import { OwnerSectionLabel } from '@/components/owner/OwnerSectionLabel';
 import {
   OWNER_RESERVATIONS,
   WALKIN_QUEUE,
@@ -13,6 +12,7 @@ import {
 } from '@/lib/mock/ownerApp';
 import { formatCurrency } from '@/lib/utils/formatCurrency';
 import { ownerColors, ownerRadii } from '@/lib/theme/ownerTheme';
+import { ownerSpace } from '@/lib/theme/ownerTheme';
 
 const FILTERS: ResFilter[] = ['all', 'confirmed', 'pending', 'walkin', 'risk'];
 
@@ -25,6 +25,43 @@ function matchesFilter(r: OwnerReservationSlot, f: ResFilter): boolean {
   return true;
 }
 
+/** Sort "6:00 PM" style strings chronologically */
+function parseTimeToMinutes(s: string): number {
+  const m = s.match(/(\d{1,2}):(\d{2})\s*(AM|PM)/i);
+  if (!m) return 0;
+  let h = parseInt(m[1], 10);
+  const min = parseInt(m[2], 10);
+  const ap = m[3].toUpperCase();
+  if (ap === 'PM' && h !== 12) h += 12;
+  if (ap === 'AM' && h === 12) h = 0;
+  return h * 60 + min;
+}
+
+function groupByTime(reservations: OwnerReservationSlot[]): { time: string; items: OwnerReservationSlot[] }[] {
+  const map = new Map<string, OwnerReservationSlot[]>();
+  for (const r of reservations) {
+    const list = map.get(r.startTime) ?? [];
+    list.push(r);
+    map.set(r.startTime, list);
+  }
+  const times = [...map.keys()].sort((a, b) => parseTimeToMinutes(a) - parseTimeToMinutes(b));
+  return times.map((time) => ({ time, items: map.get(time)! }));
+}
+
+function statusTextColor(s: OwnerReservationSlot['status']): string {
+  switch (s) {
+    case 'confirmed':
+    case 'seated':
+      return ownerColors.success;
+    case 'pending':
+      return ownerColors.gold;
+    case 'risk':
+      return ownerColors.danger;
+    default:
+      return ownerColors.textMuted;
+  }
+}
+
 export default function OwnerReservationsScreen() {
   const { t } = useTranslation();
   const [filter, setFilter] = useState<ResFilter>('all');
@@ -33,6 +70,8 @@ export default function OwnerReservationsScreen() {
     () => OWNER_RESERVATIONS.filter((r) => matchesFilter(r, filter)),
     [filter],
   );
+
+  const timeline = useMemo(() => groupByTime(rows), [rows]);
 
   const labelForFilter = (f: ResFilter) => {
     const map: Record<ResFilter, string> = {
@@ -55,6 +94,17 @@ export default function OwnerReservationsScreen() {
     return map[s];
   };
 
+  const openReservationDetail = (r: OwnerReservationSlot) => {
+    const lines = [
+      `${t('owner.resParty', { n: r.partySize })}${r.table ? ` · ${r.table}` : ''}`,
+      `${t('owner.notesLabel')}: ${r.notes ?? '—'}`,
+      r.pastVisits != null && r.avgSpend != null
+        ? t('owner.historyHint', { visits: r.pastVisits, avg: formatCurrency(r.avgSpend, 'cad') })
+        : null,
+    ].filter(Boolean) as string[];
+    Alert.alert(r.guestName, lines.join('\n'));
+  };
+
   return (
     <OwnerScreen>
       <Text style={styles.title}>{t('staff.reservations')}</Text>
@@ -75,285 +125,226 @@ export default function OwnerReservationsScreen() {
         })}
       </ScrollView>
 
-      <Text style={styles.section}>{t('owner.walkInQueue')}</Text>
-      <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.queueRow}>
+      <OwnerSectionLabel marginTop={ownerSpace.xs}>{t('owner.walkInQueue')}</OwnerSectionLabel>
+      <View style={styles.listBlock}>
         {WALKIN_QUEUE.map((q, i) => (
-          <Animated.View key={q.id} entering={FadeInDown.delay(i * 40)} style={styles.queueCardWrap}>
-            <GlassCard style={styles.queueCard}>
-              <Text style={styles.queueName}>{q.name}</Text>
-              <Text style={styles.queueMeta}>
+          <Pressable
+            key={q.id}
+            onPress={() =>
+              Alert.alert(q.name, `${t('owner.queueParty', { n: q.party })} · ${t('owner.queueWait', { mins: q.waitMins })}`)
+            }
+            style={({ pressed }) => [styles.compactRow, i > 0 && styles.rowDivider, pressed && styles.rowPressed]}
+          >
+            <View style={styles.rowMain}>
+              <Text style={styles.rowName}>{q.name}</Text>
+              <Text style={styles.rowMeta}>
                 {t('owner.queueParty', { n: q.party })} · {t('owner.queueWait', { mins: q.waitMins })}
               </Text>
-            </GlassCard>
-          </Animated.View>
+            </View>
+            <Text style={styles.rowChevron}>›</Text>
+          </Pressable>
         ))}
-      </ScrollView>
+      </View>
 
-      <Text style={styles.section}>{t('owner.waitlist')}</Text>
-      {WAITLIST_ENTRIES.map((w) => (
-        <GlassCard key={w.id} style={styles.waitRow}>
-          <View>
-            <Text style={styles.waitName}>{w.name}</Text>
-            <Text style={styles.waitMeta}>
-              {t('owner.waitParty', { n: w.party })} · {t('owner.waitQuoted', { time: w.quoted })}
-            </Text>
-          </View>
-        </GlassCard>
-      ))}
+      <OwnerSectionLabel marginTop={ownerSpace.md}>{t('owner.waitlist')}</OwnerSectionLabel>
+      <View style={styles.listBlock}>
+        {WAITLIST_ENTRIES.map((w, i) => (
+          <Pressable
+            key={w.id}
+            onPress={() =>
+              Alert.alert(w.name, `${t('owner.waitParty', { n: w.party })} · ${t('owner.waitQuoted', { time: w.quoted })}`)
+            }
+            style={({ pressed }) => [styles.compactRow, i > 0 && styles.rowDivider, pressed && styles.rowPressed]}
+          >
+            <View style={styles.rowMain}>
+              <Text style={styles.rowName}>{w.name}</Text>
+              <Text style={styles.rowMeta}>
+                {t('owner.waitParty', { n: w.party })} · {t('owner.waitQuoted', { time: w.quoted })}
+              </Text>
+            </View>
+            <Text style={styles.rowChevron}>›</Text>
+          </Pressable>
+        ))}
+      </View>
 
-      <Text style={styles.section}>{t('owner.reservationsListTitle')}</Text>
-      {rows.map((r, index) => (
-        <Animated.View key={r.id} entering={FadeInDown.delay(index * 35)}>
-          <GlassCard style={styles.card}>
-            <View style={styles.cardTop}>
-              <Text style={styles.time}>{r.startTime}</Text>
-              {r.vip ? (
-                <View style={styles.vipPill}>
-                  <Text style={styles.vipText}>{t('owner.crmVip')}</Text>
-                </View>
-              ) : null}
+      <OwnerSectionLabel marginTop={ownerSpace.lg}>{t('owner.reservationsListTitle')}</OwnerSectionLabel>
+      <View style={styles.listBlock}>
+        {timeline.length === 0 ? (
+          <Text style={styles.empty}>{t('common.noResults')}</Text>
+        ) : (
+          timeline.map(({ time, items }) => (
+            <View key={time}>
+              <Text style={styles.timeHeader}>{time}</Text>
+              {items.map((r, idx) => (
+                <Pressable
+                  key={r.id}
+                  onPress={() => openReservationDetail(r)}
+                  style={({ pressed }) => [
+                    styles.bookingRow,
+                    idx > 0 && styles.rowDivider,
+                    pressed && styles.rowPressed,
+                  ]}
+                >
+                  <View style={styles.bookingRowInner}>
+                    <View style={styles.nameLine}>
+                      <View style={styles.nameWithVip}>
+                        <Text style={styles.rowName} numberOfLines={1}>
+                          {r.guestName}
+                        </Text>
+                        {r.vip ? <Text style={styles.vipTag}> {t('owner.crmVip')}</Text> : null}
+                      </View>
+                      <Text style={[styles.statusText, { color: statusTextColor(r.status) }]}>
+                        {statusLabel(r.status)}
+                      </Text>
+                    </View>
+                    <Text style={styles.rowMeta}>
+                      {t('owner.resParty', { n: r.partySize })}
+                      {r.table ? ` · ${r.table}` : ''}
+                    </Text>
+                  </View>
+                </Pressable>
+              ))}
             </View>
-            <Text style={styles.guest}>{r.guestName}</Text>
-            <Text style={styles.meta}>
-              {t('owner.resParty', { n: r.partySize })}
-              {r.table ? ` · ${r.table}` : ''}
-            </Text>
-            {r.notes ? (
-              <Text style={styles.notes}>
-                {t('owner.notesLabel')}: {r.notes}
-              </Text>
-            ) : null}
-            {r.pastVisits != null && r.avgSpend != null ? (
-              <Text style={styles.historyHint}>
-                {t('owner.historyHint', {
-                  visits: r.pastVisits,
-                  avg: formatCurrency(r.avgSpend, 'cad'),
-                })}
-              </Text>
-            ) : null}
-            <View style={[styles.badge, badgeStyle(r.status)]}>
-              <Text style={[styles.badgeText, badgeTextStyle(r.status)]}>{statusLabel(r.status)}</Text>
-            </View>
-            <View style={styles.actions}>
-              <Pressable
-                style={({ pressed }) => [styles.actionBtn, pressed && styles.pressed]}
-                onPress={() =>
-                  Alert.alert(t('owner.receiptTitle'), t('owner.receiptMock'))
-                }
-              >
-                <Text style={styles.actionBtnText}>{t('owner.viewReceipt')}</Text>
-              </Pressable>
-              <Pressable
-                style={({ pressed }) => [styles.actionBtn, pressed && styles.pressed]}
-                onPress={() =>
-                  Alert.alert(
-                    t('owner.customerHistory'),
-                    r.pastVisits != null
-                      ? t('owner.historyDetail', { visits: r.pastVisits, avg: formatCurrency(r.avgSpend ?? 0, 'cad') })
-                      : t('owner.historyNew'),
-                  )
-                }
-              >
-                <Text style={styles.actionBtnText}>{t('owner.customerHistory')}</Text>
-              </Pressable>
-            </View>
-          </GlassCard>
-        </Animated.View>
-      ))}
-      <View style={{ height: 24 }} />
+          ))
+        )}
+      </View>
+
+      <View style={{ height: ownerSpace.lg }} />
     </OwnerScreen>
   );
 }
 
-function badgeStyle(s: OwnerReservationSlot['status']) {
-  switch (s) {
-    case 'confirmed':
-      return { backgroundColor: 'rgba(34, 197, 94, 0.18)', borderColor: 'rgba(34, 197, 94, 0.35)' };
-    case 'pending':
-      return { backgroundColor: ownerColors.goldSubtle, borderColor: 'rgba(212, 175, 55, 0.4)' };
-    case 'seated':
-      return { backgroundColor: 'rgba(34, 197, 94, 0.22)', borderColor: 'rgba(34, 197, 94, 0.4)' };
-    case 'risk':
-      return { backgroundColor: 'rgba(239, 68, 68, 0.18)', borderColor: 'rgba(239, 68, 68, 0.4)' };
-    default:
-      return { backgroundColor: ownerColors.bgGlass, borderColor: ownerColors.border };
-  }
-}
-
-function badgeTextStyle(s: OwnerReservationSlot['status']) {
-  switch (s) {
-    case 'risk':
-      return { color: ownerColors.danger };
-    case 'pending':
-      return { color: ownerColors.gold };
-    default:
-      return { color: ownerColors.success };
-  }
-}
-
 const styles = StyleSheet.create({
   title: {
-    fontSize: 28,
+    fontSize: 26,
     fontWeight: '800',
     color: ownerColors.text,
     marginBottom: 4,
+    letterSpacing: -0.4,
   },
   sub: {
     fontSize: 15,
     color: ownerColors.textMuted,
-    marginBottom: 16,
+    marginBottom: ownerSpace.sm,
+    fontWeight: '500',
   },
   filters: {
-    gap: 8,
-    marginBottom: 20,
+    gap: 6,
+    marginBottom: ownerSpace.md,
+    paddingVertical: 2,
   },
   filterChip: {
-    paddingVertical: 10,
-    paddingHorizontal: 16,
-    borderRadius: ownerRadii.xl,
-    borderWidth: 1,
+    paddingVertical: 6,
+    paddingHorizontal: 10,
+    borderRadius: ownerRadii.sm,
+    borderWidth: StyleSheet.hairlineWidth,
     borderColor: ownerColors.border,
-    backgroundColor: ownerColors.bgGlass,
+    backgroundColor: ownerColors.bgSurface,
   },
   filterChipOn: {
     borderColor: ownerColors.gold,
     backgroundColor: ownerColors.goldSubtle,
   },
   filterText: {
-    fontSize: 14,
+    fontSize: 12,
     fontWeight: '600',
     color: ownerColors.textMuted,
   },
   filterTextOn: {
     color: ownerColors.gold,
   },
-  section: {
-    fontSize: 13,
-    fontWeight: '800',
-    color: ownerColors.textMuted,
-    letterSpacing: 1,
-    marginBottom: 10,
-    marginTop: 8,
+  listBlock: {
+    backgroundColor: ownerColors.bgSurface,
+    borderRadius: ownerRadii.md,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: ownerColors.border,
+    overflow: 'hidden',
+    marginBottom: ownerSpace.xs,
   },
-  queueRow: {
-    gap: 12,
-    marginBottom: 8,
-  },
-  queueCardWrap: {
-    width: 200,
-  },
-  queueCard: {
-    padding: 14,
-    borderColor: 'rgba(212, 175, 55, 0.25)',
-  },
-  queueName: {
-    fontSize: 16,
-    fontWeight: '800',
-    color: ownerColors.text,
-    marginBottom: 6,
-  },
-  queueMeta: {
-    fontSize: 13,
-    color: ownerColors.textMuted,
-  },
-  waitRow: {
-    padding: 14,
-    marginBottom: 8,
-  },
-  waitName: {
-    fontSize: 16,
-    fontWeight: '700',
-    color: ownerColors.text,
-  },
-  waitMeta: {
-    fontSize: 13,
-    color: ownerColors.textMuted,
-    marginTop: 4,
-  },
-  card: {
-    padding: 16,
-    marginBottom: 12,
-  },
-  cardTop: {
+  compactRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
-    marginBottom: 6,
+    paddingVertical: ownerSpace.sm,
+    paddingHorizontal: ownerSpace.md,
+    paddingRight: ownerSpace.sm,
   },
-  time: {
-    fontSize: 18,
-    fontWeight: '800',
-    color: ownerColors.gold,
+  bookingRow: {
+    paddingVertical: ownerSpace.sm,
+    paddingHorizontal: ownerSpace.md,
   },
-  vipPill: {
-    paddingHorizontal: 8,
-    paddingVertical: 3,
-    borderRadius: ownerRadii.xl,
-    borderWidth: 1,
-    borderColor: ownerColors.gold,
-    backgroundColor: ownerColors.goldSubtle,
+  bookingRowInner: {
+    gap: 4,
   },
-  vipText: {
-    fontSize: 10,
-    fontWeight: '800',
-    color: ownerColors.gold,
-    letterSpacing: 0.5,
-  },
-  guest: {
-    fontSize: 17,
-    fontWeight: '700',
-    color: ownerColors.text,
-  },
-  meta: {
-    fontSize: 14,
-    color: ownerColors.textMuted,
-    marginTop: 6,
-  },
-  notes: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: ownerColors.textSecondary,
-    marginTop: 10,
-    fontStyle: 'italic',
-  },
-  historyHint: {
-    fontSize: 13,
-    color: ownerColors.textMuted,
-    marginTop: 8,
-  },
-  badge: {
-    alignSelf: 'flex-start',
-    marginTop: 12,
-    paddingHorizontal: 10,
-    paddingVertical: 5,
-    borderRadius: ownerRadii.xl,
-    borderWidth: 1,
-  },
-  badgeText: {
-    fontSize: 12,
-    fontWeight: '800',
-    textTransform: 'capitalize',
-  },
-  actions: {
+  nameLine: {
     flexDirection: 'row',
+    alignItems: 'flex-start',
+    justifyContent: 'space-between',
+    gap: ownerSpace.sm,
+  },
+  nameWithVip: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'baseline',
     flexWrap: 'wrap',
-    gap: 10,
-    marginTop: 14,
+    minWidth: 0,
   },
-  actionBtn: {
-    paddingVertical: 10,
-    paddingHorizontal: 14,
-    borderRadius: ownerRadii.xl,
-    borderWidth: 1,
-    borderColor: ownerColors.borderStrong,
-    backgroundColor: ownerColors.bgElevated,
+  rowMain: {
+    flex: 1,
+    minWidth: 0,
   },
-  actionBtnText: {
-    fontSize: 13,
-    fontWeight: '800',
+  rowName: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: ownerColors.text,
+    letterSpacing: -0.2,
+  },
+  vipTag: {
+    fontSize: 11,
+    fontWeight: '700',
     color: ownerColors.gold,
+    letterSpacing: 0.3,
   },
-  pressed: {
-    opacity: 0.88,
+  rowMeta: {
+    fontSize: 13,
+    color: ownerColors.textMuted,
+    fontWeight: '500',
+    marginTop: 2,
+  },
+  statusText: {
+    fontSize: 13,
+    fontWeight: '600',
+    textTransform: 'capitalize',
+    maxWidth: '42%',
+    textAlign: 'right',
+  },
+  rowChevron: {
+    fontSize: 18,
+    color: ownerColors.textMuted,
+    fontWeight: '300',
+    marginLeft: ownerSpace.xs,
+  },
+  timeHeader: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: ownerColors.textMuted,
+    letterSpacing: 0.6,
+    textTransform: 'uppercase',
+    paddingTop: ownerSpace.md,
+    paddingBottom: ownerSpace.xs,
+    paddingHorizontal: ownerSpace.md,
+    backgroundColor: ownerColors.bg,
+  },
+  rowDivider: {
+    borderTopWidth: StyleSheet.hairlineWidth,
+    borderTopColor: ownerColors.border,
+  },
+  rowPressed: {
+    backgroundColor: ownerColors.bgGlass,
+  },
+  empty: {
+    padding: ownerSpace.md,
+    fontSize: 14,
+    color: ownerColors.textMuted,
+    textAlign: 'center',
   },
 });

@@ -1,12 +1,15 @@
 import React from 'react';
-import { View, Text, StyleSheet } from 'react-native';
+import { View, Text, StyleSheet, Pressable } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import type { LiveFeedItem } from '@/lib/mock/ownerApp';
 import { ownerColors, ownerRadii } from '@/lib/theme/ownerTheme';
-import { GlassCard } from './GlassCard';
+import { ownerSpace } from '@/lib/theme/ownerTheme';
+import { OwnerSectionLabel } from './OwnerSectionLabel';
 
 type Props = {
   items: LiveFeedItem[];
+  onViewAll?: () => void;
+  viewAllLabel?: string;
 };
 
 function kindColor(kind: LiveFeedItem['kind']): string {
@@ -14,7 +17,7 @@ function kindColor(kind: LiveFeedItem['kind']): string {
     case 'seated':
       return ownerColors.chartPositive;
     case 'order':
-      return ownerColors.gold;
+      return ownerColors.textSecondary;
     case 'arrived':
       return ownerColors.warning;
     case 'alert':
@@ -24,13 +27,26 @@ function kindColor(kind: LiveFeedItem['kind']): string {
   }
 }
 
-export function OwnerLiveFeed({ items }: Props) {
+export function OwnerLiveFeed({ items, onViewAll, viewAllLabel }: Props) {
   const { t } = useTranslation();
+  const label = viewAllLabel ?? t('owner.overviewViewAll');
+
+  if (items.length === 0) return null;
 
   return (
     <View style={styles.wrap}>
-      <Text style={styles.sectionLabel}>{t('owner.liveFeedTitle')}</Text>
-      <GlassCard style={styles.card}>
+      <View style={styles.headerRow}>
+        <View style={styles.titleFlex}>
+          <OwnerSectionLabel marginBottom={0}>{t('owner.liveFeedTitle')}</OwnerSectionLabel>
+        </View>
+        {onViewAll ? (
+          <Pressable onPress={onViewAll} hitSlop={8} style={({ pressed }) => [styles.viewAllBtn, pressed && styles.pressed]}>
+            <Text style={styles.viewAllText}>{label}</Text>
+            <Text style={styles.viewAllChevron}>›</Text>
+          </Pressable>
+        ) : null}
+      </View>
+      <View style={styles.shell}>
         {items.map((item, i) => (
           <View key={item.id} style={[styles.row, i > 0 && styles.rowBorder]}>
             <View style={[styles.pipe, { backgroundColor: kindColor(item.kind) }]} />
@@ -40,32 +56,59 @@ export function OwnerLiveFeed({ items }: Props) {
             </View>
           </View>
         ))}
-      </GlassCard>
+      </View>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
   wrap: {
-    marginBottom: 24,
+    marginBottom: ownerSpace.md,
   },
-  sectionLabel: {
+  headerRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: ownerSpace.sm,
+    marginBottom: ownerSpace.xs,
+  },
+  titleFlex: {
+    flex: 1,
+    minWidth: 0,
+  },
+  viewAllBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 2,
+    paddingVertical: 4,
+    paddingLeft: ownerSpace.sm,
+  },
+  viewAllText: {
     fontSize: 13,
     fontWeight: '700',
-    color: ownerColors.textMuted,
-    letterSpacing: 1.2,
-    textTransform: 'uppercase',
-    marginBottom: 12,
+    color: ownerColors.gold,
   },
-  card: {
-    paddingVertical: 4,
-    paddingHorizontal: 0,
+  viewAllChevron: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: ownerColors.gold,
+    marginTop: -1,
+  },
+  pressed: {
+    opacity: 0.85,
+  },
+  shell: {
+    borderRadius: ownerRadii.md,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: ownerColors.border,
+    backgroundColor: ownerColors.bgElevated,
+    overflow: 'hidden',
   },
   row: {
     flexDirection: 'row',
     alignItems: 'stretch',
-    paddingVertical: 12,
-    paddingHorizontal: 16,
+    paddingVertical: ownerSpace.sm,
+    paddingHorizontal: ownerSpace.md,
   },
   rowBorder: {
     borderTopWidth: StyleSheet.hairlineWidth,
@@ -74,16 +117,16 @@ const styles = StyleSheet.create({
   pipe: {
     width: 3,
     borderRadius: 2,
-    marginRight: 12,
+    marginRight: ownerSpace.sm,
   },
   body: {
     flex: 1,
   },
   message: {
-    fontSize: 15,
-    fontWeight: '600',
+    fontSize: 14,
+    fontWeight: '500',
     color: ownerColors.text,
-    lineHeight: 22,
+    lineHeight: 20,
   },
   time: {
     fontSize: 12,

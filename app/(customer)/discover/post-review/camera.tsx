@@ -1,172 +1,302 @@
-import React, { useMemo, useRef, useState } from 'react';
-import { ActivityIndicator, Linking, Platform, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import {
+  ActivityIndicator,
+  Animated,
+  Image,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  Text,
+  Vibration,
+  View,
+} from 'react-native';
 import { CameraView, CameraType, FlashMode, useCameraPermissions } from 'expo-camera';
-import * as Device from 'expo-device';
 import * as ImagePicker from 'expo-image-picker';
-import { useLocalSearchParams, useRouter } from 'expo-router';
+import { LinearGradient } from 'expo-linear-gradient';
+import { Ionicons } from '@expo/vector-icons';
+import { useFocusEffect } from '@react-navigation/native';
+import { useLocalSearchParams, useNavigation, useRouter } from 'expo-router';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { StatusBar } from 'expo-status-bar';
 import { snapFilters } from '@/lib/mock/reviewSnap';
 import { borderRadius, colors, spacing, typography } from '@/lib/theme';
+import { getSnapRestaurantName } from '@/lib/mock/snaps';
+
+const TAB_BAR_STYLE = {
+  backgroundColor: colors.bgSurface,
+  borderTopColor: colors.border,
+  borderTopWidth: StyleSheet.hairlineWidth,
+  height: 85,
+  paddingBottom: 28,
+  paddingTop: 8,
+} as const;
+
+/** Glass-like chrome without native blur (safe on Simulator & all platforms). */
+function GlassBar({ children, style }: { children: React.ReactNode; style?: object }) {
+  return <View style={[styles.topBarGlass, style]}>{children}</View>;
+}
+
+function GlassCircle({ onPress, children }: { onPress: () => void; children: React.ReactNode }) {
+  return (
+    <View style={styles.sideBtnGlass}>
+      <Pressable onPress={onPress} style={({ pressed }) => [styles.sideBtnInner, pressed && styles.sideBtnPressed]}>
+        {children}
+      </Pressable>
+    </View>
+  );
+}
 
 export default function ReviewCameraScreen() {
   const router = useRouter();
+  const navigation = useNavigation();
+  const insets = useSafeAreaInsets();
   const { restaurantId } = useLocalSearchParams<{ restaurantId: string }>();
+
   const [permission, requestPermission] = useCameraPermissions();
   const [cameraFacing, setCameraFacing] = useState<CameraType>('back');
   const [flash, setFlash] = useState<FlashMode>('off');
   const [selectedFilter, setSelectedFilter] = useState(snapFilters[0].id);
   const [cameraReady, setCameraReady] = useState(false);
-  const [cameraError, setCameraError] = useState<string | null>(null);
+  const [cameraUnavailable, setCameraUnavailable] = useState(false);
   const [capturing, setCapturing] = useState(false);
-  const cameraRef = useRef<CameraView | null>(null);
-  const isIosSimulator = Platform.OS === 'ios' && !Device.isDevice;
+  const [selectedImageUri, setSelectedImageUri] = useState<string | null>(null);
+  const [selectedSource, setSelectedSource] = useState<'camera' | 'gallery' | null>(null);
 
+  const cameraRef = useRef<CameraView | null>(null);
+  const shutterOpacity = useRef(new Animated.Value(0)).current;
+  const pressScale = useRef(new Animated.Value(1)).current;
+  const [captureFill, setCaptureFill] = useState(false);
+
+  const isEditMode = !!selectedImageUri;
+  const restaurantName = useMemo(
+    () => (restaurantId ? getSnapRestaurantName(restaurantId) : 'Restaurant'),
+    [restaurantId],
+  );
   const activeFilter = useMemo(
-    () => snapFilters.find((filter) => filter.id === selectedFilter) ?? snapFilters[0],
+    () => snapFilters.find((f) => f.id === selectedFilter) ?? snapFilters[0],
     [selectedFilter],
   );
 
-  const toggleFacing = () => {
-    setCameraFacing((prev) => (prev === 'back' ? 'front' : 'back'));
+  useFocusEffect(
+    useCallback(() => {
+      const tab = navigation.getParent();
+      tab?.setOptions({ tabBarStyle: { display: 'none', height: 0, overflow: 'hidden' } });
+      return () => {
+        tab?.setOptions({ tabBarStyle: TAB_BAR_STYLE });
+      };
+    }, [navigation]),
+  );
+
+  useEffect(() => {
+    if (!restaurantId) router.replace('/(customer)/discover/post-review');
+  }, [restaurantId, router]);
+
+  const runShutter = () => {
+    Animated.sequence([
+      Animated.timing(shutterOpacity, { toValue: 0.32, duration: 55, useNativeDriver: true }),
+      Animated.timing(shutterOpacity, { toValue: 0, duration: 130, useNativeDriver: true }),
+    ]).start();
   };
 
-  const toggleFlash = () => {
-    setFlash((prev) => (prev === 'off' ? 'on' : 'off'));
+  const pulseCapture = () => {
+    setCaptureFill(true);
+    setTimeout(() => setCaptureFill(false), 160);
+  };
+
+  const onCapturePressIn = () => {
+    Animated.spring(pressScale, { toValue: 0.95, friction: 6, useNativeDriver: true }).start();
+  };
+
+  const onCapturePressOut = () => {
+    Animated.spring(pressScale, { toValue: 1, friction: 6, useNativeDriver: true }).start();
+  };
+
+  const openGallery = async () => {
+    Vibration.vibrate(8);
+    const p = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (!p.granted) return;
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      quality: 0.9,
+      selectionLimit: 1,
+    });
+    if (result.canceled || !result.assets?.[0]?.uri) return;
+    setSelectedImageUri(result.assets[0].uri);
+    setSelectedSource('gallery');
   };
 
   const capturePhoto = async () => {
-    if (!cameraRef.current || !restaurantId || capturing) return;
+    if (!cameraRef.current || capturing) return;
     try {
       setCapturing(true);
-      const photo = await cameraRef.current.takePictureAsync({ quality: 0.85 });
+      Vibration.vibrate(10);
+      pulseCapture();
+      runShutter();
+      const photo = await cameraRef.current.takePictureAsync({ quality: 0.9 });
       if (!photo?.uri) return;
-      const encodedUri = encodeURIComponent(photo.uri);
-      router.push(
-        `/(customer)/discover/post-review/preview?restaurantId=${restaurantId}&photoUri=${encodedUri}&filter=${selectedFilter}`,
-      );
+      setSelectedImageUri(photo.uri);
+      setSelectedSource('camera');
     } finally {
       setCapturing(false);
     }
   };
 
-  const openGalleryFallback = async () => {
-    if (!restaurantId) return;
-    const libraryPermission = await ImagePicker.requestMediaLibraryPermissionsAsync();
-    if (!libraryPermission.granted) {
-      return;
-    }
-    const result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ImagePicker.MediaTypeOptions.Images,
-      quality: 0.9,
-      allowsEditing: false,
-      selectionLimit: 1,
-    });
-    if (result.canceled || !result.assets?.[0]?.uri) return;
-    const encodedUri = encodeURIComponent(result.assets[0].uri);
+  const goNext = () => {
+    if (!selectedImageUri) return;
+    Vibration.vibrate(8);
+    const encodedUri = encodeURIComponent(selectedImageUri);
     router.push(
-      `/(customer)/discover/post-review/preview?restaurantId=${restaurantId}&photoUri=${encodedUri}&filter=${selectedFilter}`,
+      `/(customer)/discover/post-review/preview?photoUri=${encodedUri}&filter=${selectedFilter}&restaurantId=${restaurantId}`,
     );
   };
 
-  const openSettings = () => {
-    Linking.openSettings();
+  const goBack = () => {
+    if (isEditMode) {
+      setSelectedImageUri(null);
+      setSelectedSource(null);
+      return;
+    }
+    router.back();
   };
 
-  if (!permission) return <View style={styles.loadingRoot} />;
+  if (!permission) {
+    return <View style={styles.root} />;
+  }
 
   if (!permission.granted) {
     return (
       <View style={styles.permissionRoot}>
         <Text style={styles.permissionTitle}>Camera access needed</Text>
-        <Text style={styles.permissionBody}>Enable camera access to capture your Seatly Snap.</Text>
+        <Text style={styles.permissionBody}>Allow camera to capture your snap.</Text>
         <Pressable onPress={requestPermission} style={styles.permissionBtn}>
-          <Text style={styles.permissionBtnText}>Allow camera</Text>
-        </Pressable>
-        <Pressable onPress={openSettings} style={styles.permissionGhostBtn}>
-          <Text style={styles.permissionGhostBtnText}>Open settings</Text>
+          <Text style={styles.permissionBtnText}>Continue</Text>
         </Pressable>
       </View>
     );
   }
 
-  const showSimulatorFallback = isIosSimulator || !!cameraError;
-
   return (
     <View style={styles.root}>
-      {!showSimulatorFallback ? (
+      <StatusBar style="light" />
+
+      {isEditMode ? (
+        <Image source={{ uri: selectedImageUri! }} style={styles.cameraFill} resizeMode="cover" />
+      ) : !cameraUnavailable ? (
         <CameraView
           ref={cameraRef}
-          style={styles.camera}
+          style={styles.cameraFill}
           facing={cameraFacing}
           flash={flash}
           onCameraReady={() => setCameraReady(true)}
-          onMountError={(event) => setCameraError(event.message ?? 'Unable to start camera')}
+          onMountError={() => setCameraUnavailable(true)}
         />
       ) : (
-        <View style={styles.fallbackRoot}>
-          <Text style={styles.fallbackTitle}>Camera preview unavailable</Text>
-          <Text style={styles.fallbackBody}>
-            Live camera may not work in iOS Simulator. Use a test image from your gallery to continue this flow.
-          </Text>
-          {cameraError ? <Text style={styles.fallbackError}>{cameraError}</Text> : null}
-          <Pressable onPress={openGalleryFallback} style={styles.fallbackBtn}>
-            <Text style={styles.fallbackBtnText}>Choose test image</Text>
-          </Pressable>
-        </View>
+        <View style={[styles.cameraFill, { backgroundColor: '#1a1a1a' }]} />
       )}
 
-      <View style={styles.overlay} pointerEvents="box-none">
-        <View
-          pointerEvents="none"
-          style={[
-            styles.filterOverlay,
-            { backgroundColor: activeFilter.overlayColor, opacity: activeFilter.overlayOpacity },
-          ]}
-        />
-        <View style={styles.topControls}>
-          <Pressable onPress={() => router.back()} style={styles.controlBtn}>
-            <Text style={styles.controlText}>Back</Text>
-          </Pressable>
-          <Pressable onPress={toggleFlash} style={styles.controlBtn}>
-            <Text style={styles.controlText}>{flash === 'on' ? 'Flash On' : 'Flash Off'}</Text>
-          </Pressable>
-        </View>
+      <View pointerEvents="none" style={[styles.filterTint, { backgroundColor: activeFilter.overlayColor, opacity: activeFilter.overlayOpacity }]} />
 
-        <View style={styles.bottomControls}>
-          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.filterRow}>
-            {snapFilters.map((filter) => {
-              const selected = selectedFilter === filter.id;
+      <Animated.View pointerEvents="none" style={[styles.shutter, { opacity: shutterOpacity }]} />
+
+      <LinearGradient
+        colors={['transparent', 'rgba(0,0,0,0.45)', 'rgba(0,0,0,0.82)']}
+        locations={[0, 0.55, 1]}
+        style={styles.bottomGradient}
+        pointerEvents="none"
+      />
+
+      <View style={styles.chrome} pointerEvents="box-none">
+        <GlassBar style={[styles.topBar, { paddingTop: insets.top + 6 }]}>
+          <Pressable onPress={goBack} hitSlop={12} style={styles.topIconHit}>
+            <Ionicons name="chevron-back" size={22} color="#fff" />
+          </Pressable>
+          <Text style={styles.topTitle} numberOfLines={1}>
+            Posting to {restaurantName}
+          </Text>
+          <Pressable
+            onPress={() => {
+              Vibration.vibrate(6);
+              setFlash((f) => (f === 'off' ? 'on' : 'off'));
+            }}
+            hitSlop={12}
+            style={styles.topIconHit}
+            accessibilityLabel="Flash"
+          >
+            <Ionicons name="settings-outline" size={21} color="#fff" />
+          </Pressable>
+        </GlassBar>
+
+        <View style={[styles.bottomUi, { paddingBottom: insets.bottom + 20 }]}>
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={styles.filterScrollContent}
+            decelerationRate="fast"
+          >
+            {snapFilters.map((f) => {
+              const selected = selectedFilter === f.id;
               return (
                 <Pressable
-                  key={filter.id}
-                  onPress={() => setSelectedFilter(filter.id)}
-                  style={[styles.filterChip, selected && styles.filterChipSelected]}
+                  key={f.id}
+                  onPress={() => {
+                    Vibration.vibrate(5);
+                    setSelectedFilter(f.id);
+                  }}
+                  style={({ pressed }) => [styles.filterTextHit, pressed && { opacity: 0.7 }]}
                 >
-                  <Text style={[styles.filterChipText, selected && styles.filterChipTextSelected]}>
-                    {filter.name}
+                  <Text style={[styles.filterText, selected && styles.filterTextSelected]} numberOfLines={1}>
+                    {f.name}
                   </Text>
                 </Pressable>
               );
             })}
           </ScrollView>
-          <View style={styles.captureRow}>
-            <Pressable onPress={toggleFacing} style={styles.secondaryRoundBtn}>
-              <Text style={styles.secondaryRoundBtnText}>Flip</Text>
-            </Pressable>
-            <Pressable
-              onPress={showSimulatorFallback ? openGalleryFallback : capturePhoto}
-              disabled={!showSimulatorFallback && (!cameraReady || capturing)}
-              style={styles.captureBtn}
-            >
-              {capturing ? (
-                <ActivityIndicator color={colors.bgBase} />
-              ) : (
-                <View style={styles.captureInner} />
-              )}
-            </Pressable>
-            <Pressable onPress={openGalleryFallback} style={styles.secondaryRoundBtn}>
-              <Text style={styles.secondaryRoundBtnText}>Gallery</Text>
-            </Pressable>
-          </View>
+
+          {!isEditMode ? (
+            <View style={styles.captureRow}>
+              <GlassCircle onPress={openGallery}>
+                <Ionicons name="images-outline" size={22} color="#fff" />
+              </GlassCircle>
+
+              <Pressable
+                onPress={cameraUnavailable ? openGallery : capturePhoto}
+                onPressIn={onCapturePressIn}
+                onPressOut={onCapturePressOut}
+                disabled={!cameraUnavailable && (!cameraReady || capturing)}
+                style={styles.captureHit}
+              >
+                <Animated.View style={[styles.captureRing, { transform: [{ scale: pressScale }] }]}>
+                  <View style={styles.captureOuterRing}>
+                    <View style={[styles.captureInner, captureFill && styles.captureInnerActive]}>
+                      {capturing ? (
+                        <ActivityIndicator color={captureFill ? colors.bgBase : colors.gold} size="small" />
+                      ) : captureFill ? null : (
+                        <View style={styles.captureGoldDot} />
+                      )}
+                    </View>
+                  </View>
+                </Animated.View>
+              </Pressable>
+
+              <GlassCircle
+                onPress={() => {
+                  Vibration.vibrate(6);
+                  setCameraFacing((prev) => (prev === 'back' ? 'front' : 'back'));
+                }}
+              >
+                <Ionicons name="camera-reverse-outline" size={22} color="#fff" />
+              </GlassCircle>
+            </View>
+          ) : (
+            <View style={styles.editRow}>
+              <Pressable onPress={() => setSelectedImageUri(null)} style={styles.editLink}>
+                <Text style={styles.editLinkText}>Retake</Text>
+              </Pressable>
+              <Pressable onPress={goNext} style={styles.editPrimary}>
+                <Text style={styles.editPrimaryText}>Next</Text>
+              </Pressable>
+            </View>
+          )}
         </View>
       </View>
     </View>
@@ -176,180 +306,195 @@ export default function ReviewCameraScreen() {
 const styles = StyleSheet.create({
   root: {
     flex: 1,
-    backgroundColor: colors.bgBase,
+    backgroundColor: '#000',
   },
-  loadingRoot: {
-    flex: 1,
-    backgroundColor: colors.bgBase,
-  },
-  permissionRoot: {
-    flex: 1,
-    backgroundColor: colors.bgBase,
-    paddingHorizontal: spacing.lg,
-    justifyContent: 'center',
-    gap: spacing.md,
-  },
-  permissionTitle: {
-    ...typography.h2,
-    color: colors.textPrimary,
-  },
-  permissionBody: {
-    ...typography.body,
-    color: colors.textSecondary,
-  },
-  permissionBtn: {
-    marginTop: spacing.md,
-    alignSelf: 'flex-start',
-    borderWidth: 1,
-    borderColor: colors.gold,
-    borderRadius: borderRadius.full,
-    paddingHorizontal: spacing.lg,
-    paddingVertical: spacing.sm,
-  },
-  permissionBtnText: {
-    ...typography.bodySmall,
-    color: colors.goldLight,
-    fontWeight: '700',
-  },
-  permissionGhostBtn: {
-    marginTop: spacing.sm,
-    alignSelf: 'flex-start',
-    paddingVertical: spacing.xs,
-  },
-  permissionGhostBtnText: {
-    ...typography.bodySmall,
-    color: colors.textSecondary,
-    fontWeight: '700',
-  },
-  camera: {
+  cameraFill: {
     ...StyleSheet.absoluteFillObject,
   },
-  fallbackRoot: {
+  filterTint: {
     ...StyleSheet.absoluteFillObject,
-    backgroundColor: colors.bgElevated,
-    justifyContent: 'center',
-    alignItems: 'center',
-    paddingHorizontal: spacing['2xl'],
-    gap: spacing.md,
   },
-  fallbackTitle: {
-    ...typography.h3,
-    color: colors.textPrimary,
-    textAlign: 'center',
+  shutter: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: '#fff',
   },
-  fallbackBody: {
-    ...typography.body,
-    color: colors.textSecondary,
-    textAlign: 'center',
+  bottomGradient: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    bottom: 0,
+    height: 280,
   },
-  fallbackError: {
-    ...typography.bodySmall,
-    color: '#d8b38a',
-    textAlign: 'center',
-  },
-  fallbackBtn: {
-    marginTop: spacing.sm,
-    borderRadius: borderRadius.full,
-    borderWidth: 1,
-    borderColor: colors.gold,
-    backgroundColor: 'rgba(201, 168, 76, 0.14)',
-    paddingHorizontal: spacing.lg,
-    paddingVertical: spacing.sm,
-  },
-  fallbackBtnText: {
-    ...typography.bodySmall,
-    color: colors.goldLight,
-    fontWeight: '700',
-  },
-  overlay: {
+  chrome: {
     ...StyleSheet.absoluteFillObject,
     justifyContent: 'space-between',
   },
-  filterOverlay: {
-    ...StyleSheet.absoluteFillObject,
+  topBarGlass: {
+    backgroundColor: 'rgba(0,0,0,0.35)',
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.08)',
+    overflow: 'hidden',
   },
-  topControls: {
-    paddingTop: spacing['4xl'],
-    paddingHorizontal: spacing.lg,
+  topBar: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginHorizontal: 12,
+    marginTop: 4,
+    paddingVertical: 10,
+    paddingHorizontal: 10,
+    borderRadius: borderRadius.lg,
+    gap: 8,
   },
-  controlBtn: {
-    borderRadius: borderRadius.full,
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.22)',
-    backgroundColor: 'rgba(10,10,10,0.45)',
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.sm,
+  topIconHit: {
+    width: 40,
+    height: 40,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
-  controlText: {
-    ...typography.bodySmall,
-    color: colors.textPrimary,
-    fontWeight: '700',
-  },
-  bottomControls: {
-    paddingBottom: spacing['3xl'],
-    gap: spacing.lg,
-  },
-  filterRow: {
-    gap: spacing.sm,
-    paddingHorizontal: spacing.lg,
-  },
-  filterChip: {
-    borderRadius: borderRadius.full,
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.2)',
-    backgroundColor: 'rgba(10,10,10,0.45)',
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.sm,
-  },
-  filterChipSelected: {
-    borderColor: 'rgba(201, 168, 76, 0.8)',
-    backgroundColor: 'rgba(201, 168, 76, 0.22)',
-  },
-  filterChipText: {
-    ...typography.bodySmall,
+  topTitle: {
+    flex: 1,
+    textAlign: 'center',
+    ...typography.body,
     color: colors.textPrimary,
     fontWeight: '600',
   },
-  filterChipTextSelected: {
+  bottomUi: {
+    paddingHorizontal: spacing.lg,
+    gap: 28,
+  },
+  filterScrollContent: {
+    flexDirection: 'row',
+    flexGrow: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingVertical: 4,
+    gap: 22,
+    paddingHorizontal: 12,
+    minWidth: '100%',
+  },
+  filterTextHit: {
+    paddingVertical: 6,
+    paddingHorizontal: 4,
+  },
+  filterText: {
+    fontSize: 15,
+    fontWeight: '500',
+    color: 'rgba(255,255,255,0.45)',
+    letterSpacing: 0.2,
+  },
+  filterTextSelected: {
+    fontSize: 17,
+    fontWeight: '700',
     color: colors.goldLight,
   },
   captureRow: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingHorizontal: spacing['2xl'],
+    paddingHorizontal: 8,
   },
-  secondaryRoundBtn: {
-    width: 48,
-    height: 48,
-    borderRadius: borderRadius.full,
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: 'rgba(10,10,10,0.5)',
+  sideBtnGlass: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    overflow: 'hidden',
+    backgroundColor: 'rgba(255,255,255,0.08)',
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.26)',
+    borderColor: 'rgba(255,255,255,0.08)',
   },
-  secondaryRoundBtnText: {
-    ...typography.bodySmall,
-    color: colors.textPrimary,
-    fontWeight: '700',
-  },
-  captureBtn: {
-    width: 78,
-    height: 78,
-    borderRadius: borderRadius.full,
-    borderWidth: 2,
-    borderColor: colors.goldLight,
+  sideBtnInner: {
+    width: 40,
+    height: 40,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: 'rgba(10,10,10,0.35)',
+  },
+  sideBtnPressed: {
+    opacity: 0.86,
+  },
+  captureHit: {
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  captureRing: {
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  captureOuterRing: {
+    width: 76,
+    height: 76,
+    borderRadius: 38,
+    borderWidth: 2,
+    borderColor: 'rgba(255,255,255,0.9)',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: 'transparent',
   },
   captureInner: {
     width: 62,
     height: 62,
+    borderRadius: 31,
+    backgroundColor: '#111',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  captureInnerActive: {
+    backgroundColor: colors.gold,
+  },
+  captureGoldDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: colors.gold,
+  },
+  editRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: spacing.xl,
+  },
+  editLink: {
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+  },
+  editLinkText: {
+    ...typography.body,
+    color: 'rgba(255,255,255,0.6)',
+    fontWeight: '600',
+  },
+  editPrimary: {
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+  },
+  editPrimaryText: {
+    ...typography.body,
+    color: colors.goldLight,
+    fontWeight: '700',
+  },
+  permissionRoot: {
+    flex: 1,
+    backgroundColor: '#000',
+    justifyContent: 'center',
+    paddingHorizontal: spacing.xl,
+    gap: spacing.md,
+  },
+  permissionTitle: {
+    ...typography.h2,
+    color: '#fff',
+  },
+  permissionBody: {
+    ...typography.body,
+    color: colors.textSecondary,
+  },
+  permissionBtn: {
+    alignSelf: 'flex-start',
+    paddingVertical: spacing.sm,
+    paddingHorizontal: spacing.lg,
     borderRadius: borderRadius.full,
     backgroundColor: colors.gold,
+  },
+  permissionBtnText: {
+    ...typography.body,
+    color: colors.bgBase,
+    fontWeight: '700',
   },
 });

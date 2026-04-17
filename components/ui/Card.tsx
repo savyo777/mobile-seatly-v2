@@ -31,7 +31,7 @@ const styles = StyleSheet.create({
   card: {
     backgroundColor: colors.bgSurface,
     borderRadius: borderRadius.lg,
-    borderWidth: 1,
+    borderWidth: StyleSheet.hairlineWidth,
     borderColor: colors.border,
   },
   padded: {

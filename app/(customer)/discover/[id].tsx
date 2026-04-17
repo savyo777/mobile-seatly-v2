@@ -1,13 +1,21 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useState } from 'react';
 import { View, Text, StyleSheet, ScrollView, Image, Pressable } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useFocusEffect } from '@react-navigation/native';
 import { Button, Card, Badge, ScreenWrapper } from '@/components/ui';
 import { mockRestaurants } from '@/lib/mock/restaurants';
 import { mockMenuItems } from '@/lib/mock/menuItems';
 import { formatCurrency } from '@/lib/utils/formatCurrency';
 import { colors, spacing, borderRadius, typography, shadows } from '@/lib/theme';
+import { Ionicons } from '@expo/vector-icons';
+import {
+  listSnapPostsByRestaurant,
+  getSnapUser,
+  type SnapPost,
+} from '@/lib/mock/snaps';
+import { SnapPreviewCard } from '@/components/discover/SnapPreviewCard';
 
 const WEEKDAY_KEYS = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'] as const;
 
@@ -16,6 +24,7 @@ function priceRangeLabel(range: number): string {
 }
 
 export default function RestaurantDetailScreen() {
+  const [restaurantSnaps, setRestaurantSnaps] = useState<SnapPost[]>([]);
   const { id } = useLocalSearchParams<{ id: string }>();
   const { t } = useTranslation();
   const router = useRouter();
@@ -30,6 +39,13 @@ export default function RestaurantDetailScreen() {
 
   const todayKey = WEEKDAY_KEYS[new Date().getDay()];
   const todayHours = restaurant?.hoursJson[todayKey];
+
+  useFocusEffect(
+    React.useCallback(() => {
+      if (!id) return;
+      setRestaurantSnaps(listSnapPostsByRestaurant(id));
+    }, [id]),
+  );
 
   if (!restaurant) {
     return (
@@ -61,6 +77,14 @@ export default function RestaurantDetailScreen() {
             <Text style={styles.backChevron} accessible={false}>
               ←
             </Text>
+          </Pressable>
+          <Pressable
+            accessibilityRole="button"
+            onPress={() => router.push(`/(customer)/discover/post-review/camera?restaurantId=${restaurant.id}`)}
+            style={[styles.snapBtn, { top: insets.top + spacing.sm }]}
+            hitSlop={12}
+          >
+            <Ionicons name="add" size={20} color={colors.goldLight} />
           </Pressable>
         </View>
 
@@ -111,6 +135,37 @@ export default function RestaurantDetailScreen() {
               </Card>
             ))}
           </ScrollView>
+
+          <View style={styles.snapsHeader}>
+            <View style={styles.snapsHeaderText}>
+              <Text style={styles.snapsTitle}>Snaps from Guests</Text>
+              <Text style={styles.snapsSub}>See real moments shared by diners</Text>
+            </View>
+            <Pressable
+              onPress={() => router.push(`/(customer)/discover/snaps/${restaurant.id}`)}
+              style={({ pressed }) => [styles.seeMoreBtn, pressed && styles.seeMorePressed]}
+            >
+              <Text style={styles.seeMoreText}>See More</Text>
+              <Ionicons name="chevron-forward" size={14} color={colors.goldLight} />
+            </Pressable>
+          </View>
+          {restaurantSnaps.length ? (
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.snapsRow}>
+              {restaurantSnaps.slice(0, 6).map((post) => {
+                const user = getSnapUser(post.user_id);
+                return (
+                  <SnapPreviewCard
+                    key={post.id}
+                    post={post}
+                    user={user}
+                    onPress={() => router.push(`/(customer)/discover/snaps/detail/${post.id}?restaurantId=${restaurant.id}`)}
+                  />
+                );
+              })}
+            </ScrollView>
+          ) : (
+            <Text style={styles.bodyText}>No snaps yet. Be the first guest to post.</Text>
+          )}
         </View>
       </ScrollView>
 
@@ -147,6 +202,18 @@ const styles = StyleSheet.create({
     height: 44,
     borderRadius: borderRadius.full,
     backgroundColor: 'rgba(0,0,0,0.45)',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  snapBtn: {
+    position: 'absolute',
+    right: spacing.lg,
+    width: 44,
+    height: 44,
+    borderRadius: borderRadius.full,
+    backgroundColor: 'rgba(201, 168, 76, 0.2)',
+    borderWidth: 1,
+    borderColor: 'rgba(201, 168, 76, 0.85)',
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -250,6 +317,49 @@ const styles = StyleSheet.create({
     ...typography.body,
     color: colors.gold,
     fontWeight: '600',
+  },
+  snapsHeader: {
+    marginTop: spacing.md,
+    marginBottom: spacing.sm,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: spacing.md,
+  },
+  snapsHeaderText: {
+    flex: 1,
+  },
+  snapsTitle: {
+    ...typography.h3,
+    color: colors.textPrimary,
+  },
+  snapsSub: {
+    ...typography.bodySmall,
+    color: colors.textSecondary,
+  },
+  seeMoreBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 2,
+    borderRadius: borderRadius.full,
+    borderWidth: 1,
+    borderColor: 'rgba(201, 168, 76, 0.45)',
+    backgroundColor: 'rgba(201, 168, 76, 0.12)',
+    paddingHorizontal: spacing.sm,
+    paddingVertical: 7,
+  },
+  seeMorePressed: {
+    opacity: 0.84,
+  },
+  seeMoreText: {
+    ...typography.bodySmall,
+    color: colors.goldLight,
+    fontWeight: '700',
+  },
+  snapsRow: {
+    gap: spacing.md,
+    paddingBottom: spacing.lg,
+    paddingTop: spacing.xs,
   },
   footer: {
     position: 'absolute',

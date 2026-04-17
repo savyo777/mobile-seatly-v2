@@ -1,7 +1,7 @@
 import React from 'react';
 import { Text, Pressable, StyleSheet, ScrollView } from 'react-native';
 import type { RevenuePeriod } from '@/lib/mock/ownerApp';
-import { ownerColors, ownerRadii } from '@/lib/theme/ownerTheme';
+import { ownerColors, ownerRadii, ownerSpace } from '@/lib/theme/ownerTheme';
 
 const PERIODS: { key: RevenuePeriod; label: string }[] = [
   { key: 'day', label: 'Day' },
@@ -47,15 +47,15 @@ export function PeriodToggle({ value, onChange }: Props) {
 const styles = StyleSheet.create({
   row: {
     flexDirection: 'row',
-    gap: 8,
-    paddingVertical: 4,
+    gap: ownerSpace.xs,
+    paddingVertical: 2,
   },
   chip: {
-    paddingVertical: 10,
-    paddingHorizontal: 16,
-    borderRadius: ownerRadii.xl,
-    backgroundColor: ownerColors.bgGlass,
-    borderWidth: 1,
+    paddingVertical: 7,
+    paddingHorizontal: ownerSpace.sm,
+    borderRadius: ownerRadii.sm,
+    backgroundColor: ownerColors.bgSurface,
+    borderWidth: StyleSheet.hairlineWidth,
     borderColor: ownerColors.border,
   },
   chipActive: {

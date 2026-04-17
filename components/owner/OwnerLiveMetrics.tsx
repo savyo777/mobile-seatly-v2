@@ -2,8 +2,8 @@ import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { LIVE_METRICS } from '@/lib/mock/ownerApp';
-import { ownerColors, ownerRadii } from '@/lib/theme/ownerTheme';
-import { GlassCard } from './GlassCard';
+import { ownerColors, ownerSpace } from '@/lib/theme/ownerTheme';
+import { OwnerSectionLabel } from './OwnerSectionLabel';
 
 export function OwnerLiveMetrics() {
   const { t } = useTranslation();
@@ -17,53 +17,76 @@ export function OwnerLiveMetrics() {
 
   return (
     <View style={styles.wrap}>
-      <Text style={styles.sectionLabel}>{t('owner.liveMetricsTitle')}</Text>
+      <OwnerSectionLabel>{t('owner.liveMetricsTitle')}</OwnerSectionLabel>
       <View style={styles.grid}>
-        {tiles.map((tile) => (
-          <GlassCard key={tile.key} style={[styles.tile, tile.danger && styles.tileDanger]}>
-            <Text style={styles.tileValue}>{tile.value}</Text>
-            <Text style={styles.tileLabel}>{tile.label}</Text>
-          </GlassCard>
-        ))}
+        {tiles.map((tile, index) => {
+          const isRight = index % 2 === 1;
+          const isBottom = index >= 2;
+          return (
+            <View
+              key={tile.key}
+              style={[
+                styles.cell,
+                !isRight && styles.cellBorderRight,
+                !isBottom && styles.cellBorderBottom,
+                tile.danger && styles.cellDanger,
+              ]}
+            >
+              <Text style={[styles.tileValue, tile.danger && styles.tileValueDanger]}>{tile.value}</Text>
+              <Text style={styles.tileLabel}>{tile.label}</Text>
+            </View>
+          );
+        })}
       </View>
     </View>
   );
 }
 
+const hair = StyleSheet.hairlineWidth;
+
 const styles = StyleSheet.create({
   wrap: {
-    marginBottom: 24,
-  },
-  sectionLabel: {
-    fontSize: 13,
-    fontWeight: '700',
-    color: ownerColors.textMuted,
-    letterSpacing: 1.2,
-    textTransform: 'uppercase',
-    marginBottom: 12,
+    marginBottom: ownerSpace.md,
   },
   grid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: 10,
+    borderRadius: 12,
+    borderWidth: hair,
+    borderColor: ownerColors.border,
+    overflow: 'hidden',
+    backgroundColor: ownerColors.bgSurface,
   },
-  tile: {
-    width: '47%',
-    padding: 16,
-    minHeight: 96,
+  cell: {
+    width: '50%',
+    paddingVertical: ownerSpace.sm,
+    paddingHorizontal: ownerSpace.sm,
+    minHeight: 76,
     justifyContent: 'center',
   },
-  tileDanger: {
-    borderColor: 'rgba(239, 68, 68, 0.35)',
+  cellBorderRight: {
+    borderRightWidth: hair,
+    borderRightColor: ownerColors.border,
+  },
+  cellBorderBottom: {
+    borderBottomWidth: hair,
+    borderBottomColor: ownerColors.border,
+  },
+  cellDanger: {
+    backgroundColor: 'rgba(239, 68, 68, 0.06)',
   },
   tileValue: {
     fontSize: 26,
-    fontWeight: '800',
+    fontWeight: '700',
     color: ownerColors.text,
-    marginBottom: 6,
+    marginBottom: ownerSpace.xs,
+    letterSpacing: -0.5,
+  },
+  tileValueDanger: {
+    color: ownerColors.danger,
   },
   tileLabel: {
-    fontSize: 12,
+    fontSize: 11,
     fontWeight: '600',
     color: ownerColors.textMuted,
     textTransform: 'uppercase',

@@ -1,59 +1,64 @@
+import { appPalette } from '@/lib/theme/appPalette';
+
 /**
- * Seatly Owner App — black & gold luxury OS. No blue in UI.
+ * Restaurant / owner app — same palette as customer (`appPalette`).
+ * Gold only for actions, active filters, and key accents.
  */
 export const ownerColors = {
-  bg: '#080B16',
-  /** Cards: dark charcoal */
-  bgCard: '#12151F',
-  bgElevated: '#0D1224',
-  bgGlass: 'rgba(255,255,255,0.04)',
-  border: 'rgba(255,255,255,0.08)',
-  borderStrong: 'rgba(255,255,255,0.14)',
+  bg: appPalette.bgBase,
+  bgSurface: appPalette.bgSurface,
+  bgCard: appPalette.bgSurface,
+  bgElevated: appPalette.bgElevated,
+  bgGlass: 'rgba(255,255,255,0.035)',
+  border: appPalette.border,
+  borderStrong: 'rgba(255,255,255,0.09)',
 
-  /** Primary accent — gold only */
-  gold: '#D4AF37',
-  goldMuted: 'rgba(212, 175, 55, 0.22)',
-  goldSubtle: 'rgba(212, 175, 55, 0.12)',
+  gold: appPalette.gold,
+  goldMuted: 'rgba(201, 162, 74, 0.2)',
+  goldSubtle: appPalette.goldSubtle,
 
-  /** Charts: green / red only */
   chartPositive: '#22C55E',
   chartNegative: '#EF4444',
-  chartPositiveMuted: 'rgba(34, 197, 94, 0.35)',
-  chartNegativeMuted: 'rgba(239, 68, 68, 0.35)',
+  chartPositiveMuted: 'rgba(34, 197, 94, 0.3)',
+  chartNegativeMuted: 'rgba(239, 68, 68, 0.3)',
 
   success: '#22C55E',
   danger: '#EF4444',
-  warning: '#FBBF24',
+  warning: '#D4A574',
 
-  text: '#FFFFFF',
-  textSecondary: 'rgba(255,255,255,0.72)',
-  textMuted: 'rgba(255,255,255,0.45)',
+  text: appPalette.textPrimary,
+  textSecondary: appPalette.textSecondary,
+  textMuted: appPalette.textMuted,
 
   tableAvailable: '#22C55E',
-  tableReserved: '#FBBF24',
+  tableReserved: appPalette.gold,
   tableOccupied: '#EF4444',
-  tableCleaning: '#64748B',
+  tableCleaning: appPalette.textMuted,
 } as const;
 
 export const ownerRadii = {
+  sm: 10,
+  md: 14,
   xl: 16,
   '2xl': 20,
-  '3xl': 28,
+  '3xl': 26,
 } as const;
 
+export const ownerSpace = {
+  xs: 8,
+  sm: 12,
+  md: 16,
+  lg: 24,
+  xl: 32,
+} as const;
+
+/** Subtle lift — no colored glow */
 export const ownerShadow = {
   card: {
-    shadowColor: '#000',
-    shadowOpacity: 0.4,
-    shadowRadius: 24,
-    shadowOffset: { width: 0, height: 12 },
-    elevation: 12,
-  },
-  glow: {
-    shadowColor: '#D4AF37',
-    shadowOpacity: 0.18,
+    shadowColor: '#000000',
+    shadowOpacity: 0.35,
     shadowRadius: 16,
-    shadowOffset: { width: 0, height: 0 },
-    elevation: 6,
+    shadowOffset: { width: 0, height: 6 },
+    elevation: 5,
   },
 } as const;

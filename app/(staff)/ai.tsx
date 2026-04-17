@@ -15,14 +15,10 @@ import { useTranslation } from 'react-i18next';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Animated, { FadeIn } from 'react-native-reanimated';
 import { GlassCard } from '@/components/owner/GlassCard';
+import { SubpageHeader } from '@/components/owner/SubpageHeader';
 import { AI_ALERTS, AI_OPPORTUNITIES, AI_SUGGESTIONS } from '@/lib/mock/ownerApp';
-import { ownerColors } from '@/lib/theme/ownerTheme';
-
-const BG = '#080B16';
-const CARD_BG = '#0F1320';
-const INPUT_BG = '#141926';
-const GOLD = '#D4AF37';
-const BORDER = 'rgba(255,255,255,0.07)';
+import { appPalette } from '@/lib/theme/appPalette';
+import { ownerColors, ownerRadii } from '@/lib/theme/ownerTheme';
 
 export default function OwnerAiScreen() {
   const { t } = useTranslation();
@@ -61,8 +57,7 @@ export default function OwnerAiScreen() {
         keyboardShouldPersistTaps="handled"
       >
         <Animated.View entering={FadeIn.duration(400)}>
-          <Text style={styles.title}>{t('owner.aiTitle')}</Text>
-          <Text style={styles.sub}>{t('owner.aiSub')}</Text>
+          <SubpageHeader title={t('owner.aiTitle')} subtitle={t('owner.aiSub')} fallbackTab="more" />
         </Animated.View>
 
         <Text style={styles.sectionLabel}>{t('owner.aiOpportunities')}</Text>
@@ -100,7 +95,7 @@ export default function OwnerAiScreen() {
           <TextInput
             style={styles.textInput}
             placeholder={micActive ? 'Listening…' : 'Ask me anything about dining…'}
-            placeholderTextColor={micActive ? GOLD : '#6B7280'}
+            placeholderTextColor={micActive ? ownerColors.gold : ownerColors.textMuted}
             value={input}
             onChangeText={setInput}
             returnKeyType="send"
@@ -118,7 +113,7 @@ export default function OwnerAiScreen() {
             <Ionicons
               name={micActive ? 'mic' : 'mic-outline'}
               size={20}
-              color={GOLD}
+              color={ownerColors.gold}
             />
           </TouchableOpacity>
 
@@ -139,7 +134,7 @@ export default function OwnerAiScreen() {
 const styles = StyleSheet.create({
   root: {
     flex: 1,
-    backgroundColor: BG,
+    backgroundColor: ownerColors.bg,
   },
   scroll: {
     flex: 1,
@@ -150,22 +145,10 @@ const styles = StyleSheet.create({
     paddingBottom: 16,
   },
 
-  title: {
-    fontSize: 30,
-    fontWeight: '800',
-    color: '#FFFFFF',
-    letterSpacing: -0.6,
-    marginBottom: 6,
-  },
-  sub: {
-    fontSize: 16,
-    color: 'rgba(255,255,255,0.45)',
-    marginBottom: 24,
-  },
   sectionLabel: {
     fontSize: 12,
     fontWeight: '800',
-    color: GOLD,
+    color: ownerColors.textMuted,
     letterSpacing: 1.2,
     textTransform: 'uppercase',
     marginTop: 20,
@@ -174,7 +157,6 @@ const styles = StyleSheet.create({
   card: {
     padding: 16,
     marginBottom: 10,
-    backgroundColor: CARD_BG,
   },
   alertCard: {
     borderColor: 'rgba(248, 113, 113, 0.35)',
@@ -183,7 +165,7 @@ const styles = StyleSheet.create({
     fontSize: 15,
     lineHeight: 22,
     fontWeight: '600',
-    color: 'rgba(255,255,255,0.72)',
+    color: ownerColors.textSecondary,
   },
   alertText: {
     fontSize: 15,
@@ -194,16 +176,16 @@ const styles = StyleSheet.create({
 
   /* ── Bottom bar ── */
   bottomBar: {
-    backgroundColor: BG,
-    borderTopWidth: 1,
-    borderTopColor: BORDER,
+    backgroundColor: ownerColors.bg,
+    borderTopWidth: StyleSheet.hairlineWidth,
+    borderTopColor: ownerColors.border,
     paddingTop: 10,
     paddingHorizontal: 14,
   },
   listeningHint: {
     fontSize: 12,
     fontWeight: '700',
-    color: GOLD,
+    color: ownerColors.gold,
     letterSpacing: 1,
     textTransform: 'uppercase',
     marginBottom: 6,
@@ -221,46 +203,46 @@ const styles = StyleSheet.create({
     flex: 1,           // takes remaining space
     minWidth: 0,       // allows flex shrink past content
     height: 46,
-    backgroundColor: INPUT_BG,
-    borderRadius: 16,
+    backgroundColor: ownerColors.bgElevated,
+    borderRadius: ownerRadii.md,
     paddingHorizontal: 14,
-    color: '#FFFFFF',
+    color: ownerColors.text,
     fontSize: 15,
-    borderWidth: 1,
-    borderColor: BORDER,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: ownerColors.border,
   },
 
   micButton: {
     width: 46,          // explicit fixed width — never collapses
     height: 46,
-    borderRadius: 14,
-    backgroundColor: INPUT_BG,
-    borderWidth: 1,
-    borderColor: `rgba(212,175,55,0.40)`,
+    borderRadius: ownerRadii.md,
+    backgroundColor: ownerColors.bgElevated,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: ownerColors.goldMuted,
     alignItems: 'center',
     justifyContent: 'center',
     flexShrink: 0,      // prevent row from squashing it
   },
   micButtonActive: {
-    backgroundColor: 'rgba(212,175,55,0.18)',
-    borderColor: GOLD,
+    backgroundColor: ownerColors.goldSubtle,
+    borderColor: ownerColors.gold,
   },
 
   sendButton: {
     height: 46,
     paddingHorizontal: 20,
-    borderRadius: 14,
-    backgroundColor: GOLD,
+    borderRadius: ownerRadii.md,
+    backgroundColor: ownerColors.gold,
     alignItems: 'center',
     justifyContent: 'center',
     flexShrink: 0,
   },
   sendButtonDim: {
-    backgroundColor: 'rgba(212,175,55,0.30)',
+    backgroundColor: 'rgba(201,162,74,0.35)',
   },
   sendText: {
     fontSize: 15,
     fontWeight: '800',
-    color: BG,
+    color: appPalette.bgBase,
   },
 });

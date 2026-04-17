@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 import { OwnerScreen } from '@/components/owner/OwnerScreen';
 import { GlassCard } from '@/components/owner/GlassCard';
+import { SubpageHeader } from '@/components/owner/SubpageHeader';
 import { STAFF_ROSTER } from '@/lib/mock/ownerApp';
 import { ownerColors, ownerRadii } from '@/lib/theme/ownerTheme';
 
@@ -12,8 +13,11 @@ export default function OwnerStaffScreen() {
 
   return (
     <OwnerScreen>
-      <Text style={styles.title}>{t('owner.staffTitle')}</Text>
-      <Text style={styles.sub}>{t('owner.staffSubtitle')}</Text>
+      <SubpageHeader
+        title={t('owner.staffTitle')}
+        subtitle={t('owner.staffSubtitle')}
+        fallbackTab="more"
+      />
 
       {STAFF_ROSTER.map((member, i) => (
         <Animated.View key={member.id} entering={FadeInDown.delay(i * 45)}>
@@ -37,17 +41,6 @@ export default function OwnerStaffScreen() {
 }
 
 const styles = StyleSheet.create({
-  title: {
-    fontSize: 28,
-    fontWeight: '800',
-    color: ownerColors.text,
-    marginBottom: 6,
-  },
-  sub: {
-    fontSize: 15,
-    color: ownerColors.textMuted,
-    marginBottom: 16,
-  },
   card: {
     padding: 16,
     marginBottom: 10,

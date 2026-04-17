@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 import { OwnerScreen } from '@/components/owner/OwnerScreen';
 import { GlassCard } from '@/components/owner/GlassCard';
+import { SubpageHeader } from '@/components/owner/SubpageHeader';
 import { OWNER_EVENTS } from '@/lib/mock/ownerApp';
 import { ownerColors, ownerRadii } from '@/lib/theme/ownerTheme';
 
@@ -18,8 +19,11 @@ export default function OwnerEventsScreen() {
 
   return (
     <OwnerScreen>
-      <Text style={styles.title}>{t('owner.eventsTitle')}</Text>
-      <Text style={styles.sub}>{t('owner.eventsSubtitle')}</Text>
+      <SubpageHeader
+        title={t('owner.eventsTitle')}
+        subtitle={t('owner.eventsSubtitle')}
+        fallbackTab="more"
+      />
 
       {OWNER_EVENTS.map((ev, i) => (
         <Animated.View key={ev.id} entering={FadeInDown.delay(i * 40)}>
@@ -41,17 +45,6 @@ export default function OwnerEventsScreen() {
 }
 
 const styles = StyleSheet.create({
-  title: {
-    fontSize: 28,
-    fontWeight: '800',
-    color: ownerColors.text,
-    marginBottom: 6,
-  },
-  sub: {
-    fontSize: 15,
-    color: ownerColors.textMuted,
-    marginBottom: 16,
-  },
   card: {
     padding: 16,
     marginBottom: 10,

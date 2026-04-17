@@ -3,6 +3,7 @@ import { View, Text, StyleSheet, Pressable, Switch, Alert } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { OwnerScreen } from '@/components/owner/OwnerScreen';
 import { GlassCard } from '@/components/owner/GlassCard';
+import { SubpageHeader } from '@/components/owner/SubpageHeader';
 import { ownerColors } from '@/lib/theme/ownerTheme';
 
 export default function OwnerSettingsScreen() {
@@ -12,8 +13,11 @@ export default function OwnerSettingsScreen() {
 
   return (
     <OwnerScreen>
-      <Text style={styles.title}>{t('owner.settingsTitle')}</Text>
-      <Text style={styles.sub}>{t('owner.settingsSubtitle')}</Text>
+      <SubpageHeader
+        title={t('owner.settingsTitle')}
+        subtitle={t('owner.settingsSubtitle')}
+        fallbackTab="more"
+      />
 
       <GlassCard style={styles.card}>
         <View style={styles.row}>
@@ -42,17 +46,6 @@ export default function OwnerSettingsScreen() {
 }
 
 const styles = StyleSheet.create({
-  title: {
-    fontSize: 28,
-    fontWeight: '800',
-    color: ownerColors.text,
-    marginBottom: 6,
-  },
-  sub: {
-    fontSize: 15,
-    color: ownerColors.textMuted,
-    marginBottom: 16,
-  },
   card: {
     padding: 16,
     marginBottom: 12,

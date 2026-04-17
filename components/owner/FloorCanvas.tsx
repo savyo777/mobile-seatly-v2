@@ -4,10 +4,14 @@ import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import Animated, { useAnimatedStyle, useSharedValue, withSpring } from 'react-native-reanimated';
 import type { OwnerFloorTable } from '@/lib/mock/ownerApp';
 import type { Table } from '@/lib/mock/tables';
-import { ownerColors, ownerRadii, ownerShadow } from '@/lib/theme/ownerTheme';
+import { ownerColors, ownerRadii } from '@/lib/theme/ownerTheme';
+import { ownerSpace } from '@/lib/theme/ownerTheme';
 
-const CANVAS_W = 340;
-const CANVAS_H = 300;
+const CANVAS_W = 360;
+const CANVAS_H = 320;
+/** Spread layout — more air between tables */
+const POS_SCALE = 1.08;
+const ORIGIN_PAD = 10;
 
 function colorForStatus(status: Table['status']): string {
   switch (status) {
@@ -98,35 +102,35 @@ export function FloorCanvas({ tables, onTablePress }: Props) {
           <Text style={styles.zoomText}>+</Text>
         </Pressable>
       </View>
-      <View style={styles.clip}>
-        <GestureDetector gesture={composed}>
-          <Animated.View style={[styles.canvas, animStyle]}>
-            {tables.map((t) => {
-              const bg = `${colorForStatus(t.status)}30`;
-              const border = colorForStatus(t.status);
-              return (
-                <Pressable
-                  key={t.id}
-                  onPress={() => onTablePress(t)}
-                  style={[
-                    t.shape === 'circle' ? styles.circle : styles.rect,
-                    {
-                      left: t.x,
-                      top: t.y,
-                      width: t.w,
-                      height: t.h,
-                      borderColor: border,
-                      backgroundColor: bg,
-                    },
-                  ]}
-                >
+      <GestureDetector gesture={composed}>
+        <Animated.View style={[styles.canvas, animStyle]}>
+          {tables.map((t) => {
+            const bg = `${colorForStatus(t.status)}28`;
+            const border = colorForStatus(t.status);
+            const left = ORIGIN_PAD + t.x * POS_SCALE;
+            const top = ORIGIN_PAD + t.y * POS_SCALE;
+            return (
+              <Pressable
+                key={t.id}
+                onPress={() => onTablePress(t)}
+                style={[
+                  t.shape === 'circle' ? styles.circle : styles.rect,
+                  {
+                    left,
+                    top,
+                    width: t.w * POS_SCALE,
+                    height: t.h * POS_SCALE,
+                    borderColor: border,
+                    backgroundColor: bg,
+                  },
+                ]}
+              >
                   <Text style={styles.tableNum}>{t.tableNumber}</Text>
-                </Pressable>
-              );
-            })}
-          </Animated.View>
-        </GestureDetector>
-      </View>
+              </Pressable>
+            );
+          })}
+        </Animated.View>
+      </GestureDetector>
       <View style={styles.legend}>
         <Legend color={ownerColors.tableAvailable} label="Available" />
         <Legend color={ownerColors.tableReserved} label="Reserved" />
@@ -153,15 +157,15 @@ const styles = StyleSheet.create({
   zoomBar: {
     flexDirection: 'row',
     justifyContent: 'flex-end',
-    gap: 8,
-    marginBottom: 12,
+    gap: ownerSpace.xs,
+    marginBottom: ownerSpace.sm,
   },
   zoomBtn: {
     width: 44,
     height: 40,
-    borderRadius: ownerRadii.xl,
-    backgroundColor: ownerColors.bgGlass,
-    borderWidth: 1,
+    borderRadius: ownerRadii.md,
+    backgroundColor: ownerColors.bgSurface,
+    borderWidth: StyleSheet.hairlineWidth,
     borderColor: ownerColors.border,
     alignItems: 'center',
     justifyContent: 'center',
@@ -169,9 +173,9 @@ const styles = StyleSheet.create({
   zoomBtnWide: {
     paddingHorizontal: 16,
     height: 40,
-    borderRadius: ownerRadii.xl,
-    backgroundColor: ownerColors.bgGlass,
-    borderWidth: 1,
+    borderRadius: ownerRadii.md,
+    backgroundColor: ownerColors.bgSurface,
+    borderWidth: StyleSheet.hairlineWidth,
     borderColor: ownerColors.border,
     alignItems: 'center',
     justifyContent: 'center',
@@ -181,34 +185,25 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     color: ownerColors.text,
   },
-  clip: {
-    height: CANVAS_H + 8,
-    borderRadius: ownerRadii['2xl'],
-    overflow: 'hidden',
-  },
   canvas: {
     width: CANVAS_W,
     height: CANVAS_H,
-    backgroundColor: 'rgba(255,255,255,0.03)',
-    borderRadius: ownerRadii['2xl'],
-    borderWidth: 1,
-    borderColor: ownerColors.border,
+    backgroundColor: ownerColors.bgSurface,
+    borderRadius: ownerRadii.md,
   },
   rect: {
     position: 'absolute',
-    borderWidth: 2.5,
-    borderRadius: ownerRadii.xl,
+    borderWidth: 1.5,
+    borderRadius: ownerRadii.sm,
     alignItems: 'center',
     justifyContent: 'center',
-    ...ownerShadow.card,
   },
   circle: {
     position: 'absolute',
-    borderWidth: 2.5,
+    borderWidth: 1.5,
     borderRadius: 999,
     alignItems: 'center',
     justifyContent: 'center',
-    ...ownerShadow.card,
   },
   tableNum: {
     fontSize: 15,
@@ -218,8 +213,8 @@ const styles = StyleSheet.create({
   legend: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: 12,
-    marginTop: 16,
+    gap: ownerSpace.md,
+    marginTop: ownerSpace.md,
   },
   legendItem: {
     flexDirection: 'row',
