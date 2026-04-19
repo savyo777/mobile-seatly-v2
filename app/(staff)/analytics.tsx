@@ -116,14 +116,14 @@ export default function OwnerAnalyticsScreen() {
         <GlassCard key={c.id} style={styles.crmCard}>
           <View style={styles.crmTop}>
             <Text style={styles.crmName}>{c.name}</Text>
-            {c.vip ? (
+            {c.isVIP ? (
               <View style={styles.vipPill}>
                 <Text style={styles.vipText}>{t('owner.crmVip')}</Text>
               </View>
             ) : null}
           </View>
           <Text style={styles.crmMeta}>
-            {t('owner.crmVisits', { count: c.visits })} · {t('owner.crmAvg', { amount: formatCurrency(c.avgSpend, 'cad') })}{' '}
+            {t('owner.crmVisits', { count: c.totalVisits })} · {t('owner.crmAvg', { amount: formatCurrency(c.avgSpend, 'cad') })}{' '}
             · {c.frequency}
           </Text>
           <Text style={styles.crmPref}>

@@ -1,6 +1,8 @@
 import React, { useMemo, useState } from 'react';
 import { View, Text, StyleSheet, Pressable, ScrollView, Alert } from 'react-native';
 import { useTranslation } from 'react-i18next';
+import { useLocalSearchParams } from 'expo-router';
+import { Ionicons } from '@expo/vector-icons';
 import { OwnerScreen } from '@/components/owner/OwnerScreen';
 import { OwnerSectionLabel } from '@/components/owner/OwnerSectionLabel';
 import {
@@ -64,6 +66,13 @@ function statusTextColor(s: OwnerReservationSlot['status']): string {
 
 export default function OwnerReservationsScreen() {
   const { t } = useTranslation();
+  const params = useLocalSearchParams<{ crmGuestId?: string | string[]; crmGuestName?: string | string[] }>();
+  const crmGuestId = Array.isArray(params.crmGuestId) ? params.crmGuestId[0] : params.crmGuestId;
+  const crmGuestName = Array.isArray(params.crmGuestName) ? params.crmGuestName[0] : params.crmGuestName;
+  const [crmBannerDismissed, setCrmBannerDismissed] = useState(false);
+  const showCrmFromGuests = Boolean(crmGuestId && crmGuestName) && !crmBannerDismissed;
+  const decodedGuestName = crmGuestName ? decodeURIComponent(String(crmGuestName)) : '';
+
   const [filter, setFilter] = useState<ResFilter>('all');
 
   const rows = useMemo(
@@ -109,6 +118,26 @@ export default function OwnerReservationsScreen() {
     <OwnerScreen>
       <Text style={styles.title}>{t('staff.reservations')}</Text>
       <Text style={styles.sub}>{t('owner.reservationsTimeline')}</Text>
+
+      {showCrmFromGuests ? (
+        <View style={styles.crmBanner}>
+          <View style={styles.crmBannerTextCol}>
+            <Text style={styles.crmBannerLabel}>{t('owner.crmFromCrmBanner')}</Text>
+            <Text style={styles.crmBannerName} numberOfLines={1}>
+              {decodedGuestName}
+            </Text>
+            <Text style={styles.crmBannerHint}>{t('owner.crmReserveBanner')}</Text>
+          </View>
+          <Pressable
+            onPress={() => setCrmBannerDismissed(true)}
+            style={({ pressed }) => [styles.crmBannerClose, pressed && styles.rowPressed]}
+            accessibilityRole="button"
+            accessibilityLabel={t('common.done')}
+          >
+            <Ionicons name="close" size={22} color={ownerColors.textMuted} />
+          </Pressable>
+        </View>
+      ) : null}
 
       <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.filters}>
         {FILTERS.map((f) => {
@@ -227,6 +256,45 @@ const styles = StyleSheet.create({
     color: ownerColors.textMuted,
     marginBottom: ownerSpace.sm,
     fontWeight: '500',
+  },
+  crmBanner: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: ownerSpace.sm,
+    padding: ownerSpace.md,
+    marginBottom: ownerSpace.sm,
+    borderRadius: ownerRadii.md,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: ownerColors.gold,
+    backgroundColor: ownerColors.goldSubtle,
+  },
+  crmBannerTextCol: {
+    flex: 1,
+    minWidth: 0,
+    gap: 4,
+  },
+  crmBannerLabel: {
+    fontSize: 11,
+    fontWeight: '700',
+    color: ownerColors.gold,
+    letterSpacing: 0.8,
+    textTransform: 'uppercase',
+  },
+  crmBannerName: {
+    fontSize: 17,
+    fontWeight: '700',
+    color: ownerColors.text,
+    letterSpacing: -0.3,
+  },
+  crmBannerHint: {
+    fontSize: 13,
+    color: ownerColors.textMuted,
+    fontWeight: '500',
+    marginTop: 2,
+  },
+  crmBannerClose: {
+    padding: 4,
+    marginTop: -2,
   },
   filters: {
     gap: 6,

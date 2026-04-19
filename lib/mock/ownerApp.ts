@@ -178,14 +178,35 @@ export interface OwnerReservationSlot {
   vip?: boolean;
 }
 
-export const WALKIN_QUEUE: { id: string; party: number; waitMins: number; name: string }[] = [
-  { id: 'wq1', party: 2, waitMins: 12, name: 'Guest A' },
+export type WalkInQueueItem = {
+  id: string;
+  party: number;
+  waitMins: number;
+  name: string;
+};
+
+export const WALKIN_QUEUE: WalkInQueueItem[] = [
+  { id: 'wq1', party: 2, waitMins: 12, name: 'A. Moreau' },
   { id: 'wq2', party: 4, waitMins: 22, name: 'Guest B' },
+  { id: 'wq3', party: 3, waitMins: 18, name: 'M. Laurent' },
+  { id: 'wq4', party: 2, waitMins: 8, name: 'Chen' },
 ];
 
-export const WAITLIST_ENTRIES: { id: string; name: string; party: number; quoted: string }[] = [
-  { id: 'wl1', name: 'R. Santos', party: 2, quoted: '7:45 PM' },
-  { id: 'wl2', name: 'Y. Park', party: 3, quoted: '8:10 PM' },
+export type WaitlistEntryStatus = 'waiting' | 'late' | 'arriving';
+
+export type WaitlistEntry = {
+  id: string;
+  name: string;
+  party: number;
+  quoted: string;
+  status: WaitlistEntryStatus;
+  risk?: boolean;
+};
+
+export const WAITLIST_ENTRIES: WaitlistEntry[] = [
+  { id: 'wl1', name: 'R. Santos', party: 2, quoted: '7:45 PM', status: 'waiting' },
+  { id: 'wl2', name: 'Y. Park', party: 3, quoted: '8:10 PM', status: 'late', risk: true },
+  { id: 'wl3', name: 'M. Chen', party: 4, quoted: '8:30 PM', status: 'arriving' },
 ];
 
 export const OWNER_RESERVATIONS: OwnerReservationSlot[] = [
@@ -220,20 +241,247 @@ export const ANALYTICS_INSIGHTS = {
 /** Busy hour heatmap 0–23 */
 export const BUSY_HEATMAP = [2, 2, 1, 1, 2, 3, 4, 6, 7, 8, 7, 6, 5, 5, 6, 7, 9, 10, 10, 9, 8, 6, 4, 3];
 
-export interface CrmGuestRow {
+/** Production-style CRM guest — filters use numeric rules */
+export interface CrmGuest {
   id: string;
   name: string;
-  visits: number;
+  isVIP: boolean;
+  totalVisits: number;
   avgSpend: number;
+  /** ISO date yyyy-mm-dd */
+  lastVisitDate: string;
+  /** 0–100 */
+  churnRisk: number;
+  /** Visits per month (rolling) */
+  visitFrequency: number;
   frequency: string;
   preference: string;
-  vip: boolean;
+  preferencesShort: string;
+  aiLine: string;
+  nextBestAction: string;
+  predictedSpendTonight: number;
+  ltvScore: number;
+  predictedLifetimeValue: number;
+  hasUpcomingReservation: boolean;
+  upcomingReservationTime?: string;
+  isSeated: boolean;
+  seatedLabel?: string;
+  visitHistory: { date: string; spend: number }[];
+  favoriteDishes: string[];
+  preferredTable: string;
+  notes: string;
+  noShowNote: string;
+  aiSuggestions: string[];
 }
 
-export const CRM_SPOTLIGHT: CrmGuestRow[] = [
-  { id: 'c1', name: 'Alex Johnson', visits: 12, avgSpend: 186, frequency: '2× / month', preference: 'Booth, sparkling', vip: true },
-  { id: 'c2', name: 'Priya N.', visits: 9, avgSpend: 112, frequency: 'Monthly', preference: 'Vegetarian', vip: true },
-  { id: 'c3', name: 'David Kim', visits: 1, avgSpend: 72, frequency: 'New', preference: '—', vip: false },
+/** @deprecated Use CrmGuest */
+export type CrmGuestRow = CrmGuest;
+
+export const CRM_AI_INSIGHTS: { id: string; headline: string; sub: string }[] = [
+  {
+    id: 'ai1',
+    headline: '3 VIP guests arriving tonight',
+    sub: 'Confirm preferences and pre-stage wine pairings.',
+  },
+  {
+    id: 'ai2',
+    headline: '2 high-risk guests — confirm now',
+    sub: 'Card hold recommended for at-risk reservations.',
+  },
+  {
+    id: 'ai3',
+    headline: 'Alex Johnson likely to spend $200+ tonight',
+    sub: 'Based on party size, history, and tonight’s booking.',
+  },
+  {
+    id: 'ai4',
+    headline: 'Revenue opportunity: upsell wine on 4 tables',
+    sub: 'Guests with high predicted spend seated before 8 PM.',
+  },
+  {
+    id: 'ai5',
+    headline: '1 guest hasn’t returned in 30+ days',
+    sub: 'Maya Ortiz — send win-back message with soft offer.',
+  },
+];
+
+export const CRM_SPOTLIGHT: CrmGuest[] = [
+  {
+    id: 'c1',
+    name: 'Alex Johnson',
+    isVIP: true,
+    totalVisits: 12,
+    avgSpend: 186,
+    lastVisitDate: '2026-04-12',
+    churnRisk: 4,
+    visitFrequency: 2,
+    frequency: '2× / month',
+    preference: 'Booth, sparkling',
+    preferencesShort: 'Booth • Sparkling • No dairy',
+    aiLine: 'Usually orders wine · Prefers window seating',
+    nextBestAction: 'Offer wine pairing · Seat near window',
+    predictedSpendTonight: 215,
+    ltvScore: 94,
+    predictedLifetimeValue: 8200,
+    hasUpcomingReservation: true,
+    upcomingReservationTime: '7:00 PM',
+    isSeated: false,
+    visitHistory: [
+      { date: 'Apr 12', spend: 198 },
+      { date: 'Mar 14', spend: 172 },
+      { date: 'Feb 1', spend: 205 },
+    ],
+    favoriteDishes: ['Tagliatelle', 'Branzino', 'Tiramisu'],
+    preferredTable: 'Window · T4',
+    notes: 'Anniversary preference — champagne on arrival.',
+    noShowNote: 'No late cancellations in 12 visits.',
+    aiSuggestions: ['Offer wine pairing', 'Seat near window', 'Send dessert promo on next visit'],
+  },
+  {
+    id: 'c2',
+    name: 'Priya N.',
+    isVIP: true,
+    totalVisits: 9,
+    avgSpend: 112,
+    lastVisitDate: '2026-04-10',
+    churnRisk: 9,
+    visitFrequency: 1,
+    frequency: 'Monthly',
+    preference: 'Vegetarian',
+    preferencesShort: 'Vegetarian • Low spice • Gin cocktails',
+    aiLine: 'Books bar high-tops · Late 1× recently',
+    nextBestAction: 'Chef’s veg tasting · Quiet corner',
+    predictedSpendTonight: 124,
+    ltvScore: 81,
+    predictedLifetimeValue: 4100,
+    hasUpcomingReservation: false,
+    isSeated: true,
+    seatedLabel: 'Table T8',
+    visitHistory: [
+      { date: 'Apr 10', spend: 108 },
+      { date: 'Mar 4', spend: 96 },
+    ],
+    favoriteDishes: ['Risotto', 'Seasonal salad'],
+    preferredTable: 'Bar · high-top',
+    notes: 'Allergic to shellfish — kitchen flagged.',
+    noShowNote: 'One late arrival last month.',
+    aiSuggestions: ['Offer chef’s veg tasting', 'Reserve quiet corner'],
+  },
+  {
+    id: 'c3',
+    name: 'David Kim',
+    isVIP: false,
+    totalVisits: 1,
+    avgSpend: 72,
+    lastVisitDate: '2026-04-17',
+    churnRisk: 72,
+    visitFrequency: 0.5,
+    frequency: 'New',
+    preference: '—',
+    preferencesShort: 'Exploring menu · No prefs yet',
+    aiLine: '72% no-show risk without card hold',
+    nextBestAction: 'Require card to hold · SMS confirm',
+    predictedSpendTonight: 85,
+    ltvScore: 22,
+    predictedLifetimeValue: 890,
+    hasUpcomingReservation: false,
+    isSeated: false,
+    visitHistory: [{ date: 'First', spend: 0 }],
+    favoriteDishes: ['—'],
+    preferredTable: 'Any',
+    notes: 'First booking — confirm by SMS.',
+    noShowNote: 'Two late cancellations at other venues (synced).',
+    aiSuggestions: ['Require card to hold', 'Offer 5:30 soft promo'],
+  },
+  {
+    id: 'c4',
+    name: 'Jordan Lee',
+    isVIP: false,
+    totalVisits: 3,
+    avgSpend: 156,
+    lastVisitDate: '2026-04-02',
+    churnRisk: 18,
+    visitFrequency: 0.8,
+    frequency: 'Occasional',
+    preference: 'Window, red wine',
+    preferencesShort: 'Window • Red wine · Gluten-aware',
+    aiLine: 'High check on short history — nurture',
+    nextBestAction: 'Upsell wine flight · Private dining offer',
+    predictedSpendTonight: 168,
+    ltvScore: 68,
+    predictedLifetimeValue: 3200,
+    hasUpcomingReservation: true,
+    upcomingReservationTime: '8:15 PM',
+    isSeated: false,
+    visitHistory: [
+      { date: 'Apr 2', spend: 142 },
+      { date: 'Jan 20', spend: 168 },
+    ],
+    favoriteDishes: ['Steak frites', 'Burrata'],
+    preferredTable: 'Window',
+    notes: 'Corporate card on file.',
+    noShowNote: 'Always on time.',
+    aiSuggestions: ['Upsell wine flight', 'Offer private dining'],
+  },
+  {
+    id: 'c5',
+    name: 'Maya Ortiz',
+    isVIP: false,
+    totalVisits: 22,
+    avgSpend: 98,
+    lastVisitDate: '2026-03-01',
+    churnRisk: 6,
+    visitFrequency: 2,
+    frequency: '2× / month',
+    preference: 'Quiet, early seating',
+    preferencesShort: 'Quiet • Early · Sparkling water',
+    aiLine: 'Stable regular — churn risk low',
+    nextBestAction: 'Loyalty tier · Birthday dessert',
+    predictedSpendTonight: 95,
+    ltvScore: 76,
+    predictedLifetimeValue: 5600,
+    hasUpcomingReservation: false,
+    isSeated: false,
+    visitHistory: [
+      { date: 'Mar 1', spend: 94 },
+      { date: 'Feb 15', spend: 101 },
+    ],
+    favoriteDishes: ['Roast chicken', 'Chocolate torte'],
+    preferredTable: 'Back room · Q1',
+    notes: 'Prefers 6:00 PM slot.',
+    noShowNote: 'Never no-show.',
+    aiSuggestions: ['Loyalty tier upgrade', 'Birthday dessert'],
+  },
+  {
+    id: 'c6',
+    name: 'Nova Corp',
+    isVIP: true,
+    totalVisits: 8,
+    avgSpend: 620,
+    lastVisitDate: '2025-12-15',
+    churnRisk: 2,
+    visitFrequency: 0.33,
+    frequency: 'Quarterly',
+    preference: 'Private dining',
+    preferencesShort: 'Private room · Sparkling · Dietary roster',
+    aiLine: 'Large parties — pre-order recommended',
+    nextBestAction: 'Pre-sell wine package · Captain assigned',
+    predictedSpendTonight: 2400,
+    ltvScore: 99,
+    predictedLifetimeValue: 48000,
+    hasUpcomingReservation: true,
+    upcomingReservationTime: '6:30 PM',
+    isSeated: false,
+    visitHistory: [
+      { date: 'Dec 15', spend: 5800 },
+      { date: 'Sep 8', spend: 4200 },
+    ],
+    favoriteDishes: ['Chef’s tasting', 'Wine pairings'],
+    preferredTable: 'Private · P1',
+    notes: 'Contract billing — AR contact on file.',
+    noShowNote: 'Never cancelled.',
+    aiSuggestions: ['Pre-sell wine package', 'Assign dedicated captain'],
+  },
 ];
 
 export const AI_OPPORTUNITIES = [
@@ -255,14 +503,19 @@ export interface KdsTicket {
   table: string;
   items: string;
   status: 'fired' | 'in_progress' | 'ready';
+  /** Minutes on station / ticket age */
   mins: number;
+  /** Explicit SLA breach (optional; UI may also infer from mins) */
+  delayed?: boolean;
 }
 
 export const KDS_TICKETS: KdsTicket[] = [
-  { id: 'k1', station: 'Kitchen', table: 'T4', items: '2× Tagliatelle · 1× Branzino', status: 'in_progress', mins: 6 },
+  { id: 'k1', station: 'Kitchen', table: 'T4', items: '2× Tagliatelle · 1× Branzino', status: 'in_progress', mins: 14, delayed: true },
   { id: 'k2', station: 'Kitchen', table: 'T9', items: '1× Steak Frites · 1× Soup', status: 'fired', mins: 2 },
   { id: 'k3', station: 'Bar', table: 'T2', items: '3× Negroni · 1× Old Fashioned', status: 'ready', mins: 0 },
   { id: 'k4', station: 'Dessert', table: 'T1', items: '2× Tiramisu', status: 'in_progress', mins: 4 },
+  { id: 'k5', station: 'Kitchen', table: 'T12', items: '1× Risotto · 2× Chopped salad', status: 'in_progress', mins: 11 },
+  { id: 'k6', station: 'Bar', table: 'T7', items: '2× Martini · 1× Amaro', status: 'fired', mins: 1 },
 ];
 
 export interface StaffRosterMember {
@@ -320,6 +573,196 @@ export const EXPORT_OPTIONS: ExportOptionRow[] = [
   { id: 'x4', title: 'Guest CRM export', subtitle: 'VIP & tags · CSV' },
 ];
 
+/** Full promotion model — owner promotions console */
+export type PromoStatus = 'live' | 'scheduled' | 'paused' | 'expired' | 'draft';
+
+/** Why a promo appears in “Needs attention” (owner console). */
+export type PromoAttentionReason =
+  | 'low_engagement'
+  | 'no_redemptions_recent'
+  | 'overlapping_time'
+  | 'expired_still_listed'
+  | 'scheduled_zero_usage';
+export type PromoType =
+  | 'percent_off'
+  | 'fixed_discount'
+  | 'free_item'
+  | 'happy_hour'
+  | 'birthday'
+  | 'first_time_guest';
+
+export interface OwnerPromotion {
+  id: string;
+  name: string;
+  type: PromoType;
+  startDate: string;
+  endDate: string;
+  startTime: string;
+  endTime: string;
+  /** 0=Mon … 6=Sun */
+  daysOfWeek: number[];
+  appliesTo: {
+    dineIn: boolean;
+    takeout: boolean;
+    bar: boolean;
+    patio: boolean;
+    menuItems: boolean;
+    guestGroups: boolean;
+  };
+  autoApply: boolean;
+  description: string;
+  status: PromoStatus;
+  targetAudience: string;
+  whereApplies: string;
+  analytics: {
+    redemptions: number;
+    guestsReached: number;
+    revenueGenerated: number;
+  };
+  estimatedLiftPct: number;
+  /** Featured strip hints (computed in UI; optional seed) */
+  startsTonight?: boolean;
+  needsAttention?: boolean;
+  /** Primary attention reason (optional; UI may still derive) */
+  attentionReason?: PromoAttentionReason;
+}
+
+export const OWNER_PROMOTIONS: OwnerPromotion[] = [
+  {
+    id: 'p1',
+    name: '10% off early seating',
+    type: 'percent_off',
+    startDate: '2026-01-01',
+    endDate: '2026-12-31',
+    startTime: '5:00 PM',
+    endTime: '5:45 PM',
+    daysOfWeek: [0, 1, 2, 3, 4, 5, 6],
+    appliesTo: {
+      dineIn: true,
+      takeout: false,
+      bar: false,
+      patio: true,
+      menuItems: false,
+      guestGroups: false,
+    },
+    autoApply: false,
+    description: 'Drive covers in the dead hour before peak.',
+    status: 'live',
+    targetAudience: 'All guests · in-app',
+    whereApplies: 'Dine-in · patio · 5:00–5:45 PM',
+    analytics: { redemptions: 428, guestsReached: 1204, revenueGenerated: 3820 },
+    estimatedLiftPct: 12,
+  },
+  {
+    id: 'p2',
+    name: 'Birthday dessert comp',
+    type: 'birthday',
+    startDate: '2026-04-01',
+    endDate: '2026-12-31',
+    startTime: '12:00 PM',
+    endTime: '10:00 PM',
+    daysOfWeek: [0, 1, 2, 3, 4, 5, 6],
+    appliesTo: {
+      dineIn: true,
+      takeout: true,
+      bar: false,
+      patio: false,
+      menuItems: true,
+      guestGroups: true,
+    },
+    autoApply: true,
+    description: 'Auto-apply for CRM birthday tags.',
+    status: 'scheduled',
+    targetAudience: 'Tagged birthdays',
+    whereApplies: 'Dine-in & takeout',
+    analytics: { redemptions: 0, guestsReached: 0, revenueGenerated: 0 },
+    estimatedLiftPct: 8,
+    startsTonight: true,
+    attentionReason: 'scheduled_zero_usage',
+  },
+  {
+    id: 'p3',
+    name: 'Bar high-top happy hour',
+    type: 'happy_hour',
+    startDate: '2026-03-01',
+    endDate: '2026-12-31',
+    startTime: '4:00 PM',
+    endTime: '6:00 PM',
+    daysOfWeek: [3, 4, 5, 6],
+    appliesTo: {
+      dineIn: false,
+      takeout: false,
+      bar: true,
+      patio: false,
+      menuItems: true,
+      guestGroups: false,
+    },
+    autoApply: false,
+    description: 'Thu–Sun bar & high-tops.',
+    status: 'paused',
+    targetAudience: 'Walk-in bar guests',
+    whereApplies: 'Bar only',
+    analytics: { redemptions: 28, guestsReached: 2102, revenueGenerated: 420 },
+    estimatedLiftPct: 18,
+    needsAttention: true,
+    attentionReason: 'low_engagement',
+  },
+  {
+    id: 'p4',
+    name: 'Winter prefix menu',
+    type: 'fixed_discount',
+    startDate: '2025-11-01',
+    endDate: '2026-02-28',
+    startTime: '5:00 PM',
+    endTime: '10:00 PM',
+    daysOfWeek: [0, 1, 2, 3, 4, 5, 6],
+    appliesTo: {
+      dineIn: true,
+      takeout: false,
+      bar: false,
+      patio: false,
+      menuItems: true,
+      guestGroups: false,
+    },
+    autoApply: false,
+    description: 'Ended with winter menu rotation.',
+    status: 'expired',
+    targetAudience: 'Dine-in',
+    whereApplies: 'Main dining',
+    analytics: { redemptions: 2104, guestsReached: 5600, revenueGenerated: 89400 },
+    estimatedLiftPct: 0,
+    attentionReason: 'expired_still_listed',
+  },
+  {
+    id: 'p5',
+    name: 'First visit welcome drink',
+    type: 'first_time_guest',
+    startDate: '2026-05-01',
+    endDate: '2026-08-31',
+    startTime: '4:00 PM',
+    endTime: '11:00 PM',
+    daysOfWeek: [4, 5, 6],
+    appliesTo: {
+      dineIn: true,
+      takeout: false,
+      bar: true,
+      patio: true,
+      menuItems: false,
+      guestGroups: true,
+    },
+    autoApply: true,
+    description: 'Draft — review copy and CRM rule.',
+    status: 'draft',
+    targetAudience: 'First-time guests',
+    whereApplies: 'Bar + patio + dining',
+    analytics: { redemptions: 0, guestsReached: 0, revenueGenerated: 0 },
+    estimatedLiftPct: 15,
+    needsAttention: true,
+    attentionReason: 'overlapping_time',
+  },
+];
+
+/** @deprecated Compact row for legacy screens — derived from OWNER_PROMOTIONS */
 export interface OwnerPromoRow {
   id: string;
   title: string;
@@ -327,8 +770,9 @@ export interface OwnerPromoRow {
   active: boolean;
 }
 
-export const OWNER_PROMO_ROWS: OwnerPromoRow[] = [
-  { id: 'p1', title: '10% off early seating', subtitle: '5:00–5:45 PM · in-app only', active: true },
-  { id: 'p2', title: 'Birthday dessert comp', subtitle: 'Auto-apply for tagged guests', active: true },
-  { id: 'p3', title: 'Bar high-top happy hour', subtitle: 'Thu–Sun · 4–6 PM', active: false },
-];
+export const OWNER_PROMO_ROWS: OwnerPromoRow[] = OWNER_PROMOTIONS.map((p) => ({
+  id: p.id,
+  title: p.name,
+  subtitle: p.whereApplies,
+  active: p.status === 'live',
+}));

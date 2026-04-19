@@ -7,7 +7,7 @@ import { OwnerSectionLabel } from '@/components/owner/OwnerSectionLabel';
 import {
   KDS_TICKETS,
   OWNER_EVENTS,
-  OWNER_PROMO_ROWS,
+  OWNER_PROMOTIONS,
   STAFF_ROSTER,
   WAITLIST_ENTRIES,
 } from '@/lib/mock/ownerApp';
@@ -59,7 +59,7 @@ export default function OwnerMoreScreen() {
   const waitlistCount = WAITLIST_ENTRIES.length;
   const openOrdersCount = KDS_TICKETS.filter((t) => t.status !== 'ready').length;
   const onShiftCount = STAFF_ROSTER.filter((s) => s.onClock).length;
-  const activePromotions = OWNER_PROMO_ROWS.filter((p) => p.active).length;
+  const activePromotions = OWNER_PROMOTIONS.filter((p) => p.status === 'live').length;
   const upcomingEvents = OWNER_EVENTS.filter((e) => e.status !== 'draft').length;
 
   const tonight: CommandItem[] = [
