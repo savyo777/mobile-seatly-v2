@@ -18,7 +18,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { StatusBar } from 'expo-status-bar';
 import { Button } from '@/components/ui';
 import { borderRadius, colors, spacing, typography } from '@/lib/theme';
-import { createSnapPost, getSnapRestaurantName } from '@/lib/mock/snaps';
+import { createSnapPost, getSnapRestaurantName, TAG_POOL } from '@/lib/mock/snaps';
 import { mockCustomer } from '@/lib/mock/users';
 
 const { width: SCREEN_W } = Dimensions.get('window');
@@ -31,6 +31,21 @@ export default function SnapCaptionScreen() {
   const { photoUri, restaurantId } = useLocalSearchParams<{ photoUri: string; restaurantId?: string }>();
   const [caption, setCaption] = useState('');
   const [rating, setRating] = useState<1 | 2 | 3 | 4 | 5>(5);
+  const [dish, setDish] = useState('');
+  const [tags, setTags] = useState<string[]>([]);
+  const [tagInput, setTagInput] = useState('');
+
+  const toggleTag = (tag: string) => {
+    setTags((prev) => (prev.includes(tag) ? prev.filter((t) => t !== tag) : [...prev, tag]));
+  };
+
+  const addCustomTag = () => {
+    const raw = tagInput.trim().toLowerCase();
+    if (!raw) return;
+    const normalized = raw.startsWith('#') ? raw : `#${raw}`;
+    if (!tags.includes(normalized)) setTags([...tags, normalized]);
+    setTagInput('');
+  };
 
   const decodedUri = photoUri
     ? (() => {
@@ -51,11 +66,13 @@ export default function SnapCaptionScreen() {
       image: decodedUri,
       caption: caption.trim(),
       rating,
+      tags,
+      dish: dish.trim() || undefined,
     });
     router.replace(
       `/(customer)/discover/post-review/reward?points=25&restaurantName=${encodeURIComponent(
         restaurantName,
-      )}&restaurantId=${restaurantId}`,
+      )}&restaurantId=${restaurantId}&photoUri=${encodeURIComponent(decodedUri)}&rating=${rating}`,
     );
   };
 
@@ -150,6 +167,74 @@ export default function SnapCaptionScreen() {
               maxLength={220}
             />
             <Text style={styles.counter}>{caption.length}/220</Text>
+          </View>
+
+          {/* Dish name */}
+          <View style={styles.fieldSection}>
+            <Text style={styles.fieldLabel}>Dish name (optional)</Text>
+            <TextInput
+              value={dish}
+              onChangeText={setDish}
+              placeholder="e.g. Tonkotsu ramen"
+              placeholderTextColor={colors.textMuted}
+              style={styles.lineInput}
+              maxLength={60}
+            />
+          </View>
+
+          {/* Tags */}
+          <View style={styles.fieldSection}>
+            <Text style={styles.fieldLabel}>Tags</Text>
+            <View style={styles.tagPoolRow}>
+              {TAG_POOL.map((tag) => {
+                const on = tags.includes(tag);
+                return (
+                  <Pressable
+                    key={tag}
+                    onPress={() => toggleTag(tag)}
+                    style={[styles.tagChip, on && styles.tagChipOn]}
+                  >
+                    <Text style={[styles.tagChipText, on && styles.tagChipTextOn]}>{tag}</Text>
+                  </Pressable>
+                );
+              })}
+            </View>
+            <View style={styles.customTagRow}>
+              <TextInput
+                value={tagInput}
+                onChangeText={setTagInput}
+                placeholder="Add your own tag"
+                placeholderTextColor={colors.textMuted}
+                style={styles.lineInput}
+                onSubmitEditing={addCustomTag}
+                autoCapitalize="none"
+                maxLength={24}
+              />
+              <Pressable
+                onPress={addCustomTag}
+                disabled={!tagInput.trim()}
+                style={({ pressed }) => [
+                  styles.addBtn,
+                  (!tagInput.trim() || pressed) && { opacity: 0.5 },
+                ]}
+              >
+                <Ionicons name="add" size={20} color={colors.bgBase} />
+              </Pressable>
+            </View>
+            {tags.length > 0 ? (
+              <View style={styles.selectedRow}>
+                {tags.map((t) => (
+                  <Pressable
+                    key={t}
+                    onPress={() => toggleTag(t)}
+                    style={styles.selectedChip}
+                  >
+                    <Text style={styles.selectedChipText}>{t}</Text>
+                    <Ionicons name="close" size={13} color={colors.bgBase} />
+                  </Pressable>
+                ))}
+              </View>
+            ) : null}
           </View>
         </ScrollView>
 
@@ -299,6 +384,84 @@ const styles = StyleSheet.create({
     color: colors.textMuted,
     textAlign: 'right',
     marginTop: spacing.sm,
+  },
+  fieldSection: {
+    marginHorizontal: H_PAD,
+    marginTop: spacing.lg,
+    gap: spacing.sm,
+  },
+  fieldLabel: {
+    ...typography.label,
+    color: colors.textMuted,
+  },
+  lineInput: {
+    flex: 1,
+    ...typography.body,
+    color: colors.textPrimary,
+    borderWidth: 1,
+    borderColor: colors.border,
+    borderRadius: borderRadius.md,
+    paddingHorizontal: spacing.sm,
+    paddingVertical: 9,
+    backgroundColor: 'rgba(255,255,255,0.035)',
+  },
+  tagPoolRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 6,
+  },
+  tagChip: {
+    paddingHorizontal: spacing.sm,
+    paddingVertical: 6,
+    borderRadius: borderRadius.full,
+    borderWidth: 1,
+    borderColor: colors.border,
+    backgroundColor: colors.bgSurface,
+  },
+  tagChipOn: {
+    borderColor: colors.gold,
+    backgroundColor: 'rgba(201,168,76,0.14)',
+  },
+  tagChipText: {
+    ...typography.bodySmall,
+    color: colors.textMuted,
+    fontWeight: '600',
+  },
+  tagChipTextOn: {
+    color: colors.gold,
+  },
+  customTagRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+  },
+  addBtn: {
+    width: 40,
+    height: 40,
+    borderRadius: borderRadius.full,
+    backgroundColor: colors.gold,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  selectedRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 6,
+    marginTop: spacing.xs,
+  },
+  selectedChip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    paddingHorizontal: spacing.sm,
+    paddingVertical: 5,
+    borderRadius: borderRadius.full,
+    backgroundColor: colors.gold,
+  },
+  selectedChipText: {
+    ...typography.bodySmall,
+    color: colors.bgBase,
+    fontWeight: '700',
   },
   footer: {
     borderTopWidth: StyleSheet.hairlineWidth,

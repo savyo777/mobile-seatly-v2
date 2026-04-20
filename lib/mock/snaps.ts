@@ -15,7 +15,37 @@ export type SnapPost = {
   caption: string;
   rating?: 1 | 2 | 3 | 4 | 5;
   timestamp: string;
+  likes: number;
+  saves: number;
+  tags: string[];
+  dish?: string;
 };
+
+export const TAG_POOL = [
+  '#ramen',
+  '#brunch',
+  '#sushi',
+  '#datenight',
+  '#cocktails',
+  '#patio',
+  '#cheapeats',
+  '#vegan',
+  '#pasta',
+  '#dessert',
+] as const;
+
+const dishPool = [
+  'Tonkotsu ramen',
+  'Avocado toast',
+  'Spicy tuna roll',
+  'Carbonara',
+  'Negroni',
+  'Espresso martini',
+  'Truffle fries',
+  'Burrata',
+  'Lamb tagine',
+  'Tiramisu',
+];
 
 export const snapUsers: SnapUser[] = [
   { id: mockCustomer.id, username: 'alexj', avatarUrl: mockCustomer.avatarUrl ?? '' },
@@ -62,6 +92,15 @@ const hourOffsets = [
   210, 240, 280, 320,
 ];
 
+function pickTags(index: number): string[] {
+  const count = (index % 3) + 2; // 2-4 tags
+  const tags = new Set<string>();
+  for (let i = 0; i < count; i++) {
+    tags.add(TAG_POOL[(index + i * 3) % TAG_POOL.length]);
+  }
+  return [...tags];
+}
+
 const initialMockPosts: SnapPost[] = hourOffsets.map((offset, index) => {
   const user = snapUsers[index % snapUsers.length];
   const restaurant = snapRestaurants[index % snapRestaurants.length];
@@ -76,6 +115,10 @@ const initialMockPosts: SnapPost[] = hourOffsets.map((offset, index) => {
     caption,
     rating: ((index % 5) + 1) as 1 | 2 | 3 | 4 | 5,
     timestamp,
+    likes: Math.floor(Math.random() * 80) + 2,
+    saves: Math.floor(Math.random() * 20),
+    tags: pickTags(index),
+    dish: dishPool[index % dishPool.length],
   };
 });
 
@@ -94,14 +137,47 @@ export function listSnapPostsByRestaurant(restaurantId: string): SnapPost[] {
   return listSnapPosts().filter((post) => post.restaurant_id === restaurantId);
 }
 
-export function createSnapPost(input: Omit<SnapPost, 'id' | 'timestamp'>): SnapPost {
+export function createSnapPost(
+  input: Omit<SnapPost, 'id' | 'timestamp' | 'likes' | 'saves' | 'tags'> & { tags?: string[] },
+): SnapPost {
   const created: SnapPost = {
-    id: `snap-${snapIdCounter++}`,
+    likes: 0,
+    saves: 0,
     ...input,
+    id: `snap-${snapIdCounter++}`,
+    tags: input.tags ?? [],
     timestamp: new Date().toISOString(),
   };
   snapPosts = [created, ...snapPosts];
   return created;
+}
+
+/** Returns posts sorted by freshness, optionally filtered to restaurants within radiusKm of (lat, lng). */
+export function listFeedPosts(
+  userLat?: number,
+  userLng?: number,
+  radiusKm: number = 150,
+): SnapPost[] {
+  const { haversineMeters } = require('@/lib/map/geo') as typeof import('@/lib/map/geo');
+  const all = [...snapPosts].sort((a, b) => +new Date(b.timestamp) - +new Date(a.timestamp));
+  if (userLat == null || userLng == null) return all;
+
+  const { mockRestaurants } = require('@/lib/mock/restaurants') as typeof import('@/lib/mock/restaurants');
+  const restaurantById = new Map(mockRestaurants.map((r: { id: string; lat: number; lng: number }) => [r.id, r]));
+
+  const inRadius = all.filter((post) => {
+    const r = restaurantById.get(post.restaurant_id);
+    if (!r) return false;
+    const distM = haversineMeters(userLat, userLng, r.lat, r.lng);
+    return distM <= radiusKm * 1000;
+  });
+
+  return inRadius.length >= 8 ? inRadius : all;
+}
+
+export function getRestaurantForPost(restaurantId: string) {
+  const { mockRestaurants } = require('@/lib/mock/restaurants') as typeof import('@/lib/mock/restaurants');
+  return mockRestaurants.find((r: { id: string }) => r.id === restaurantId) ?? null;
 }
 
 export function getSnapUser(userId: string): SnapUser | undefined {

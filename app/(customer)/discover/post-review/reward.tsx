@@ -1,21 +1,26 @@
 import React, { useEffect, useRef } from 'react';
-import { Animated, StyleSheet, Text, View } from 'react-native';
+import { Animated, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Button, ScreenWrapper } from '@/components/ui';
+import { SnapShareSheet } from '@/components/snaps/SnapShareSheet';
 import { borderRadius, colors, spacing, typography } from '@/lib/theme';
 
 export default function ReviewRewardScreen() {
   const router = useRouter();
-  const { points, restaurantName, restaurantId } = useLocalSearchParams<{
+  const { points, restaurantName, restaurantId, photoUri, rating } = useLocalSearchParams<{
     points: string;
     restaurantName: string;
     restaurantId?: string;
+    photoUri?: string;
+    rating?: string;
   }>();
   const pulse = useRef(new Animated.Value(0.9)).current;
   const actionFade = useRef(new Animated.Value(0)).current;
 
   const numericPoints = Number(points ?? 25);
+  const numericRating = rating ? (Number(rating) as 1 | 2 | 3 | 4 | 5) : undefined;
   const decodedName = restaurantName ? decodeURIComponent(restaurantName) : 'Restaurant';
+  const decodedPhoto = photoUri ? decodeURIComponent(photoUri) : '';
 
   useEffect(() => {
     Animated.parallel([
@@ -36,38 +41,60 @@ export default function ReviewRewardScreen() {
 
   return (
     <ScreenWrapper scrollable={false}>
-      <View style={styles.container}>
-        <Animated.View style={[styles.badge, { transform: [{ scale: pulse }] }]}>
-          <Text style={styles.badgeText}>+{numericPoints}</Text>
-        </Animated.View>
-        <Text style={styles.title}>+{numericPoints} points earned</Text>
-        <Text style={styles.subtitle}>Your snap at {decodedName} is now live on your profile and restaurant page.</Text>
+      <ScrollView
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={styles.scroll}
+      >
+        <View style={styles.badgeWrap}>
+          <Animated.View style={[styles.badge, { transform: [{ scale: pulse }] }]}>
+            <Text style={styles.badgeText}>+{numericPoints}</Text>
+          </Animated.View>
+          <Text style={styles.title}>+{numericPoints} points earned</Text>
+          <Text style={styles.subtitle}>
+            Your snap at {decodedName} is now live on the restaurant page.
+          </Text>
+        </View>
+
         <Animated.View style={[styles.actions, { opacity: actionFade }]}>
+          {decodedPhoto ? (
+            <SnapShareSheet
+              imageUrl={decodedPhoto}
+              restaurantName={decodedName}
+              rating={numericRating}
+            />
+          ) : null}
+
           <Button
             title="Go to Restaurant"
             onPress={() =>
-              restaurantId ? router.replace(`/(customer)/discover/${restaurantId}`) : router.replace('/(customer)/discover')
+              restaurantId
+                ? router.replace(`/(customer)/discover/${restaurantId}`)
+                : router.replace('/(customer)/discover')
             }
           />
-          <Button title="Go to Dashboard" onPress={() => router.replace('/(customer)/discover')} variant="outlined" />
           <Button
             title="View My Snaps"
             onPress={() => router.push('/(customer)/profile')}
             variant="outlined"
           />
         </Animated.View>
-      </View>
+      </ScrollView>
     </ScreenWrapper>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
+  scroll: {
+    flexGrow: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    gap: spacing.lg,
+    gap: spacing.xl,
     paddingHorizontal: spacing.lg,
+    paddingVertical: spacing['3xl'],
+  },
+  badgeWrap: {
+    alignItems: 'center',
+    gap: spacing.lg,
   },
   badge: {
     width: 112,
@@ -99,6 +126,5 @@ const styles = StyleSheet.create({
   actions: {
     width: '100%',
     gap: spacing.md,
-    marginTop: spacing.lg,
   },
 });

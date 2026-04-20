@@ -1,320 +1,328 @@
-import React, { useMemo } from 'react';
-import { View, Text, StyleSheet, Pressable, Image } from 'react-native';
+import React from 'react';
+import { View, Text, Image, Pressable, StyleSheet, ScrollView } from 'react-native';
+import { useRouter, Href } from 'expo-router';
 import { useTranslation } from 'react-i18next';
-import { ScreenWrapper, Button } from '@/components/ui';
-import { profileDisplayUser } from '@/lib/mock/profileDisplayUser';
-import { ProfileQuickActions } from '@/components/profile/ProfileQuickActions';
-import { colors, spacing, typography, borderRadius } from '@/lib/theme';
-import { useRouter, type Href } from 'expo-router';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
-import { ChevronGlyph } from '@/components/ui/ChevronGlyph';
+import { profileDisplayUser } from '@/lib/mock/profileDisplayUser';
+import { mockCustomer } from '@/lib/mock/users';
+import { mockReservations } from '@/lib/mock/reservations';
+import { listSnapPostsByUser } from '@/lib/mock/snaps';
+import { listCollections } from '@/lib/mock/collections';
+import { colors, spacing, borderRadius, typography } from '@/lib/theme';
 
-type SettingsRowDef = {
+const ME = mockCustomer.id;
+const GUEST_ID = 'g1';
+
+function getUpcomingCount() {
+  const active = ['pending', 'confirmed', 'seated'];
+  return mockReservations.filter(
+    (r) => r.guestId === GUEST_ID && active.includes(r.status),
+  ).length;
+}
+
+type RowDef = {
   icon: keyof typeof Ionicons.glyphMap;
-  titleKey: keyof typeof import('@/lib/i18n/locales/en').default.profile;
-  subtitleKey?: keyof typeof import('@/lib/i18n/locales/en').default.profile;
+  label: string;
+  sub?: string;
   href: Href;
+  badge?: string;
 };
 
 export default function ProfileScreen() {
   const { t } = useTranslation();
   const router = useRouter();
+  const insets = useSafeAreaInsets();
   const user = profileDisplayUser;
+  const upcomingCount = getUpcomingCount();
+  const postCount = listSnapPostsByUser(ME).length;
+  const collectionsCount = listCollections(ME).length;
 
-  const accountRows: SettingsRowDef[] = useMemo(
-    () => [
-      {
-        icon: 'person-outline',
-        titleKey: 'personalInfo',
-        subtitleKey: 'personalInfoSub',
-        href: '/(customer)/profile/personal-info',
-      },
-      {
-        icon: 'card-outline',
-        titleKey: 'paymentMethods',
-        subtitleKey: 'paymentMethodsSub',
-        href: '/(customer)/profile/payment',
-      },
-      {
-        icon: 'notifications-outline',
-        titleKey: 'notifications',
-        subtitleKey: 'notificationsSub',
-        href: '/(customer)/profile/notifications',
-      },
-      {
-        icon: 'shield-checkmark-outline',
-        titleKey: 'privacySecurity',
-        href: '/(customer)/profile/privacy',
-      },
-    ],
-    [],
-  );
+  const activityRows: RowDef[] = [
+    {
+      icon: 'calendar-outline',
+      label: 'My Bookings',
+      sub: upcomingCount > 0 ? `${upcomingCount} upcoming` : 'No upcoming reservations',
+      href: '/(customer)/activity',
+      badge: upcomingCount > 0 ? String(upcomingCount) : undefined,
+    },
+    {
+      icon: 'receipt-outline',
+      label: 'Orders',
+      sub: 'Past orders & receipts',
+      href: '/(customer)/orders',
+    },
+    {
+      icon: 'star-outline',
+      label: 'Loyalty & Rewards',
+      sub: `${user.loyaltyPointsBalance?.toLocaleString() ?? 0} points · ${user.loyaltyTier ?? 'Member'}`,
+      href: '/(customer)/loyalty',
+    },
+    {
+      icon: 'bookmark-outline',
+      label: 'Saved Restaurants',
+      href: '/(customer)/profile/saved',
+    },
+    {
+      icon: 'albums-outline',
+      label: 'Collections',
+      sub: `${collectionsCount} list${collectionsCount !== 1 ? 's' : ''}`,
+      href: '/(customer)/profile/collections',
+    },
+    {
+      icon: 'images-outline',
+      label: 'My Food Posts',
+      sub: `${postCount} post${postCount !== 1 ? 's' : ''}`,
+      href: '/(customer)/profile/my-snaps',
+    },
+  ];
 
-  const generalRows: SettingsRowDef[] = useMemo(
-    () => [
-      { icon: 'bookmark-outline', titleKey: 'savedRestaurants', href: '/(customer)/profile/saved' },
-      { icon: 'pricetag-outline', titleKey: 'promotions', href: '/(customer)/profile/promotions' },
-      { icon: 'people-outline', titleKey: 'inviteFriends', href: '/(customer)/profile/invite' },
-    ],
-    [],
-  );
-
-  const supportRows: SettingsRowDef[] = useMemo(
-    () => [
-      { icon: 'help-circle-outline', titleKey: 'help', href: '/(customer)/profile/help' },
-      { icon: 'information-circle-outline', titleKey: 'about', href: '/(customer)/profile/about' },
-    ],
-    [],
-  );
-
-  const handleLogout = () => {
-    router.replace('/(auth)/login' as Href);
-  };
+  const accountRows: RowDef[] = [
+    { icon: 'person-outline', label: 'Personal Info', href: '/(customer)/profile/personal-info' },
+    { icon: 'card-outline', label: 'Payment Methods', href: '/(customer)/profile/payment' },
+    { icon: 'notifications-outline', label: 'Notifications', href: '/(customer)/profile/notifications' },
+    { icon: 'shield-checkmark-outline', label: 'Privacy & Security', href: '/(customer)/profile/privacy' },
+    { icon: 'help-circle-outline', label: 'Help', href: '/(customer)/profile/help' },
+  ];
 
   return (
-    <ScreenWrapper scrollable padded>
-      <View style={styles.page}>
-        <View style={styles.header}>
+    <ScrollView
+      style={styles.container}
+      contentContainerStyle={[styles.content, { paddingTop: insets.top + spacing.md, paddingBottom: insets.bottom + 100 }]}
+      showsVerticalScrollIndicator={false}
+    >
+      {/* Header */}
+      <View style={styles.header}>
+        <View style={styles.avatarWrap}>
           {user.avatarUrl ? (
             <Image source={{ uri: user.avatarUrl }} style={styles.avatar} />
           ) : (
-            <View style={[styles.avatar, styles.avatarPlaceholder]}>
+            <View style={[styles.avatar, styles.avatarFallback]}>
               <Ionicons name="person" size={32} color={colors.textMuted} />
             </View>
           )}
-          <View style={styles.headerText}>
-            <Text style={styles.name} numberOfLines={1}>
-              {user.fullName}
-            </Text>
-            <Text style={styles.email} numberOfLines={1}>
-              {user.email}
-            </Text>
-            <Pressable
-              onPress={() => router.push('/(customer)/profile/personal-info' as Href)}
-              hitSlop={8}
-              style={({ pressed }) => [styles.editLink, pressed && styles.editPressed]}
-              accessibilityRole="button"
-              accessibilityLabel={t('profile.editProfile')}
-            >
-              <Text style={styles.editLinkText}>{t('profile.editProfile')}</Text>
-            </Pressable>
-          </View>
+        </View>
+        <View style={styles.headerText}>
+          <Text style={styles.name}>{user.fullName}</Text>
+          <Text style={styles.email}>{user.email}</Text>
           <Pressable
-            onPress={() => router.push('/(customer)/discover/post-review/camera')}
-            style={({ pressed }) => [styles.snapPlusBtn, pressed && styles.snapPlusPressed]}
-            accessibilityRole="button"
-            accessibilityLabel="Create a snap"
+            onPress={() => router.push('/(customer)/profile/personal-info' as Href)}
+            hitSlop={8}
+            style={({ pressed }) => [{ opacity: pressed ? 0.6 : 1 }]}
           >
-            <Ionicons name="add" size={20} color={colors.goldLight} />
+            <Text style={styles.editLink}>Edit profile</Text>
           </Pressable>
         </View>
-
         <Pressable
-          onPress={() => router.push('/(customer)/profile/my-snaps' as Href)}
-          style={({ pressed }) => [styles.mySnapsNav, pressed && styles.mySnapsNavPressed]}
-          accessibilityRole="button"
-          accessibilityLabel={t('profile.mySnaps')}
+          onPress={() => router.push('/(customer)/profile/settings' as Href)}
+          hitSlop={10}
+          style={({ pressed }) => ({ opacity: pressed ? 0.6 : 1 })}
         >
-          <Text style={styles.mySnapsNavText}>{t('profile.mySnaps')}</Text>
-          <Ionicons name="chevron-forward" size={18} color={colors.goldLight} />
+          <Ionicons name="settings-outline" size={22} color={colors.textMuted} />
         </Pressable>
-
-        <ProfileQuickActions onNavigate={(href) => router.push(href)} />
-
-        <SectionHeader title={t('profile.sectionAccount')} />
-        <View style={styles.group}>
-          {accountRows.map((row, i) => renderRow(row, i, accountRows.length, t, router))}
-        </View>
-
-        <SectionHeader title={t('profile.sectionGeneral')} />
-        <View style={styles.group}>
-          {generalRows.map((row, i) => renderRow(row, i, generalRows.length, t, router))}
-        </View>
-
-        <SectionHeader title={t('profile.sectionSupport')} />
-        <View style={styles.group}>
-          {supportRows.map((row, i) => renderRow(row, i, supportRows.length, t, router))}
-        </View>
-
-        <View style={styles.logoutWrap}>
-          <Button
-            title={t('common.logout')}
-            onPress={handleLogout}
-            variant="dangerSoft"
-            size="sm"
-            fullWidth
-          />
-        </View>
       </View>
-    </ScreenWrapper>
+
+      {/* Quick stat pills */}
+      <View style={styles.statsRow}>
+        <StatPill
+          icon="calendar"
+          value={upcomingCount}
+          label="Upcoming"
+          onPress={() => router.push('/(customer)/activity' as Href)}
+        />
+        <StatPill
+          icon="star"
+          value={user.loyaltyPointsBalance ?? 0}
+          label="Points"
+          onPress={() => router.push('/(customer)/loyalty' as Href)}
+        />
+        <StatPill
+          icon="images"
+          value={postCount}
+          label="Posts"
+          onPress={() => router.push('/(customer)/profile/my-snaps' as Href)}
+        />
+      </View>
+
+      {/* Activity section */}
+      <Text style={styles.sectionLabel}>Activity</Text>
+      <View style={styles.group}>
+        {activityRows.map((row, i) => (
+          <Row key={row.label} row={row} isLast={i === activityRows.length - 1} router={router} />
+        ))}
+      </View>
+
+      {/* Account section */}
+      <Text style={styles.sectionLabel}>Account</Text>
+      <View style={styles.group}>
+        {accountRows.map((row, i) => (
+          <Row key={row.label} row={row} isLast={i === accountRows.length - 1} router={router} />
+        ))}
+      </View>
+
+      {/* Logout */}
+      <Pressable
+        onPress={() => router.replace('/(auth)/login' as Href)}
+        style={({ pressed }) => [styles.logoutBtn, pressed && { opacity: 0.7 }]}
+      >
+        <Text style={styles.logoutText}>{t('common.logout')}</Text>
+      </Pressable>
+    </ScrollView>
   );
 }
 
-function SectionHeader({ title }: { title: string }) {
-  return <Text style={styles.sectionHeader}>{title}</Text>;
-}
-
-function renderRow(
-  row: SettingsRowDef,
-  index: number,
-  total: number,
-  t: (key: string) => string,
-  router: ReturnType<typeof useRouter>,
-) {
-  const isLast = index === total - 1;
+function StatPill({
+  icon,
+  value,
+  label,
+  onPress,
+}: {
+  icon: keyof typeof Ionicons.glyphMap;
+  value: number;
+  label: string;
+  onPress: () => void;
+}) {
   return (
     <Pressable
-      key={`${String(row.titleKey)}-${index}`}
+      onPress={onPress}
+      style={({ pressed }) => [styles.statPill, pressed && { opacity: 0.75 }]}
+    >
+      <Ionicons name={icon} size={18} color={colors.gold} />
+      <Text style={styles.statValue}>{value.toLocaleString()}</Text>
+      <Text style={styles.statLabel}>{label}</Text>
+    </Pressable>
+  );
+}
+
+function Row({
+  row,
+  isLast,
+  router,
+}: {
+  row: RowDef;
+  isLast: boolean;
+  router: ReturnType<typeof useRouter>;
+}) {
+  return (
+    <Pressable
       onPress={() => router.push(row.href)}
       style={({ pressed }) => [styles.row, !isLast && styles.rowBorder, pressed && styles.rowPressed]}
-      accessibilityRole="button"
     >
-      <Ionicons name={row.icon} size={22} color={colors.gold} style={styles.rowIcon} />
-      <View style={styles.rowText}>
-        <Text style={styles.rowTitle}>{t(`profile.${row.titleKey}`)}</Text>
-        {row.subtitleKey ? <Text style={styles.rowSub}>{t(`profile.${row.subtitleKey}`)}</Text> : null}
+      <View style={styles.rowIconWrap}>
+        <Ionicons name={row.icon} size={20} color={colors.gold} />
       </View>
-      <ChevronGlyph color={colors.textMuted} size={18} />
+      <View style={styles.rowText}>
+        <Text style={styles.rowLabel}>{row.label}</Text>
+        {row.sub ? <Text style={styles.rowSub}>{row.sub}</Text> : null}
+      </View>
+      {row.badge ? (
+        <View style={styles.badge}>
+          <Text style={styles.badgeText}>{row.badge}</Text>
+        </View>
+      ) : null}
+      <Ionicons name="chevron-forward" size={16} color={colors.textMuted} />
     </Pressable>
   );
 }
 
 const styles = StyleSheet.create({
-  page: {
-    paddingBottom: spacing['3xl'],
-  },
+  container: { flex: 1, backgroundColor: colors.bgBase },
+  content: { paddingHorizontal: spacing.lg },
+
+  // Header
   header: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: spacing.md,
-    marginBottom: spacing.md,
-    paddingTop: spacing.xs,
+    marginBottom: spacing.xl,
   },
-  mySnapsNav: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    width: '100%',
-    paddingVertical: 14,
-    paddingHorizontal: spacing.md,
-    marginBottom: spacing.lg,
-    borderRadius: borderRadius.lg,
-    backgroundColor: 'rgba(255,255,255,0.06)',
-  },
-  mySnapsNavPressed: {
-    backgroundColor: 'rgba(255,255,255,0.09)',
-  },
-  mySnapsNavText: {
-    ...typography.body,
-    fontSize: 16,
-    fontWeight: '600',
-    color: colors.goldLight,
-  },
-  snapPlusBtn: {
-    width: 38,
-    height: 38,
-    borderRadius: borderRadius.full,
-    borderWidth: 1,
-    borderColor: 'rgba(201, 168, 76, 0.8)',
-    backgroundColor: 'rgba(201, 168, 76, 0.14)',
-    alignItems: 'center',
-    justifyContent: 'center',
-    alignSelf: 'flex-start',
-    marginTop: spacing.sm,
-  },
-  snapPlusPressed: {
-    opacity: 0.78,
+  avatarWrap: {
+    borderWidth: 2,
+    borderColor: colors.gold,
+    borderRadius: 36,
+    padding: 2,
   },
   avatar: {
-    width: 72,
-    height: 72,
-    borderRadius: 36,
+    width: 64,
+    height: 64,
+    borderRadius: 32,
     backgroundColor: colors.bgElevated,
   },
-  avatarPlaceholder: {
+  avatarFallback: {
     alignItems: 'center',
     justifyContent: 'center',
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: colors.border,
   },
-  headerText: {
+  headerText: { flex: 1 },
+  name: { fontSize: 18, fontWeight: '700', color: colors.textPrimary },
+  email: { ...typography.bodySmall, color: colors.textMuted, marginTop: 2 },
+  editLink: { ...typography.bodySmall, color: colors.gold, fontWeight: '600', marginTop: spacing.xs },
+
+  // Stats
+  statsRow: {
+    flexDirection: 'row',
+    gap: spacing.sm,
+    marginBottom: spacing.xl,
+  },
+  statPill: {
     flex: 1,
-    minWidth: 0,
-    justifyContent: 'center',
+    backgroundColor: colors.bgSurface,
+    borderRadius: borderRadius.md,
+    paddingVertical: spacing.md,
+    alignItems: 'center',
+    gap: 4,
   },
-  name: {
-    fontSize: 22,
-    fontWeight: '700',
-    color: colors.textPrimary,
-    letterSpacing: -0.3,
-  },
-  email: {
-    ...typography.bodySmall,
-    fontSize: 14,
-    color: colors.textSecondary,
-    marginTop: 4,
-  },
-  editLink: {
-    alignSelf: 'flex-start',
-    marginTop: spacing.sm,
-    paddingVertical: 2,
-  },
-  editPressed: {
-    opacity: 0.7,
-  },
-  editLinkText: {
-    ...typography.bodySmall,
-    color: colors.gold,
-    fontWeight: '600',
-  },
-  sectionHeader: {
+  statValue: { fontSize: 18, fontWeight: '700', color: colors.textPrimary },
+  statLabel: { ...typography.bodySmall, color: colors.textMuted },
+
+  // Section
+  sectionLabel: {
     ...typography.label,
-    fontSize: 12,
-    letterSpacing: 0.8,
     color: colors.textMuted,
     marginBottom: spacing.sm,
-    marginTop: spacing.lg,
-    textTransform: 'uppercase',
+    marginTop: spacing.xs,
   },
   group: {
+    backgroundColor: colors.bgSurface,
     borderRadius: borderRadius.lg,
-    backgroundColor: 'rgba(255,255,255,0.04)',
+    marginBottom: spacing.xl,
     overflow: 'hidden',
   },
   row: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingVertical: 14,
+    paddingVertical: spacing.md,
     paddingHorizontal: spacing.md,
     gap: spacing.md,
   },
   rowBorder: {
     borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: 'rgba(255,255,255,0.07)',
+    borderBottomColor: colors.border,
   },
-  rowPressed: {
-    backgroundColor: 'rgba(255,255,255,0.05)',
+  rowPressed: { backgroundColor: 'rgba(255,255,255,0.04)' },
+  rowIconWrap: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: 'rgba(201,168,76,0.1)',
+    alignItems: 'center',
+    justifyContent: 'center',
   },
-  rowIcon: {
-    width: 28,
+  rowText: { flex: 1 },
+  rowLabel: { ...typography.body, fontWeight: '600', color: colors.textPrimary },
+  rowSub: { ...typography.bodySmall, color: colors.textMuted, marginTop: 2 },
+  badge: {
+    backgroundColor: colors.gold,
+    borderRadius: 10,
+    paddingHorizontal: 7,
+    paddingVertical: 2,
   },
-  rowText: {
-    flex: 1,
-    minWidth: 0,
+  badgeText: { fontSize: 11, fontWeight: '700', color: colors.bgBase },
+
+  // Logout
+  logoutBtn: {
+    paddingVertical: spacing.md,
+    alignItems: 'center',
+    marginTop: spacing.sm,
   },
-  rowTitle: {
-    ...typography.body,
-    fontSize: 16,
-    color: colors.textPrimary,
-    fontWeight: '500',
-  },
-  rowSub: {
-    ...typography.bodySmall,
-    color: colors.textMuted,
-    marginTop: 3,
-  },
-  logoutWrap: {
-    marginTop: spacing['2xl'],
-    paddingTop: spacing.lg,
-  },
+  logoutText: { ...typography.body, color: colors.danger, fontWeight: '600' },
 });

@@ -23,6 +23,8 @@ export default function DiscoverStackLayout() {
       <Stack.Screen name="snaps/detail/[snapId]" options={{ animation: 'fade_from_bottom' }} />
       <Stack.Screen name="[id]" />
       <Stack.Screen name="category/[category]" />
+      <Stack.Screen name="tag/[tag]" />
+      <Stack.Screen name="explore" />
     </Stack>
   );
 }

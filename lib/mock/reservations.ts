@@ -16,21 +16,28 @@ export interface Reservation {
   depositAmount?: number;
 }
 
+// Dates relative to now so upcoming reservations always appear in demos
+function daysFromNow(days: number, hour = 19, minute = 0): string {
+  const d = new Date();
+  d.setDate(d.getDate() + days);
+  d.setHours(hour, minute, 0, 0);
+  return d.toISOString();
+}
+
 export const mockReservations: Reservation[] = [
   {
-    id: 'res1',
+    id: 'res-tonight',
     restaurantId: 'r1',
     restaurantName: 'Nova Ristorante',
     guestId: 'g1',
-    tableId: 't3',
     partySize: 2,
-    reservedAt: '2026-03-28T19:00:00-04:00',
+    reservedAt: daysFromNow(0, 19, 30),
     status: 'confirmed',
     source: 'app',
-    confirmationCode: 'SEAT-7X3K9M',
-    specialRequest: 'Window seat please',
+    confirmationCode: 'SEAT-T0N1G8T',
     occasion: 'Date Night',
     guestName: 'Alex Johnson',
+    specialRequest: 'Quiet corner table please',
     depositAmount: 25.00,
   },
   {
@@ -39,13 +46,28 @@ export const mockReservations: Reservation[] = [
     restaurantName: 'Sakura Omakase',
     guestId: 'g1',
     partySize: 4,
-    reservedAt: '2026-04-02T18:30:00-04:00',
+    reservedAt: daysFromNow(4, 18, 30),
     status: 'pending',
     source: 'app',
     confirmationCode: 'SEAT-P2L8N4',
     occasion: 'Birthday',
     guestName: 'Alex Johnson',
     preorderOrderId: 'ord2',
+  },
+  {
+    id: 'res1',
+    restaurantId: 'r1',
+    restaurantName: 'Nova Ristorante',
+    guestId: 'g1',
+    tableId: 't3',
+    partySize: 2,
+    reservedAt: daysFromNow(10, 19, 0),
+    status: 'confirmed',
+    source: 'app',
+    confirmationCode: 'SEAT-7X3K9M',
+    specialRequest: 'Window seat please',
+    occasion: 'Date Night',
+    guestName: 'Alex Johnson',
   },
   {
     id: 'res3',
