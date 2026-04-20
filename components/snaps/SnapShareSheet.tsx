@@ -41,7 +41,7 @@ export function SnapShareSheet({ imageUrl, restaurantName, rating }: SnapShareSh
       ) : null}
 
       <Text style={styles.hint}>
-        Share to Instagram, TikTok, iMessage & more — with Seatly branding so your friends can discover the restaurant too.
+        Share to Instagram, TikTok, iMessage & more — with Cenaiva branding so your friends can discover the restaurant too.
       </Text>
 
       <Pressable

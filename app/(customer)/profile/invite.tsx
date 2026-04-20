@@ -12,8 +12,8 @@ export default function InviteScreen() {
 
   const share = async () => {
     await Share.share({
-      message: `Join me on Seatly — book incredible tables and earn rewards. Use my code ${REFERRAL_CODE} when you sign up.`,
-      title: 'Seatly referral',
+      message: `Join me on Cenaiva — book incredible tables and earn rewards. Use my code ${REFERRAL_CODE} when you sign up.`,
+      title: 'Cenaiva referral',
     });
   };
 
@@ -22,7 +22,7 @@ export default function InviteScreen() {
       <Card style={{ ...styles.hero, ...shadows.goldGlow }}>
         <Text style={styles.heroTitle}>Invite friends and earn dining credits</Text>
         <Text style={styles.heroBody}>
-          When a friend completes their first eligible booking, you both unlock Seatly credits toward your next experience.
+          When a friend completes their first eligible booking, you both unlock Cenaiva credits toward your next experience.
         </Text>
         <View style={styles.rewardPills}>
           <View style={styles.pill}>

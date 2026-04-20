@@ -8,6 +8,7 @@ import {
   StyleSheet,
   Dimensions,
 } from 'react-native';
+import * as Haptics from 'expo-haptics';
 import { useRouter, Href } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
@@ -112,10 +113,12 @@ export default function FeedScreen() {
       : listTrendingPosts(7);
 
   const handleLike = useCallback((postId: string) => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     setLikeState((prev) => ({ ...prev, [postId]: toggleLike(ME, postId) }));
   }, []);
 
   const handleOpenSaveSheet = useCallback((postId: string) => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     setSaveSheetPostId(postId);
   }, []);
 
@@ -249,7 +252,7 @@ export default function FeedScreen() {
     <View style={[styles.container, { paddingTop: insets.top }]}>
       {/* Header */}
       <View style={styles.header}>
-        <Text style={styles.logo}>Seatly</Text>
+        <Text style={styles.logo}>Cenaiva</Text>
         <Pressable
           onPress={() => {
             router.push('/(customer)/notifications' as Href);
@@ -290,13 +293,31 @@ export default function FeedScreen() {
           showsVerticalScrollIndicator={false}
           contentContainerStyle={{ paddingBottom: insets.bottom + 90 }}
           ListEmptyComponent={
-            <View style={styles.empty}>
-              <Text style={styles.emptyText}>
-                {mode === 'following'
-                  ? 'Follow people to see their food posts here.'
-                  : 'No posts yet.'}
-              </Text>
-            </View>
+            mode === 'following' ? (
+              <View style={styles.empty}>
+                <Ionicons name="people-outline" size={48} color={colors.textMuted} style={{ marginBottom: spacing.md }} />
+                <Text style={styles.emptyTitle}>No posts yet</Text>
+                <Text style={styles.emptyText}>Follow food lovers to see their posts here.</Text>
+                <Pressable
+                  onPress={() => router.push('/(customer)/discover' as Href)}
+                  style={({ pressed }) => [styles.emptyCta, pressed && { opacity: 0.75 }]}
+                >
+                  <Text style={styles.emptyCtaText}>Find people →</Text>
+                </Pressable>
+              </View>
+            ) : (
+              <View style={styles.empty}>
+                <Ionicons name="images-outline" size={48} color={colors.textMuted} style={{ marginBottom: spacing.md }} />
+                <Text style={styles.emptyTitle}>Nothing nearby yet</Text>
+                <Text style={styles.emptyText}>Be the first to post a meal in your area.</Text>
+                <Pressable
+                  onPress={() => router.push('/(customer)/discover/post-review/camera' as Href)}
+                  style={({ pressed }) => [styles.emptyCta, pressed && { opacity: 0.75 }]}
+                >
+                  <Text style={styles.emptyCtaText}>Share a meal →</Text>
+                </Pressable>
+              </View>
+            )
           }
         />
       )}
@@ -481,6 +502,16 @@ const styles = StyleSheet.create({
     paddingTop: spacing['4xl'],
     alignItems: 'center',
     paddingHorizontal: spacing['3xl'],
+    gap: spacing.sm,
   },
+  emptyTitle: { ...typography.body, fontWeight: '700', color: colors.textPrimary, textAlign: 'center' },
   emptyText: { ...typography.body, color: colors.textMuted, textAlign: 'center' },
+  emptyCta: {
+    marginTop: spacing.md,
+    paddingVertical: spacing.sm,
+    paddingHorizontal: spacing.xl,
+    backgroundColor: colors.gold,
+    borderRadius: 24,
+  },
+  emptyCtaText: { ...typography.body, fontWeight: '700', color: colors.bgBase },
 });

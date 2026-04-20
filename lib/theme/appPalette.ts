@@ -1,5 +1,5 @@
 /**
- * Unified Seatly palette — customer + restaurant apps share this language:
+ * Unified Cenaiva palette — customer + restaurant apps share this language:
  * soft black base, warm gold, minimal borders (no navy / blue UI chrome).
  */
 export const appPalette = {

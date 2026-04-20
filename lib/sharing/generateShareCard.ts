@@ -3,7 +3,7 @@ import * as Sharing from 'expo-sharing';
 export function buildShareCaption(restaurantName: string, rating?: number): string {
   const stars = rating ? '⭐'.repeat(rating) : '';
   const starLine = stars ? ` ${stars}` : '';
-  return `Just dined at ${restaurantName}${starLine} — booked and discovered through @SeatlyApp 🍽️ Download the app: seatly.app`;
+  return `Just dined at ${restaurantName}${starLine} — booked and discovered through @CenaivaApp 🍽️ Download the app: cenaiva.app`;
 }
 
 export async function shareSnapToSocial(

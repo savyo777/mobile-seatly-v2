@@ -40,7 +40,7 @@ export default function PaymentScreen() {
         end={{ x: 1, y: 1 }}
         style={styles.walletHero}
       >
-        <Text style={styles.walletHeroLabel}>Seatly credits</Text>
+        <Text style={styles.walletHeroLabel}>Cenaiva credits</Text>
         <Text style={styles.walletHeroAmt}>{formatCurrency(creditTotal, 'CAD')}</Text>
         <Text style={styles.walletHeroHint}>Applied automatically at checkout when eligible</Text>
       </LinearGradient>

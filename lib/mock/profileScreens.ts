@@ -32,7 +32,7 @@ export type NotificationPref = {
 
 export const mockNotificationPrefs: NotificationPref[] = [
   { id: 'n1', title: 'Booking confirmations', subtitle: 'When a reservation is confirmed or updated', defaultOn: true },
-  { id: 'n2', title: 'Special promotions', subtitle: 'Exclusive offers from Seatly and partners', defaultOn: true },
+  { id: 'n2', title: 'Special promotions', subtitle: 'Exclusive offers from Cenaiva and partners', defaultOn: true },
   { id: 'n3', title: 'Rewards updates', subtitle: 'Points earned, tier changes, expiring rewards', defaultOn: true },
   { id: 'n4', title: 'New restaurant alerts', subtitle: 'When spots you follow add tables or menus', defaultOn: false },
   { id: 'n5', title: 'Nearby dining suggestions', subtitle: 'Curated picks near your location', defaultOn: true },
@@ -123,7 +123,7 @@ export const mockFaqs: FaqItem[] = [
 
 export type WalletGiftCard = { id: string; label: string; balance: number; codeLast4: string };
 export const mockGiftCards: WalletGiftCard[] = [
-  { id: 'g1', label: 'Seatly Gift', balance: 50, codeLast4: '8821' },
+  { id: 'g1', label: 'Cenaiva Gift', balance: 50, codeLast4: '8821' },
   { id: 'g2', label: 'Holiday Promo', balance: 25, codeLast4: '4402' },
 ];
 
@@ -148,7 +148,7 @@ export const mockInviteRecords: InviteRecord[] = [
   { id: 'i3', name: 'Priya Shah', email: 'priya.s@email.com', status: 'Joined', dateLabel: 'Feb 4, 2026', youEarned: 15 },
 ];
 
-export const REFERRAL_CODE = 'ALEX-SEATLY-24';
+export const REFERRAL_CODE = 'ALEX-CENAIVA-24';
 export const REFERRAL_YOU_GET = 15;
 export const REFERRAL_THEY_GET = 10;
 

@@ -71,7 +71,7 @@ export default function HelpScreen() {
           <Ionicons name="mail-outline" size={22} color={colors.gold} />
           <View style={styles.flex}>
             <Text style={styles.contactTitle}>Contact support</Text>
-            <Text style={styles.contactSub}>help@seatly.app</Text>
+            <Text style={styles.contactSub}>help@cenaiva.app</Text>
           </View>
           <ChevronGlyph color={colors.textMuted} size={18} />
         </View>

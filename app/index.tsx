@@ -15,7 +15,7 @@ export default function SplashScreen() {
 
   return (
     <View style={styles.container}>
-      <Text style={styles.logo}>SEATLY</Text>
+      <Text style={styles.logo}>CENAIVA</Text>
       <Text style={styles.tagline}>Your table awaits</Text>
       <ActivityIndicator color={colors.gold} size="small" style={styles.loader} />
     </View>

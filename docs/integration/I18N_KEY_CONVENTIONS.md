@@ -1,6 +1,6 @@
 # i18n: web vs mobile key mapping
 
-Web ([StevenGeorgy/Seatly](https://github.com/StevenGeorgy/Seatly)) uses **one namespace** per locale file:
+Web ([StevenGeorgy/Cenaiva](https://github.com/StevenGeorgy/Cenaiva)) uses **one namespace** per locale file:
 
 - `apps/web/src/locales/en/common.ts` — default export is nested under `common`; i18next namespace is typically `common`.
 - Keys use **dot notation** in code, e.g. `t('common.booking.step1.title')`.

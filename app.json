@@ -1,12 +1,12 @@
 {
   "expo": {
-    "name": "Seatly",
-    "slug": "seatly",
+    "name": "Cenaiva",
+    "slug": "cenaiva",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "dark",
-    "scheme": "seatly",
+    "scheme": "cenaiva",
     "splash": {
       "image": "./assets/splash-icon.png",
       "resizeMode": "contain",
@@ -14,7 +14,7 @@
     },
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.seatly.app"
+      "bundleIdentifier": "com.cenaiva.app"
     },
     "android": {
       "adaptiveIcon": {
@@ -23,7 +23,7 @@
         "backgroundImage": "./assets/android-icon-background.png",
         "monochromeImage": "./assets/android-icon-monochrome.png"
       },
-      "package": "com.seatly.app"
+      "package": "com.cenaiva.app"
     },
     "web": {
       "favicon": "./assets/favicon.png"
@@ -34,27 +34,27 @@
       [
         "expo-camera",
         {
-          "cameraPermission": "Allow Seatly to access your camera so you can capture and post restaurant review snaps."
+          "cameraPermission": "Allow Cenaiva to access your camera so you can capture and post restaurant review snaps."
         }
       ],
       [
         "expo-image-picker",
         {
-          "photosPermission": "Allow Seatly to access your photos so you can choose a test image when camera preview is unavailable."
+          "photosPermission": "Allow Cenaiva to access your photos so you can choose a test image when camera preview is unavailable."
         }
       ],
       [
         "expo-location",
         {
-          "locationAlwaysAndWhenInUsePermission": "Allow Seatly to use your location to show nearby restaurants on the map."
+          "locationAlwaysAndWhenInUsePermission": "Allow Cenaiva to use your location to show nearby restaurants on the map."
         }
       ],
       "expo-sharing",
       [
         "expo-speech-recognition",
         {
-          "microphonePermission": "Allow Seatly to use the microphone for voice commands in the AI assistant.",
-          "speechRecognitionPermission": "Allow Seatly to transcribe your speech for the AI assistant."
+          "microphonePermission": "Allow Cenaiva to use the microphone for voice commands in the AI assistant.",
+          "speechRecognitionPermission": "Allow Cenaiva to transcribe your speech for the AI assistant."
         }
       ]
     ]

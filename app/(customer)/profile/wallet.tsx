@@ -13,7 +13,7 @@ import { formatCurrency } from '@/lib/utils/formatCurrency';
 import { colors, spacing, typography, borderRadius, shadows } from '@/lib/theme';
 
 const MINI_ACTIVITY = [
-  { id: '1', title: 'Referral bonus applied', sub: 'Mar 12 · Seatly Credits', amount: 15 },
+  { id: '1', title: 'Referral bonus applied', sub: 'Mar 12 · Cenaiva Credits', amount: 15 },
   { id: '2', title: 'Nova Ristorante deposit', sub: 'Mar 8 · Card ···· 4821', amount: -40 },
   { id: '3', title: 'Gift card redeemed', sub: 'Feb 22 · Holiday Promo', amount: -25 },
 ];
@@ -35,7 +35,7 @@ export default function WalletScreen() {
         <Button title="View rewards" variant="outlined" size="sm" fullWidth onPress={() => router.push('/(customer)/profile/rewards')} />
       </Card>
 
-      <ProfileSectionTitle>Seatly credits</ProfileSectionTitle>
+      <ProfileSectionTitle>Cenaiva credits</ProfileSectionTitle>
       <Card style={styles.card}>
         <View style={styles.creditTotalRow}>
           <Text style={styles.creditTotalLabel}>Available</Text>

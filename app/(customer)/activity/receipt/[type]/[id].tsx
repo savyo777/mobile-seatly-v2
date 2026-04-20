@@ -100,7 +100,7 @@ export default function ReceiptScreen() {
       }
       const { uri } = await Print.printToFileAsync({ html });
       const safeRef = payload.referenceId.replace(/[^a-zA-Z0-9-_]/g, '-');
-      const fileName = `Seatly-Receipt-${safeRef}.pdf`;
+      const fileName = `Cenaiva-Receipt-${safeRef}.pdf`;
       const dest = `${FileSystem.documentDirectory}${fileName}`;
       await FileSystem.copyAsync({ from: uri, to: dest });
       Alert.alert(t('receipt.savedTitle'), t('receipt.savedBody', { fileName }));
@@ -146,7 +146,7 @@ export default function ReceiptScreen() {
           contentContainerStyle={styles.scroll}
         >
           <Animated.View entering={FadeInDown.duration(420).delay(60)}>
-            <Text style={styles.brand}>SEATLY</Text>
+            <Text style={styles.brand}>CENAIVA</Text>
             <Text style={styles.h1}>{payload.restaurantName}</Text>
             <Text style={styles.when}>{when}</Text>
 

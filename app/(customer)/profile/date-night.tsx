@@ -23,7 +23,7 @@ export default function DateNightScreen() {
   return (
     <ProfileStackScreen title={t('profile.dateNightPrefs')} subtitle={t('profile.dateNightPrefsSub')}>
       <Text style={styles.lead}>
-        Tune how Seatly ranks date-night picks — rooftops, quiet tables, wine lists, and more.
+        Tune how Cenaiva ranks date-night picks — rooftops, quiet tables, wine lists, and more.
       </Text>
       <ProfileSectionTitle>Match my dates to</ProfileSectionTitle>
       <View style={styles.chipWrap}>

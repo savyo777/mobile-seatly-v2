@@ -47,7 +47,7 @@ export default function RestrictionsScreen() {
       </View>
       <View style={styles.note}>
         <Text style={styles.noteText}>
-          Always confirm with your server on arrival. Seatly surfaces this information to restaurants you book (demo).
+          Always confirm with your server on arrival. Cenaiva surfaces this information to restaurants you book (demo).
         </Text>
       </View>
     </ProfileStackScreen>

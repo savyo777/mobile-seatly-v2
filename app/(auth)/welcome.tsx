@@ -61,7 +61,7 @@ export default function WelcomeScreen() {
       </View>
 
       <View style={styles.footer}>
-        <Text style={styles.footerText}>Seatly · Your table awaits</Text>
+        <Text style={styles.footerText}>Cenaiva · Your table awaits</Text>
       </View>
     </View>
   );

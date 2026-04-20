@@ -11,11 +11,11 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { AiChatPanel } from '@/components/ai/AiChatPanel';
 import { borderRadius, colors, spacing } from '@/lib/theme';
 
-/** Seatly monogram on the FAB (swap for an <Image> if you add assets/ai-fab.png). */
+/** Cenaiva monogram on the FAB (swap for an <Image> if you add assets/ai-fab.png). */
 function FabLogoMark() {
   return (
     <Text style={styles.fabMark} accessibilityElementsHidden>
-      S
+      C
     </Text>
   );
 }

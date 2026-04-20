@@ -1,6 +1,6 @@
 # Supabase schema vs mobile mock models
 
-Source of truth for SQL: [StevenGeorgy/Seatly `supabase/migrations`](https://github.com/StevenGeorgy/Seatly/tree/main/supabase/migrations).  
+Source of truth for SQL: [StevenGeorgy/Cenaiva `supabase/migrations`](https://github.com/StevenGeorgy/Cenaiva/tree/main/supabase/migrations).  
 Mobile types: [`lib/mock/restaurants.ts`](../../lib/mock/restaurants.ts), [`lib/mock/reservations.ts`](../../lib/mock/reservations.ts), [`lib/mock/orders.ts`](../../lib/mock/orders.ts).
 
 ## restaurants
@@ -52,4 +52,4 @@ Mobile types: [`lib/mock/restaurants.ts`](../../lib/mock/restaurants.ts), [`lib/
 
 ## Shared types package
 
-Database-aligned row types live in [`packages/types`](../../packages/types) (`@seatly/types`). App-facing `Restaurant` in `lib/mock/restaurants.ts` remains the UI model; [`lib/supabase/mapRestaurantRow.ts`](../../lib/supabase/mapRestaurantRow.ts) maps rows to that shape.
+Database-aligned row types live in [`packages/types`](../../packages/types) (`@cenaiva/types`). App-facing `Restaurant` in `lib/mock/restaurants.ts` remains the UI model; [`lib/supabase/mapRestaurantRow.ts`](../../lib/supabase/mapRestaurantRow.ts) maps rows to that shape.

@@ -3,6 +3,7 @@ import { Pressable, StyleSheet, View } from 'react-native';
 import { Tabs, useRouter, usePathname, Href } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
+import * as Haptics from 'expo-haptics';
 import { AiChatFab } from '@/components/ai/AiChatFab';
 import { colors } from '@/lib/theme';
 
@@ -57,7 +58,10 @@ export default function CustomerTabsLayout() {
           tabBarLabel: () => null,
           tabBarButton: () => (
             <Pressable
-              onPress={() => router.push('/(customer)/discover/post-review/camera' as Href)}
+              onPress={() => {
+                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+                router.push('/(customer)/discover/post-review/camera' as Href);
+              }}
               style={styles.centerBtnWrapper}
               accessibilityLabel="Post food"
             >

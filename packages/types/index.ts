@@ -1,6 +1,6 @@
 /**
- * Shared Seatly types — aligned with StevenGeorgy/Seatly packages/types and Supabase schema.
- * @see https://github.com/StevenGeorgy/Seatly/blob/main/packages/types/index.ts
+ * Shared Cenaiva types — aligned with StevenGeorgy/Cenaiva packages/types and Supabase schema.
+ * @see https://github.com/StevenGeorgy/Cenaiva/blob/main/packages/types/index.ts
  */
 
 export type Role = 'customer' | 'host' | 'waiter' | 'owner' | 'kitchen' | 'admin';

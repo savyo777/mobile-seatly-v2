@@ -7,7 +7,7 @@
       "@/*": [
         "./*"
       ],
-      "@seatly/types": [
+      "@cenaiva/types": [
         "./packages/types/index.ts"
       ]
     }

@@ -1,4 +1,4 @@
-import type { RestaurantRow } from '@seatly/types';
+import type { RestaurantRow } from '@cenaiva/types';
 import type { DiscoverSectionKey, Restaurant } from '@/lib/mock/restaurants';
 
 function num(v: string | number | null | undefined, fallback: number): number {

@@ -79,7 +79,7 @@ export default function OwnerLoginScreen() {
         </View>
 
         <View style={styles.footerRow}>
-          <Text style={styles.footerMuted}>{t('auth.newToSeatly')} </Text>
+          <Text style={styles.footerMuted}>{t('auth.newToCenaiva')} </Text>
           <TouchableOpacity
             onPress={() => router.push('/(auth)/owner-register')}
             activeOpacity={0.7}

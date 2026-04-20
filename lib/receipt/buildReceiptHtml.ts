@@ -77,7 +77,7 @@ export function buildReceiptHtml(payload: ReceiptPayload): string {
   </style>
 </head>
 <body>
-  <div class="brand">SEATLY</div>
+  <div class="brand">CENAIVA</div>
   <h1>${escapeHtml(title)}</h1>
   <div class="meta"><strong>${escapeHtml(payload.restaurantName)}</strong></div>
   <div class="meta">${escapeHtml(formatWhen(payload.dateTimeIso))}</div>

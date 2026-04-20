@@ -15,7 +15,7 @@ export default function PrivacyScreen() {
   const confirmDelete = () => {
     Alert.alert(
       'Delete account',
-      'This will permanently remove your Seatly account and reservation history. This cannot be undone.',
+      'This will permanently remove your Cenaiva account and reservation history. This cannot be undone.',
       [
         { text: t('common.cancel'), style: 'cancel' },
         { text: 'Delete', style: 'destructive', onPress: () => {} },
@@ -29,13 +29,13 @@ export default function PrivacyScreen() {
       <View style={styles.group}>
         <ChevronSettingRow
           title="Change password"
-          subtitle="Update your Seatly password"
+          subtitle="Update your Cenaiva password"
           icon="key-outline"
           onPress={() => Alert.alert('Change password', 'You will receive an email to reset your password (demo).')}
         />
         <ToggleRow
           title="Face ID / biometric login"
-          subtitle="Use Face ID or fingerprint to unlock Seatly"
+          subtitle="Use Face ID or fingerprint to unlock Cenaiva"
           value={faceId}
           onValueChange={setFaceId}
         />

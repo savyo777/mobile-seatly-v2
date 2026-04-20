@@ -39,7 +39,7 @@ import { colors, spacing, borderRadius, typography } from '@/lib/theme';
 
 const ME = mockCustomer.id;
 
-const FILTER_KEYS = ['all', 'italian', 'japanese', 'french'] as const;
+const FILTER_KEYS = ['all', 'italian', 'japanese', 'french', 'seafood'] as const;
 type FilterKey = (typeof FILTER_KEYS)[number];
 type SearchMode = 'restaurants' | 'people';
 type QuickFilter = 'dateNight' | 'nearMe' | 'availableNow' | 'cheapEats';
@@ -48,14 +48,11 @@ function cuisineMatchesFilter(restaurant: Restaurant, filter: FilterKey): boolea
   if (filter === 'all') return true;
   const c = restaurant.cuisineType.toLowerCase();
   switch (filter) {
-    case 'italian':
-      return c.includes('italian');
-    case 'japanese':
-      return c.includes('japanese');
-    case 'french':
-      return c.includes('french');
-    default:
-      return true;
+    case 'italian': return c.includes('italian');
+    case 'japanese': return c.includes('japanese');
+    case 'french': return c.includes('french');
+    case 'seafood': return c.includes('seafood') || c.includes('fish');
+    default: return true;
   }
 }
 
@@ -91,21 +88,33 @@ export default function DiscoverScreen() {
 
   const filterLabel = (key: FilterKey) => {
     const map: Record<FilterKey, string> = {
-      all: t('discover.filterAll'),
-      italian: t('discover.filterItalian'),
-      japanese: t('discover.filterJapanese'),
-      french: t('discover.filterFrench'),
+      all: 'All',
+      italian: 'Italian',
+      japanese: 'Japanese',
+      french: 'French',
+      seafood: 'Seafood',
     };
     return map[key];
   };
 
-  const namedGreeting = useMemo(() => {
+  const { greetingLine1, greetingLine2 } = useMemo(() => {
     const period = getTorontoGreetingPeriod();
     const name = DISCOVER_USER_FIRST_NAME;
-    if (period === 'morning') return t('discover.greetingMorningNamed', { name });
-    if (period === 'afternoon') return t('discover.greetingAfternoonNamed', { name });
-    return t('discover.greetingEveningNamed', { name });
-  }, [t]);
+    const greetMap: Record<string, string> = {
+      morning: `Good morning, ${name} —`,
+      afternoon: `Good afternoon, ${name} —`,
+      evening: `Good evening, ${name} —`,
+    };
+    const taglineMap: Record<string, string> = {
+      morning: "this morning's picks are ready.",
+      afternoon: "this afternoon's picks are ready.",
+      evening: "tonight's picks are ready.",
+    };
+    return {
+      greetingLine1: greetMap[period] ?? greetMap.evening,
+      greetingLine2: taglineMap[period] ?? taglineMap.evening,
+    };
+  }, []);
 
   const filteredRestaurants = useMemo(() => {
     let list = baseRestaurants.filter((r) => {
@@ -219,7 +228,7 @@ export default function DiscoverScreen() {
   return (
     <ScreenWrapper scrollable={false} padded={false}>
       {/* Sticky header: logo + List/Map toggle + bell */}
-      <View style={[styles.stickyHeader, { paddingTop: insets.top + spacing.xs }]}>
+      <View style={[styles.stickyHeader, { paddingTop: spacing.xs }]}>
         <Text style={styles.logo}>{t('common.appName')}</Text>
         <View style={styles.headerRight}>
           <View style={styles.viewToggle}>
@@ -266,97 +275,49 @@ export default function DiscoverScreen() {
         <View style={styles.headerBlock}>
           <PostVisitPrompt />
 
-          {/* AI planning chip */}
-          <Pressable
-            onPress={() => router.push('/(customer)/ai-chat' as Href)}
-            style={({ pressed }) => [styles.aiChip, pressed && { opacity: 0.8 }]}
-          >
-            <Ionicons name="sparkles" size={15} color={colors.bgBase} />
-            <Text style={styles.aiChipText}>Plan an event with AI</Text>
-            <Ionicons name="chevron-forward" size={14} color={colors.bgBase} style={{ opacity: 0.7 }} />
-          </Pressable>
-
+          {/* Search bar */}
           <Input
-            placeholder={searchMode === 'people' ? 'Search people...' : 'Search restaurants to book...'}
+            placeholder="Restaurants, cuisines, neighborhoods..."
             value={query}
             onChangeText={onSearchChange}
           />
 
-          {/* Search mode toggle */}
-          <View style={styles.searchModeRow}>
-            <Pressable
-              onPress={() => setSearchMode('restaurants')}
-              style={[styles.searchModeBtn, searchMode === 'restaurants' && styles.searchModeBtnActive]}
-            >
-              <Text style={[styles.searchModeLabel, searchMode === 'restaurants' && styles.searchModeLabelActive]}>
-                Restaurants
-              </Text>
-            </Pressable>
-            <Pressable
-              onPress={() => setSearchMode('people')}
-              style={[styles.searchModeBtn, searchMode === 'people' && styles.searchModeBtnActive]}
-            >
-              <Text style={[styles.searchModeLabel, searchMode === 'people' && styles.searchModeLabelActive]}>
-                People
-              </Text>
-            </Pressable>
-          </View>
-
+          {/* Quick filter chips */}
           <ScrollView
             horizontal
             showsHorizontalScrollIndicator={false}
             contentContainerStyle={styles.vibeChipsRow}
           >
-            <Pressable
-              onPress={() => toggleQuick('dateNight')}
-              style={({ pressed }) => [
-                ...quickChipStyle(quickFilter === 'dateNight'),
-                pressed && styles.vibeChipPressed,
-              ]}
-            >
-              <Text style={[styles.vibeChipText, quickFilter === 'dateNight' && styles.vibeChipTextSelected]}>
-                {t('discover.chipDateNight')}
-              </Text>
-            </Pressable>
-            <Pressable
-              onPress={() => toggleQuick('nearMe')}
-              style={({ pressed }) => [
-                ...quickChipStyle(quickFilter === 'nearMe'),
-                pressed && styles.vibeChipPressed,
-              ]}
-            >
-              <Text style={[styles.vibeChipText, quickFilter === 'nearMe' && styles.vibeChipTextSelected]}>
-                {t('discover.chipNearMe')}
-              </Text>
-            </Pressable>
-            <Pressable
-              onPress={() => toggleQuick('availableNow')}
-              style={({ pressed }) => [
-                ...quickChipStyle(quickFilter === 'availableNow'),
-                pressed && styles.vibeChipPressed,
-              ]}
-            >
-              <Text style={[styles.vibeChipText, quickFilter === 'availableNow' && styles.vibeChipTextSelected]}>
-                {t('discover.chipAvailableNow')}
-              </Text>
-            </Pressable>
-            <Pressable
-              onPress={() => toggleQuick('cheapEats')}
-              style={({ pressed }) => [
-                ...quickChipStyle(quickFilter === 'cheapEats'),
-                pressed && styles.vibeChipPressed,
-              ]}
-            >
-              <Text style={[styles.vibeChipText, quickFilter === 'cheapEats' && styles.vibeChipTextSelected]}>
-                {t('discover.chipCheapEats')}
-              </Text>
-            </Pressable>
+            {(
+              [
+                { key: 'dateNight', label: t('discover.chipDateNight') },
+                { key: 'nearMe', label: t('discover.chipNearMe') },
+                { key: 'availableNow', label: t('discover.chipAvailableNow') },
+                { key: 'cheapEats', label: t('discover.chipCheapEats') },
+              ] as { key: QuickFilter; label: string }[]
+            ).map(({ key, label }) => (
+              <Pressable
+                key={key}
+                onPress={() => toggleQuick(key)}
+                style={({ pressed }) => [
+                  ...quickChipStyle(quickFilter === key),
+                  pressed && styles.vibeChipPressed,
+                ]}
+              >
+                <Text style={[styles.vibeChipText, quickFilter === key && styles.vibeChipTextSelected]}>
+                  {label}
+                </Text>
+              </Pressable>
+            ))}
           </ScrollView>
 
+          {/* Two-part greeting */}
           <View style={styles.greetingBlock}>
-            <Text style={styles.personalGreeting}>{namedGreeting}</Text>
+            <Text style={styles.greetingLine1}>{greetingLine1}</Text>
+            <Text style={styles.greetingLine2}>{greetingLine2}</Text>
           </View>
 
+          {/* Cuisine chips */}
           <ScrollView
             horizontal
             showsHorizontalScrollIndicator={false}
@@ -643,102 +604,67 @@ const styles = StyleSheet.create({
   },
   greetingBlock: {
     marginTop: spacing.lg,
-    marginBottom: spacing.lg,
-    paddingTop: spacing.xs,
+    marginBottom: spacing.sm,
   },
-  personalGreeting: {
-    fontSize: 23,
-    fontWeight: '700',
+  greetingLine1: {
+    fontSize: 28,
+    fontWeight: '800',
     color: colors.textPrimary,
-    letterSpacing: -0.45,
-    lineHeight: 28,
+    letterSpacing: -0.6,
+    lineHeight: 34,
   },
-  aiChip: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.xs,
-    alignSelf: 'flex-start',
-    backgroundColor: colors.gold,
-    borderRadius: borderRadius.full,
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.sm,
-    marginBottom: spacing.md,
-  },
-  aiChipText: {
-    ...typography.bodySmall,
-    fontWeight: '700',
-    color: colors.bgBase,
-  },
-  searchModeRow: {
-    flexDirection: 'row',
-    gap: spacing.sm,
-    paddingTop: spacing.sm,
-  },
-  searchModeBtn: {
-    paddingHorizontal: spacing.md,
-    paddingVertical: 7,
-    borderRadius: borderRadius.full,
-    borderWidth: 1,
-    borderColor: colors.border,
-    backgroundColor: colors.bgSurface,
-  },
-  searchModeBtnActive: {
-    borderColor: colors.gold,
-    backgroundColor: 'rgba(201, 168, 76, 0.12)',
-  },
-  searchModeLabel: {
-    ...typography.bodySmall,
-    fontWeight: '700',
-    color: colors.textMuted,
-  },
-  searchModeLabelActive: {
+  greetingLine2: {
+    fontSize: 28,
+    fontWeight: '800',
     color: colors.gold,
+    letterSpacing: -0.6,
+    lineHeight: 34,
   },
   vibeChipsRow: {
     gap: spacing.sm,
-    paddingTop: spacing.xs,
-    paddingBottom: spacing.md,
+    paddingTop: spacing.sm,
+    paddingBottom: spacing.xs,
   },
   vibeChip: {
-    borderWidth: 1.5,
-    borderColor: 'rgba(201, 168, 76, 0.35)',
+    borderWidth: 1,
+    borderColor: colors.border,
     borderRadius: borderRadius.full,
     paddingHorizontal: spacing.md,
-    paddingVertical: spacing.sm,
-    backgroundColor: 'rgba(201, 168, 76, 0.06)',
+    paddingVertical: 8,
+    backgroundColor: colors.bgSurface,
   },
   vibeChipSelected: {
     borderColor: colors.gold,
-    backgroundColor: 'rgba(201, 168, 76, 0.14)',
+    backgroundColor: colors.gold,
   },
   vibeChipPressed: {
-    opacity: 0.88,
-    transform: [{ scale: 0.98 }],
+    opacity: 0.85,
   },
   vibeChipText: {
     ...typography.bodySmall,
-    color: colors.textSecondary,
-    fontWeight: '700',
+    color: colors.textMuted,
+    fontWeight: '600',
   },
   vibeChipTextSelected: {
-    color: colors.goldLight,
+    color: colors.bgBase,
+    fontWeight: '700',
   },
   chipsRow: {
     gap: spacing.sm,
-    paddingTop: spacing.xs,
-    paddingBottom: spacing['2xl'],
+    paddingTop: spacing.md,
+    paddingBottom: spacing.lg,
   },
   chip: {
     borderWidth: 1,
     borderColor: colors.border,
     borderRadius: borderRadius.full,
     paddingHorizontal: spacing.md,
-    paddingVertical: 7,
+    paddingVertical: 8,
     backgroundColor: colors.bgSurface,
   },
   chipSelected: {
-    borderColor: 'rgba(201, 168, 76, 0.5)',
-    backgroundColor: 'rgba(201, 168, 76, 0.08)',
+    borderColor: colors.gold,
+    backgroundColor: colors.gold,
   },
   chipText: {
     ...typography.bodySmall,
@@ -746,7 +672,8 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
   chipTextSelected: {
-    color: colors.gold,
+    color: colors.bgBase,
+    fontWeight: '700',
   },
   content: {
     paddingHorizontal: spacing.lg,

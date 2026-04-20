@@ -2,8 +2,8 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 
 export type SnapPlatform = 'instagram' | 'facebook' | 'google';
 
-const CONNECTIONS_KEY = 'seatly.snap.connections.v1';
-const PENDING_SELECTION_KEY = 'seatly.snap.pendingSelection.v1';
+const CONNECTIONS_KEY = 'cenaiva.snap.connections.v1';
+const PENDING_SELECTION_KEY = 'cenaiva.snap.pendingSelection.v1';
 
 export interface SnapPlatformConnections {
   instagram: boolean;

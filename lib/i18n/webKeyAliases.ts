@@ -1,5 +1,5 @@
 /**
- * Reference map: StevenGeorgy/Seatly web i18n paths (namespace `common`) vs mobile keys.
+ * Reference map: StevenGeorgy/Cenaiva web i18n paths (namespace `common`) vs mobile keys.
  * Use when porting copy or auditing parity — does not affect runtime.
  */
 

@@ -19,29 +19,29 @@ export default function AboutScreen() {
   return (
     <ProfileStackScreen title={t('profile.about')}>
       <View style={styles.brand}>
-        <Text style={styles.logo}>SEATLY</Text>
+        <Text style={styles.logo}>CENAIVA</Text>
         <Text style={styles.tagline}>Premium dining, reserved.</Text>
         <Text style={styles.version}>Version {APP_VERSION}</Text>
       </View>
 
       <Card style={styles.aboutCard}>
         <Text style={styles.aboutText}>
-          Seatly connects diners with exceptional restaurants — from last-minute tables to loyalty rewards. Built in
+          Cenaiva connects diners with exceptional restaurants — from last-minute tables to loyalty rewards. Built in
           Toronto for food lovers everywhere (demo company copy).
         </Text>
       </Card>
 
-      <Pressable style={styles.linkRow} onPress={() => open('https://seatly.app/terms')}>
+      <Pressable style={styles.linkRow} onPress={() => open('https://cenaiva.app/terms')}>
         <Ionicons name="document-text-outline" size={20} color={colors.gold} />
         <Text style={styles.linkText}>Terms of service</Text>
         <Ionicons name="open-outline" size={16} color={colors.textMuted} />
       </Pressable>
-      <Pressable style={styles.linkRow} onPress={() => open('https://seatly.app/privacy')}>
+      <Pressable style={styles.linkRow} onPress={() => open('https://cenaiva.app/privacy')}>
         <Ionicons name="shield-checkmark-outline" size={20} color={colors.gold} />
         <Text style={styles.linkText}>Privacy policy</Text>
         <Ionicons name="open-outline" size={16} color={colors.textMuted} />
       </Pressable>
-      <Pressable style={styles.linkRow} onPress={() => open('https://seatly.app/ack')}>
+      <Pressable style={styles.linkRow} onPress={() => open('https://cenaiva.app/ack')}>
         <Ionicons name="heart-outline" size={20} color={colors.gold} />
         <Text style={styles.linkText}>Acknowledgements</Text>
         <Ionicons name="open-outline" size={16} color={colors.textMuted} />
@@ -49,7 +49,7 @@ export default function AboutScreen() {
 
       <Card style={styles.contactCard}>
         <Text style={styles.contactLabel}>Contact</Text>
-        <Text style={styles.contactEmail}>hello@seatly.app</Text>
+        <Text style={styles.contactEmail}>hello@cenaiva.app</Text>
         <Text style={styles.contactHint}>For partnerships and press inquiries</Text>
       </Card>
     </ProfileStackScreen>
