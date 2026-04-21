@@ -158,7 +158,7 @@ export default function ActivityScreen() {
             <Pressable
               onPress={() => {
                 Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-                router.push(`/booking/${item.restaurantId}/step1-date` as Href);
+                router.push(`/booking/${item.restaurantId}/step2-time` as Href);
               }}
               style={({ pressed }) => [styles.bookAgainBtn, pressed && { opacity: 0.75 }]}
             >

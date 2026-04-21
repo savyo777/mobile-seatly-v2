@@ -18,7 +18,9 @@ export default function Step5Review() {
   const { t } = useTranslation();
   const [specialRequest, setSpecialRequest] = useState('');
   const [occasion, setOccasion] = useState('None');
-  const progress = 5 / 7;
+  const BOOKING_STEPS = 6;
+  const STEP = 4;
+  const progress = STEP / BOOKING_STEPS;
 
   const restaurant = mockRestaurants.find((r) => r.id === restaurantId);
   const parsedDate = date ? new Date(date) : new Date();
@@ -31,7 +33,9 @@ export default function Step5Review() {
         <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
           <Ionicons name="chevron-back" size={24} color={colors.textPrimary} />
         </TouchableOpacity>
-        <Text style={styles.stepLabel}>Step 5 of 7</Text>
+        <Text style={styles.stepLabel}>
+          {t('booking.stepCounter', { current: STEP, total: BOOKING_STEPS })}
+        </Text>
         <View style={{ width: 40 }} />
       </View>
 

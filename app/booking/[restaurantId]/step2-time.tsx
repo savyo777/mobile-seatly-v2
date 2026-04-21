@@ -1,115 +1,383 @@
-import React, { useState, useMemo } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView } from 'react-native';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import {
+  View,
+  Text,
+  StyleSheet,
+  TouchableOpacity,
+  Pressable,
+  ScrollView,
+  FlatList,
+} from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { useTranslation } from 'react-i18next';
+import * as Haptics from 'expo-haptics';
 import { Button } from '@/components/ui';
+import { BookingCalendarModal } from '@/components/booking/BookingCalendarModal';
+import { parseBookingDateParam, parseDateKeyLocal } from '@/lib/booking/dateUtils';
+import {
+  firstBookableDateKey,
+  getTimeSlotsForDate,
+  nextBookableDateAfter,
+} from '@/lib/booking/getAvailability';
+import { mockRestaurants } from '@/lib/mock/restaurants';
 import { colors, spacing, borderRadius } from '@/lib/theme';
+import type { DateKey } from '@/lib/booking/availabilityTypes';
 
-const TIME_SLOTS = [
-  '11:30 AM', '12:00 PM', '12:30 PM', '1:00 PM',
-  '5:00 PM', '5:30 PM', '6:00 PM', '6:30 PM',
-  '7:00 PM', '7:30 PM', '8:00 PM', '8:30 PM',
-  '9:00 PM', '9:30 PM',
-];
-
-const PARTY_SIZES = [1, 2, 3, 4, 5, 6, 7, 8];
+const PARTY_OPTIONS = [1, 2, 3, 4, 5, 6, 7, 8];
 
 export default function Step2Time() {
   const { restaurantId, date } = useLocalSearchParams<{ restaurantId: string; date: string }>();
   const router = useRouter();
   const insets = useSafeAreaInsets();
-  const { t } = useTranslation();
-  const [selectedTime, setSelectedTime] = useState<string | null>(null);
-  const [partySize, setPartySize] = useState(2);
-  const progress = 2 / 7;
+  const rid = restaurantId ?? '';
 
-  const availableSlots = useMemo(() => {
-    return TIME_SLOTS.filter((_, i) => i % 3 !== 1 || partySize <= 4);
-  }, [partySize]);
+  const firstDate = useMemo(() => firstBookableDateKey(rid), [rid]);
+
+  const [dateKey, setDateKey] = useState<DateKey>(
+    () => parseBookingDateParam(date) ?? firstDate,
+  );
+  const [partySize, setPartySize] = useState(2);
+  const [selectedSlotId, setSelectedSlotId] = useState<string | null>(null);
+  const [selectedLabel, setSelectedLabel] = useState<string | null>(null);
+  const [calendarOpen, setCalendarOpen] = useState(false);
+
+  const pillLabel = useMemo(() => {
+    const d = parseDateKeyLocal(dateKey);
+    return d.toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' });
+  }, [dateKey]);
+
+  const slots = useMemo(
+    () => getTimeSlotsForDate(rid, dateKey, partySize),
+    [rid, dateKey, partySize],
+  );
+
+  useEffect(() => {
+    const first = slots.find((s) => s.available);
+    if (first) {
+      setSelectedSlotId(first.slotId);
+      setSelectedLabel(first.label);
+    } else {
+      setSelectedSlotId(null);
+      setSelectedLabel(null);
+    }
+  }, [slots]);
+
+  const restaurant = mockRestaurants.find((r) => r.id === restaurantId);
+
+  const handleSelectParty = useCallback((size: number) => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    setPartySize(size);
+  }, []);
+
+  const handleSelectSlot = useCallback((slotId: string, label: string) => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    setSelectedSlotId(slotId);
+    setSelectedLabel(label);
+  }, []);
+
+  const handleNext = useCallback(() => {
+    if (!selectedLabel) return;
+    router.push(
+      `/booking/${restaurantId}/confirm?date=${encodeURIComponent(dateKey)}&time=${encodeURIComponent(selectedLabel)}&partySize=${partySize}`,
+    );
+  }, [selectedLabel, dateKey, partySize, restaurantId, router]);
+
+  const handleNextDate = useCallback(() => {
+    setDateKey(nextBookableDateAfter(rid, dateKey));
+  }, [rid, dateKey]);
 
   return (
     <View style={[styles.container, { paddingTop: insets.top }]}>
+      {/* Header */}
       <View style={styles.header}>
         <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
           <Ionicons name="chevron-back" size={24} color={colors.textPrimary} />
         </TouchableOpacity>
-        <Text style={styles.stepLabel}>Step 2 of 7</Text>
+        <View style={styles.headerCenter}>
+          <Text style={styles.restaurantName} numberOfLines={1}>{restaurant?.name}</Text>
+          <Text style={styles.headerSub}>Select date, time & guests</Text>
+        </View>
         <View style={{ width: 40 }} />
       </View>
 
-      <View style={styles.progressBar}>
-        <View style={[styles.progressFill, { width: `${progress * 100}%` }]} />
-      </View>
-
-      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
-        <Text style={styles.title}>{t('booking.step2Title')}</Text>
-
-        <Text style={styles.sectionTitle}>{t('booking.partySize')}</Text>
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.partySizeScroll}>
-          <View style={styles.partySizeRow}>
-            {PARTY_SIZES.map((size) => (
-              <TouchableOpacity
-                key={size}
-                onPress={() => setPartySize(size)}
-                style={[styles.partySizeBtn, partySize === size && styles.partySizeBtnSelected]}
-              >
-                <Text style={[styles.partySizeText, partySize === size && styles.partySizeTextSelected]}>
-                  {size}
-                </Text>
-              </TouchableOpacity>
-            ))}
-          </View>
+      <ScrollView
+        style={styles.scroll}
+        contentContainerStyle={[styles.body, { paddingBottom: insets.bottom + 110 }]}
+        showsVerticalScrollIndicator={false}
+        keyboardShouldPersistTaps="handled"
+      >
+        {/* Party size */}
+        <Text style={styles.sectionLabel}>Guests</Text>
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={styles.partyRow}
+        >
+          {PARTY_OPTIONS.map((n) => (
+            <Pressable
+              key={n}
+              onPress={() => handleSelectParty(n)}
+              style={[styles.partyChip, partySize === n && styles.partyChipSelected]}
+            >
+              <Text style={[styles.partyChipText, partySize === n && styles.partyChipTextSelected]}>
+                {n}
+              </Text>
+            </Pressable>
+          ))}
+          <Pressable
+            onPress={() => handleSelectParty(partySize > 8 ? partySize : 9)}
+            style={[styles.partyChip, partySize > 8 && styles.partyChipSelected]}
+          >
+            <Text style={[styles.partyChipText, partySize > 8 && styles.partyChipTextSelected]}>
+              9+
+            </Text>
+          </Pressable>
         </ScrollView>
 
-        <Text style={styles.sectionTitle}>Available Times</Text>
-        <View style={styles.timeGrid}>
-          {availableSlots.map((time) => (
-            <TouchableOpacity
-              key={time}
-              onPress={() => setSelectedTime(time)}
-              style={[styles.timeSlot, selectedTime === time && styles.timeSlotSelected]}
-            >
-              <Text style={[styles.timeText, selectedTime === time && styles.timeTextSelected]}>
-                {time}
-              </Text>
-            </TouchableOpacity>
-          ))}
-        </View>
+        {/* Date */}
+        <Text style={styles.sectionLabel}>Date</Text>
+        <Pressable style={styles.dateRow} onPress={() => setCalendarOpen(true)}>
+          <Ionicons name="calendar-outline" size={20} color={colors.gold} />
+          <Text style={styles.dateRowLabel}>{pillLabel}</Text>
+          <View style={styles.datePill}>
+            <Text style={styles.datePillText}>Change</Text>
+          </View>
+        </Pressable>
+
+        {/* Time slots */}
+        <Text style={styles.sectionLabel}>Available times</Text>
+        {slots.some((s) => s.available) ? (
+          <View style={styles.slotsGrid}>
+            {slots.map((slot) => (
+              <Pressable
+                key={slot.slotId}
+                onPress={() => slot.available && handleSelectSlot(slot.slotId, slot.label)}
+                disabled={!slot.available}
+                style={[
+                  styles.slotPill,
+                  slot.available && selectedSlotId === slot.slotId && styles.slotPillSelected,
+                  !slot.available && styles.slotPillUnavailable,
+                ]}
+              >
+                <Text style={[
+                  styles.slotText,
+                  slot.available && selectedSlotId === slot.slotId && styles.slotTextSelected,
+                  !slot.available && styles.slotTextUnavailable,
+                ]}>
+                  {slot.label}
+                </Text>
+              </Pressable>
+            ))}
+          </View>
+        ) : (
+          <View style={styles.noTimesBox}>
+            <Text style={styles.noTimesText}>No availability on this date</Text>
+            <Pressable onPress={handleNextDate}>
+              <Text style={styles.noTimesLink}>Next available date →</Text>
+            </Pressable>
+          </View>
+        )}
       </ScrollView>
 
+      {/* Footer */}
       <View style={[styles.footer, { paddingBottom: insets.bottom + 16 }]}>
+        {selectedLabel ? (
+          <View style={styles.selectionBadge}>
+            <Ionicons name="checkmark-circle" size={15} color={colors.gold} />
+            <Text style={styles.selectionText}>
+              {selectedLabel} · {partySize} {partySize === 1 ? 'guest' : 'guests'}
+            </Text>
+          </View>
+        ) : null}
         <Button
-          title={t('common.next')}
-          onPress={() => router.push(`/booking/${restaurantId}/step3-table?date=${date}&time=${selectedTime}&partySize=${partySize}`)}
-          disabled={!selectedTime}
+          title="Continue"
+          onPress={handleNext}
+          disabled={!selectedLabel}
         />
       </View>
+
+      <BookingCalendarModal
+        visible={calendarOpen}
+        restaurantId={rid}
+        selectedDateKey={dateKey}
+        onClose={() => setCalendarOpen(false)}
+        onSelect={(k) => { setDateKey(k); setCalendarOpen(false); }}
+      />
     </View>
   );
 }
 
+const SLOT_COLS = 3;
+const SLOT_GAP = 10;
+
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.bgBase },
-  header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 20, paddingVertical: 12 },
+
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 20,
+    paddingVertical: 12,
+  },
   backBtn: { width: 40, height: 40, alignItems: 'center', justifyContent: 'center' },
-  stepLabel: { fontSize: 13, color: colors.textMuted, fontWeight: '500' },
-  progressBar: { height: 3, backgroundColor: colors.border, marginHorizontal: 20 },
-  progressFill: { height: 3, backgroundColor: colors.gold, borderRadius: 2 },
-  scrollContent: { paddingHorizontal: 20, paddingBottom: 120 },
-  title: { fontSize: 24, fontWeight: '700', color: colors.textPrimary, marginTop: 24, marginBottom: 24 },
-  sectionTitle: { fontSize: 16, fontWeight: '600', color: colors.textPrimary, marginBottom: 12, marginTop: 8 },
-  partySizeScroll: { marginBottom: 24 },
-  partySizeRow: { flexDirection: 'row', gap: 10 },
-  partySizeBtn: { width: 48, height: 48, borderRadius: borderRadius.md, backgroundColor: colors.bgSurface, borderWidth: 1, borderColor: colors.border, alignItems: 'center', justifyContent: 'center' },
-  partySizeBtnSelected: { backgroundColor: colors.gold, borderColor: colors.gold },
-  partySizeText: { fontSize: 18, fontWeight: '600', color: colors.textPrimary },
-  partySizeTextSelected: { color: colors.bgBase },
-  timeGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 10 },
-  timeSlot: { paddingVertical: 14, paddingHorizontal: 18, borderRadius: borderRadius.md, backgroundColor: colors.bgSurface, borderWidth: 1, borderColor: colors.border },
-  timeSlotSelected: { backgroundColor: 'rgba(201, 168, 76, 0.15)', borderColor: colors.gold },
-  timeText: { fontSize: 14, fontWeight: '500', color: colors.textPrimary },
-  timeTextSelected: { color: colors.gold },
-  footer: { position: 'absolute', bottom: 0, left: 0, right: 0, paddingHorizontal: 20, paddingTop: 16, backgroundColor: colors.bgBase, borderTopWidth: 1, borderTopColor: colors.border },
+  headerCenter: { flex: 1, alignItems: 'center' },
+  restaurantName: {
+    fontSize: 16,
+    fontWeight: '700',
+    color: colors.textPrimary,
+  },
+  headerSub: {
+    fontSize: 12,
+    color: colors.textMuted,
+    marginTop: 2,
+  },
+
+  scroll: { flex: 1 },
+  body: {
+    paddingHorizontal: 20,
+    paddingTop: 8,
+    gap: 12,
+  },
+
+  sectionLabel: {
+    fontSize: 11,
+    fontWeight: '700',
+    color: colors.textMuted,
+    textTransform: 'uppercase',
+    letterSpacing: 0.8,
+    marginBottom: -4,
+  },
+
+  // Party size chips
+  partyRow: { gap: 8, paddingBottom: 2 },
+  partyChip: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    borderWidth: 1,
+    borderColor: colors.border,
+    backgroundColor: colors.bgSurface,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  partyChipSelected: {
+    backgroundColor: colors.gold,
+    borderColor: colors.gold,
+  },
+  partyChipText: {
+    fontSize: 15,
+    fontWeight: '600',
+    color: colors.textSecondary,
+  },
+  partyChipTextSelected: {
+    color: colors.bgBase,
+    fontWeight: '700',
+  },
+
+  // Date row
+  dateRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 14,
+    paddingHorizontal: 16,
+    backgroundColor: colors.bgSurface,
+    borderRadius: borderRadius.lg,
+    borderWidth: 1,
+    borderColor: colors.border,
+    gap: 10,
+  },
+  dateRowLabel: {
+    flex: 1,
+    fontSize: 16,
+    fontWeight: '600',
+    color: colors.textPrimary,
+  },
+  datePill: {
+    paddingVertical: 5,
+    paddingHorizontal: 12,
+    borderRadius: borderRadius.full,
+    backgroundColor: colors.bgElevated,
+    borderWidth: 1,
+    borderColor: colors.border,
+  },
+  datePillText: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: colors.textSecondary,
+  },
+
+  // Time slots grid
+  slotsGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: SLOT_GAP,
+  },
+  slotPill: {
+    paddingVertical: 12,
+    paddingHorizontal: 8,
+    borderRadius: borderRadius.lg,
+    borderWidth: 1,
+    borderColor: colors.border,
+    backgroundColor: colors.bgSurface,
+    alignItems: 'center',
+    minWidth: 90,
+    flex: 1,
+  },
+  slotPillSelected: {
+    backgroundColor: colors.gold,
+    borderColor: colors.gold,
+  },
+  slotPillUnavailable: {
+    opacity: 0.3,
+  },
+  slotText: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: colors.textPrimary,
+  },
+  slotTextSelected: {
+    color: colors.bgBase,
+    fontWeight: '700',
+  },
+  slotTextUnavailable: {
+    color: colors.textMuted,
+  },
+
+  // No times
+  noTimesBox: {
+    alignItems: 'center',
+    paddingVertical: spacing.xl,
+    gap: spacing.sm,
+  },
+  noTimesText: {
+    fontSize: 14,
+    color: colors.textMuted,
+  },
+  noTimesLink: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: colors.gold,
+  },
+
+  // Footer
+  footer: {
+    paddingHorizontal: 20,
+    paddingTop: 12,
+    backgroundColor: colors.bgBase,
+    borderTopWidth: 1,
+    borderTopColor: colors.border,
+    gap: 8,
+  },
+  selectionBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 5,
+  },
+  selectionText: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: colors.gold,
+  },
 });

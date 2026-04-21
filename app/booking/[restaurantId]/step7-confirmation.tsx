@@ -1,105 +1,325 @@
 import React, { useEffect, useRef } from 'react';
-import { View, Text, StyleSheet, Platform, Animated } from 'react-native';
+import {
+  View,
+  Text,
+  StyleSheet,
+  ScrollView,
+  Pressable,
+  Animated,
+  Platform,
+} from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { useTranslation } from 'react-i18next';
-import { Button, Card } from '@/components/ui';
+import { Button } from '@/components/ui';
 import { mockRestaurants } from '@/lib/mock/restaurants';
-import { colors, borderRadius, shadows } from '@/lib/theme';
+import { parseDateKeyLocal } from '@/lib/booking/dateUtils';
+import { colors, spacing, borderRadius, shadows } from '@/lib/theme';
+import type { DateKey } from '@/lib/booking/availabilityTypes';
 
 function generateCode(): string {
   const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
   let code = 'SEAT-';
-  for (let i = 0; i < 6; i++) {
-    code += chars[Math.floor(Math.random() * chars.length)];
-  }
+  for (let i = 0; i < 6; i++) code += chars[Math.floor(Math.random() * chars.length)];
   return code;
 }
 
 export default function Step7Confirmation() {
-  const { restaurantId, date, time, partySize } = useLocalSearchParams<{ restaurantId: string; date: string; time: string; partySize: string }>();
+  const { restaurantId, date, time, partySize, occasion } = useLocalSearchParams<{
+    restaurantId: string;
+    date: string;
+    time: string;
+    partySize: string;
+    occasion: string;
+  }>();
   const router = useRouter();
   const insets = useSafeAreaInsets();
-  const { t } = useTranslation();
+
   const restaurant = mockRestaurants.find((r) => r.id === restaurantId);
-  const parsedDate = date ? new Date(date) : new Date();
+  const guests = parseInt(partySize ?? '2', 10);
   const confirmationCode = useRef(generateCode()).current;
+
+  const dateLabel = (() => {
+    try {
+      return parseDateKeyLocal(date as DateKey).toLocaleDateString(undefined, {
+        weekday: 'long', month: 'long', day: 'numeric',
+      });
+    } catch { return date ?? ''; }
+  })();
 
   const scaleAnim = useRef(new Animated.Value(0)).current;
   const fadeAnim = useRef(new Animated.Value(0)).current;
+  const slideAnim = useRef(new Animated.Value(30)).current;
 
   useEffect(() => {
     Animated.sequence([
-      Animated.spring(scaleAnim, { toValue: 1, tension: 50, friction: 7, useNativeDriver: true }),
-      Animated.timing(fadeAnim, { toValue: 1, duration: 400, useNativeDriver: true }),
+      Animated.spring(scaleAnim, {
+        toValue: 1,
+        tension: 55,
+        friction: 7,
+        useNativeDriver: true,
+      }),
+      Animated.parallel([
+        Animated.timing(fadeAnim, { toValue: 1, duration: 350, useNativeDriver: true }),
+        Animated.timing(slideAnim, { toValue: 0, duration: 350, useNativeDriver: true }),
+      ]),
     ]).start();
-  }, [scaleAnim, fadeAnim]);
+  }, []);
+
+  const navigateToPreorder = () => {
+    router.push(
+      `/booking/${restaurantId}/step4-preorder?date=${encodeURIComponent(date ?? '')}&time=${encodeURIComponent(time ?? '')}&partySize=${partySize}`,
+    );
+  };
 
   return (
     <View style={[styles.container, { paddingTop: insets.top }]}>
-      <View style={styles.progressBar}>
-        <View style={[styles.progressFill, { width: '100%' }]} />
-      </View>
+      <ScrollView
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={[styles.body, { paddingBottom: insets.bottom + 32 }]}
+      >
+        {/* Success badge */}
+        <View style={styles.successSection}>
+          <Animated.View style={[styles.checkCircle, { transform: [{ scale: scaleAnim }] }]}>
+            <Ionicons name="checkmark" size={44} color={colors.bgBase} />
+          </Animated.View>
+          <Animated.Text style={[styles.title, { opacity: fadeAnim, transform: [{ translateY: slideAnim }] }]}>
+            You're all set!
+          </Animated.Text>
+          <Animated.Text style={[styles.subtitle, { opacity: fadeAnim, transform: [{ translateY: slideAnim }] }]}>
+            {restaurant?.name}
+          </Animated.Text>
+        </View>
 
-      <View style={styles.content}>
-        <Animated.View style={[styles.checkCircle, { transform: [{ scale: scaleAnim }] }]}>
-          <Ionicons name="checkmark" size={48} color={colors.bgBase} />
+        {/* Booking summary */}
+        <Animated.View style={[styles.summaryCard, { opacity: fadeAnim, transform: [{ translateY: slideAnim }] }]}>
+          <View style={styles.summaryRow}>
+            <Ionicons name="calendar-outline" size={16} color={colors.gold} />
+            <Text style={styles.summaryText}>{dateLabel}</Text>
+          </View>
+          <View style={styles.summaryDivider} />
+          <View style={styles.summaryRow}>
+            <Ionicons name="time-outline" size={16} color={colors.gold} />
+            <Text style={styles.summaryText}>{time}</Text>
+          </View>
+          <View style={styles.summaryDivider} />
+          <View style={styles.summaryRow}>
+            <Ionicons name="people-outline" size={16} color={colors.gold} />
+            <Text style={styles.summaryText}>{guests} {guests === 1 ? 'guest' : 'guests'}</Text>
+          </View>
+          {occasion ? (
+            <>
+              <View style={styles.summaryDivider} />
+              <View style={styles.summaryRow}>
+                <Ionicons name="sparkles-outline" size={16} color={colors.gold} />
+                <Text style={styles.summaryText}>{occasion}</Text>
+              </View>
+            </>
+          ) : null}
         </Animated.View>
 
-        <Animated.View style={{ opacity: fadeAnim, alignItems: 'center', width: '100%' }}>
-          <Text style={styles.title}>{t('booking.bookingConfirmed')}</Text>
-          <Text style={styles.subtitle}>{restaurant?.name}</Text>
+        {/* Confirmation code */}
+        <Animated.View style={[styles.codeWrap, { opacity: fadeAnim }]}>
+          <Text style={styles.codeLabel}>Confirmation code</Text>
+          <View style={styles.codeBox}>
+            <Text style={styles.codeText}>{confirmationCode}</Text>
+          </View>
+        </Animated.View>
 
-          <Card style={styles.confirmCard}>
-            <View style={styles.detailRow}>
-              <Ionicons name="calendar-outline" size={18} color={colors.gold} />
-              <Text style={styles.detailText}>
-                {parsedDate.toLocaleDateString('en-CA', { weekday: 'long', month: 'long', day: 'numeric' })}
+        {/* Upsell divider */}
+        <Animated.View style={[{ opacity: fadeAnim }]}>
+          <Text style={styles.upsellHeading}>Make it even better</Text>
+
+          {/* Pre-order meals */}
+          <Pressable
+            style={({ pressed }) => [styles.upsellCard, pressed && { opacity: 0.88 }]}
+            onPress={navigateToPreorder}
+          >
+            <View style={[styles.upsellIconWrap, { backgroundColor: 'rgba(201,162,74,0.12)' }]}>
+              <Ionicons name="restaurant-outline" size={24} color={colors.gold} />
+            </View>
+            <View style={styles.upsellBody}>
+              <Text style={styles.upsellTitle}>Pre-order your meal</Text>
+              <Text style={styles.upsellDesc}>
+                Browse the menu and choose your dishes — they'll be ready when you arrive.
               </Text>
             </View>
-            <View style={styles.detailRow}>
-              <Ionicons name="time-outline" size={18} color={colors.gold} />
-              <Text style={styles.detailText}>{time}</Text>
-            </View>
-            <View style={styles.detailRow}>
-              <Ionicons name="people-outline" size={18} color={colors.gold} />
-              <Text style={styles.detailText}>{partySize} {t('booking.guests')}</Text>
-            </View>
-          </Card>
+            <Ionicons name="chevron-forward" size={18} color={colors.textMuted} />
+          </Pressable>
 
-          <View style={styles.codeContainer}>
-            <Text style={styles.codeLabel}>{t('booking.confirmationCode')}</Text>
-            <View style={styles.codeBox}>
-              <Text style={styles.codeText}>{confirmationCode}</Text>
+          {/* Pre-pay */}
+          <Pressable
+            style={({ pressed }) => [styles.upsellCard, styles.upsellCardLast, pressed && { opacity: 0.88 }]}
+            onPress={() => {/* future: payment screen */}}
+          >
+            <View style={[styles.upsellIconWrap, { backgroundColor: 'rgba(34,197,94,0.12)' }]}>
+              <Ionicons name="card-outline" size={24} color={colors.success} />
             </View>
-          </View>
-
-          <View style={styles.buttons}>
-            <Button title={t('booking.addToCalendar')} variant="outlined" onPress={() => {}} />
-            <View style={{ height: 12 }} />
-            <Button title={t('booking.viewBooking')} onPress={() => router.replace('/(customer)/activity')} />
-          </View>
+            <View style={styles.upsellBody}>
+              <Text style={styles.upsellTitle}>Pre-pay your bill</Text>
+              <Text style={styles.upsellDesc}>
+                Skip the check at the end of the night — pay now and just enjoy.
+              </Text>
+            </View>
+            <Ionicons name="chevron-forward" size={18} color={colors.textMuted} />
+          </Pressable>
         </Animated.View>
-      </View>
+
+        {/* Done */}
+        <Animated.View style={[styles.doneWrap, { opacity: fadeAnim }]}>
+          <Button
+            title="View my bookings"
+            onPress={() => router.replace('/(customer)/activity')}
+          />
+          <Pressable onPress={() => router.replace('/(customer)/discover')} style={styles.skipBtn}>
+            <Text style={styles.skipText}>Back to explore</Text>
+          </Pressable>
+        </Animated.View>
+      </ScrollView>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.bgBase },
-  progressBar: { height: 3, backgroundColor: colors.border, marginHorizontal: 20, marginTop: 12 },
-  progressFill: { height: 3, backgroundColor: colors.gold, borderRadius: 2 },
-  content: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 32, paddingBottom: 40 },
-  checkCircle: { width: 88, height: 88, borderRadius: 44, backgroundColor: colors.gold, alignItems: 'center', justifyContent: 'center', marginBottom: 24, ...shadows.goldGlow },
-  title: { fontSize: 26, fontWeight: '700', color: colors.textPrimary, textAlign: 'center' },
-  subtitle: { fontSize: 16, color: colors.textSecondary, marginTop: 4, marginBottom: 28 },
-  confirmCard: { width: '100%', padding: 20, gap: 14, marginBottom: 28 },
-  detailRow: { flexDirection: 'row', alignItems: 'center', gap: 12 },
-  detailText: { fontSize: 15, color: colors.textPrimary },
-  codeContainer: { alignItems: 'center', marginBottom: 32 },
-  codeLabel: { fontSize: 12, color: colors.textMuted, fontWeight: '500', textTransform: 'uppercase', letterSpacing: 1, marginBottom: 8 },
-  codeBox: { paddingHorizontal: 24, paddingVertical: 14, borderRadius: borderRadius.md, backgroundColor: colors.bgSurface, borderWidth: 1.5, borderColor: colors.gold },
-  codeText: { fontSize: 22, fontWeight: '700', color: colors.gold, fontFamily: Platform.OS === 'ios' ? 'Menlo' : 'monospace', letterSpacing: 2 },
-  buttons: { width: '100%' },
+  body: {
+    paddingHorizontal: 20,
+    paddingTop: 32,
+    gap: 20,
+  },
+
+  // Success
+  successSection: {
+    alignItems: 'center',
+    gap: 10,
+  },
+  checkCircle: {
+    width: 84,
+    height: 84,
+    borderRadius: 42,
+    backgroundColor: colors.gold,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 4,
+    ...shadows.goldGlow,
+  },
+  title: {
+    fontSize: 28,
+    fontWeight: '800',
+    color: colors.textPrimary,
+    textAlign: 'center',
+  },
+  subtitle: {
+    fontSize: 16,
+    color: colors.textSecondary,
+    fontWeight: '500',
+    textAlign: 'center',
+  },
+
+  // Summary card
+  summaryCard: {
+    backgroundColor: colors.bgSurface,
+    borderRadius: borderRadius.xl,
+    borderWidth: 1,
+    borderColor: colors.border,
+    paddingVertical: 4,
+    paddingHorizontal: 16,
+  },
+  summaryRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    paddingVertical: 14,
+  },
+  summaryDivider: {
+    height: StyleSheet.hairlineWidth,
+    backgroundColor: colors.border,
+  },
+  summaryText: {
+    fontSize: 15,
+    fontWeight: '500',
+    color: colors.textPrimary,
+  },
+
+  // Code
+  codeWrap: { alignItems: 'center', gap: 8 },
+  codeLabel: {
+    fontSize: 11,
+    fontWeight: '700',
+    color: colors.textMuted,
+    textTransform: 'uppercase',
+    letterSpacing: 1,
+  },
+  codeBox: {
+    paddingHorizontal: 28,
+    paddingVertical: 14,
+    borderRadius: borderRadius.lg,
+    backgroundColor: colors.bgSurface,
+    borderWidth: 1.5,
+    borderColor: colors.gold,
+  },
+  codeText: {
+    fontSize: 22,
+    fontWeight: '700',
+    color: colors.gold,
+    fontFamily: Platform.OS === 'ios' ? 'Menlo' : 'monospace',
+    letterSpacing: 3,
+  },
+
+  // Upsell
+  upsellHeading: {
+    fontSize: 11,
+    fontWeight: '700',
+    color: colors.textMuted,
+    textTransform: 'uppercase',
+    letterSpacing: 0.8,
+    marginBottom: 10,
+  },
+  upsellCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 14,
+    backgroundColor: colors.bgSurface,
+    borderWidth: 1,
+    borderColor: colors.border,
+    borderBottomWidth: 0,
+    borderTopLeftRadius: borderRadius.xl,
+    borderTopRightRadius: borderRadius.xl,
+    padding: 16,
+  },
+  upsellCardLast: {
+    borderBottomWidth: 1,
+    borderTopWidth: 0,
+    borderTopLeftRadius: 0,
+    borderTopRightRadius: 0,
+    borderBottomLeftRadius: borderRadius.xl,
+    borderBottomRightRadius: borderRadius.xl,
+  },
+  upsellIconWrap: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  upsellBody: { flex: 1, gap: 3 },
+  upsellTitle: {
+    fontSize: 15,
+    fontWeight: '700',
+    color: colors.textPrimary,
+  },
+  upsellDesc: {
+    fontSize: 13,
+    color: colors.textSecondary,
+    lineHeight: 18,
+  },
+
+  // Done
+  doneWrap: { gap: 12 },
+  skipBtn: { alignItems: 'center', paddingVertical: 4 },
+  skipText: {
+    fontSize: 14,
+    color: colors.textMuted,
+    fontWeight: '500',
+  },
 });

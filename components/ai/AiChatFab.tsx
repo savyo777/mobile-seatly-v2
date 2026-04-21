@@ -3,21 +3,16 @@ import {
   Modal,
   Pressable,
   StyleSheet,
-  Text,
   View,
   type ViewStyle,
 } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { AiChatPanel } from '@/components/ai/AiChatPanel';
 import { borderRadius, colors, spacing } from '@/lib/theme';
 
-/** Cenaiva monogram on the FAB (swap for an <Image> if you add assets/ai-fab.png). */
-function FabLogoMark() {
-  return (
-    <Text style={styles.fabMark} accessibilityElementsHidden>
-      C
-    </Text>
-  );
+function FabIcon() {
+  return <Ionicons name="chatbubble-ellipses" size={26} color={colors.bgBase} accessibilityElementsHidden />;
 }
 
 type Props = {
@@ -44,7 +39,7 @@ export function AiChatFab({ bottomOffset = 100, style }: Props) {
         ]}
         hitSlop={8}
       >
-        <FabLogoMark />
+        <FabIcon />
       </Pressable>
 
       <Modal
@@ -122,13 +117,5 @@ const styles = StyleSheet.create({
     flex: 1,
     paddingHorizontal: spacing.lg,
     paddingTop: spacing.sm,
-  },
-  fabMark: {
-    fontSize: 26,
-    fontWeight: '800',
-    fontStyle: 'italic',
-    color: colors.bgBase,
-    letterSpacing: -1,
-    marginTop: 2,
   },
 });

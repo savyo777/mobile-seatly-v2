@@ -222,6 +222,13 @@ export default {
     confirmationCode: 'Code de confirmation',
     addToCalendar: 'Ajouter au calendrier',
     viewBooking: 'Voir la réservation',
+    calendarHint: 'Les jours non disponibles sont grisés.',
+    dateField: 'Date',
+    timeField: 'Heure',
+    availableTimesLabel: 'Créneaux disponibles',
+    slotDurationHint: 'Créneaux de {{minutes}} minutes',
+    timeWheelHint: 'Faites défiler et appuyez sur un horaire. Les créneaux indisponibles sont grisés.',
+    stepCounter: 'Étape {{current}} sur {{total}}',
   },
   bookings: {
     title: 'Mes réservations',

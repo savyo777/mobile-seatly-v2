@@ -1,5 +1,5 @@
 import React, { useMemo, useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, Image, Pressable } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, Image, Pressable, Linking } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -18,13 +18,41 @@ import {
 import { SnapPreviewCard } from '@/components/discover/SnapPreviewCard';
 
 const WEEKDAY_KEYS = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'] as const;
+const WEEKDAY_SHORT = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 
 function priceRangeLabel(range: number): string {
   return '$'.repeat(range) as string;
 }
 
+function isOpenNow(hoursJson: Record<string, { open: string; close: string }>): boolean {
+  const now = new Date();
+  const key = WEEKDAY_KEYS[now.getDay()];
+  const hours = hoursJson[key];
+  if (!hours) return false;
+  const [openH, openM] = hours.open.split(':').map(Number);
+  const [closeH, closeM] = hours.close.split(':').map(Number);
+  const current = now.getHours() * 60 + now.getMinutes();
+  return current >= openH * 60 + openM && current < closeH * 60 + closeM;
+}
+
+function formatHour(time: string): string {
+  const [h, m] = time.split(':').map(Number);
+  const period = h >= 12 ? 'PM' : 'AM';
+  const hour = h % 12 || 12;
+  return m === 0 ? `${hour} ${period}` : `${hour}:${String(m).padStart(2, '0')} ${period}`;
+}
+
+function openMaps(address: string, city: string) {
+  const query = encodeURIComponent(`${address}, ${city}`);
+  Linking.openURL(`https://maps.apple.com/?q=${query}`).catch(() =>
+    Linking.openURL(`https://www.google.com/maps/search/?api=1&query=${query}`)
+  );
+}
+
 export default function RestaurantDetailScreen() {
   const [restaurantSnaps, setRestaurantSnaps] = useState<SnapPost[]>([]);
+  const [aboutExpanded, setAboutExpanded] = useState(false);
+  const [hoursExpanded, setHoursExpanded] = useState(false);
   const { id } = useLocalSearchParams<{ id: string }>();
   const { t } = useTranslation();
   const router = useRouter();
@@ -64,7 +92,7 @@ export default function RestaurantDetailScreen() {
     <View style={styles.root}>
       <ScrollView
         showsVerticalScrollIndicator={false}
-        contentContainerStyle={[styles.scrollContent, { paddingBottom: insets.bottom + 100 }]}
+        contentContainerStyle={[styles.scrollContent, { paddingBottom: insets.bottom + 160 }]}
       >
         <View style={styles.heroWrap}>
           <Image source={{ uri: restaurant.coverPhotoUrl }} style={styles.hero} />
@@ -100,26 +128,86 @@ export default function RestaurantDetailScreen() {
                 {restaurant.avgRating.toFixed(1)} · {t('discover.reviewsCount', { count: restaurant.totalReviews })}
               </Text>
             </View>
-            <Text style={styles.price}>{priceRangeLabel(restaurant.priceRange)}</Text>
           </View>
 
-          <View style={styles.addressRow}>
-            <Text style={styles.addressPin} accessible={false}>
-              ●
+          {/* Address — tappable, opens Maps */}
+          <Pressable
+            onPress={() => openMaps(restaurant.address, restaurant.city)}
+            style={({ pressed }) => [styles.addressRow, pressed && { opacity: 0.7 }]}
+          >
+            <Ionicons name="location-sharp" size={16} color={colors.gold} style={{ marginTop: 1 }} />
+            <View style={styles.addressBody}>
+              <Text style={styles.address}>
+                {restaurant.address}, {restaurant.city}, {restaurant.province}
+              </Text>
+              <Text style={styles.addressDirections}>Get directions →</Text>
+            </View>
+          </Pressable>
+
+          {/* About — collapsible with vibe chips */}
+          <View style={styles.section}>
+            <Text
+              style={styles.bodyText}
+              numberOfLines={aboutExpanded ? undefined : 3}
+            >
+              {restaurant.description}
             </Text>
-            <Text style={styles.address}>
-              {restaurant.address}, {restaurant.city}, {restaurant.province}
-            </Text>
+            {restaurant.description.length > 100 && (
+              <Pressable onPress={() => setAboutExpanded((v) => !v)} hitSlop={8}>
+                <Text style={styles.expandLink}>{aboutExpanded ? 'Show less' : 'Read more'}</Text>
+              </Pressable>
+            )}
+            <View style={styles.vibeRow}>
+              {restaurant.ambiance ? (
+                <View style={styles.vibeChip}>
+                  <Text style={styles.vibeChipText}>{restaurant.ambiance}</Text>
+                </View>
+              ) : null}
+              {restaurant.tags.slice(0, 3).map((tag) => (
+                <View key={tag} style={styles.vibeChip}>
+                  <Text style={styles.vibeChipText}>{tag}</Text>
+                </View>
+              ))}
+            </View>
           </View>
 
-          <Text style={styles.sectionHeading}>{t('restaurant.about')}</Text>
-          <Text style={styles.bodyText}>{restaurant.description}</Text>
-
-          <Text style={styles.sectionHeading}>{t('restaurant.hours')}</Text>
-          <Text style={styles.bodyText}>
-            {t('restaurant.todaysHours')}:{' '}
-            {todayHours ? `${todayHours.open} – ${todayHours.close}` : t('restaurant.closed')}
-          </Text>
+          {/* Hours — open/closed status + collapsible full week */}
+          <View style={styles.section}>
+            <View style={styles.hoursHeader}>
+              <Text style={styles.sectionHeading}>{t('restaurant.hours')}</Text>
+              <View style={styles.openBadge}>
+                <View style={[styles.openDot, { backgroundColor: isOpenNow(restaurant.hoursJson) ? colors.success : colors.danger }]} />
+                <Text style={[styles.openLabel, { color: isOpenNow(restaurant.hoursJson) ? colors.success : colors.danger }]}>
+                  {isOpenNow(restaurant.hoursJson) ? 'Open now' : 'Closed'}
+                </Text>
+              </View>
+            </View>
+            <Text style={styles.todayHours}>
+              Today: {todayHours ? `${formatHour(todayHours.open)} – ${formatHour(todayHours.close)}` : 'Closed'}
+            </Text>
+            {hoursExpanded && (
+              <View style={styles.hoursGrid}>
+                {WEEKDAY_KEYS.map((key, i) => {
+                  const h = restaurant.hoursJson[key];
+                  const isToday = i === new Date().getDay();
+                  return (
+                    <View key={key} style={[styles.hoursRow, isToday && styles.hoursRowToday]}>
+                      <Text style={[styles.hoursDay, isToday && styles.hoursDayToday]}>
+                        {WEEKDAY_SHORT[i]}
+                      </Text>
+                      <Text style={[styles.hoursTime, isToday && styles.hoursTimeToday]}>
+                        {h ? `${formatHour(h.open)} – ${formatHour(h.close)}` : 'Closed'}
+                      </Text>
+                    </View>
+                  );
+                })}
+              </View>
+            )}
+            <Pressable onPress={() => setHoursExpanded((v) => !v)} hitSlop={8} style={styles.expandBtn}>
+              <Text style={styles.expandLink}>{hoursExpanded ? 'Hide hours' : 'See all hours'}</Text>
+              <Ionicons name={hoursExpanded ? 'chevron-up' : 'chevron-down'} size={13} color={colors.gold} />
+            </Pressable>
+          </View>
 
           <Text style={styles.sectionHeading}>{t('restaurant.featuredMenu')}</Text>
           <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.featuredRow}>
@@ -172,7 +260,7 @@ export default function RestaurantDetailScreen() {
       <View style={[styles.footer, { paddingBottom: Math.max(insets.bottom, spacing.md) }]}>
         <Button
           title={t('restaurant.bookTable')}
-          onPress={() => router.push(`/booking/${restaurant.id}/step1-date`)}
+          onPress={() => router.push(`/booking/${restaurant.id}/step2-time`)}
         />
       </View>
     </View>
@@ -229,14 +317,6 @@ const styles = StyleSheet.create({
     color: colors.gold,
     fontWeight: '700',
   },
-  addressPin: {
-    fontSize: 10,
-    lineHeight: 18,
-    color: colors.gold,
-    marginTop: 3,
-    width: 12,
-    textAlign: 'center',
-  },
   body: {
     paddingHorizontal: spacing.lg,
     paddingTop: spacing.lg,
@@ -272,23 +352,134 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'flex-start',
     gap: spacing.sm,
-    marginBottom: spacing['2xl'],
+    backgroundColor: colors.bgSurface,
+    borderRadius: borderRadius.lg,
+    borderWidth: 1,
+    borderColor: colors.border,
+    padding: spacing.md,
+    marginBottom: spacing.lg,
   },
+  addressBody: { flex: 1, gap: 2 },
   address: {
-    flex: 1,
     ...typography.body,
-    color: colors.textSecondary,
+    color: colors.textPrimary,
+    fontWeight: '500',
+  },
+  addressDirections: {
+    ...typography.bodySmall,
+    color: colors.gold,
+    fontWeight: '600',
+  },
+
+  // Section wrapper
+  section: {
+    marginBottom: spacing.xl,
   },
   sectionHeading: {
     ...typography.h3,
     color: colors.textPrimary,
     marginBottom: spacing.sm,
-    marginTop: spacing.md,
   },
   bodyText: {
-    ...typography.bodyLarge,
+    ...typography.body,
     color: colors.textSecondary,
-    marginBottom: spacing.lg,
+    lineHeight: 22,
+  },
+  expandLink: {
+    ...typography.bodySmall,
+    color: colors.gold,
+    fontWeight: '600',
+    marginTop: spacing.xs,
+  },
+  expandBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    marginTop: spacing.sm,
+  },
+
+  // Vibe chips
+  vibeRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: spacing.xs,
+    marginTop: spacing.md,
+  },
+  vibeChip: {
+    borderWidth: 1,
+    borderColor: colors.border,
+    borderRadius: borderRadius.full,
+    paddingHorizontal: spacing.sm,
+    paddingVertical: 5,
+    backgroundColor: colors.bgSurface,
+  },
+  vibeChipText: {
+    ...typography.bodySmall,
+    color: colors.textSecondary,
+    fontWeight: '500',
+  },
+
+  // Hours
+  hoursHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: spacing.xs,
+  },
+  openBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+  },
+  openDot: {
+    width: 7,
+    height: 7,
+    borderRadius: 4,
+  },
+  openLabel: {
+    fontSize: 13,
+    fontWeight: '700',
+  },
+  todayHours: {
+    ...typography.body,
+    color: colors.textSecondary,
+    marginBottom: spacing.xs,
+  },
+  hoursGrid: {
+    marginTop: spacing.sm,
+    borderRadius: borderRadius.lg,
+    borderWidth: 1,
+    borderColor: colors.border,
+    overflow: 'hidden',
+  },
+  hoursRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    paddingVertical: 10,
+    paddingHorizontal: spacing.md,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: colors.border,
+  },
+  hoursRowToday: {
+    backgroundColor: 'rgba(201,168,76,0.08)',
+  },
+  hoursDay: {
+    ...typography.body,
+    color: colors.textMuted,
+    fontWeight: '500',
+    width: 40,
+  },
+  hoursDayToday: {
+    color: colors.gold,
+    fontWeight: '700',
+  },
+  hoursTime: {
+    ...typography.body,
+    color: colors.textSecondary,
+  },
+  hoursTimeToday: {
+    color: colors.textPrimary,
+    fontWeight: '600',
   },
   featuredRow: {
     gap: spacing.md,

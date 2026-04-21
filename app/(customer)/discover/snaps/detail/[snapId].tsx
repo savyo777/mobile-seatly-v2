@@ -129,7 +129,7 @@ export default function SnapDetailScreen() {
           </Pressable>
           <Pressable
             onPress={() =>
-              router.push(`/booking/${post.restaurant_id}/step1-date` as Href)
+              router.push(`/booking/${post.restaurant_id}/step2-time` as Href)
             }
             hitSlop={8}
           >
@@ -180,7 +180,7 @@ export default function SnapDetailScreen() {
       ) : null}
 
       <Pressable
-        onPress={() => router.push(`/booking/${post.restaurant_id}/step1-date` as Href)}
+        onPress={() => router.push(`/booking/${post.restaurant_id}/step2-time` as Href)}
       >
         <Text style={styles.bookLink}>
           {t('snapDetail.bookAt', { name: restaurant?.name ?? '' })}

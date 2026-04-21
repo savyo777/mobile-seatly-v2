@@ -221,6 +221,13 @@ export default {
     confirmationCode: 'Confirmation Code',
     addToCalendar: 'Add to Calendar',
     viewBooking: 'View Booking',
+    calendarHint: 'Unavailable days are grayed out.',
+    dateField: 'Date',
+    timeField: 'Time',
+    availableTimesLabel: 'Available times',
+    slotDurationHint: '{{minutes}}-minute seating slots',
+    timeWheelHint: 'Scroll and tap a time. Unavailable slots are grayed out.',
+    stepCounter: 'Step {{current}} of {{total}}',
   },
   bookings: {
     title: 'My Bookings',

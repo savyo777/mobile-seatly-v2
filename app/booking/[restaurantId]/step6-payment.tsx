@@ -16,7 +16,9 @@ export default function Step6Payment() {
   const insets = useSafeAreaInsets();
   const { t } = useTranslation();
   const [selectedMethod, setSelectedMethod] = useState<PaymentMethod>('card');
-  const progress = 6 / 7;
+  const BOOKING_STEPS = 6;
+  const STEP = 5;
+  const progress = STEP / BOOKING_STEPS;
 
   const preorderTotal = parseFloat(cartTotal || '0');
   const depositAmount = 25.00;
@@ -36,7 +38,9 @@ export default function Step6Payment() {
         <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
           <Ionicons name="chevron-back" size={24} color={colors.textPrimary} />
         </TouchableOpacity>
-        <Text style={styles.stepLabel}>Step 6 of 7</Text>
+        <Text style={styles.stepLabel}>
+          {t('booking.stepCounter', { current: STEP, total: BOOKING_STEPS })}
+        </Text>
         <View style={{ width: 40 }} />
       </View>
 

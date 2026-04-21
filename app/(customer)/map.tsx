@@ -306,7 +306,7 @@ export default function MapScreen() {
         onDismiss={() => setSheetRestaurantId(null)}
         onBook={() => {
           if (!selectedRestaurant) return;
-          router.push(`/booking/${selectedRestaurant.id}/step1-date`);
+          router.push(`/booking/${selectedRestaurant.id}/step2-time`);
         }}
         onViewDetails={() => {
           if (!selectedRestaurant) return;

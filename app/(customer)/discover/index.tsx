@@ -201,7 +201,7 @@ export default function DiscoverScreen() {
   };
 
   const reserveRestaurant = (r: Restaurant) => {
-    router.push(`/booking/${r.id}/step1-date` as Href);
+    router.push(`/booking/${r.id}/step2-time` as Href);
   };
 
   const goCategory = (slug: DiscoverCategorySlug) => {

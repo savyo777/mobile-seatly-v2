@@ -23,7 +23,9 @@ export default function Step4Preorder() {
   const { t } = useTranslation();
   const [cart, setCart] = useState<CartItem[]>([]);
   const [selectedCategory, setSelectedCategory] = useState('All');
-  const progress = 4 / 7;
+  const BOOKING_STEPS = 6;
+  const STEP = 3;
+  const progress = STEP / BOOKING_STEPS;
 
   const items = useMemo(() => {
     const restaurantItems = mockMenuItems.filter((m) => m.restaurantId === restaurantId && m.isPreorderable && m.isAvailable);
@@ -68,7 +70,9 @@ export default function Step4Preorder() {
         <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
           <Ionicons name="chevron-back" size={24} color={colors.textPrimary} />
         </TouchableOpacity>
-        <Text style={styles.stepLabel}>Step 4 of 7</Text>
+        <Text style={styles.stepLabel}>
+          {t('booking.stepCounter', { current: STEP, total: BOOKING_STEPS })}
+        </Text>
         <View style={styles.cartIndicator}>
           {cart.length > 0 && (
             <>

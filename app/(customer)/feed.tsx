@@ -9,6 +9,7 @@ import {
   Dimensions,
 } from 'react-native';
 import * as Haptics from 'expo-haptics';
+import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter, Href } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
@@ -33,8 +34,7 @@ import { getUnreadCount } from '@/lib/mock/notifications';
 import { SnapGrid } from '@/components/snaps/SnapGrid';
 import { SaveToCollectionSheet } from '@/components/snaps/SaveToCollectionSheet';
 import { mockCustomer } from '@/lib/mock/users';
-import { mockReservations, type Reservation } from '@/lib/mock/reservations';
-import { colors, spacing, typography } from '@/lib/theme';
+import { colors, spacing, typography, borderRadius } from '@/lib/theme';
 
 type FeedMode = 'local' | 'following' | 'explore';
 
@@ -42,57 +42,11 @@ const SCREEN_W = Dimensions.get('window').width;
 const TORONTO_LAT = 43.6532;
 const TORONTO_LNG = -79.3832;
 const LOCAL_RADIUS_KM = 50;
-const GUEST_ID = 'g1';
 const ME = mockCustomer.id;
+const IMAGE_HEIGHT = SCREEN_W * 1.25;
 
-const ACTIVE_STATUSES: Reservation['status'][] = ['pending', 'confirmed', 'seated'];
 
-function getNextReservation(): Reservation | null {
-  const now = Date.now();
-  return (
-    mockReservations
-      .filter((r) => r.guestId === GUEST_ID && ACTIVE_STATUSES.includes(r.status))
-      .filter((r) => new Date(r.reservedAt).getTime() > now - 60 * 60 * 1000) // include "in progress" (1h ago)
-      .sort((a, b) => new Date(a.reservedAt).getTime() - new Date(b.reservedAt).getTime())[0] ?? null
-  );
-}
 
-function formatReservationTime(iso: string): string {
-  const d = new Date(iso);
-  const now = new Date();
-  const isToday = d.toDateString() === now.toDateString();
-  const tomorrow = new Date(now);
-  tomorrow.setDate(now.getDate() + 1);
-  const isTomorrow = d.toDateString() === tomorrow.toDateString();
-  const timeStr = d.toLocaleTimeString('en-CA', { hour: 'numeric', minute: '2-digit', hour12: true });
-  if (isToday) return `Tonight · ${timeStr}`;
-  if (isTomorrow) return `Tomorrow · ${timeStr}`;
-  return `${d.toLocaleDateString('en-CA', { weekday: 'short', month: 'short', day: 'numeric' })} · ${timeStr}`;
-}
-
-function statusColor(status: Reservation['status']): string {
-  if (status === 'confirmed') return colors.gold;
-  if (status === 'seated') return colors.success;
-  return colors.warning;
-}
-
-function ReservationBanner({ res, onPress }: { res: Reservation; onPress: () => void }) {
-  return (
-    <Pressable
-      onPress={onPress}
-      style={({ pressed }) => [styles.banner, pressed && { opacity: 0.8 }]}
-    >
-      <View style={styles.bannerIcon}>
-        <Ionicons name="restaurant-outline" size={22} color={colors.gold} />
-      </View>
-      <View style={styles.bannerBody}>
-        <Text style={styles.bannerRestaurant} numberOfLines={1}>{res.restaurantName}</Text>
-        <Text style={styles.bannerMeta}>{formatReservationTime(res.reservedAt)} · {res.partySize} guests</Text>
-      </View>
-      <Ionicons name="chevron-forward" size={18} color={colors.textMuted} />
-    </Pressable>
-  );
-}
 
 export default function FeedScreen() {
   const router = useRouter();
@@ -102,8 +56,6 @@ export default function FeedScreen() {
   const [saveState, setSaveState] = useState<Record<string, boolean>>({});
   const [saveSheetPostId, setSaveSheetPostId] = useState<string | null>(null);
   const [unreadCount, setUnreadCount] = useState(() => getUnreadCount(ME));
-
-  const nextReservation = getNextReservation();
 
   const posts: SnapPost[] =
     mode === 'following'
@@ -133,114 +85,124 @@ export default function FeedScreen() {
       const restaurant = getRestaurantForPost(item.restaurant_id);
       const user = getSnapUser(item.user_id);
       const liked = likeState[item.id] ?? isLiked(ME, item.id);
-      const saved =
-        saveState[item.id] ?? (isSaved(ME, item.id) || isPostInAnyCollection(ME, item.id));
+      const saved = saveState[item.id] ?? (isSaved(ME, item.id) || isPostInAnyCollection(ME, item.id));
       const likeCount = item.likes + (liked ? 1 : 0);
       const commentCount = getCommentCountForPost(item.id);
 
       return (
         <View style={styles.post}>
-          {/* Post header */}
-          <Pressable
-            style={styles.postHeader}
-            onPress={() => router.push(`/(customer)/profile/${item.user_id}` as Href)}
-          >
-            {user?.avatarUrl ? (
-              <Image source={{ uri: user.avatarUrl }} style={styles.postAvatar} />
-            ) : (
-              <View style={[styles.postAvatar, styles.avatarFallback]} />
-            )}
-            <View style={styles.postMeta}>
-              <Text style={styles.postUsername}>{user?.username ?? 'user'}</Text>
-              <Pressable onPress={() => router.push(`/(customer)/discover/${item.restaurant_id}` as Href)}>
-                <Text style={styles.postLocation}>{restaurant?.name ?? 'Restaurant'}</Text>
+          {/* Image + overlays */}
+          <View style={styles.postImageWrap}>
+            <Pressable onPress={() => router.push(`/(customer)/discover/snaps/detail/${item.id}` as Href)}>
+              <Image source={{ uri: item.image }} style={styles.postImage} resizeMode="cover" />
+            </Pressable>
+
+            {/* Bottom gradient: user + restaurant info */}
+            <LinearGradient
+              colors={['transparent', 'rgba(0,0,0,0.75)']}
+              style={styles.imageGradient}
+              pointerEvents="box-none"
+            >
+              <View style={styles.overlayRow}>
+                <Pressable
+                  onPress={() => router.push(`/(customer)/profile/${item.user_id}` as Href)}
+                  style={styles.overlayAvatarWrap}
+                >
+                  {user?.avatarUrl ? (
+                    <Image source={{ uri: user.avatarUrl }} style={styles.overlayAvatar} />
+                  ) : (
+                    <View style={[styles.overlayAvatar, styles.avatarFallback]} />
+                  )}
+                </Pressable>
+                <View style={styles.overlayInfo}>
+                  <Text style={styles.overlayUsername}>@{user?.username ?? 'user'}</Text>
+                  <Pressable onPress={() => router.push(`/(customer)/discover/${item.restaurant_id}` as Href)}>
+                    <Text style={styles.overlayRestaurant} numberOfLines={1}>
+                      <Ionicons name="location-sharp" size={11} color={colors.gold} /> {restaurant?.name ?? 'Restaurant'}
+                    </Text>
+                  </Pressable>
+                </View>
+                <Ionicons name="ellipsis-horizontal" size={20} color="rgba(255,255,255,0.7)" />
+              </View>
+            </LinearGradient>
+
+            {/* Right-side action stack */}
+            <View style={styles.rightActions}>
+              {/* Avatar above actions */}
+              <Pressable
+                onPress={() => router.push(`/(customer)/profile/${item.user_id}` as Href)}
+                style={({ pressed }) => [styles.rightAction, pressed && { opacity: 0.7 }]}
+                hitSlop={8}
+              >
+                {user?.avatarUrl ? (
+                  <Image source={{ uri: user.avatarUrl }} style={styles.rightAvatar} />
+                ) : (
+                  <View style={[styles.rightAvatar, styles.avatarFallback]} />
+                )}
               </Pressable>
-            </View>
-            <Ionicons name="ellipsis-horizontal" size={20} color={colors.textMuted} />
-          </Pressable>
 
-          {/* Photo */}
-          <Pressable
-            onPress={() => router.push(`/(customer)/discover/snaps/detail/${item.id}` as Href)}
-          >
-            <Image source={{ uri: item.image }} style={styles.postImage} resizeMode="cover" />
-          </Pressable>
-
-          {/* Action bar */}
-          <View style={styles.actionBar}>
-            <View style={styles.actionLeft}>
               <Pressable
                 onPress={() => handleLike(item.id)}
-                style={({ pressed }) => [styles.actionIcon, pressed && { opacity: 0.6 }]}
+                style={({ pressed }) => [styles.rightAction, pressed && { opacity: 0.6 }]}
                 hitSlop={8}
               >
                 <Ionicons
                   name={liked ? 'heart' : 'heart-outline'}
-                  size={26}
-                  color={liked ? '#EF4444' : colors.textPrimary}
+                  size={32}
+                  color={liked ? colors.gold : '#fff'}
                 />
+                <Text style={styles.rightActionCount}>{likeCount.toLocaleString()}</Text>
               </Pressable>
+
               <Pressable
                 onPress={() => router.push(`/(customer)/discover/snaps/detail/${item.id}` as Href)}
-                style={({ pressed }) => [styles.actionIcon, pressed && { opacity: 0.6 }]}
+                style={({ pressed }) => [styles.rightAction, pressed && { opacity: 0.6 }]}
                 hitSlop={8}
               >
-                <Ionicons name="chatbubble-outline" size={23} color={colors.textPrimary} />
+                <Ionicons name="chatbubble-outline" size={30} color="#fff" />
+                {commentCount > 0 && (
+                  <Text style={styles.rightActionCount}>{commentCount}</Text>
+                )}
               </Pressable>
+
               <Pressable
-                onPress={() => router.push(`/booking/${item.restaurant_id}/step1-date` as Href)}
-                style={({ pressed }) => [styles.actionIcon, pressed && { opacity: 0.6 }]}
+                onPress={() => handleOpenSaveSheet(item.id)}
+                style={({ pressed }) => [styles.rightAction, pressed && { opacity: 0.6 }]}
                 hitSlop={8}
               >
-                <Ionicons name="calendar-outline" size={24} color={colors.textPrimary} />
+                <Ionicons
+                  name={saved ? 'bookmark' : 'bookmark-outline'}
+                  size={30}
+                  color={saved ? colors.gold : '#fff'}
+                />
               </Pressable>
             </View>
-            <Pressable
-              onPress={() => handleOpenSaveSheet(item.id)}
-              style={({ pressed }) => ({ opacity: pressed ? 0.6 : 1 })}
-              hitSlop={8}
-            >
-              <Ionicons
-                name={saved ? 'bookmark' : 'bookmark-outline'}
-                size={24}
-                color={saved ? colors.gold : colors.textPrimary}
-              />
-            </Pressable>
           </View>
 
-          <Text style={styles.likeCount}>{likeCount.toLocaleString()} likes</Text>
-          <View style={styles.captionRow}>
-            <Text style={styles.captionUsername}>{user?.username ?? 'user'} </Text>
-            <Text style={styles.captionText}>{item.caption}</Text>
+          {/* Below image: caption + book */}
+          <View style={styles.postFooter}>
+            <View style={styles.captionRow}>
+              <Text style={styles.captionUsername}>@{user?.username ?? 'user'} </Text>
+              <Text style={styles.captionText}>{item.caption}</Text>
+            </View>
+
+            <View style={styles.footerRow}>
+              <Pressable
+                onPress={() => router.push(`/booking/${item.restaurant_id}/step2-time` as Href)}
+                style={({ pressed }) => [styles.bookBtn, pressed && { opacity: 0.75 }]}
+              >
+                <Ionicons name="calendar-outline" size={15} color={colors.bgBase} />
+                <Text style={styles.bookBtnText}>Book a table</Text>
+              </Pressable>
+              <Text style={styles.timestamp}>{timeAgoLabel(item.timestamp).toUpperCase()}</Text>
+            </View>
           </View>
-          {commentCount > 0 ? (
-            <Pressable
-              onPress={() => router.push(`/(customer)/discover/snaps/detail/${item.id}` as Href)}
-            >
-              <Text style={styles.viewComments}>View all {commentCount} comments</Text>
-            </Pressable>
-          ) : null}
-          <Pressable onPress={() => router.push(`/booking/${item.restaurant_id}/step1-date` as Href)}>
-            <Text style={styles.bookLink}>Book a table at {restaurant?.name ?? 'this restaurant'} →</Text>
-          </Pressable>
-          <Text style={styles.timestamp}>{timeAgoLabel(item.timestamp).toUpperCase()}</Text>
-          <View style={styles.separator} />
         </View>
       );
     },
     [likeState, saveState, router, handleLike, handleOpenSaveSheet],
   );
 
-  const ListHeader = useCallback(
-    () =>
-      nextReservation ? (
-        <ReservationBanner
-          res={nextReservation}
-          onPress={() => router.push('/(customer)/activity' as Href)}
-        />
-      ) : null,
-    [nextReservation, router],
-  );
 
   const modeLabels: Record<FeedMode, string> = {
     local: 'Local',
@@ -252,31 +214,45 @@ export default function FeedScreen() {
     <View style={[styles.container, { paddingTop: insets.top }]}>
       {/* Header */}
       <View style={styles.header}>
-        <Text style={styles.logo}>Cenaiva</Text>
+        <Pressable style={styles.locationPill}>
+          <Ionicons name="location-sharp" size={12} color={colors.gold} />
+          <Text style={styles.locationText}>Toronto</Text>
+          <Ionicons name="chevron-down" size={11} color={colors.textMuted} />
+        </Pressable>
+
+        {/* Segmented pill selector */}
+        <View style={styles.modePill}>
+          {(['local', 'following', 'explore'] as FeedMode[]).map((m) => (
+            <Pressable
+              key={m}
+              onPress={() => setMode(m)}
+              style={[styles.modePillBtn, mode === m && styles.modePillBtnActive]}
+            >
+              <Text style={[styles.modePillText, mode === m && styles.modePillTextActive]}>
+                {modeLabels[m]}
+              </Text>
+            </Pressable>
+          ))}
+        </View>
+
         <Pressable
           onPress={() => {
             router.push('/(customer)/notifications' as Href);
             setUnreadCount(0);
           }}
           hitSlop={10}
-          style={styles.bellBtn}
         >
-          <Ionicons name="notifications-outline" size={24} color={colors.textPrimary} />
+          <Ionicons name="notifications-outline" size={22} color={colors.textPrimary} />
           {unreadCount > 0 ? <View style={styles.bellDot} /> : null}
         </Pressable>
       </View>
 
-      {/* Mode tabs */}
-      <View style={styles.modeTabs}>
-        {(['local', 'following', 'explore'] as FeedMode[]).map((m) => (
-          <Pressable key={m} onPress={() => setMode(m)} style={styles.modeTab}>
-            <Text style={[styles.modeTabText, mode === m && styles.modeTabTextActive]}>
-              {modeLabels[m]}
-            </Text>
-            {mode === m && <View style={styles.modeTabUnderline} />}
-          </Pressable>
-        ))}
-      </View>
+      {/* Context label */}
+      <Text style={styles.contextLabel}>
+        {mode === 'local' && 'Showing posts near Toronto'}
+        {mode === 'following' && 'From people you follow'}
+        {mode === 'explore' && 'Trending this week'}
+      </Text>
 
       {mode === 'explore' ? (
         <SnapGrid
@@ -289,7 +265,6 @@ export default function FeedScreen() {
           data={posts}
           keyExtractor={(item) => item.id}
           renderItem={renderPost}
-          ListHeaderComponent={ListHeader}
           showsVerticalScrollIndicator={false}
           contentContainerStyle={{ paddingBottom: insets.bottom + 90 }}
           ListEmptyComponent={
@@ -335,169 +310,274 @@ export default function FeedScreen() {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.bgBase },
 
+  // Header
   header: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingHorizontal: spacing.lg,
+    paddingHorizontal: spacing.md,
     paddingVertical: spacing.sm,
-    borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: colors.border,
+    gap: spacing.sm,
   },
-  logo: {
-    fontSize: 28,
-    fontWeight: '700',
-    color: colors.gold,
-    fontStyle: 'italic',
-    letterSpacing: -0.5,
+  locationPill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 3,
+    backgroundColor: colors.bgSurface,
+    borderRadius: 20,
+    paddingHorizontal: spacing.sm,
+    paddingVertical: 6,
+    borderWidth: 1,
+    borderColor: colors.border,
   },
-  bellBtn: {
-    padding: 4,
+  locationText: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: colors.textSecondary,
   },
   bellDot: {
     position: 'absolute',
-    top: 2,
-    right: 2,
+    top: 0,
+    right: 0,
     width: 8,
     height: 8,
     borderRadius: 4,
     backgroundColor: colors.danger,
   },
 
-  modeTabs: {
-    flexDirection: 'row',
-    borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: colors.border,
-  },
-  modeTab: {
+  // Segmented mode selector
+  modePill: {
     flex: 1,
-    alignItems: 'center',
-    paddingVertical: spacing.sm,
+    flexDirection: 'row',
+    backgroundColor: colors.bgSurface,
+    borderRadius: borderRadius.full,
+    borderWidth: 1,
+    borderColor: colors.border,
+    padding: 3,
+    marginHorizontal: spacing.xs,
   },
-  modeTabText: { ...typography.body, fontWeight: '600', color: colors.textMuted },
-  modeTabTextActive: { color: colors.textPrimary, fontWeight: '700' },
-  modeTabUnderline: {
-    position: 'absolute',
-    bottom: 0,
-    left: '15%',
-    right: '15%',
-    height: 1.5,
-    backgroundColor: colors.textPrimary,
-    borderRadius: 1,
+  modePillBtn: {
+    flex: 1,
+    paddingVertical: 6,
+    borderRadius: borderRadius.full,
+    alignItems: 'center',
+  },
+  modePillBtnActive: {
+    backgroundColor: colors.bgElevated,
+    borderWidth: 1,
+    borderColor: 'rgba(201,168,76,0.25)',
+  },
+  modePillText: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: colors.textMuted,
+  },
+  modePillTextActive: {
+    color: colors.textPrimary,
+    fontWeight: '700',
   },
 
-  // Reservation banner — Uber style
+  // Context label
+  contextLabel: {
+    fontSize: 11,
+    fontWeight: '500',
+    color: colors.textMuted,
+    paddingHorizontal: spacing.lg,
+    paddingBottom: spacing.sm,
+    letterSpacing: 0.2,
+  },
+
+  // Reservation banner
   banner: {
     flexDirection: 'row',
     alignItems: 'center',
     marginHorizontal: spacing.md,
-    marginVertical: spacing.sm,
-    paddingVertical: spacing.md,
-    paddingHorizontal: spacing.md,
-    backgroundColor: colors.bgSurface,
-    borderRadius: 14,
-    gap: spacing.md,
+    marginTop: spacing.sm,
+    marginBottom: spacing.xs,
+    backgroundColor: 'rgba(201,168,76,0.07)',
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: 'rgba(201,168,76,0.2)',
+    overflow: 'hidden',
   },
-  bannerIcon: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    backgroundColor: 'rgba(201,168,76,0.12)',
-    alignItems: 'center',
-    justifyContent: 'center',
+  bannerAccent: {
+    width: 4,
+    alignSelf: 'stretch',
+    backgroundColor: colors.gold,
   },
-  bannerBody: {
+  bannerContent: {
     flex: 1,
+    paddingVertical: spacing.md,
+    paddingLeft: spacing.md,
     gap: 3,
   },
-  bannerRestaurant: {
-    ...typography.body,
-    fontWeight: '700',
-    color: colors.textPrimary,
+  bannerUrgency: {
+    fontSize: 10,
+    fontWeight: '800',
+    color: colors.gold,
+    letterSpacing: 1.2,
   },
-  bannerMeta: {
+  bannerTime: {
+    fontSize: 22,
+    fontWeight: '800',
+    color: colors.textPrimary,
+    letterSpacing: -0.3,
+  },
+  bannerRestaurant: {
     ...typography.bodySmall,
+    color: colors.textSecondary,
+    fontWeight: '500',
+  },
+  bannerChips: {
+    flexDirection: 'row',
+    gap: spacing.xs,
+    marginTop: 4,
+  },
+  bannerChip: {
+    backgroundColor: 'rgba(255,255,255,0.06)',
+    borderRadius: 20,
+    paddingHorizontal: spacing.sm,
+    paddingVertical: 3,
+  },
+  bannerChipText: {
+    fontSize: 11,
     color: colors.textMuted,
+    fontWeight: '500',
+  },
+  bannerAction: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 2,
+    paddingHorizontal: spacing.md,
+  },
+  bannerActionText: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: colors.gold,
   },
 
   // Post
-  post: { marginBottom: spacing.xs },
-  postHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.sm,
-    gap: spacing.sm,
+  post: { marginBottom: spacing['2xl'] },
+
+  postImageWrap: {
+    width: SCREEN_W,
+    height: IMAGE_HEIGHT,
+    position: 'relative',
   },
-  postAvatar: {
-    width: 34,
-    height: 34,
-    borderRadius: 17,
-    backgroundColor: colors.bgElevated,
-    borderWidth: 1.5,
-    borderColor: colors.gold,
-  },
-  avatarFallback: { backgroundColor: colors.bgElevated },
-  postMeta: { flex: 1, gap: 1 },
-  postUsername: { ...typography.body, fontWeight: '700', color: colors.textPrimary },
-  postLocation: { ...typography.bodySmall, color: colors.textMuted },
   postImage: {
     width: SCREEN_W,
-    height: SCREEN_W,
+    height: IMAGE_HEIGHT,
     backgroundColor: colors.bgElevated,
   },
-  actionBar: {
+
+  // Bottom gradient overlay
+  imageGradient: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    paddingTop: 60,
+    paddingBottom: spacing.md,
+    paddingHorizontal: spacing.md,
+  },
+  overlayRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
+    gap: spacing.sm,
+  },
+  overlayAvatarWrap: {},
+  overlayAvatar: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    borderWidth: 1.5,
+    borderColor: colors.gold,
+    backgroundColor: colors.bgElevated,
+  },
+  avatarFallback: { backgroundColor: colors.bgElevated },
+  overlayInfo: { flex: 1 },
+  overlayUsername: {
+    fontSize: 13,
+    fontWeight: '700',
+    color: '#fff',
+  },
+  overlayRestaurant: {
+    fontSize: 12,
+    fontWeight: '500',
+    color: 'rgba(255,255,255,0.8)',
+    marginTop: 1,
+  },
+
+  // Right-side action stack
+  rightActions: {
+    position: 'absolute',
+    right: spacing.md,
+    bottom: 80,
+    alignItems: 'center',
+    gap: spacing.lg,
+  },
+  rightAction: {
+    alignItems: 'center',
+    gap: 4,
+  },
+  rightAvatar: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    borderWidth: 2,
+    borderColor: colors.gold,
+    backgroundColor: colors.bgElevated,
+  },
+  rightActionCount: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: '#fff',
+    textShadowColor: 'rgba(0,0,0,0.6)',
+    textShadowOffset: { width: 0, height: 1 },
+    textShadowRadius: 3,
+  },
+
+  // Post footer
+  postFooter: {
     paddingHorizontal: spacing.md,
     paddingTop: spacing.sm,
-    paddingBottom: spacing.xs,
-  },
-  actionLeft: { flexDirection: 'row', alignItems: 'center', gap: spacing.md },
-  actionIcon: {},
-  likeCount: {
-    ...typography.body,
-    fontWeight: '700',
-    color: colors.textPrimary,
-    paddingHorizontal: spacing.md,
-    marginBottom: 3,
+    gap: spacing.xs,
   },
   captionRow: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    paddingHorizontal: spacing.md,
-    marginBottom: 4,
   },
-  captionUsername: { ...typography.body, fontWeight: '700', color: colors.textPrimary },
-  captionText: { ...typography.body, color: colors.textPrimary, flex: 1 },
-  viewComments: {
-    ...typography.bodySmall,
-    color: colors.textMuted,
-    paddingHorizontal: spacing.md,
-    marginBottom: spacing.xs,
+  captionUsername: { fontSize: 14, fontWeight: '700', color: colors.textPrimary },
+  captionText: { fontSize: 14, color: colors.textSecondary, flex: 1 },
+
+  footerRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginTop: spacing.xs,
   },
-  bookLink: {
-    ...typography.bodySmall,
-    color: colors.gold,
-    fontWeight: '600',
-    paddingHorizontal: spacing.md,
-    marginBottom: spacing.xs,
+  bookBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    backgroundColor: colors.gold,
+    borderRadius: 20,
+    paddingHorizontal: spacing.lg,
+    paddingVertical: 9,
+  },
+  bookBtnText: {
+    fontSize: 14,
+    fontWeight: '700',
+    color: colors.bgBase,
   },
   timestamp: {
     fontSize: 10,
     fontWeight: '500',
     color: colors.textMuted,
-    paddingHorizontal: spacing.md,
-    marginBottom: spacing.sm,
     letterSpacing: 0.4,
   },
-  separator: {
-    height: StyleSheet.hairlineWidth,
-    backgroundColor: colors.border,
-    marginTop: spacing.xs,
-  },
 
+  // Empty states
   empty: {
     paddingTop: spacing['4xl'],
     alignItems: 'center',
