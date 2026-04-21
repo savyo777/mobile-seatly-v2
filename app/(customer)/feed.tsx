@@ -27,7 +27,6 @@ import {
   listTrendingPosts,
 } from '@/lib/mock/social';
 import { isPostInAnyCollection } from '@/lib/mock/collections';
-import { getUnreadCount } from '@/lib/mock/notifications';
 import { SnapGrid } from '@/components/snaps/SnapGrid';
 import { SaveToCollectionSheet } from '@/components/snaps/SaveToCollectionSheet';
 import { FeedHero } from '@/components/feed/FeedHero';
@@ -77,7 +76,6 @@ export default function FeedScreen() {
   const [likeState, setLikeState] = useState<Record<string, boolean>>({});
   const [saveState, setSaveState] = useState<Record<string, boolean>>({});
   const [saveSheetPostId, setSaveSheetPostId] = useState<string | null>(null);
-  const [unreadCount, setUnreadCount] = useState(() => getUnreadCount(ME));
 
   // Collapsing header animation
   const scrollY = useRef(new Animated.Value(0)).current;
@@ -178,17 +176,6 @@ export default function FeedScreen() {
                 {getGreeting().toUpperCase()} · TORONTO
               </Text>
             </View>
-            <Pressable
-              onPress={() => {
-                router.push('/(customer)/notifications' as Href);
-                setUnreadCount(0);
-              }}
-              hitSlop={10}
-              style={styles.bellBtn}
-            >
-              <Ionicons name="notifications-outline" size={21} color={colors.textPrimary} />
-              {unreadCount > 0 ? <View style={styles.bellDot} /> : null}
-            </Pressable>
           </View>
         </Animated.View>
 
@@ -300,7 +287,6 @@ const styles = StyleSheet.create({
   greetingRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
   },
   greetingLeft: {
     flexDirection: 'row',
@@ -319,19 +305,6 @@ const styles = StyleSheet.create({
     color: colors.textMuted,
     letterSpacing: 1.3,
   },
-  bellBtn: { position: 'relative', padding: 2 },
-  bellDot: {
-    position: 'absolute',
-    top: 2,
-    right: 2,
-    width: 7,
-    height: 7,
-    borderRadius: 4,
-    backgroundColor: colors.danger,
-    borderWidth: 1.5,
-    borderColor: colors.bgBase,
-  },
-
   // Tabs
   tabs: {
     flexDirection: 'row',

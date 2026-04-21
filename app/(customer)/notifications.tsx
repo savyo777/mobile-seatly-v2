@@ -1,11 +1,11 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import {
-  Image,
   Pressable,
   ScrollView,
   StyleSheet,
   Text,
   View,
+  Image,
 } from 'react-native';
 import { Href, useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -20,13 +20,48 @@ import {
   type NotificationBucket,
 } from '@/lib/mock/notifications';
 import { getSnapPostById, timeAgoLabel } from '@/lib/mock/snaps';
-import { follow, isFollowing, unfollow } from '@/lib/mock/social';
 import { mockCustomer } from '@/lib/mock/users';
 import { borderRadius, colors, spacing, typography } from '@/lib/theme';
 
 const ME = mockCustomer.id;
-
 const BUCKET_ORDER: NotificationBucket[] = ['today', 'thisWeek', 'earlier'];
+
+const BUCKET_LABELS: Record<NotificationBucket, string> = {
+  today: 'Today',
+  thisWeek: 'This Week',
+  earlier: 'Earlier',
+};
+
+type TypeConfig = {
+  icon: React.ComponentProps<typeof Ionicons>['name'];
+  bg: string;
+  color: string;
+};
+
+const TYPE_CONFIG: Record<SocialNotification['type'], TypeConfig> = {
+  like: { icon: 'heart', bg: 'rgba(201,162,74,0.15)', color: colors.gold },
+  comment: { icon: 'chatbubble', bg: 'rgba(99,179,237,0.12)', color: '#63B3ED' },
+  follow: { icon: 'person-add', bg: 'rgba(255,255,255,0.06)', color: colors.textMuted },
+};
+
+function buildNotifText(
+  n: SocialNotification,
+  actorUsername: string,
+  postRestaurant?: string,
+): string {
+  if (n.type === 'like') {
+    return postRestaurant
+      ? `${actorUsername} liked your snap at ${postRestaurant}`
+      : `${actorUsername} liked your snap`;
+  }
+  if (n.type === 'comment') {
+    const quote = n.commentText ? ` "${n.commentText}"` : '';
+    return postRestaurant
+      ? `${actorUsername} commented on your snap at ${postRestaurant}${quote}`
+      : `${actorUsername} commented on your snap${quote}`;
+  }
+  return `${actorUsername} started following you`;
+}
 
 export default function NotificationsScreen() {
   const router = useRouter();
@@ -34,134 +69,114 @@ export default function NotificationsScreen() {
   const { t } = useTranslation();
 
   const [items, setItems] = useState<SocialNotification[]>(() => listNotifications(ME));
-  const [followState, setFollowState] = useState<Record<string, boolean>>(() => {
-    const seed: Record<string, boolean> = {};
-    items.forEach((n) => {
-      if (n.type === 'follow') seed[n.actorId] = isFollowing(ME, n.actorId);
-    });
-    return seed;
-  });
 
   useEffect(() => {
     const timeout = setTimeout(() => {
       markAllRead(ME);
       setItems(listNotifications(ME));
-    }, 400);
+    }, 600);
     return () => clearTimeout(timeout);
   }, []);
 
-  const handleFollowToggle = useCallback((actorId: string) => {
-    const currently = isFollowing(ME, actorId);
-    if (currently) unfollow(ME, actorId);
-    else follow(ME, actorId);
-    setFollowState((prev) => ({ ...prev, [actorId]: !currently }));
-  }, []);
-
-  const buckets = bucketNotifications(items);
-
-  const renderNotification = (n: SocialNotification) => {
-    const actor = getNotificationActor(n.actorId);
-    const post = n.postId ? getSnapPostById(n.postId) : undefined;
-
-    const handlePress = () => {
+  const handlePress = useCallback(
+    (n: SocialNotification) => {
+      const post = n.postId ? getSnapPostById(n.postId) : undefined;
       if (n.type === 'follow') {
-        router.push(`/(customer)/profile/${n.actorId}` as Href);
+        router.push(`/(customer)/profile/${n.actorId}?from=notifications` as Href);
       } else if (post) {
         router.push(`/(customer)/discover/snaps/detail/${post.id}` as Href);
       }
-    };
+    },
+    [router],
+  );
 
-    let text: React.ReactNode;
-    if (n.type === 'like') {
-      text = (
-        <Text style={styles.text}>
-          <Text style={styles.username}>{actor?.username ?? 'someone'}</Text>{' '}
-          {t('notifications.liked')}
-        </Text>
-      );
-    } else if (n.type === 'comment') {
-      text = (
-        <Text style={styles.text}>
-          <Text style={styles.username}>{actor?.username ?? 'someone'}</Text>{' '}
-          {t('notifications.commented')}
-          {n.commentText ? <Text style={styles.quoted}> "{n.commentText}"</Text> : null}
-        </Text>
-      );
-    } else {
-      text = (
-        <Text style={styles.text}>
-          <Text style={styles.username}>{actor?.username ?? 'someone'}</Text>{' '}
-          {t('notifications.followed')}
-        </Text>
-      );
-    }
+  const buckets = bucketNotifications(items);
 
-    const following = followState[n.actorId] ?? isFollowing(ME, n.actorId);
+  const renderItem = (n: SocialNotification) => {
+    const actor = getNotificationActor(n.actorId);
+    const post = n.postId ? getSnapPostById(n.postId) : undefined;
+    const cfg = TYPE_CONFIG[n.type];
+    const username = actor?.username ?? 'someone';
+    const notifText = buildNotifText(n, username, post?.restaurantName);
+    const isUnread = !n.read;
 
     return (
       <Pressable
         key={n.id}
-        onPress={handlePress}
-        style={({ pressed }) => [styles.row, pressed && { opacity: 0.75 }]}
+        onPress={() => handlePress(n)}
+        style={({ pressed }) => [styles.row, pressed && { opacity: 0.72 }]}
       >
-        {actor?.avatarUrl ? (
-          <Image source={{ uri: actor.avatarUrl }} style={styles.avatar} />
-        ) : (
-          <View style={[styles.avatar, styles.avatarFallback]} />
-        )}
+        {/* Unread accent bar */}
+        {isUnread && <View style={styles.unreadBar} />}
+
+        {/* Type icon circle */}
+        <View style={[styles.iconCircle, { backgroundColor: cfg.bg }]}>
+          <Ionicons name={cfg.icon} size={18} color={cfg.color} />
+        </View>
+
+        {/* Text block */}
         <View style={styles.body}>
-          {text}
+          <Text style={styles.notifText} numberOfLines={3}>
+            <Text style={styles.boldName}>{username}</Text>
+            <Text>{notifText.slice(username.length)}</Text>
+          </Text>
           <Text style={styles.time}>{timeAgoLabel(n.timestamp)}</Text>
         </View>
-        {n.type === 'follow' ? (
-          <Pressable
-            onPress={() => handleFollowToggle(n.actorId)}
-            style={[styles.followBtn, following && styles.followBtnActive]}
-          >
-            <Text style={[styles.followBtnText, following && styles.followBtnTextActive]}>
-              {following ? t('notifications.following') : t('notifications.followBack')}
-            </Text>
-          </Pressable>
-        ) : post ? (
+
+        {/* Snap thumbnail (like / comment) */}
+        {post?.image ? (
           <Image source={{ uri: post.image }} style={styles.thumb} />
         ) : null}
       </Pressable>
     );
   };
 
-  const bucketLabel = (key: NotificationBucket) => {
-    if (key === 'today') return t('notifications.today');
-    if (key === 'thisWeek') return t('notifications.thisWeek');
-    return t('notifications.earlier');
-  };
-
   return (
     <View style={[styles.root, { paddingTop: insets.top }]}>
+      {/* Header */}
       <View style={styles.topBar}>
-        <Pressable onPress={() => router.back()} hitSlop={10}>
-          <Ionicons name="chevron-back" size={24} color={colors.textPrimary} />
+        <Pressable
+          onPress={() => router.back()}
+          hitSlop={12}
+          style={({ pressed }) => [styles.backBtn, pressed && { opacity: 0.6 }]}
+        >
+          <Ionicons name="chevron-back" size={20} color={colors.textPrimary} />
         </Pressable>
-        <Text style={styles.topBarTitle}>{t('notifications.title')}</Text>
-        <View style={{ width: 24 }} />
+        <Text style={styles.topBarTitle}>Activity</Text>
+        <View style={{ width: 36 }} />
       </View>
 
       <ScrollView
-        contentContainerStyle={{ paddingBottom: insets.bottom + spacing.xl }}
+        contentContainerStyle={{ paddingBottom: insets.bottom + spacing['4xl'] }}
         showsVerticalScrollIndicator={false}
       >
         {items.length === 0 ? (
           <View style={styles.empty}>
-            <Ionicons name="notifications-outline" size={40} color={colors.textMuted} />
-            <Text style={styles.emptyText}>{t('notifications.empty')}</Text>
+            <View style={[styles.iconCircle, { backgroundColor: 'rgba(255,255,255,0.06)', width: 56, height: 56 }]}>
+              <Ionicons name="notifications-outline" size={26} color={colors.textMuted} />
+            </View>
+            <Text style={styles.emptyTitle}>No activity yet</Text>
+            <Text style={styles.emptyBody}>When people like or comment on your snaps, you'll see it here.</Text>
           </View>
         ) : (
           BUCKET_ORDER.map((bucket) => {
             const list = buckets[bucket];
             if (!list.length) return null;
             return (
-              <View key={bucket}>
-                <Text style={styles.bucketHeader}>{bucketLabel(bucket)}</Text>
-                {list.map(renderNotification)}
+              <View key={bucket} style={styles.section}>
+                {/* Bucket header */}
+                <View style={styles.bucketRow}>
+                  <View style={styles.goldDot} />
+                  <Text style={styles.bucketHeader}>{BUCKET_LABELS[bucket]}</Text>
+                </View>
+                <View style={styles.card}>
+                  {list.map((n, i) => (
+                    <React.Fragment key={n.id}>
+                      {i > 0 && <View style={styles.divider} />}
+                      {renderItem(n)}
+                    </React.Fragment>
+                  ))}
+                </View>
               </View>
             );
           })
@@ -176,6 +191,7 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: colors.bgBase,
   },
+
   topBar: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -183,87 +199,133 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.sm,
     borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: colors.border,
+    borderBottomColor: 'rgba(255,255,255,0.06)',
+  },
+  backBtn: {
+    width: 36,
+    height: 36,
+    borderRadius: borderRadius.full,
+    backgroundColor: 'rgba(255,255,255,0.06)',
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   topBarTitle: {
-    ...typography.body,
-    fontWeight: '700',
+    fontSize: 17,
+    fontWeight: '800',
     color: colors.textPrimary,
+    letterSpacing: -0.2,
+  },
+
+  section: {
+    paddingHorizontal: spacing.lg,
+    marginTop: spacing.xl,
+  },
+
+  bucketRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    marginBottom: spacing.sm,
+  },
+  goldDot: {
+    width: 5,
+    height: 5,
+    borderRadius: borderRadius.full,
+    backgroundColor: colors.gold,
   },
   bucketHeader: {
-    ...typography.label,
+    fontSize: 11,
+    fontWeight: '700',
     color: colors.textMuted,
-    paddingHorizontal: spacing.lg,
-    paddingTop: spacing.md,
-    paddingBottom: spacing.xs,
+    letterSpacing: 1,
+    textTransform: 'uppercase',
   },
+
+  card: {
+    backgroundColor: colors.bgSurface,
+    borderRadius: borderRadius.xl,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: 'rgba(255,255,255,0.07)',
+    overflow: 'hidden',
+  },
+
+  divider: {
+    height: StyleSheet.hairlineWidth,
+    backgroundColor: 'rgba(255,255,255,0.06)',
+    marginLeft: 60,
+  },
+
   row: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: spacing.sm,
-    paddingHorizontal: spacing.lg,
-    paddingVertical: spacing.sm,
-  },
-  avatar: {
-    width: 44,
-    height: 44,
-    borderRadius: borderRadius.full,
-    backgroundColor: colors.bgElevated,
-  },
-  avatarFallback: {
-    backgroundColor: colors.bgElevated,
-  },
-  body: {
-    flex: 1,
-    gap: 2,
-  },
-  text: {
-    ...typography.body,
-    color: colors.textPrimary,
-  },
-  username: {
-    fontWeight: '700',
-  },
-  quoted: {
-    color: colors.textSecondary,
-  },
-  time: {
-    ...typography.bodySmall,
-    color: colors.textMuted,
-    fontSize: 11,
-  },
-  thumb: {
-    width: 44,
-    height: 44,
-    borderRadius: borderRadius.sm,
-    backgroundColor: colors.bgElevated,
-  },
-  followBtn: {
+    paddingVertical: spacing.md,
     paddingHorizontal: spacing.md,
-    paddingVertical: 7,
-    borderRadius: borderRadius.sm,
+    position: 'relative',
+  },
+
+  unreadBar: {
+    position: 'absolute',
+    left: 0,
+    top: 0,
+    bottom: 0,
+    width: 3,
+    borderRadius: 2,
     backgroundColor: colors.gold,
   },
-  followBtnActive: {
-    backgroundColor: 'transparent',
-    borderWidth: 1,
-    borderColor: colors.border,
+
+  iconCircle: {
+    width: 40,
+    height: 40,
+    borderRadius: borderRadius.full,
+    alignItems: 'center',
+    justifyContent: 'center',
+    flexShrink: 0,
   },
-  followBtnText: {
-    ...typography.bodySmall,
+
+  body: {
+    flex: 1,
+    gap: 3,
+  },
+  notifText: {
+    fontSize: 13,
+    lineHeight: 18,
+    color: colors.textSecondary,
+  },
+  boldName: {
     fontWeight: '700',
-    color: colors.bgBase,
-  },
-  followBtnTextActive: {
     color: colors.textPrimary,
   },
+  time: {
+    fontSize: 11,
+    color: colors.textMuted,
+    fontWeight: '500',
+  },
+
+  thumb: {
+    width: 40,
+    height: 40,
+    borderRadius: borderRadius.sm,
+    backgroundColor: colors.bgElevated,
+    flexShrink: 0,
+  },
+
   empty: {
     alignItems: 'center',
-    paddingTop: spacing['4xl'],
+    paddingTop: 80,
+    paddingHorizontal: spacing['3xl'],
     gap: spacing.md,
   },
-  emptyText: {
-    ...typography.body,
+  emptyTitle: {
+    fontSize: 16,
+    fontWeight: '700',
+    color: colors.textPrimary,
+    marginTop: spacing.sm,
+  },
+  emptyBody: {
+    fontSize: 13,
     color: colors.textMuted,
+    textAlign: 'center',
+    lineHeight: 20,
   },
 });

@@ -6,7 +6,7 @@ export interface Reservation {
   tableId?: string;
   partySize: number;
   reservedAt: string;
-  status: 'pending' | 'confirmed' | 'seated' | 'completed' | 'cancelled' | 'no_show';
+  status: 'confirmed' | 'seated' | 'completed' | 'cancelled' | 'no_show';
   source: 'app' | 'web' | 'phone' | 'walkin';
   confirmationCode: string;
   specialRequest?: string;
@@ -47,7 +47,7 @@ export const mockReservations: Reservation[] = [
     guestId: 'g1',
     partySize: 4,
     reservedAt: daysFromNow(4, 18, 30),
-    status: 'pending',
+    status: 'confirmed',
     source: 'app',
     confirmationCode: 'SEAT-P2L8N4',
     occasion: 'Birthday',

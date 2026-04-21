@@ -1,63 +1,34 @@
 import React, { useMemo, useState } from 'react';
-import { View, Text, StyleSheet, FlatList, Pressable } from 'react-native';
+import {
+  View,
+  Text,
+  StyleSheet,
+  FlatList,
+  Pressable,
+  ImageBackground,
+} from 'react-native';
 import * as Haptics from 'expo-haptics';
 import { useRouter, Href } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
-import { ScreenWrapper } from '@/components/ui';
+import { LinearGradient } from 'expo-linear-gradient';
 import { mockReservations, type Reservation } from '@/lib/mock/reservations';
-import { colors, spacing, borderRadius, typography } from '@/lib/theme';
+import { mockRestaurants } from '@/lib/mock/restaurants';
+import { colors, spacing, borderRadius } from '@/lib/theme';
 
 const GUEST_ID = 'g1';
-
-type ActivityType = 'booking' | 'order';
 type SegmentKey = 'upcoming' | 'past';
 
-interface ActivityItem {
+interface BookingItem {
   id: string;
-  type: ActivityType;
   restaurantName: string;
-  restaurantId?: string;
+  restaurantId: string;
+  coverPhotoUrl: string;
   whenIso: string;
-  status: string;
-  statusColor: string;
-  partySize?: number;
+  status: Reservation['status'];
+  partySize: number;
   occasion?: string;
-  referenceId: string;
-  isCompleted?: boolean;
-}
-
-function statusDotColor(status: Reservation['status']): string {
-  switch (status) {
-    case 'confirmed': return colors.gold;
-    case 'completed': return colors.success;
-    case 'cancelled': return colors.danger;
-    case 'pending':   return colors.warning;
-    case 'seated':    return '#60A5FA';
-    default:          return colors.textMuted;
-  }
-}
-
-function isUpcomingReservation(r: Reservation): boolean {
-  if (['completed', 'cancelled', 'no_show'].includes(r.status)) return false;
-  return new Date(r.reservedAt).getTime() >= Date.now();
-}
-
-function formatWhenHero(iso: string): { line1: string; line2: string } {
-  const d = new Date(iso);
-  const now = new Date();
-  const tomorrow = new Date(now);
-  tomorrow.setDate(now.getDate() + 1);
-
-  const timeStr = d.toLocaleTimeString('en-CA', { hour: 'numeric', minute: '2-digit', hour12: true });
-  const isToday = d.toDateString() === now.toDateString();
-  const isTomorrow = d.toDateString() === tomorrow.toDateString();
-
-  if (isToday) return { line1: 'Tonight', line2: timeStr };
-  if (isTomorrow) return { line1: 'Tomorrow', line2: timeStr };
-
-  const dayStr = d.toLocaleDateString('en-CA', { weekday: 'long', month: 'short', day: 'numeric' });
-  return { line1: dayStr, line2: timeStr };
+  confirmationCode: string;
 }
 
 const OCCASION_ICONS: Record<string, string> = {
@@ -68,36 +39,61 @@ const OCCASION_ICONS: Record<string, string> = {
   'Business': '💼',
 };
 
+function isUpcoming(r: Reservation): boolean {
+  if (['completed', 'cancelled', 'no_show'].includes(r.status)) return false;
+  return new Date(r.reservedAt).getTime() >= Date.now();
+}
+
+function formatDateTime(iso: string): { primary: string; sub: string } {
+  const d = new Date(iso);
+  const now = new Date();
+  const tomorrow = new Date(now);
+  tomorrow.setDate(now.getDate() + 1);
+
+  const time = d.toLocaleTimeString('en-CA', { hour: 'numeric', minute: '2-digit', hour12: true });
+  const isToday = d.toDateString() === now.toDateString();
+  const isTomorrow = d.toDateString() === tomorrow.toDateString();
+
+  if (isToday) return { primary: 'Tonight', sub: time };
+  if (isTomorrow) return { primary: 'Tomorrow', sub: time };
+
+  const datePart = d.toLocaleDateString('en-CA', { weekday: 'long', month: 'long', day: 'numeric' });
+  return { primary: datePart, sub: time };
+}
+
+function pastStatusChip(status: Reservation['status']): { label: string; color: string } | null {
+  if (status === 'completed') return { label: 'Completed', color: colors.success };
+  if (status === 'cancelled') return { label: 'Cancelled', color: colors.danger };
+  if (status === 'no_show') return { label: 'No Show', color: colors.textMuted };
+  return null;
+}
+
 export default function ActivityScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const [segment, setSegment] = useState<SegmentKey>('upcoming');
 
-  const items = useMemo<ActivityItem[]>(() => {
-    return mockReservations
+  const items = useMemo<BookingItem[]>(() =>
+    mockReservations
       .filter((r) => r.guestId === GUEST_ID)
       .map((r) => ({
         id: r.id,
-        type: 'booking' as const,
         restaurantName: r.restaurantName,
         restaurantId: r.restaurantId,
+        coverPhotoUrl: mockRestaurants.find((rest) => rest.id === r.restaurantId)?.coverPhotoUrl ?? '',
         whenIso: r.reservedAt,
-        status: r.status.charAt(0).toUpperCase() + r.status.slice(1),
-        statusColor: statusDotColor(r.status),
+        status: r.status,
         partySize: r.partySize,
         occasion: r.occasion,
-        referenceId: r.confirmationCode,
-        isCompleted: r.status === 'completed',
-      }));
-  }, []);
+        confirmationCode: r.confirmationCode,
+      })),
+  []);
 
   const segmentItems = useMemo(() => {
     const filtered = items.filter((item) => {
-      const res = mockReservations.find((r) => r.id === item.id);
-      if (!res) return false;
-      return segment === 'upcoming' ? isUpcomingReservation(res) : !isUpcomingReservation(res);
+      const r = mockReservations.find((r) => r.id === item.id)!;
+      return segment === 'upcoming' ? isUpcoming(r) : !isUpcoming(r);
     });
-
     return filtered.sort((a, b) => {
       const ta = new Date(a.whenIso).getTime();
       const tb = new Date(b.whenIso).getTime();
@@ -105,353 +101,366 @@ export default function ActivityScreen() {
     });
   }, [items, segment]);
 
-  const openReceipt = (item: ActivityItem) => {
-    router.push(`/(customer)/activity/receipt/${item.type}/${item.id}` as Href);
-  };
+  const upcomingCount = useMemo(
+    () => items.filter((item) => isUpcoming(mockReservations.find((r) => r.id === item.id)!)).length,
+    [items],
+  );
 
-  const renderItem = ({ item }: { item: ActivityItem }) => {
-    const { line1, line2 } = formatWhenHero(item.whenIso);
+  const renderItem = ({ item }: { item: BookingItem }) => {
     const isPast = segment === 'past';
+    const { primary, sub } = formatDateTime(item.whenIso);
+    const chip = isPast ? pastStatusChip(item.status) : null;
+    const icon = item.occasion ? OCCASION_ICONS[item.occasion] : null;
+    const guestLabel = `${item.partySize} ${item.partySize === 1 ? 'guest' : 'guests'}`;
+    const detailLine = [guestLabel, icon ? `${icon} ${item.occasion}` : null].filter(Boolean).join('  ·  ');
 
     return (
       <Pressable
-        onPress={() => openReceipt(item)}
+        onPress={() => router.push(`/(customer)/activity/receipt/booking/${item.id}` as Href)}
         style={({ pressed }) => [styles.card, isPast && styles.cardPast, pressed && styles.cardPressed]}
       >
-        {/* Top row: restaurant name + status */}
-        <View style={styles.cardTop}>
-          <Text style={[styles.restaurantName, isPast && styles.textDim]} numberOfLines={1}>
-            {item.restaurantName}
-          </Text>
-          <View style={styles.statusBadge}>
-            <View style={[styles.statusDot, { backgroundColor: item.statusColor }]} />
-            <Text style={[styles.statusLabel, { color: item.statusColor }]}>{item.status}</Text>
+        {/* Gold left accent for upcoming */}
+        {!isPast && <View style={styles.leftAccent} />}
+
+        {/* Photo */}
+        <ImageBackground
+          source={{ uri: item.coverPhotoUrl }}
+          style={styles.photo}
+          imageStyle={styles.photoImg}
+        >
+          <LinearGradient
+            colors={['rgba(0,0,0,0.1)', 'rgba(0,0,0,0.72)']}
+            style={StyleSheet.absoluteFill}
+          />
+          {/* Top row: confirmed badge (upcoming) or status chip (past) */}
+          <View style={styles.photoTopRow}>
+            {!isPast ? (
+              <View style={styles.confirmedBadge}>
+                <Ionicons name="checkmark-circle" size={13} color={colors.bgBase} />
+                <Text style={styles.confirmedBadgeText}>Confirmed</Text>
+              </View>
+            ) : chip ? (
+              <View style={[styles.chip, { borderColor: chip.color + '66' }]}>
+                <View style={[styles.chipDot, { backgroundColor: chip.color }]} />
+                <Text style={[styles.chipText, { color: chip.color }]}>{chip.label}</Text>
+              </View>
+            ) : null}
           </View>
+          <Text style={styles.restaurantName} numberOfLines={1}>{item.restaurantName}</Text>
+        </ImageBackground>
+
+        {/* Info */}
+        <View style={styles.info}>
+          <Text style={[styles.dateText, isPast && styles.dimPrimary]}>{primary}  ·  {sub}</Text>
+          <Text style={[styles.detailText, isPast && styles.dimSecondary]}>{detailLine}</Text>
         </View>
-
-        {/* Hero: date + time */}
-        <View style={styles.heroRow}>
-          <Ionicons name="calendar-outline" size={15} color={isPast ? colors.textMuted : colors.gold} style={{ marginTop: 1 }} />
-          <Text style={[styles.heroDate, isPast && styles.textDim]}>{line1}</Text>
-          <Text style={[styles.heroDot, isPast && styles.textDim]}>·</Text>
-          <Text style={[styles.heroTime, isPast && styles.textDim]}>{line2}</Text>
-        </View>
-
-        {/* Sub row: party + occasion */}
-        <View style={styles.subRow}>
-          <Ionicons name="people-outline" size={13} color={colors.textMuted} />
-          <Text style={styles.subText}>
-            {item.partySize} {item.partySize === 1 ? 'guest' : 'guests'}
-            {item.occasion ? `  ${OCCASION_ICONS[item.occasion] ?? ''}  ${item.occasion}` : ''}
-          </Text>
-        </View>
-
-        {/* Reference code */}
-        <Text style={styles.refCode}>{item.referenceId}</Text>
-
-        {/* Divider */}
-        <View style={styles.divider} />
 
         {/* Action row */}
         <View style={styles.actionRow}>
-          {isPast && item.isCompleted && item.restaurantId ? (
+          {isPast && item.status === 'completed' ? (
             <Pressable
               onPress={() => {
                 Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
                 router.push(`/booking/${item.restaurantId}/step2-time` as Href);
               }}
-              style={({ pressed }) => [styles.bookAgainBtn, pressed && { opacity: 0.75 }]}
+              style={({ pressed }) => [styles.bookAgainBtn, pressed && { opacity: 0.8 }]}
             >
-              <Text style={styles.bookAgainLabel}>Book Again</Text>
+              <Text style={styles.bookAgainText}>Book Again</Text>
+            </Pressable>
+          ) : !isPast ? (
+            <Pressable
+              onPress={() => router.push(`/(customer)/discover/${item.restaurantId}` as Href)}
+              style={({ pressed }) => [styles.outlineBtn, pressed && { opacity: 0.7 }]}
+            >
+              <Text style={styles.outlineBtnText}>View restaurant</Text>
             </Pressable>
           ) : (
             <View />
           )}
           <Pressable
-            onPress={() => openReceipt(item)}
-            style={({ pressed }) => [styles.receiptLink, pressed && { opacity: 0.6 }]}
-            hitSlop={8}
+            onPress={() => router.push(`/(customer)/activity/receipt/booking/${item.id}` as Href)}
+            hitSlop={10}
+            style={({ pressed }) => [styles.detailsLink, pressed && { opacity: 0.5 }]}
           >
-            <Text style={styles.receiptLinkText}>View receipt</Text>
-            <Ionicons name="chevron-forward" size={14} color={colors.textMuted} />
+            <Text style={styles.detailsLinkText}>Details</Text>
+            <Ionicons name="chevron-forward" size={13} color={colors.textMuted} />
           </Pressable>
         </View>
       </Pressable>
     );
   };
 
-  const listHeader = (
-    <View style={styles.listHeaderWrap}>
-      <Text style={styles.title}>My Bookings</Text>
-      <View style={styles.segment}>
-        <Pressable
-          onPress={() => setSegment('upcoming')}
-          style={[styles.segmentBtn, segment === 'upcoming' && styles.segmentBtnActive]}
-        >
-          <Text style={[styles.segmentLabel, segment === 'upcoming' && styles.segmentLabelActive]}>
-            Upcoming
-          </Text>
-        </Pressable>
-        <Pressable
-          onPress={() => setSegment('past')}
-          style={[styles.segmentBtn, segment === 'past' && styles.segmentBtnActive]}
-        >
-          <Text style={[styles.segmentLabel, segment === 'past' && styles.segmentLabelActive]}>
-            Past
-          </Text>
-        </Pressable>
-      </View>
-    </View>
-  );
-
   return (
-    <ScreenWrapper scrollable={false} padded>
+    <View style={[styles.root, { paddingTop: insets.top }]}>
       <FlatList
-        style={styles.flatList}
         data={segmentItems}
-        keyExtractor={(it) => `${it.type}-${it.id}`}
+        keyExtractor={(it) => it.id}
         renderItem={renderItem}
-        ListHeaderComponent={listHeader}
-        contentContainerStyle={[styles.list, { paddingBottom: insets.bottom + spacing['3xl'] }]}
         showsVerticalScrollIndicator={false}
+        contentContainerStyle={[styles.list, { paddingBottom: insets.bottom + 100 }]}
+        ListHeaderComponent={
+          <View style={styles.header}>
+            {/* Title */}
+            <View style={styles.titleRow}>
+              <Text style={styles.title}>Bookings</Text>
+              {upcomingCount > 0 && (
+                <View style={styles.badge}>
+                  <Text style={styles.badgeText}>{upcomingCount}</Text>
+                </View>
+              )}
+            </View>
+
+            {/* Segment */}
+            <View style={styles.tabs}>
+              {(['upcoming', 'past'] as SegmentKey[]).map((key) => {
+                const active = segment === key;
+                return (
+                  <Pressable
+                    key={key}
+                    onPress={() => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); setSegment(key); }}
+                    style={styles.tab}
+                  >
+                    <Text style={[styles.tabText, active && styles.tabTextActive]}>
+                      {key === 'upcoming' ? 'Upcoming' : 'Past'}
+                    </Text>
+                    {active && <View style={styles.tabUnderline} />}
+                  </Pressable>
+                );
+              })}
+            </View>
+          </View>
+        }
         ListEmptyComponent={
           <View style={styles.empty}>
-            <Ionicons
-              name={segment === 'upcoming' ? 'calendar-outline' : 'receipt-outline'}
-              size={48}
-              color={colors.textMuted}
-              style={{ marginBottom: spacing.sm }}
-            />
+            <View style={styles.emptyIcon}>
+              <Ionicons
+                name={segment === 'upcoming' ? 'calendar-outline' : 'receipt-outline'}
+                size={30}
+                color={colors.textMuted}
+              />
+            </View>
             <Text style={styles.emptyTitle}>
-              {segment === 'upcoming' ? 'No upcoming reservations' : 'No past bookings yet'}
+              {segment === 'upcoming' ? 'No upcoming bookings' : 'No past bookings'}
             </Text>
-            {segment === 'upcoming' ? (
-              <>
-                <Text style={styles.emptyText}>Find a restaurant and make your first reservation.</Text>
-                <Pressable
-                  onPress={() => router.push('/(customer)/discover' as Href)}
-                  style={({ pressed }) => [styles.emptyCta, pressed && { opacity: 0.75 }]}
-                >
-                  <Text style={styles.emptyCtaText}>Discover restaurants →</Text>
-                </Pressable>
-              </>
-            ) : (
-              <Text style={styles.emptyText}>Your completed and past bookings will appear here.</Text>
+            <Text style={styles.emptyBody}>
+              {segment === 'upcoming'
+                ? 'Find a restaurant and reserve a table.'
+                : 'Your dining history will appear here.'}
+            </Text>
+            {segment === 'upcoming' && (
+              <Pressable
+                onPress={() => router.push('/(customer)/discover' as Href)}
+                style={({ pressed }) => [styles.emptyCta, pressed && { opacity: 0.8 }]}
+              >
+                <Text style={styles.emptyCtaText}>Explore restaurants →</Text>
+              </Pressable>
             )}
           </View>
         }
       />
-    </ScreenWrapper>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  flatList: { flex: 1 },
+  root: { flex: 1, backgroundColor: colors.bgBase },
+  list: { paddingHorizontal: spacing.md, flexGrow: 1 },
 
-  listHeaderWrap: {
-    marginBottom: spacing.lg,
-  },
-  title: {
-    fontSize: 28,
-    fontWeight: '800',
-    color: colors.textPrimary,
-    letterSpacing: -0.5,
-    marginBottom: spacing.lg,
-  },
-
-  // Segment toggle
-  segment: {
-    flexDirection: 'row',
-    backgroundColor: colors.bgSurface,
-    borderRadius: borderRadius.lg,
-    borderWidth: 1,
-    borderColor: colors.border,
-    padding: 3,
-  },
-  segmentBtn: {
-    flex: 1,
-    paddingVertical: spacing.sm,
-    borderRadius: borderRadius.md,
+  // Header
+  header: { paddingTop: spacing.lg, marginBottom: spacing.xl },
+  titleRow: { flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: spacing.lg },
+  title: { fontSize: 30, fontWeight: '800', color: colors.textPrimary, letterSpacing: -0.5 },
+  badge: {
+    backgroundColor: colors.gold,
+    borderRadius: 12,
+    minWidth: 22,
+    height: 22,
     alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 6,
   },
-  segmentBtnActive: {
-    backgroundColor: colors.bgElevated,
+  badgeText: { fontSize: 12, fontWeight: '800', color: colors.bgBase },
+
+  // Tabs
+  tabs: {
+    flexDirection: 'row',
+    gap: spacing.xl,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: colors.border,
   },
-  segmentLabel: {
-    ...typography.body,
-    fontWeight: '600',
-    color: colors.textMuted,
-  },
-  segmentLabelActive: {
-    color: colors.textPrimary,
+  tab: { paddingBottom: 10 },
+  tabText: { fontSize: 15, fontWeight: '600', color: colors.textMuted },
+  tabTextActive: { color: colors.textPrimary, fontWeight: '700' },
+  tabUnderline: {
+    position: 'absolute',
+    bottom: -1,
+    left: 0,
+    right: 0,
+    height: 2,
+    borderRadius: 1,
+    backgroundColor: colors.gold,
   },
 
   // Card
   card: {
     marginBottom: spacing.md,
-    backgroundColor: colors.bgSurface,
     borderRadius: borderRadius.xl,
-    borderWidth: 1,
-    borderColor: colors.border,
-    paddingHorizontal: spacing.lg,
-    paddingTop: spacing.lg,
-    paddingBottom: spacing.sm,
     overflow: 'hidden',
+    borderWidth: 1,
+    borderColor: 'rgba(201,162,74,0.22)',
+    backgroundColor: colors.bgSurface,
   },
-  cardPast: {
-    opacity: 0.75,
-  },
-  cardPressed: {
-    opacity: 0.88,
+  cardPast: { borderColor: colors.border },
+  cardPressed: { transform: [{ scale: 0.985 }], opacity: 0.9 },
+
+  // Left accent stripe for upcoming
+  leftAccent: {
+    position: 'absolute',
+    left: 0,
+    top: 0,
+    bottom: 0,
+    width: 3,
+    backgroundColor: colors.gold,
+    zIndex: 1,
+    shadowColor: colors.gold,
+    shadowOffset: { width: 2, height: 0 },
+    shadowOpacity: 0.4,
+    shadowRadius: 6,
   },
 
-  cardTop: {
-    flexDirection: 'row',
-    alignItems: 'center',
+  // Photo
+  photo: {
+    height: 160,
     justifyContent: 'space-between',
-    marginBottom: spacing.md,
+    padding: spacing.md,
   },
-  restaurantName: {
-    fontSize: 17,
-    fontWeight: '700',
-    color: colors.textPrimary,
-    flex: 1,
-    marginRight: spacing.sm,
+  photoImg: { borderRadius: 0 },
+  photoTopRow: {
+    flexDirection: 'row',
+    justifyContent: 'flex-end',
   },
-  textDim: {
-    color: colors.textSecondary,
-  },
-  statusBadge: {
+  confirmedBadge: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 5,
+    backgroundColor: colors.gold,
+    borderRadius: borderRadius.full,
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    shadowColor: colors.gold,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.4,
+    shadowRadius: 6,
   },
-  statusDot: {
-    width: 7,
-    height: 7,
-    borderRadius: 4,
-  },
-  statusLabel: {
+  confirmedBadgeText: {
     fontSize: 12,
-    fontWeight: '600',
-    letterSpacing: 0.2,
+    fontWeight: '800',
+    color: colors.bgBase,
+    letterSpacing: 0.1,
   },
-
-  // Hero date/time
-  heroRow: {
+  chip: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: spacing.xs,
-    marginBottom: spacing.sm,
+    gap: 5,
+    alignSelf: 'flex-end',
+    backgroundColor: 'rgba(0,0,0,0.65)',
+    borderWidth: 1,
+    borderRadius: borderRadius.full,
+    paddingHorizontal: 10,
+    paddingVertical: 5,
   },
-  heroDate: {
-    fontSize: 18,
+  chipDot: { width: 6, height: 6, borderRadius: 3 },
+  chipText: { fontSize: 11, fontWeight: '700' },
+  restaurantName: {
+    fontSize: 20,
+    fontWeight: '800',
+    color: '#fff',
+    letterSpacing: -0.3,
+    textShadowColor: 'rgba(0,0,0,0.6)',
+    textShadowOffset: { width: 0, height: 1 },
+    textShadowRadius: 6,
+  },
+
+  // Info
+  info: {
+    paddingHorizontal: spacing.md,
+    paddingTop: 14,
+    paddingBottom: 12,
+    gap: 5,
+  },
+  dateText: {
+    fontSize: 16,
     fontWeight: '700',
-    color: colors.gold,
-    letterSpacing: -0.2,
+    color: colors.textPrimary,
+    letterSpacing: -0.1,
   },
-  heroDot: {
-    fontSize: 18,
-    color: colors.textMuted,
-    fontWeight: '300',
-  },
-  heroTime: {
-    fontSize: 18,
-    fontWeight: '600',
-    color: colors.gold,
-  },
-
-  // Sub row
-  subRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.xs,
-    marginBottom: spacing.sm,
-  },
-  subText: {
-    ...typography.bodySmall,
-    color: colors.textMuted,
-  },
-
-  // Ref code
-  refCode: {
-    fontSize: 11,
-    color: 'rgba(255,255,255,0.2)',
+  detailText: {
+    fontSize: 13,
     fontWeight: '500',
-    letterSpacing: 0.5,
-    marginBottom: spacing.md,
+    color: colors.textMuted,
   },
-
-  // Divider
-  divider: {
-    height: StyleSheet.hairlineWidth,
-    backgroundColor: colors.border,
-    marginBottom: spacing.sm,
-  },
+  dimPrimary: { color: colors.textSecondary },
+  dimSecondary: { color: 'rgba(255,255,255,0.3)' },
 
   // Action row
   actionRow: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingVertical: spacing.xs,
+    paddingHorizontal: spacing.md,
+    paddingVertical: 12,
+    borderTopWidth: StyleSheet.hairlineWidth,
+    borderTopColor: 'rgba(255,255,255,0.07)',
   },
   bookAgainBtn: {
-    paddingVertical: 6,
-    paddingHorizontal: spacing.md,
+    paddingVertical: 7,
+    paddingHorizontal: 18,
     backgroundColor: colors.gold,
-    borderRadius: 20,
+    borderRadius: borderRadius.full,
+    shadowColor: colors.gold,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.3,
+    shadowRadius: 6,
   },
-  bookAgainLabel: {
-    fontSize: 12,
-    fontWeight: '700',
-    color: colors.bgBase,
+  bookAgainText: { fontSize: 13, fontWeight: '800', color: colors.bgBase },
+  outlineBtn: {
+    paddingVertical: 6,
+    paddingHorizontal: 14,
+    borderRadius: borderRadius.full,
+    borderWidth: 1,
+    borderColor: 'rgba(201,162,74,0.4)',
   },
-  receiptLink: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 3,
-    marginLeft: 'auto',
-  },
-  receiptLinkText: {
-    ...typography.bodySmall,
-    color: colors.textMuted,
-    fontWeight: '500',
-  },
+  outlineBtnText: { fontSize: 12, fontWeight: '600', color: colors.goldLight },
+  detailsLink: { flexDirection: 'row', alignItems: 'center', gap: 2 },
+  detailsLinkText: { fontSize: 13, fontWeight: '500', color: colors.textMuted },
 
-  // List
-  list: {
-    flexGrow: 1,
-  },
-
-  // Empty state
+  // Empty
   empty: {
     alignItems: 'center',
-    paddingVertical: spacing['5xl'],
-    paddingHorizontal: spacing['3xl'],
-    gap: spacing.sm,
+    paddingVertical: 64,
+    paddingHorizontal: 40,
+    gap: spacing.md,
   },
-  emptyTitle: {
-    ...typography.body,
-    fontWeight: '700',
-    color: colors.textPrimary,
-    textAlign: 'center',
+  emptyIcon: {
+    width: 64,
+    height: 64,
+    borderRadius: 32,
+    backgroundColor: 'rgba(255,255,255,0.05)',
+    borderWidth: 1,
+    borderColor: colors.border,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 4,
   },
-  emptyText: {
-    ...typography.body,
-    color: colors.textMuted,
-    textAlign: 'center',
-  },
+  emptyTitle: { fontSize: 17, fontWeight: '700', color: colors.textPrimary, textAlign: 'center' },
+  emptyBody: { fontSize: 14, color: colors.textMuted, textAlign: 'center', lineHeight: 20 },
   emptyCta: {
-    marginTop: spacing.md,
+    marginTop: 4,
     paddingVertical: spacing.sm,
     paddingHorizontal: spacing.xl,
-    backgroundColor: colors.gold,
-    borderRadius: 24,
+    borderRadius: borderRadius.full,
+    borderWidth: 1.5,
+    borderColor: colors.gold,
   },
-  emptyCtaText: {
-    ...typography.body,
-    fontWeight: '700',
-    color: colors.bgBase,
-  },
+  emptyCtaText: { fontSize: 14, fontWeight: '700', color: colors.gold },
 });

@@ -114,17 +114,15 @@ export default function ProfileScreen() {
         >
           {/* Gear floats top-right above avatar */}
           <Pressable
-            hitSlop={8}
-            style={styles.settingsBtn}
+            hitSlop={12}
+            style={({ pressed }) => [styles.settingsBtn, pressed && styles.settingsBtnPressed]}
             onPress={() => nav('/(customer)/profile/settings')}
           >
-            {({ pressed }) => (
-              <Ionicons
-                name="settings-outline"
-                size={22}
-                color={pressed ? colors.gold : 'rgba(201,162,74,0.65)'}
-              />
-            )}
+            <Ionicons
+              name="settings-outline"
+              size={22}
+              color={colors.gold}
+            />
           </Pressable>
 
           {/* Push avatar below the floating gear */}
@@ -358,6 +356,7 @@ const styles = StyleSheet.create({
     position: 'absolute',
     top: spacing.sm,
     right: spacing.lg,
+    zIndex: 10,
     width: 38,
     height: 38,
     borderRadius: 19,
@@ -366,6 +365,10 @@ const styles = StyleSheet.create({
     borderColor: 'rgba(201,162,74,0.3)',
     alignItems: 'center',
     justifyContent: 'center',
+  },
+  settingsBtnPressed: {
+    backgroundColor: 'rgba(201,162,74,0.2)',
+    opacity: 0.8,
   },
 
   avatarSection: { alignItems: 'center', gap: 5, paddingTop: 52, paddingBottom: spacing.lg },
