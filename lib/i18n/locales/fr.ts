@@ -69,6 +69,11 @@ export default {
     backToWelcome: 'Retour',
     signInAsOwner: 'Connexion propriétaire',
   },
+  feed: {
+    postReservePrimary: 'Réserver une table',
+    postReserveVenue: '{{name}}',
+    postReserveCompact: 'Réserver',
+  },
   tabs: {
     discover: 'Découvrir',
     bookings: 'Réservations',

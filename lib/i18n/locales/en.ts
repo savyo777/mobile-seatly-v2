@@ -68,6 +68,11 @@ export default {
     backToWelcome: 'Back',
     signInAsOwner: 'Sign in as owner',
   },
+  feed: {
+    postReservePrimary: 'Reserve a table',
+    postReserveVenue: '{{name}}',
+    postReserveCompact: 'Reserve',
+  },
   tabs: {
     discover: 'Discover',
     bookings: 'Bookings',

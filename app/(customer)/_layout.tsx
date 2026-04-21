@@ -23,17 +23,23 @@ export default function CustomerTabsLayout() {
         headerShown: false,
         tabBarActiveTintColor: colors.gold,
         tabBarInactiveTintColor: colors.textMuted,
-        tabBarStyle: {
-          backgroundColor: colors.bgSurface,
+        // Do not set height or paddingBottom here — they override React Navigation's
+        // default tab bar sizing and safe-area bottom inset (see BottomTabBar).
+        tabBarStyle: hideFab ? { display: 'none' } : {
+          backgroundColor: colors.bgBase,
           borderTopColor: colors.border,
           borderTopWidth: StyleSheet.hairlineWidth,
-          height: 85,
-          paddingBottom: 28,
-          paddingTop: 8,
+          paddingTop: 0,
+        },
+        // Default tab layout is flex-start, which leaves a gap above the home indicator.
+        // Nudge items down so the row sits lower without overriding safe-area paddingBottom.
+        tabBarItemStyle: {
+          transform: [{ translateY: 10 }],
         },
         tabBarLabelStyle: {
           fontSize: 11,
           fontWeight: '600',
+          marginBottom: 0,
         },
       }}
     >
@@ -60,14 +66,20 @@ export default function CustomerTabsLayout() {
             <Pressable
               onPress={() => {
                 Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-                router.push('/(customer)/discover/post-review/camera' as Href);
+                router.push('/(customer)/discover/post-review' as Href);
               }}
               style={styles.centerBtnWrapper}
               accessibilityLabel="Post food"
             >
-              <View style={styles.centerBtn}>
-                <Ionicons name="add" size={30} color={colors.bgBase} />
-              </View>
+              {({ pressed }) => (
+                <View style={[styles.centerBtn, pressed && styles.centerBtnActive]}>
+                  <Ionicons
+                    name="add"
+                    size={30}
+                    color={colors.bgBase}
+                  />
+                </View>
+              )}
             </Pressable>
           ),
         }}
@@ -93,6 +105,9 @@ export default function CustomerTabsLayout() {
       <Tabs.Screen name="loyalty" options={{ href: null }} />
       <Tabs.Screen name="ai-chat" options={{ href: null }} />
       <Tabs.Screen name="notifications" options={{ href: null }} />
+      <Tabs.Screen name="post/camera" options={{ href: null }} />
+      <Tabs.Screen name="post/caption" options={{ href: null }} />
+      <Tabs.Screen name="post/reward" options={{ href: null }} />
     </Tabs>
       {!hideFab ? <AiChatFab bottomOffset={100} /> : null}
     </View>
@@ -102,12 +117,13 @@ export default function CustomerTabsLayout() {
 const styles = StyleSheet.create({
   root: {
     flex: 1,
+    backgroundColor: colors.bgBase,
   },
   centerBtnWrapper: {
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: 12,
+    marginBottom: 0,
   },
   centerBtn: {
     width: 56,
@@ -116,6 +132,17 @@ const styles = StyleSheet.create({
     backgroundColor: colors.gold,
     alignItems: 'center',
     justifyContent: 'center',
+    borderWidth: 1.5,
+    borderColor: colors.gold,
+    shadowColor: colors.gold,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.35,
+    shadowRadius: 8,
+    elevation: 6,
+  },
+  centerBtnActive: {
+    backgroundColor: colors.gold,
+    borderColor: colors.gold,
     shadowColor: colors.gold,
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.4,

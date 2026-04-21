@@ -10,6 +10,10 @@ export default function ProfileStackLayout() {
         contentStyle: { backgroundColor: colors.bgBase },
         animation: 'slide_from_right',
       }}
-    />
+    >
+      <Stack.Screen name="index" />
+      <Stack.Screen name="settings" />
+      <Stack.Screen name="snaps/detail/[snapId]" options={{ animation: 'slide_from_bottom' }} />
+    </Stack>
   );
 }

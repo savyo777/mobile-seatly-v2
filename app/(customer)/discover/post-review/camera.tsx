@@ -26,9 +26,7 @@ const TAB_BAR_STYLE = {
   backgroundColor: colors.bgSurface,
   borderTopColor: colors.border,
   borderTopWidth: StyleSheet.hairlineWidth,
-  height: 85,
-  paddingBottom: 28,
-  paddingTop: 8,
+  paddingTop: 0,
 } as const;
 
 /** Glass-like chrome without native blur (safe on Simulator & all platforms). */

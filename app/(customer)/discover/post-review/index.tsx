@@ -3,7 +3,8 @@ import { Image, Pressable, ScrollView, StyleSheet, Text, View } from 'react-nati
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Input, ScreenWrapper } from '@/components/ui';
 import { borderRadius, colors, spacing, typography } from '@/lib/theme';
-import { listSnapPosts, snapRestaurants } from '@/lib/mock/snaps';
+import { snapRestaurants } from '@/lib/mock/snaps';
+import { mockReservations } from '@/lib/mock/reservations';
 import { Ionicons } from '@expo/vector-icons';
 
 export default function ReviewRestaurantSelectScreen() {
@@ -21,12 +22,21 @@ export default function ReviewRestaurantSelectScreen() {
   }, [query]);
 
   const recentlyVisited = useMemo(() => {
-    const recent = listSnapPosts().slice(0, 8);
-    const ids = Array.from(new Set(recent.map((post) => post.restaurant_id)));
+    const completed = mockReservations
+      .filter((r) => r.status === 'completed')
+      .sort((a, b) => new Date(b.reservedAt).getTime() - new Date(a.reservedAt).getTime());
+    const seen = new Set<string>();
+    const ids: string[] = [];
+    for (const r of completed) {
+      if (!seen.has(r.restaurantId)) {
+        seen.add(r.restaurantId);
+        ids.push(r.restaurantId);
+      }
+      if (ids.length >= 3) break;
+    }
     return ids
       .map((id) => snapRestaurants.find((restaurant) => restaurant.id === id))
-      .filter((restaurant): restaurant is (typeof snapRestaurants)[number] => !!restaurant)
-      .slice(0, 3);
+      .filter((restaurant): restaurant is (typeof snapRestaurants)[number] => !!restaurant);
   }, []);
 
   const openCamera = (restaurantId: string) => {
@@ -37,6 +47,9 @@ export default function ReviewRestaurantSelectScreen() {
     <ScreenWrapper scrollable={false}>
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.content}>
         <View style={styles.header}>
+          <Pressable onPress={() => router.back()} hitSlop={10} style={styles.backBtn}>
+            <Ionicons name="chevron-back" size={22} color={colors.textPrimary} />
+          </Pressable>
           <Text style={styles.title}>Where are you posting?</Text>
           <Text style={styles.subtitle}>Choose the restaurant this snap is for</Text>
         </View>
@@ -109,6 +122,10 @@ const styles = StyleSheet.create({
   header: {
     gap: spacing.xs,
     paddingTop: spacing.xs,
+  },
+  backBtn: {
+    marginBottom: spacing.xs,
+    alignSelf: 'flex-start',
   },
   title: {
     ...typography.h2,

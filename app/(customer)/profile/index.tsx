@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect, useCallback } from 'react';
+import React, { useRef, useEffect } from 'react';
 import {
   View,
   Text,
@@ -15,21 +15,18 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { BlurView } from 'expo-blur';
+import { listSnapPostsByUser } from '@/lib/mock/snaps';
 import { mockCustomer } from '@/lib/mock/users';
 import { mockReservations } from '@/lib/mock/reservations';
-import { listSnapPostsByUser } from '@/lib/mock/snaps';
-import { getFollowerCount } from '@/lib/mock/social';
 import { mockRestaurants } from '@/lib/mock/restaurants';
-import { mockLoyaltyTransactions, mockRewards } from '@/lib/mock/loyalty';
+import { mockLoyaltyTransactions } from '@/lib/mock/loyalty';
 import { colors, spacing, borderRadius } from '@/lib/theme';
 
 const ME = mockCustomer.id;
 const SCREEN_W = Dimensions.get('window').width;
-const GRID_GAP = 2;
-const GRID_COLS = 3;
-const TILE_SIZE = (SCREEN_W - GRID_GAP * (GRID_COLS - 1)) / GRID_COLS;
-const TAB_W = SCREEN_W / 3;
+const CARD_W = (SCREEN_W - spacing.lg * 2 - spacing.sm) / 2;
 
+// ─── Tier config ─────────────────────────────────────────────────────────────
 const TIERS = [
   { name: 'Bronze',   min: 0,    next: 500,  color: '#CD7F32' },
   { name: 'Silver',   min: 500,  next: 1500, color: '#A8A8B8' },
@@ -40,97 +37,97 @@ const TIERS = [
 function getTierInfo(pts: number) {
   const idx = TIERS.findIndex((_, i) => pts < (TIERS[i + 1]?.min ?? Infinity));
   const tier = TIERS[Math.max(0, idx)];
-  const next = TIERS[idx + 1] ?? null;
-  const progress = next ? (pts - tier.min) / (next.min - tier.min) : 1;
-  return { tier, next, progress, toNext: next ? next.min - pts : 0 };
+  const nextTier = TIERS[idx + 1] ?? null;
+  const progress = nextTier ? (pts - tier.min) / (nextTier.min - tier.min) : 1;
+  return { tier, nextTier, progress, toNext: nextTier ? nextTier.min - pts : 0 };
 }
 
-function getVisits() {
+// ─── Data helpers ─────────────────────────────────────────────────────────────
+function getNextBooking() {
+  const now = new Date();
+  return mockReservations
+    .filter((r) => r.guestId === 'g1' && ['confirmed', 'pending'].includes(r.status) && new Date(r.reservedAt) > now)
+    .sort((a, b) => new Date(a.reservedAt).getTime() - new Date(b.reservedAt).getTime())[0] ?? null;
+}
+
+function getLastVisit() {
   return mockReservations
     .filter((r) => r.guestId === 'g1' && r.status === 'completed')
-    .map((r) => ({ reservation: r, restaurant: mockRestaurants.find((x) => x.id === r.restaurantId) }))
-    .filter((v): v is typeof v & { restaurant: NonNullable<typeof v['restaurant']> } => v.restaurant != null);
+    .sort((a, b) => new Date(b.reservedAt).getTime() - new Date(a.reservedAt).getTime())[0] ?? null;
 }
 
-type Tab = 'snaps' | 'dining' | 'rewards';
-const TAB_ORDER: Tab[] = ['snaps', 'dining', 'rewards'];
-const MAX_STAGGER = 12;
+function formatBookingDate(iso: string): string {
+  const d = new Date(iso);
+  const now = new Date();
+  const diff = Math.floor((d.getTime() - now.getTime()) / 86400000);
+  if (diff === 0) return 'Tonight';
+  if (diff === 1) return 'Tomorrow';
+  return d.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
+}
 
+function formatTime(iso: string): string {
+  return new Date(iso).toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' });
+}
+
+function formatPastDate(iso: string): string {
+  return new Date(iso).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' });
+}
+
+// ─── Main screen ──────────────────────────────────────────────────────────────
 export default function ProfileScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
-  const [tab, setTab] = useState<Tab>('snaps');
 
   const posts = listSnapPostsByUser(ME);
-  const followerCount = getFollowerCount(ME);
-  const visits = getVisits();
   const pts = mockCustomer.loyaltyPointsBalance ?? 0;
-  const { tier, next: nextTier, progress, toNext } = getTierInfo(pts);
+  const { tier, nextTier, progress, toNext } = getTierInfo(pts);
+  const totalVisits = mockReservations.filter((r) => r.guestId === 'g1' && r.status === 'completed').length;
+  const nextBooking = getNextBooking();
+  const lastVisit = getLastVisit();
+  const nextRestaurant = nextBooking ? mockRestaurants.find((r) => r.id === nextBooking.restaurantId) : null;
+  const lastRestaurant = lastVisit ? mockRestaurants.find((r) => r.id === lastVisit.restaurantId) : null;
 
-  // Tab indicator spring
-  const tabAnim = useRef(new Animated.Value(0)).current;
-
-  const switchTab = useCallback((t: Tab) => {
-    setTab(t);
-    Animated.spring(tabAnim, {
-      toValue: TAB_ORDER.indexOf(t) * TAB_W,
-      useNativeDriver: true,
-      tension: 160,
-      friction: 12,
-    }).start();
-  }, [tabAnim]);
-
-  // Staggered card entrance
-  const staggerAnims = useRef(
-    Array.from({ length: MAX_STAGGER }, () => new Animated.Value(0))
-  ).current;
-
-  const runStagger = useCallback((count: number) => {
-    const n = Math.min(count, MAX_STAGGER);
-    staggerAnims.slice(0, n).forEach((a) => a.setValue(0));
-    Animated.stagger(
-      55,
-      staggerAnims.slice(0, n).map((a) =>
-        Animated.spring(a, { toValue: 1, useNativeDriver: true, tension: 120, friction: 11 }),
-      ),
-    ).start();
-  }, [staggerAnims]);
-
+  // Entrance animation
+  const fadeAnim = useRef(new Animated.Value(0)).current;
+  const slideAnim = useRef(new Animated.Value(16)).current;
   useEffect(() => {
-    if (tab === 'snaps') runStagger(1);
-    else if (tab === 'dining') runStagger(visits.length || 1);
-    else runStagger(mockRewards.length + 2);
-  }, [tab, runStagger, visits.length]);
+    Animated.parallel([
+      Animated.timing(fadeAnim, { toValue: 1, duration: 420, useNativeDriver: true }),
+      Animated.spring(slideAnim, { toValue: 0, tension: 100, friction: 12, useNativeDriver: true }),
+    ]).start();
+  }, []);
 
-  const cardStyle = (i: number) => ({
-    opacity: staggerAnims[i],
-    transform: [{ translateY: staggerAnims[i].interpolate({ inputRange: [0, 1], outputRange: [18, 0] }) }],
-  });
+  const nav = (href: string) => router.push(href as Href);
 
   return (
     <View style={[styles.container, { paddingTop: insets.top }]}>
-      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: insets.bottom + 100 }}>
-
-        {/* ── HEADER ── */}
+      <ScrollView
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={{ paddingBottom: insets.bottom + 100 }}
+      >
+        {/* ── HEADER ─────────────────────────────────────────────── */}
         <LinearGradient
-          colors={['rgba(201,162,74,0.09)', 'transparent']}
+          colors={['rgba(201,162,74,0.08)', 'transparent']}
           start={{ x: 0.5, y: 0 }}
           end={{ x: 0.5, y: 1 }}
-          style={styles.headerGradient}
+          style={styles.header}
         >
-          {/* Top bar */}
-          <View style={styles.topBar}>
-            <Text style={styles.handle}>@alexj</Text>
-            <Pressable
-              onPress={() => router.push('/(customer)/profile/settings' as Href)}
-              hitSlop={10}
-              style={({ pressed }) => ({ opacity: pressed ? 0.6 : 1 })}
-            >
-              <Ionicons name="settings-outline" size={22} color={colors.textMuted} />
-            </Pressable>
-          </View>
+          {/* Gear floats top-right above avatar */}
+          <Pressable
+            hitSlop={8}
+            style={styles.settingsBtn}
+            onPress={() => nav('/(customer)/profile/settings')}
+          >
+            {({ pressed }) => (
+              <Ionicons
+                name="settings-outline"
+                size={22}
+                color={pressed ? colors.gold : 'rgba(201,162,74,0.65)'}
+              />
+            )}
+          </Pressable>
 
-          {/* Avatar */}
+          {/* Push avatar below the floating gear */}
           <View style={styles.avatarSection}>
             <View style={styles.avatarGlow}>
               <View style={styles.avatarRing}>
@@ -138,585 +135,402 @@ export default function ProfileScreen() {
                   <Image source={{ uri: mockCustomer.avatarUrl }} style={styles.avatar} />
                 ) : (
                   <View style={[styles.avatar, styles.avatarFallback]}>
-                    <Ionicons name="person" size={38} color={colors.textMuted} />
+                    <Ionicons name="person" size={36} color={colors.textMuted} />
                   </View>
                 )}
               </View>
             </View>
-
             <Text style={styles.name}>{mockCustomer.fullName}</Text>
-            <Text style={styles.bio}>Food explorer · Toronto</Text>
+            <Text style={styles.handle}>@alexj</Text>
 
             {/* Tier badge */}
             <Pressable
-              onPress={() => switchTab('rewards')}
-              style={({ pressed }) => [styles.tierBadge, { borderColor: `${tier.color}55` }, pressed && { opacity: 0.7 }]}
+              onPress={() => nav('/(customer)/profile/loyalty')}
+              style={({ pressed }) => [styles.tierBadge, { borderColor: `${tier.color}50` }, pressed && { opacity: 0.7 }]}
             >
               <Ionicons name="star" size={11} color={tier.color} />
-              <Text style={[styles.tierBadgeText, { color: tier.color }]}>{tier.name}</Text>
-              {nextTier && (
-                <Text style={styles.tierBadgeNext}> · {toNext.toLocaleString()} to {nextTier.name}</Text>
-              )}
+              <Text style={[styles.tierBadgeText, { color: tier.color }]}>{tier.name} Member</Text>
+              <Text style={styles.tierBadgePts}>· {pts.toLocaleString()} pts</Text>
             </Pressable>
+          </View>
+
+          {/* Quick stats */}
+          <View style={styles.quickStats}>
+            <View style={styles.quickStat}>
+              <Text style={styles.quickStatValue}>{totalVisits}</Text>
+              <Text style={styles.quickStatLabel}>Visits</Text>
+            </View>
+            <View style={styles.quickStatDivider} />
+            <View style={styles.quickStat}>
+              <Text style={styles.quickStatValue}>{pts.toLocaleString()}</Text>
+              <Text style={styles.quickStatLabel}>Points</Text>
+            </View>
+            <View style={styles.quickStatDivider} />
+            <View style={styles.quickStat}>
+              <Text style={styles.quickStatValue}>{tier.name}</Text>
+              <Text style={styles.quickStatLabel}>Tier</Text>
+            </View>
           </View>
         </LinearGradient>
 
-        {/* ── STATS ROW ── */}
-        <View style={styles.statsRow}>
-          <Pressable style={styles.stat} onPress={() => switchTab('snaps')}>
-            <Text style={styles.statValue}>{posts.length}</Text>
-            <Text style={styles.statLabel}>Snaps</Text>
-          </Pressable>
-          <View style={styles.statDivider} />
-          <Pressable style={styles.stat} onPress={() => router.push('/(customer)/profile/followers' as Href)}>
-            <Text style={styles.statValue}>{followerCount}</Text>
-            <Text style={styles.statLabel}>Followers</Text>
-          </Pressable>
-          <View style={styles.statDivider} />
-          <Pressable style={styles.stat} onPress={() => switchTab('dining')}>
-            <Text style={styles.statValue}>{visits.length}</Text>
-            <Text style={styles.statLabel}>Visits</Text>
-          </Pressable>
-        </View>
+        <Animated.View style={{ opacity: fadeAnim, transform: [{ translateY: slideAnim }] }}>
 
-        {/* ── ACTION ROW ── */}
-        <View style={styles.actionRow}>
-          <Pressable
-            onPress={() => router.push('/(customer)/profile/personal-info' as Href)}
-            style={({ pressed }) => [styles.actionBtn, pressed && { opacity: 0.7 }]}
-          >
-            <Text style={styles.actionBtnText}>Edit Profile</Text>
-          </Pressable>
-          <Pressable style={({ pressed }) => [styles.actionBtn, pressed && { opacity: 0.7 }]}>
-            <Ionicons name="share-outline" size={15} color={colors.textPrimary} />
-            <Text style={styles.actionBtnText}>Share</Text>
-          </Pressable>
-        </View>
-
-        {/* ── TAB STRIP ── */}
-        <View style={styles.tabStrip}>
-          {/* Spring indicator */}
-          <Animated.View style={[styles.tabIndicator, { transform: [{ translateX: tabAnim }] }]} />
-
-          {(['snaps', 'dining', 'rewards'] as Tab[]).map((t, i) => {
-            const active = tab === t;
-            const icons: Record<Tab, keyof typeof Ionicons.glyphMap> = {
-              snaps: 'grid-outline',
-              dining: 'restaurant-outline',
-              rewards: 'star-outline',
-            };
-            return (
-              <Pressable key={t} style={styles.tabBtn} onPress={() => switchTab(t)}>
-                <Ionicons name={icons[t]} size={17} color={active ? colors.gold : colors.textMuted} />
-                <Text style={[styles.tabText, active && styles.tabTextActive]}>
-                  {t.charAt(0).toUpperCase() + t.slice(1)}
-                </Text>
-              </Pressable>
-            );
-          })}
-        </View>
-
-        {/* ── SNAPS TAB ── */}
-        {tab === 'snaps' && (
-          posts.length === 0 ? (
-            <View style={styles.empty}>
-              <Ionicons name="camera-outline" size={44} color={colors.textMuted} />
-              <Text style={styles.emptyTitle}>No snaps yet</Text>
-              <Text style={styles.emptyText}>Book a table, dine, and share your experience.</Text>
-            </View>
-          ) : (
-            <Animated.View style={[styles.grid, cardStyle(0)]}>
-              {posts.map((post) => (
-                <Pressable
-                  key={post.id}
-                  onPress={() => router.push(`/(customer)/discover/snaps/detail/${post.id}` as Href)}
-                  style={({ pressed }) => [styles.gridTile, pressed && { opacity: 0.8 }]}
-                >
-                  <Image source={{ uri: post.image }} style={styles.gridImage} resizeMode="cover" />
-                  {post.likes > 50 && (
-                    <View style={styles.gridBadge}>
-                      <Ionicons name="heart" size={9} color={colors.gold} />
-                      <Text style={styles.gridBadgeText}>{post.likes}</Text>
-                    </View>
-                  )}
-                </Pressable>
-              ))}
-            </Animated.View>
-          )
-        )}
-
-        {/* ── DINING TAB ── */}
-        {tab === 'dining' && (
-          <View style={styles.listWrap}>
-            {visits.length === 0 ? (
-              <View style={styles.empty}>
-                <Ionicons name="restaurant-outline" size={44} color={colors.textMuted} />
-                <Text style={styles.emptyTitle}>No visits yet</Text>
-                <Text style={styles.emptyText}>Complete a reservation to see your dining history.</Text>
-              </View>
-            ) : visits.map(({ reservation, restaurant }, i) => (
-              <Animated.View key={reservation.id} style={cardStyle(i)}>
-                <View style={styles.diningCard}>
+          {/* ── DINING SNAPSHOT ──────────────────────────────────── */}
+          {(nextBooking || lastVisit) ? (
+            <View style={styles.section}>
+              <Text style={styles.sectionLabel}>Dining</Text>
+              <View style={styles.snapshotRow}>
+                {/* Next booking card */}
+                {nextBooking && nextRestaurant ? (
                   <Pressable
-                    style={styles.diningCardTop}
-                    onPress={() => router.push(`/(customer)/discover/${restaurant.id}` as Href)}
+                    style={({ pressed }) => [styles.snapshotCard, pressed && { opacity: 0.88 }]}
+                    onPress={() => nav('/(customer)/activity')}
                   >
-                    <Image source={{ uri: restaurant.coverPhotoUrl }} style={styles.diningThumb} resizeMode="cover" />
-                    <View style={styles.diningInfo}>
-                      <Text style={styles.diningName}>{restaurant.name}</Text>
-                      <Text style={styles.diningCuisine}>{restaurant.cuisineType}</Text>
-                      <Text style={styles.diningAddress} numberOfLines={1}>{restaurant.address}</Text>
-                      <View style={styles.visitedPill}>
-                        <Ionicons name="checkmark-circle" size={11} color={colors.gold} />
-                        <Text style={styles.visitedPillText}>Visited</Text>
+                    <Image source={{ uri: nextRestaurant.coverPhotoUrl }} style={styles.snapshotPhoto} resizeMode="cover" />
+                    <LinearGradient
+                      colors={['transparent', 'rgba(0,0,0,0.78)']}
+                      style={StyleSheet.absoluteFill}
+                    />
+                    <View style={styles.snapshotOverlay}>
+                      <View style={styles.snapshotPill}>
+                        <Text style={styles.snapshotPillText}>{formatBookingDate(nextBooking.reservedAt)}</Text>
                       </View>
-                    </View>
-                    <Ionicons name="chevron-forward" size={15} color={colors.textMuted} />
-                  </Pressable>
-                  <View style={styles.diningActions}>
-                    <Pressable
-                      style={({ pressed }) => [styles.rebookBtn, pressed && { opacity: 0.8 }]}
-                      onPress={() => router.push(`/booking/${restaurant.id}/step2-time` as Href)}
-                    >
-                      <LinearGradient
-                        colors={['#D4AF6A', colors.gold, '#A87E30']}
-                        start={{ x: 0, y: 0 }}
-                        end={{ x: 1, y: 0 }}
-                        style={styles.rebookGradient}
-                      >
-                        <Ionicons name="calendar-outline" size={13} color="#1A1510" />
-                        <Text style={styles.rebookText}>Rebook</Text>
-                      </LinearGradient>
-                    </Pressable>
-                    <Pressable
-                      style={({ pressed }) => [styles.viewBtn, pressed && { opacity: 0.7 }]}
-                      onPress={() => router.push(`/(customer)/discover/${restaurant.id}` as Href)}
-                    >
-                      <Text style={styles.viewBtnText}>View restaurant</Text>
-                    </Pressable>
-                  </View>
-                </View>
-              </Animated.View>
-            ))}
-          </View>
-        )}
-
-        {/* ── REWARDS TAB ── */}
-        {tab === 'rewards' && (
-          <View style={styles.listWrap}>
-
-            {/* Tier card — glassmorphism */}
-            <Animated.View style={cardStyle(0)}>
-              {Platform.OS === 'ios' ? (
-                <BlurView intensity={22} tint="dark" style={styles.tierCard}>
-                  <TierCardContent tier={tier} nextTier={nextTier} progress={progress} toNext={toNext} pts={pts} />
-                </BlurView>
-              ) : (
-                <View style={[styles.tierCard, styles.tierCardAndroid]}>
-                  <TierCardContent tier={tier} nextTier={nextTier} progress={progress} toNext={toNext} pts={pts} />
-                </View>
-              )}
-            </Animated.View>
-
-            {/* Available rewards */}
-            <Animated.View style={cardStyle(1)}>
-              <Text style={styles.sectionLabel}>Available rewards</Text>
-            </Animated.View>
-
-            {mockRewards.map((reward, i) => {
-              const canRedeem = pts >= reward.pointsCost;
-              return (
-                <Animated.View key={reward.id} style={cardStyle(i + 2)}>
-                  <Pressable style={({ pressed }) => [styles.rewardRow, pressed && { opacity: 0.78 }]}>
-                    <View style={[styles.rewardIcon, !canRedeem && { opacity: 0.38 }]}>
-                      <Ionicons
-                        name={reward.category === 'event' ? 'ticket-outline' : reward.category === 'discount' ? 'pricetag-outline' : 'gift-outline'}
-                        size={17}
-                        color={colors.gold}
-                      />
-                    </View>
-                    <View style={styles.rewardBody}>
-                      <Text style={[styles.rewardName, !canRedeem && { color: colors.textMuted }]}>{reward.name}</Text>
-                      <Text style={styles.rewardDesc} numberOfLines={1}>{reward.description}</Text>
-                    </View>
-                    <View style={[styles.rewardCostPill, canRedeem && styles.rewardCostPillActive]}>
-                      <Text style={[styles.rewardCostText, canRedeem && { color: colors.gold }]}>
-                        {reward.pointsCost.toLocaleString()} pts
+                      <Text style={styles.snapshotName} numberOfLines={1}>{nextRestaurant.name}</Text>
+                      <Text style={styles.snapshotMeta}>
+                        {formatTime(nextBooking.reservedAt)} · {nextBooking.partySize} guests
                       </Text>
                     </View>
                   </Pressable>
-                </Animated.View>
-              );
-            })}
+                ) : null}
 
-            {/* History */}
-            <Animated.View style={[cardStyle(mockRewards.length + 2), styles.historySection]}>
-              <Text style={[styles.sectionLabel, { marginBottom: spacing.sm }]}>History</Text>
-              {mockLoyaltyTransactions.map((tx, i) => (
-                <View key={tx.id} style={[styles.txRow, i === mockLoyaltyTransactions.length - 1 && { borderBottomWidth: 0 }]}>
-                  <View style={[styles.txDot, { backgroundColor: tx.type === 'earn' ? colors.success : tx.type === 'redeem' ? colors.gold : colors.textMuted }]} />
-                  <View style={styles.txBody}>
-                    <Text style={styles.txDesc}>{tx.description}</Text>
-                    <Text style={styles.txDate}>
-                      {new Date(tx.createdAt).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })}
-                    </Text>
-                  </View>
-                  <Text style={[styles.txPts, { color: tx.type === 'earn' ? colors.success : colors.textMuted }]}>
-                    {tx.type === 'earn' ? '+' : ''}{tx.points}
-                  </Text>
+                {/* Last visit card */}
+                {lastVisit && lastRestaurant ? (
+                  <Pressable
+                    style={({ pressed }) => [styles.snapshotCard, pressed && { opacity: 0.88 }]}
+                    onPress={() => nav(`/(customer)/discover/${lastRestaurant.id}`)}
+                  >
+                    <Image source={{ uri: lastRestaurant.coverPhotoUrl }} style={styles.snapshotPhoto} resizeMode="cover" />
+                    <LinearGradient
+                      colors={['transparent', 'rgba(0,0,0,0.78)']}
+                      style={StyleSheet.absoluteFill}
+                    />
+                    <View style={styles.snapshotOverlay}>
+                      <View style={[styles.snapshotPill, styles.snapshotPillMuted]}>
+                        <Text style={[styles.snapshotPillText, { color: colors.textSecondary }]}>
+                          {formatPastDate(lastVisit.reservedAt)}
+                        </Text>
+                      </View>
+                      <Text style={styles.snapshotName} numberOfLines={1}>{lastRestaurant.name}</Text>
+                      <Pressable
+                        style={styles.rebookPill}
+                        onPress={() => nav(`/booking/${lastRestaurant.id}/step2-time`)}
+                      >
+                        <Text style={styles.rebookPillText}>Rebook →</Text>
+                      </Pressable>
+                    </View>
+                  </Pressable>
+                ) : null}
+              </View>
+            </View>
+          ) : null}
+
+          {/* ── LOYALTY CARD ─────────────────────────────────────── */}
+          <View style={styles.section}>
+            <Text style={styles.sectionLabel}>Rewards</Text>
+            <Pressable
+              onPress={() => nav('/(customer)/profile/loyalty')}
+              style={({ pressed }) => [{ opacity: pressed ? 0.9 : 1 }]}
+            >
+              {Platform.OS === 'ios' ? (
+                <BlurView intensity={22} tint="dark" style={styles.loyaltyCard}>
+                  <LoyaltyCardContent tier={tier} nextTier={nextTier} progress={progress} toNext={toNext} pts={pts} />
+                </BlurView>
+              ) : (
+                <View style={[styles.loyaltyCard, { backgroundColor: 'rgba(28,22,12,0.98)' }]}>
+                  <LoyaltyCardContent tier={tier} nextTier={nextTier} progress={progress} toNext={toNext} pts={pts} />
                 </View>
-              ))}
-            </Animated.View>
+              )}
+            </Pressable>
           </View>
-        )}
 
+          {/* ── RECENT SNAPS ─────────────────────────────────────── */}
+          {posts.length > 0 && (
+            <View style={styles.section}>
+              <View style={styles.snapsHeader}>
+                <Text style={styles.sectionLabel}>My snaps</Text>
+                <Pressable
+                  onPress={() => nav('/(customer)/profile/my-snaps')}
+                  hitSlop={8}
+                  style={({ pressed }) => ({ opacity: pressed ? 0.6 : 1 })}
+                >
+                  <Text style={styles.seeAllLink}>See all →</Text>
+                </Pressable>
+              </View>
+              <ScrollView
+                horizontal
+                showsHorizontalScrollIndicator={false}
+                contentContainerStyle={styles.snapsRow}
+              >
+                {posts.slice(0, 8).map((post) => (
+                  <Pressable
+                    key={post.id}
+                    onPress={() => nav(`/(customer)/profile/snaps/detail/${post.id}`)}
+                    style={({ pressed }) => [styles.snapThumb, pressed && { opacity: 0.8 }]}
+                  >
+                    <Image source={{ uri: post.image }} style={styles.snapThumbImg} resizeMode="cover" />
+                    {post.likes > 50 && (
+                      <View style={styles.snapLikeBadge}>
+                        <Ionicons name="heart" size={9} color={colors.gold} />
+                        <Text style={styles.snapLikeText}>{post.likes}</Text>
+                      </View>
+                    )}
+                  </Pressable>
+                ))}
+              </ScrollView>
+            </View>
+          )}
+
+        </Animated.View>
       </ScrollView>
     </View>
   );
 }
 
-function TierCardContent({ tier, nextTier, progress, toNext, pts }: {
+// ─── Loyalty card inner ───────────────────────────────────────────────────────
+function LoyaltyCardContent({ tier, nextTier, progress, toNext, pts }: {
   tier: typeof TIERS[number];
   nextTier: typeof TIERS[number] | null;
   progress: number;
   toNext: number;
   pts: number;
 }) {
+  const recentEarned = mockLoyaltyTransactions.filter((t) => t.type === 'earn').slice(0, 1)[0];
   return (
     <LinearGradient
-      colors={['rgba(201,162,74,0.07)', 'transparent']}
+      colors={['rgba(201,162,74,0.09)', 'rgba(201,162,74,0.02)', 'transparent']}
       start={{ x: 0, y: 0 }}
       end={{ x: 1, y: 1 }}
-      style={styles.tierCardInner}
+      style={styles.loyaltyInner}
     >
-      <View style={styles.tierCardHeader}>
-        <View>
-          <Text style={styles.tierName}>{tier.name} Member</Text>
-          <Text style={styles.tierPts}>{pts.toLocaleString()} points</Text>
+      <View style={styles.loyaltyTop}>
+        <View style={{ gap: 3 }}>
+          <Text style={styles.loyaltyTierName}>{tier.name} Member</Text>
+          <Text style={styles.loyaltyPoints}>{pts.toLocaleString()} points</Text>
         </View>
-        <View style={[styles.tierIconCircle, { backgroundColor: `${tier.color}1A` }]}>
+        <View style={[styles.loyaltyIcon, { backgroundColor: `${tier.color}20` }]}>
           <Ionicons name="star" size={22} color={tier.color} />
         </View>
       </View>
-      {nextTier && (
+
+      {nextTier ? (
         <>
           <View style={styles.progressTrack}>
-            <View style={[styles.progressFill, { width: `${Math.round(progress * 100)}%`, backgroundColor: tier.color }]} />
+            <View style={[styles.progressFill, { width: `${Math.min(progress * 100, 100)}%`, backgroundColor: tier.color }]} />
           </View>
-          <Text style={styles.progressLabel}>
+          <Text style={styles.loyaltySub}>
             {toNext.toLocaleString()} pts to{' '}
             <Text style={{ color: tier.color, fontWeight: '700' }}>{nextTier.name}</Text>
           </Text>
         </>
+      ) : (
+        <Text style={styles.loyaltySub}>Highest tier achieved ✦</Text>
       )}
-      {!nextTier && (
-        <Text style={styles.progressLabel}>You've reached the highest tier ✦</Text>
-      )}
+
+      <View style={styles.loyaltyFooter}>
+        {recentEarned ? (
+          <Text style={styles.loyaltyRecent}>
+            Last earned: <Text style={{ color: colors.success }}>+{recentEarned.points} pts</Text> · {recentEarned.description}
+          </Text>
+        ) : null}
+        <Text style={styles.loyaltyLink}>View rewards →</Text>
+      </View>
     </LinearGradient>
   );
 }
 
+// ─── Styles ───────────────────────────────────────────────────────────────────
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.bgBase },
 
   // Header
-  headerGradient: { paddingBottom: spacing.lg },
-  topBar: {
-    flexDirection: 'row',
+  header: { paddingBottom: spacing.xl, paddingTop: spacing.sm, position: 'relative' },
+  settingsBtn: {
+    position: 'absolute',
+    top: spacing.sm,
+    right: spacing.lg,
+    width: 38,
+    height: 38,
+    borderRadius: 19,
+    backgroundColor: 'rgba(201,162,74,0.08)',
+    borderWidth: 1,
+    borderColor: 'rgba(201,162,74,0.3)',
     alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: spacing.lg,
-    paddingVertical: spacing.sm,
+    justifyContent: 'center',
   },
-  handle: { fontSize: 16, fontWeight: '700', color: colors.textPrimary },
 
-  avatarSection: { alignItems: 'center', paddingTop: spacing.sm, gap: 6 },
+  avatarSection: { alignItems: 'center', gap: 5, paddingTop: 52, paddingBottom: spacing.lg },
   avatarGlow: {
     shadowColor: colors.gold,
     shadowOffset: { width: 0, height: 0 },
-    shadowOpacity: 0.45,
-    shadowRadius: 20,
-    elevation: 12,
-    borderRadius: 64,
-    marginBottom: 4,
+    shadowOpacity: 0.4,
+    shadowRadius: 18,
+    elevation: 10,
+    borderRadius: 60,
+    marginBottom: 6,
   },
   avatarRing: {
     borderWidth: 2.5,
     borderColor: colors.gold,
-    borderRadius: 64,
+    borderRadius: 60,
     padding: 3,
   },
-  avatar: { width: 112, height: 112, borderRadius: 56, backgroundColor: colors.bgElevated },
+  avatar: { width: 100, height: 100, borderRadius: 50, backgroundColor: colors.bgElevated },
   avatarFallback: { alignItems: 'center', justifyContent: 'center' },
-
-  name: { fontSize: 22, fontWeight: '800', color: colors.textPrimary, letterSpacing: 0.2 },
-  bio: { fontSize: 13, color: colors.textSecondary, marginTop: -2 },
-
+  name: { fontSize: 21, fontWeight: '800', color: colors.textPrimary, letterSpacing: 0.2 },
+  handle: { fontSize: 13, color: colors.textMuted, marginTop: -2 },
   tierBadge: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 4,
-    marginTop: 4,
-    paddingHorizontal: 11,
+    gap: 5,
+    marginTop: 6,
+    paddingHorizontal: 12,
     paddingVertical: 5,
     borderRadius: borderRadius.full,
     borderWidth: 1,
     backgroundColor: 'rgba(255,255,255,0.04)',
   },
   tierBadgeText: { fontSize: 12, fontWeight: '700' },
-  tierBadgeNext: { fontSize: 11, color: colors.textMuted },
+  tierBadgePts: { fontSize: 11, color: colors.textMuted },
 
-  // Stats — floating, no card
-  statsRow: {
+  // Quick stats
+  quickStats: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    paddingVertical: spacing.lg,
-    paddingHorizontal: spacing.xl,
-    gap: spacing.xl,
-  },
-  stat: { alignItems: 'center', gap: 3, flex: 1 },
-  statValue: { fontSize: 22, fontWeight: '800', color: colors.gold },
-  statLabel: { fontSize: 10, fontWeight: '600', color: colors.textMuted, textTransform: 'uppercase', letterSpacing: 0.8 },
-  statDivider: { width: 1, height: 28, backgroundColor: colors.border },
-
-  // Actions
-  actionRow: {
-    flexDirection: 'row',
-    gap: spacing.sm,
-    paddingHorizontal: spacing.lg,
-    paddingBottom: spacing.lg,
-  },
-  actionBtn: {
-    flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 5,
-    paddingVertical: 11,
-    borderRadius: borderRadius.lg,
-    backgroundColor: colors.bgSurface,
+    marginHorizontal: spacing.lg,
+    paddingVertical: 14,
+    borderRadius: borderRadius.xl,
+    backgroundColor: 'rgba(255,255,255,0.04)',
     borderWidth: 1,
     borderColor: colors.border,
   },
-  actionBtnText: { fontSize: 14, fontWeight: '700', color: colors.textPrimary },
+  quickStat: { flex: 1, alignItems: 'center', gap: 3 },
+  quickStatValue: { fontSize: 18, fontWeight: '800', color: colors.textPrimary },
+  quickStatLabel: { fontSize: 10, fontWeight: '600', color: colors.textMuted, textTransform: 'uppercase', letterSpacing: 0.7 },
+  quickStatDivider: { width: 1, height: 26, backgroundColor: colors.border },
 
-  // Tab strip
-  tabStrip: {
-    flexDirection: 'row',
-    borderTopWidth: StyleSheet.hairlineWidth,
-    borderTopColor: colors.border,
-    borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: colors.border,
-    position: 'relative',
-    marginBottom: GRID_GAP,
-  },
-  tabIndicator: {
-    position: 'absolute',
-    bottom: 0,
-    left: 0,
-    width: TAB_W,
-    height: 2.5,
-    backgroundColor: colors.gold,
-    borderRadius: 2,
-    shadowColor: colors.gold,
-    shadowOffset: { width: 0, height: 0 },
-    shadowOpacity: 0.7,
-    shadowRadius: 6,
-  },
-  tabBtn: {
-    flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: 13,
-    gap: 5,
-  },
-  tabText: { fontSize: 13, fontWeight: '600', color: colors.textMuted },
-  tabTextActive: { color: colors.gold },
-
-  // Grid
-  grid: { flexDirection: 'row', flexWrap: 'wrap', gap: GRID_GAP },
-  gridTile: { width: TILE_SIZE, height: TILE_SIZE, backgroundColor: colors.bgElevated },
-  gridImage: { width: TILE_SIZE, height: TILE_SIZE },
-  gridBadge: {
-    position: 'absolute',
-    bottom: 5,
-    left: 5,
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 2,
-    backgroundColor: 'rgba(0,0,0,0.6)',
-    borderRadius: 8,
-    paddingHorizontal: 5,
-    paddingVertical: 2,
-  },
-  gridBadgeText: { fontSize: 10, fontWeight: '700', color: '#fff' },
-
-  // List wrapper
-  listWrap: { padding: spacing.md, gap: spacing.sm },
-
-  // Dining cards
-  diningCard: {
-    backgroundColor: colors.bgSurface,
-    borderRadius: borderRadius.xl,
-    borderWidth: 1,
-    borderColor: colors.border,
-    overflow: 'hidden',
-  },
-  diningCardTop: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    padding: spacing.md,
-    gap: spacing.md,
-  },
-  diningThumb: {
-    width: 68,
-    height: 68,
-    borderRadius: borderRadius.lg,
-    backgroundColor: colors.bgElevated,
-  },
-  diningInfo: { flex: 1, gap: 2 },
-  diningName: { fontSize: 15, fontWeight: '700', color: colors.textPrimary },
-  diningCuisine: { fontSize: 12, color: colors.textMuted },
-  diningAddress: { fontSize: 12, color: colors.textMuted },
-  visitedPill: { flexDirection: 'row', alignItems: 'center', gap: 3, marginTop: 3 },
-  visitedPillText: { fontSize: 11, fontWeight: '700', color: colors.gold },
-  diningActions: {
-    flexDirection: 'row',
-    borderTopWidth: StyleSheet.hairlineWidth,
-    borderTopColor: colors.border,
-  },
-  rebookBtn: { flex: 1 },
-  rebookGradient: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 5,
-    paddingVertical: 11,
-  },
-  rebookText: { fontSize: 13, fontWeight: '800', color: '#1A1510' },
-  viewBtn: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: 11,
-    borderLeftWidth: StyleSheet.hairlineWidth,
-    borderLeftColor: colors.border,
-  },
-  viewBtnText: { fontSize: 13, fontWeight: '600', color: colors.textSecondary },
-
-  // Tier card
-  tierCard: {
-    borderRadius: borderRadius.xl,
-    borderWidth: 1,
-    borderColor: 'rgba(201,162,74,0.25)',
-    overflow: 'hidden',
-    marginBottom: spacing.sm,
-  },
-  tierCardAndroid: { backgroundColor: 'rgba(30,25,15,0.95)' },
-  tierCardInner: { padding: spacing.lg, gap: spacing.md },
-  tierCardHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
-  tierName: { fontSize: 20, fontWeight: '800', color: colors.textPrimary },
-  tierPts: { fontSize: 13, color: colors.textMuted, marginTop: 2 },
-  tierIconCircle: {
-    width: 50,
-    height: 50,
-    borderRadius: 25,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  progressTrack: {
-    height: 5,
-    backgroundColor: 'rgba(255,255,255,0.08)',
-    borderRadius: 3,
-    overflow: 'hidden',
-  },
-  progressFill: {
-    height: 5,
-    borderRadius: 3,
-    shadowColor: colors.gold,
-    shadowOffset: { width: 0, height: 0 },
-    shadowOpacity: 0.8,
-    shadowRadius: 4,
-  },
-  progressLabel: { fontSize: 12, color: colors.textMuted },
-
-  // Section label
+  // Section wrapper
+  section: { paddingHorizontal: spacing.lg, paddingBottom: spacing.sm },
   sectionLabel: {
     fontSize: 11,
     fontWeight: '700',
     color: colors.textMuted,
     textTransform: 'uppercase',
     letterSpacing: 0.9,
+    marginBottom: spacing.sm,
+    marginTop: spacing.lg,
   },
 
-  // Reward rows
-  rewardRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.md,
-    backgroundColor: colors.bgSurface,
-    borderRadius: borderRadius.lg,
-    borderWidth: 1,
-    borderColor: colors.border,
-    padding: spacing.md,
+  // Dining snapshot cards
+  snapshotRow: { flexDirection: 'row', gap: spacing.sm },
+  snapshotCard: {
+    width: CARD_W,
+    height: 160,
+    borderRadius: borderRadius.xl,
+    overflow: 'hidden',
+    backgroundColor: colors.bgElevated,
   },
-  rewardIcon: {
-    width: 38,
-    height: 38,
-    borderRadius: 19,
-    backgroundColor: 'rgba(201,162,74,0.1)',
-    alignItems: 'center',
-    justifyContent: 'center',
+  snapshotPhoto: { ...StyleSheet.absoluteFillObject },
+  snapshotOverlay: {
+    position: 'absolute',
+    bottom: 12,
+    left: 12,
+    right: 12,
+    gap: 4,
   },
-  rewardBody: { flex: 1, gap: 2 },
-  rewardName: { fontSize: 14, fontWeight: '700', color: colors.textPrimary },
-  rewardDesc: { fontSize: 12, color: colors.textMuted },
-  rewardCostPill: {
+  snapshotPill: {
+    alignSelf: 'flex-start',
     paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: borderRadius.full,
+    backgroundColor: colors.gold,
+    marginBottom: 2,
+  },
+  snapshotPillMuted: { backgroundColor: 'rgba(255,255,255,0.18)' },
+  snapshotPillText: { fontSize: 10, fontWeight: '800', color: colors.bgBase },
+  snapshotName: { fontSize: 14, fontWeight: '800', color: '#FFFFFF' },
+  snapshotMeta: { fontSize: 11, color: 'rgba(255,255,255,0.75)', fontWeight: '500' },
+  rebookPill: {
+    alignSelf: 'flex-start',
+    marginTop: 2,
+    paddingHorizontal: 10,
     paddingVertical: 4,
     borderRadius: borderRadius.full,
-    backgroundColor: colors.bgElevated,
+    backgroundColor: 'rgba(255,255,255,0.15)',
     borderWidth: 1,
-    borderColor: colors.border,
+    borderColor: 'rgba(255,255,255,0.25)',
   },
-  rewardCostPillActive: {
-    backgroundColor: 'rgba(201,162,74,0.1)',
-    borderColor: 'rgba(201,162,74,0.3)',
-  },
-  rewardCostText: { fontSize: 11, fontWeight: '700', color: colors.textMuted },
+  rebookPillText: { fontSize: 11, fontWeight: '700', color: '#FFFFFF' },
 
-  // History
-  historySection: {
-    backgroundColor: colors.bgSurface,
-    borderRadius: borderRadius.xl,
-    borderWidth: 1,
-    borderColor: colors.border,
-    padding: spacing.md,
-    marginTop: spacing.xs,
-  },
-  txRow: {
+  // Snaps row
+  snapsHeader: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: spacing.md,
-    paddingVertical: 10,
-    borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: colors.border,
+    justifyContent: 'space-between',
+    marginBottom: spacing.sm,
   },
-  txDot: { width: 7, height: 7, borderRadius: 4 },
-  txBody: { flex: 1 },
-  txDesc: { fontSize: 13, fontWeight: '500', color: colors.textPrimary },
-  txDate: { fontSize: 11, color: colors.textMuted, marginTop: 1 },
-  txPts: { fontSize: 13, fontWeight: '700' },
-
-  // Empty
-  empty: {
-    paddingTop: 56,
+  seeAllLink: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: colors.gold,
+  },
+  snapsRow: { gap: spacing.sm, paddingBottom: 2 },
+  snapThumb: {
+    width: 80,
+    height: 80,
+    borderRadius: borderRadius.lg,
+    overflow: 'hidden',
+    backgroundColor: colors.bgElevated,
+  },
+  snapThumbImg: { width: 80, height: 80 },
+  snapLikeBadge: {
+    position: 'absolute',
+    bottom: 4,
+    left: 4,
+    flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 32,
-    gap: spacing.sm,
+    gap: 2,
+    backgroundColor: 'rgba(0,0,0,0.6)',
+    borderRadius: 6,
+    paddingHorizontal: 4,
+    paddingVertical: 2,
   },
-  emptyTitle: { fontSize: 16, fontWeight: '700', color: colors.textPrimary },
-  emptyText: { fontSize: 13, color: colors.textMuted, textAlign: 'center', lineHeight: 19 },
+  snapLikeText: { fontSize: 9, fontWeight: '700', color: '#fff' },
+
+  // Loyalty card
+  loyaltyCard: {
+    borderRadius: borderRadius.xl,
+    borderWidth: 1,
+    borderColor: 'rgba(201,162,74,0.22)',
+    overflow: 'hidden',
+  },
+  loyaltyInner: { padding: spacing.lg, gap: spacing.sm },
+  loyaltyTop: { flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'space-between' },
+  loyaltyTierName: { fontSize: 19, fontWeight: '800', color: colors.textPrimary },
+  loyaltyPoints: { fontSize: 13, color: colors.textMuted },
+  loyaltyIcon: { width: 48, height: 48, borderRadius: 24, alignItems: 'center', justifyContent: 'center' },
+  progressTrack: { height: 5, backgroundColor: 'rgba(255,255,255,0.08)', borderRadius: 3, overflow: 'hidden' },
+  progressFill: {
+    height: 5,
+    borderRadius: 3,
+    shadowColor: colors.gold,
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0.7,
+    shadowRadius: 4,
+  },
+  loyaltySub: { fontSize: 12, color: colors.textMuted },
+  loyaltyFooter: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginTop: 2 },
+  loyaltyRecent: { fontSize: 11, color: colors.textMuted, flex: 1, marginRight: spacing.sm },
+  loyaltyLink: { fontSize: 13, fontWeight: '700', color: colors.gold },
+
 });
