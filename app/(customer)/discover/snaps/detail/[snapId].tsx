@@ -1,9 +1,11 @@
 import React, { useCallback, useMemo, useState } from 'react';
 import {
+  Alert,
   Dimensions,
   FlatList,
   Image,
   KeyboardAvoidingView,
+  Modal,
   Platform,
   Pressable,
   StyleSheet,
@@ -16,6 +18,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
 import {
+  deleteSnapPost,
   getRestaurantForPost,
   getSnapPostById,
   getSnapUser,
@@ -31,12 +34,315 @@ import { isLiked, isSaved, toggleLike, toggleSave } from '@/lib/mock/social';
 import { mockCustomer } from '@/lib/mock/users';
 import { isPostInAnyCollection } from '@/lib/mock/collections';
 import { SaveToCollectionSheet } from '@/components/snaps/SaveToCollectionSheet';
-import { borderRadius, colors, spacing, typography } from '@/lib/theme';
+import { useColors, createStyles, borderRadius, spacing, typography } from '@/lib/theme';
 
 const ME = mockCustomer.id;
 const SCREEN_W = Dimensions.get('window').width;
 
+const useStyles = createStyles((c) => ({
+  root: {
+    flex: 1,
+    backgroundColor: c.bgBase,
+  },
+  centered: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: spacing.md,
+  },
+  emptyTitle: {
+    ...typography.h3,
+    color: c.textSecondary,
+  },
+  backGhost: {
+    borderWidth: 1,
+    borderColor: c.border,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
+    borderRadius: borderRadius.full,
+  },
+  backGhostText: {
+    ...typography.bodySmall,
+    color: c.textPrimary,
+  },
+
+  topBar: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: c.border,
+  },
+  topBarBtn: {
+    width: 40,
+    alignItems: 'flex-start',
+  },
+  topBarTitle: {
+    ...typography.body,
+    fontWeight: '700',
+    color: c.textPrimary,
+  },
+
+  postHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
+  },
+  userRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+    flex: 1,
+  },
+  avatar: {
+    width: 38,
+    height: 38,
+    borderRadius: borderRadius.full,
+    backgroundColor: c.bgElevated,
+    borderWidth: 1.5,
+    borderColor: c.gold,
+  },
+  avatarFallback: {
+    backgroundColor: c.bgElevated,
+  },
+  userMeta: { flex: 1, gap: 1 },
+  username: {
+    ...typography.body,
+    fontWeight: '700',
+    color: c.textPrimary,
+  },
+  restaurantName: {
+    ...typography.bodySmall,
+    color: c.textMuted,
+  },
+
+  postImage: {
+    width: SCREEN_W,
+    height: SCREEN_W,
+    backgroundColor: c.bgElevated,
+  },
+
+  actionBar: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: spacing.md,
+    paddingTop: spacing.sm,
+    paddingBottom: spacing.xs,
+  },
+  actionLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.md,
+  },
+
+  likeCount: {
+    ...typography.body,
+    fontWeight: '700',
+    color: c.textPrimary,
+    paddingHorizontal: spacing.md,
+    marginTop: spacing.xs,
+    marginBottom: 3,
+  },
+  captionRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    paddingHorizontal: spacing.md,
+    marginBottom: 4,
+  },
+  captionUsername: {
+    ...typography.body,
+    fontWeight: '700',
+    color: c.textPrimary,
+  },
+  captionText: {
+    ...typography.body,
+    color: c.textPrimary,
+    flex: 1,
+  },
+
+  dishRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.xs,
+    paddingHorizontal: spacing.md,
+    marginBottom: 6,
+  },
+  dishText: {
+    ...typography.bodySmall,
+    color: c.gold,
+    fontWeight: '600',
+  },
+
+  tagRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 6,
+    paddingHorizontal: spacing.md,
+    marginBottom: spacing.sm,
+  },
+  tagChip: {
+    paddingHorizontal: spacing.sm,
+    paddingVertical: 4,
+    borderRadius: borderRadius.full,
+    backgroundColor: 'rgba(201,168,76,0.10)',
+    borderWidth: 1,
+    borderColor: 'rgba(201,168,76,0.25)',
+  },
+  tagChipText: {
+    ...typography.bodySmall,
+    color: '#DDD5C4',
+    fontWeight: '600',
+  },
+
+  bookLink: {
+    ...typography.bodySmall,
+    color: c.gold,
+    fontWeight: '700',
+    paddingHorizontal: spacing.md,
+    marginBottom: spacing.xs,
+  },
+  timestamp: {
+    fontSize: 10,
+    fontWeight: '500',
+    color: c.textMuted,
+    paddingHorizontal: spacing.md,
+    marginBottom: spacing.md,
+    letterSpacing: 0.4,
+  },
+
+  divider: {
+    height: StyleSheet.hairlineWidth,
+    backgroundColor: c.border,
+    marginBottom: spacing.md,
+  },
+
+  commentsHeader: {
+    ...typography.label,
+    color: c.textMuted,
+    paddingHorizontal: spacing.md,
+    marginBottom: spacing.sm,
+  },
+
+  commentRow: {
+    flexDirection: 'row',
+    gap: spacing.sm,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
+  },
+  commentAvatar: {
+    width: 32,
+    height: 32,
+    borderRadius: borderRadius.full,
+    backgroundColor: c.bgElevated,
+  },
+  commentBody: { flex: 1, gap: 2 },
+  commentText: {
+    ...typography.body,
+    color: c.textPrimary,
+  },
+  commentUsername: {
+    fontWeight: '700',
+  },
+  commentTime: {
+    ...typography.bodySmall,
+    color: c.textMuted,
+    fontSize: 11,
+  },
+
+  emptyCommentsBlock: {
+    paddingVertical: spacing.xl,
+    alignItems: 'center',
+  },
+  emptyCommentsText: {
+    ...typography.bodySmall,
+    color: c.textMuted,
+  },
+
+  composer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+    paddingHorizontal: spacing.md,
+    paddingTop: spacing.sm,
+    borderTopWidth: StyleSheet.hairlineWidth,
+    borderTopColor: c.border,
+    backgroundColor: c.bgBase,
+  },
+  composerAvatar: {
+    width: 32,
+    height: 32,
+    borderRadius: borderRadius.full,
+    backgroundColor: c.bgElevated,
+  },
+  composerInput: {
+    flex: 1,
+    ...typography.body,
+    color: c.textPrimary,
+    minHeight: 36,
+    maxHeight: 100,
+    paddingVertical: 6,
+  },
+  composerBtn: {
+    paddingHorizontal: spacing.sm,
+    paddingVertical: 6,
+  },
+  composerBtnText: {
+    ...typography.body,
+    color: c.gold,
+    fontWeight: '700',
+  },
+
+  sheetBackdrop: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    justifyContent: 'flex-end',
+  },
+  sheet: {
+    backgroundColor: c.bgElevated,
+    borderTopLeftRadius: borderRadius.xl,
+    borderTopRightRadius: borderRadius.xl,
+    paddingBottom: 36,
+    paddingTop: spacing.sm,
+  },
+  sheetHandle: {
+    width: 36,
+    height: 4,
+    borderRadius: 2,
+    backgroundColor: 'rgba(255,255,255,0.2)',
+    alignSelf: 'center',
+    marginBottom: spacing.md,
+  },
+  sheetAction: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+    paddingVertical: spacing.lg,
+    paddingHorizontal: spacing.xl,
+  },
+  sheetActionDanger: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: c.danger,
+  },
+  sheetActionCancel: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: c.textPrimary,
+  },
+  sheetDivider: {
+    height: StyleSheet.hairlineWidth,
+    backgroundColor: 'rgba(255,255,255,0.08)',
+    marginHorizontal: spacing.lg,
+  },
+}));
+
 export default function SnapDetailScreen() {
+  const c = useColors();
+  const styles = useStyles();
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const { t } = useTranslation();
@@ -55,6 +361,28 @@ export default function SnapDetailScreen() {
     post ? listCommentsForPost(post.id) : [],
   );
   const [showSaveSheet, setShowSaveSheet] = useState(false);
+  const [showDeleteSheet, setShowDeleteSheet] = useState(false);
+  const isOwnPost = post?.user_id === ME;
+
+  const handleDeleteConfirm = useCallback(() => {
+    if (!post) return;
+    setShowDeleteSheet(false);
+    Alert.alert(
+      'Delete snap?',
+      "This can't be undone.",
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Delete',
+          style: 'destructive',
+          onPress: () => {
+            deleteSnapPost(post.id, ME);
+            router.back();
+          },
+        },
+      ],
+    );
+  }, [post, router]);
 
   const displayLikeCount = useMemo(
     () => (post ? post.likes + (liked ? 1 : 0) : 0),
@@ -74,8 +402,8 @@ export default function SnapDetailScreen() {
 
   const handleSubmitComment = useCallback(() => {
     if (!post || !commentText.trim()) return;
-    const c = addComment(post.id, ME, commentText.trim());
-    setComments((prev) => [...prev, c]);
+    const comment = addComment(post.id, ME, commentText.trim());
+    setComments((prev) => [...prev, comment]);
     setCommentText('');
   }, [post, commentText]);
 
@@ -121,11 +449,11 @@ export default function SnapDetailScreen() {
             <Ionicons
               name={liked ? 'heart' : 'heart-outline'}
               size={28}
-              color={liked ? colors.danger : colors.textPrimary}
+              color={liked ? c.danger : c.textPrimary}
             />
           </Pressable>
           <Pressable hitSlop={8}>
-            <Ionicons name="chatbubble-outline" size={25} color={colors.textPrimary} />
+            <Ionicons name="chatbubble-outline" size={25} color={c.textPrimary} />
           </Pressable>
           <Pressable
             onPress={() =>
@@ -133,14 +461,14 @@ export default function SnapDetailScreen() {
             }
             hitSlop={8}
           >
-            <Ionicons name="calendar-outline" size={25} color={colors.textPrimary} />
+            <Ionicons name="calendar-outline" size={25} color={c.textPrimary} />
           </Pressable>
         </View>
         <Pressable onPress={handleSave} hitSlop={8}>
           <Ionicons
             name={saved ? 'bookmark' : 'bookmark-outline'}
             size={26}
-            color={saved ? colors.gold : colors.textPrimary}
+            color={saved ? c.gold : c.textPrimary}
           />
         </Pressable>
       </View>
@@ -156,7 +484,7 @@ export default function SnapDetailScreen() {
 
       {post.dish ? (
         <View style={styles.dishRow}>
-          <Ionicons name="restaurant-outline" size={14} color={colors.gold} />
+          <Ionicons name="restaurant-outline" size={14} color={c.gold} />
           <Text style={styles.dishText}>{post.dish}</Text>
         </View>
       ) : null}
@@ -221,10 +549,20 @@ export default function SnapDetailScreen() {
     <View style={[styles.root, { paddingTop: insets.top }]}>
       <View style={styles.topBar}>
         <Pressable onPress={() => router.back()} hitSlop={10} style={styles.topBarBtn}>
-          <Ionicons name="chevron-back" size={24} color={colors.textPrimary} />
+          <Ionicons name="chevron-back" size={24} color={c.textPrimary} />
         </Pressable>
         <Text style={styles.topBarTitle}>{t('snapDetail.title')}</Text>
-        <View style={styles.topBarBtn} />
+        {isOwnPost ? (
+          <Pressable
+            onPress={() => setShowDeleteSheet(true)}
+            hitSlop={10}
+            style={({ pressed }) => [styles.topBarBtn, pressed && { opacity: 0.6 }]}
+          >
+            <Ionicons name="ellipsis-horizontal" size={22} color={c.textPrimary} />
+          </Pressable>
+        ) : (
+          <View style={styles.topBarBtn} />
+        )}
       </View>
 
       <KeyboardAvoidingView
@@ -256,7 +594,7 @@ export default function SnapDetailScreen() {
             value={commentText}
             onChangeText={setCommentText}
             placeholder={t('snapDetail.addCommentPlaceholder')}
-            placeholderTextColor={colors.textMuted}
+            placeholderTextColor={c.textMuted}
             style={styles.composerInput}
             multiline
           />
@@ -273,6 +611,33 @@ export default function SnapDetailScreen() {
         </View>
       </KeyboardAvoidingView>
 
+      <Modal
+        visible={showDeleteSheet}
+        transparent
+        animationType="slide"
+        onRequestClose={() => setShowDeleteSheet(false)}
+      >
+        <Pressable style={styles.sheetBackdrop} onPress={() => setShowDeleteSheet(false)}>
+          <View style={styles.sheet}>
+            <View style={styles.sheetHandle} />
+            <Pressable
+              style={({ pressed }) => [styles.sheetAction, pressed && { opacity: 0.7 }]}
+              onPress={handleDeleteConfirm}
+            >
+              <Ionicons name="trash-outline" size={20} color={c.danger} />
+              <Text style={styles.sheetActionDanger}>Delete snap</Text>
+            </Pressable>
+            <View style={styles.sheetDivider} />
+            <Pressable
+              style={({ pressed }) => [styles.sheetAction, pressed && { opacity: 0.7 }]}
+              onPress={() => setShowDeleteSheet(false)}
+            >
+              <Text style={styles.sheetActionCancel}>Cancel</Text>
+            </Pressable>
+          </View>
+        </Pressable>
+      </Modal>
+
       <SaveToCollectionSheet
         visible={showSaveSheet}
         postId={post.id}
@@ -285,261 +650,3 @@ export default function SnapDetailScreen() {
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  root: {
-    flex: 1,
-    backgroundColor: colors.bgBase,
-  },
-  centered: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: spacing.md,
-  },
-  emptyTitle: {
-    ...typography.h3,
-    color: colors.textSecondary,
-  },
-  backGhost: {
-    borderWidth: 1,
-    borderColor: colors.border,
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.sm,
-    borderRadius: borderRadius.full,
-  },
-  backGhostText: {
-    ...typography.bodySmall,
-    color: colors.textPrimary,
-  },
-
-  topBar: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.sm,
-    borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: colors.border,
-  },
-  topBarBtn: {
-    width: 40,
-    alignItems: 'flex-start',
-  },
-  topBarTitle: {
-    ...typography.body,
-    fontWeight: '700',
-    color: colors.textPrimary,
-  },
-
-  postHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.sm,
-  },
-  userRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.sm,
-    flex: 1,
-  },
-  avatar: {
-    width: 38,
-    height: 38,
-    borderRadius: borderRadius.full,
-    backgroundColor: colors.bgElevated,
-    borderWidth: 1.5,
-    borderColor: colors.gold,
-  },
-  avatarFallback: {
-    backgroundColor: colors.bgElevated,
-  },
-  userMeta: { flex: 1, gap: 1 },
-  username: {
-    ...typography.body,
-    fontWeight: '700',
-    color: colors.textPrimary,
-  },
-  restaurantName: {
-    ...typography.bodySmall,
-    color: colors.textMuted,
-  },
-
-  postImage: {
-    width: SCREEN_W,
-    height: SCREEN_W,
-    backgroundColor: colors.bgElevated,
-  },
-
-  actionBar: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: spacing.md,
-    paddingTop: spacing.sm,
-    paddingBottom: spacing.xs,
-  },
-  actionLeft: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.md,
-  },
-
-  likeCount: {
-    ...typography.body,
-    fontWeight: '700',
-    color: colors.textPrimary,
-    paddingHorizontal: spacing.md,
-    marginTop: spacing.xs,
-    marginBottom: 3,
-  },
-  captionRow: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    paddingHorizontal: spacing.md,
-    marginBottom: 4,
-  },
-  captionUsername: {
-    ...typography.body,
-    fontWeight: '700',
-    color: colors.textPrimary,
-  },
-  captionText: {
-    ...typography.body,
-    color: colors.textPrimary,
-    flex: 1,
-  },
-
-  dishRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.xs,
-    paddingHorizontal: spacing.md,
-    marginBottom: 6,
-  },
-  dishText: {
-    ...typography.bodySmall,
-    color: colors.gold,
-    fontWeight: '600',
-  },
-
-  tagRow: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 6,
-    paddingHorizontal: spacing.md,
-    marginBottom: spacing.sm,
-  },
-  tagChip: {
-    paddingHorizontal: spacing.sm,
-    paddingVertical: 4,
-    borderRadius: borderRadius.full,
-    backgroundColor: 'rgba(201,168,76,0.10)',
-    borderWidth: 1,
-    borderColor: 'rgba(201,168,76,0.25)',
-  },
-  tagChipText: {
-    ...typography.bodySmall,
-    color: colors.goldLight,
-    fontWeight: '600',
-  },
-
-  bookLink: {
-    ...typography.bodySmall,
-    color: colors.gold,
-    fontWeight: '700',
-    paddingHorizontal: spacing.md,
-    marginBottom: spacing.xs,
-  },
-  timestamp: {
-    fontSize: 10,
-    fontWeight: '500',
-    color: colors.textMuted,
-    paddingHorizontal: spacing.md,
-    marginBottom: spacing.md,
-    letterSpacing: 0.4,
-  },
-
-  divider: {
-    height: StyleSheet.hairlineWidth,
-    backgroundColor: colors.border,
-    marginBottom: spacing.md,
-  },
-
-  commentsHeader: {
-    ...typography.label,
-    color: colors.textMuted,
-    paddingHorizontal: spacing.md,
-    marginBottom: spacing.sm,
-  },
-
-  commentRow: {
-    flexDirection: 'row',
-    gap: spacing.sm,
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.sm,
-  },
-  commentAvatar: {
-    width: 32,
-    height: 32,
-    borderRadius: borderRadius.full,
-    backgroundColor: colors.bgElevated,
-  },
-  commentBody: { flex: 1, gap: 2 },
-  commentText: {
-    ...typography.body,
-    color: colors.textPrimary,
-  },
-  commentUsername: {
-    fontWeight: '700',
-  },
-  commentTime: {
-    ...typography.bodySmall,
-    color: colors.textMuted,
-    fontSize: 11,
-  },
-
-  emptyCommentsBlock: {
-    paddingVertical: spacing.xl,
-    alignItems: 'center',
-  },
-  emptyCommentsText: {
-    ...typography.bodySmall,
-    color: colors.textMuted,
-  },
-
-  composer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.sm,
-    paddingHorizontal: spacing.md,
-    paddingTop: spacing.sm,
-    borderTopWidth: StyleSheet.hairlineWidth,
-    borderTopColor: colors.border,
-    backgroundColor: colors.bgBase,
-  },
-  composerAvatar: {
-    width: 32,
-    height: 32,
-    borderRadius: borderRadius.full,
-    backgroundColor: colors.bgElevated,
-  },
-  composerInput: {
-    flex: 1,
-    ...typography.body,
-    color: colors.textPrimary,
-    minHeight: 36,
-    maxHeight: 100,
-    paddingVertical: 6,
-  },
-  composerBtn: {
-    paddingHorizontal: spacing.sm,
-    paddingVertical: 6,
-  },
-  composerBtnText: {
-    ...typography.body,
-    color: colors.gold,
-    fontWeight: '700',
-  },
-});

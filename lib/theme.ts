@@ -1,33 +1,12 @@
-import { appPalette } from '@/lib/theme/appPalette';
+// ─── Theme system ─────────────────────────────────────────────────────────────
+export { ThemeProvider, useTheme } from '@/lib/theme/ThemeProvider';
+export { useColors } from '@/lib/theme/useColors';
+export { createStyles } from '@/lib/theme/createStyles';
+export { darkColors, lightColors } from '@/lib/theme/palettes';
+export type { Palette, } from '@/lib/theme/palettes';
+export type { ThemeMode } from '@/lib/theme/ThemeProvider';
 
-export const colors = {
-  gold: appPalette.gold,
-  /** Soft highlight text / icons on dark */
-  goldLight: '#DDD5C4',
-  goldDark: '#A38630',
-
-  bgBase: appPalette.bgBase,
-  bgSurface: appPalette.bgSurface,
-  bgElevated: appPalette.bgElevated,
-  border: appPalette.border,
-
-  textPrimary: appPalette.textPrimary,
-  textSecondary: appPalette.textSecondary,
-  textMuted: appPalette.textMuted,
-
-  success: '#22C55E',
-  warning: '#D4A574',
-  danger: '#EF4444',
-  /** No blue chrome — neutral “info” */
-  info: '#71717A',
-
-  tableEmpty: '#22C55E',
-  tableReserved: appPalette.gold,
-  tableOccupied: '#EF4444',
-  tableCleaning: '#71717A',
-  tableBlocked: '#52525C',
-} as const;
-
+// ─── Non-color tokens (unchanged) ─────────────────────────────────────────────
 export const spacing = {
   xs: 4,
   sm: 8,

@@ -3,7 +3,7 @@ import { View, Text, StyleSheet, ImageBackground, Pressable } from 'react-native
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import type { Restaurant } from '@/lib/mock/restaurants';
-import { colors, spacing, borderRadius, shadows } from '@/lib/theme';
+import { useColors, createStyles, spacing, borderRadius, shadows } from '@/lib/theme';
 
 interface Props {
   restaurant: Restaurant;
@@ -13,56 +13,7 @@ interface Props {
 
 const PRICE_LABELS = ['', '$', '$$', '$$$', '$$$$'];
 
-export function FeedHero({ restaurant, onPressCard, onPressReserve }: Props) {
-  return (
-    <View style={styles.wrap}>
-      <Pressable
-        onPress={onPressCard}
-        style={({ pressed }) => [styles.card, pressed && styles.cardPressed]}
-      >
-        <ImageBackground
-          source={{ uri: restaurant.coverPhotoUrl }}
-          style={styles.image}
-          imageStyle={styles.imageRadius}
-        >
-          <LinearGradient
-            colors={['transparent', 'rgba(0,0,0,0.18)', 'rgba(0,0,0,0.92)']}
-            style={StyleSheet.absoluteFill}
-          />
-
-          {/* Top badges */}
-          <View style={styles.topRow}>
-            <View style={styles.pickBadge}>
-              <Text style={styles.pickBadgeText}>TONIGHT'S PICK</Text>
-            </View>
-            <View style={styles.ratingBadge}>
-              <Ionicons name="star" size={10} color={colors.bgBase} />
-              <Text style={styles.ratingBadgeText}>{restaurant.avgRating.toFixed(1)}</Text>
-            </View>
-          </View>
-
-          {/* Bottom content */}
-          <View style={styles.bottom}>
-            <Text style={styles.cuisine}>
-              {restaurant.cuisineType.toUpperCase()} · {PRICE_LABELS[restaurant.priceRange]} · {restaurant.distanceKm.toFixed(1)} km
-            </Text>
-            <Text style={styles.name} numberOfLines={2}>{restaurant.name}</Text>
-            <Text style={styles.ambiance} numberOfLines={1}>{restaurant.ambiance}</Text>
-            <Pressable
-              onPress={onPressReserve}
-              style={({ pressed }) => [styles.cta, pressed && styles.ctaPressed]}
-            >
-              <Ionicons name="calendar-outline" size={14} color={colors.bgBase} />
-              <Text style={styles.ctaText}>Reserve a table</Text>
-            </Pressable>
-          </View>
-        </ImageBackground>
-      </Pressable>
-    </View>
-  );
-}
-
-const styles = StyleSheet.create({
+const useStyles = createStyles((c) => ({
   wrap: {
     marginHorizontal: spacing.md,
     marginTop: spacing.sm,
@@ -86,7 +37,6 @@ const styles = StyleSheet.create({
   imageRadius: {
     borderRadius: borderRadius.xl,
   },
-
   topRow: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -102,7 +52,7 @@ const styles = StyleSheet.create({
   pickBadgeText: {
     fontSize: 10,
     fontWeight: '800',
-    color: colors.bgBase,
+    color: c.bgBase,
     letterSpacing: 1,
     textTransform: 'uppercase',
   },
@@ -110,7 +60,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 4,
-    backgroundColor: colors.gold,
+    backgroundColor: c.gold,
     paddingHorizontal: 10,
     paddingVertical: 5,
     borderRadius: borderRadius.full,
@@ -118,9 +68,8 @@ const styles = StyleSheet.create({
   ratingBadgeText: {
     fontSize: 11,
     fontWeight: '800',
-    color: colors.bgBase,
+    color: c.bgBase,
   },
-
   bottom: {
     padding: spacing.lg,
     gap: 4,
@@ -152,7 +101,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 7,
     alignSelf: 'flex-start',
-    backgroundColor: colors.gold,
+    backgroundColor: c.gold,
     paddingVertical: 11,
     paddingHorizontal: spacing.lg,
     borderRadius: borderRadius.lg,
@@ -166,6 +115,53 @@ const styles = StyleSheet.create({
   ctaText: {
     fontSize: 14,
     fontWeight: '800',
-    color: colors.bgBase,
+    color: c.bgBase,
   },
-});
+}));
+
+export function FeedHero({ restaurant, onPressCard, onPressReserve }: Props) {
+  const c = useColors();
+  const styles = useStyles();
+
+  return (
+    <View style={styles.wrap}>
+      <Pressable onPress={onPressCard} style={({ pressed }) => [styles.card, pressed && styles.cardPressed]}>
+        <ImageBackground
+          source={{ uri: restaurant.coverPhotoUrl }}
+          style={styles.image}
+          imageStyle={styles.imageRadius}
+        >
+          <LinearGradient
+            colors={['transparent', 'rgba(0,0,0,0.18)', 'rgba(0,0,0,0.92)']}
+            style={StyleSheet.absoluteFill}
+          />
+
+          <View style={styles.topRow}>
+            <View style={styles.pickBadge}>
+              <Text style={styles.pickBadgeText}>TONIGHT'S PICK</Text>
+            </View>
+            <View style={styles.ratingBadge}>
+              <Ionicons name="star" size={10} color={c.bgBase} />
+              <Text style={styles.ratingBadgeText}>{restaurant.avgRating.toFixed(1)}</Text>
+            </View>
+          </View>
+
+          <View style={styles.bottom}>
+            <Text style={styles.cuisine}>
+              {restaurant.cuisineType.toUpperCase()} · {PRICE_LABELS[restaurant.priceRange]} · {restaurant.distanceKm.toFixed(1)} km
+            </Text>
+            <Text style={styles.name} numberOfLines={2}>{restaurant.name}</Text>
+            <Text style={styles.ambiance} numberOfLines={1}>{restaurant.ambiance}</Text>
+            <Pressable
+              onPress={onPressReserve}
+              style={({ pressed }) => [styles.cta, pressed && styles.ctaPressed]}
+            >
+              <Ionicons name="calendar-outline" size={14} color={c.bgBase} />
+              <Text style={styles.ctaText}>Reserve a table</Text>
+            </Pressable>
+          </View>
+        </ImageBackground>
+      </Pressable>
+    </View>
+  );
+}

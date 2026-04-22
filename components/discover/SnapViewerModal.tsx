@@ -1,6 +1,6 @@
 import React from 'react';
 import { Modal, Pressable, StyleSheet, Text, View, Image } from 'react-native';
-import { borderRadius, colors, spacing, typography } from '@/lib/theme';
+import { borderRadius, createStyles, spacing, typography } from '@/lib/theme';
 import type { SnapPost } from '@/lib/mock/snaps';
 import { getSnapUser, getSnapRestaurantName, timeAgoLabel } from '@/lib/mock/snaps';
 
@@ -10,7 +10,74 @@ type SnapViewerModalProps = {
   onClose: () => void;
 };
 
+const useStyles = createStyles((c) => ({
+  backdrop: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.8)',
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: spacing.lg,
+  },
+  sheet: {
+    width: '100%',
+    maxWidth: 440,
+    borderRadius: borderRadius.xl,
+    overflow: 'hidden',
+    backgroundColor: '#0f0f0f',
+    borderWidth: 1,
+    borderColor: 'rgba(201, 168, 76, 0.35)',
+  },
+  image: {
+    width: '100%',
+    aspectRatio: 1,
+    backgroundColor: c.bgElevated,
+  },
+  body: {
+    padding: spacing.md,
+    gap: spacing.sm,
+  },
+  row: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+  },
+  avatar: {
+    width: 34,
+    height: 34,
+    borderRadius: borderRadius.full,
+    backgroundColor: c.bgElevated,
+  },
+  meta: {
+    flex: 1,
+  },
+  username: {
+    ...typography.bodySmall,
+    color: c.goldLight,
+    fontWeight: '700',
+  },
+  time: {
+    ...typography.bodySmall,
+    color: c.textMuted,
+  },
+  caption: {
+    ...typography.body,
+    color: c.textPrimary,
+  },
+  close: {
+    borderTopWidth: 1,
+    borderTopColor: 'rgba(255,255,255,0.08)',
+    alignItems: 'center',
+    paddingVertical: spacing.md,
+  },
+  closeText: {
+    ...typography.bodySmall,
+    color: c.textSecondary,
+    fontWeight: '700',
+  },
+}));
+
 export function SnapViewerModal({ visible, post, onClose }: SnapViewerModalProps) {
+  const styles = useStyles();
   const user = post ? getSnapUser(post.user_id) : undefined;
   const restaurantName = post ? getSnapRestaurantName(post.restaurant_id) : '';
   return (
@@ -39,69 +106,3 @@ export function SnapViewerModal({ visible, post, onClose }: SnapViewerModalProps
     </Modal>
   );
 }
-
-const styles = StyleSheet.create({
-  backdrop: {
-    flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.8)',
-    alignItems: 'center',
-    justifyContent: 'center',
-    padding: spacing.lg,
-  },
-  sheet: {
-    width: '100%',
-    maxWidth: 440,
-    borderRadius: borderRadius.xl,
-    overflow: 'hidden',
-    backgroundColor: '#0f0f0f',
-    borderWidth: 1,
-    borderColor: 'rgba(201, 168, 76, 0.35)',
-  },
-  image: {
-    width: '100%',
-    aspectRatio: 1,
-    backgroundColor: colors.bgElevated,
-  },
-  body: {
-    padding: spacing.md,
-    gap: spacing.sm,
-  },
-  row: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.sm,
-  },
-  avatar: {
-    width: 34,
-    height: 34,
-    borderRadius: borderRadius.full,
-    backgroundColor: colors.bgElevated,
-  },
-  meta: {
-    flex: 1,
-  },
-  username: {
-    ...typography.bodySmall,
-    color: colors.goldLight,
-    fontWeight: '700',
-  },
-  time: {
-    ...typography.bodySmall,
-    color: colors.textMuted,
-  },
-  caption: {
-    ...typography.body,
-    color: colors.textPrimary,
-  },
-  close: {
-    borderTopWidth: 1,
-    borderTopColor: 'rgba(255,255,255,0.08)',
-    alignItems: 'center',
-    paddingVertical: spacing.md,
-  },
-  closeText: {
-    ...typography.bodySmall,
-    color: colors.textSecondary,
-    fontWeight: '700',
-  },
-});

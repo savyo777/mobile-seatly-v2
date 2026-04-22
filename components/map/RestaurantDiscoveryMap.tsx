@@ -7,7 +7,68 @@ import { RestaurantMapMarker } from '@/components/map/RestaurantMapMarker';
 import { googleDarkMapStyle } from '@/lib/map/darkMapStyle';
 import { DEFAULT_MAP_CENTER } from '@/lib/map/mapFilters';
 import type { RestaurantDiscoveryMapProps } from '@/components/map/restaurantMapTypes';
-import { colors, spacing, borderRadius, typography, shadows } from '@/lib/theme';
+import { useColors, createStyles, spacing, borderRadius, typography, shadows } from '@/lib/theme';
+
+const useStyles = createStyles((c) => ({
+  mapShell: {
+    flex: 1,
+    minHeight: 300,
+    width: '100%',
+    backgroundColor: c.bgBase,
+  },
+  emptyOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: 'rgba(10,10,10,0.55)',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: spacing.xl,
+  },
+  emptyTitle: {
+    ...typography.h3,
+    color: c.textPrimary,
+    marginBottom: spacing.xs,
+  },
+  emptySub: {
+    ...typography.bodySmall,
+    color: c.textSecondary,
+    textAlign: 'center',
+  },
+  locateFab: {
+    position: 'absolute',
+    right: spacing.md,
+    width: 48,
+    height: 48,
+    borderRadius: borderRadius.full,
+    backgroundColor: c.bgSurface,
+    borderWidth: 1.5,
+    borderColor: c.gold,
+    alignItems: 'center',
+    justifyContent: 'center',
+    ...shadows.goldGlow,
+  },
+  loadingOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: 'rgba(10,10,10,0.25)',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  fallbackUserDotOuter: {
+    width: 18,
+    height: 18,
+    borderRadius: borderRadius.full,
+    backgroundColor: 'rgba(59,130,246,0.28)',
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1,
+    borderColor: 'rgba(59,130,246,0.6)',
+  },
+  fallbackUserDotInner: {
+    width: 8,
+    height: 8,
+    borderRadius: borderRadius.full,
+    backgroundColor: c.info,
+  },
+}));
 
 export function RestaurantDiscoveryMap({
   filteredRestaurants,
@@ -19,6 +80,8 @@ export function RestaurantDiscoveryMap({
   locationReady,
   contentBottomInset = 0,
 }: RestaurantDiscoveryMapProps) {
+  const c = useColors();
+  const styles = useStyles();
   const { t } = useTranslation();
   const mapRef = useRef<MapView>(null);
   const detailOpen = !!selectedId;
@@ -46,7 +109,6 @@ export function RestaurantDiscoveryMap({
   const handleMapPress = useCallback(
     (event: MapPressEvent) => {
       const action = event?.nativeEvent?.action;
-      // Prevent marker taps from immediately clearing selection.
       if (action === 'marker-press') return;
       onMapPress();
     },
@@ -114,7 +176,7 @@ export function RestaurantDiscoveryMap({
 
       {!locationReady && (
         <View style={styles.loadingOverlay} pointerEvents="none">
-          <ActivityIndicator size="large" color={colors.gold} />
+          <ActivityIndicator size="large" color={c.gold} />
         </View>
       )}
 
@@ -130,70 +192,9 @@ export function RestaurantDiscoveryMap({
             },
           ]}
         >
-          <Ionicons name="locate" size={22} color={colors.gold} />
+          <Ionicons name="locate" size={22} color={c.gold} />
         </Pressable>
       ) : null}
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  mapShell: {
-    flex: 1,
-    minHeight: 300,
-    width: '100%',
-    backgroundColor: colors.bgBase,
-  },
-  emptyOverlay: {
-    ...StyleSheet.absoluteFillObject,
-    backgroundColor: 'rgba(10,10,10,0.55)',
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingHorizontal: spacing.xl,
-  },
-  emptyTitle: {
-    ...typography.h3,
-    color: colors.textPrimary,
-    marginBottom: spacing.xs,
-  },
-  emptySub: {
-    ...typography.bodySmall,
-    color: colors.textSecondary,
-    textAlign: 'center',
-  },
-  locateFab: {
-    position: 'absolute',
-    right: spacing.md,
-    width: 48,
-    height: 48,
-    borderRadius: borderRadius.full,
-    backgroundColor: colors.bgSurface,
-    borderWidth: 1.5,
-    borderColor: colors.gold,
-    alignItems: 'center',
-    justifyContent: 'center',
-    ...shadows.goldGlow,
-  },
-  loadingOverlay: {
-    ...StyleSheet.absoluteFillObject,
-    backgroundColor: 'rgba(10,10,10,0.25)',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  fallbackUserDotOuter: {
-    width: 18,
-    height: 18,
-    borderRadius: borderRadius.full,
-    backgroundColor: 'rgba(59,130,246,0.28)',
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderWidth: 1,
-    borderColor: 'rgba(59,130,246,0.6)',
-  },
-  fallbackUserDotInner: {
-    width: 8,
-    height: 8,
-    borderRadius: borderRadius.full,
-    backgroundColor: colors.info,
-  },
-});

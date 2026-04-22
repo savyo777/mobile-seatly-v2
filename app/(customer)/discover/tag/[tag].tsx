@@ -7,9 +7,86 @@ import { useTranslation } from 'react-i18next';
 import { SnapGrid } from '@/components/snaps/SnapGrid';
 import { getRestaurantForPost } from '@/lib/mock/snaps';
 import { listPostsByTag } from '@/lib/mock/social';
-import { colors, spacing, typography, borderRadius } from '@/lib/theme';
+import { useColors, createStyles, spacing, typography, borderRadius } from '@/lib/theme';
+
+const useStyles = createStyles((c) => ({
+  root: {
+    flex: 1,
+    backgroundColor: c.bgBase,
+  },
+  topBar: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: c.border,
+  },
+  topBarTitle: {
+    ...typography.body,
+    fontWeight: '700',
+    color: c.textPrimary,
+  },
+  headerBlock: {
+    paddingHorizontal: spacing.lg,
+    paddingTop: spacing.lg,
+    paddingBottom: spacing.md,
+    gap: spacing.sm,
+  },
+  tagPill: {
+    alignSelf: 'flex-start',
+    paddingHorizontal: spacing.md,
+    paddingVertical: 6,
+    borderRadius: borderRadius.full,
+    backgroundColor: 'rgba(201,168,76,0.14)',
+    borderWidth: 1,
+    borderColor: 'rgba(201,168,76,0.35)',
+  },
+  tagPillText: {
+    ...typography.h3,
+    color: c.gold,
+    fontWeight: '700',
+  },
+  count: {
+    ...typography.bodySmall,
+    color: c.textMuted,
+  },
+  restaurantsBlock: {
+    marginTop: spacing.sm,
+    gap: spacing.sm,
+  },
+  restaurantsTitle: {
+    ...typography.label,
+    color: c.textMuted,
+  },
+  restaurantRow: {
+    flexDirection: 'row',
+    gap: spacing.sm,
+  },
+  restaurantCard: {
+    flex: 1,
+    borderRadius: borderRadius.md,
+    overflow: 'hidden',
+    backgroundColor: c.bgSurface,
+    borderWidth: 1,
+    borderColor: c.border,
+  },
+  restaurantImg: {
+    width: '100%',
+    aspectRatio: 1.4,
+  },
+  restaurantName: {
+    ...typography.bodySmall,
+    fontWeight: '700',
+    color: c.textPrimary,
+    padding: spacing.sm,
+  },
+}));
 
 export default function TagFeedScreen() {
+  const c = useColors();
+  const styles = useStyles();
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const { t } = useTranslation();
@@ -53,7 +130,7 @@ export default function TagFeedScreen() {
                 {r.coverPhotoUrl ? (
                   <Image source={{ uri: r.coverPhotoUrl }} style={styles.restaurantImg} />
                 ) : (
-                  <View style={[styles.restaurantImg, { backgroundColor: colors.bgElevated }]} />
+                  <View style={[styles.restaurantImg, { backgroundColor: c.bgElevated }]} />
                 )}
                 <Text style={styles.restaurantName} numberOfLines={1}>
                   {r.name}
@@ -70,7 +147,7 @@ export default function TagFeedScreen() {
     <View style={[styles.root, { paddingTop: insets.top }]}>
       <View style={styles.topBar}>
         <Pressable onPress={() => router.back()} hitSlop={10}>
-          <Ionicons name="chevron-back" size={24} color={colors.textPrimary} />
+          <Ionicons name="chevron-back" size={24} color={c.textPrimary} />
         </Pressable>
         <Text style={styles.topBarTitle}>{displayTag}</Text>
         <View style={{ width: 24 }} />
@@ -84,79 +161,3 @@ export default function TagFeedScreen() {
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  root: {
-    flex: 1,
-    backgroundColor: colors.bgBase,
-  },
-  topBar: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.sm,
-    borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: colors.border,
-  },
-  topBarTitle: {
-    ...typography.body,
-    fontWeight: '700',
-    color: colors.textPrimary,
-  },
-
-  headerBlock: {
-    paddingHorizontal: spacing.lg,
-    paddingTop: spacing.lg,
-    paddingBottom: spacing.md,
-    gap: spacing.sm,
-  },
-  tagPill: {
-    alignSelf: 'flex-start',
-    paddingHorizontal: spacing.md,
-    paddingVertical: 6,
-    borderRadius: borderRadius.full,
-    backgroundColor: 'rgba(201,168,76,0.14)',
-    borderWidth: 1,
-    borderColor: 'rgba(201,168,76,0.35)',
-  },
-  tagPillText: {
-    ...typography.h3,
-    color: colors.gold,
-    fontWeight: '700',
-  },
-  count: {
-    ...typography.bodySmall,
-    color: colors.textMuted,
-  },
-  restaurantsBlock: {
-    marginTop: spacing.sm,
-    gap: spacing.sm,
-  },
-  restaurantsTitle: {
-    ...typography.label,
-    color: colors.textMuted,
-  },
-  restaurantRow: {
-    flexDirection: 'row',
-    gap: spacing.sm,
-  },
-  restaurantCard: {
-    flex: 1,
-    borderRadius: borderRadius.md,
-    overflow: 'hidden',
-    backgroundColor: colors.bgSurface,
-    borderWidth: 1,
-    borderColor: colors.border,
-  },
-  restaurantImg: {
-    width: '100%',
-    aspectRatio: 1.4,
-  },
-  restaurantName: {
-    ...typography.bodySmall,
-    fontWeight: '700',
-    color: colors.textPrimary,
-    padding: spacing.sm,
-  },
-});

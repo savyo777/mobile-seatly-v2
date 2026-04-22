@@ -1,9 +1,9 @@
 import React, { useCallback } from 'react';
-import { View, Text, Pressable, StyleSheet, Dimensions } from 'react-native';
+import { View, Text, Pressable, Dimensions } from 'react-native';
 import * as Haptics from 'expo-haptics';
 import { Ionicons } from '@expo/vector-icons';
 import type { TimeSlotOption } from '@/lib/booking/availabilityTypes';
-import { colors, borderRadius, spacing } from '@/lib/theme';
+import { borderRadius, createStyles, spacing, useColors } from '@/lib/theme';
 
 const SCREEN_W = Dimensions.get('window').width;
 const H_PAD = 40; // 20px each side from parent
@@ -18,7 +18,73 @@ interface Props {
   onNextDate?: () => void;
 }
 
+const useStyles = createStyles((c) => ({
+  grid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: GAP,
+  },
+  pill: {
+    width: PILL_W,
+    paddingVertical: 12,
+    borderRadius: borderRadius.md,
+    backgroundColor: c.bgSurface,
+    borderWidth: 1,
+    borderColor: c.border,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  pillSelected: {
+    backgroundColor: c.gold,
+    borderColor: c.gold,
+  },
+  pillUnavailable: {
+    opacity: 0.3,
+  },
+  pillText: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: c.textPrimary,
+  },
+  pillTextSelected: {
+    color: c.bgBase,
+  },
+  pillTextUnavailable: {
+    color: c.textMuted,
+  },
+  empty: {
+    paddingVertical: spacing['3xl'],
+    alignItems: 'center',
+    gap: spacing.sm,
+  },
+  emptyTitle: {
+    fontSize: 16,
+    fontWeight: '700',
+    color: c.textPrimary,
+  },
+  emptyText: {
+    fontSize: 13,
+    color: c.textMuted,
+  },
+  nextBtn: {
+    marginTop: spacing.sm,
+    paddingVertical: spacing.sm,
+    paddingHorizontal: spacing.xl,
+    backgroundColor: c.bgSurface,
+    borderRadius: borderRadius.full,
+    borderWidth: 1,
+    borderColor: c.border,
+  },
+  nextBtnText: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: c.gold,
+  },
+}));
+
 export function TimeSlotWheel({ slots, selectedSlotId, onSelect, onNextDate }: Props) {
+  const c = useColors();
+  const styles = useStyles();
   const available = slots.filter((s) => s.available);
 
   const handlePress = useCallback(
@@ -32,7 +98,7 @@ export function TimeSlotWheel({ slots, selectedSlotId, onSelect, onNextDate }: P
   if (slots.length === 0 || available.length === 0) {
     return (
       <View style={styles.empty}>
-        <Ionicons name="calendar-outline" size={36} color={colors.textMuted} />
+        <Ionicons name="calendar-outline" size={36} color={c.textMuted} />
         <Text style={styles.emptyTitle}>No times available</Text>
         <Text style={styles.emptyText}>Try a different date or party size.</Text>
         {onNextDate && (
@@ -77,70 +143,3 @@ export function TimeSlotWheel({ slots, selectedSlotId, onSelect, onNextDate }: P
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  grid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: GAP,
-  },
-
-  pill: {
-    width: PILL_W,
-    paddingVertical: 12,
-    borderRadius: borderRadius.md,
-    backgroundColor: colors.bgSurface,
-    borderWidth: 1,
-    borderColor: colors.border,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  pillSelected: {
-    backgroundColor: colors.gold,
-    borderColor: colors.gold,
-  },
-  pillUnavailable: {
-    opacity: 0.3,
-  },
-
-  pillText: {
-    fontSize: 13,
-    fontWeight: '600',
-    color: colors.textPrimary,
-  },
-  pillTextSelected: {
-    color: colors.bgBase,
-  },
-  pillTextUnavailable: {
-    color: colors.textMuted,
-  },
-
-  empty: {
-    paddingVertical: spacing['3xl'],
-    alignItems: 'center',
-    gap: spacing.sm,
-  },
-  emptyTitle: {
-    fontSize: 16,
-    fontWeight: '700',
-    color: colors.textPrimary,
-  },
-  emptyText: {
-    fontSize: 13,
-    color: colors.textMuted,
-  },
-  nextBtn: {
-    marginTop: spacing.sm,
-    paddingVertical: spacing.sm,
-    paddingHorizontal: spacing.xl,
-    backgroundColor: colors.bgSurface,
-    borderRadius: borderRadius.full,
-    borderWidth: 1,
-    borderColor: colors.border,
-  },
-  nextBtnText: {
-    fontSize: 13,
-    fontWeight: '600',
-    color: colors.gold,
-  },
-});

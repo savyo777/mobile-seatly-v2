@@ -6,12 +6,114 @@ import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Button, ScreenWrapper } from '@/components/ui';
 import { snapFilters } from '@/lib/mock/reviewSnap';
-import { borderRadius, colors, spacing, typography } from '@/lib/theme';
+import { useColors, createStyles, borderRadius, spacing, typography } from '@/lib/theme';
 import { getSnapRestaurantName } from '@/lib/mock/snaps';
 
 const TAB_BAR_EXTRA = 72;
 
+const useStyles = createStyles((c) => ({
+  screen: {
+    flex: 1,
+  },
+  topBar: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: spacing.md,
+    paddingBottom: spacing.sm,
+    gap: spacing.sm,
+  },
+  backBtn: {
+    width: 40,
+    height: 40,
+    borderRadius: borderRadius.full,
+    borderWidth: 1,
+    borderColor: c.border,
+    backgroundColor: c.bgSurface,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  pressed: {
+    opacity: 0.85,
+  },
+  headerTitle: {
+    flex: 1,
+    ...typography.h3,
+    color: c.textPrimary,
+    textAlign: 'center',
+  },
+  headerSpacer: {
+    width: 40,
+  },
+  scroll: {
+    flex: 1,
+  },
+  scrollContent: {
+    paddingHorizontal: spacing.lg,
+    paddingBottom: spacing.sm,
+    gap: spacing.md,
+  },
+  subtitle: {
+    ...typography.body,
+    color: c.textSecondary,
+  },
+  photoWrap: {
+    borderRadius: borderRadius.xl,
+    overflow: 'hidden',
+    backgroundColor: c.bgElevated,
+    width: '100%',
+    minHeight: 200,
+  },
+  photo: {
+    width: '100%',
+    height: '100%',
+    minHeight: 200,
+  },
+  photoPlaceholder: {
+    minHeight: 200,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: c.bgElevated,
+  },
+  placeholderText: {
+    ...typography.bodySmall,
+    color: c.textMuted,
+  },
+  filterOverlay: {
+    ...StyleSheet.absoluteFillObject,
+  },
+  depthOverlay: {
+    ...StyleSheet.absoluteFillObject,
+  },
+  postingTo: {
+    ...typography.body,
+    color: '#DDD5C4',
+    fontWeight: '600',
+  },
+  errorText: {
+    ...typography.bodySmall,
+    color: c.danger,
+  },
+  retakeLink: {
+    alignSelf: 'flex-start',
+    paddingVertical: spacing.xs,
+  },
+  retakeLinkText: {
+    ...typography.bodySmall,
+    color: c.textMuted,
+    textDecorationLine: 'underline',
+  },
+  footer: {
+    borderTopWidth: StyleSheet.hairlineWidth,
+    borderTopColor: c.border,
+    backgroundColor: c.bgBase,
+    paddingTop: spacing.md,
+    gap: spacing.sm,
+  },
+}));
+
 export default function ReviewPreviewScreen() {
+  const c = useColors();
+  const styles = useStyles();
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const { restaurantId, photoUri, filter } = useLocalSearchParams<{
@@ -54,20 +156,11 @@ export default function ReviewPreviewScreen() {
   const goToPostDetails = useCallback(() => {
     if (!hasImage || !restaurantId) {
       setNavError('Something went wrong. Go back and try again.');
-      if (__DEV__) console.warn('[SnapPreview] blocked: missing image or restaurantId', { hasImage, restaurantId });
       return;
     }
 
     setNavError(null);
     setNavigating(true);
-
-    if (__DEV__) {
-      console.log('[SnapPreview] Next pressed → navigating to post-review/details', {
-        restaurantId,
-        filter: filter ?? snapFilters[0].id,
-        uriLength: decodedUri.length,
-      });
-    }
 
     try {
       const href: Href = {
@@ -80,7 +173,6 @@ export default function ReviewPreviewScreen() {
       };
       router.push(href);
     } catch (e) {
-      if (__DEV__) console.error('[SnapPreview] navigation error', e);
       setNavError('Something went wrong, try again.');
     } finally {
       setTimeout(() => setNavigating(false), 400);
@@ -97,7 +189,7 @@ export default function ReviewPreviewScreen() {
             accessibilityRole="button"
             accessibilityLabel="Back"
           >
-            <Ionicons name="chevron-back" size={22} color={colors.textPrimary} />
+            <Ionicons name="chevron-back" size={22} color={c.textPrimary} />
           </Pressable>
           <Text style={styles.headerTitle} numberOfLines={1}>
             Preview your snap
@@ -161,103 +253,3 @@ export default function ReviewPreviewScreen() {
     </ScreenWrapper>
   );
 }
-
-const styles = StyleSheet.create({
-  screen: {
-    flex: 1,
-  },
-  topBar: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: spacing.md,
-    paddingBottom: spacing.sm,
-    gap: spacing.sm,
-  },
-  backBtn: {
-    width: 40,
-    height: 40,
-    borderRadius: borderRadius.full,
-    borderWidth: 1,
-    borderColor: colors.border,
-    backgroundColor: colors.bgSurface,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  pressed: {
-    opacity: 0.85,
-  },
-  headerTitle: {
-    flex: 1,
-    ...typography.h3,
-    color: colors.textPrimary,
-    textAlign: 'center',
-  },
-  headerSpacer: {
-    width: 40,
-  },
-  scroll: {
-    flex: 1,
-  },
-  scrollContent: {
-    paddingHorizontal: spacing.lg,
-    paddingBottom: spacing.sm,
-    gap: spacing.md,
-  },
-  subtitle: {
-    ...typography.body,
-    color: colors.textSecondary,
-  },
-  photoWrap: {
-    borderRadius: borderRadius.xl,
-    overflow: 'hidden',
-    backgroundColor: colors.bgElevated,
-    width: '100%',
-    minHeight: 200,
-  },
-  photo: {
-    width: '100%',
-    height: '100%',
-    minHeight: 200,
-  },
-  photoPlaceholder: {
-    minHeight: 200,
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: colors.bgElevated,
-  },
-  placeholderText: {
-    ...typography.bodySmall,
-    color: colors.textMuted,
-  },
-  filterOverlay: {
-    ...StyleSheet.absoluteFillObject,
-  },
-  depthOverlay: {
-    ...StyleSheet.absoluteFillObject,
-  },
-  postingTo: {
-    ...typography.body,
-    color: colors.goldLight,
-    fontWeight: '600',
-  },
-  errorText: {
-    ...typography.bodySmall,
-    color: colors.danger,
-  },
-  retakeLink: {
-    alignSelf: 'flex-start',
-    paddingVertical: spacing.xs,
-  },
-  retakeLinkText: {
-    ...typography.bodySmall,
-    color: colors.textMuted,
-    textDecorationLine: 'underline',
-  },
-  footer: {
-    borderTopWidth: StyleSheet.hairlineWidth,
-    borderTopColor: colors.border,
-    backgroundColor: colors.bgBase,
-    paddingTop: spacing.md,
-    gap: spacing.sm,
-  },
-});

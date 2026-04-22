@@ -16,6 +16,11 @@ export interface UserProfile {
   preferredLanguage: string;
   loyaltyPointsBalance: number;
   loyaltyTier?: string;
+  // Security fields
+  passwordLastChangedAt?: string;
+  emailVerified?: boolean;
+  twoFactorEnabled?: boolean;
+  biometricEnabled?: boolean;
 }
 
 export const mockCustomer: UserProfile = {
@@ -33,6 +38,10 @@ export const mockCustomer: UserProfile = {
   preferredLanguage: 'en',
   loyaltyPointsBalance: 1250,
   loyaltyTier: 'Silver',
+  passwordLastChangedAt: '2026-02-14T10:00:00Z',
+  emailVerified: true,
+  twoFactorEnabled: false,
+  biometricEnabled: true,
 };
 
 export const mockOwner: UserProfile = {

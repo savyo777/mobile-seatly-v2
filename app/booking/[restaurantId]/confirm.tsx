@@ -18,194 +18,13 @@ import { Button } from '@/components/ui';
 import { BookingCalendarModal } from '@/components/booking/BookingCalendarModal';
 import { mockRestaurants } from '@/lib/mock/restaurants';
 import { parseDateKeyLocal } from '@/lib/booking/dateUtils';
-import { colors, spacing, borderRadius } from '@/lib/theme';
+import { useColors, createStyles, spacing, borderRadius } from '@/lib/theme';
 import type { DateKey } from '@/lib/booking/availabilityTypes';
 
 const OCCASIONS = ['Birthday', 'Anniversary', 'Date Night', 'Business', 'Celebration'];
 
-export default function ConfirmScreen() {
-  const { restaurantId, date, time, partySize } = useLocalSearchParams<{
-    restaurantId: string;
-    date: string;
-    time: string;
-    partySize: string;
-  }>();
-  const router = useRouter();
-  const insets = useSafeAreaInsets();
-
-  const [dateKey, setDateKey] = useState<DateKey>((date ?? '') as DateKey);
-  const [guests, setGuests] = useState(parseInt(partySize ?? '2', 10));
-  const [occasion, setOccasion] = useState('');
-  const [notes, setNotes] = useState('');
-  const [calendarOpen, setCalendarOpen] = useState(false);
-
-  const restaurant = mockRestaurants.find((r) => r.id === restaurantId);
-
-  const dateLabel = useMemo(() => {
-    try {
-      return parseDateKeyLocal(dateKey).toLocaleDateString(undefined, {
-        weekday: 'long', month: 'long', day: 'numeric',
-      });
-    } catch { return dateKey; }
-  }, [dateKey]);
-
-  const handleConfirm = useCallback(() => {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-    router.replace(
-      `/booking/${restaurantId}/step7-confirmation?date=${encodeURIComponent(dateKey)}&time=${encodeURIComponent(time ?? '')}&partySize=${guests}&occasion=${encodeURIComponent(occasion)}&notes=${encodeURIComponent(notes)}`,
-    );
-  }, [restaurantId, dateKey, time, guests, occasion, notes, router]);
-
-  const adjustGuests = useCallback((delta: number) => {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    setGuests((g) => Math.max(1, Math.min(20, g + delta)));
-  }, []);
-
-  return (
-    <View style={[styles.container, { paddingTop: insets.top }]}>
-      {/* Header */}
-      <View style={styles.header}>
-        <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
-          <Ionicons name="chevron-back" size={24} color={colors.textPrimary} />
-        </TouchableOpacity>
-        <Text style={styles.headerTitle}>Review Reservation</Text>
-        <View style={{ width: 40 }} />
-      </View>
-
-      <ScrollView
-        showsVerticalScrollIndicator={false}
-        contentContainerStyle={[styles.body, { paddingBottom: insets.bottom + 110 }]}
-        keyboardShouldPersistTaps="handled"
-      >
-        {/* Restaurant hero */}
-        {restaurant?.coverPhotoUrl ? (
-          <View style={styles.heroWrap}>
-            <Image source={{ uri: restaurant.coverPhotoUrl }} style={styles.hero} />
-            <View style={styles.heroOverlay} />
-            <View style={styles.heroTextWrap}>
-              <Text style={styles.heroName}>{restaurant.name}</Text>
-              <Text style={styles.heroCuisine}>{restaurant.cuisineType} · {'★'} {restaurant.avgRating.toFixed(1)}</Text>
-            </View>
-          </View>
-        ) : null}
-
-        {/* Booking details — each row tappable */}
-        <View style={styles.detailsCard}>
-          <Text style={styles.detailsHeading}>Your reservation</Text>
-
-          {/* Date */}
-          <Pressable style={styles.detailRow} onPress={() => setCalendarOpen(true)}>
-            <View style={styles.detailIcon}>
-              <Ionicons name="calendar-outline" size={18} color={colors.gold} />
-            </View>
-            <View style={styles.detailBody}>
-              <Text style={styles.detailLabel}>Date</Text>
-              <Text style={styles.detailValue}>{dateLabel}</Text>
-            </View>
-            <Ionicons name="chevron-forward" size={16} color={colors.textMuted} />
-          </Pressable>
-
-          <View style={styles.rowDivider} />
-
-          {/* Time */}
-          <Pressable style={styles.detailRow} onPress={() => router.back()}>
-            <View style={styles.detailIcon}>
-              <Ionicons name="time-outline" size={18} color={colors.gold} />
-            </View>
-            <View style={styles.detailBody}>
-              <Text style={styles.detailLabel}>Time</Text>
-              <Text style={styles.detailValue}>{time}</Text>
-            </View>
-            <Ionicons name="chevron-forward" size={16} color={colors.textMuted} />
-          </Pressable>
-
-          <View style={styles.rowDivider} />
-
-          {/* Guests — inline stepper */}
-          <View style={styles.detailRow}>
-            <View style={styles.detailIcon}>
-              <Ionicons name="people-outline" size={18} color={colors.gold} />
-            </View>
-            <View style={styles.detailBody}>
-              <Text style={styles.detailLabel}>Guests</Text>
-              <Text style={styles.detailValue}>{guests} {guests === 1 ? 'guest' : 'guests'}</Text>
-            </View>
-            <View style={styles.stepper}>
-              <Pressable
-                onPress={() => adjustGuests(-1)}
-                disabled={guests <= 1}
-                style={[styles.stepperBtn, guests <= 1 && styles.stepperBtnDisabled]}
-              >
-                <Ionicons name="remove" size={16} color={guests <= 1 ? colors.textMuted : colors.textPrimary} />
-              </Pressable>
-              <Text style={styles.stepperCount}>{guests}</Text>
-              <Pressable
-                onPress={() => adjustGuests(1)}
-                disabled={guests >= 20}
-                style={[styles.stepperBtn, guests >= 20 && styles.stepperBtnDisabled]}
-              >
-                <Ionicons name="add" size={16} color={guests >= 20 ? colors.textMuted : colors.textPrimary} />
-              </Pressable>
-            </View>
-          </View>
-        </View>
-
-        {/* Occasion */}
-        <Text style={styles.sectionLabel}>
-          Occasion <Text style={styles.optional}>(optional)</Text>
-        </Text>
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.chipRow}>
-          {OCCASIONS.map((o) => (
-            <Pressable
-              key={o}
-              onPress={() => setOccasion(occasion === o ? '' : o)}
-              style={[styles.chip, occasion === o && styles.chipSelected]}
-            >
-              <Text style={[styles.chipText, occasion === o && styles.chipTextSelected]}>{o}</Text>
-            </Pressable>
-          ))}
-        </ScrollView>
-
-        {/* Special requests */}
-        <Text style={styles.sectionLabel}>
-          Special requests <Text style={styles.optional}>(optional)</Text>
-        </Text>
-        <TextInput
-          style={styles.textInput}
-          placeholder="Allergies, seating preferences, celebrations…"
-          placeholderTextColor={colors.textMuted}
-          multiline
-          numberOfLines={3}
-          value={notes}
-          onChangeText={setNotes}
-          textAlignVertical="top"
-        />
-
-        {/* Policy */}
-        <View style={styles.policyRow}>
-          <Ionicons name="shield-checkmark-outline" size={15} color={colors.textMuted} />
-          <Text style={styles.policyText}>Free cancellation up to 24 hours before your reservation.</Text>
-        </View>
-      </ScrollView>
-
-      {/* CTA */}
-      <View style={[styles.footer, { paddingBottom: insets.bottom + 12 }]}>
-        <Button title="Confirm Reservation" onPress={handleConfirm} />
-      </View>
-
-      <BookingCalendarModal
-        visible={calendarOpen}
-        restaurantId={restaurantId ?? ''}
-        selectedDateKey={dateKey}
-        onClose={() => setCalendarOpen(false)}
-        onSelect={(k) => { setDateKey(k); setCalendarOpen(false); }}
-      />
-    </View>
-  );
-}
-
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: colors.bgBase },
+const useStyles = createStyles((c) => ({
+  container: { flex: 1, backgroundColor: c.bgBase },
 
   header: {
     flexDirection: 'row',
@@ -219,7 +38,7 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     fontSize: 16,
     fontWeight: '700',
-    color: colors.textPrimary,
+    color: c.textPrimary,
   },
 
   body: { gap: 14 },
@@ -258,16 +77,16 @@ const styles = StyleSheet.create({
   // Details card
   detailsCard: {
     marginHorizontal: 20,
-    backgroundColor: colors.bgSurface,
+    backgroundColor: c.bgSurface,
     borderRadius: borderRadius.xl,
     borderWidth: 1,
-    borderColor: colors.border,
+    borderColor: c.border,
     overflow: 'hidden',
   },
   detailsHeading: {
     fontSize: 11,
     fontWeight: '700',
-    color: colors.textMuted,
+    color: c.textMuted,
     textTransform: 'uppercase',
     letterSpacing: 0.8,
     paddingHorizontal: 16,
@@ -283,7 +102,7 @@ const styles = StyleSheet.create({
   },
   rowDivider: {
     height: StyleSheet.hairlineWidth,
-    backgroundColor: colors.border,
+    backgroundColor: c.border,
     marginLeft: 52,
   },
   detailIcon: {
@@ -298,7 +117,7 @@ const styles = StyleSheet.create({
   detailLabel: {
     fontSize: 11,
     fontWeight: '600',
-    color: colors.textMuted,
+    color: c.textMuted,
     textTransform: 'uppercase',
     letterSpacing: 0.5,
     marginBottom: 2,
@@ -306,7 +125,7 @@ const styles = StyleSheet.create({
   detailValue: {
     fontSize: 15,
     fontWeight: '600',
-    color: colors.textPrimary,
+    color: c.textPrimary,
   },
 
   // Inline guest stepper
@@ -319,9 +138,9 @@ const styles = StyleSheet.create({
     width: 30,
     height: 30,
     borderRadius: 15,
-    backgroundColor: colors.bgElevated,
+    backgroundColor: c.bgElevated,
     borderWidth: 1,
-    borderColor: colors.border,
+    borderColor: c.border,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -329,7 +148,7 @@ const styles = StyleSheet.create({
   stepperCount: {
     fontSize: 16,
     fontWeight: '700',
-    color: colors.textPrimary,
+    color: c.textPrimary,
     minWidth: 20,
     textAlign: 'center',
   },
@@ -338,7 +157,7 @@ const styles = StyleSheet.create({
   sectionLabel: {
     fontSize: 11,
     fontWeight: '700',
-    color: colors.textMuted,
+    color: c.textMuted,
     textTransform: 'uppercase',
     letterSpacing: 0.8,
     paddingHorizontal: 20,
@@ -349,23 +168,23 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.md,
     paddingVertical: 8,
     borderRadius: borderRadius.full,
-    backgroundColor: colors.bgSurface,
+    backgroundColor: c.bgSurface,
     borderWidth: 1,
-    borderColor: colors.border,
+    borderColor: c.border,
   },
-  chipSelected: { backgroundColor: colors.gold, borderColor: colors.gold },
-  chipText: { fontSize: 13, fontWeight: '600', color: colors.textSecondary },
-  chipTextSelected: { color: colors.bgBase },
+  chipSelected: { backgroundColor: c.gold, borderColor: c.gold },
+  chipText: { fontSize: 13, fontWeight: '600', color: c.textSecondary },
+  chipTextSelected: { color: c.bgBase },
 
   // Notes
   textInput: {
-    backgroundColor: colors.bgSurface,
+    backgroundColor: c.bgSurface,
     borderRadius: borderRadius.lg,
     borderWidth: 1,
-    borderColor: colors.border,
+    borderColor: c.border,
     padding: spacing.md,
     marginHorizontal: 20,
-    color: colors.textPrimary,
+    color: c.textPrimary,
     fontSize: 14,
     minHeight: 80,
   },
@@ -381,15 +200,198 @@ const styles = StyleSheet.create({
   policyText: {
     flex: 1,
     fontSize: 12,
-    color: colors.textMuted,
+    color: c.textMuted,
     lineHeight: 17,
   },
 
   footer: {
     paddingHorizontal: 20,
     paddingTop: 12,
-    backgroundColor: colors.bgBase,
+    backgroundColor: c.bgBase,
     borderTopWidth: 1,
-    borderTopColor: colors.border,
+    borderTopColor: c.border,
   },
-});
+}));
+
+export default function ConfirmScreen() {
+  const { restaurantId, date, time, partySize } = useLocalSearchParams<{
+    restaurantId: string;
+    date: string;
+    time: string;
+    partySize: string;
+  }>();
+  const router = useRouter();
+  const insets = useSafeAreaInsets();
+  const c = useColors();
+  const styles = useStyles();
+
+  const [dateKey, setDateKey] = useState<DateKey>((date ?? '') as DateKey);
+  const [guests, setGuests] = useState(parseInt(partySize ?? '2', 10));
+  const [occasion, setOccasion] = useState('');
+  const [notes, setNotes] = useState('');
+  const [calendarOpen, setCalendarOpen] = useState(false);
+
+  const restaurant = mockRestaurants.find((r) => r.id === restaurantId);
+
+  const dateLabel = useMemo(() => {
+    try {
+      return parseDateKeyLocal(dateKey).toLocaleDateString(undefined, {
+        weekday: 'long', month: 'long', day: 'numeric',
+      });
+    } catch { return dateKey; }
+  }, [dateKey]);
+
+  const handleConfirm = useCallback(() => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    router.replace(
+      `/booking/${restaurantId}/step7-confirmation?date=${encodeURIComponent(dateKey)}&time=${encodeURIComponent(time ?? '')}&partySize=${guests}&occasion=${encodeURIComponent(occasion)}&notes=${encodeURIComponent(notes)}`,
+    );
+  }, [restaurantId, dateKey, time, guests, occasion, notes, router]);
+
+  const adjustGuests = useCallback((delta: number) => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    setGuests((g) => Math.max(1, Math.min(20, g + delta)));
+  }, []);
+
+  return (
+    <View style={[styles.container, { paddingTop: insets.top }]}>
+      {/* Header */}
+      <View style={styles.header}>
+        <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
+          <Ionicons name="chevron-back" size={24} color={c.textPrimary} />
+        </TouchableOpacity>
+        <Text style={styles.headerTitle}>Review Reservation</Text>
+        <View style={{ width: 40 }} />
+      </View>
+
+      <ScrollView
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={[styles.body, { paddingBottom: insets.bottom + 110 }]}
+        keyboardShouldPersistTaps="handled"
+      >
+        {/* Restaurant hero */}
+        {restaurant?.coverPhotoUrl ? (
+          <View style={styles.heroWrap}>
+            <Image source={{ uri: restaurant.coverPhotoUrl }} style={styles.hero} />
+            <View style={styles.heroOverlay} />
+            <View style={styles.heroTextWrap}>
+              <Text style={styles.heroName}>{restaurant.name}</Text>
+              <Text style={styles.heroCuisine}>{restaurant.cuisineType} · {'★'} {restaurant.avgRating.toFixed(1)}</Text>
+            </View>
+          </View>
+        ) : null}
+
+        {/* Booking details — each row tappable */}
+        <View style={styles.detailsCard}>
+          <Text style={styles.detailsHeading}>Your reservation</Text>
+
+          {/* Date */}
+          <Pressable style={styles.detailRow} onPress={() => setCalendarOpen(true)}>
+            <View style={styles.detailIcon}>
+              <Ionicons name="calendar-outline" size={18} color={c.gold} />
+            </View>
+            <View style={styles.detailBody}>
+              <Text style={styles.detailLabel}>Date</Text>
+              <Text style={styles.detailValue}>{dateLabel}</Text>
+            </View>
+            <Ionicons name="chevron-forward" size={16} color={c.textMuted} />
+          </Pressable>
+
+          <View style={styles.rowDivider} />
+
+          {/* Time */}
+          <Pressable style={styles.detailRow} onPress={() => router.back()}>
+            <View style={styles.detailIcon}>
+              <Ionicons name="time-outline" size={18} color={c.gold} />
+            </View>
+            <View style={styles.detailBody}>
+              <Text style={styles.detailLabel}>Time</Text>
+              <Text style={styles.detailValue}>{time}</Text>
+            </View>
+            <Ionicons name="chevron-forward" size={16} color={c.textMuted} />
+          </Pressable>
+
+          <View style={styles.rowDivider} />
+
+          {/* Guests — inline stepper */}
+          <View style={styles.detailRow}>
+            <View style={styles.detailIcon}>
+              <Ionicons name="people-outline" size={18} color={c.gold} />
+            </View>
+            <View style={styles.detailBody}>
+              <Text style={styles.detailLabel}>Guests</Text>
+              <Text style={styles.detailValue}>{guests} {guests === 1 ? 'guest' : 'guests'}</Text>
+            </View>
+            <View style={styles.stepper}>
+              <Pressable
+                onPress={() => adjustGuests(-1)}
+                disabled={guests <= 1}
+                style={[styles.stepperBtn, guests <= 1 && styles.stepperBtnDisabled]}
+              >
+                <Ionicons name="remove" size={16} color={guests <= 1 ? c.textMuted : c.textPrimary} />
+              </Pressable>
+              <Text style={styles.stepperCount}>{guests}</Text>
+              <Pressable
+                onPress={() => adjustGuests(1)}
+                disabled={guests >= 20}
+                style={[styles.stepperBtn, guests >= 20 && styles.stepperBtnDisabled]}
+              >
+                <Ionicons name="add" size={16} color={guests >= 20 ? c.textMuted : c.textPrimary} />
+              </Pressable>
+            </View>
+          </View>
+        </View>
+
+        {/* Occasion */}
+        <Text style={styles.sectionLabel}>
+          Occasion <Text style={styles.optional}>(optional)</Text>
+        </Text>
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.chipRow}>
+          {OCCASIONS.map((o) => (
+            <Pressable
+              key={o}
+              onPress={() => setOccasion(occasion === o ? '' : o)}
+              style={[styles.chip, occasion === o && styles.chipSelected]}
+            >
+              <Text style={[styles.chipText, occasion === o && styles.chipTextSelected]}>{o}</Text>
+            </Pressable>
+          ))}
+        </ScrollView>
+
+        {/* Special requests */}
+        <Text style={styles.sectionLabel}>
+          Special requests <Text style={styles.optional}>(optional)</Text>
+        </Text>
+        <TextInput
+          style={styles.textInput}
+          placeholder="Allergies, seating preferences, celebrations…"
+          placeholderTextColor={c.textMuted}
+          multiline
+          numberOfLines={3}
+          value={notes}
+          onChangeText={setNotes}
+          textAlignVertical="top"
+        />
+
+        {/* Policy */}
+        <View style={styles.policyRow}>
+          <Ionicons name="shield-checkmark-outline" size={15} color={c.textMuted} />
+          <Text style={styles.policyText}>Free cancellation up to 24 hours before your reservation.</Text>
+        </View>
+      </ScrollView>
+
+      {/* CTA */}
+      <View style={[styles.footer, { paddingBottom: insets.bottom + 12 }]}>
+        <Button title="Confirm Reservation" onPress={handleConfirm} />
+      </View>
+
+      <BookingCalendarModal
+        visible={calendarOpen}
+        restaurantId={restaurantId ?? ''}
+        selectedDateKey={dateKey}
+        onClose={() => setCalendarOpen(false)}
+        onSelect={(k) => { setDateKey(k); setCalendarOpen(false); }}
+      />
+    </View>
+  );
+}

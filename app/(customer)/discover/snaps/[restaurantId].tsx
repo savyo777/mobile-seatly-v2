@@ -3,10 +3,94 @@ import { FlatList, Image, Pressable, StyleSheet, Text, View } from 'react-native
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { ScreenWrapper } from '@/components/ui';
-import { borderRadius, colors, spacing, typography } from '@/lib/theme';
-import { getSnapUser, listSnapPostsByRestaurant, getSnapRestaurantName, type SnapPost } from '@/lib/mock/snaps';
+import { useColors, createStyles, borderRadius, spacing, typography } from '@/lib/theme';
+import { getSnapUser, listSnapPostsByRestaurant, getSnapRestaurantName } from '@/lib/mock/snaps';
+
+const useStyles = createStyles((c) => ({
+  root: {
+    flex: 1,
+  },
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+    marginBottom: spacing.md,
+  },
+  backBtn: {
+    width: 36,
+    height: 36,
+    borderRadius: borderRadius.full,
+    borderWidth: 1,
+    borderColor: c.border,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: c.bgSurface,
+  },
+  headerText: {
+    flex: 1,
+  },
+  title: {
+    ...typography.h2,
+    color: c.textPrimary,
+  },
+  subtitle: {
+    ...typography.bodySmall,
+    color: c.textSecondary,
+  },
+  grid: {
+    paddingBottom: spacing['3xl'],
+    gap: spacing.md,
+  },
+  col: {
+    gap: spacing.md,
+  },
+  card: {
+    flex: 1,
+    borderRadius: borderRadius.lg,
+    overflow: 'hidden',
+    borderWidth: 1,
+    borderColor: 'rgba(201, 168, 76, 0.26)',
+    backgroundColor: '#101010',
+  },
+  cardPressed: {
+    opacity: 0.9,
+    transform: [{ scale: 0.99 }],
+  },
+  photo: {
+    width: '100%',
+    height: 170,
+    backgroundColor: c.bgElevated,
+  },
+  cardBody: {
+    padding: spacing.sm,
+    gap: spacing.xs,
+  },
+  userRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.xs,
+  },
+  avatar: {
+    width: 20,
+    height: 20,
+    borderRadius: borderRadius.full,
+    backgroundColor: c.bgElevated,
+  },
+  username: {
+    ...typography.bodySmall,
+    color: '#DDD5C4',
+    fontWeight: '700',
+    flex: 1,
+  },
+  caption: {
+    ...typography.bodySmall,
+    color: c.textSecondary,
+  },
+}));
 
 export default function RestaurantSnapGalleryScreen() {
+  const c = useColors();
+  const styles = useStyles();
   const router = useRouter();
   const { restaurantId } = useLocalSearchParams<{ restaurantId: string }>();
   const [pressingId, setPressingId] = useState<string | null>(null);
@@ -19,7 +103,7 @@ export default function RestaurantSnapGalleryScreen() {
       <View style={styles.root}>
         <View style={styles.header}>
           <Pressable onPress={() => router.back()} style={styles.backBtn}>
-            <Ionicons name="chevron-back" size={20} color={colors.textPrimary} />
+            <Ionicons name="chevron-back" size={20} color={c.textPrimary} />
           </Pressable>
           <View style={styles.headerText}>
             <Text style={styles.title}>Guest Snaps</Text>
@@ -64,85 +148,3 @@ export default function RestaurantSnapGalleryScreen() {
     </ScreenWrapper>
   );
 }
-
-const styles = StyleSheet.create({
-  root: {
-    flex: 1,
-  },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.sm,
-    marginBottom: spacing.md,
-  },
-  backBtn: {
-    width: 36,
-    height: 36,
-    borderRadius: borderRadius.full,
-    borderWidth: 1,
-    borderColor: colors.border,
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: colors.bgSurface,
-  },
-  headerText: {
-    flex: 1,
-  },
-  title: {
-    ...typography.h2,
-    color: colors.textPrimary,
-  },
-  subtitle: {
-    ...typography.bodySmall,
-    color: colors.textSecondary,
-  },
-  grid: {
-    paddingBottom: spacing['3xl'],
-    gap: spacing.md,
-  },
-  col: {
-    gap: spacing.md,
-  },
-  card: {
-    flex: 1,
-    borderRadius: borderRadius.lg,
-    overflow: 'hidden',
-    borderWidth: 1,
-    borderColor: 'rgba(201, 168, 76, 0.26)',
-    backgroundColor: '#101010',
-  },
-  cardPressed: {
-    opacity: 0.9,
-    transform: [{ scale: 0.99 }],
-  },
-  photo: {
-    width: '100%',
-    height: 170,
-    backgroundColor: colors.bgElevated,
-  },
-  cardBody: {
-    padding: spacing.sm,
-    gap: spacing.xs,
-  },
-  userRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.xs,
-  },
-  avatar: {
-    width: 20,
-    height: 20,
-    borderRadius: borderRadius.full,
-    backgroundColor: colors.bgElevated,
-  },
-  username: {
-    ...typography.bodySmall,
-    color: colors.goldLight,
-    fontWeight: '700',
-    flex: 1,
-  },
-  caption: {
-    ...typography.bodySmall,
-    color: colors.textSecondary,
-  },
-});

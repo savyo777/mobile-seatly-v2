@@ -1,6 +1,6 @@
 import React from 'react';
 import { View, Text, StyleSheet, Switch } from 'react-native';
-import { colors, spacing, typography } from '@/lib/theme';
+import { useColors, createStyles, spacing, typography } from '@/lib/theme';
 
 type Props = {
   title: string;
@@ -10,25 +10,7 @@ type Props = {
   isLast?: boolean;
 };
 
-export function ToggleRow({ title, subtitle, value, onValueChange, isLast }: Props) {
-  return (
-    <View style={[styles.row, isLast && styles.rowLast]}>
-      <View style={styles.textWrap}>
-        <Text style={styles.title}>{title}</Text>
-        {subtitle ? <Text style={styles.subtitle}>{subtitle}</Text> : null}
-      </View>
-      <Switch
-        value={value}
-        onValueChange={onValueChange}
-        trackColor={{ false: colors.bgElevated, true: 'rgba(201, 168, 76, 0.45)' }}
-        thumbColor={value ? colors.gold : colors.textMuted}
-        ios_backgroundColor={colors.bgElevated}
-      />
-    </View>
-  );
-}
-
-const styles = StyleSheet.create({
+const useStyles = createStyles((c) => ({
   row: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -37,7 +19,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.md,
     gap: spacing.md,
     borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: colors.border,
+    borderBottomColor: c.border,
   },
   rowLast: {
     borderBottomWidth: 0,
@@ -49,12 +31,33 @@ const styles = StyleSheet.create({
   },
   title: {
     ...typography.body,
-    color: colors.textPrimary,
+    color: c.textPrimary,
     fontWeight: '600',
   },
   subtitle: {
     ...typography.bodySmall,
-    color: colors.textMuted,
+    color: c.textMuted,
     marginTop: 4,
   },
-});
+}));
+
+export function ToggleRow({ title, subtitle, value, onValueChange, isLast }: Props) {
+  const c = useColors();
+  const styles = useStyles();
+
+  return (
+    <View style={[styles.row, isLast && styles.rowLast]}>
+      <View style={styles.textWrap}>
+        <Text style={styles.title}>{title}</Text>
+        {subtitle ? <Text style={styles.subtitle}>{subtitle}</Text> : null}
+      </View>
+      <Switch
+        value={value}
+        onValueChange={onValueChange}
+        trackColor={{ false: c.bgElevated, true: `${c.gold}80` }}
+        thumbColor={value ? c.gold : c.textMuted}
+        ios_backgroundColor={c.bgElevated}
+      />
+    </View>
+  );
+}

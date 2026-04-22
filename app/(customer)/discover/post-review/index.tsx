@@ -2,12 +2,110 @@ import React, { useMemo, useState } from 'react';
 import { Image, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Input, ScreenWrapper } from '@/components/ui';
-import { borderRadius, colors, spacing, typography } from '@/lib/theme';
+import { useColors, createStyles, borderRadius, spacing, typography } from '@/lib/theme';
 import { snapRestaurants } from '@/lib/mock/snaps';
 import { mockReservations } from '@/lib/mock/reservations';
 import { Ionicons } from '@expo/vector-icons';
 
+const useStyles = createStyles((c) => ({
+  content: {
+    gap: spacing.lg,
+    paddingBottom: spacing['3xl'],
+  },
+  header: {
+    gap: spacing.xs,
+    paddingTop: spacing.xs,
+  },
+  backBtn: {
+    marginBottom: spacing.xs,
+    alignSelf: 'flex-start',
+  },
+  title: {
+    ...typography.h2,
+    color: c.textPrimary,
+  },
+  subtitle: {
+    ...typography.body,
+    color: c.textSecondary,
+  },
+  section: {
+    gap: spacing.sm,
+  },
+  sectionTitle: {
+    ...typography.body,
+    color: '#DDD5C4',
+    fontWeight: '700',
+  },
+  list: {
+    gap: spacing.md,
+  },
+  card: {
+    borderRadius: borderRadius.xl,
+    borderWidth: 1,
+    borderColor: 'rgba(201, 168, 76, 0.28)',
+    backgroundColor: '#101010',
+    overflow: 'hidden',
+  },
+  recentCard: {
+    borderColor: 'rgba(201, 168, 76, 0.8)',
+    shadowColor: '#C9A84C',
+    shadowOpacity: 0.18,
+    shadowRadius: 8,
+    shadowOffset: { width: 0, height: 3 },
+  },
+  selectedCard: {
+    borderColor: c.gold,
+    shadowColor: c.gold,
+    shadowOpacity: 0.25,
+    shadowRadius: 10,
+    shadowOffset: { width: 0, height: 4 },
+  },
+  cardPressed: {
+    opacity: 0.9,
+    transform: [{ scale: 0.99 }],
+  },
+  image: {
+    width: '100%',
+    height: 160,
+    backgroundColor: c.bgElevated,
+  },
+  cardBody: {
+    padding: spacing.md,
+    gap: 2,
+  },
+  name: {
+    ...typography.bodyLarge,
+    color: c.textPrimary,
+    fontWeight: '700',
+  },
+  meta: {
+    ...typography.bodySmall,
+    color: c.textSecondary,
+  },
+  overlayChip: {
+    position: 'absolute',
+    top: spacing.sm,
+    left: spacing.sm,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    paddingHorizontal: spacing.sm,
+    paddingVertical: 4,
+    borderRadius: borderRadius.full,
+    borderWidth: 1,
+    borderColor: 'rgba(201, 168, 76, 0.7)',
+    backgroundColor: 'rgba(10,10,10,0.65)',
+  },
+  overlayChipText: {
+    ...typography.bodySmall,
+    color: '#DDD5C4',
+    fontWeight: '700',
+  },
+}));
+
 export default function ReviewRestaurantSelectScreen() {
+  const c = useColors();
+  const styles = useStyles();
   const router = useRouter();
   const { restaurantId } = useLocalSearchParams<{ restaurantId?: string }>();
   const [query, setQuery] = useState('');
@@ -48,7 +146,7 @@ export default function ReviewRestaurantSelectScreen() {
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.content}>
         <View style={styles.header}>
           <Pressable onPress={() => router.back()} hitSlop={10} style={styles.backBtn}>
-            <Ionicons name="chevron-back" size={22} color={colors.textPrimary} />
+            <Ionicons name="chevron-back" size={22} color={c.textPrimary} />
           </Pressable>
           <Text style={styles.title}>Where are you posting?</Text>
           <Text style={styles.subtitle}>Choose the restaurant this snap is for</Text>
@@ -71,7 +169,7 @@ export default function ReviewRestaurantSelectScreen() {
               >
                 <Image source={{ uri: restaurant.coverPhotoUrl }} style={styles.image} />
                 <View style={styles.overlayChip}>
-                  <Ionicons name="time-outline" size={12} color={colors.goldLight} />
+                  <Ionicons name="time-outline" size={12} color="#DDD5C4" />
                   <Text style={styles.overlayChipText}>Recent</Text>
                 </View>
                 <View style={styles.cardBody}>
@@ -113,99 +211,3 @@ export default function ReviewRestaurantSelectScreen() {
     </ScreenWrapper>
   );
 }
-
-const styles = StyleSheet.create({
-  content: {
-    gap: spacing.lg,
-    paddingBottom: spacing['3xl'],
-  },
-  header: {
-    gap: spacing.xs,
-    paddingTop: spacing.xs,
-  },
-  backBtn: {
-    marginBottom: spacing.xs,
-    alignSelf: 'flex-start',
-  },
-  title: {
-    ...typography.h2,
-    color: colors.textPrimary,
-  },
-  subtitle: {
-    ...typography.body,
-    color: colors.textSecondary,
-  },
-  section: {
-    gap: spacing.sm,
-  },
-  sectionTitle: {
-    ...typography.body,
-    color: colors.goldLight,
-    fontWeight: '700',
-  },
-  list: {
-    gap: spacing.md,
-  },
-  card: {
-    borderRadius: borderRadius.xl,
-    borderWidth: 1,
-    borderColor: 'rgba(201, 168, 76, 0.28)',
-    backgroundColor: '#101010',
-    overflow: 'hidden',
-  },
-  recentCard: {
-    borderColor: 'rgba(201, 168, 76, 0.8)',
-    shadowColor: colors.gold,
-    shadowOpacity: 0.18,
-    shadowRadius: 8,
-    shadowOffset: { width: 0, height: 3 },
-  },
-  selectedCard: {
-    borderColor: colors.gold,
-    shadowColor: colors.gold,
-    shadowOpacity: 0.25,
-    shadowRadius: 10,
-    shadowOffset: { width: 0, height: 4 },
-  },
-  cardPressed: {
-    opacity: 0.9,
-    transform: [{ scale: 0.99 }],
-  },
-  image: {
-    width: '100%',
-    height: 160,
-    backgroundColor: colors.bgElevated,
-  },
-  cardBody: {
-    padding: spacing.md,
-    gap: 2,
-  },
-  name: {
-    ...typography.bodyLarge,
-    color: colors.textPrimary,
-    fontWeight: '700',
-  },
-  meta: {
-    ...typography.bodySmall,
-    color: colors.textSecondary,
-  },
-  overlayChip: {
-    position: 'absolute',
-    top: spacing.sm,
-    left: spacing.sm,
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-    paddingHorizontal: spacing.sm,
-    paddingVertical: 4,
-    borderRadius: borderRadius.full,
-    borderWidth: 1,
-    borderColor: 'rgba(201, 168, 76, 0.7)',
-    backgroundColor: 'rgba(10,10,10,0.65)',
-  },
-  overlayChipText: {
-    ...typography.bodySmall,
-    color: colors.goldLight,
-    fontWeight: '700',
-  },
-});

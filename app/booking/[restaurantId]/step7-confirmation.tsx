@@ -14,7 +14,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Button } from '@/components/ui';
 import { mockRestaurants } from '@/lib/mock/restaurants';
 import { parseDateKeyLocal } from '@/lib/booking/dateUtils';
-import { colors, spacing, borderRadius, shadows } from '@/lib/theme';
+import { useColors, createStyles, spacing, borderRadius, shadows } from '@/lib/theme';
 import type { DateKey } from '@/lib/booking/availabilityTypes';
 
 function generateCode(): string {
@@ -23,6 +23,150 @@ function generateCode(): string {
   for (let i = 0; i < 6; i++) code += chars[Math.floor(Math.random() * chars.length)];
   return code;
 }
+
+const useStyles = createStyles((c) => ({
+  container: { flex: 1, backgroundColor: c.bgBase },
+  body: {
+    paddingHorizontal: 20,
+    paddingTop: 32,
+    gap: 20,
+  },
+
+  // Success
+  successSection: {
+    alignItems: 'center',
+    gap: 10,
+  },
+  checkCircle: {
+    width: 84,
+    height: 84,
+    borderRadius: 42,
+    backgroundColor: c.gold,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 4,
+    ...shadows.goldGlow,
+  },
+  title: {
+    fontSize: 28,
+    fontWeight: '800',
+    color: c.textPrimary,
+    textAlign: 'center',
+  },
+  subtitle: {
+    fontSize: 16,
+    color: c.textSecondary,
+    fontWeight: '500',
+    textAlign: 'center',
+  },
+
+  // Summary card
+  summaryCard: {
+    backgroundColor: c.bgSurface,
+    borderRadius: borderRadius.xl,
+    borderWidth: 1,
+    borderColor: c.border,
+    paddingVertical: 4,
+    paddingHorizontal: 16,
+  },
+  summaryRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    paddingVertical: 14,
+  },
+  summaryDivider: {
+    height: StyleSheet.hairlineWidth,
+    backgroundColor: c.border,
+  },
+  summaryText: {
+    fontSize: 15,
+    fontWeight: '500',
+    color: c.textPrimary,
+  },
+
+  // Code
+  codeWrap: { alignItems: 'center', gap: 8 },
+  codeLabel: {
+    fontSize: 11,
+    fontWeight: '700',
+    color: c.textMuted,
+    textTransform: 'uppercase',
+    letterSpacing: 1,
+  },
+  codeBox: {
+    paddingHorizontal: 28,
+    paddingVertical: 14,
+    borderRadius: borderRadius.lg,
+    backgroundColor: c.bgSurface,
+    borderWidth: 1.5,
+    borderColor: c.gold,
+  },
+  codeText: {
+    fontSize: 22,
+    fontWeight: '700',
+    color: c.gold,
+    fontFamily: Platform.OS === 'ios' ? 'Menlo' : 'monospace',
+    letterSpacing: 3,
+  },
+
+  // Upsell
+  upsellHeading: {
+    fontSize: 11,
+    fontWeight: '700',
+    color: c.textMuted,
+    textTransform: 'uppercase',
+    letterSpacing: 0.8,
+    marginBottom: 10,
+  },
+  upsellCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 14,
+    backgroundColor: c.bgSurface,
+    borderWidth: 1,
+    borderColor: c.border,
+    borderBottomWidth: 0,
+    borderTopLeftRadius: borderRadius.xl,
+    borderTopRightRadius: borderRadius.xl,
+    padding: 16,
+  },
+  upsellCardLast: {
+    borderBottomWidth: 1,
+    borderTopWidth: 0,
+    borderTopLeftRadius: 0,
+    borderTopRightRadius: 0,
+    borderBottomLeftRadius: borderRadius.xl,
+    borderBottomRightRadius: borderRadius.xl,
+  },
+  upsellIconWrap: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  upsellBody: { flex: 1, gap: 3 },
+  upsellTitle: {
+    fontSize: 15,
+    fontWeight: '700',
+    color: c.textPrimary,
+  },
+  upsellDesc: {
+    fontSize: 13,
+    color: c.textSecondary,
+    lineHeight: 18,
+  },
+
+  // Done
+  doneWrap: { gap: 12 },
+  skipBtn: { alignItems: 'center', paddingVertical: 4 },
+  skipText: {
+    fontSize: 14,
+    color: c.textMuted,
+    fontWeight: '500',
+  },
+}));
 
 export default function Step7Confirmation() {
   const { restaurantId, date, time, partySize, occasion } = useLocalSearchParams<{
@@ -34,6 +178,8 @@ export default function Step7Confirmation() {
   }>();
   const router = useRouter();
   const insets = useSafeAreaInsets();
+  const c = useColors();
+  const styles = useStyles();
 
   const restaurant = mockRestaurants.find((r) => r.id === restaurantId);
   const guests = parseInt(partySize ?? '2', 10);
@@ -81,7 +227,7 @@ export default function Step7Confirmation() {
         {/* Success badge */}
         <View style={styles.successSection}>
           <Animated.View style={[styles.checkCircle, { transform: [{ scale: scaleAnim }] }]}>
-            <Ionicons name="checkmark" size={44} color={colors.bgBase} />
+            <Ionicons name="checkmark" size={44} color={c.bgBase} />
           </Animated.View>
           <Animated.Text style={[styles.title, { opacity: fadeAnim, transform: [{ translateY: slideAnim }] }]}>
             You're all set!
@@ -94,24 +240,24 @@ export default function Step7Confirmation() {
         {/* Booking summary */}
         <Animated.View style={[styles.summaryCard, { opacity: fadeAnim, transform: [{ translateY: slideAnim }] }]}>
           <View style={styles.summaryRow}>
-            <Ionicons name="calendar-outline" size={16} color={colors.gold} />
+            <Ionicons name="calendar-outline" size={16} color={c.gold} />
             <Text style={styles.summaryText}>{dateLabel}</Text>
           </View>
           <View style={styles.summaryDivider} />
           <View style={styles.summaryRow}>
-            <Ionicons name="time-outline" size={16} color={colors.gold} />
+            <Ionicons name="time-outline" size={16} color={c.gold} />
             <Text style={styles.summaryText}>{time}</Text>
           </View>
           <View style={styles.summaryDivider} />
           <View style={styles.summaryRow}>
-            <Ionicons name="people-outline" size={16} color={colors.gold} />
+            <Ionicons name="people-outline" size={16} color={c.gold} />
             <Text style={styles.summaryText}>{guests} {guests === 1 ? 'guest' : 'guests'}</Text>
           </View>
           {occasion ? (
             <>
               <View style={styles.summaryDivider} />
               <View style={styles.summaryRow}>
-                <Ionicons name="sparkles-outline" size={16} color={colors.gold} />
+                <Ionicons name="sparkles-outline" size={16} color={c.gold} />
                 <Text style={styles.summaryText}>{occasion}</Text>
               </View>
             </>
@@ -136,7 +282,7 @@ export default function Step7Confirmation() {
             onPress={navigateToPreorder}
           >
             <View style={[styles.upsellIconWrap, { backgroundColor: 'rgba(201,162,74,0.12)' }]}>
-              <Ionicons name="restaurant-outline" size={24} color={colors.gold} />
+              <Ionicons name="restaurant-outline" size={24} color={c.gold} />
             </View>
             <View style={styles.upsellBody}>
               <Text style={styles.upsellTitle}>Pre-order your meal</Text>
@@ -144,7 +290,7 @@ export default function Step7Confirmation() {
                 Browse the menu and choose your dishes — they'll be ready when you arrive.
               </Text>
             </View>
-            <Ionicons name="chevron-forward" size={18} color={colors.textMuted} />
+            <Ionicons name="chevron-forward" size={18} color={c.textMuted} />
           </Pressable>
 
           {/* Pre-pay */}
@@ -153,7 +299,7 @@ export default function Step7Confirmation() {
             onPress={() => {/* future: payment screen */}}
           >
             <View style={[styles.upsellIconWrap, { backgroundColor: 'rgba(34,197,94,0.12)' }]}>
-              <Ionicons name="card-outline" size={24} color={colors.success} />
+              <Ionicons name="card-outline" size={24} color={c.success} />
             </View>
             <View style={styles.upsellBody}>
               <Text style={styles.upsellTitle}>Pre-pay your bill</Text>
@@ -161,7 +307,7 @@ export default function Step7Confirmation() {
                 Skip the check at the end of the night — pay now and just enjoy.
               </Text>
             </View>
-            <Ionicons name="chevron-forward" size={18} color={colors.textMuted} />
+            <Ionicons name="chevron-forward" size={18} color={c.textMuted} />
           </Pressable>
         </Animated.View>
 
@@ -179,147 +325,3 @@ export default function Step7Confirmation() {
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: colors.bgBase },
-  body: {
-    paddingHorizontal: 20,
-    paddingTop: 32,
-    gap: 20,
-  },
-
-  // Success
-  successSection: {
-    alignItems: 'center',
-    gap: 10,
-  },
-  checkCircle: {
-    width: 84,
-    height: 84,
-    borderRadius: 42,
-    backgroundColor: colors.gold,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: 4,
-    ...shadows.goldGlow,
-  },
-  title: {
-    fontSize: 28,
-    fontWeight: '800',
-    color: colors.textPrimary,
-    textAlign: 'center',
-  },
-  subtitle: {
-    fontSize: 16,
-    color: colors.textSecondary,
-    fontWeight: '500',
-    textAlign: 'center',
-  },
-
-  // Summary card
-  summaryCard: {
-    backgroundColor: colors.bgSurface,
-    borderRadius: borderRadius.xl,
-    borderWidth: 1,
-    borderColor: colors.border,
-    paddingVertical: 4,
-    paddingHorizontal: 16,
-  },
-  summaryRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-    paddingVertical: 14,
-  },
-  summaryDivider: {
-    height: StyleSheet.hairlineWidth,
-    backgroundColor: colors.border,
-  },
-  summaryText: {
-    fontSize: 15,
-    fontWeight: '500',
-    color: colors.textPrimary,
-  },
-
-  // Code
-  codeWrap: { alignItems: 'center', gap: 8 },
-  codeLabel: {
-    fontSize: 11,
-    fontWeight: '700',
-    color: colors.textMuted,
-    textTransform: 'uppercase',
-    letterSpacing: 1,
-  },
-  codeBox: {
-    paddingHorizontal: 28,
-    paddingVertical: 14,
-    borderRadius: borderRadius.lg,
-    backgroundColor: colors.bgSurface,
-    borderWidth: 1.5,
-    borderColor: colors.gold,
-  },
-  codeText: {
-    fontSize: 22,
-    fontWeight: '700',
-    color: colors.gold,
-    fontFamily: Platform.OS === 'ios' ? 'Menlo' : 'monospace',
-    letterSpacing: 3,
-  },
-
-  // Upsell
-  upsellHeading: {
-    fontSize: 11,
-    fontWeight: '700',
-    color: colors.textMuted,
-    textTransform: 'uppercase',
-    letterSpacing: 0.8,
-    marginBottom: 10,
-  },
-  upsellCard: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 14,
-    backgroundColor: colors.bgSurface,
-    borderWidth: 1,
-    borderColor: colors.border,
-    borderBottomWidth: 0,
-    borderTopLeftRadius: borderRadius.xl,
-    borderTopRightRadius: borderRadius.xl,
-    padding: 16,
-  },
-  upsellCardLast: {
-    borderBottomWidth: 1,
-    borderTopWidth: 0,
-    borderTopLeftRadius: 0,
-    borderTopRightRadius: 0,
-    borderBottomLeftRadius: borderRadius.xl,
-    borderBottomRightRadius: borderRadius.xl,
-  },
-  upsellIconWrap: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  upsellBody: { flex: 1, gap: 3 },
-  upsellTitle: {
-    fontSize: 15,
-    fontWeight: '700',
-    color: colors.textPrimary,
-  },
-  upsellDesc: {
-    fontSize: 13,
-    color: colors.textSecondary,
-    lineHeight: 18,
-  },
-
-  // Done
-  doneWrap: { gap: 12 },
-  skipBtn: { alignItems: 'center', paddingVertical: 4 },
-  skipText: {
-    fontSize: 14,
-    color: colors.textMuted,
-    fontWeight: '500',
-  },
-});

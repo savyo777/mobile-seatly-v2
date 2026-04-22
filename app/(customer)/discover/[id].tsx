@@ -8,7 +8,7 @@ import { Button, Card, Badge, ScreenWrapper } from '@/components/ui';
 import { mockRestaurants } from '@/lib/mock/restaurants';
 import { mockMenuItems } from '@/lib/mock/menuItems';
 import { formatCurrency } from '@/lib/utils/formatCurrency';
-import { colors, spacing, borderRadius, typography, shadows } from '@/lib/theme';
+import { useColors, createStyles, spacing, borderRadius, typography, shadows } from '@/lib/theme';
 import { Ionicons } from '@expo/vector-icons';
 import {
   listSnapPostsByRestaurant,
@@ -49,12 +49,323 @@ function openMaps(address: string, city: string) {
   );
 }
 
+const useStyles = createStyles((c) => ({
+  root: {
+    flex: 1,
+    backgroundColor: c.bgBase,
+  },
+  scrollContent: {
+    flexGrow: 1,
+  },
+  heroWrap: {
+    position: 'relative',
+  },
+  hero: {
+    width: '100%',
+    height: 250,
+    backgroundColor: c.bgElevated,
+  },
+  backBtn: {
+    position: 'absolute',
+    left: spacing.lg,
+    width: 44,
+    height: 44,
+    borderRadius: borderRadius.full,
+    backgroundColor: 'rgba(0,0,0,0.45)',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  snapBtn: {
+    position: 'absolute',
+    right: spacing.lg,
+    width: 44,
+    height: 44,
+    borderRadius: borderRadius.full,
+    backgroundColor: 'rgba(201, 168, 76, 0.2)',
+    borderWidth: 1,
+    borderColor: 'rgba(201, 168, 76, 0.85)',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  backChevron: {
+    fontSize: 28,
+    lineHeight: 30,
+    color: c.textPrimary,
+    fontWeight: '400',
+  },
+  starGlyph: {
+    fontSize: 15,
+    lineHeight: 18,
+    color: c.gold,
+    fontWeight: '700',
+  },
+  body: {
+    paddingHorizontal: spacing.lg,
+    paddingTop: spacing.lg,
+  },
+  h1: {
+    ...typography.h1,
+    color: c.textPrimary,
+    marginBottom: spacing.md,
+  },
+  badgesRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    alignItems: 'center',
+    gap: spacing.sm,
+    marginBottom: spacing.lg,
+  },
+  ratingBlock: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+  },
+  ratingText: {
+    ...typography.body,
+    color: c.textSecondary,
+  },
+  price: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: c.gold,
+    marginLeft: spacing.sm,
+  },
+  addressRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: spacing.sm,
+    backgroundColor: c.bgSurface,
+    borderRadius: borderRadius.lg,
+    borderWidth: 1,
+    borderColor: c.border,
+    padding: spacing.md,
+    marginBottom: spacing.lg,
+  },
+  addressBody: { flex: 1, gap: 2 },
+  address: {
+    ...typography.body,
+    color: c.textPrimary,
+    fontWeight: '500',
+  },
+  addressDirections: {
+    ...typography.bodySmall,
+    color: c.gold,
+    fontWeight: '600',
+  },
+
+  // Section wrapper
+  section: {
+    marginBottom: spacing.xl,
+  },
+  sectionHeading: {
+    ...typography.h3,
+    color: c.textPrimary,
+    marginBottom: spacing.sm,
+  },
+  bodyText: {
+    ...typography.body,
+    color: c.textSecondary,
+    lineHeight: 22,
+  },
+  expandLink: {
+    ...typography.bodySmall,
+    color: c.gold,
+    fontWeight: '600',
+    marginTop: spacing.xs,
+  },
+  expandBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    marginTop: spacing.sm,
+  },
+
+  // Vibe chips
+  vibeRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: spacing.xs,
+    marginTop: spacing.md,
+  },
+  vibeChip: {
+    borderWidth: 1,
+    borderColor: c.border,
+    borderRadius: borderRadius.full,
+    paddingHorizontal: spacing.sm,
+    paddingVertical: 5,
+    backgroundColor: c.bgSurface,
+  },
+  vibeChipText: {
+    ...typography.bodySmall,
+    color: c.textSecondary,
+    fontWeight: '500',
+  },
+
+  // Hours
+  hoursHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: spacing.xs,
+  },
+  openBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+  },
+  openDot: {
+    width: 7,
+    height: 7,
+    borderRadius: 4,
+  },
+  openLabel: {
+    fontSize: 13,
+    fontWeight: '700',
+  },
+  todayHours: {
+    ...typography.body,
+    color: c.textSecondary,
+    marginBottom: spacing.xs,
+  },
+  hoursGrid: {
+    marginTop: spacing.sm,
+    borderRadius: borderRadius.lg,
+    borderWidth: 1,
+    borderColor: c.border,
+    overflow: 'hidden',
+  },
+  hoursRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    paddingVertical: 10,
+    paddingHorizontal: spacing.md,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: c.border,
+  },
+  hoursRowToday: {
+    backgroundColor: 'rgba(201,168,76,0.08)',
+  },
+  hoursDay: {
+    ...typography.body,
+    color: c.textMuted,
+    fontWeight: '500',
+    width: 40,
+  },
+  hoursDayToday: {
+    color: c.gold,
+    fontWeight: '700',
+  },
+  hoursTime: {
+    ...typography.body,
+    color: c.textSecondary,
+  },
+  hoursTimeToday: {
+    color: c.textPrimary,
+    fontWeight: '600',
+  },
+  featuredRow: {
+    gap: spacing.md,
+    paddingBottom: spacing.lg,
+  },
+  menuCard: {
+    width: 160,
+    overflow: 'hidden',
+    ...shadows.card,
+  },
+  menuPhoto: {
+    width: '100%',
+    height: 100,
+    backgroundColor: c.bgElevated,
+  },
+  menuCardBody: {
+    padding: spacing.md,
+  },
+  menuName: {
+    ...typography.body,
+    color: c.textPrimary,
+    fontWeight: '600',
+    marginBottom: spacing.xs,
+  },
+  menuPrice: {
+    ...typography.body,
+    color: c.gold,
+    fontWeight: '600',
+  },
+  snapsHeader: {
+    marginTop: spacing.md,
+    marginBottom: spacing.sm,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: spacing.md,
+  },
+  snapsHeaderText: {
+    flex: 1,
+  },
+  snapsTitle: {
+    ...typography.h3,
+    color: c.textPrimary,
+  },
+  snapsSub: {
+    ...typography.bodySmall,
+    color: c.textSecondary,
+  },
+  seeMoreBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 2,
+    borderRadius: borderRadius.full,
+    borderWidth: 1,
+    borderColor: 'rgba(201, 168, 76, 0.45)',
+    backgroundColor: 'rgba(201, 168, 76, 0.12)',
+    paddingHorizontal: spacing.sm,
+    paddingVertical: 7,
+  },
+  seeMorePressed: {
+    opacity: 0.84,
+  },
+  seeMoreText: {
+    ...typography.bodySmall,
+    color: '#DDD5C4',
+    fontWeight: '700',
+  },
+  snapsRow: {
+    gap: spacing.md,
+    paddingBottom: spacing.lg,
+    paddingTop: spacing.xs,
+  },
+  footer: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    bottom: 0,
+    paddingHorizontal: spacing.lg,
+    paddingTop: spacing.md,
+    backgroundColor: c.bgBase,
+    borderTopWidth: 1,
+    borderTopColor: c.border,
+  },
+  centered: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: spacing.lg,
+  },
+  errorTitle: {
+    ...typography.h3,
+    color: c.textSecondary,
+    textAlign: 'center',
+  },
+}));
+
 export default function RestaurantDetailScreen() {
   const [restaurantSnaps, setRestaurantSnaps] = useState<SnapPost[]>([]);
   const [aboutExpanded, setAboutExpanded] = useState(false);
   const [hoursExpanded, setHoursExpanded] = useState(false);
   const { id } = useLocalSearchParams<{ id: string }>();
   const { t } = useTranslation();
+  const c = useColors();
+  const styles = useStyles();
   const router = useRouter();
   const insets = useSafeAreaInsets();
 
@@ -112,7 +423,7 @@ export default function RestaurantDetailScreen() {
             style={[styles.snapBtn, { top: insets.top + spacing.sm }]}
             hitSlop={12}
           >
-            <Ionicons name="add" size={20} color={colors.goldLight} />
+            <Ionicons name="add" size={20} color="#DDD5C4" />
           </Pressable>
         </View>
 
@@ -135,7 +446,7 @@ export default function RestaurantDetailScreen() {
             onPress={() => openMaps(restaurant.address, restaurant.city)}
             style={({ pressed }) => [styles.addressRow, pressed && { opacity: 0.7 }]}
           >
-            <Ionicons name="location-sharp" size={16} color={colors.gold} style={{ marginTop: 1 }} />
+            <Ionicons name="location-sharp" size={16} color={c.gold} style={{ marginTop: 1 }} />
             <View style={styles.addressBody}>
               <Text style={styles.address}>
                 {restaurant.address}, {restaurant.city}, {restaurant.province}
@@ -176,8 +487,8 @@ export default function RestaurantDetailScreen() {
             <View style={styles.hoursHeader}>
               <Text style={styles.sectionHeading}>{t('restaurant.hours')}</Text>
               <View style={styles.openBadge}>
-                <View style={[styles.openDot, { backgroundColor: isOpenNow(restaurant.hoursJson) ? colors.success : colors.danger }]} />
-                <Text style={[styles.openLabel, { color: isOpenNow(restaurant.hoursJson) ? colors.success : colors.danger }]}>
+                <View style={[styles.openDot, { backgroundColor: isOpenNow(restaurant.hoursJson) ? c.success : c.danger }]} />
+                <Text style={[styles.openLabel, { color: isOpenNow(restaurant.hoursJson) ? c.success : c.danger }]}>
                   {isOpenNow(restaurant.hoursJson) ? 'Open now' : 'Closed'}
                 </Text>
               </View>
@@ -205,7 +516,7 @@ export default function RestaurantDetailScreen() {
             )}
             <Pressable onPress={() => setHoursExpanded((v) => !v)} hitSlop={8} style={styles.expandBtn}>
               <Text style={styles.expandLink}>{hoursExpanded ? 'Hide hours' : 'See all hours'}</Text>
-              <Ionicons name={hoursExpanded ? 'chevron-up' : 'chevron-down'} size={13} color={colors.gold} />
+              <Ionicons name={hoursExpanded ? 'chevron-up' : 'chevron-down'} size={13} color={c.gold} />
             </Pressable>
           </View>
 
@@ -234,7 +545,7 @@ export default function RestaurantDetailScreen() {
               style={({ pressed }) => [styles.seeMoreBtn, pressed && styles.seeMorePressed]}
             >
               <Text style={styles.seeMoreText}>See More</Text>
-              <Ionicons name="chevron-forward" size={14} color={colors.goldLight} />
+              <Ionicons name="chevron-forward" size={14} color="#DDD5C4" />
             </Pressable>
           </View>
           {restaurantSnaps.length ? (
@@ -266,312 +577,3 @@ export default function RestaurantDetailScreen() {
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  root: {
-    flex: 1,
-    backgroundColor: colors.bgBase,
-  },
-  scrollContent: {
-    flexGrow: 1,
-  },
-  heroWrap: {
-    position: 'relative',
-  },
-  hero: {
-    width: '100%',
-    height: 250,
-    backgroundColor: colors.bgElevated,
-  },
-  backBtn: {
-    position: 'absolute',
-    left: spacing.lg,
-    width: 44,
-    height: 44,
-    borderRadius: borderRadius.full,
-    backgroundColor: 'rgba(0,0,0,0.45)',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  snapBtn: {
-    position: 'absolute',
-    right: spacing.lg,
-    width: 44,
-    height: 44,
-    borderRadius: borderRadius.full,
-    backgroundColor: 'rgba(201, 168, 76, 0.2)',
-    borderWidth: 1,
-    borderColor: 'rgba(201, 168, 76, 0.85)',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  backChevron: {
-    fontSize: 28,
-    lineHeight: 30,
-    color: colors.textPrimary,
-    fontWeight: '400',
-  },
-  starGlyph: {
-    fontSize: 15,
-    lineHeight: 18,
-    color: colors.gold,
-    fontWeight: '700',
-  },
-  body: {
-    paddingHorizontal: spacing.lg,
-    paddingTop: spacing.lg,
-  },
-  h1: {
-    ...typography.h1,
-    color: colors.textPrimary,
-    marginBottom: spacing.md,
-  },
-  badgesRow: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    alignItems: 'center',
-    gap: spacing.sm,
-    marginBottom: spacing.lg,
-  },
-  ratingBlock: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-  },
-  ratingText: {
-    ...typography.body,
-    color: colors.textSecondary,
-  },
-  price: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: colors.gold,
-    marginLeft: spacing.sm,
-  },
-  addressRow: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    gap: spacing.sm,
-    backgroundColor: colors.bgSurface,
-    borderRadius: borderRadius.lg,
-    borderWidth: 1,
-    borderColor: colors.border,
-    padding: spacing.md,
-    marginBottom: spacing.lg,
-  },
-  addressBody: { flex: 1, gap: 2 },
-  address: {
-    ...typography.body,
-    color: colors.textPrimary,
-    fontWeight: '500',
-  },
-  addressDirections: {
-    ...typography.bodySmall,
-    color: colors.gold,
-    fontWeight: '600',
-  },
-
-  // Section wrapper
-  section: {
-    marginBottom: spacing.xl,
-  },
-  sectionHeading: {
-    ...typography.h3,
-    color: colors.textPrimary,
-    marginBottom: spacing.sm,
-  },
-  bodyText: {
-    ...typography.body,
-    color: colors.textSecondary,
-    lineHeight: 22,
-  },
-  expandLink: {
-    ...typography.bodySmall,
-    color: colors.gold,
-    fontWeight: '600',
-    marginTop: spacing.xs,
-  },
-  expandBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-    marginTop: spacing.sm,
-  },
-
-  // Vibe chips
-  vibeRow: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: spacing.xs,
-    marginTop: spacing.md,
-  },
-  vibeChip: {
-    borderWidth: 1,
-    borderColor: colors.border,
-    borderRadius: borderRadius.full,
-    paddingHorizontal: spacing.sm,
-    paddingVertical: 5,
-    backgroundColor: colors.bgSurface,
-  },
-  vibeChipText: {
-    ...typography.bodySmall,
-    color: colors.textSecondary,
-    fontWeight: '500',
-  },
-
-  // Hours
-  hoursHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    marginBottom: spacing.xs,
-  },
-  openBadge: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 5,
-  },
-  openDot: {
-    width: 7,
-    height: 7,
-    borderRadius: 4,
-  },
-  openLabel: {
-    fontSize: 13,
-    fontWeight: '700',
-  },
-  todayHours: {
-    ...typography.body,
-    color: colors.textSecondary,
-    marginBottom: spacing.xs,
-  },
-  hoursGrid: {
-    marginTop: spacing.sm,
-    borderRadius: borderRadius.lg,
-    borderWidth: 1,
-    borderColor: colors.border,
-    overflow: 'hidden',
-  },
-  hoursRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    paddingVertical: 10,
-    paddingHorizontal: spacing.md,
-    borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: colors.border,
-  },
-  hoursRowToday: {
-    backgroundColor: 'rgba(201,168,76,0.08)',
-  },
-  hoursDay: {
-    ...typography.body,
-    color: colors.textMuted,
-    fontWeight: '500',
-    width: 40,
-  },
-  hoursDayToday: {
-    color: colors.gold,
-    fontWeight: '700',
-  },
-  hoursTime: {
-    ...typography.body,
-    color: colors.textSecondary,
-  },
-  hoursTimeToday: {
-    color: colors.textPrimary,
-    fontWeight: '600',
-  },
-  featuredRow: {
-    gap: spacing.md,
-    paddingBottom: spacing.lg,
-  },
-  menuCard: {
-    width: 160,
-    overflow: 'hidden',
-    ...shadows.card,
-  },
-  menuPhoto: {
-    width: '100%',
-    height: 100,
-    backgroundColor: colors.bgElevated,
-  },
-  menuCardBody: {
-    padding: spacing.md,
-  },
-  menuName: {
-    ...typography.body,
-    color: colors.textPrimary,
-    fontWeight: '600',
-    marginBottom: spacing.xs,
-  },
-  menuPrice: {
-    ...typography.body,
-    color: colors.gold,
-    fontWeight: '600',
-  },
-  snapsHeader: {
-    marginTop: spacing.md,
-    marginBottom: spacing.sm,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    gap: spacing.md,
-  },
-  snapsHeaderText: {
-    flex: 1,
-  },
-  snapsTitle: {
-    ...typography.h3,
-    color: colors.textPrimary,
-  },
-  snapsSub: {
-    ...typography.bodySmall,
-    color: colors.textSecondary,
-  },
-  seeMoreBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 2,
-    borderRadius: borderRadius.full,
-    borderWidth: 1,
-    borderColor: 'rgba(201, 168, 76, 0.45)',
-    backgroundColor: 'rgba(201, 168, 76, 0.12)',
-    paddingHorizontal: spacing.sm,
-    paddingVertical: 7,
-  },
-  seeMorePressed: {
-    opacity: 0.84,
-  },
-  seeMoreText: {
-    ...typography.bodySmall,
-    color: colors.goldLight,
-    fontWeight: '700',
-  },
-  snapsRow: {
-    gap: spacing.md,
-    paddingBottom: spacing.lg,
-    paddingTop: spacing.xs,
-  },
-  footer: {
-    position: 'absolute',
-    left: 0,
-    right: 0,
-    bottom: 0,
-    paddingHorizontal: spacing.lg,
-    paddingTop: spacing.md,
-    backgroundColor: colors.bgBase,
-    borderTopWidth: 1,
-    borderTopColor: colors.border,
-  },
-  centered: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: spacing.lg,
-  },
-  errorTitle: {
-    ...typography.h3,
-    color: colors.textSecondary,
-    textAlign: 'center',
-  },
-});

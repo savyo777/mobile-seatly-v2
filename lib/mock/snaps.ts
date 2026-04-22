@@ -5,6 +5,8 @@ export type SnapUser = {
   id: string;
   username: string;
   avatarUrl: string;
+  displayName?: string;
+  bio?: string;
 };
 
 export type SnapPost = {
@@ -48,16 +50,16 @@ const dishPool = [
 ];
 
 export const snapUsers: SnapUser[] = [
-  { id: mockCustomer.id, username: 'alexj', avatarUrl: mockCustomer.avatarUrl ?? '' },
-  { id: 'u3', username: 'maria.eats', avatarUrl: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=300' },
-  { id: 'u4', username: 'jayonthego', avatarUrl: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=300' },
-  { id: 'u5', username: 'nina.city', avatarUrl: 'https://images.unsplash.com/photo-1487412720507-e7ab37603c6f?w=300' },
-  { id: 'u6', username: 'foodwithleo', avatarUrl: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=300' },
-  { id: 'u7', username: 'samplates', avatarUrl: 'https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?w=300' },
-  { id: 'u8', username: 'goldenforks', avatarUrl: 'https://images.unsplash.com/photo-1531123897727-8f129e1688ce?w=300' },
-  { id: 'u9', username: 'liadines', avatarUrl: 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=300' },
-  { id: 'u10', username: 'derekbites', avatarUrl: 'https://images.unsplash.com/photo-1463453091185-61582044d556?w=300' },
-  { id: 'u11', username: 'sofiastories', avatarUrl: 'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=300' },
+  { id: mockCustomer.id, username: 'alexj',       displayName: 'Alex Johnson',   avatarUrl: mockCustomer.avatarUrl ?? '',                                                              bio: 'Chasing great meals across the city.' },
+  { id: 'u3',           username: 'maria.eats',   displayName: 'Maria Rossi',    avatarUrl: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=300',  bio: 'Food photographer. Pasta enthusiast. Always hungry.' },
+  { id: 'u4',           username: 'jayonthego',   displayName: 'Jay Park',       avatarUrl: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=300',  bio: 'Street food to fine dining — I eat it all.' },
+  { id: 'u5',           username: 'nina.city',    displayName: 'Nina Laurent',   avatarUrl: 'https://images.unsplash.com/photo-1487412720507-e7ab37603c6f?w=300',  bio: 'Finding the best hidden spots in every city.' },
+  { id: 'u6',           username: 'foodwithleo',  displayName: 'Leo Santos',     avatarUrl: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=300',  bio: 'Chef by trade, eater by passion.' },
+  { id: 'u7',           username: 'samplates',    displayName: 'Sam Okafor',     avatarUrl: 'https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?w=300',  bio: 'Date nights and late-night bites.' },
+  { id: 'u8',           username: 'goldenforks',  displayName: 'Priya Mehta',    avatarUrl: 'https://images.unsplash.com/photo-1531123897727-8f129e1688ce?w=300',  bio: 'Sushi, ramen, repeat.' },
+  { id: 'u9',           username: 'liadines',     displayName: 'Lia Chen',       avatarUrl: 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=300',     bio: 'Wine pairings and long dinners.' },
+  { id: 'u10',          username: 'derekbites',   displayName: 'Derek Williams', avatarUrl: 'https://images.unsplash.com/photo-1463453091185-61582044d556?w=300',  bio: 'BBQ on weekends, everything else Monday–Friday.' },
+  { id: 'u11',          username: 'sofiastories', displayName: 'Sofia Moreau',   avatarUrl: 'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=300',  bio: 'Documenting every meal worth remembering.' },
 ];
 
 const snapRestaurantIds = ['r1', 'r2', 'r3', 'r5', 'r10'] as const;
@@ -190,6 +192,13 @@ export function getSnapRestaurantName(restaurantId: string): string {
 
 export function getSnapPostById(snapId: string): SnapPost | undefined {
   return snapPosts.find((post) => post.id === snapId);
+}
+
+export function deleteSnapPost(postId: string, userId: string): boolean {
+  const idx = snapPosts.findIndex((p) => p.id === postId && p.user_id === userId);
+  if (idx === -1) return false;
+  snapPosts = [...snapPosts.slice(0, idx), ...snapPosts.slice(idx + 1)];
+  return true;
 }
 
 export function timeAgoLabel(timestamp: string): string {

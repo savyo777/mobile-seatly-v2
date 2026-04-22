@@ -2,13 +2,12 @@ import React, { useState } from 'react';
 import {
   View,
   Text,
-  StyleSheet,
   Pressable,
   ActivityIndicator,
   Image,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { colors, spacing, borderRadius, typography, shadows } from '@/lib/theme';
+import { borderRadius, createStyles, shadows, spacing, typography, useColors } from '@/lib/theme';
 import { shareSnapToSocial } from '@/lib/sharing/generateShareCard';
 
 interface SnapShareSheetProps {
@@ -17,7 +16,65 @@ interface SnapShareSheetProps {
   rating?: number;
 }
 
+const useStyles = createStyles((c) => ({
+  card: {
+    backgroundColor: c.bgSurface,
+    borderRadius: borderRadius.xl,
+    borderWidth: 1,
+    borderColor: 'rgba(201, 168, 76, 0.25)',
+    padding: spacing.lg,
+    gap: spacing.md,
+    width: '100%',
+    ...shadows.card,
+  },
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+  },
+  heading: {
+    ...typography.label,
+    color: c.gold,
+    fontWeight: '700',
+  },
+  preview: {
+    width: '100%',
+    height: 160,
+    borderRadius: borderRadius.md,
+    backgroundColor: c.bgBase,
+  },
+  hint: {
+    ...typography.bodySmall,
+    color: c.textSecondary,
+    lineHeight: 18,
+  },
+  shareBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: c.gold,
+    borderRadius: borderRadius.lg,
+    paddingVertical: spacing.md,
+    paddingHorizontal: spacing.lg,
+    gap: spacing.sm,
+    minHeight: 48,
+  },
+  shareBtnPressed: {
+    opacity: 0.82,
+  },
+  btnIcon: {
+    marginRight: 2,
+  },
+  shareBtnLabel: {
+    ...typography.body,
+    color: c.bgBase,
+    fontWeight: '700',
+  },
+}));
+
 export function SnapShareSheet({ imageUrl, restaurantName, rating }: SnapShareSheetProps) {
+  const c = useColors();
+  const styles = useStyles();
   const [sharing, setSharing] = useState(false);
 
   const handleShare = async () => {
@@ -32,7 +89,7 @@ export function SnapShareSheet({ imageUrl, restaurantName, rating }: SnapShareSh
   return (
     <View style={styles.card}>
       <View style={styles.header}>
-        <Ionicons name="share-social-outline" size={20} color={colors.gold} />
+        <Ionicons name="share-social-outline" size={20} color={c.gold} />
         <Text style={styles.heading}>Share your snap</Text>
       </View>
 
@@ -52,10 +109,10 @@ export function SnapShareSheet({ imageUrl, restaurantName, rating }: SnapShareSh
         accessibilityLabel="Share snap to social media"
       >
         {sharing ? (
-          <ActivityIndicator size="small" color={colors.bgBase} />
+          <ActivityIndicator size="small" color={c.bgBase} />
         ) : (
           <>
-            <Ionicons name="logo-instagram" size={18} color={colors.bgBase} style={styles.btnIcon} />
+            <Ionicons name="logo-instagram" size={18} color={c.bgBase} style={styles.btnIcon} />
             <Text style={styles.shareBtnLabel}>Share to Instagram, TikTok & more</Text>
           </>
         )}
@@ -63,59 +120,3 @@ export function SnapShareSheet({ imageUrl, restaurantName, rating }: SnapShareSh
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  card: {
-    backgroundColor: colors.bgSurface,
-    borderRadius: borderRadius.xl,
-    borderWidth: 1,
-    borderColor: 'rgba(201, 168, 76, 0.25)',
-    padding: spacing.lg,
-    gap: spacing.md,
-    width: '100%',
-    ...shadows.card,
-  },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.sm,
-  },
-  heading: {
-    ...typography.label,
-    color: colors.gold,
-    fontWeight: '700',
-  },
-  preview: {
-    width: '100%',
-    height: 160,
-    borderRadius: borderRadius.md,
-    backgroundColor: colors.bgBase,
-  },
-  hint: {
-    ...typography.bodySmall,
-    color: colors.textSecondary,
-    lineHeight: 18,
-  },
-  shareBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: colors.gold,
-    borderRadius: borderRadius.lg,
-    paddingVertical: spacing.md,
-    paddingHorizontal: spacing.lg,
-    gap: spacing.sm,
-    minHeight: 48,
-  },
-  shareBtnPressed: {
-    opacity: 0.82,
-  },
-  btnIcon: {
-    marginRight: 2,
-  },
-  shareBtnLabel: {
-    ...typography.body,
-    color: colors.bgBase,
-    fontWeight: '700',
-  },
-});

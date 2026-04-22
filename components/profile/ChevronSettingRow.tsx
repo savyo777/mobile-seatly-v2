@@ -2,7 +2,7 @@ import React from 'react';
 import { View, Text, StyleSheet, Pressable } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { ChevronGlyph } from '@/components/ui/ChevronGlyph';
-import { colors, spacing, typography } from '@/lib/theme';
+import { useColors, createStyles, spacing, typography } from '@/lib/theme';
 
 type Props = {
   title: string;
@@ -12,38 +12,11 @@ type Props = {
   destructive?: boolean;
   showChevron?: boolean;
   isLast?: boolean;
+  /** Softer icon treatment (e.g. account hub lists) */
+  iconMuted?: boolean;
 };
 
-export function ChevronSettingRow({
-  title,
-  subtitle,
-  icon,
-  onPress,
-  destructive,
-  showChevron = true,
-  isLast,
-}: Props) {
-  return (
-    <Pressable
-      onPress={onPress}
-      style={({ pressed }) => [styles.row, !isLast && styles.rowBorder, pressed && styles.pressed]}
-      accessibilityRole="button"
-    >
-      {icon ? (
-        <View style={styles.iconWrap}>
-          <Ionicons name={icon} size={20} color={destructive ? '#E8A0A0' : colors.gold} />
-        </View>
-      ) : null}
-      <View style={styles.textWrap}>
-        <Text style={[styles.title, destructive && styles.titleDestructive]}>{title}</Text>
-        {subtitle ? <Text style={styles.subtitle}>{subtitle}</Text> : null}
-      </View>
-      {showChevron ? <ChevronGlyph color={colors.textMuted} size={18} /> : null}
-    </Pressable>
-  );
-}
-
-const styles = StyleSheet.create({
+const useStyles = createStyles((c) => ({
   row: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -53,16 +26,16 @@ const styles = StyleSheet.create({
   },
   rowBorder: {
     borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: colors.border,
+    borderBottomColor: c.border,
   },
   pressed: {
-    backgroundColor: colors.bgElevated,
+    backgroundColor: c.bgElevated,
   },
   iconWrap: {
     width: 36,
     height: 36,
     borderRadius: 8,
-    backgroundColor: colors.bgElevated,
+    backgroundColor: c.bgElevated,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -72,15 +45,49 @@ const styles = StyleSheet.create({
   },
   title: {
     ...typography.body,
-    color: colors.textPrimary,
+    color: c.textPrimary,
     fontWeight: '600',
   },
   titleDestructive: {
-    color: '#E8A0A0',
+    color: c.danger,
   },
   subtitle: {
     ...typography.bodySmall,
-    color: colors.textMuted,
+    color: c.textMuted,
     marginTop: 4,
   },
-});
+}));
+
+export function ChevronSettingRow({
+  title,
+  subtitle,
+  icon,
+  onPress,
+  destructive,
+  showChevron = true,
+  isLast,
+  iconMuted,
+}: Props) {
+  const c = useColors();
+  const styles = useStyles();
+  const iconColor = destructive ? c.danger : iconMuted ? c.textSecondary : c.gold;
+
+  return (
+    <Pressable
+      onPress={onPress}
+      style={({ pressed }) => [styles.row, !isLast && styles.rowBorder, pressed && styles.pressed]}
+      accessibilityRole="button"
+    >
+      {icon ? (
+        <View style={styles.iconWrap}>
+          <Ionicons name={icon} size={20} color={iconColor} />
+        </View>
+      ) : null}
+      <View style={styles.textWrap}>
+        <Text style={[styles.title, destructive && styles.titleDestructive]}>{title}</Text>
+        {subtitle ? <Text style={styles.subtitle}>{subtitle}</Text> : null}
+      </View>
+      {showChevron ? <ChevronGlyph color={c.textMuted} size={18} /> : null}
+    </Pressable>
+  );
+}

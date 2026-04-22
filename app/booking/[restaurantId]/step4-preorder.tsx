@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Image, FlatList } from 'react-native';
+import { View, Text, TouchableOpacity, ScrollView, Image, FlatList } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -7,7 +7,7 @@ import { useTranslation } from 'react-i18next';
 import { Button, Card, Badge } from '@/components/ui';
 import { mockMenuItems, menuCategories } from '@/lib/mock/menuItems';
 import { formatCurrency } from '@/lib/utils/formatCurrency';
-import { colors, borderRadius } from '@/lib/theme';
+import { useColors, createStyles, borderRadius } from '@/lib/theme';
 
 interface CartItem {
   menuItemId: string;
@@ -16,11 +16,46 @@ interface CartItem {
   quantity: number;
 }
 
+const useStyles = createStyles((c) => ({
+  container: { flex: 1, backgroundColor: c.bgBase },
+  header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 20, paddingVertical: 12 },
+  backBtn: { width: 40, height: 40, alignItems: 'center', justifyContent: 'center' },
+  stepLabel: { fontSize: 13, color: c.textMuted, fontWeight: '500' },
+  cartIndicator: { flexDirection: 'row', alignItems: 'center', gap: 4, width: 40 },
+  cartCount: { fontSize: 13, color: c.gold, fontWeight: '700' },
+  progressBar: { height: 3, backgroundColor: c.border, marginHorizontal: 20 },
+  progressFill: { height: 3, backgroundColor: c.gold, borderRadius: 2 },
+  title: { fontSize: 24, fontWeight: '700', color: c.textPrimary, paddingHorizontal: 20, marginTop: 24 },
+  subtitle: { fontSize: 14, color: c.textSecondary, paddingHorizontal: 20, marginTop: 4, marginBottom: 16 },
+  categoryScroll: { maxHeight: 40, marginBottom: 16 },
+  categoryChip: { paddingHorizontal: 16, paddingVertical: 8, borderRadius: 999, backgroundColor: c.bgSurface, borderWidth: 1, borderColor: c.border },
+  categoryChipActive: { backgroundColor: 'rgba(201, 168, 76, 0.15)', borderColor: c.gold },
+  categoryText: { fontSize: 13, color: c.textSecondary, fontWeight: '500' },
+  categoryTextActive: { color: c.gold },
+  menuList: { paddingHorizontal: 20, paddingBottom: 180 },
+  menuItem: { flexDirection: 'row', paddingVertical: 14, borderBottomWidth: 1, borderBottomColor: c.border },
+  menuPhoto: { width: 72, height: 72, borderRadius: borderRadius.sm },
+  menuInfo: { flex: 1, marginLeft: 12 },
+  menuName: { fontSize: 15, fontWeight: '600', color: c.textPrimary },
+  menuDesc: { fontSize: 12, color: c.textMuted, marginTop: 2 },
+  menuMeta: { flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 6 },
+  menuPrice: { fontSize: 14, fontWeight: '600', color: c.gold },
+  qtyControls: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  qtyBtn: { width: 32, height: 32, borderRadius: 999, borderWidth: 1, borderColor: c.gold, alignItems: 'center', justifyContent: 'center' },
+  qtyBtnAdd: { backgroundColor: c.gold, borderColor: c.gold },
+  qtyText: { fontSize: 16, fontWeight: '700', color: c.textPrimary, minWidth: 20, textAlign: 'center' },
+  footer: { position: 'absolute', bottom: 0, left: 0, right: 0, paddingHorizontal: 20, paddingTop: 12, backgroundColor: c.bgBase, borderTopWidth: 1, borderTopColor: c.border },
+  cartSummary: { fontSize: 14, color: c.gold, fontWeight: '600', textAlign: 'center', marginBottom: 8 },
+  footerButtons: { flexDirection: 'row', gap: 12 },
+}));
+
 export default function Step4Preorder() {
   const { restaurantId, date, time, partySize, tableId } = useLocalSearchParams<{ restaurantId: string; date: string; time: string; partySize: string; tableId: string }>();
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const { t } = useTranslation();
+  const c = useColors();
+  const styles = useStyles();
   const [cart, setCart] = useState<CartItem[]>([]);
   const [selectedCategory, setSelectedCategory] = useState('All');
   const BOOKING_STEPS = 6;
@@ -68,7 +103,7 @@ export default function Step4Preorder() {
     <View style={[styles.container, { paddingTop: insets.top }]}>
       <View style={styles.header}>
         <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
-          <Ionicons name="chevron-back" size={24} color={colors.textPrimary} />
+          <Ionicons name="chevron-back" size={24} color={c.textPrimary} />
         </TouchableOpacity>
         <Text style={styles.stepLabel}>
           {t('booking.stepCounter', { current: STEP, total: BOOKING_STEPS })}
@@ -76,7 +111,7 @@ export default function Step4Preorder() {
         <View style={styles.cartIndicator}>
           {cart.length > 0 && (
             <>
-              <Ionicons name="cart" size={20} color={colors.gold} />
+              <Ionicons name="cart" size={20} color={c.gold} />
               <Text style={styles.cartCount}>{cart.reduce((s, c) => s + c.quantity, 0)}</Text>
             </>
           )}
@@ -124,12 +159,12 @@ export default function Step4Preorder() {
               <View style={styles.qtyControls}>
                 {qty > 0 && (
                   <TouchableOpacity onPress={() => removeFromCart(item.id)} style={styles.qtyBtn}>
-                    <Ionicons name="remove" size={18} color={colors.gold} />
+                    <Ionicons name="remove" size={18} color={c.gold} />
                   </TouchableOpacity>
                 )}
                 {qty > 0 && <Text style={styles.qtyText}>{qty}</Text>}
                 <TouchableOpacity onPress={() => addToCart(item)} style={[styles.qtyBtn, styles.qtyBtnAdd]}>
-                  <Ionicons name="add" size={18} color={colors.bgBase} />
+                  <Ionicons name="add" size={18} color={c.bgBase} />
                 </TouchableOpacity>
               </View>
             </View>
@@ -151,36 +186,3 @@ export default function Step4Preorder() {
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: colors.bgBase },
-  header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 20, paddingVertical: 12 },
-  backBtn: { width: 40, height: 40, alignItems: 'center', justifyContent: 'center' },
-  stepLabel: { fontSize: 13, color: colors.textMuted, fontWeight: '500' },
-  cartIndicator: { flexDirection: 'row', alignItems: 'center', gap: 4, width: 40 },
-  cartCount: { fontSize: 13, color: colors.gold, fontWeight: '700' },
-  progressBar: { height: 3, backgroundColor: colors.border, marginHorizontal: 20 },
-  progressFill: { height: 3, backgroundColor: colors.gold, borderRadius: 2 },
-  title: { fontSize: 24, fontWeight: '700', color: colors.textPrimary, paddingHorizontal: 20, marginTop: 24 },
-  subtitle: { fontSize: 14, color: colors.textSecondary, paddingHorizontal: 20, marginTop: 4, marginBottom: 16 },
-  categoryScroll: { maxHeight: 40, marginBottom: 16 },
-  categoryChip: { paddingHorizontal: 16, paddingVertical: 8, borderRadius: 999, backgroundColor: colors.bgSurface, borderWidth: 1, borderColor: colors.border },
-  categoryChipActive: { backgroundColor: 'rgba(201, 168, 76, 0.15)', borderColor: colors.gold },
-  categoryText: { fontSize: 13, color: colors.textSecondary, fontWeight: '500' },
-  categoryTextActive: { color: colors.gold },
-  menuList: { paddingHorizontal: 20, paddingBottom: 180 },
-  menuItem: { flexDirection: 'row', paddingVertical: 14, borderBottomWidth: 1, borderBottomColor: colors.border },
-  menuPhoto: { width: 72, height: 72, borderRadius: borderRadius.sm },
-  menuInfo: { flex: 1, marginLeft: 12 },
-  menuName: { fontSize: 15, fontWeight: '600', color: colors.textPrimary },
-  menuDesc: { fontSize: 12, color: colors.textMuted, marginTop: 2 },
-  menuMeta: { flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 6 },
-  menuPrice: { fontSize: 14, fontWeight: '600', color: colors.gold },
-  qtyControls: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-  qtyBtn: { width: 32, height: 32, borderRadius: 999, borderWidth: 1, borderColor: colors.gold, alignItems: 'center', justifyContent: 'center' },
-  qtyBtnAdd: { backgroundColor: colors.gold, borderColor: colors.gold },
-  qtyText: { fontSize: 16, fontWeight: '700', color: colors.textPrimary, minWidth: 20, textAlign: 'center' },
-  footer: { position: 'absolute', bottom: 0, left: 0, right: 0, paddingHorizontal: 20, paddingTop: 12, backgroundColor: colors.bgBase, borderTopWidth: 1, borderTopColor: colors.border },
-  cartSummary: { fontSize: 14, color: colors.gold, fontWeight: '600', textAlign: 'center', marginBottom: 8 },
-  footerButtons: { flexDirection: 'row', gap: 12 },
-});

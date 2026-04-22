@@ -2,7 +2,7 @@ import React from 'react';
 import { View, Text, StyleSheet, Pressable } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
-import { colors, spacing, typography, borderRadius } from '@/lib/theme';
+import { useColors, createStyles, spacing, typography, borderRadius } from '@/lib/theme';
 import type { Href } from 'expo-router';
 
 /** Order: Payments, Saved Places, Rewards, Activity — compact shortcuts */
@@ -22,30 +22,7 @@ type Props = {
   onNavigate: (href: Href) => void;
 };
 
-export function ProfileQuickActions({ onNavigate }: Props) {
-  const { t } = useTranslation();
-
-  return (
-    <View style={styles.grid}>
-      {ACTIONS.map((a) => (
-        <Pressable
-          key={a.key}
-          onPress={() => onNavigate(a.href)}
-          style={({ pressed }) => [styles.tile, pressed && styles.tilePressed]}
-        >
-          <View style={styles.iconWrap}>
-            <Ionicons name={a.icon} size={22} color={colors.gold} />
-          </View>
-          <Text style={styles.label} numberOfLines={2}>
-            {t(`profile.${a.labelKey}`)}
-          </Text>
-        </Pressable>
-      ))}
-    </View>
-  );
-}
-
-const styles = StyleSheet.create({
+const useStyles = createStyles((c) => ({
   grid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
@@ -81,7 +58,32 @@ const styles = StyleSheet.create({
     ...typography.bodySmall,
     fontSize: 13,
     fontWeight: '600',
-    color: colors.textPrimary,
+    color: c.textPrimary,
     textAlign: 'center',
   },
-});
+}));
+
+export function ProfileQuickActions({ onNavigate }: Props) {
+  const c = useColors();
+  const styles = useStyles();
+  const { t } = useTranslation();
+
+  return (
+    <View style={styles.grid}>
+      {ACTIONS.map((a) => (
+        <Pressable
+          key={a.key}
+          onPress={() => onNavigate(a.href)}
+          style={({ pressed }) => [styles.tile, pressed && styles.tilePressed]}
+        >
+          <View style={styles.iconWrap}>
+            <Ionicons name={a.icon} size={22} color={c.gold} />
+          </View>
+          <Text style={styles.label} numberOfLines={2}>
+            {t(`profile.${a.labelKey}`)}
+          </Text>
+        </Pressable>
+      ))}
+    </View>
+  );
+}

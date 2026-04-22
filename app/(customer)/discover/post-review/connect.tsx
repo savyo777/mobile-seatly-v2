@@ -17,7 +17,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { StatusBar } from 'expo-status-bar';
 import { Button } from '@/components/ui';
-import { borderRadius, colors, spacing, typography } from '@/lib/theme';
+import { useColors, createStyles, borderRadius, spacing, typography } from '@/lib/theme';
 import { createSnapPost, getSnapRestaurantName, TAG_POOL } from '@/lib/mock/snaps';
 import { mockCustomer } from '@/lib/mock/users';
 
@@ -25,7 +25,220 @@ const { width: SCREEN_W } = Dimensions.get('window');
 const IMAGE_H = Math.min(SCREEN_W * 0.52, 320);
 const H_PAD = 18;
 
+const useStyles = createStyles((c) => ({
+  screen: {
+    flex: 1,
+    backgroundColor: c.bgBase,
+  },
+  flex: {
+    flex: 1,
+  },
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: H_PAD,
+    paddingBottom: spacing.sm,
+    gap: spacing.sm,
+  },
+  headerIconBtn: {
+    width: 40,
+    height: 40,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  pressed: {
+    opacity: 0.75,
+  },
+  headerTitle: {
+    flex: 1,
+    textAlign: 'center',
+    ...typography.h3,
+    color: c.textPrimary,
+    fontWeight: '600',
+  },
+  headerRight: {
+    width: 40,
+  },
+  scroll: {
+    flex: 1,
+  },
+  scrollContent: {
+    paddingBottom: spacing.lg,
+  },
+  imageBlock: {
+    width: SCREEN_W,
+    alignSelf: 'center',
+    overflow: 'hidden',
+    borderBottomLeftRadius: borderRadius.lg,
+    borderBottomRightRadius: borderRadius.lg,
+  },
+  previewImage: {
+    width: SCREEN_W,
+    height: IMAGE_H,
+    backgroundColor: c.bgElevated,
+  },
+  imageBottomFade: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    bottom: 0,
+    height: 88,
+  },
+  imagePlaceholder: {
+    alignSelf: 'center',
+  },
+  metaSection: {
+    paddingHorizontal: H_PAD,
+    paddingTop: spacing.lg,
+    gap: spacing.md,
+  },
+  identityRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+  },
+  avatar: {
+    width: 40,
+    height: 40,
+    borderRadius: borderRadius.full,
+    backgroundColor: c.bgElevated,
+  },
+  identityText: {
+    flex: 1,
+  },
+  username: {
+    ...typography.body,
+    color: c.goldLight,
+    fontWeight: '700',
+  },
+  restaurantLine: {
+    ...typography.bodySmall,
+    color: c.textSecondary,
+    marginTop: 2,
+  },
+  ratingRow: {
+    gap: spacing.xs,
+  },
+  ratingLabel: {
+    ...typography.bodySmall,
+    color: c.textMuted,
+    fontWeight: '600',
+  },
+  starsRow: {
+    flexDirection: 'row',
+    gap: spacing.md,
+    alignItems: 'center',
+  },
+  inputSection: {
+    marginHorizontal: H_PAD,
+    marginTop: spacing.lg,
+    paddingVertical: spacing.md,
+    paddingHorizontal: spacing.md,
+    borderRadius: borderRadius.md,
+    backgroundColor: 'rgba(255,255,255,0.035)',
+  },
+  input: {
+    minHeight: 120,
+    ...typography.bodyLarge,
+    color: c.textPrimary,
+    textAlignVertical: 'top',
+    padding: 0,
+  },
+  counter: {
+    ...typography.bodySmall,
+    color: c.textMuted,
+    textAlign: 'right',
+    marginTop: spacing.sm,
+  },
+  fieldSection: {
+    marginHorizontal: H_PAD,
+    marginTop: spacing.lg,
+    gap: spacing.sm,
+  },
+  fieldLabel: {
+    ...typography.label,
+    color: c.textMuted,
+  },
+  lineInput: {
+    flex: 1,
+    ...typography.body,
+    color: c.textPrimary,
+    borderWidth: 1,
+    borderColor: c.border,
+    borderRadius: borderRadius.md,
+    paddingHorizontal: spacing.sm,
+    paddingVertical: 9,
+    backgroundColor: 'rgba(255,255,255,0.035)',
+  },
+  tagPoolRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 6,
+  },
+  tagChip: {
+    paddingHorizontal: spacing.sm,
+    paddingVertical: 6,
+    borderRadius: borderRadius.full,
+    borderWidth: 1,
+    borderColor: c.border,
+    backgroundColor: c.bgSurface,
+  },
+  tagChipOn: {
+    borderColor: c.gold,
+    backgroundColor: 'rgba(201,168,76,0.14)',
+  },
+  tagChipText: {
+    ...typography.bodySmall,
+    color: c.textMuted,
+    fontWeight: '600',
+  },
+  tagChipTextOn: {
+    color: c.gold,
+  },
+  customTagRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+  },
+  addBtn: {
+    width: 40,
+    height: 40,
+    borderRadius: borderRadius.full,
+    backgroundColor: c.gold,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  selectedRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 6,
+    marginTop: spacing.xs,
+  },
+  selectedChip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    paddingHorizontal: spacing.sm,
+    paddingVertical: 5,
+    borderRadius: borderRadius.full,
+    backgroundColor: c.gold,
+  },
+  selectedChipText: {
+    ...typography.bodySmall,
+    color: c.bgBase,
+    fontWeight: '700',
+  },
+  footer: {
+    borderTopWidth: StyleSheet.hairlineWidth,
+    borderTopColor: 'rgba(255,255,255,0.06)',
+    backgroundColor: c.bgBase,
+    paddingTop: spacing.md,
+  },
+}));
+
 export default function SnapCaptionScreen() {
+  const c = useColors();
+  const styles = useStyles();
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const { photoUri, restaurantId } = useLocalSearchParams<{ photoUri: string; restaurantId?: string }>();
@@ -86,7 +299,6 @@ export default function SnapCaptionScreen() {
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
         keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 0}
       >
-        {/* Header — flat, no box */}
         <View style={[styles.header, { paddingTop: insets.top + spacing.sm }]}>
           <Pressable
             onPress={() => router.back()}
@@ -95,7 +307,7 @@ export default function SnapCaptionScreen() {
             accessibilityRole="button"
             accessibilityLabel="Back"
           >
-            <Ionicons name="chevron-back" size={22} color={colors.textPrimary} />
+            <Ionicons name="chevron-back" size={22} color={c.textPrimary} />
           </Pressable>
           <Text style={styles.headerTitle} numberOfLines={1}>
             Add Caption
@@ -109,7 +321,6 @@ export default function SnapCaptionScreen() {
           showsVerticalScrollIndicator={false}
           keyboardShouldPersistTaps="handled"
         >
-          {/* Image — full width, top-aligned, social-style */}
           {decodedUri ? (
             <View style={styles.imageBlock}>
               <Image source={{ uri: decodedUri }} style={styles.previewImage} resizeMode="cover" />
@@ -123,7 +334,6 @@ export default function SnapCaptionScreen() {
             <View style={[styles.previewImage, styles.imagePlaceholder]} />
           )}
 
-          {/* User + rating — inline, no card */}
           <View style={styles.metaSection}>
             <View style={styles.identityRow}>
               {mockCustomer.avatarUrl ? (
@@ -146,7 +356,7 @@ export default function SnapCaptionScreen() {
                       <Ionicons
                         name={active ? 'star' : 'star-outline'}
                         size={22}
-                        color={active ? colors.gold : colors.textMuted}
+                        color={active ? c.gold : c.textMuted}
                       />
                     </Pressable>
                   );
@@ -155,13 +365,12 @@ export default function SnapCaptionScreen() {
             </View>
           </View>
 
-          {/* Caption — embedded field, no outer card */}
           <View style={styles.inputSection}>
             <TextInput
               value={caption}
               onChangeText={setCaption}
               placeholder="How was it?"
-              placeholderTextColor={colors.textMuted}
+              placeholderTextColor={c.textMuted}
               multiline
               style={styles.input}
               maxLength={220}
@@ -169,20 +378,18 @@ export default function SnapCaptionScreen() {
             <Text style={styles.counter}>{caption.length}/220</Text>
           </View>
 
-          {/* Dish name */}
           <View style={styles.fieldSection}>
             <Text style={styles.fieldLabel}>Dish name (optional)</Text>
             <TextInput
               value={dish}
               onChangeText={setDish}
               placeholder="e.g. Tonkotsu ramen"
-              placeholderTextColor={colors.textMuted}
+              placeholderTextColor={c.textMuted}
               style={styles.lineInput}
               maxLength={60}
             />
           </View>
 
-          {/* Tags */}
           <View style={styles.fieldSection}>
             <Text style={styles.fieldLabel}>Tags</Text>
             <View style={styles.tagPoolRow}>
@@ -204,7 +411,7 @@ export default function SnapCaptionScreen() {
                 value={tagInput}
                 onChangeText={setTagInput}
                 placeholder="Add your own tag"
-                placeholderTextColor={colors.textMuted}
+                placeholderTextColor={c.textMuted}
                 style={styles.lineInput}
                 onSubmitEditing={addCustomTag}
                 autoCapitalize="none"
@@ -218,7 +425,7 @@ export default function SnapCaptionScreen() {
                   (!tagInput.trim() || pressed) && { opacity: 0.5 },
                 ]}
               >
-                <Ionicons name="add" size={20} color={colors.bgBase} />
+                <Ionicons name="add" size={20} color={c.bgBase} />
               </Pressable>
             </View>
             {tags.length > 0 ? (
@@ -230,7 +437,7 @@ export default function SnapCaptionScreen() {
                     style={styles.selectedChip}
                   >
                     <Text style={styles.selectedChipText}>{t}</Text>
-                    <Ionicons name="close" size={13} color={colors.bgBase} />
+                    <Ionicons name="close" size={13} color={c.bgBase} />
                   </Pressable>
                 ))}
               </View>
@@ -238,7 +445,6 @@ export default function SnapCaptionScreen() {
           </View>
         </ScrollView>
 
-        {/* Post CTA — sticky near bottom */}
         <View
           style={[
             styles.footer,
@@ -259,214 +465,3 @@ export default function SnapCaptionScreen() {
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  screen: {
-    flex: 1,
-    backgroundColor: colors.bgBase,
-  },
-  flex: {
-    flex: 1,
-  },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: H_PAD,
-    paddingBottom: spacing.sm,
-    gap: spacing.sm,
-  },
-  headerIconBtn: {
-    width: 40,
-    height: 40,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  pressed: {
-    opacity: 0.75,
-  },
-  headerTitle: {
-    flex: 1,
-    textAlign: 'center',
-    ...typography.h3,
-    color: colors.textPrimary,
-    fontWeight: '600',
-  },
-  headerRight: {
-    width: 40,
-  },
-  scroll: {
-    flex: 1,
-  },
-  scrollContent: {
-    paddingBottom: spacing.lg,
-  },
-  imageBlock: {
-    width: SCREEN_W,
-    alignSelf: 'center',
-    overflow: 'hidden',
-    borderBottomLeftRadius: borderRadius.lg,
-    borderBottomRightRadius: borderRadius.lg,
-  },
-  previewImage: {
-    width: SCREEN_W,
-    height: IMAGE_H,
-    backgroundColor: colors.bgElevated,
-  },
-  imageBottomFade: {
-    position: 'absolute',
-    left: 0,
-    right: 0,
-    bottom: 0,
-    height: 88,
-  },
-  imagePlaceholder: {
-    alignSelf: 'center',
-  },
-  metaSection: {
-    paddingHorizontal: H_PAD,
-    paddingTop: spacing.lg,
-    gap: spacing.md,
-  },
-  identityRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.sm,
-  },
-  avatar: {
-    width: 40,
-    height: 40,
-    borderRadius: borderRadius.full,
-    backgroundColor: colors.bgElevated,
-  },
-  identityText: {
-    flex: 1,
-  },
-  username: {
-    ...typography.body,
-    color: colors.goldLight,
-    fontWeight: '700',
-  },
-  restaurantLine: {
-    ...typography.bodySmall,
-    color: colors.textSecondary,
-    marginTop: 2,
-  },
-  ratingRow: {
-    gap: spacing.xs,
-  },
-  ratingLabel: {
-    ...typography.bodySmall,
-    color: colors.textMuted,
-    fontWeight: '600',
-  },
-  starsRow: {
-    flexDirection: 'row',
-    gap: spacing.md,
-    alignItems: 'center',
-  },
-  inputSection: {
-    marginHorizontal: H_PAD,
-    marginTop: spacing.lg,
-    paddingVertical: spacing.md,
-    paddingHorizontal: spacing.md,
-    borderRadius: borderRadius.md,
-    backgroundColor: 'rgba(255,255,255,0.035)',
-  },
-  input: {
-    minHeight: 120,
-    ...typography.bodyLarge,
-    color: colors.textPrimary,
-    textAlignVertical: 'top',
-    padding: 0,
-  },
-  counter: {
-    ...typography.bodySmall,
-    color: colors.textMuted,
-    textAlign: 'right',
-    marginTop: spacing.sm,
-  },
-  fieldSection: {
-    marginHorizontal: H_PAD,
-    marginTop: spacing.lg,
-    gap: spacing.sm,
-  },
-  fieldLabel: {
-    ...typography.label,
-    color: colors.textMuted,
-  },
-  lineInput: {
-    flex: 1,
-    ...typography.body,
-    color: colors.textPrimary,
-    borderWidth: 1,
-    borderColor: colors.border,
-    borderRadius: borderRadius.md,
-    paddingHorizontal: spacing.sm,
-    paddingVertical: 9,
-    backgroundColor: 'rgba(255,255,255,0.035)',
-  },
-  tagPoolRow: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 6,
-  },
-  tagChip: {
-    paddingHorizontal: spacing.sm,
-    paddingVertical: 6,
-    borderRadius: borderRadius.full,
-    borderWidth: 1,
-    borderColor: colors.border,
-    backgroundColor: colors.bgSurface,
-  },
-  tagChipOn: {
-    borderColor: colors.gold,
-    backgroundColor: 'rgba(201,168,76,0.14)',
-  },
-  tagChipText: {
-    ...typography.bodySmall,
-    color: colors.textMuted,
-    fontWeight: '600',
-  },
-  tagChipTextOn: {
-    color: colors.gold,
-  },
-  customTagRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.sm,
-  },
-  addBtn: {
-    width: 40,
-    height: 40,
-    borderRadius: borderRadius.full,
-    backgroundColor: colors.gold,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  selectedRow: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 6,
-    marginTop: spacing.xs,
-  },
-  selectedChip: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-    paddingHorizontal: spacing.sm,
-    paddingVertical: 5,
-    borderRadius: borderRadius.full,
-    backgroundColor: colors.gold,
-  },
-  selectedChipText: {
-    ...typography.bodySmall,
-    color: colors.bgBase,
-    fontWeight: '700',
-  },
-  footer: {
-    borderTopWidth: StyleSheet.hairlineWidth,
-    borderTopColor: 'rgba(255,255,255,0.06)',
-    backgroundColor: colors.bgBase,
-    paddingTop: spacing.md,
-  },
-});

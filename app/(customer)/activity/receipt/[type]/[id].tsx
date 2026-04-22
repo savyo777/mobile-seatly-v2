@@ -20,7 +20,7 @@ import { buildReceiptHtml } from '@/lib/receipt/buildReceiptHtml';
 import { getReceiptPayload } from '@/lib/receipt/getReceiptPayload';
 import type { ReceiptActivityKind } from '@/lib/receipt/receiptTypes';
 import { formatCurrency } from '@/lib/utils/formatCurrency';
-import { colors, spacing, borderRadius, typography, shadows } from '@/lib/theme';
+import { useColors, createStyles, spacing, borderRadius, typography, shadows } from '@/lib/theme';
 
 function isReceiptKind(s: string): s is ReceiptActivityKind {
   return s === 'booking' || s === 'order';
@@ -37,10 +37,226 @@ function formatWhen(iso: string, locale: string): string {
   }).format(d);
 }
 
+const useStyles = createStyles((c) => ({
+  root: {
+    flex: 1,
+  },
+  topBar: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: spacing.lg,
+    paddingBottom: spacing.md,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: c.border,
+  },
+  backBtn: {
+    width: 44,
+    minHeight: 44,
+    justifyContent: 'center',
+  },
+  backChevron: {
+    fontSize: 26,
+    color: c.gold,
+  },
+  topBarTitle: {
+    flex: 1,
+    textAlign: 'center',
+    ...typography.bodyLarge,
+    color: c.textPrimary,
+    fontWeight: '700',
+  },
+  scroll: {
+    paddingHorizontal: spacing.lg,
+    paddingTop: spacing.xl,
+    paddingBottom: spacing['2xl'],
+  },
+  brand: {
+    ...typography.label,
+    color: c.gold,
+    marginBottom: spacing.sm,
+  },
+  h1: {
+    ...typography.h1,
+    color: c.gold,
+    marginBottom: spacing.sm,
+  },
+  when: {
+    ...typography.body,
+    color: c.textSecondary,
+    marginBottom: spacing.xl,
+  },
+  row: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: spacing.md,
+    gap: spacing.md,
+  },
+  label: {
+    ...typography.bodySmall,
+    color: c.textMuted,
+    flexShrink: 0,
+  },
+  value: {
+    ...typography.body,
+    color: c.textPrimary,
+    fontWeight: '600',
+    flex: 1,
+    textAlign: 'right',
+  },
+  valueMono: {
+    ...typography.bodySmall,
+    color: c.textPrimary,
+    fontWeight: '600',
+    flex: 1,
+    textAlign: 'right',
+  },
+  sectionTitle: {
+    ...typography.label,
+    color: c.gold,
+    marginTop: spacing.lg,
+    marginBottom: spacing.md,
+  },
+  lineRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: spacing.sm,
+    marginBottom: spacing.md,
+    paddingBottom: spacing.md,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: c.border,
+  },
+  lineMain: {
+    flex: 1,
+    minWidth: 0,
+  },
+  lineName: {
+    ...typography.body,
+    color: c.textPrimary,
+    fontWeight: '600',
+  },
+  lineNote: {
+    ...typography.bodySmall,
+    color: c.textMuted,
+    marginTop: 4,
+  },
+  lineQty: {
+    ...typography.bodySmall,
+    color: c.textSecondary,
+    width: 36,
+    textAlign: 'right',
+  },
+  lineTotal: {
+    ...typography.bodySmall,
+    color: c.textPrimary,
+    fontWeight: '600',
+    width: 72,
+    textAlign: 'right',
+  },
+  totalsBox: {
+    marginTop: spacing.md,
+    padding: spacing.lg,
+    borderRadius: borderRadius.lg,
+    backgroundColor: c.bgSurface,
+    borderWidth: 1,
+    borderColor: c.border,
+    ...shadows.card,
+  },
+  totalLine: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginBottom: spacing.sm,
+  },
+  totalGrand: {
+    marginTop: spacing.sm,
+    paddingTop: spacing.md,
+    borderTopWidth: StyleSheet.hairlineWidth,
+    borderTopColor: c.border,
+    marginBottom: 0,
+  },
+  totalLabel: {
+    ...typography.bodySmall,
+    color: c.textMuted,
+  },
+  totalVal: {
+    ...typography.bodySmall,
+    color: c.textPrimary,
+    fontWeight: '600',
+  },
+  totalLabelGold: {
+    ...typography.body,
+    color: c.gold,
+    fontWeight: '700',
+  },
+  totalGold: {
+    ...typography.bodyLarge,
+    color: c.gold,
+    fontWeight: '800',
+  },
+  emptyItems: {
+    ...typography.body,
+    color: c.textMuted,
+    marginTop: spacing.md,
+    fontStyle: 'italic',
+  },
+  footerNote: {
+    ...typography.bodySmall,
+    color: c.textMuted,
+    marginTop: spacing.lg,
+    lineHeight: 20,
+  },
+  guestBox: {
+    marginTop: spacing['2xl'],
+    paddingTop: spacing.lg,
+    borderTopWidth: StyleSheet.hairlineWidth,
+    borderTopColor: c.border,
+  },
+  guestName: {
+    ...typography.bodyLarge,
+    color: c.textPrimary,
+    fontWeight: '600',
+  },
+  guestEmail: {
+    ...typography.body,
+    color: c.textSecondary,
+    marginTop: spacing.xs,
+  },
+  actions: {
+    paddingHorizontal: spacing.lg,
+    paddingTop: spacing.md,
+    borderTopWidth: StyleSheet.hairlineWidth,
+    borderTopColor: c.border,
+    backgroundColor: c.bgBase,
+  },
+  actionGap: {
+    height: spacing.sm,
+  },
+  loadingOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: 'rgba(0,0,0,0.35)',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  centered: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: spacing.lg,
+  },
+  errorText: {
+    ...typography.body,
+    color: c.textSecondary,
+    textAlign: 'center',
+  },
+}));
+
 export default function ReceiptScreen() {
   const { t, i18n } = useTranslation();
   const router = useRouter();
   const insets = useSafeAreaInsets();
+  const c = useColors();
+  const styles = useStyles();
   const { type: rawType, id: rawId } = useLocalSearchParams<{ type: string; id: string }>();
 
   const [actionLoading, setActionLoading] = useState(false);
@@ -69,9 +285,7 @@ export default function ReceiptScreen() {
 
   const handlePrint = useCallback(() => {
     if (!html) return;
-    runWithLoading(async () => {
-      await Print.printAsync({ html });
-    });
+    runWithLoading(async () => { await Print.printAsync({ html }); });
   }, [html, runWithLoading]);
 
   const handleShare = useCallback(() => {
@@ -79,10 +293,7 @@ export default function ReceiptScreen() {
     runWithLoading(async () => {
       const { uri } = await Print.printToFileAsync({ html });
       const can = await Sharing.isAvailableAsync();
-      if (!can) {
-        Alert.alert(t('receipt.shareUnavailable'));
-        return;
-      }
+      if (!can) { Alert.alert(t('receipt.shareUnavailable')); return; }
       await Sharing.shareAsync(uri, {
         mimeType: 'application/pdf',
         dialogTitle: t('receipt.shareDialogTitle'),
@@ -131,20 +342,13 @@ export default function ReceiptScreen() {
             style={({ pressed }) => [styles.backBtn, pressed && { opacity: 0.75 }]}
             hitSlop={12}
           >
-            <Text style={styles.backChevron} accessible={false}>
-              ←
-            </Text>
+            <Text style={styles.backChevron} accessible={false}>←</Text>
           </Pressable>
-          <Text style={styles.topBarTitle} numberOfLines={1}>
-            {t('receipt.title')}
-          </Text>
+          <Text style={styles.topBarTitle} numberOfLines={1}>{t('receipt.title')}</Text>
           <View style={styles.backBtn} />
         </Animated.View>
 
-        <ScrollView
-          showsVerticalScrollIndicator={false}
-          contentContainerStyle={styles.scroll}
-        >
+        <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scroll}>
           <Animated.View entering={FadeInDown.duration(420).delay(60)}>
             <Text style={styles.brand}>CENAIVA</Text>
             <Text style={styles.h1}>{payload.restaurantName}</Text>
@@ -160,9 +364,7 @@ export default function ReceiptScreen() {
             </View>
             <View style={styles.row}>
               <Text style={styles.label}>{t('receipt.reference')}</Text>
-              <Text style={styles.valueMono} numberOfLines={1}>
-                {payload.referenceId}
-              </Text>
+              <Text style={styles.valueMono} numberOfLines={1}>{payload.referenceId}</Text>
             </View>
 
             {payload.items.length > 0 ? (
@@ -171,9 +373,7 @@ export default function ReceiptScreen() {
                 {payload.items.map((it, idx) => (
                   <View key={`${it.name}-${idx}`} style={styles.lineRow}>
                     <View style={styles.lineMain}>
-                      <Text style={styles.lineName} numberOfLines={2}>
-                        {it.name}
-                      </Text>
+                      <Text style={styles.lineName} numberOfLines={2}>{it.name}</Text>
                       {it.note ? <Text style={styles.lineNote}>{it.note}</Text> : null}
                     </View>
                     <Text style={styles.lineQty}>×{it.quantity}</Text>
@@ -214,19 +414,9 @@ export default function ReceiptScreen() {
         </ScrollView>
 
         <Animated.View entering={FadeInDown.duration(400).delay(120)} style={styles.actions}>
-          <Button
-            title={t('receipt.downloadPdf')}
-            onPress={handleDownload}
-            variant="outlined"
-            disabled={actionLoading}
-          />
+          <Button title={t('receipt.downloadPdf')} onPress={handleDownload} variant="outlined" disabled={actionLoading} />
           <View style={styles.actionGap} />
-          <Button
-            title={t('receipt.share')}
-            onPress={handleShare}
-            variant="outlined"
-            disabled={actionLoading}
-          />
+          <Button title={t('receipt.share')} onPress={handleShare} variant="outlined" disabled={actionLoading} />
           <View style={styles.actionGap} />
           <Button title={t('receipt.print')} onPress={handlePrint} disabled={actionLoading} />
         </Animated.View>
@@ -234,223 +424,9 @@ export default function ReceiptScreen() {
 
       {actionLoading ? (
         <View style={styles.loadingOverlay} pointerEvents="none">
-          <ActivityIndicator size="large" color={colors.gold} />
+          <ActivityIndicator size="large" color={c.gold} />
         </View>
       ) : null}
     </ScreenWrapper>
   );
 }
-
-const styles = StyleSheet.create({
-  root: {
-    flex: 1,
-  },
-  topBar: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: spacing.lg,
-    paddingBottom: spacing.md,
-    borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: colors.border,
-  },
-  backBtn: {
-    width: 44,
-    minHeight: 44,
-    justifyContent: 'center',
-  },
-  backChevron: {
-    fontSize: 26,
-    color: colors.gold,
-  },
-  topBarTitle: {
-    flex: 1,
-    textAlign: 'center',
-    ...typography.bodyLarge,
-    color: colors.textPrimary,
-    fontWeight: '700',
-  },
-  scroll: {
-    paddingHorizontal: spacing.lg,
-    paddingTop: spacing.xl,
-    paddingBottom: spacing['2xl'],
-  },
-  brand: {
-    ...typography.label,
-    color: colors.gold,
-    marginBottom: spacing.sm,
-  },
-  h1: {
-    ...typography.h1,
-    color: colors.gold,
-    marginBottom: spacing.sm,
-  },
-  when: {
-    ...typography.body,
-    color: colors.textSecondary,
-    marginBottom: spacing.xl,
-  },
-  row: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: spacing.md,
-    gap: spacing.md,
-  },
-  label: {
-    ...typography.bodySmall,
-    color: colors.textMuted,
-    flexShrink: 0,
-  },
-  value: {
-    ...typography.body,
-    color: colors.textPrimary,
-    fontWeight: '600',
-    flex: 1,
-    textAlign: 'right',
-  },
-  valueMono: {
-    ...typography.bodySmall,
-    color: colors.textPrimary,
-    fontWeight: '600',
-    flex: 1,
-    textAlign: 'right',
-  },
-  sectionTitle: {
-    ...typography.label,
-    color: colors.gold,
-    marginTop: spacing.lg,
-    marginBottom: spacing.md,
-  },
-  lineRow: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    gap: spacing.sm,
-    marginBottom: spacing.md,
-    paddingBottom: spacing.md,
-    borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: colors.border,
-  },
-  lineMain: {
-    flex: 1,
-    minWidth: 0,
-  },
-  lineName: {
-    ...typography.body,
-    color: colors.textPrimary,
-    fontWeight: '600',
-  },
-  lineNote: {
-    ...typography.bodySmall,
-    color: colors.textMuted,
-    marginTop: 4,
-  },
-  lineQty: {
-    ...typography.bodySmall,
-    color: colors.textSecondary,
-    width: 36,
-    textAlign: 'right',
-  },
-  lineTotal: {
-    ...typography.bodySmall,
-    color: colors.textPrimary,
-    fontWeight: '600',
-    width: 72,
-    textAlign: 'right',
-  },
-  totalsBox: {
-    marginTop: spacing.md,
-    padding: spacing.lg,
-    borderRadius: borderRadius.lg,
-    backgroundColor: colors.bgSurface,
-    borderWidth: 1,
-    borderColor: colors.border,
-    ...shadows.card,
-  },
-  totalLine: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginBottom: spacing.sm,
-  },
-  totalGrand: {
-    marginTop: spacing.sm,
-    paddingTop: spacing.md,
-    borderTopWidth: StyleSheet.hairlineWidth,
-    borderTopColor: colors.border,
-    marginBottom: 0,
-  },
-  totalLabel: {
-    ...typography.bodySmall,
-    color: colors.textMuted,
-  },
-  totalVal: {
-    ...typography.bodySmall,
-    color: colors.textPrimary,
-    fontWeight: '600',
-  },
-  totalLabelGold: {
-    ...typography.body,
-    color: colors.gold,
-    fontWeight: '700',
-  },
-  totalGold: {
-    ...typography.bodyLarge,
-    color: colors.gold,
-    fontWeight: '800',
-  },
-  emptyItems: {
-    ...typography.body,
-    color: colors.textMuted,
-    marginTop: spacing.md,
-    fontStyle: 'italic',
-  },
-  footerNote: {
-    ...typography.bodySmall,
-    color: colors.textMuted,
-    marginTop: spacing.lg,
-    lineHeight: 20,
-  },
-  guestBox: {
-    marginTop: spacing['2xl'],
-    paddingTop: spacing.lg,
-    borderTopWidth: StyleSheet.hairlineWidth,
-    borderTopColor: colors.border,
-  },
-  guestName: {
-    ...typography.bodyLarge,
-    color: colors.textPrimary,
-    fontWeight: '600',
-  },
-  guestEmail: {
-    ...typography.body,
-    color: colors.textSecondary,
-    marginTop: spacing.xs,
-  },
-  actions: {
-    paddingHorizontal: spacing.lg,
-    paddingTop: spacing.md,
-    borderTopWidth: StyleSheet.hairlineWidth,
-    borderTopColor: colors.border,
-    backgroundColor: colors.bgBase,
-  },
-  actionGap: {
-    height: spacing.sm,
-  },
-  loadingOverlay: {
-    ...StyleSheet.absoluteFillObject,
-    backgroundColor: 'rgba(0,0,0,0.35)',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  centered: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: spacing.lg,
-  },
-  errorText: {
-    ...typography.body,
-    color: colors.textSecondary,
-    textAlign: 'center',
-  },
-});

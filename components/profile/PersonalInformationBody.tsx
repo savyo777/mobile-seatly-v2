@@ -1,233 +1,330 @@
-import React, { useState } from 'react';
-import { View, Text, StyleSheet, Image, Pressable } from 'react-native';
-import { LinearGradient } from 'expo-linear-gradient';
+import React, { useState, useCallback } from 'react';
+import {
+  View,
+  Text,
+  StyleSheet,
+  Image,
+  Pressable,
+  TextInput,
+  ScrollView,
+  KeyboardAvoidingView,
+  Platform,
+  Alert,
+} from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { useTranslation } from 'react-i18next';
-import { Input } from '@/components/ui';
-import { Button } from '@/components/ui';
-import { ProfileSectionTitle } from '@/components/profile/ProfileSectionTitle';
 import { mockCustomer } from '@/lib/mock/users';
-import { colors, spacing, typography, borderRadius } from '@/lib/theme';
+import { useColors, createStyles, spacing, borderRadius, typography } from '@/lib/theme';
 
-export function PersonalInformationBody() {
-  const { t } = useTranslation();
-  const [editing, setEditing] = useState(false);
-  const [fullName, setFullName] = useState(mockCustomer.fullName);
-  const [email, setEmail] = useState(mockCustomer.email);
-  const [phone, setPhone] = useState(mockCustomer.phone);
-  const [dob] = useState('May 12, 1998');
-  const [city] = useState('Milton, Ontario');
-  const [language] = useState('English');
+const BIO_LIMIT = 150;
 
-  return (
-    <View style={styles.wrap}>
-      <LinearGradient colors={['#1E1A14', '#12100E', '#0A0A0A']} style={styles.heroBand} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}>
-        <View style={styles.avatarRing}>
-          {mockCustomer.avatarUrl ? (
-            <Image source={{ uri: mockCustomer.avatarUrl }} style={styles.avatar} />
-          ) : (
-            <View style={[styles.avatar, styles.avatarPh]}>
-              <Ionicons name="person" size={44} color={colors.textMuted} />
-            </View>
-          )}
-        </View>
-        <Text style={styles.heroName}>{mockCustomer.fullName}</Text>
-        <Text style={styles.heroMeta}>{mockCustomer.email}</Text>
-        <Pressable
-          style={({ pressed }) => [styles.photoBtn, pressed && { opacity: 0.8 }]}
-          onPress={() => {}}
-          accessibilityRole="button"
-        >
-          <Text style={styles.photoBtnText}>{t('common.edit')} photo</Text>
-        </Pressable>
-      </LinearGradient>
+type FormState = {
+  displayName: string;
+  username: string;
+  bio: string;
+  email: string;
+  phone: string;
+};
 
-      <View style={styles.toolbar}>
-        <Button
-          title={editing ? t('common.done') : t('common.edit')}
-          onPress={() => setEditing(!editing)}
-          variant="outlined"
-          size="sm"
-          fullWidth={false}
-          style={styles.actionBtn}
-        />
-      </View>
-
-      <ProfileSectionTitle>Account</ProfileSectionTitle>
-      <View style={styles.surface}>
-        <Input
-          label={t('profile.fullNameLabel')}
-          value={fullName}
-          onChangeText={setFullName}
-          editable={editing}
-          icon="person-outline"
-        />
-        <Input
-          label={t('profile.emailLabel')}
-          value={email}
-          onChangeText={setEmail}
-          editable={editing}
-          keyboardType="email-address"
-          autoCapitalize="none"
-          icon="mail-outline"
-        />
-        <Input
-          label={t('profile.phoneLabel')}
-          value={phone}
-          onChangeText={setPhone}
-          editable={editing}
-          keyboardType="phone-pad"
-          icon="call-outline"
-        />
-      </View>
-
-      <ProfileSectionTitle>Profile details</ProfileSectionTitle>
-      <View style={styles.surface}>
-        <ReadOnlyRow label="Date of birth" value={dob} icon="calendar-outline" />
-        <ReadOnlyRow label="City" value={city} icon="location-outline" />
-        <ReadOnlyRow label="Preferred language" value={language} icon="language-outline" last />
-      </View>
-
-      <Button title={t('common.save')} onPress={() => setEditing(false)} variant="primary" size="md" style={styles.save} />
-    </View>
+function useForm(initial: FormState) {
+  const [values, setValues] = useState(initial);
+  const [original] = useState(initial);
+  const isDirty = Object.keys(values).some(
+    (k) => values[k as keyof FormState] !== original[k as keyof FormState],
   );
+  const set = useCallback((field: keyof FormState) => (value: string) => {
+    setValues((prev) => ({ ...prev, [field]: value }));
+  }, []);
+  return { values, set, isDirty };
 }
 
-function ReadOnlyRow({
-  label,
-  value,
-  icon,
-  last,
-}: {
-  label: string;
-  value: string;
-  icon: keyof typeof Ionicons.glyphMap;
-  last?: boolean;
-}) {
-  return (
-    <View style={[styles.readRow, !last && styles.readRowBorder]}>
-      <View style={styles.readLeft}>
-        <View style={styles.readIcon}>
-          <Ionicons name={icon} size={17} color={colors.gold} />
-        </View>
-        <View style={styles.readText}>
-          <Text style={styles.readLabel}>{label}</Text>
-          <Text style={styles.readValue}>{value}</Text>
-        </View>
-      </View>
-    </View>
-  );
-}
-
-const styles = StyleSheet.create({
-  wrap: {
-    paddingBottom: spacing['2xl'],
+const useStyles = createStyles((c) => ({
+  scroll: {
+    paddingBottom: spacing['4xl'],
   },
-  heroBand: {
-    borderRadius: borderRadius.xl,
-    paddingVertical: spacing['2xl'],
-    paddingHorizontal: spacing.lg,
+
+  avatarSection: {
     alignItems: 'center',
-    marginBottom: spacing.lg,
-    borderWidth: 1,
-    borderColor: 'rgba(201, 168, 76, 0.15)',
-    overflow: 'hidden',
+    paddingVertical: spacing.xl,
+    gap: spacing.sm,
   },
   avatarRing: {
+    borderWidth: 2,
+    borderColor: c.gold,
+    borderRadius: 50,
     padding: 3,
-    borderRadius: 999,
-    borderWidth: 1,
-    borderColor: 'rgba(201, 168, 76, 0.4)',
-    marginBottom: spacing.md,
+    position: 'relative',
   },
   avatar: {
     width: 88,
     height: 88,
     borderRadius: 44,
-    backgroundColor: colors.bgElevated,
+    backgroundColor: c.bgElevated,
   },
-  avatarPh: {
+  avatarFallback: { alignItems: 'center', justifyContent: 'center' },
+  cameraOverlay: {
+    position: 'absolute',
+    bottom: 2,
+    right: 2,
+    width: 26,
+    height: 26,
+    borderRadius: 13,
+    backgroundColor: c.gold,
     alignItems: 'center',
     justifyContent: 'center',
+    borderWidth: 2,
+    borderColor: c.bgBase,
   },
-  heroName: {
-    fontSize: 22,
-    fontWeight: '800',
-    color: colors.textPrimary,
-    letterSpacing: -0.4,
-    marginBottom: 4,
-  },
-  heroMeta: {
-    ...typography.bodySmall,
-    color: colors.textSecondary,
-    marginBottom: spacing.md,
-  },
-  photoBtn: {
-    paddingVertical: 6,
-    paddingHorizontal: spacing.md,
-  },
-  photoBtnText: {
-    ...typography.bodySmall,
-    color: colors.gold,
-    fontWeight: '700',
-  },
-  toolbar: {
-    flexDirection: 'row',
-    justifyContent: 'flex-end',
-    marginBottom: spacing.lg,
-  },
-  actionBtn: {
-    minWidth: 120,
-  },
-  surface: {
-    borderRadius: borderRadius.xl,
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.08)',
-    backgroundColor: 'rgba(255,255,255,0.03)',
-    paddingHorizontal: spacing.md,
-    paddingTop: spacing.sm,
-    paddingBottom: spacing.xs,
-    marginBottom: spacing.lg,
-  },
-  save: {
-    marginTop: spacing.sm,
-  },
-  readRow: {
-    paddingVertical: spacing.md,
-  },
-  readRowBorder: {
-    borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: 'rgba(255,255,255,0.06)',
-  },
-  readLeft: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    gap: spacing.md,
-  },
-  readIcon: {
-    width: 36,
-    height: 36,
-    borderRadius: 10,
-    backgroundColor: 'rgba(201, 168, 76, 0.1)',
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderWidth: 1,
-    borderColor: 'rgba(201, 168, 76, 0.15)',
-  },
-  readText: {
-    flex: 1,
-  },
-  readLabel: {
-    ...typography.bodySmall,
-    color: colors.textMuted,
-    marginBottom: 4,
-    fontSize: 11,
-    letterSpacing: 0.4,
-    textTransform: 'uppercase',
-  },
-  readValue: {
-    ...typography.bodyLarge,
-    color: colors.textPrimary,
+  changePhotoLabel: {
+    fontSize: 13,
+    color: c.gold,
     fontWeight: '600',
   },
-});
+
+  group: {
+    marginHorizontal: spacing.lg,
+    marginBottom: spacing.md,
+    borderRadius: borderRadius.lg,
+    backgroundColor: 'rgba(255,255,255,0.04)',
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: 'rgba(255,255,255,0.08)',
+    overflow: 'hidden',
+  },
+
+  fieldWrap: {
+    paddingHorizontal: spacing.md,
+    paddingTop: 10,
+    paddingBottom: 10,
+  },
+  fieldBorder: {
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: 'rgba(255,255,255,0.07)',
+  },
+  fieldLabel: {
+    fontSize: 11,
+    fontWeight: '600',
+    color: c.textMuted,
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+    marginBottom: 4,
+  },
+  fieldInputRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  fieldPrefix: {
+    fontSize: 15,
+    color: c.textMuted,
+    marginRight: 2,
+  },
+  fieldInput: {
+    flex: 1,
+    fontSize: 15,
+    color: c.textPrimary,
+    paddingVertical: 2,
+  },
+  fieldInputFocused: {
+    color: c.textPrimary,
+  },
+
+  bioWrap: {
+    padding: spacing.md,
+  },
+  bioInput: {
+    fontSize: 15,
+    color: c.textPrimary,
+    minHeight: 72,
+    lineHeight: 22,
+    paddingTop: 6,
+    paddingBottom: 6,
+    textAlignVertical: 'top',
+  },
+  bioCounter: {
+    fontSize: 11,
+    color: c.textMuted,
+    textAlign: 'right',
+    marginTop: 4,
+  },
+
+  saveBtn: {
+    marginHorizontal: spacing.lg,
+    marginTop: spacing.md,
+    paddingVertical: 14,
+    borderRadius: borderRadius.lg,
+    backgroundColor: c.gold,
+    alignItems: 'center',
+    shadowColor: c.gold,
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 4,
+  },
+  saveBtnDisabled: {
+    backgroundColor: 'rgba(255,255,255,0.07)',
+    shadowOpacity: 0,
+    elevation: 0,
+  },
+  saveBtnText: {
+    fontSize: 15,
+    fontWeight: '700',
+    color: c.bgBase,
+  },
+  saveBtnTextDisabled: {
+    color: c.textMuted,
+  },
+}));
+
+export function PersonalInformationBody() {
+  const c = useColors();
+  const styles = useStyles();
+  const { values, set, isDirty } = useForm({
+    displayName: mockCustomer.fullName,
+    username: 'alexj',
+    bio: 'Chasing great meals across the city.',
+    email: mockCustomer.email,
+    phone: mockCustomer.phone,
+  });
+
+  const handleSave = useCallback(() => {
+    Alert.alert('Saved', 'Your profile has been updated.');
+  }, []);
+
+  return (
+    <KeyboardAvoidingView
+      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+      style={{ flex: 1 }}
+    >
+      <ScrollView
+        showsVerticalScrollIndicator={false}
+        keyboardShouldPersistTaps="handled"
+        contentContainerStyle={styles.scroll}
+      >
+        {/* Avatar */}
+        <View style={styles.avatarSection}>
+          <View style={styles.avatarRing}>
+            {mockCustomer.avatarUrl ? (
+              <Image source={{ uri: mockCustomer.avatarUrl }} style={styles.avatar} />
+            ) : (
+              <View style={[styles.avatar, styles.avatarFallback]}>
+                <Ionicons name="person" size={36} color={c.textMuted} />
+              </View>
+            )}
+            <View style={styles.cameraOverlay}>
+              <Ionicons name="camera" size={14} color="#fff" />
+            </View>
+          </View>
+          <Text style={styles.changePhotoLabel}>Change photo</Text>
+        </View>
+
+        {/* Identity fields */}
+        <View style={styles.group}>
+          <Field
+            label="Display name"
+            value={values.displayName}
+            onChangeText={set('displayName')}
+            placeholder="Your full name"
+            autoCapitalize="words"
+          />
+          <Field
+            label="Username"
+            value={values.username}
+            onChangeText={set('username')}
+            placeholder="username"
+            autoCapitalize="none"
+            prefix="@"
+            isLast
+          />
+        </View>
+
+        {/* Bio */}
+        <View style={styles.group}>
+          <View style={styles.bioWrap}>
+            <Text style={styles.fieldLabel}>Bio</Text>
+            <TextInput
+              value={values.bio}
+              onChangeText={(v) => v.length <= BIO_LIMIT && set('bio')(v)}
+              placeholder="Write something about yourself…"
+              placeholderTextColor={c.textMuted}
+              style={styles.bioInput}
+              multiline
+              maxLength={BIO_LIMIT}
+            />
+            <Text style={styles.bioCounter}>
+              {values.bio.length}/{BIO_LIMIT}
+            </Text>
+          </View>
+        </View>
+
+        {/* Contact fields */}
+        <View style={styles.group}>
+          <Field
+            label="Email"
+            value={values.email}
+            onChangeText={set('email')}
+            placeholder="you@example.com"
+            keyboardType="email-address"
+            autoCapitalize="none"
+          />
+          <Field
+            label="Phone"
+            value={values.phone}
+            onChangeText={set('phone')}
+            placeholder="+1 (000) 000-0000"
+            keyboardType="phone-pad"
+            isLast
+          />
+        </View>
+
+        {/* Save */}
+        <Pressable
+          onPress={handleSave}
+          disabled={!isDirty}
+          style={({ pressed }) => [
+            styles.saveBtn,
+            !isDirty && styles.saveBtnDisabled,
+            pressed && isDirty && { opacity: 0.8 },
+          ]}
+        >
+          <Text style={[styles.saveBtnText, !isDirty && styles.saveBtnTextDisabled]}>
+            Save changes
+          </Text>
+        </Pressable>
+      </ScrollView>
+    </KeyboardAvoidingView>
+  );
+}
+
+type FieldProps = {
+  label: string;
+  value: string;
+  onChangeText: (v: string) => void;
+  placeholder?: string;
+  prefix?: string;
+  isLast?: boolean;
+  autoCapitalize?: 'none' | 'words' | 'sentences' | 'characters';
+  keyboardType?: 'default' | 'email-address' | 'phone-pad';
+};
+
+function Field({ label, value, onChangeText, placeholder, prefix, isLast, autoCapitalize, keyboardType }: FieldProps) {
+  const c = useColors();
+  const styles = useStyles();
+  const [focused, setFocused] = useState(false);
+  return (
+    <View style={[styles.fieldWrap, !isLast && styles.fieldBorder]}>
+      <Text style={styles.fieldLabel}>{label}</Text>
+      <View style={styles.fieldInputRow}>
+        {prefix ? <Text style={styles.fieldPrefix}>{prefix}</Text> : null}
+        <TextInput
+          value={value}
+          onChangeText={onChangeText}
+          placeholder={placeholder}
+          placeholderTextColor={c.textMuted}
+          style={[styles.fieldInput, focused && styles.fieldInputFocused]}
+          autoCapitalize={autoCapitalize ?? 'sentences'}
+          keyboardType={keyboardType ?? 'default'}
+          onFocus={() => setFocused(true)}
+          onBlur={() => setFocused(false)}
+        />
+      </View>
+    </View>
+  );
+}

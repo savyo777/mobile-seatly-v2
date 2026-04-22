@@ -1,6 +1,6 @@
 import React from 'react';
-import { Text, StyleSheet, Pressable } from 'react-native';
-import { colors, spacing, typography, borderRadius } from '@/lib/theme';
+import { Text, Pressable } from 'react-native';
+import { useColors, createStyles, spacing, typography, borderRadius } from '@/lib/theme';
 
 type Props = {
   label: string;
@@ -8,7 +8,35 @@ type Props = {
   onPress: () => void;
 };
 
+const useStyles = createStyles((c) => ({
+  chip: {
+    paddingVertical: spacing.sm,
+    paddingHorizontal: spacing.md,
+    borderRadius: borderRadius.full,
+    borderWidth: 1,
+    borderColor: c.border,
+    backgroundColor: c.bgElevated,
+  },
+  chipSelected: {
+    borderColor: c.gold,
+    backgroundColor: 'rgba(201, 168, 76, 0.12)',
+  },
+  chipPressed: {
+    opacity: 0.85,
+  },
+  label: {
+    ...typography.bodySmall,
+    color: c.textSecondary,
+    fontWeight: '600',
+  },
+  labelSelected: {
+    color: c.gold,
+  },
+}));
+
 export function PreferenceChip({ label, selected, onPress }: Props) {
+  const styles = useStyles();
+
   return (
     <Pressable
       onPress={onPress}
@@ -22,29 +50,3 @@ export function PreferenceChip({ label, selected, onPress }: Props) {
     </Pressable>
   );
 }
-
-const styles = StyleSheet.create({
-  chip: {
-    paddingVertical: spacing.sm,
-    paddingHorizontal: spacing.md,
-    borderRadius: borderRadius.full,
-    borderWidth: 1,
-    borderColor: colors.border,
-    backgroundColor: colors.bgElevated,
-  },
-  chipSelected: {
-    borderColor: colors.gold,
-    backgroundColor: 'rgba(201, 168, 76, 0.12)',
-  },
-  chipPressed: {
-    opacity: 0.85,
-  },
-  label: {
-    ...typography.bodySmall,
-    color: colors.textSecondary,
-    fontWeight: '600',
-  },
-  labelSelected: {
-    color: colors.gold,
-  },
-});

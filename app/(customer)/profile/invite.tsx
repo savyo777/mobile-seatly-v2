@@ -5,10 +5,117 @@ import { Ionicons } from '@expo/vector-icons';
 import { ProfileStackScreen } from '@/components/profile/ProfileStackScreen';
 import { Card, Button, Badge } from '@/components/ui';
 import { mockInviteRecords, REFERRAL_CODE, REFERRAL_THEY_GET, REFERRAL_YOU_GET } from '@/lib/mock/profileScreens';
-import { colors, spacing, typography, borderRadius, shadows } from '@/lib/theme';
+import { useColors, createStyles, spacing, typography, borderRadius, shadows } from '@/lib/theme';
+
+const useStyles = createStyles((c) => ({
+  hero: {
+    marginBottom: spacing.xl,
+    borderColor: 'rgba(201, 168, 76, 0.35)',
+  },
+  heroTitle: {
+    ...typography.h3,
+    color: c.textPrimary,
+    fontWeight: '700',
+    marginBottom: spacing.sm,
+  },
+  heroBody: {
+    ...typography.body,
+    color: c.textSecondary,
+    lineHeight: 22,
+    marginBottom: spacing.lg,
+  },
+  rewardPills: {
+    flexDirection: 'row',
+    gap: spacing.md,
+  },
+  pill: {
+    flex: 1,
+    backgroundColor: c.bgElevated,
+    borderRadius: borderRadius.md,
+    padding: spacing.md,
+    borderWidth: 1,
+    borderColor: c.border,
+  },
+  pillLabel: {
+    ...typography.bodySmall,
+    color: c.textMuted,
+    marginBottom: 4,
+  },
+  pillValue: {
+    fontSize: 22,
+    fontWeight: '800',
+    color: c.gold,
+  },
+  codeLabel: {
+    ...typography.label,
+    color: c.textMuted,
+    marginBottom: spacing.sm,
+  },
+  codeBox: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    backgroundColor: c.bgSurface,
+    borderRadius: borderRadius.lg,
+    borderWidth: 1,
+    borderColor: 'rgba(201, 168, 76, 0.4)',
+    paddingVertical: spacing.lg,
+    paddingHorizontal: spacing.lg,
+    marginBottom: spacing.md,
+    ...shadows.card,
+  },
+  codeText: {
+    fontSize: 20,
+    fontWeight: '700',
+    color: c.gold,
+    letterSpacing: 2,
+  },
+  shareBtn: {
+    marginBottom: spacing['2xl'],
+  },
+  sectionTitle: {
+    ...typography.h3,
+    color: c.textPrimary,
+    marginBottom: spacing.md,
+    fontWeight: '700',
+  },
+  invRow: {
+    marginBottom: spacing.md,
+    ...shadows.card,
+  },
+  invTop: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+    gap: spacing.md,
+  },
+  invName: {
+    ...typography.bodyLarge,
+    color: c.textPrimary,
+    fontWeight: '700',
+  },
+  invEmail: {
+    ...typography.bodySmall,
+    color: c.textMuted,
+    marginTop: 2,
+  },
+  invDate: {
+    ...typography.bodySmall,
+    color: c.textSecondary,
+    marginTop: spacing.sm,
+  },
+  invEarned: {
+    ...typography.bodySmall,
+    color: c.gold,
+    fontWeight: '600',
+    marginTop: spacing.xs,
+  },
+}));
 
 export default function InviteScreen() {
   const { t } = useTranslation();
+  const c = useColors();
+  const styles = useStyles();
 
   const share = async () => {
     await Share.share({
@@ -18,7 +125,7 @@ export default function InviteScreen() {
   };
 
   return (
-    <ProfileStackScreen title={t('profile.inviteFriends')}>
+    <ProfileStackScreen title="Refer & Earn">
       <Card style={{ ...styles.hero, ...shadows.goldGlow }}>
         <Text style={styles.heroTitle}>Invite friends and earn dining credits</Text>
         <Text style={styles.heroBody}>
@@ -39,7 +146,7 @@ export default function InviteScreen() {
       <Text style={styles.codeLabel}>Your referral code</Text>
       <Pressable style={styles.codeBox} onPress={share}>
         <Text style={styles.codeText}>{REFERRAL_CODE}</Text>
-        <Ionicons name="share-outline" size={22} color={colors.gold} />
+        <Ionicons name="share-outline" size={22} color={c.gold} />
       </Pressable>
       <Button title="Share invite link" onPress={share} variant="primary" size="md" style={styles.shareBtn} />
 
@@ -62,108 +169,3 @@ export default function InviteScreen() {
     </ProfileStackScreen>
   );
 }
-
-const styles = StyleSheet.create({
-  hero: {
-    marginBottom: spacing.xl,
-    borderColor: 'rgba(201, 168, 76, 0.35)',
-  },
-  heroTitle: {
-    ...typography.h3,
-    color: colors.textPrimary,
-    fontWeight: '700',
-    marginBottom: spacing.sm,
-  },
-  heroBody: {
-    ...typography.body,
-    color: colors.textSecondary,
-    lineHeight: 22,
-    marginBottom: spacing.lg,
-  },
-  rewardPills: {
-    flexDirection: 'row',
-    gap: spacing.md,
-  },
-  pill: {
-    flex: 1,
-    backgroundColor: colors.bgElevated,
-    borderRadius: borderRadius.md,
-    padding: spacing.md,
-    borderWidth: 1,
-    borderColor: colors.border,
-  },
-  pillLabel: {
-    ...typography.bodySmall,
-    color: colors.textMuted,
-    marginBottom: 4,
-  },
-  pillValue: {
-    fontSize: 22,
-    fontWeight: '800',
-    color: colors.gold,
-  },
-  codeLabel: {
-    ...typography.label,
-    color: colors.textMuted,
-    marginBottom: spacing.sm,
-  },
-  codeBox: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    backgroundColor: colors.bgSurface,
-    borderRadius: borderRadius.lg,
-    borderWidth: 1,
-    borderColor: 'rgba(201, 168, 76, 0.4)',
-    paddingVertical: spacing.lg,
-    paddingHorizontal: spacing.lg,
-    marginBottom: spacing.md,
-    ...shadows.card,
-  },
-  codeText: {
-    fontSize: 20,
-    fontWeight: '700',
-    color: colors.gold,
-    letterSpacing: 2,
-  },
-  shareBtn: {
-    marginBottom: spacing['2xl'],
-  },
-  sectionTitle: {
-    ...typography.h3,
-    color: colors.textPrimary,
-    marginBottom: spacing.md,
-    fontWeight: '700',
-  },
-  invRow: {
-    marginBottom: spacing.md,
-    ...shadows.card,
-  },
-  invTop: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'flex-start',
-    gap: spacing.md,
-  },
-  invName: {
-    ...typography.bodyLarge,
-    color: colors.textPrimary,
-    fontWeight: '700',
-  },
-  invEmail: {
-    ...typography.bodySmall,
-    color: colors.textMuted,
-    marginTop: 2,
-  },
-  invDate: {
-    ...typography.bodySmall,
-    color: colors.textSecondary,
-    marginTop: spacing.sm,
-  },
-  invEarned: {
-    ...typography.bodySmall,
-    color: colors.gold,
-    fontWeight: '600',
-    marginTop: spacing.xs,
-  },
-});

@@ -4,7 +4,6 @@ import {
   FlatList,
   Image,
   Pressable,
-  StyleSheet,
   Text,
   View,
   type ListRenderItem,
@@ -14,7 +13,7 @@ import {
 import { Href, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import type { SnapPost } from '@/lib/mock/snaps';
-import { colors, spacing, typography } from '@/lib/theme';
+import { createStyles, spacing, typography } from '@/lib/theme';
 
 const SCREEN_W = Dimensions.get('window').width;
 const GUTTER = 2;
@@ -30,6 +29,48 @@ type Props = {
   emptyLabel?: string;
 };
 
+const useStyles = createStyles((c) => ({
+  row: {
+    gap: GUTTER,
+    marginBottom: GUTTER,
+  },
+  tile: {
+    width: TILE,
+    height: TILE,
+    backgroundColor: c.bgElevated,
+  },
+  tileImage: {
+    width: '100%',
+    height: '100%',
+  },
+  badge: {
+    position: 'absolute',
+    bottom: 6,
+    left: 6,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 3,
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 10,
+    backgroundColor: 'rgba(0,0,0,0.55)',
+  },
+  badgeText: {
+    ...typography.bodySmall,
+    color: '#fff',
+    fontWeight: '700',
+    fontSize: 10,
+  },
+  empty: {
+    paddingTop: spacing['4xl'],
+    alignItems: 'center',
+  },
+  emptyText: {
+    ...typography.body,
+    color: c.textMuted,
+  },
+}));
+
 export function SnapGrid({
   posts,
   onPressTile,
@@ -40,6 +81,7 @@ export function SnapGrid({
   emptyLabel = 'No posts yet',
 }: Props) {
   const router = useRouter();
+  const styles = useStyles();
 
   const handlePress = useCallback(
     (post: SnapPost) => {
@@ -90,45 +132,3 @@ export function SnapGrid({
     />
   );
 }
-
-const styles = StyleSheet.create({
-  row: {
-    gap: GUTTER,
-    marginBottom: GUTTER,
-  },
-  tile: {
-    width: TILE,
-    height: TILE,
-    backgroundColor: colors.bgElevated,
-  },
-  tileImage: {
-    width: '100%',
-    height: '100%',
-  },
-  badge: {
-    position: 'absolute',
-    bottom: 6,
-    left: 6,
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 3,
-    paddingHorizontal: 6,
-    paddingVertical: 2,
-    borderRadius: 10,
-    backgroundColor: 'rgba(0,0,0,0.55)',
-  },
-  badgeText: {
-    ...typography.bodySmall,
-    color: '#fff',
-    fontWeight: '700',
-    fontSize: 10,
-  },
-  empty: {
-    paddingTop: spacing['4xl'],
-    alignItems: 'center',
-  },
-  emptyText: {
-    ...typography.body,
-    color: colors.textMuted,
-  },
-});

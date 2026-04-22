@@ -1,14 +1,73 @@
 import React, { useMemo } from 'react';
-import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Pressable, StyleSheet, Text, View, ScrollView } from 'react-native';
 import { Href, useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
 import { SnapGrid } from '@/components/snaps/SnapGrid';
 import { listTopTags, listTrendingPosts } from '@/lib/mock/social';
-import { borderRadius, colors, spacing, typography } from '@/lib/theme';
+import { useColors, createStyles, borderRadius, spacing, typography } from '@/lib/theme';
+
+const useStyles = createStyles((c) => ({
+  root: {
+    flex: 1,
+    backgroundColor: c.bgBase,
+  },
+  topBar: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: c.border,
+  },
+  topBarTitle: {
+    ...typography.body,
+    fontWeight: '700',
+    color: c.textPrimary,
+  },
+  headerBlock: {
+    paddingTop: spacing.md,
+    paddingBottom: spacing.sm,
+    gap: spacing.sm,
+  },
+  sectionTitle: {
+    ...typography.label,
+    color: c.textMuted,
+    paddingHorizontal: spacing.lg,
+  },
+  chipRow: {
+    gap: spacing.sm,
+    paddingHorizontal: spacing.lg,
+    paddingBottom: spacing.sm,
+  },
+  chip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    paddingHorizontal: spacing.md,
+    paddingVertical: 7,
+    borderRadius: borderRadius.full,
+    borderWidth: 1,
+    borderColor: 'rgba(201,168,76,0.3)',
+    backgroundColor: 'rgba(201,168,76,0.08)',
+  },
+  chipText: {
+    ...typography.bodySmall,
+    color: '#DDD5C4',
+    fontWeight: '700',
+  },
+  chipCount: {
+    ...typography.bodySmall,
+    color: c.textMuted,
+    fontSize: 11,
+  },
+}));
 
 export default function ExploreScreen() {
+  const c = useColors();
+  const styles = useStyles();
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const { t } = useTranslation();
@@ -47,7 +106,7 @@ export default function ExploreScreen() {
     <View style={[styles.root, { paddingTop: insets.top }]}>
       <View style={styles.topBar}>
         <Pressable onPress={() => router.back()} hitSlop={10}>
-          <Ionicons name="chevron-back" size={24} color={colors.textPrimary} />
+          <Ionicons name="chevron-back" size={24} color={c.textPrimary} />
         </Pressable>
         <Text style={styles.topBarTitle}>{t('explore.title')}</Text>
         <View style={{ width: 24 }} />
@@ -61,60 +120,3 @@ export default function ExploreScreen() {
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  root: {
-    flex: 1,
-    backgroundColor: colors.bgBase,
-  },
-  topBar: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.sm,
-    borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: colors.border,
-  },
-  topBarTitle: {
-    ...typography.body,
-    fontWeight: '700',
-    color: colors.textPrimary,
-  },
-  headerBlock: {
-    paddingTop: spacing.md,
-    paddingBottom: spacing.sm,
-    gap: spacing.sm,
-  },
-  sectionTitle: {
-    ...typography.label,
-    color: colors.textMuted,
-    paddingHorizontal: spacing.lg,
-  },
-  chipRow: {
-    gap: spacing.sm,
-    paddingHorizontal: spacing.lg,
-    paddingBottom: spacing.sm,
-  },
-  chip: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-    paddingHorizontal: spacing.md,
-    paddingVertical: 7,
-    borderRadius: borderRadius.full,
-    borderWidth: 1,
-    borderColor: 'rgba(201,168,76,0.3)',
-    backgroundColor: 'rgba(201,168,76,0.08)',
-  },
-  chipText: {
-    ...typography.bodySmall,
-    color: colors.goldLight,
-    fontWeight: '700',
-  },
-  chipCount: {
-    ...typography.bodySmall,
-    color: colors.textMuted,
-    fontSize: 11,
-  },
-});

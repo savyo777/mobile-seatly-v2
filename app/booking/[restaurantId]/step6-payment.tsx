@@ -1,20 +1,54 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Platform } from 'react-native';
+import { View, Text, TouchableOpacity, ScrollView, Platform } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTranslation } from 'react-i18next';
 import { Button, Card } from '@/components/ui';
 import { formatCurrency } from '@/lib/utils/formatCurrency';
-import { colors, borderRadius } from '@/lib/theme';
+import { useColors, createStyles, borderRadius } from '@/lib/theme';
 
 type PaymentMethod = 'card' | 'apple_pay' | 'google_pay';
+
+const useStyles = createStyles((c) => ({
+  container: { flex: 1, backgroundColor: c.bgBase },
+  header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 20, paddingVertical: 12 },
+  backBtn: { width: 40, height: 40, alignItems: 'center', justifyContent: 'center' },
+  stepLabel: { fontSize: 13, color: c.textMuted, fontWeight: '500' },
+  progressBar: { height: 3, backgroundColor: c.border, marginHorizontal: 20 },
+  progressFill: { height: 3, backgroundColor: c.gold, borderRadius: 2 },
+  scrollContent: { paddingHorizontal: 20, paddingBottom: 120 },
+  title: { fontSize: 24, fontWeight: '700', color: c.textPrimary, marginTop: 24, marginBottom: 20 },
+  breakdownCard: { padding: 20, gap: 12 },
+  lineItem: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
+  lineLabel: { fontSize: 14, color: c.textSecondary },
+  lineValue: { fontSize: 14, color: c.textPrimary, fontWeight: '500' },
+  totalLine: { marginTop: 8, paddingTop: 12, borderTopWidth: 1, borderTopColor: c.border },
+  totalLabel: { fontSize: 16, fontWeight: '700', color: c.textPrimary },
+  totalValue: { fontSize: 18, fontWeight: '700', color: c.gold },
+  sectionTitle: { fontSize: 16, fontWeight: '600', color: c.textPrimary, marginTop: 24, marginBottom: 12 },
+  methodCard: { flexDirection: 'row', alignItems: 'center', padding: 16, backgroundColor: c.bgSurface, borderRadius: borderRadius.md, borderWidth: 1, borderColor: c.border, marginBottom: 10, gap: 14 },
+  methodCardSelected: { borderColor: c.gold, backgroundColor: 'rgba(201, 168, 76, 0.08)' },
+  methodLabel: { flex: 1, fontSize: 15, color: c.textPrimary },
+  methodLabelSelected: { color: c.gold },
+  radio: { width: 22, height: 22, borderRadius: 11, borderWidth: 2, borderColor: c.border, alignItems: 'center', justifyContent: 'center' },
+  radioSelected: { borderColor: c.gold },
+  radioInner: { width: 12, height: 12, borderRadius: 6, backgroundColor: c.gold },
+  cardForm: { padding: 16, marginTop: 8, gap: 12 },
+  mockCardInput: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingHorizontal: 14, paddingVertical: 14, backgroundColor: c.bgElevated, borderRadius: borderRadius.sm, borderWidth: 1, borderColor: c.border },
+  mockCardText: { fontSize: 15, color: c.textSecondary, fontFamily: Platform.OS === 'ios' ? 'Menlo' : 'monospace' },
+  cardRow: { flexDirection: 'row', gap: 12 },
+  secureText: { fontSize: 12, color: c.textMuted, textAlign: 'center', marginTop: 20, lineHeight: 18 },
+  footer: { position: 'absolute', bottom: 0, left: 0, right: 0, paddingHorizontal: 20, paddingTop: 16, backgroundColor: c.bgBase, borderTopWidth: 1, borderTopColor: c.border },
+}));
 
 export default function Step6Payment() {
   const { restaurantId, date, time, partySize, tableId, cartTotal, occasion } = useLocalSearchParams<{ restaurantId: string; date: string; time: string; partySize: string; tableId: string; cartTotal: string; occasion: string }>();
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const { t } = useTranslation();
+  const c = useColors();
+  const styles = useStyles();
   const [selectedMethod, setSelectedMethod] = useState<PaymentMethod>('card');
   const BOOKING_STEPS = 6;
   const STEP = 5;
@@ -36,7 +70,7 @@ export default function Step6Payment() {
     <View style={[styles.container, { paddingTop: insets.top }]}>
       <View style={styles.header}>
         <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
-          <Ionicons name="chevron-back" size={24} color={colors.textPrimary} />
+          <Ionicons name="chevron-back" size={24} color={c.textPrimary} />
         </TouchableOpacity>
         <Text style={styles.stepLabel}>
           {t('booking.stepCounter', { current: STEP, total: BOOKING_STEPS })}
@@ -81,7 +115,7 @@ export default function Step6Payment() {
             onPress={() => setSelectedMethod(method.id)}
             style={[styles.methodCard, selectedMethod === method.id && styles.methodCardSelected]}
           >
-            <Ionicons name={method.icon} size={24} color={selectedMethod === method.id ? colors.gold : colors.textSecondary} />
+            <Ionicons name={method.icon} size={24} color={selectedMethod === method.id ? c.gold : c.textSecondary} />
             <Text style={[styles.methodLabel, selectedMethod === method.id && styles.methodLabelSelected]}>
               {method.label}
             </Text>
@@ -94,7 +128,7 @@ export default function Step6Payment() {
         {selectedMethod === 'card' && (
           <Card style={styles.cardForm}>
             <View style={styles.mockCardInput}>
-              <Ionicons name="card" size={20} color={colors.textMuted} />
+              <Ionicons name="card" size={20} color={c.textMuted} />
               <Text style={styles.mockCardText}>•••• •••• •••• 4242</Text>
             </View>
             <View style={styles.cardRow}>
@@ -109,7 +143,7 @@ export default function Step6Payment() {
         )}
 
         <Text style={styles.secureText}>
-          <Ionicons name="lock-closed" size={12} color={colors.textMuted} /> Secured by Stripe. Your payment information is encrypted.
+          <Ionicons name="lock-closed" size={12} color={c.textMuted} /> Secured by Stripe. Your payment information is encrypted.
         </Text>
       </ScrollView>
 
@@ -122,35 +156,3 @@ export default function Step6Payment() {
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: colors.bgBase },
-  header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 20, paddingVertical: 12 },
-  backBtn: { width: 40, height: 40, alignItems: 'center', justifyContent: 'center' },
-  stepLabel: { fontSize: 13, color: colors.textMuted, fontWeight: '500' },
-  progressBar: { height: 3, backgroundColor: colors.border, marginHorizontal: 20 },
-  progressFill: { height: 3, backgroundColor: colors.gold, borderRadius: 2 },
-  scrollContent: { paddingHorizontal: 20, paddingBottom: 120 },
-  title: { fontSize: 24, fontWeight: '700', color: colors.textPrimary, marginTop: 24, marginBottom: 20 },
-  breakdownCard: { padding: 20, gap: 12 },
-  lineItem: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
-  lineLabel: { fontSize: 14, color: colors.textSecondary },
-  lineValue: { fontSize: 14, color: colors.textPrimary, fontWeight: '500' },
-  totalLine: { marginTop: 8, paddingTop: 12, borderTopWidth: 1, borderTopColor: colors.border },
-  totalLabel: { fontSize: 16, fontWeight: '700', color: colors.textPrimary },
-  totalValue: { fontSize: 18, fontWeight: '700', color: colors.gold },
-  sectionTitle: { fontSize: 16, fontWeight: '600', color: colors.textPrimary, marginTop: 24, marginBottom: 12 },
-  methodCard: { flexDirection: 'row', alignItems: 'center', padding: 16, backgroundColor: colors.bgSurface, borderRadius: borderRadius.md, borderWidth: 1, borderColor: colors.border, marginBottom: 10, gap: 14 },
-  methodCardSelected: { borderColor: colors.gold, backgroundColor: 'rgba(201, 168, 76, 0.08)' },
-  methodLabel: { flex: 1, fontSize: 15, color: colors.textPrimary },
-  methodLabelSelected: { color: colors.gold },
-  radio: { width: 22, height: 22, borderRadius: 11, borderWidth: 2, borderColor: colors.border, alignItems: 'center', justifyContent: 'center' },
-  radioSelected: { borderColor: colors.gold },
-  radioInner: { width: 12, height: 12, borderRadius: 6, backgroundColor: colors.gold },
-  cardForm: { padding: 16, marginTop: 8, gap: 12 },
-  mockCardInput: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingHorizontal: 14, paddingVertical: 14, backgroundColor: colors.bgElevated, borderRadius: borderRadius.sm, borderWidth: 1, borderColor: colors.border },
-  mockCardText: { fontSize: 15, color: colors.textSecondary, fontFamily: Platform.OS === 'ios' ? 'Menlo' : 'monospace' },
-  cardRow: { flexDirection: 'row', gap: 12 },
-  secureText: { fontSize: 12, color: colors.textMuted, textAlign: 'center', marginTop: 20, lineHeight: 18 },
-  footer: { position: 'absolute', bottom: 0, left: 0, right: 0, paddingHorizontal: 20, paddingTop: 16, backgroundColor: colors.bgBase, borderTopWidth: 1, borderTopColor: colors.border },
-});

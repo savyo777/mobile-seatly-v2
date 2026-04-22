@@ -1,10 +1,10 @@
 import React from 'react';
-import { Image, Pressable, StyleSheet, Text, View } from 'react-native';
+import { Image, Pressable, Text, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import type { Restaurant } from '@/lib/mock/restaurants';
 import type { DiscoverBadgeKind } from '@/lib/mock/discoverPresentation';
 import { getDiscoverBadges, getUrgencyCopy, shortTagLine } from '@/lib/mock/discoverPresentation';
-import { borderRadius, colors, shadows, spacing, typography } from '@/lib/theme';
+import { borderRadius, createStyles, shadows, spacing, typography, useColors } from '@/lib/theme';
 
 type Variant = 'carousel' | 'grid';
 
@@ -30,6 +30,109 @@ function badgeLabel(t: (k: string) => string, kind: DiscoverBadgeKind): string {
   }
 }
 
+const useStyles = createStyles((c) => ({
+  card: {
+    backgroundColor: c.bgSurface,
+    borderRadius: borderRadius.lg,
+    borderWidth: 1,
+    borderColor: c.border,
+    overflow: 'hidden',
+    ...shadows.card,
+  },
+  cardGrid: {
+    flex: 1,
+    minWidth: 0,
+  },
+  cardGridUniform: {
+    minHeight: 300,
+  },
+  starGlyph: {
+    fontSize: 13,
+    color: c.gold,
+    lineHeight: 16,
+    marginRight: 2,
+    fontWeight: '700',
+  },
+  bodyGrid: {
+    minHeight: 118,
+    flexGrow: 1,
+  },
+  pressed: {
+    transform: [{ scale: 0.97 }],
+    opacity: 0.95,
+  },
+  image: {
+    width: '100%',
+    backgroundColor: c.bgElevated,
+  },
+  badgeRow: {
+    position: 'absolute',
+    top: 8,
+    left: 8,
+    right: 8,
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 6,
+  },
+  miniBadge: {
+    backgroundColor: 'rgba(10,10,10,0.82)',
+    borderWidth: 1,
+    borderColor: 'rgba(201, 168, 76, 0.45)',
+    borderRadius: borderRadius.full,
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+  },
+  miniBadgeText: {
+    fontSize: 9,
+    fontWeight: '800',
+    color: c.goldLight,
+    letterSpacing: 0.3,
+    textTransform: 'uppercase',
+  },
+  body: {
+    padding: spacing.md,
+    gap: 4,
+  },
+  name: {
+    ...typography.bodyLarge,
+    color: c.textPrimary,
+    fontWeight: '700',
+  },
+  ratingRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flexWrap: 'wrap',
+    gap: 4,
+  },
+  rating: {
+    ...typography.bodySmall,
+    color: c.textPrimary,
+    fontWeight: '700',
+  },
+  reviews: {
+    ...typography.bodySmall,
+    color: c.textMuted,
+  },
+  meta: {
+    ...typography.bodySmall,
+    color: c.textSecondary,
+    fontWeight: '500',
+  },
+  tag: {
+    ...typography.bodySmall,
+    color: c.gold,
+    fontWeight: '600',
+    marginTop: 2,
+  },
+  urgency: {
+    ...typography.bodySmall,
+    fontSize: 11,
+    color: c.textMuted,
+    marginTop: 4,
+    fontWeight: '500',
+  },
+}));
+
 export function DiscoverEnhancedCard({
   restaurant,
   width,
@@ -38,6 +141,8 @@ export function DiscoverEnhancedCard({
   gridImageHeight,
 }: Props) {
   const { t } = useTranslation();
+  const c = useColors();
+  const styles = useStyles();
   const badges = getDiscoverBadges(restaurant);
   const urgency = getUrgencyCopy(restaurant, t);
   const tag = shortTagLine(restaurant);
@@ -90,106 +195,3 @@ export function DiscoverEnhancedCard({
     </Pressable>
   );
 }
-
-const styles = StyleSheet.create({
-  card: {
-    backgroundColor: colors.bgSurface,
-    borderRadius: borderRadius.lg,
-    borderWidth: 1,
-    borderColor: colors.border,
-    overflow: 'hidden',
-    ...shadows.card,
-  },
-  cardGrid: {
-    flex: 1,
-    minWidth: 0,
-  },
-  cardGridUniform: {
-    minHeight: 300,
-  },
-  starGlyph: {
-    fontSize: 13,
-    color: colors.gold,
-    lineHeight: 16,
-    marginRight: 2,
-    fontWeight: '700',
-  },
-  bodyGrid: {
-    minHeight: 118,
-    flexGrow: 1,
-  },
-  pressed: {
-    transform: [{ scale: 0.97 }],
-    opacity: 0.95,
-  },
-  image: {
-    width: '100%',
-    backgroundColor: colors.bgElevated,
-  },
-  badgeRow: {
-    position: 'absolute',
-    top: 8,
-    left: 8,
-    right: 8,
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 6,
-  },
-  miniBadge: {
-    backgroundColor: 'rgba(10,10,10,0.82)',
-    borderWidth: 1,
-    borderColor: 'rgba(201, 168, 76, 0.45)',
-    borderRadius: borderRadius.full,
-    paddingHorizontal: 8,
-    paddingVertical: 3,
-  },
-  miniBadgeText: {
-    fontSize: 9,
-    fontWeight: '800',
-    color: colors.goldLight,
-    letterSpacing: 0.3,
-    textTransform: 'uppercase',
-  },
-  body: {
-    padding: spacing.md,
-    gap: 4,
-  },
-  name: {
-    ...typography.bodyLarge,
-    color: colors.textPrimary,
-    fontWeight: '700',
-  },
-  ratingRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    flexWrap: 'wrap',
-    gap: 4,
-  },
-  rating: {
-    ...typography.bodySmall,
-    color: colors.textPrimary,
-    fontWeight: '700',
-  },
-  reviews: {
-    ...typography.bodySmall,
-    color: colors.textMuted,
-  },
-  meta: {
-    ...typography.bodySmall,
-    color: colors.textSecondary,
-    fontWeight: '500',
-  },
-  tag: {
-    ...typography.bodySmall,
-    color: colors.gold,
-    fontWeight: '600',
-    marginTop: 2,
-  },
-  urgency: {
-    ...typography.bodySmall,
-    fontSize: 11,
-    color: colors.textMuted,
-    marginTop: 4,
-    fontWeight: '500',
-  },
-});

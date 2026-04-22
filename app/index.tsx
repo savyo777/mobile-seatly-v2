@@ -1,10 +1,36 @@
 import React, { useEffect } from 'react';
-import { View, Text, StyleSheet, ActivityIndicator } from 'react-native';
+import { View, Text, ActivityIndicator } from 'react-native';
 import { useRouter } from 'expo-router';
-import { colors } from '@/lib/theme';
+import { useColors, createStyles } from '@/lib/theme';
+
+const useStyles = createStyles((c) => ({
+  container: {
+    flex: 1,
+    backgroundColor: c.bgBase,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  logo: {
+    fontSize: 42,
+    fontWeight: '700',
+    color: c.gold,
+    letterSpacing: 6,
+  },
+  tagline: {
+    fontSize: 16,
+    color: c.textSecondary,
+    marginTop: 8,
+  },
+  loader: {
+    position: 'absolute',
+    bottom: 80,
+  },
+}));
 
 export default function SplashScreen() {
   const router = useRouter();
+  const c = useColors();
+  const styles = useStyles();
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -17,31 +43,7 @@ export default function SplashScreen() {
     <View style={styles.container}>
       <Text style={styles.logo}>CENAIVA</Text>
       <Text style={styles.tagline}>Your table awaits</Text>
-      <ActivityIndicator color={colors.gold} size="small" style={styles.loader} />
+      <ActivityIndicator color={c.gold} size="small" style={styles.loader} />
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: colors.bgBase,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  logo: {
-    fontSize: 42,
-    fontWeight: '700',
-    color: colors.gold,
-    letterSpacing: 6,
-  },
-  tagline: {
-    fontSize: 16,
-    color: colors.textSecondary,
-    marginTop: 8,
-  },
-  loader: {
-    position: 'absolute',
-    bottom: 80,
-  },
-});

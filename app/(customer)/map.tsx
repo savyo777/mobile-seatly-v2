@@ -2,7 +2,6 @@ import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import {
   View,
   Text,
-  StyleSheet,
   FlatList,
   Image,
   Pressable,
@@ -10,6 +9,7 @@ import {
   Platform,
   NativeScrollEvent,
   NativeSyntheticEvent,
+  StyleSheet,
 } from 'react-native';
 import * as Location from 'expo-location';
 import { Ionicons } from '@expo/vector-icons';
@@ -27,7 +27,7 @@ import {
   withDistances,
 } from '@/lib/map/mapFilters';
 import { formatDistanceMeters } from '@/lib/map/geo';
-import { colors, spacing, borderRadius, typography } from '@/lib/theme';
+import { useColors, createStyles, spacing, borderRadius, typography } from '@/lib/theme';
 
 const FILTERS: { id: MapFilterId; labelKey: string; icon: keyof typeof Ionicons.glyphMap }[] = [
   { id: 'nearby', labelKey: 'nearby', icon: 'navigate-outline' },
@@ -38,12 +38,187 @@ const FILTERS: { id: MapFilterId; labelKey: string; icon: keyof typeof Ionicons.
 ];
 
 const CARD_WIDTH = 248;
-/** Rail: paddingTop + card row + inner padding (see `carouselWrap` / `restaurantCard`). */
 const RAIL_PADDING_TOP = spacing.sm;
 const RAIL_CARD_MIN_HEIGHT = 76;
 const RAIL_CONTENT_PAD_BOTTOM = spacing.xs;
 
+const useStyles = createStyles((c) => ({
+  root: {
+    flex: 1,
+    backgroundColor: c.bgBase,
+  },
+  title: {
+    ...typography.h2,
+    color: c.textPrimary,
+    fontWeight: '700',
+  },
+  subtitle: {
+    ...typography.bodySmall,
+    color: c.textSecondary,
+    marginTop: 2,
+  },
+  topOverlay: {
+    position: 'absolute',
+    left: spacing.lg,
+    right: spacing.lg,
+    borderRadius: borderRadius.xl,
+    backgroundColor: 'rgba(10,10,10,0.68)',
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.08)',
+    padding: spacing.md,
+    zIndex: 12,
+    elevation: 12,
+  },
+  topOverlayHeaderRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: spacing.sm,
+  },
+  settingsFab: {
+    width: 40,
+    height: 40,
+    borderRadius: borderRadius.full,
+    backgroundColor: 'rgba(26,26,26,0.96)',
+    borderWidth: 1,
+    borderColor: c.border,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  permissionHint: {
+    position: 'absolute',
+    left: spacing.lg,
+    right: spacing.lg,
+    zIndex: 11,
+    borderRadius: borderRadius.lg,
+    backgroundColor: 'rgba(10,10,10,0.78)',
+    borderWidth: 1,
+    borderColor: c.border,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+  },
+  permissionHintText: {
+    ...typography.bodySmall,
+    color: c.textSecondary,
+    flex: 1,
+  },
+  filtersContent: {
+    gap: spacing.sm,
+    paddingRight: spacing.sm,
+  },
+  filterChip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.xs,
+    paddingHorizontal: 12,
+    paddingVertical: 9,
+    borderRadius: borderRadius.full,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.1)',
+    backgroundColor: 'rgba(26,26,26,0.9)',
+  },
+  filterChipActive: {
+    borderColor: c.gold,
+    backgroundColor: c.gold,
+  },
+  filterChipText: {
+    ...typography.bodySmall,
+    color: c.textSecondary,
+    fontWeight: '600',
+  },
+  filterChipTextActive: {
+    color: c.bgBase,
+  },
+  carouselWrap: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    bottom: 0,
+    zIndex: 10,
+    paddingTop: RAIL_PADDING_TOP,
+    backgroundColor: 'rgba(8,8,8,0.82)',
+    borderTopWidth: StyleSheet.hairlineWidth,
+    borderTopColor: 'rgba(255,255,255,0.1)',
+    ...Platform.select({
+      ios: {
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: -4 },
+        shadowOpacity: 0.35,
+        shadowRadius: 12,
+      },
+      android: { elevation: 16 },
+      default: {},
+    }),
+  },
+  carouselContent: {
+    paddingHorizontal: spacing.lg,
+    gap: spacing.sm,
+    paddingBottom: spacing.xs,
+  },
+  restaurantCard: {
+    width: CARD_WIDTH,
+    borderRadius: borderRadius.lg,
+    backgroundColor: 'rgba(18,18,18,0.92)',
+    borderWidth: 1,
+    borderColor: c.border,
+    padding: spacing.sm,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+    minHeight: 76,
+  },
+  restaurantCardActive: {
+    borderColor: c.gold,
+    backgroundColor: 'rgba(24,20,12,0.95)',
+  },
+  restaurantThumb: {
+    width: 62,
+    height: 62,
+    borderRadius: borderRadius.md,
+    backgroundColor: c.bgElevated,
+  },
+  restaurantBody: {
+    flex: 1,
+    minWidth: 0,
+  },
+  restaurantName: {
+    ...typography.body,
+    color: c.textPrimary,
+    fontWeight: '700',
+  },
+  restaurantMeta: {
+    ...typography.bodySmall,
+    color: c.textSecondary,
+    marginTop: 2,
+  },
+  restaurantStar: {
+    fontSize: 12,
+    lineHeight: 14,
+    color: c.gold,
+    fontWeight: '700',
+  },
+  restaurantStats: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: 7,
+    gap: 4,
+  },
+  restaurantStatText: {
+    ...typography.bodySmall,
+    color: c.textSecondary,
+    fontWeight: '600',
+  },
+  restaurantDot: {
+    color: c.textMuted,
+    marginHorizontal: 2,
+  },
+}));
+
 export default function MapScreen() {
+  const c = useColors();
+  const styles = useStyles();
   const { t } = useTranslation();
   const router = useRouter();
   const insets = useSafeAreaInsets();
@@ -119,6 +294,7 @@ export default function MapScreen() {
     const bottomPad = Math.max(insets.bottom, spacing.md);
     return RAIL_PADDING_TOP + RAIL_CARD_MIN_HEIGHT + RAIL_CONTENT_PAD_BOTTOM + bottomPad;
   }, [insets.bottom]);
+
   const idToIndex = useMemo(
     () => new Map(filtered.map((restaurant, index) => [restaurant.id, index])),
     [filtered],
@@ -207,7 +383,7 @@ export default function MapScreen() {
         </Pressable>
       );
     },
-    [focusedId, scrollToRestaurantCard],
+    [focusedId, scrollToRestaurantCard, styles],
   );
 
   return (
@@ -235,7 +411,7 @@ export default function MapScreen() {
               if (permissionDenied && Platform.OS !== 'web') Linking.openSettings();
             }}
           >
-            <Ionicons name="options-outline" size={19} color={colors.gold} />
+            <Ionicons name="options-outline" size={19} color={c.gold} />
           </Pressable>
         </View>
 
@@ -255,7 +431,7 @@ export default function MapScreen() {
                 <Ionicons
                   name={item.icon}
                   size={14}
-                  color={active ? colors.bgBase : colors.textSecondary}
+                  color={active ? c.bgBase : c.textSecondary}
                 />
                 <Text style={[styles.filterChipText, active && styles.filterChipTextActive]}>
                   {t(`mapScreen.${item.labelKey}`)}
@@ -296,7 +472,7 @@ export default function MapScreen() {
           onPress={() => Linking.openSettings()}
           style={[styles.permissionHint, { top: insets.top + 148 }]}
         >
-          <Ionicons name="location-outline" size={16} color={colors.gold} />
+          <Ionicons name="location-outline" size={16} color={c.gold} />
           <Text style={styles.permissionHintText}>{t('mapScreen.locationFallback')}</Text>
         </Pressable>
       ) : null}
@@ -317,177 +493,3 @@ export default function MapScreen() {
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  root: {
-    flex: 1,
-    backgroundColor: colors.bgBase,
-  },
-  title: {
-    ...typography.h2,
-    color: colors.textPrimary,
-    fontWeight: '700',
-  },
-  subtitle: {
-    ...typography.bodySmall,
-    color: colors.textSecondary,
-    marginTop: 2,
-  },
-  topOverlay: {
-    position: 'absolute',
-    left: spacing.lg,
-    right: spacing.lg,
-    borderRadius: borderRadius.xl,
-    backgroundColor: 'rgba(10,10,10,0.68)',
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.08)',
-    padding: spacing.md,
-    zIndex: 12,
-    elevation: 12,
-  },
-  topOverlayHeaderRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: spacing.sm,
-  },
-  settingsFab: {
-    width: 40,
-    height: 40,
-    borderRadius: borderRadius.full,
-    backgroundColor: 'rgba(26,26,26,0.96)',
-    borderWidth: 1,
-    borderColor: colors.border,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  permissionHint: {
-    position: 'absolute',
-    left: spacing.lg,
-    right: spacing.lg,
-    zIndex: 11,
-    borderRadius: borderRadius.lg,
-    backgroundColor: 'rgba(10,10,10,0.78)',
-    borderWidth: 1,
-    borderColor: colors.border,
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.sm,
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.sm,
-  },
-  permissionHintText: {
-    ...typography.bodySmall,
-    color: colors.textSecondary,
-    flex: 1,
-  },
-  filtersContent: {
-    gap: spacing.sm,
-    paddingRight: spacing.sm,
-  },
-  filterChip: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.xs,
-    paddingHorizontal: 12,
-    paddingVertical: 9,
-    borderRadius: borderRadius.full,
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.1)',
-    backgroundColor: 'rgba(26,26,26,0.9)',
-  },
-  filterChipActive: {
-    borderColor: colors.gold,
-    backgroundColor: colors.gold,
-  },
-  filterChipText: {
-    ...typography.bodySmall,
-    color: colors.textSecondary,
-    fontWeight: '600',
-  },
-  filterChipTextActive: {
-    color: colors.bgBase,
-  },
-  carouselWrap: {
-    position: 'absolute',
-    left: 0,
-    right: 0,
-    bottom: 0,
-    zIndex: 10,
-    paddingTop: RAIL_PADDING_TOP,
-    backgroundColor: 'rgba(8,8,8,0.82)',
-    borderTopWidth: StyleSheet.hairlineWidth,
-    borderTopColor: 'rgba(255,255,255,0.1)',
-    ...Platform.select({
-      ios: {
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: -4 },
-        shadowOpacity: 0.35,
-        shadowRadius: 12,
-      },
-      android: { elevation: 16 },
-      default: {},
-    }),
-  },
-  carouselContent: {
-    paddingHorizontal: spacing.lg,
-    gap: spacing.sm,
-    paddingBottom: spacing.xs,
-  },
-  restaurantCard: {
-    width: CARD_WIDTH,
-    borderRadius: borderRadius.lg,
-    backgroundColor: 'rgba(18,18,18,0.92)',
-    borderWidth: 1,
-    borderColor: colors.border,
-    padding: spacing.sm,
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.sm,
-    minHeight: 76,
-  },
-  restaurantCardActive: {
-    borderColor: colors.gold,
-    backgroundColor: 'rgba(24,20,12,0.95)',
-  },
-  restaurantThumb: {
-    width: 62,
-    height: 62,
-    borderRadius: borderRadius.md,
-    backgroundColor: colors.bgElevated,
-  },
-  restaurantBody: {
-    flex: 1,
-    minWidth: 0,
-  },
-  restaurantName: {
-    ...typography.body,
-    color: colors.textPrimary,
-    fontWeight: '700',
-  },
-  restaurantMeta: {
-    ...typography.bodySmall,
-    color: colors.textSecondary,
-    marginTop: 2,
-  },
-  restaurantStar: {
-    fontSize: 12,
-    lineHeight: 14,
-    color: colors.gold,
-    fontWeight: '700',
-  },
-  restaurantStats: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginTop: 7,
-    gap: 4,
-  },
-  restaurantStatText: {
-    ...typography.bodySmall,
-    color: colors.textSecondary,
-    fontWeight: '600',
-  },
-  restaurantDot: {
-    color: colors.textMuted,
-    marginHorizontal: 2,
-  },
-});

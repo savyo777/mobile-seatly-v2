@@ -24,7 +24,7 @@ import {
 } from '@/lib/mock/collections';
 import { getSnapPostById } from '@/lib/mock/snaps';
 import { mockCustomer } from '@/lib/mock/users';
-import { borderRadius, colors, spacing, typography } from '@/lib/theme';
+import { borderRadius, createStyles, spacing, typography, useColors } from '@/lib/theme';
 
 const ME = mockCustomer.id;
 
@@ -35,9 +35,150 @@ type Props = {
   onSaved?: () => void;
 };
 
+const useStyles = createStyles((c) => ({
+  backdrop: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.55)',
+    justifyContent: 'flex-end',
+  },
+  sheet: {
+    backgroundColor: c.bgSurface,
+    borderTopLeftRadius: borderRadius.xl,
+    borderTopRightRadius: borderRadius.xl,
+    paddingHorizontal: spacing.lg,
+    paddingTop: spacing.sm,
+  },
+  grabber: {
+    width: 40,
+    height: 4,
+    borderRadius: 2,
+    backgroundColor: c.border,
+    alignSelf: 'center',
+    marginBottom: spacing.sm,
+  },
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingVertical: spacing.sm,
+  },
+  title: {
+    ...typography.h3,
+    color: c.textPrimary,
+  },
+  newCollectionRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.md,
+    paddingVertical: spacing.md,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: c.border,
+  },
+  newCollectionIcon: {
+    width: 48,
+    height: 48,
+    borderRadius: borderRadius.md,
+    backgroundColor: 'rgba(201,168,76,0.10)',
+    borderWidth: 1,
+    borderColor: 'rgba(201,168,76,0.3)',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  newCollectionText: {
+    ...typography.body,
+    fontWeight: '700',
+    color: c.gold,
+  },
+  createRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+    paddingVertical: spacing.md,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: c.border,
+  },
+  input: {
+    flex: 1,
+    ...typography.body,
+    color: c.textPrimary,
+    borderWidth: 1,
+    borderColor: c.border,
+    borderRadius: borderRadius.md,
+    paddingHorizontal: spacing.sm,
+    paddingVertical: 8,
+    backgroundColor: c.bgElevated,
+  },
+  primaryBtn: {
+    paddingHorizontal: spacing.md,
+    paddingVertical: 8,
+    borderRadius: borderRadius.md,
+    backgroundColor: c.gold,
+  },
+  primaryBtnText: {
+    ...typography.body,
+    fontWeight: '700',
+    color: c.bgBase,
+  },
+  row: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.md,
+    paddingVertical: spacing.sm,
+  },
+  cover: {
+    width: 48,
+    height: 48,
+    borderRadius: borderRadius.md,
+    backgroundColor: c.bgElevated,
+    overflow: 'hidden',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  coverImg: {
+    width: '100%',
+    height: '100%',
+  },
+  rowBody: {
+    flex: 1,
+    gap: 2,
+  },
+  rowName: {
+    ...typography.body,
+    fontWeight: '700',
+    color: c.textPrimary,
+  },
+  rowMeta: {
+    ...typography.bodySmall,
+    color: c.textMuted,
+  },
+  checkbox: {
+    width: 24,
+    height: 24,
+    borderRadius: borderRadius.full,
+    borderWidth: 1.5,
+    borderColor: c.border,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  checkboxOn: {
+    backgroundColor: c.gold,
+    borderColor: c.gold,
+  },
+  empty: {
+    paddingVertical: spacing.xl,
+    alignItems: 'center',
+  },
+  emptyText: {
+    ...typography.bodySmall,
+    color: c.textMuted,
+  },
+}));
+
 export function SaveToCollectionSheet({ visible, postId, onClose, onSaved }: Props) {
   const insets = useSafeAreaInsets();
   const { t } = useTranslation();
+  const styles = useStyles();
+  const c = useColors();
   const [creating, setCreating] = useState(false);
   const [newName, setNewName] = useState('');
   const [version, setVersion] = useState(0);
@@ -89,7 +230,7 @@ export function SaveToCollectionSheet({ visible, postId, onClose, onSaved }: Pro
             <View style={styles.header}>
               <Text style={styles.title}>{t('collections.saveTitle')}</Text>
               <Pressable onPress={onClose} hitSlop={10}>
-                <Ionicons name="close" size={22} color={colors.textPrimary} />
+                <Ionicons name="close" size={22} color={c.textPrimary} />
               </Pressable>
             </View>
 
@@ -99,7 +240,7 @@ export function SaveToCollectionSheet({ visible, postId, onClose, onSaved }: Pro
                   value={newName}
                   onChangeText={setNewName}
                   placeholder={t('collections.newNamePlaceholder')}
-                  placeholderTextColor={colors.textMuted}
+                  placeholderTextColor={c.textMuted}
                   style={styles.input}
                   autoFocus
                   returnKeyType="done"
@@ -119,7 +260,7 @@ export function SaveToCollectionSheet({ visible, postId, onClose, onSaved }: Pro
             ) : (
               <Pressable onPress={() => setCreating(true)} style={styles.newCollectionRow}>
                 <View style={styles.newCollectionIcon}>
-                  <Ionicons name="add" size={24} color={colors.gold} />
+                  <Ionicons name="add" size={24} color={c.gold} />
                 </View>
                 <Text style={styles.newCollectionText}>
                   {t('collections.newCollection')}
@@ -144,7 +285,7 @@ export function SaveToCollectionSheet({ visible, postId, onClose, onSaved }: Pro
                       {cover ? (
                         <Image source={{ uri: cover }} style={styles.coverImg} />
                       ) : (
-                        <Ionicons name="bookmark" size={20} color={colors.textMuted} />
+                        <Ionicons name="bookmark" size={20} color={c.textMuted} />
                       )}
                     </View>
                     <View style={styles.rowBody}>
@@ -160,7 +301,7 @@ export function SaveToCollectionSheet({ visible, postId, onClose, onSaved }: Pro
                       ]}
                     >
                       {isIn ? (
-                        <Ionicons name="checkmark" size={16} color={colors.bgBase} />
+                        <Ionicons name="checkmark" size={16} color={c.bgBase} />
                       ) : null}
                     </View>
                   </Pressable>
@@ -180,142 +321,3 @@ export function SaveToCollectionSheet({ visible, postId, onClose, onSaved }: Pro
     </Modal>
   );
 }
-
-const styles = StyleSheet.create({
-  backdrop: {
-    flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.55)',
-    justifyContent: 'flex-end',
-  },
-  sheet: {
-    backgroundColor: colors.bgSurface,
-    borderTopLeftRadius: borderRadius.xl,
-    borderTopRightRadius: borderRadius.xl,
-    paddingHorizontal: spacing.lg,
-    paddingTop: spacing.sm,
-  },
-  grabber: {
-    width: 40,
-    height: 4,
-    borderRadius: 2,
-    backgroundColor: colors.border,
-    alignSelf: 'center',
-    marginBottom: spacing.sm,
-  },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingVertical: spacing.sm,
-  },
-  title: {
-    ...typography.h3,
-    color: colors.textPrimary,
-  },
-  newCollectionRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.md,
-    paddingVertical: spacing.md,
-    borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: colors.border,
-  },
-  newCollectionIcon: {
-    width: 48,
-    height: 48,
-    borderRadius: borderRadius.md,
-    backgroundColor: 'rgba(201,168,76,0.10)',
-    borderWidth: 1,
-    borderColor: 'rgba(201,168,76,0.3)',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  newCollectionText: {
-    ...typography.body,
-    fontWeight: '700',
-    color: colors.gold,
-  },
-  createRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.sm,
-    paddingVertical: spacing.md,
-    borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: colors.border,
-  },
-  input: {
-    flex: 1,
-    ...typography.body,
-    color: colors.textPrimary,
-    borderWidth: 1,
-    borderColor: colors.border,
-    borderRadius: borderRadius.md,
-    paddingHorizontal: spacing.sm,
-    paddingVertical: 8,
-    backgroundColor: colors.bgElevated,
-  },
-  primaryBtn: {
-    paddingHorizontal: spacing.md,
-    paddingVertical: 8,
-    borderRadius: borderRadius.md,
-    backgroundColor: colors.gold,
-  },
-  primaryBtnText: {
-    ...typography.body,
-    fontWeight: '700',
-    color: colors.bgBase,
-  },
-  row: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.md,
-    paddingVertical: spacing.sm,
-  },
-  cover: {
-    width: 48,
-    height: 48,
-    borderRadius: borderRadius.md,
-    backgroundColor: colors.bgElevated,
-    overflow: 'hidden',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  coverImg: {
-    width: '100%',
-    height: '100%',
-  },
-  rowBody: {
-    flex: 1,
-    gap: 2,
-  },
-  rowName: {
-    ...typography.body,
-    fontWeight: '700',
-    color: colors.textPrimary,
-  },
-  rowMeta: {
-    ...typography.bodySmall,
-    color: colors.textMuted,
-  },
-  checkbox: {
-    width: 24,
-    height: 24,
-    borderRadius: borderRadius.full,
-    borderWidth: 1.5,
-    borderColor: colors.border,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  checkboxOn: {
-    backgroundColor: colors.gold,
-    borderColor: colors.gold,
-  },
-  empty: {
-    paddingVertical: spacing.xl,
-    alignItems: 'center',
-  },
-  emptyText: {
-    ...typography.bodySmall,
-    color: colors.textMuted,
-  },
-});

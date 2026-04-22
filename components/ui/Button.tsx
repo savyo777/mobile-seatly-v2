@@ -1,6 +1,6 @@
 import React from 'react';
 import { TouchableOpacity, Text, ActivityIndicator, StyleSheet, ViewStyle } from 'react-native';
-import { colors, borderRadius, shadows } from '@/lib/theme';
+import { useColors, borderRadius, shadows } from '@/lib/theme';
 
 interface ButtonProps {
   title: string;
@@ -14,6 +14,8 @@ interface ButtonProps {
 }
 
 export function Button({ title, onPress, variant = 'primary', size = 'md', loading = false, disabled = false, fullWidth = true, style }: ButtonProps) {
+  const c = useColors();
+
   const sizeStyles = {
     sm: { height: 40, paddingHorizontal: 16, fontSize: 13 },
     md: { height: 48, paddingHorizontal: 24, fontSize: 15 },
@@ -23,19 +25,19 @@ export function Button({ title, onPress, variant = 'primary', size = 'md', loadi
   const s = sizeStyles[size];
 
   const variantStyles: Record<string, ViewStyle> = {
-    primary: { backgroundColor: colors.gold, ...shadows.card },
-    outlined: { backgroundColor: 'transparent', borderWidth: StyleSheet.hairlineWidth, borderColor: colors.gold },
-    danger: { backgroundColor: colors.danger },
+    primary: { backgroundColor: c.gold, ...shadows.card },
+    outlined: { backgroundColor: 'transparent', borderWidth: StyleSheet.hairlineWidth, borderColor: c.gold },
+    danger: { backgroundColor: c.danger },
     dangerSoft: { backgroundColor: 'rgba(220, 90, 90, 0.22)', borderWidth: 1, borderColor: 'rgba(220, 90, 90, 0.35)' },
     ghost: { backgroundColor: 'transparent' },
   };
 
   const textColors: Record<string, string> = {
-    primary: colors.bgBase,
-    outlined: colors.gold,
+    primary: c.bgBase,
+    outlined: c.gold,
     danger: '#FFFFFF',
     dangerSoft: '#E8A0A0',
-    ghost: colors.gold,
+    ghost: c.gold,
   };
 
   return (

@@ -1,7 +1,7 @@
 import React, { useMemo } from 'react';
-import { Dimensions, FlatList, Pressable, StyleSheet, Text, View } from 'react-native';
+import { Dimensions, FlatList, Pressable, Text, View } from 'react-native';
 import { ChevronGlyph } from '@/components/ui/ChevronGlyph';
-import { colors, spacing, typography } from '@/lib/theme';
+import { createStyles, spacing, typography, useColors } from '@/lib/theme';
 import { Restaurant } from '@/lib/mock/restaurants';
 import { RestaurantBrowseCard } from './RestaurantBrowseCard';
 
@@ -12,12 +12,49 @@ interface RestaurantCarouselSectionProps {
   onPressSeeAll?: () => void;
 }
 
+const useStyles = createStyles((c) => ({
+  section: {
+    marginBottom: spacing['2xl'],
+  },
+  sectionHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: spacing.md,
+  },
+  title: {
+    ...typography.h3,
+    color: c.textPrimary,
+  },
+  seeAllBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 2,
+  },
+  seeAllText: {
+    ...typography.bodySmall,
+    color: c.gold,
+    fontWeight: '600',
+  },
+  listContent: {
+    paddingRight: spacing.lg,
+  },
+  cardWrap: {
+    marginRight: spacing.md,
+  },
+  lastCardWrap: {
+    marginRight: 0,
+  },
+}));
+
 export function RestaurantCarouselSection({
   title,
   data,
   onPressCard,
   onPressSeeAll,
 }: RestaurantCarouselSectionProps) {
+  const c = useColors();
+  const styles = useStyles();
   const cardWidth = useMemo(() => Dimensions.get('window').width * 0.72, []);
 
   if (!data.length) return null;
@@ -28,7 +65,7 @@ export function RestaurantCarouselSection({
         <Text style={styles.title}>{title}</Text>
         <Pressable onPress={onPressSeeAll} style={styles.seeAllBtn}>
           <Text style={styles.seeAllText}>See all</Text>
-          <ChevronGlyph color={colors.gold} size={15} />
+          <ChevronGlyph color={c.gold} size={15} />
         </Pressable>
       </View>
 
@@ -53,38 +90,3 @@ export function RestaurantCarouselSection({
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  section: {
-    marginBottom: spacing['2xl'],
-  },
-  sectionHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: spacing.md,
-  },
-  title: {
-    ...typography.h3,
-    color: colors.textPrimary,
-  },
-  seeAllBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 2,
-  },
-  seeAllText: {
-    ...typography.bodySmall,
-    color: colors.gold,
-    fontWeight: '600',
-  },
-  listContent: {
-    paddingRight: spacing.lg,
-  },
-  cardWrap: {
-    marginRight: spacing.md,
-  },
-  lastCardWrap: {
-    marginRight: 0,
-  },
-});

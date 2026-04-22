@@ -7,34 +7,159 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Card, Badge, ScreenWrapper } from '@/components/ui';
 import { mockOrders, type Order } from '@/lib/mock/orders';
 import { formatCurrency } from '@/lib/utils/formatCurrency';
-import { colors, spacing, borderRadius, typography } from '@/lib/theme';
+import { useColors, createStyles, spacing, borderRadius, typography } from '@/lib/theme';
 
 const mono = Platform.select({ ios: 'Menlo', android: 'monospace', default: 'monospace' });
 
 function orderBadgeVariant(status: Order['status']): 'gold' | 'success' | 'warning' | 'danger' | 'info' | 'muted' {
   switch (status) {
-    case 'served':
-      return 'success';
-    case 'cancelled':
-      return 'danger';
-    case 'preparing':
-      return 'info';
-    case 'ready':
-      return 'warning';
-    case 'pending':
-      return 'warning';
-    case 'confirmed':
-      return 'gold';
-    default:
-      return 'muted';
+    case 'served':     return 'success';
+    case 'cancelled':  return 'danger';
+    case 'preparing':  return 'info';
+    case 'ready':      return 'warning';
+    case 'pending':    return 'warning';
+    case 'confirmed':  return 'gold';
+    default:           return 'muted';
   }
 }
+
+const useStyles = createStyles((c) => ({
+  topBar: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: spacing.sm,
+  },
+  backHit: {
+    padding: spacing.xs,
+  },
+  scroll: {
+    paddingBottom: spacing['3xl'],
+  },
+  h2: {
+    ...typography.h2,
+    color: c.textPrimary,
+    marginBottom: spacing.md,
+  },
+  statusWrap: {
+    marginBottom: spacing.lg,
+  },
+  tableRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+    marginBottom: spacing.lg,
+  },
+  tableText: {
+    ...typography.body,
+    color: c.textSecondary,
+  },
+  sectionLabel: {
+    ...typography.h3,
+    color: c.textPrimary,
+    marginBottom: spacing.sm,
+  },
+  itemsCard: {
+    marginBottom: spacing.lg,
+  },
+  line: {
+    marginBottom: spacing.lg,
+    paddingBottom: spacing.lg,
+    borderBottomWidth: 1,
+    borderBottomColor: c.border,
+  },
+  lineLast: {
+    borderBottomWidth: 0,
+    marginBottom: 0,
+    paddingBottom: 0,
+  },
+  lineTop: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+    gap: spacing.md,
+  },
+  lineName: {
+    ...typography.bodyLarge,
+    color: c.textPrimary,
+    fontWeight: '600',
+    flex: 1,
+  },
+  lineTotal: {
+    ...typography.bodyLarge,
+    color: c.textPrimary,
+    fontVariant: ['tabular-nums'],
+  },
+  unitPrice: {
+    ...typography.bodySmall,
+    color: c.textMuted,
+    marginTop: 4,
+    fontFamily: mono,
+  },
+  mods: {
+    ...typography.bodySmall,
+    color: c.textSecondary,
+    marginTop: spacing.xs,
+    fontStyle: 'italic',
+  },
+  totalsCard: {
+    marginBottom: spacing.lg,
+  },
+  totalRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginBottom: spacing.sm,
+  },
+  totalLabel: {
+    ...typography.body,
+    color: c.textSecondary,
+  },
+  totalValue: {
+    ...typography.body,
+    color: c.textPrimary,
+    fontVariant: ['tabular-nums'],
+  },
+  grandRow: {
+    marginTop: spacing.md,
+    paddingTop: spacing.md,
+    borderTopWidth: 1,
+    borderTopColor: c.border,
+    marginBottom: 0,
+  },
+  grandLabel: {
+    ...typography.bodyLarge,
+    fontWeight: '700',
+    color: c.textPrimary,
+  },
+  grandValue: {
+    ...typography.bodyLarge,
+    fontWeight: '700',
+    color: c.gold,
+    fontVariant: ['tabular-nums'],
+  },
+  centered: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  muted: {
+    ...typography.body,
+    color: c.textSecondary,
+  },
+  backLink: {
+    ...typography.bodyLarge,
+    color: c.gold,
+    fontWeight: '600',
+    marginTop: spacing.md,
+  },
+}));
 
 export default function OrderDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const { t } = useTranslation();
   const router = useRouter();
   const insets = useSafeAreaInsets();
+  const c = useColors();
+  const styles = useStyles();
 
   const order = useMemo(() => mockOrders.find((o) => o.id === id), [id]);
 
@@ -55,7 +180,7 @@ export default function OrderDetailScreen() {
     <ScreenWrapper scrollable={false}>
       <View style={styles.topBar}>
         <Pressable accessibilityRole="button" onPress={() => router.back()} hitSlop={12} style={styles.backHit}>
-          <Ionicons name="chevron-back" size={26} color={colors.gold} />
+          <Ionicons name="chevron-back" size={26} color={c.gold} />
         </Pressable>
       </View>
 
@@ -70,7 +195,7 @@ export default function OrderDetailScreen() {
 
         {order.tableNumber ? (
           <View style={styles.tableRow}>
-            <Ionicons name="restaurant-outline" size={18} color={colors.textSecondary} />
+            <Ionicons name="restaurant-outline" size={18} color={c.textSecondary} />
             <Text style={styles.tableText}>
               {t('orders.tableNumber')}: {order.tableNumber}
             </Text>
@@ -121,133 +246,3 @@ export default function OrderDetailScreen() {
     </ScreenWrapper>
   );
 }
-
-const styles = StyleSheet.create({
-  topBar: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: spacing.sm,
-  },
-  backHit: {
-    padding: spacing.xs,
-  },
-  scroll: {
-    paddingBottom: spacing['3xl'],
-  },
-  h2: {
-    ...typography.h2,
-    color: colors.textPrimary,
-    marginBottom: spacing.md,
-  },
-  statusWrap: {
-    marginBottom: spacing.lg,
-  },
-  tableRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.sm,
-    marginBottom: spacing.lg,
-  },
-  tableText: {
-    ...typography.body,
-    color: colors.textSecondary,
-  },
-  sectionLabel: {
-    ...typography.h3,
-    color: colors.textPrimary,
-    marginBottom: spacing.sm,
-  },
-  itemsCard: {
-    marginBottom: spacing.lg,
-  },
-  line: {
-    marginBottom: spacing.lg,
-    paddingBottom: spacing.lg,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.border,
-  },
-  lineLast: {
-    borderBottomWidth: 0,
-    marginBottom: 0,
-    paddingBottom: 0,
-  },
-  lineTop: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'flex-start',
-    gap: spacing.md,
-  },
-  lineName: {
-    ...typography.bodyLarge,
-    color: colors.textPrimary,
-    fontWeight: '600',
-    flex: 1,
-  },
-  lineTotal: {
-    ...typography.bodyLarge,
-    color: colors.textPrimary,
-    fontVariant: ['tabular-nums'],
-  },
-  unitPrice: {
-    ...typography.bodySmall,
-    color: colors.textMuted,
-    marginTop: 4,
-    fontFamily: mono,
-  },
-  mods: {
-    ...typography.bodySmall,
-    color: colors.textSecondary,
-    marginTop: spacing.xs,
-    fontStyle: 'italic',
-  },
-  totalsCard: {
-    marginBottom: spacing.lg,
-  },
-  totalRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginBottom: spacing.sm,
-  },
-  totalLabel: {
-    ...typography.body,
-    color: colors.textSecondary,
-  },
-  totalValue: {
-    ...typography.body,
-    color: colors.textPrimary,
-    fontVariant: ['tabular-nums'],
-  },
-  grandRow: {
-    marginTop: spacing.md,
-    paddingTop: spacing.md,
-    borderTopWidth: 1,
-    borderTopColor: colors.border,
-    marginBottom: 0,
-  },
-  grandLabel: {
-    ...typography.bodyLarge,
-    fontWeight: '700',
-    color: colors.textPrimary,
-  },
-  grandValue: {
-    ...typography.bodyLarge,
-    fontWeight: '700',
-    color: colors.gold,
-    fontVariant: ['tabular-nums'],
-  },
-  centered: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  muted: {
-    ...typography.body,
-    color: colors.textSecondary,
-  },
-  backLink: {
-    ...typography.bodyLarge,
-    color: colors.gold,
-    fontWeight: '600',
-    marginTop: spacing.md,
-  },
-});

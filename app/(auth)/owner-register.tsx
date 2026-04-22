@@ -4,13 +4,123 @@ import { useRouter } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
-import { colors, spacing, typography, borderRadius } from '@/lib/theme';
+import { useColors, createStyles, spacing, typography, borderRadius } from '@/lib/theme';
 import { Input, Button } from '@/components/ui';
+
+const useStyles = createStyles((c) => ({
+  root: {
+    flex: 1,
+    backgroundColor: c.bgBase,
+  },
+  scroll: {
+    paddingHorizontal: spacing['2xl'],
+    paddingTop: spacing.md,
+  },
+  backBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.xs,
+    marginBottom: spacing['2xl'],
+  },
+  backText: {
+    ...typography.body,
+    color: c.textSecondary,
+  },
+  logo: {
+    fontSize: 36,
+    fontWeight: '700',
+    color: c.gold,
+    letterSpacing: 8,
+    textAlign: 'center',
+    marginBottom: spacing.lg,
+  },
+  badgeRow: {
+    alignItems: 'center',
+    marginBottom: spacing['2xl'],
+  },
+  badge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.xs,
+    backgroundColor: c.gold,
+    paddingVertical: spacing.xs,
+    paddingHorizontal: spacing.md,
+    borderRadius: borderRadius.full,
+  },
+  badgeText: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: c.bgBase,
+    letterSpacing: 0.5,
+  },
+  heading: {
+    ...typography.h2,
+    color: c.textPrimary,
+    marginBottom: spacing.sm,
+  },
+  tagline: {
+    ...typography.body,
+    color: c.textSecondary,
+    marginBottom: spacing['2xl'],
+  },
+  sectionLabel: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+    marginBottom: spacing.lg,
+  },
+  sectionLabelText: {
+    ...typography.label,
+    color: c.gold,
+  },
+  divider: {
+    height: StyleSheet.hairlineWidth,
+    backgroundColor: c.border,
+    marginVertical: spacing['2xl'],
+  },
+  termsRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: spacing.sm,
+    marginTop: spacing.md,
+    marginBottom: spacing['2xl'],
+  },
+  termsText: {
+    ...typography.bodySmall,
+    color: c.textMuted,
+    flex: 1,
+    lineHeight: 18,
+  },
+  termsLink: {
+    color: c.gold,
+    fontWeight: '600',
+  },
+  ctaBtn: {
+    marginBottom: spacing.lg,
+  },
+  footerRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'center',
+    marginTop: spacing.sm,
+  },
+  footerMuted: {
+    ...typography.body,
+    color: c.textSecondary,
+  },
+  footerLink: {
+    ...typography.body,
+    color: c.gold,
+    fontWeight: '600',
+  },
+}));
 
 export default function OwnerRegisterScreen() {
   const { t } = useTranslation();
   const router = useRouter();
   const insets = useSafeAreaInsets();
+  const c = useColors();
+  const styles = useStyles();
 
   return (
     <View style={[styles.root, { paddingTop: insets.top }]}>
@@ -25,7 +135,7 @@ export default function OwnerRegisterScreen() {
           activeOpacity={0.7}
           hitSlop={12}
         >
-          <Ionicons name="arrow-back" size={20} color={colors.textSecondary} />
+          <Ionicons name="arrow-back" size={20} color={c.textSecondary} />
           <Text style={styles.backText}>{t('auth.backToWelcome')}</Text>
         </TouchableOpacity>
 
@@ -33,7 +143,7 @@ export default function OwnerRegisterScreen() {
 
         <View style={styles.badgeRow}>
           <View style={styles.badge}>
-            <Ionicons name="storefront-outline" size={14} color={colors.bgBase} />
+            <Ionicons name="storefront-outline" size={14} color={c.bgBase} />
             <Text style={styles.badgeText}>{t('auth.restaurantOwner')}</Text>
           </View>
         </View>
@@ -42,7 +152,7 @@ export default function OwnerRegisterScreen() {
         <Text style={styles.tagline}>{t('auth.restaurantOwnerTagline')}</Text>
 
         <View style={styles.sectionLabel}>
-          <Ionicons name="person-circle-outline" size={16} color={colors.gold} />
+          <Ionicons name="person-circle-outline" size={16} color={c.gold} />
           <Text style={styles.sectionLabelText}>Your Account</Text>
         </View>
 
@@ -73,7 +183,7 @@ export default function OwnerRegisterScreen() {
         <View style={styles.divider} />
 
         <View style={styles.sectionLabel}>
-          <Ionicons name="storefront-outline" size={16} color={colors.gold} />
+          <Ionicons name="storefront-outline" size={16} color={c.gold} />
           <Text style={styles.sectionLabelText}>Your Restaurant</Text>
         </View>
 
@@ -91,7 +201,7 @@ export default function OwnerRegisterScreen() {
         />
 
         <View style={styles.termsRow}>
-          <Ionicons name="shield-checkmark-outline" size={14} color={colors.textMuted} />
+          <Ionicons name="shield-checkmark-outline" size={14} color={c.textMuted} />
           <Text style={styles.termsText}>
             By creating an account you agree to our{' '}
             <Text style={styles.termsLink}>Terms of Service</Text> and{' '}
@@ -119,111 +229,3 @@ export default function OwnerRegisterScreen() {
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  root: {
-    flex: 1,
-    backgroundColor: colors.bgBase,
-  },
-  scroll: {
-    paddingHorizontal: spacing['2xl'],
-    paddingTop: spacing.md,
-  },
-  backBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.xs,
-    marginBottom: spacing['2xl'],
-  },
-  backText: {
-    ...typography.body,
-    color: colors.textSecondary,
-  },
-  logo: {
-    fontSize: 36,
-    fontWeight: '700',
-    color: colors.gold,
-    letterSpacing: 8,
-    textAlign: 'center',
-    marginBottom: spacing.lg,
-  },
-  badgeRow: {
-    alignItems: 'center',
-    marginBottom: spacing['2xl'],
-  },
-  badge: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.xs,
-    backgroundColor: colors.gold,
-    paddingVertical: spacing.xs,
-    paddingHorizontal: spacing.md,
-    borderRadius: borderRadius.full,
-  },
-  badgeText: {
-    fontSize: 12,
-    fontWeight: '700',
-    color: colors.bgBase,
-    letterSpacing: 0.5,
-  },
-  heading: {
-    ...typography.h2,
-    color: colors.textPrimary,
-    marginBottom: spacing.sm,
-  },
-  tagline: {
-    ...typography.body,
-    color: colors.textSecondary,
-    marginBottom: spacing['2xl'],
-  },
-  sectionLabel: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.sm,
-    marginBottom: spacing.lg,
-  },
-  sectionLabelText: {
-    ...typography.label,
-    color: colors.gold,
-  },
-  divider: {
-    height: StyleSheet.hairlineWidth,
-    backgroundColor: colors.border,
-    marginVertical: spacing['2xl'],
-  },
-  termsRow: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    gap: spacing.sm,
-    marginTop: spacing.md,
-    marginBottom: spacing['2xl'],
-  },
-  termsText: {
-    ...typography.bodySmall,
-    color: colors.textMuted,
-    flex: 1,
-    lineHeight: 18,
-  },
-  termsLink: {
-    color: colors.gold,
-    fontWeight: '600',
-  },
-  ctaBtn: {
-    marginBottom: spacing.lg,
-  },
-  footerRow: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    justifyContent: 'center',
-    marginTop: spacing.sm,
-  },
-  footerMuted: {
-    ...typography.body,
-    color: colors.textSecondary,
-  },
-  footerLink: {
-    ...typography.body,
-    color: colors.gold,
-    fontWeight: '600',
-  },
-});

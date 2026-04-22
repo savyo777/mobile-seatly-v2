@@ -1,12 +1,12 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { Modal, Pressable, StyleSheet, Text, View } from 'react-native';
+import { Modal, Pressable, Text, View } from 'react-native';
 import { BlurView } from 'expo-blur';
 import { Ionicons } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
 import type { CalendarCell, DateKey } from '@/lib/booking/availabilityTypes';
 import { getCalendarMonth, getShiftConfig } from '@/lib/booking/getAvailability';
 import { parseDateKeyLocal } from '@/lib/booking/dateUtils';
-import { borderRadius, colors, spacing } from '@/lib/theme';
+import { borderRadius, createStyles, spacing } from '@/lib/theme';
 
 const WEEK_LABELS = ['SUN', 'MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT'] as const;
 
@@ -30,6 +30,126 @@ function chunkWeeks(cells: CalendarCell[]): CalendarCell[][] {
   return rows;
 }
 
+const useStyles = createStyles((c) => ({
+  backdrop: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.55)',
+    justifyContent: 'center',
+    paddingHorizontal: spacing.lg,
+  },
+  sheetWrap: {
+    borderRadius: borderRadius.xl,
+    overflow: 'hidden',
+    maxHeight: '88%',
+  },
+  blur: {
+    borderRadius: borderRadius.xl,
+    overflow: 'hidden',
+    borderWidth: 1,
+    borderColor: 'rgba(0,0,0,0.06)',
+  },
+  sheetInner: {
+    backgroundColor: 'rgba(255,255,255,0.88)',
+    paddingHorizontal: spacing.lg,
+    paddingBottom: spacing.lg,
+    paddingTop: spacing.sm,
+  },
+  grabber: {
+    width: 40,
+    height: 4,
+    borderRadius: 2,
+    backgroundColor: 'rgba(0,0,0,0.12)',
+    alignSelf: 'center',
+    marginBottom: spacing.md,
+  },
+  headerRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: spacing.md,
+  },
+  monthRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+  },
+  monthTitle: {
+    fontSize: 17,
+    fontWeight: '700',
+    color: '#111',
+  },
+  navRow: {
+    flexDirection: 'row',
+    gap: 4,
+  },
+  navBtn: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: 'rgba(0,0,0,0.06)',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  navBtnDisabled: { opacity: 0.3 },
+  weekRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginBottom: spacing.sm,
+  },
+  weekLabel: {
+    flex: 1,
+    fontSize: 10,
+    fontWeight: '600',
+    color: '#71717A',
+    textAlign: 'center',
+  },
+  week: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginBottom: 6,
+  },
+  cell: {
+    flex: 1,
+    aspectRatio: 1,
+    marginHorizontal: 2,
+    maxHeight: 44,
+    borderRadius: borderRadius.full,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  cellSelected: {
+    backgroundColor: c.gold,
+  },
+  cellToday: {
+    borderWidth: 1.5,
+    borderColor: '#CA8A04',
+  },
+  cellText: {
+    fontSize: 15,
+    fontWeight: '600',
+    color: '#111',
+  },
+  cellTextOutOfMonth: {
+    color: '#C0C0C8',
+    fontWeight: '400',
+  },
+  cellTextDisabled: {
+    color: '#BABAC0',
+    fontWeight: '400',
+  },
+  cellTextToday: {
+    color: '#CA8A04',
+    fontWeight: '700',
+  },
+  cellTextSelected: { color: '#000', fontWeight: '700' },
+  hint: {
+    marginTop: spacing.md,
+    fontSize: 12,
+    color: '#71717A',
+    textAlign: 'center',
+  },
+}));
+
 export function BookingCalendarModal({
   visible,
   restaurantId,
@@ -38,6 +158,7 @@ export function BookingCalendarModal({
   onSelect,
 }: Props) {
   const { t } = useTranslation();
+  const styles = useStyles();
   const config = useMemo(() => getShiftConfig(restaurantId), [restaurantId]);
   const today = useMemo(() => {
     const x = new Date();
@@ -186,123 +307,3 @@ export function BookingCalendarModal({
     </Modal>
   );
 }
-
-const styles = StyleSheet.create({
-  backdrop: {
-    flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.55)',
-    justifyContent: 'center',
-    paddingHorizontal: spacing.lg,
-  },
-  sheetWrap: {
-    borderRadius: borderRadius.xl,
-    overflow: 'hidden',
-    maxHeight: '88%',
-  },
-  blur: {
-    borderRadius: borderRadius.xl,
-    overflow: 'hidden',
-    borderWidth: 1,
-    borderColor: 'rgba(0,0,0,0.06)',
-  },
-  sheetInner: {
-    backgroundColor: 'rgba(255,255,255,0.88)',
-    paddingHorizontal: spacing.lg,
-    paddingBottom: spacing.lg,
-    paddingTop: spacing.sm,
-  },
-  grabber: {
-    width: 40,
-    height: 4,
-    borderRadius: 2,
-    backgroundColor: 'rgba(0,0,0,0.12)',
-    alignSelf: 'center',
-    marginBottom: spacing.md,
-  },
-  headerRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    marginBottom: spacing.md,
-  },
-  monthRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-  },
-  monthTitle: {
-    fontSize: 17,
-    fontWeight: '700',
-    color: '#111',
-  },
-  navRow: {
-    flexDirection: 'row',
-    gap: 4,
-  },
-  navBtn: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    backgroundColor: 'rgba(0,0,0,0.06)',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  navBtnDisabled: { opacity: 0.3 },
-  weekRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginBottom: spacing.sm,
-  },
-  weekLabel: {
-    flex: 1,
-    fontSize: 10,
-    fontWeight: '600',
-    color: '#71717A',
-    textAlign: 'center',
-  },
-  week: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginBottom: 6,
-  },
-  cell: {
-    flex: 1,
-    aspectRatio: 1,
-    marginHorizontal: 2,
-    maxHeight: 44,
-    borderRadius: borderRadius.full,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  cellSelected: {
-    backgroundColor: colors.gold,
-  },
-  cellToday: {
-    borderWidth: 1.5,
-    borderColor: '#CA8A04',
-  },
-  cellText: {
-    fontSize: 15,
-    fontWeight: '600',
-    color: '#111',
-  },
-  cellTextOutOfMonth: {
-    color: '#C0C0C8',
-    fontWeight: '400',
-  },
-  cellTextDisabled: {
-    color: '#BABAC0',
-    fontWeight: '400',
-  },
-  cellTextToday: {
-    color: '#CA8A04',
-    fontWeight: '700',
-  },
-  cellTextSelected: { color: '#000', fontWeight: '700' },
-  hint: {
-    marginTop: spacing.md,
-    fontSize: 12,
-    color: '#71717A',
-    textAlign: 'center',
-  },
-});

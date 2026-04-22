@@ -1,9 +1,9 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, Pressable } from 'react-native';
+import { View, Text, Pressable } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { mockReservations, type Reservation } from '@/lib/mock/reservations';
-import { colors, spacing, borderRadius, typography, shadows } from '@/lib/theme';
+import { borderRadius, createStyles, shadows, spacing, typography, useColors } from '@/lib/theme';
 
 const GUEST_ID = 'g1';
 const WINDOW_MS = 8 * 60 * 60 * 1000; // 8 hours
@@ -24,64 +24,9 @@ function getPostVisitReservation(): Reservation | null {
   );
 }
 
-export function PostVisitPrompt() {
-  const router = useRouter();
-  const [dismissed, setDismissed] = useState(false);
-
-  if (dismissed) return null;
-
-  const reservation = getPostVisitReservation();
-  if (!reservation) return null;
-
-  const isSeated = reservation.status === 'seated';
-  const heading = isSeated
-    ? `Enjoying ${reservation.restaurantName}?`
-    : `How was ${reservation.restaurantName}?`;
-  const subtext = isSeated
-    ? 'Snap your meal and share it — earn 25 points.'
-    : 'Share a snap from your visit and earn 25 points.';
-
-  const handleSnap = () => {
-    router.push(
-      `/(customer)/discover/post-review/camera?restaurantId=${reservation.restaurantId}` as any,
-    );
-  };
-
-  return (
-    <View style={styles.card}>
-      <View style={styles.row}>
-        <View style={styles.iconWrap}>
-          <Ionicons name="camera" size={20} color={colors.gold} />
-        </View>
-        <View style={styles.text}>
-          <Text style={styles.heading}>{heading}</Text>
-          <Text style={styles.sub}>{subtext}</Text>
-        </View>
-        <Pressable
-          onPress={() => setDismissed(true)}
-          hitSlop={10}
-          accessibilityRole="button"
-          accessibilityLabel="Dismiss"
-        >
-          <Ionicons name="close" size={18} color={colors.textMuted} />
-        </Pressable>
-      </View>
-
-      <Pressable
-        onPress={handleSnap}
-        style={({ pressed }) => [styles.btn, pressed && styles.btnPressed]}
-        accessibilityRole="button"
-      >
-        <Ionicons name="camera-outline" size={16} color={colors.bgBase} />
-        <Text style={styles.btnLabel}>Share a Snap</Text>
-      </Pressable>
-    </View>
-  );
-}
-
-const styles = StyleSheet.create({
+const useStyles = createStyles((c) => ({
   card: {
-    backgroundColor: colors.bgSurface,
+    backgroundColor: c.bgSurface,
     borderRadius: borderRadius.xl,
     borderWidth: 1,
     borderColor: 'rgba(201, 168, 76, 0.3)',
@@ -111,11 +56,11 @@ const styles = StyleSheet.create({
   heading: {
     ...typography.body,
     fontWeight: '700',
-    color: colors.textPrimary,
+    color: c.textPrimary,
   },
   sub: {
     ...typography.bodySmall,
-    color: colors.textSecondary,
+    color: c.textSecondary,
     lineHeight: 17,
   },
   btn: {
@@ -123,7 +68,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     gap: spacing.xs,
-    backgroundColor: colors.gold,
+    backgroundColor: c.gold,
     borderRadius: borderRadius.lg,
     paddingVertical: spacing.sm + 2,
   },
@@ -133,6 +78,63 @@ const styles = StyleSheet.create({
   btnLabel: {
     ...typography.body,
     fontWeight: '700',
-    color: colors.bgBase,
+    color: c.bgBase,
   },
-});
+}));
+
+export function PostVisitPrompt() {
+  const router = useRouter();
+  const c = useColors();
+  const styles = useStyles();
+  const [dismissed, setDismissed] = useState(false);
+
+  if (dismissed) return null;
+
+  const reservation = getPostVisitReservation();
+  if (!reservation) return null;
+
+  const isSeated = reservation.status === 'seated';
+  const heading = isSeated
+    ? `Enjoying ${reservation.restaurantName}?`
+    : `How was ${reservation.restaurantName}?`;
+  const subtext = isSeated
+    ? 'Snap your meal and share it — earn 25 points.'
+    : 'Share a snap from your visit and earn 25 points.';
+
+  const handleSnap = () => {
+    router.push(
+      `/(customer)/discover/post-review/camera?restaurantId=${reservation.restaurantId}` as any,
+    );
+  };
+
+  return (
+    <View style={styles.card}>
+      <View style={styles.row}>
+        <View style={styles.iconWrap}>
+          <Ionicons name="camera" size={20} color={c.gold} />
+        </View>
+        <View style={styles.text}>
+          <Text style={styles.heading}>{heading}</Text>
+          <Text style={styles.sub}>{subtext}</Text>
+        </View>
+        <Pressable
+          onPress={() => setDismissed(true)}
+          hitSlop={10}
+          accessibilityRole="button"
+          accessibilityLabel="Dismiss"
+        >
+          <Ionicons name="close" size={18} color={c.textMuted} />
+        </Pressable>
+      </View>
+
+      <Pressable
+        onPress={handleSnap}
+        style={({ pressed }) => [styles.btn, pressed && styles.btnPressed]}
+        accessibilityRole="button"
+      >
+        <Ionicons name="camera-outline" size={16} color={c.bgBase} />
+        <Text style={styles.btnLabel}>Share a Snap</Text>
+      </Pressable>
+    </View>
+  );
+}

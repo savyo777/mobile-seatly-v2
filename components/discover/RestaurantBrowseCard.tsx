@@ -1,6 +1,6 @@
 import React from 'react';
-import { Image, Pressable, StyleSheet, Text, View } from 'react-native';
-import { borderRadius, colors, shadows, spacing, typography } from '@/lib/theme';
+import { Image, Pressable, Text, View } from 'react-native';
+import { borderRadius, createStyles, shadows, spacing, typography } from '@/lib/theme';
 import { Restaurant } from '@/lib/mock/restaurants';
 
 interface RestaurantBrowseCardProps {
@@ -9,7 +9,91 @@ interface RestaurantBrowseCardProps {
   onPress: () => void;
 }
 
+const useStyles = createStyles((c) => ({
+  card: {
+    backgroundColor: c.bgSurface,
+    borderRadius: borderRadius.lg,
+    borderWidth: 1,
+    borderColor: c.border,
+    overflow: 'hidden',
+    ...shadows.card,
+  },
+  image: {
+    width: '100%',
+    height: 122,
+    backgroundColor: c.bgElevated,
+  },
+  badge: {
+    position: 'absolute',
+    top: 10,
+    left: 10,
+    backgroundColor: 'rgba(10,10,10,0.78)',
+    borderColor: c.gold,
+    borderWidth: 1,
+    borderRadius: borderRadius.full,
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+  },
+  badgeText: {
+    fontSize: 10,
+    color: c.goldLight,
+    fontWeight: '700',
+    letterSpacing: 0.4,
+  },
+  body: {
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
+    gap: 4,
+  },
+  name: {
+    ...typography.bodyLarge,
+    color: c.textPrimary,
+    fontWeight: '600',
+  },
+  meta: {
+    ...typography.bodySmall,
+    color: c.textSecondary,
+  },
+  infoRow: {
+    marginTop: 2,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  ratingRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+  },
+  starGlyph: {
+    fontSize: 13,
+    lineHeight: 15,
+    color: c.gold,
+    fontWeight: '700',
+  },
+  rating: {
+    ...typography.bodySmall,
+    color: c.textPrimary,
+    fontWeight: '600',
+  },
+  reviews: {
+    ...typography.bodySmall,
+    color: c.textMuted,
+  },
+  price: {
+    ...typography.body,
+    color: c.gold,
+    fontWeight: '700',
+  },
+  ambiance: {
+    ...typography.bodySmall,
+    color: c.goldLight,
+    marginTop: 2,
+  },
+}));
+
 export function RestaurantBrowseCard({ restaurant, width, onPress }: RestaurantBrowseCardProps) {
+  const styles = useStyles();
   return (
     <Pressable style={[styles.card, { width }]} onPress={onPress}>
       <Image source={{ uri: restaurant.coverPhotoUrl }} style={styles.image} />
@@ -40,86 +124,3 @@ export function RestaurantBrowseCard({ restaurant, width, onPress }: RestaurantB
     </Pressable>
   );
 }
-
-const styles = StyleSheet.create({
-  card: {
-    backgroundColor: colors.bgSurface,
-    borderRadius: borderRadius.lg,
-    borderWidth: 1,
-    borderColor: colors.border,
-    overflow: 'hidden',
-    ...shadows.card,
-  },
-  image: {
-    width: '100%',
-    height: 122,
-    backgroundColor: colors.bgElevated,
-  },
-  badge: {
-    position: 'absolute',
-    top: 10,
-    left: 10,
-    backgroundColor: 'rgba(10,10,10,0.78)',
-    borderColor: colors.gold,
-    borderWidth: 1,
-    borderRadius: borderRadius.full,
-    paddingHorizontal: 10,
-    paddingVertical: 5,
-  },
-  badgeText: {
-    fontSize: 10,
-    color: colors.goldLight,
-    fontWeight: '700',
-    letterSpacing: 0.4,
-  },
-  body: {
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.sm,
-    gap: 4,
-  },
-  name: {
-    ...typography.bodyLarge,
-    color: colors.textPrimary,
-    fontWeight: '600',
-  },
-  meta: {
-    ...typography.bodySmall,
-    color: colors.textSecondary,
-  },
-  infoRow: {
-    marginTop: 2,
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-  },
-  ratingRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-  },
-  starGlyph: {
-    fontSize: 13,
-    lineHeight: 15,
-    color: colors.gold,
-    fontWeight: '700',
-  },
-  rating: {
-    ...typography.bodySmall,
-    color: colors.textPrimary,
-    fontWeight: '600',
-  },
-  reviews: {
-    ...typography.bodySmall,
-    color: colors.textMuted,
-  },
-  price: {
-    ...typography.body,
-    color: colors.gold,
-    fontWeight: '700',
-  },
-  ambiance: {
-    ...typography.bodySmall,
-    color: colors.goldLight,
-    marginTop: 2,
-  },
-});

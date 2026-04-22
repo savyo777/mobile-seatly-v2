@@ -3,13 +3,93 @@ import { View, Text, StyleSheet, TouchableOpacity, Platform } from 'react-native
 import { useRouter } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { colors, spacing, typography } from '@/lib/theme';
+import { useColors, createStyles, spacing, typography } from '@/lib/theme';
 import { ScreenWrapper, Input, Button } from '@/components/ui';
+
+const useStyles = createStyles((c) => ({
+  inner: {
+    flex: 1,
+    paddingTop: spacing.md,
+  },
+  logo: {
+    fontSize: 36,
+    fontWeight: '700',
+    color: c.gold,
+    letterSpacing: 8,
+    textAlign: 'center',
+    marginBottom: spacing['3xl'],
+  },
+  heading: {
+    ...typography.h2,
+    color: c.textPrimary,
+    marginBottom: spacing['2xl'],
+  },
+  forgotWrap: {
+    alignSelf: 'flex-end',
+    marginBottom: spacing.lg,
+    marginTop: -spacing.sm,
+  },
+  forgotText: {
+    ...typography.body,
+    color: c.gold,
+    fontWeight: '600',
+  },
+  dividerRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginVertical: spacing['2xl'],
+    gap: spacing.md,
+  },
+  dividerLine: {
+    flex: 1,
+    height: StyleSheet.hairlineWidth,
+    backgroundColor: c.border,
+  },
+  dividerText: {
+    ...typography.bodySmall,
+    color: c.textMuted,
+    textTransform: 'lowercase',
+  },
+  appleBtn: {
+    marginTop: spacing.md,
+  },
+  footerRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'center',
+    marginTop: spacing['3xl'],
+  },
+  footerMuted: {
+    ...typography.body,
+    color: c.textSecondary,
+  },
+  footerLink: {
+    ...typography.body,
+    color: c.gold,
+    fontWeight: '600',
+  },
+  ownerLinkWrap: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'center',
+    marginTop: spacing.lg,
+  },
+  ownerLinkText: {
+    ...typography.bodySmall,
+    color: c.textMuted,
+  },
+  ownerLinkCta: {
+    ...typography.bodySmall,
+    color: c.gold,
+    fontWeight: '600',
+  },
+}));
 
 export default function LoginScreen() {
   const { t } = useTranslation();
   const router = useRouter();
   const insets = useSafeAreaInsets();
+  const styles = useStyles();
 
   return (
     <ScreenWrapper withKeyboardAvoiding padded>
@@ -79,82 +159,3 @@ export default function LoginScreen() {
     </ScreenWrapper>
   );
 }
-
-const styles = StyleSheet.create({
-  inner: {
-    flex: 1,
-    paddingTop: spacing.md,
-  },
-  logo: {
-    fontSize: 36,
-    fontWeight: '700',
-    color: colors.gold,
-    letterSpacing: 8,
-    textAlign: 'center',
-    marginBottom: spacing['3xl'],
-  },
-  heading: {
-    ...typography.h2,
-    color: colors.textPrimary,
-    marginBottom: spacing['2xl'],
-  },
-  forgotWrap: {
-    alignSelf: 'flex-end',
-    marginBottom: spacing.lg,
-    marginTop: -spacing.sm,
-  },
-  forgotText: {
-    ...typography.body,
-    color: colors.gold,
-    fontWeight: '600',
-  },
-  dividerRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginVertical: spacing['2xl'],
-    gap: spacing.md,
-  },
-  dividerLine: {
-    flex: 1,
-    height: StyleSheet.hairlineWidth,
-    backgroundColor: colors.border,
-  },
-  dividerText: {
-    ...typography.bodySmall,
-    color: colors.textMuted,
-    textTransform: 'lowercase',
-  },
-  appleBtn: {
-    marginTop: spacing.md,
-  },
-  footerRow: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    justifyContent: 'center',
-    marginTop: spacing['3xl'],
-  },
-  footerMuted: {
-    ...typography.body,
-    color: colors.textSecondary,
-  },
-  footerLink: {
-    ...typography.body,
-    color: colors.gold,
-    fontWeight: '600',
-  },
-  ownerLinkWrap: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    justifyContent: 'center',
-    marginTop: spacing.lg,
-  },
-  ownerLinkText: {
-    ...typography.bodySmall,
-    color: colors.textMuted,
-  },
-  ownerLinkCta: {
-    ...typography.bodySmall,
-    color: colors.gold,
-    fontWeight: '600',
-  },
-});

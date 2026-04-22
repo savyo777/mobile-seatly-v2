@@ -5,29 +5,69 @@ import { Ionicons } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
 import * as Haptics from 'expo-haptics';
 import { AiChatFab } from '@/components/ai/AiChatFab';
-import { colors } from '@/lib/theme';
+import { useColors, createStyles } from '@/lib/theme';
 
 const HIDE_FAB_ROUTES = ['/ai-chat', '/post-review', '/camera', '/booking'];
+
+const useStyles = createStyles((c) => ({
+  root: {
+    flex: 1,
+    backgroundColor: c.bgBase,
+  },
+  centerBtnWrapper: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 0,
+  },
+  centerBtn: {
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    backgroundColor: c.gold,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1.5,
+    borderColor: c.gold,
+    shadowColor: c.gold,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.35,
+    shadowRadius: 8,
+    elevation: 6,
+  },
+  centerBtnActive: {
+    backgroundColor: c.gold,
+    borderColor: c.gold,
+    shadowColor: c.gold,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.4,
+    shadowRadius: 8,
+    elevation: 8,
+  },
+}));
 
 export default function CustomerTabsLayout() {
   const { t } = useTranslation();
   const router = useRouter();
   const pathname = usePathname();
+  const c = useColors();
+  const styles = useStyles();
 
   const hideFab = HIDE_FAB_ROUTES.some((route) => pathname?.includes(route));
 
   return (
     <View style={styles.root}>
     <Tabs
+      sceneContainerStyle={{ backgroundColor: c.bgBase }}
       screenOptions={{
         headerShown: false,
-        tabBarActiveTintColor: colors.gold,
-        tabBarInactiveTintColor: colors.textMuted,
+        tabBarActiveTintColor: c.gold,
+        tabBarInactiveTintColor: c.textMuted,
         // Do not set height or paddingBottom here — they override React Navigation's
         // default tab bar sizing and safe-area bottom inset (see BottomTabBar).
         tabBarStyle: hideFab ? { display: 'none' } : {
-          backgroundColor: colors.bgBase,
-          borderTopColor: colors.border,
+          backgroundColor: c.bgBase,
+          borderTopColor: c.border,
           borderTopWidth: StyleSheet.hairlineWidth,
           paddingTop: 0,
         },
@@ -51,10 +91,10 @@ export default function CustomerTabsLayout() {
         }}
       />
       <Tabs.Screen
-        name="feed"
+        name="events"
         options={{
-          title: 'Feed',
-          tabBarIcon: ({ color, size }) => <Ionicons name="images-outline" size={size} color={color} />,
+          title: 'Events',
+          tabBarIcon: ({ color, size }) => <Ionicons name="ticket-outline" size={size} color={color} />,
         }}
       />
       <Tabs.Screen
@@ -76,7 +116,7 @@ export default function CustomerTabsLayout() {
                   <Ionicons
                     name="add"
                     size={30}
-                    color={colors.bgBase}
+                    color={c.bgBase}
                   />
                 </View>
               )}
@@ -98,6 +138,7 @@ export default function CustomerTabsLayout() {
           tabBarIcon: ({ color, size }) => <Ionicons name="person-outline" size={size} color={color} />,
         }}
       />
+      <Tabs.Screen name="feed" options={{ href: null }} />
       <Tabs.Screen name="map" options={{ href: null }} />
       <Tabs.Screen name="index" options={{ href: null }} />
       <Tabs.Screen name="bookings" options={{ href: null }} />
@@ -113,40 +154,3 @@ export default function CustomerTabsLayout() {
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  root: {
-    flex: 1,
-    backgroundColor: colors.bgBase,
-  },
-  centerBtnWrapper: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: 0,
-  },
-  centerBtn: {
-    width: 56,
-    height: 56,
-    borderRadius: 28,
-    backgroundColor: colors.gold,
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderWidth: 1.5,
-    borderColor: colors.gold,
-    shadowColor: colors.gold,
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.35,
-    shadowRadius: 8,
-    elevation: 6,
-  },
-  centerBtnActive: {
-    backgroundColor: colors.gold,
-    borderColor: colors.gold,
-    shadowColor: colors.gold,
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.4,
-    shadowRadius: 8,
-    elevation: 8,
-  },
-});

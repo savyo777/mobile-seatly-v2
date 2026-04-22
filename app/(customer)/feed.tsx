@@ -18,22 +18,13 @@ import {
   getRestaurantForPost,
   type SnapPost,
 } from '@/lib/mock/snaps';
-import {
-  isLiked,
-  isSaved,
-  toggleLike,
-  toggleSave,
-  listFollowingPosts,
-  listTrendingPosts,
-} from '@/lib/mock/social';
-import { isPostInAnyCollection } from '@/lib/mock/collections';
+import { listFollowingPosts, listTrendingPosts } from '@/lib/mock/social';
 import { SnapGrid } from '@/components/snaps/SnapGrid';
-import { SaveToCollectionSheet } from '@/components/snaps/SaveToCollectionSheet';
 import { FeedHero } from '@/components/feed/FeedHero';
 import { FeedPostCard } from '@/components/feed/FeedPostCard';
 import { CollectionsStrip } from '@/components/feed/CollectionsStrip';
 import { mockCustomer } from '@/lib/mock/users';
-import { colors, spacing, borderRadius } from '@/lib/theme';
+import { useColors, createStyles, spacing, borderRadius } from '@/lib/theme';
 
 type FeedMode = 'local' | 'following' | 'explore';
 type FeedItem = SnapPost | { _type: 'collections' };
@@ -69,13 +60,124 @@ function injectCollections(posts: SnapPost[]): FeedItem[] {
   return result;
 }
 
+const useStyles = createStyles((c) => ({
+  container: { flex: 1, backgroundColor: c.bgBase },
+
+  // Header
+  header: {
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: c.border,
+  },
+  headerTop: {
+    justifyContent: 'center',
+    paddingHorizontal: spacing.md,
+  },
+  greetingRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  greetingLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 7,
+  },
+  greetingDot: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+    backgroundColor: c.gold,
+  },
+  greetingText: {
+    fontSize: 11,
+    fontWeight: '700',
+    color: c.textMuted,
+    letterSpacing: 1.3,
+  },
+  // Tabs
+  tabs: {
+    flexDirection: 'row',
+    paddingTop: 24,
+  },
+  tab: {
+    flex: 1,
+    alignItems: 'center',
+  },
+  tabInner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+    paddingVertical: 10,
+  },
+  tabLabel: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: c.textMuted,
+  },
+  tabLabelActive: {
+    color: c.gold,
+    fontWeight: '700',
+  },
+  tabUnderline: {
+    height: 2,
+    width: '55%',
+    borderRadius: 2,
+    backgroundColor: c.gold,
+    marginTop: -1,
+  },
+
+  // Between posts
+  separator: {
+    height: 8,
+    backgroundColor: c.bgBase,
+    borderTopWidth: StyleSheet.hairlineWidth,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderColor: c.border,
+  },
+
+  // Empty state
+  emptyCard: {
+    margin: spacing.lg,
+    backgroundColor: c.bgSurface,
+    borderRadius: borderRadius.xl,
+    borderWidth: 1,
+    borderColor: c.border,
+    padding: spacing['3xl'],
+    alignItems: 'center',
+    gap: spacing.sm,
+  },
+  emptyTitle: {
+    fontSize: 16,
+    fontWeight: '700',
+    color: c.textPrimary,
+    textAlign: 'center',
+  },
+  emptyText: {
+    fontSize: 14,
+    color: c.textMuted,
+    textAlign: 'center',
+    lineHeight: 20,
+  },
+  emptyCta: {
+    marginTop: spacing.md,
+    paddingVertical: spacing.sm,
+    paddingHorizontal: spacing.xl,
+    borderRadius: borderRadius.full,
+    borderWidth: 1.5,
+    borderColor: c.gold,
+  },
+  emptyCtaText: {
+    fontSize: 14,
+    fontWeight: '700',
+    color: c.gold,
+  },
+}));
+
 export default function FeedScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
+  const c = useColors();
+  const styles = useStyles();
   const [mode, setMode] = useState<FeedMode>('local');
-  const [likeState, setLikeState] = useState<Record<string, boolean>>({});
-  const [saveState, setSaveState] = useState<Record<string, boolean>>({});
-  const [saveSheetPostId, setSaveSheetPostId] = useState<string | null>(null);
 
   // Collapsing header animation
   const scrollY = useRef(new Animated.Value(0)).current;
@@ -108,48 +210,20 @@ export default function FeedScreen() {
   }, [rawPosts]);
   const heroRestaurant = heroPost ? getRestaurantForPost(heroPost.restaurant_id) : null;
 
-  const handleLike = useCallback((postId: string) => {
-    setLikeState((prev) => ({ ...prev, [postId]: toggleLike(ME, postId) }));
-  }, []);
-
-  const handleOpenSaveSheet = useCallback((postId: string) => {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    setSaveSheetPostId(postId);
-  }, []);
-
-  const handleSavedToCollection = useCallback(() => {
-    if (!saveSheetPostId) return;
-    if (!isSaved(ME, saveSheetPostId)) toggleSave(ME, saveSheetPostId);
-    setSaveState((prev) => ({ ...prev, [saveSheetPostId]: true }));
-  }, [saveSheetPostId]);
-
   const handleTabSwitch = useCallback((m: FeedMode) => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     setMode(m);
   }, []);
 
   const renderItem = useCallback(
-    ({ item, index }: { item: FeedItem; index: number }) => {
+    ({ item }: { item: FeedItem }) => {
       if ('_type' in item) {
         return <CollectionsStrip />;
       }
       const post = item as SnapPost;
-      const liked = likeState[post.id] ?? isLiked(ME, post.id);
-      const saved = saveState[post.id] ?? (isSaved(ME, post.id) || isPostInAnyCollection(ME, post.id));
-      const postIndex = rawPosts.indexOf(post);
-      return (
-        <FeedPostCard
-          item={post}
-          index={postIndex}
-          mode={mode}
-          liked={liked}
-          saved={saved}
-          onLike={() => handleLike(post.id)}
-          onSave={() => handleOpenSaveSheet(post.id)}
-        />
-      );
+      return <FeedPostCard item={post} />;
     },
-    [likeState, saveState, mode, rawPosts, handleLike, handleOpenSaveSheet],
+    [],
   );
 
   const ListHeader = useMemo(() => {
@@ -193,7 +267,7 @@ export default function FeedScreen() {
                   <Ionicons
                     name={tab.icon as any}
                     size={14}
-                    color={active ? colors.gold : colors.textMuted}
+                    color={active ? c.gold : c.textMuted}
                   />
                   <Text style={[styles.tabLabel, active && styles.tabLabelActive]}>
                     {tab.label}
@@ -232,7 +306,7 @@ export default function FeedScreen() {
               <Ionicons
                 name={mode === 'following' ? 'people-outline' : 'images-outline'}
                 size={44}
-                color={colors.textMuted}
+                color={c.textMuted}
                 style={{ marginBottom: spacing.md }}
               />
               <Text style={styles.emptyTitle}>
@@ -261,125 +335,6 @@ export default function FeedScreen() {
           }
         />
       )}
-
-      <SaveToCollectionSheet
-        visible={!!saveSheetPostId}
-        postId={saveSheetPostId}
-        onClose={() => setSaveSheetPostId(null)}
-        onSaved={handleSavedToCollection}
-      />
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: colors.bgBase },
-
-  // Header
-  header: {
-    borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: colors.border,
-  },
-  headerTop: {
-    justifyContent: 'center',
-    paddingHorizontal: spacing.md,
-  },
-  greetingRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  greetingLeft: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 7,
-  },
-  greetingDot: {
-    width: 6,
-    height: 6,
-    borderRadius: 3,
-    backgroundColor: colors.gold,
-  },
-  greetingText: {
-    fontSize: 11,
-    fontWeight: '700',
-    color: colors.textMuted,
-    letterSpacing: 1.3,
-  },
-  // Tabs
-  tabs: {
-    flexDirection: 'row',
-    paddingTop: 24,
-  },
-  tab: {
-    flex: 1,
-    alignItems: 'center',
-  },
-  tabInner: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 5,
-    paddingVertical: 10,
-  },
-  tabLabel: {
-    fontSize: 13,
-    fontWeight: '600',
-    color: colors.textMuted,
-  },
-  tabLabelActive: {
-    color: colors.gold,
-    fontWeight: '700',
-  },
-  tabUnderline: {
-    height: 2,
-    width: '55%',
-    borderRadius: 2,
-    backgroundColor: colors.gold,
-    marginTop: -1,
-  },
-
-  // Between posts
-  separator: {
-    height: 8,
-    backgroundColor: colors.bgBase,
-    borderTopWidth: StyleSheet.hairlineWidth,
-    borderBottomWidth: StyleSheet.hairlineWidth,
-    borderColor: 'rgba(255,255,255,0.06)',
-  },
-
-  // Empty state
-  emptyCard: {
-    margin: spacing.lg,
-    backgroundColor: colors.bgSurface,
-    borderRadius: borderRadius.xl,
-    borderWidth: 1,
-    borderColor: colors.border,
-    padding: spacing['3xl'],
-    alignItems: 'center',
-    gap: spacing.sm,
-  },
-  emptyTitle: {
-    fontSize: 16,
-    fontWeight: '700',
-    color: colors.textPrimary,
-    textAlign: 'center',
-  },
-  emptyText: {
-    fontSize: 14,
-    color: colors.textMuted,
-    textAlign: 'center',
-    lineHeight: 20,
-  },
-  emptyCta: {
-    marginTop: spacing.md,
-    paddingVertical: spacing.sm,
-    paddingHorizontal: spacing.xl,
-    borderRadius: borderRadius.full,
-    borderWidth: 1.5,
-    borderColor: colors.gold,
-  },
-  emptyCtaText: {
-    fontSize: 14,
-    fontWeight: '700',
-    color: colors.gold,
-  },
-});

@@ -1,32 +1,16 @@
 import React from 'react';
-import { View, Text, StyleSheet } from 'react-native';
+import { View, Text } from 'react-native';
 import { Badge } from '@/components/ui';
 import type { PromotionOffer } from '@/lib/mock/profileScreens';
-import { colors, spacing, typography, borderRadius, shadows } from '@/lib/theme';
+import { useColors, createStyles, spacing, typography, borderRadius, shadows } from '@/lib/theme';
 
 type Props = {
   offer: PromotionOffer;
 };
 
-export function PromotionOfferCard({ offer }: Props) {
-  return (
-    <View style={styles.card}>
-      <View style={styles.top}>
-        <Text style={styles.headline}>{offer.headline}</Text>
-        {offer.badge ? <Badge label={offer.badge} variant="gold" size="sm" /> : <View style={styles.spacer} />}
-      </View>
-      <Text style={styles.description}>{offer.description}</Text>
-      <Text style={styles.expires}>{offer.expiresLabel}</Text>
-      <View style={styles.termsBox}>
-        <Text style={styles.terms}>{offer.terms}</Text>
-      </View>
-    </View>
-  );
-}
-
-const styles = StyleSheet.create({
+const useStyles = createStyles((c) => ({
   card: {
-    backgroundColor: colors.bgSurface,
+    backgroundColor: c.bgSurface,
     borderRadius: borderRadius.xl,
     borderWidth: 1,
     borderColor: 'rgba(201, 168, 76, 0.25)',
@@ -43,7 +27,7 @@ const styles = StyleSheet.create({
   },
   headline: {
     ...typography.h3,
-    color: colors.textPrimary,
+    color: c.textPrimary,
     fontWeight: '700',
     flex: 1,
   },
@@ -52,25 +36,43 @@ const styles = StyleSheet.create({
   },
   description: {
     ...typography.body,
-    color: colors.textSecondary,
+    color: c.textSecondary,
     marginBottom: spacing.sm,
   },
   expires: {
     ...typography.bodySmall,
-    color: colors.gold,
+    color: c.gold,
     fontWeight: '600',
     marginBottom: spacing.md,
   },
   termsBox: {
-    backgroundColor: colors.bgElevated,
+    backgroundColor: c.bgElevated,
     borderRadius: borderRadius.md,
     padding: spacing.sm,
     borderWidth: 1,
-    borderColor: colors.border,
+    borderColor: c.border,
   },
   terms: {
     ...typography.bodySmall,
-    color: colors.textMuted,
+    color: c.textMuted,
     lineHeight: 18,
   },
-});
+}));
+
+export function PromotionOfferCard({ offer }: Props) {
+  const styles = useStyles();
+
+  return (
+    <View style={styles.card}>
+      <View style={styles.top}>
+        <Text style={styles.headline}>{offer.headline}</Text>
+        {offer.badge ? <Badge label={offer.badge} variant="gold" size="sm" /> : <View style={styles.spacer} />}
+      </View>
+      <Text style={styles.description}>{offer.description}</Text>
+      <Text style={styles.expires}>{offer.expiresLabel}</Text>
+      <View style={styles.termsBox}>
+        <Text style={styles.terms}>{offer.terms}</Text>
+      </View>
+    </View>
+  );
+}

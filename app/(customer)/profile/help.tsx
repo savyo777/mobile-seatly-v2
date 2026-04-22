@@ -7,14 +7,126 @@ import { ProfileStackScreen } from '@/components/profile/ProfileStackScreen';
 import { ProfileSectionTitle } from '@/components/profile/ProfileSectionTitle';
 import { Card } from '@/components/ui';
 import { mockFaqs, mockHelpTopics } from '@/lib/mock/profileScreens';
-import { colors, spacing, typography, borderRadius, shadows } from '@/lib/theme';
+import { useColors, createStyles, spacing, typography, borderRadius, shadows } from '@/lib/theme';
 
 if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental) {
   UIManager.setLayoutAnimationEnabledExperimental(true);
 }
 
+const useStyles = createStyles((c) => ({
+  searchWrap: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: c.bgSurface,
+    borderRadius: borderRadius.lg,
+    borderWidth: 1,
+    borderColor: c.border,
+    paddingHorizontal: spacing.md,
+    marginBottom: spacing.lg,
+    ...shadows.card,
+  },
+  searchIcon: {
+    marginRight: spacing.sm,
+  },
+  searchInput: {
+    flex: 1,
+    ...typography.body,
+    color: c.textPrimary,
+    paddingVertical: spacing.md,
+  },
+  topicGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: spacing.sm,
+    marginBottom: spacing.xl,
+  },
+  topicCard: {
+    width: '48%',
+    backgroundColor: c.bgSurface,
+    borderRadius: borderRadius.lg,
+    borderWidth: 1,
+    borderColor: c.border,
+    padding: spacing.md,
+    ...shadows.card,
+  },
+  topicPressed: {
+    opacity: 0.88,
+    borderColor: 'rgba(201, 168, 76, 0.35)',
+  },
+  topicIcon: {
+    marginBottom: spacing.sm,
+  },
+  topicTitle: {
+    ...typography.body,
+    color: c.textPrimary,
+    fontWeight: '700',
+    marginBottom: 4,
+  },
+  topicDesc: {
+    ...typography.bodySmall,
+    color: c.textMuted,
+  },
+  contactCard: {
+    marginBottom: spacing.xl,
+    ...shadows.card,
+  },
+  contactRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.md,
+    paddingVertical: spacing.xs,
+  },
+  flex: {
+    flex: 1,
+  },
+  contactTitle: {
+    ...typography.body,
+    color: c.textPrimary,
+    fontWeight: '600',
+  },
+  contactSub: {
+    ...typography.bodySmall,
+    color: c.textMuted,
+    marginTop: 2,
+  },
+  divider: {
+    height: StyleSheet.hairlineWidth,
+    backgroundColor: c.border,
+    marginVertical: spacing.sm,
+  },
+  faqCard: {
+    backgroundColor: c.bgSurface,
+    borderRadius: borderRadius.lg,
+    borderWidth: 1,
+    borderColor: c.border,
+    padding: spacing.md,
+    marginBottom: spacing.sm,
+    ...shadows.card,
+  },
+  faqHead: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+    gap: spacing.md,
+  },
+  faqQ: {
+    ...typography.body,
+    color: c.textPrimary,
+    fontWeight: '600',
+    flex: 1,
+  },
+  faqA: {
+    ...typography.bodySmall,
+    color: c.textSecondary,
+    marginTop: spacing.md,
+    lineHeight: 20,
+  },
+}));
+
 export default function HelpScreen() {
   const { t } = useTranslation();
+  const c = useColors();
+  const styles = useStyles();
   const [q, setQ] = useState('');
   const [openFaq, setOpenFaq] = useState<string | null>(mockFaqs[0]?.id ?? null);
 
@@ -32,12 +144,12 @@ export default function HelpScreen() {
   return (
     <ProfileStackScreen title={t('profile.help')}>
       <View style={styles.searchWrap}>
-        <Ionicons name="search" size={20} color={colors.textMuted} style={styles.searchIcon} />
+        <Ionicons name="search" size={20} color={c.textMuted} style={styles.searchIcon} />
         <TextInput
           value={q}
           onChangeText={setQ}
           placeholder="Search help topics"
-          placeholderTextColor={colors.textMuted}
+          placeholderTextColor={c.textMuted}
           style={styles.searchInput}
         />
       </View>
@@ -47,7 +159,7 @@ export default function HelpScreen() {
         {mockHelpTopics.map((topic) => (
           <Pressable key={topic.id} style={({ pressed }) => [styles.topicCard, pressed && styles.topicPressed]}>
             <View style={styles.topicIcon}>
-              <Ionicons name={topic.icon} size={22} color={colors.gold} />
+              <Ionicons name={topic.icon} size={22} color={c.gold} />
             </View>
             <Text style={styles.topicTitle}>{topic.title}</Text>
             <Text style={styles.topicDesc} numberOfLines={2}>
@@ -59,21 +171,21 @@ export default function HelpScreen() {
 
       <Card style={styles.contactCard}>
         <View style={styles.contactRow}>
-          <Ionicons name="chatbubble-ellipses-outline" size={22} color={colors.gold} />
+          <Ionicons name="chatbubble-ellipses-outline" size={22} color={c.gold} />
           <View style={styles.flex}>
             <Text style={styles.contactTitle}>Live chat</Text>
             <Text style={styles.contactSub}>Avg. reply under 4 min · 9am–11pm ET</Text>
           </View>
-          <ChevronGlyph color={colors.textMuted} size={18} />
+          <ChevronGlyph color={c.textMuted} size={18} />
         </View>
         <View style={styles.divider} />
         <View style={styles.contactRow}>
-          <Ionicons name="mail-outline" size={22} color={colors.gold} />
+          <Ionicons name="mail-outline" size={22} color={c.gold} />
           <View style={styles.flex}>
             <Text style={styles.contactTitle}>Contact support</Text>
             <Text style={styles.contactSub}>help@cenaiva.app</Text>
           </View>
-          <ChevronGlyph color={colors.textMuted} size={18} />
+          <ChevronGlyph color={c.textMuted} size={18} />
         </View>
       </Card>
 
@@ -84,7 +196,7 @@ export default function HelpScreen() {
           <Pressable key={f.id} onPress={() => toggleFaq(f.id)} style={styles.faqCard}>
             <View style={styles.faqHead}>
               <Text style={styles.faqQ}>{f.q}</Text>
-              <Ionicons name={open ? 'chevron-up' : 'chevron-down'} size={20} color={colors.gold} />
+              <Ionicons name={open ? 'chevron-up' : 'chevron-down'} size={20} color={c.gold} />
             </View>
             {open ? <Text style={styles.faqA}>{f.a}</Text> : null}
           </Pressable>
@@ -93,113 +205,3 @@ export default function HelpScreen() {
     </ProfileStackScreen>
   );
 }
-
-const styles = StyleSheet.create({
-  searchWrap: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: colors.bgSurface,
-    borderRadius: borderRadius.lg,
-    borderWidth: 1,
-    borderColor: colors.border,
-    paddingHorizontal: spacing.md,
-    marginBottom: spacing.lg,
-    ...shadows.card,
-  },
-  searchIcon: {
-    marginRight: spacing.sm,
-  },
-  searchInput: {
-    flex: 1,
-    ...typography.body,
-    color: colors.textPrimary,
-    paddingVertical: spacing.md,
-  },
-  topicGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: spacing.sm,
-    marginBottom: spacing.xl,
-  },
-  topicCard: {
-    width: '48%',
-    backgroundColor: colors.bgSurface,
-    borderRadius: borderRadius.lg,
-    borderWidth: 1,
-    borderColor: colors.border,
-    padding: spacing.md,
-    ...shadows.card,
-  },
-  topicPressed: {
-    opacity: 0.88,
-    borderColor: 'rgba(201, 168, 76, 0.35)',
-  },
-  topicIcon: {
-    marginBottom: spacing.sm,
-  },
-  topicTitle: {
-    ...typography.body,
-    color: colors.textPrimary,
-    fontWeight: '700',
-    marginBottom: 4,
-  },
-  topicDesc: {
-    ...typography.bodySmall,
-    color: colors.textMuted,
-  },
-  contactCard: {
-    marginBottom: spacing.xl,
-    ...shadows.card,
-  },
-  contactRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.md,
-    paddingVertical: spacing.xs,
-  },
-  flex: {
-    flex: 1,
-  },
-  contactTitle: {
-    ...typography.body,
-    color: colors.textPrimary,
-    fontWeight: '600',
-  },
-  contactSub: {
-    ...typography.bodySmall,
-    color: colors.textMuted,
-    marginTop: 2,
-  },
-  divider: {
-    height: StyleSheet.hairlineWidth,
-    backgroundColor: colors.border,
-    marginVertical: spacing.sm,
-  },
-  faqCard: {
-    backgroundColor: colors.bgSurface,
-    borderRadius: borderRadius.lg,
-    borderWidth: 1,
-    borderColor: colors.border,
-    padding: spacing.md,
-    marginBottom: spacing.sm,
-    ...shadows.card,
-  },
-  faqHead: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'flex-start',
-    gap: spacing.md,
-  },
-  faqQ: {
-    ...typography.body,
-    color: colors.textPrimary,
-    fontWeight: '600',
-    flex: 1,
-  },
-  faqA: {
-    ...typography.bodySmall,
-    color: colors.textSecondary,
-    marginTop: spacing.md,
-    lineHeight: 20,
-  },
-});

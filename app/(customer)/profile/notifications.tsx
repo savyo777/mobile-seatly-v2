@@ -1,13 +1,33 @@
 import React, { useMemo, useState } from 'react';
-import { View, Text, StyleSheet } from 'react-native';
+import { View, Text } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { ProfileStackScreen } from '@/components/profile/ProfileStackScreen';
 import { ToggleRow } from '@/components/profile/ToggleRow';
 import { mockNotificationPrefs } from '@/lib/mock/profileScreens';
-import { colors, spacing, typography, borderRadius, shadows } from '@/lib/theme';
+import { useColors, createStyles, spacing, typography, shadows } from '@/lib/theme';
+
+const useStyles = createStyles((c) => ({
+  intro: {
+    ...typography.body,
+    color: c.textSecondary,
+    lineHeight: 22,
+    marginBottom: spacing.lg,
+    opacity: 0.95,
+  },
+  group: {
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.08)',
+    backgroundColor: 'rgba(255,255,255,0.03)',
+    overflow: 'hidden',
+    marginBottom: spacing.lg,
+    ...shadows.card,
+  },
+}));
 
 export default function NotificationsScreen() {
   const { t } = useTranslation();
+  const styles = useStyles();
   const initial = useMemo(() => {
     const o: Record<string, boolean> = {};
     mockNotificationPrefs.forEach((p) => {
@@ -41,22 +61,3 @@ export default function NotificationsScreen() {
     </ProfileStackScreen>
   );
 }
-
-const styles = StyleSheet.create({
-  intro: {
-    ...typography.body,
-    color: colors.textSecondary,
-    lineHeight: 22,
-    marginBottom: spacing.lg,
-    opacity: 0.95,
-  },
-  group: {
-    borderRadius: 14,
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.08)',
-    backgroundColor: 'rgba(255,255,255,0.03)',
-    overflow: 'hidden',
-    marginBottom: spacing.lg,
-    ...shadows.card,
-  },
-});

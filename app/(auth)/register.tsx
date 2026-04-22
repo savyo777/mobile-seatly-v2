@@ -1,15 +1,51 @@
 import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
+import { View, Text, TouchableOpacity } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { colors, spacing, typography } from '@/lib/theme';
+import { useColors, createStyles, spacing, typography } from '@/lib/theme';
 import { ScreenWrapper, Input, Button } from '@/components/ui';
+
+const useStyles = createStyles((c) => ({
+  inner: {
+    flexGrow: 1,
+    paddingTop: spacing.md,
+  },
+  heading: {
+    ...typography.h2,
+    color: c.textPrimary,
+    marginBottom: spacing.sm,
+  },
+  sub: {
+    ...typography.body,
+    color: c.textMuted,
+    marginBottom: spacing['2xl'],
+  },
+  primaryBtn: {
+    marginTop: spacing.sm,
+  },
+  footerRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'center',
+    marginTop: spacing['3xl'],
+  },
+  footerMuted: {
+    ...typography.body,
+    color: c.textSecondary,
+  },
+  footerLink: {
+    ...typography.body,
+    color: c.gold,
+    fontWeight: '600',
+  },
+}));
 
 export default function RegisterScreen() {
   const { t } = useTranslation();
   const router = useRouter();
   const insets = useSafeAreaInsets();
+  const styles = useStyles();
 
   const onSuccess = () => {
     router.replace('/(customer)');
@@ -44,38 +80,3 @@ export default function RegisterScreen() {
     </ScreenWrapper>
   );
 }
-
-const styles = StyleSheet.create({
-  inner: {
-    flexGrow: 1,
-    paddingTop: spacing.md,
-  },
-  heading: {
-    ...typography.h2,
-    color: colors.textPrimary,
-    marginBottom: spacing.sm,
-  },
-  sub: {
-    ...typography.body,
-    color: colors.textMuted,
-    marginBottom: spacing['2xl'],
-  },
-  primaryBtn: {
-    marginTop: spacing.sm,
-  },
-  footerRow: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    justifyContent: 'center',
-    marginTop: spacing['3xl'],
-  },
-  footerMuted: {
-    ...typography.body,
-    color: colors.textSecondary,
-  },
-  footerLink: {
-    ...typography.body,
-    color: colors.gold,
-    fontWeight: '600',
-  },
-});

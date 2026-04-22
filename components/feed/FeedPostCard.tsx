@@ -1,286 +1,53 @@
-import React, { useCallback, useEffect, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   Animated,
   Dimensions,
   Image,
+  Modal,
   Platform,
   Pressable,
   StyleSheet,
   Text,
+  useWindowDimensions,
   View,
 } from 'react-native';
 import * as Haptics from 'expo-haptics';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
-import { useRouter, Href } from 'expo-router';
-import {
-  getRestaurantForPost,
-  getSnapUser,
-  timeAgoLabel,
-  type SnapPost,
-} from '@/lib/mock/snaps';
-import { getCommentCountForPost } from '@/lib/mock/comments';
-import { useTranslation } from 'react-i18next';
-import { HeartBurst } from './HeartBurst';
-import { colors, spacing, borderRadius } from '@/lib/theme';
+import { Href, useRouter } from 'expo-router';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { getRestaurantForPost, getSnapUser, timeAgoLabel, type SnapPost } from '@/lib/mock/snaps';
+import { isLiked, isSaved, toggleLike, toggleSave } from '@/lib/mock/social';
+import { mockCustomer } from '@/lib/mock/users';
+import { useColors, createStyles, spacing, borderRadius } from '@/lib/theme';
+
+const ME = mockCustomer.id;
 
 interface Props {
   item: SnapPost;
-  index: number;
-  mode: 'local' | 'following' | 'explore';
-  liked: boolean;
-  saved: boolean;
-  onLike: () => void;
-  onSave: () => void;
 }
 
 const SCREEN_W = Dimensions.get('window').width;
 const IMAGE_H = SCREEN_W * 1.15;
 const PRICE_LABELS = ['', '$', '$$', '$$$', '$$$$'];
 
-export function FeedPostCard({ item, index, mode, liked, saved, onLike, onSave }: Props) {
-  const router = useRouter();
-  const { t } = useTranslation();
-  const restaurant = getRestaurantForPost(item.restaurant_id);
-  const user = getSnapUser(item.user_id);
-  const commentCount = getCommentCountForPost(item.id);
-  const likeCount = item.likes + (liked ? 1 : 0);
-
-  const [heartBurst, setHeartBurst] = useState(false);
-  const heartScale = useRef(new Animated.Value(1)).current;
-  const bookmarkScale = useRef(new Animated.Value(1)).current;
-
-  // Card entrance animation
-  const entranceOpacity = useRef(new Animated.Value(0)).current;
-  const entranceY = useRef(new Animated.Value(10)).current;
-  useEffect(() => {
-    Animated.parallel([
-      Animated.timing(entranceOpacity, { toValue: 1, duration: 320, useNativeDriver: true }),
-      Animated.timing(entranceY, { toValue: 0, duration: 320, useNativeDriver: true }),
-    ]).start();
-  }, []);
-
-  // Double-tap detection
-  const lastTapRef = useRef(0);
-  const tapTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-
-  const handleImagePress = useCallback(() => {
-    const now = Date.now();
-    if (now - lastTapRef.current < 300 && tapTimeoutRef.current) {
-      clearTimeout(tapTimeoutRef.current);
-      tapTimeoutRef.current = null;
-      // Double tap → like
-      if (!liked) {
-        onLike();
-        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-      }
-      setHeartBurst(true);
-    } else {
-      lastTapRef.current = now;
-      tapTimeoutRef.current = setTimeout(() => {
-        tapTimeoutRef.current = null;
-        router.push(`/(customer)/discover/snaps/detail/${item.id}` as Href);
-      }, 260);
-    }
-  }, [liked, onLike, item.id, router]);
-
-  const handleLike = useCallback(() => {
-    onLike();
-    Animated.sequence([
-      Animated.spring(heartScale, { toValue: 1.35, tension: 120, friction: 6, useNativeDriver: true }),
-      Animated.spring(heartScale, { toValue: 1, tension: 80, friction: 8, useNativeDriver: true }),
-    ]).start();
-  }, [onLike, heartScale]);
-
-  const handleSave = useCallback(() => {
-    onSave();
-    Animated.sequence([
-      Animated.spring(bookmarkScale, { toValue: 1.35, tension: 120, friction: 6, useNativeDriver: true }),
-      Animated.spring(bookmarkScale, { toValue: 1, tension: 80, friction: 8, useNativeDriver: true }),
-    ]).start();
-  }, [onSave, bookmarkScale]);
-
-  const handleReserveTable = useCallback(() => {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    router.push(`/booking/${item.restaurant_id}/step2-time` as Href);
-  }, [item.restaurant_id, router]);
-
-  const isTrending = mode === 'explore' || item.likes > 500;
-  const hasAvailabilityStripe =
-    restaurant?.availability === 'Top Rated' || restaurant?.availability === 'Available Tonight';
-
-  return (
-    <Animated.View style={[styles.card, { opacity: entranceOpacity, transform: [{ translateY: entranceY }] }]}>
-      {/* ── Image zone ── */}
-      <View style={styles.imageWrap}>
-        <Pressable onPress={handleImagePress} style={styles.imagePressable}>
-          <Image source={{ uri: item.image }} style={styles.image} resizeMode="cover" />
-        </Pressable>
-
-        {/* Heart burst overlay */}
-        <HeartBurst visible={heartBurst} onComplete={() => setHeartBurst(false)} />
-
-        {/* Dish badge — top left */}
-        {item.dish ? (
-          <View style={styles.dishBadge}>
-            <Ionicons name="restaurant" size={10} color={colors.gold} />
-            <Text style={styles.dishBadgeText} numberOfLines={1}>{item.dish}</Text>
-          </View>
-        ) : null}
-
-        {/* Trending badge — top right */}
-        {isTrending ? (
-          <View style={styles.trendingBadge}>
-            <Ionicons name="flame" size={10} color={colors.bgBase} />
-            <Text style={styles.trendingBadgeText}>
-              {mode === 'explore' ? `#${index + 1}` : 'HOT'}
-            </Text>
-          </View>
-        ) : null}
-
-        {/* Bottom gradient + identity */}
-        <LinearGradient
-          colors={['transparent', 'rgba(0,0,0,0.85)']}
-          style={styles.gradient}
-          pointerEvents="box-none"
-        >
-          <View style={styles.identityRow}>
-            <Pressable
-              onPress={() => router.push(`/(customer)/profile/${item.user_id}` as Href)}
-              style={styles.avatarWrap}
-            >
-              {user?.avatarUrl ? (
-                <Image source={{ uri: user.avatarUrl }} style={styles.avatar} />
-              ) : (
-                <View style={[styles.avatar, styles.avatarFallback]} />
-              )}
-            </Pressable>
-            <View style={styles.identityInfo}>
-              <Text style={styles.identityUsername}>@{user?.username ?? 'user'}</Text>
-              <Text style={styles.identityTime}>{timeAgoLabel(item.timestamp)}</Text>
-            </View>
-          </View>
-        </LinearGradient>
-
-      </View>
-
-      {/* ── Info card ── */}
-      <View style={styles.infoCard}>
-        {/* Availability stripe */}
-        {hasAvailabilityStripe ? (
-          <LinearGradient
-            colors={[colors.gold, 'transparent']}
-            start={{ x: 0, y: 0 }}
-            end={{ x: 1, y: 0 }}
-            style={styles.availStripe}
-          />
-        ) : null}
-
-        {/* ── Horizontal action row ── */}
-        <View style={styles.actionBar}>
-          <Pressable onPress={handleLike} style={styles.actionItem} hitSlop={8}>
-            <Animated.View style={{ transform: [{ scale: heartScale }] }}>
-              <Ionicons
-                name={liked ? 'heart' : 'heart-outline'}
-                size={22}
-                color={liked ? colors.gold : colors.textSecondary}
-              />
-            </Animated.View>
-            <Text style={[styles.actionLabel, liked && styles.actionLabelActive]}>
-              {likeCount.toLocaleString()}
-            </Text>
-          </Pressable>
-
-          <View style={styles.actionDivider} />
-
-          <Pressable
-            onPress={() => router.push(`/(customer)/discover/snaps/detail/${item.id}` as Href)}
-            style={styles.actionItem}
-            hitSlop={8}
-          >
-            <Ionicons name="chatbubble-outline" size={20} color={colors.textSecondary} />
-            <Text style={styles.actionLabel}>{commentCount > 0 ? commentCount : 'Comment'}</Text>
-          </Pressable>
-
-          <View style={styles.actionDivider} />
-
-          <Pressable onPress={handleSave} style={styles.actionItem} hitSlop={8}>
-            <Animated.View style={{ transform: [{ scale: bookmarkScale }] }}>
-              <Ionicons
-                name={saved ? 'bookmark' : 'bookmark-outline'}
-                size={20}
-                color={saved ? colors.gold : colors.textSecondary}
-              />
-            </Animated.View>
-            <Text style={[styles.actionLabel, saved && styles.actionLabelActive]}>
-              {saved ? 'Saved' : 'Save'}
-            </Text>
-          </Pressable>
-        </View>
-
-        <View style={styles.infoInner}>
-          {/* Restaurant name + Reserve pill — same row */}
-          <View style={styles.nameReserveRow}>
-            <Pressable
-              style={styles.namePress}
-              onPress={() => router.push(`/(customer)/discover/${item.restaurant_id}` as Href)}
-            >
-              <Text style={styles.restaurantName} numberOfLines={1}>
-                {restaurant?.name ?? 'Restaurant'}
-              </Text>
-            </Pressable>
-
-            <View style={styles.reserveFrame}>
-              <Pressable
-                onPress={handleReserveTable}
-                accessibilityRole="button"
-                accessibilityLabel={`Reserve a table at ${restaurant?.name ?? ''}`}
-                style={({ pressed }) => [styles.reservePressable, pressed && styles.reservePressablePressed]}
-              >
-                <View style={styles.reserveRow}>
-                  <Text style={styles.reserveLabel}>Book</Text>
-                </View>
-              </Pressable>
-            </View>
-          </View>
-
-          {/* Meta row */}
-          <View style={styles.metaRow}>
-            <Ionicons name="star" size={11} color={colors.gold} />
-            <Text style={styles.metaGold}>{restaurant?.avgRating.toFixed(1)}</Text>
-            <Text style={styles.metaMuted}>· {restaurant?.totalReviews} reviews</Text>
-            <Text style={styles.metaDot}>·</Text>
-            <Text style={styles.metaMuted}>{PRICE_LABELS[restaurant?.priceRange ?? 2]}</Text>
-            <Text style={styles.metaDot}>·</Text>
-            <Text style={styles.metaMuted}>{restaurant?.distanceKm.toFixed(1)} km</Text>
-          </View>
-
-          {/* Caption */}
-          <Text style={styles.caption} numberOfLines={2}>
-            <Text style={styles.captionUser}>@{user?.username ?? 'user'} </Text>
-            {item.caption}
-          </Text>
-
-          {/* Tags */}
-          {item.tags && item.tags.length > 0 ? (
-            <View style={styles.tagsRow}>
-              {item.tags.slice(0, 3).map((tag) => (
-                <View key={tag} style={styles.tagChip}>
-                  <Text style={styles.tagText}>{tag}</Text>
-                </View>
-              ))}
-            </View>
-          ) : null}
-        </View>
-      </View>
-    </Animated.View>
-  );
-}
-
-const styles = StyleSheet.create({
+const useStyles = createStyles((c) => ({
   card: {},
-
-  // Image
+  photoModalRoot: {
+    flex: 1,
+    backgroundColor: '#000',
+  },
+  photoModalClose: {
+    position: 'absolute',
+    right: spacing.md,
+    zIndex: 2,
+    padding: spacing.sm,
+  },
+  photoModalImageWrap: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
   imageWrap: {
     width: SCREEN_W,
     height: IMAGE_H,
@@ -293,52 +60,8 @@ const styles = StyleSheet.create({
   image: {
     width: SCREEN_W,
     height: IMAGE_H,
-    backgroundColor: colors.bgElevated,
+    backgroundColor: c.bgElevated,
   },
-
-  // Dish badge
-  dishBadge: {
-    position: 'absolute',
-    top: spacing.md,
-    left: spacing.md,
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 5,
-    backgroundColor: 'rgba(0,0,0,0.58)',
-    borderRadius: borderRadius.full,
-    paddingHorizontal: 10,
-    paddingVertical: 5,
-    borderWidth: 1,
-    borderColor: 'rgba(201,162,74,0.38)',
-    maxWidth: SCREEN_W * 0.55,
-  },
-  dishBadgeText: {
-    fontSize: 11,
-    fontWeight: '600',
-    color: colors.gold,
-  },
-
-  // Trending badge
-  trendingBadge: {
-    position: 'absolute',
-    top: spacing.md,
-    right: spacing.md,
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-    backgroundColor: colors.gold,
-    borderRadius: borderRadius.full,
-    paddingHorizontal: 9,
-    paddingVertical: 5,
-  },
-  trendingBadgeText: {
-    fontSize: 10,
-    fontWeight: '800',
-    color: colors.bgBase,
-    letterSpacing: 0.5,
-  },
-
-  // Bottom gradient + identity
   gradient: {
     position: 'absolute',
     bottom: 0,
@@ -359,10 +82,10 @@ const styles = StyleSheet.create({
     height: 34,
     borderRadius: 17,
     borderWidth: 1.5,
-    borderColor: colors.gold,
-    backgroundColor: colors.bgElevated,
+    borderColor: c.gold,
+    backgroundColor: c.bgElevated,
   },
-  avatarFallback: { backgroundColor: colors.bgElevated },
+  avatarFallback: { backgroundColor: c.bgElevated },
   identityInfo: { flex: 1 },
   identityUsername: {
     fontSize: 13,
@@ -374,41 +97,49 @@ const styles = StyleSheet.create({
     color: 'rgba(255,255,255,0.5)',
     marginTop: 1,
   },
-
-  // Horizontal action bar
   actionBar: {
     flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'space-between',
     paddingHorizontal: spacing.md,
-    paddingVertical: 10,
-    borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: colors.border,
+    paddingTop: spacing.sm,
+    paddingBottom: spacing.xs,
+    backgroundColor: c.bgBase,
   },
-  actionItem: {
-    flex: 1,
+  actionLeft: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'center',
-    gap: 6,
-    paddingVertical: 2,
+    gap: spacing.md,
   },
-  actionDivider: {
-    width: StyleSheet.hairlineWidth,
-    height: 18,
-    backgroundColor: colors.border,
-  },
-  actionLabel: {
+  likeCount: {
     fontSize: 13,
-    fontWeight: '600',
-    color: colors.textMuted,
+    fontWeight: '700',
+    color: c.textPrimary,
+    marginLeft: -8,
+    minWidth: 20,
   },
-  actionLabelActive: {
-    color: colors.gold,
+  bookBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: borderRadius.full,
+    backgroundColor: c.gold,
+    shadowColor: c.gold,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.35,
+    shadowRadius: 6,
+    elevation: 3,
   },
-
-  // Info card
+  bookBtnText: {
+    fontSize: 12,
+    fontWeight: '800',
+    color: c.bgBase,
+    letterSpacing: 0.2,
+  },
   infoCard: {
-    backgroundColor: colors.bgBase,
+    backgroundColor: c.bgBase,
     overflow: 'hidden',
   },
   availStripe: {
@@ -419,26 +150,14 @@ const styles = StyleSheet.create({
     paddingTop: 8,
     paddingBottom: 10,
   },
-
-  nameReserveRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    gap: 8,
-    marginBottom: 2,
-  },
-  namePress: {
-    flex: 1,
-    minWidth: 0,
-  },
   restaurantName: {
     fontSize: 15,
     fontWeight: '700',
-    color: colors.textPrimary,
+    color: c.textPrimary,
     letterSpacing: -0.1,
     lineHeight: 20,
+    marginBottom: 2,
   },
-
   metaRow: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -449,29 +168,27 @@ const styles = StyleSheet.create({
   metaGold: {
     fontSize: 11,
     fontWeight: '700',
-    color: colors.gold,
+    color: c.gold,
   },
   metaMuted: {
     fontSize: 11,
-    color: colors.textMuted,
+    color: c.textMuted,
     fontWeight: '400',
   },
   metaDot: {
     fontSize: 11,
     color: 'rgba(255,255,255,0.15)',
   },
-
   caption: {
     fontSize: 13,
-    color: colors.textPrimary,
+    color: c.textPrimary,
     lineHeight: 18,
     marginTop: 5,
   },
   captionUser: {
     fontWeight: '700',
-    color: colors.textPrimary,
+    color: c.textPrimary,
   },
-
   tagsRow: {
     flexDirection: 'row',
     flexWrap: 'wrap',
@@ -480,7 +197,7 @@ const styles = StyleSheet.create({
     marginTop: 5,
     paddingTop: 5,
     borderTopWidth: StyleSheet.hairlineWidth,
-    borderTopColor: colors.border,
+    borderTopColor: c.border,
   },
   tagChip: {
     paddingHorizontal: 8,
@@ -495,40 +212,186 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     color: 'rgba(201,162,74,0.8)',
   },
+}));
 
-  reserveFrame: {
-    alignSelf: 'center',
-    borderRadius: borderRadius.full,
-    overflow: 'hidden',
-    backgroundColor: colors.gold,
-    shadowColor: colors.gold,
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.35,
-    shadowRadius: 6,
-    elevation: 4,
-  },
-  reservePressable: {
-    borderRadius: borderRadius.full,
-    overflow: 'hidden',
-  },
-  reservePressablePressed: {
-    opacity: 0.82,
-    transform: [{ scale: 0.96 }],
-  },
-  reserveRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingVertical: 7,
-    paddingHorizontal: 13,
-    gap: 5,
-  },
-  reserveMedallion: {},
-  reserveLabel: {
-    fontSize: 13,
-    fontWeight: '800',
-    color: colors.bgBase,
-    letterSpacing: 0.1,
-  },
-  reserveChevronCap: {},
+export function FeedPostCard({ item }: Props) {
+  const c = useColors();
+  const styles = useStyles();
+  const insets = useSafeAreaInsets();
+  const { width: winW, height: winH } = useWindowDimensions();
+  const router = useRouter();
+  const restaurant = getRestaurantForPost(item.restaurant_id);
+  const user = getSnapUser(item.user_id);
 
-});
+  const [photoOpen, setPhotoOpen] = useState(false);
+  const [liked, setLiked] = useState(() => isLiked(ME, item.id));
+  const [saved, setSaved] = useState(() => isSaved(ME, item.id));
+  const likeCount = useMemo(() => item.likes + (liked ? 1 : 0), [item.likes, liked]);
+
+  const handleLike = useCallback(() => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    setLiked(toggleLike(ME, item.id));
+  }, [item.id]);
+
+  const handleSave = useCallback(() => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    setSaved(toggleSave(ME, item.id));
+  }, [item.id]);
+
+  const handleComment = useCallback(() => {
+    router.push(`/(customer)/discover/snaps/detail/${item.id}` as Href);
+  }, [item.id, router]);
+
+  const handleBook = useCallback(() => {
+    router.push(`/booking/${item.restaurant_id}/step2-time` as Href);
+  }, [item.restaurant_id, router]);
+
+  const entranceOpacity = useRef(new Animated.Value(0)).current;
+  const entranceY = useRef(new Animated.Value(10)).current;
+  useEffect(() => {
+    Animated.parallel([
+      Animated.timing(entranceOpacity, { toValue: 1, duration: 320, useNativeDriver: true }),
+      Animated.timing(entranceY, { toValue: 0, duration: 320, useNativeDriver: true }),
+    ]).start();
+  }, []);
+
+  const openPhoto = useCallback(() => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    setPhotoOpen(true);
+  }, []);
+
+  const closePhoto = useCallback(() => {
+    setPhotoOpen(false);
+  }, []);
+
+  const hasAvailabilityStripe =
+    restaurant?.availability === 'Top Rated' || restaurant?.availability === 'Available Tonight';
+
+  const modalImageHeight = Math.max(240, winH - insets.top - insets.bottom - 56);
+
+  return (
+    <Animated.View style={[styles.card, { opacity: entranceOpacity, transform: [{ translateY: entranceY }] }]}>
+      <Modal
+        visible={photoOpen}
+        animationType="fade"
+        presentationStyle={Platform.OS === 'ios' ? 'fullScreen' : undefined}
+        onRequestClose={closePhoto}
+      >
+        <View style={[styles.photoModalRoot, { paddingTop: insets.top, paddingBottom: insets.bottom }]}>
+          <Pressable
+            onPress={closePhoto}
+            style={[styles.photoModalClose, { top: insets.top + 8 }]}
+            hitSlop={12}
+            accessibilityRole="button"
+            accessibilityLabel="Close photo"
+          >
+            <Ionicons name="close" size={28} color="#fff" />
+          </Pressable>
+          <Pressable style={styles.photoModalImageWrap} onPress={closePhoto}>
+            <Image
+              source={{ uri: item.image }}
+              style={{ width: winW, height: modalImageHeight }}
+              resizeMode="contain"
+            />
+          </Pressable>
+        </View>
+      </Modal>
+
+      <View style={styles.imageWrap}>
+        <Pressable onPress={openPhoto} style={styles.imagePressable}>
+          <Image source={{ uri: item.image }} style={styles.image} resizeMode="cover" />
+        </Pressable>
+
+        <LinearGradient
+          colors={['transparent', 'rgba(0,0,0,0.85)']}
+          style={styles.gradient}
+          pointerEvents="none"
+        >
+          <View style={styles.identityRow}>
+            <View style={styles.avatarWrap}>
+              {user?.avatarUrl ? (
+                <Image source={{ uri: user.avatarUrl }} style={styles.avatar} />
+              ) : (
+                <View style={[styles.avatar, styles.avatarFallback]} />
+              )}
+            </View>
+            <View style={styles.identityInfo}>
+              <Text style={styles.identityUsername}>@{user?.username ?? 'user'}</Text>
+              <Text style={styles.identityTime}>{timeAgoLabel(item.timestamp)}</Text>
+            </View>
+          </View>
+        </LinearGradient>
+      </View>
+
+      <View style={styles.actionBar}>
+        <View style={styles.actionLeft}>
+          <Pressable onPress={handleLike} hitSlop={8} style={({ pressed }) => pressed && { opacity: 0.7 }}>
+            <Ionicons
+              name={liked ? 'heart' : 'heart-outline'}
+              size={27}
+              color={liked ? '#EF4444' : c.textPrimary}
+            />
+          </Pressable>
+          <Text style={styles.likeCount}>{likeCount > 0 ? likeCount.toLocaleString() : ''}</Text>
+          <Pressable onPress={handleComment} hitSlop={8} style={({ pressed }) => pressed && { opacity: 0.7 }}>
+            <Ionicons name="chatbubble-outline" size={25} color={c.textPrimary} />
+          </Pressable>
+          <Pressable
+            onPress={handleBook}
+            style={({ pressed }) => [styles.bookBtn, pressed && { opacity: 0.75 }]}
+          >
+            <Ionicons name="calendar-outline" size={13} color={c.bgBase} />
+            <Text style={styles.bookBtnText}>Book here</Text>
+          </Pressable>
+        </View>
+        <Pressable onPress={handleSave} hitSlop={8} style={({ pressed }) => pressed && { opacity: 0.7 }}>
+          <Ionicons
+            name={saved ? 'bookmark' : 'bookmark-outline'}
+            size={26}
+            color={saved ? c.gold : c.textPrimary}
+          />
+        </Pressable>
+      </View>
+
+      <View style={styles.infoCard}>
+        {hasAvailabilityStripe ? (
+          <LinearGradient
+            colors={[c.gold, 'transparent']}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 0 }}
+            style={styles.availStripe}
+          />
+        ) : null}
+
+        <View style={styles.infoInner}>
+          <Text style={styles.restaurantName} numberOfLines={1}>
+            {restaurant?.name ?? 'Restaurant'}
+          </Text>
+
+          <View style={styles.metaRow}>
+            <Ionicons name="star" size={11} color={c.gold} />
+            <Text style={styles.metaGold}>{restaurant?.avgRating.toFixed(1)}</Text>
+            <Text style={styles.metaMuted}>· {restaurant?.totalReviews} reviews</Text>
+            <Text style={styles.metaDot}>·</Text>
+            <Text style={styles.metaMuted}>{restaurant?.distanceKm.toFixed(1)} km</Text>
+          </View>
+
+          <Text style={styles.caption} numberOfLines={2}>
+            <Text style={styles.captionUser}>@{user?.username ?? 'user'} </Text>
+            {item.caption}
+          </Text>
+
+          {item.tags && item.tags.length > 0 ? (
+            <View style={styles.tagsRow}>
+              {item.tags.slice(0, 3).map((tag) => (
+                <View key={tag} style={styles.tagChip}>
+                  <Text style={styles.tagText}>{tag}</Text>
+                </View>
+              ))}
+            </View>
+          ) : null}
+        </View>
+      </View>
+    </Animated.View>
+  );
+}

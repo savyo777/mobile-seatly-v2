@@ -19,32 +19,226 @@ import { useLocalSearchParams, useNavigation, useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { StatusBar } from 'expo-status-bar';
 import { snapFilters } from '@/lib/mock/reviewSnap';
-import { borderRadius, colors, spacing, typography } from '@/lib/theme';
+import { useColors, createStyles, borderRadius, spacing, typography } from '@/lib/theme';
 import { getSnapRestaurantName } from '@/lib/mock/snaps';
-
-const TAB_BAR_STYLE = {
-  backgroundColor: colors.bgSurface,
-  borderTopColor: colors.border,
-  borderTopWidth: StyleSheet.hairlineWidth,
-  paddingTop: 0,
-} as const;
 
 /** Glass-like chrome without native blur (safe on Simulator & all platforms). */
 function GlassBar({ children, style }: { children: React.ReactNode; style?: object }) {
-  return <View style={[styles.topBarGlass, style]}>{children}</View>;
+  return <View style={[glassStyles.topBarGlass, style]}>{children}</View>;
 }
 
 function GlassCircle({ onPress, children }: { onPress: () => void; children: React.ReactNode }) {
   return (
-    <View style={styles.sideBtnGlass}>
-      <Pressable onPress={onPress} style={({ pressed }) => [styles.sideBtnInner, pressed && styles.sideBtnPressed]}>
+    <View style={glassStyles.sideBtnGlass}>
+      <Pressable onPress={onPress} style={({ pressed }) => [glassStyles.sideBtnInner, pressed && glassStyles.sideBtnPressed]}>
         {children}
       </Pressable>
     </View>
   );
 }
 
+const glassStyles = StyleSheet.create({
+  topBarGlass: {
+    backgroundColor: 'rgba(0,0,0,0.35)',
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.08)',
+    overflow: 'hidden',
+  },
+  sideBtnGlass: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    overflow: 'hidden',
+    backgroundColor: 'rgba(255,255,255,0.08)',
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.08)',
+  },
+  sideBtnInner: {
+    width: 40,
+    height: 40,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  sideBtnPressed: {
+    opacity: 0.86,
+  },
+});
+
+const useStyles = createStyles((c) => ({
+  root: {
+    flex: 1,
+    backgroundColor: '#000',
+  },
+  cameraFill: {
+    ...StyleSheet.absoluteFillObject,
+  },
+  filterTint: {
+    ...StyleSheet.absoluteFillObject,
+  },
+  shutter: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: '#fff',
+  },
+  bottomGradient: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    bottom: 0,
+    height: 280,
+  },
+  chrome: {
+    ...StyleSheet.absoluteFillObject,
+    justifyContent: 'space-between',
+  },
+  topBar: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginHorizontal: 12,
+    marginTop: 4,
+    paddingVertical: 10,
+    paddingHorizontal: 10,
+    borderRadius: borderRadius.lg,
+    gap: 8,
+  },
+  topIconHit: {
+    width: 40,
+    height: 40,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  topTitle: {
+    flex: 1,
+    textAlign: 'center',
+    ...typography.body,
+    color: '#FFFFFF',
+    fontWeight: '600',
+  },
+  bottomUi: {
+    paddingHorizontal: spacing.lg,
+    gap: 28,
+  },
+  filterScrollContent: {
+    flexDirection: 'row',
+    flexGrow: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingVertical: 4,
+    gap: 22,
+    paddingHorizontal: 12,
+    minWidth: '100%',
+  },
+  filterTextHit: {
+    paddingVertical: 6,
+    paddingHorizontal: 4,
+  },
+  filterText: {
+    fontSize: 15,
+    fontWeight: '500',
+    color: 'rgba(255,255,255,0.45)',
+    letterSpacing: 0.2,
+  },
+  filterTextSelected: {
+    fontSize: 17,
+    fontWeight: '700',
+    color: '#DDD5C4',
+  },
+  captureRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 8,
+  },
+  captureHit: {
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  captureRing: {
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  captureOuterRing: {
+    width: 76,
+    height: 76,
+    borderRadius: 38,
+    borderWidth: 2,
+    borderColor: 'rgba(255,255,255,0.9)',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: 'transparent',
+  },
+  captureInner: {
+    width: 62,
+    height: 62,
+    borderRadius: 31,
+    backgroundColor: '#111',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  captureInnerActive: {
+    backgroundColor: c.gold,
+  },
+  captureGoldDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: c.gold,
+  },
+  editRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: spacing.xl,
+  },
+  editLink: {
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+  },
+  editLinkText: {
+    ...typography.body,
+    color: 'rgba(255,255,255,0.6)',
+    fontWeight: '600',
+  },
+  editPrimary: {
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+  },
+  editPrimaryText: {
+    ...typography.body,
+    color: '#DDD5C4',
+    fontWeight: '700',
+  },
+  permissionRoot: {
+    flex: 1,
+    backgroundColor: '#000',
+    justifyContent: 'center',
+    paddingHorizontal: spacing.xl,
+    gap: spacing.md,
+  },
+  permissionTitle: {
+    ...typography.h2,
+    color: '#fff',
+  },
+  permissionBody: {
+    ...typography.body,
+    color: c.textSecondary,
+  },
+  permissionBtn: {
+    alignSelf: 'flex-start',
+    paddingVertical: spacing.sm,
+    paddingHorizontal: spacing.lg,
+    borderRadius: borderRadius.full,
+    backgroundColor: c.gold,
+  },
+  permissionBtnText: {
+    ...typography.body,
+    color: c.bgBase,
+    fontWeight: '700',
+  },
+}));
+
 export default function ReviewCameraScreen() {
+  const c = useColors();
+  const styles = useStyles();
   const router = useRouter();
   const navigation = useNavigation();
   const insets = useSafeAreaInsets();
@@ -74,6 +268,13 @@ export default function ReviewCameraScreen() {
     () => snapFilters.find((f) => f.id === selectedFilter) ?? snapFilters[0],
     [selectedFilter],
   );
+
+  const TAB_BAR_STYLE = {
+    backgroundColor: c.bgSurface,
+    borderTopColor: c.border,
+    borderTopWidth: StyleSheet.hairlineWidth,
+    paddingTop: 0,
+  };
 
   useFocusEffect(
     useCallback(() => {
@@ -267,7 +468,7 @@ export default function ReviewCameraScreen() {
                   <View style={styles.captureOuterRing}>
                     <View style={[styles.captureInner, captureFill && styles.captureInnerActive]}>
                       {capturing ? (
-                        <ActivityIndicator color={captureFill ? colors.bgBase : colors.gold} size="small" />
+                        <ActivityIndicator color={captureFill ? c.bgBase : c.gold} size="small" />
                       ) : captureFill ? null : (
                         <View style={styles.captureGoldDot} />
                       )}
@@ -300,199 +501,3 @@ export default function ReviewCameraScreen() {
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  root: {
-    flex: 1,
-    backgroundColor: '#000',
-  },
-  cameraFill: {
-    ...StyleSheet.absoluteFillObject,
-  },
-  filterTint: {
-    ...StyleSheet.absoluteFillObject,
-  },
-  shutter: {
-    ...StyleSheet.absoluteFillObject,
-    backgroundColor: '#fff',
-  },
-  bottomGradient: {
-    position: 'absolute',
-    left: 0,
-    right: 0,
-    bottom: 0,
-    height: 280,
-  },
-  chrome: {
-    ...StyleSheet.absoluteFillObject,
-    justifyContent: 'space-between',
-  },
-  topBarGlass: {
-    backgroundColor: 'rgba(0,0,0,0.35)',
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.08)',
-    overflow: 'hidden',
-  },
-  topBar: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginHorizontal: 12,
-    marginTop: 4,
-    paddingVertical: 10,
-    paddingHorizontal: 10,
-    borderRadius: borderRadius.lg,
-    gap: 8,
-  },
-  topIconHit: {
-    width: 40,
-    height: 40,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  topTitle: {
-    flex: 1,
-    textAlign: 'center',
-    ...typography.body,
-    color: colors.textPrimary,
-    fontWeight: '600',
-  },
-  bottomUi: {
-    paddingHorizontal: spacing.lg,
-    gap: 28,
-  },
-  filterScrollContent: {
-    flexDirection: 'row',
-    flexGrow: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    paddingVertical: 4,
-    gap: 22,
-    paddingHorizontal: 12,
-    minWidth: '100%',
-  },
-  filterTextHit: {
-    paddingVertical: 6,
-    paddingHorizontal: 4,
-  },
-  filterText: {
-    fontSize: 15,
-    fontWeight: '500',
-    color: 'rgba(255,255,255,0.45)',
-    letterSpacing: 0.2,
-  },
-  filterTextSelected: {
-    fontSize: 17,
-    fontWeight: '700',
-    color: colors.goldLight,
-  },
-  captureRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: 8,
-  },
-  sideBtnGlass: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    overflow: 'hidden',
-    backgroundColor: 'rgba(255,255,255,0.08)',
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.08)',
-  },
-  sideBtnInner: {
-    width: 40,
-    height: 40,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  sideBtnPressed: {
-    opacity: 0.86,
-  },
-  captureHit: {
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  captureRing: {
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  captureOuterRing: {
-    width: 76,
-    height: 76,
-    borderRadius: 38,
-    borderWidth: 2,
-    borderColor: 'rgba(255,255,255,0.9)',
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: 'transparent',
-  },
-  captureInner: {
-    width: 62,
-    height: 62,
-    borderRadius: 31,
-    backgroundColor: '#111',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  captureInnerActive: {
-    backgroundColor: colors.gold,
-  },
-  captureGoldDot: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-    backgroundColor: colors.gold,
-  },
-  editRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: spacing.xl,
-  },
-  editLink: {
-    paddingVertical: 12,
-    paddingHorizontal: 16,
-  },
-  editLinkText: {
-    ...typography.body,
-    color: 'rgba(255,255,255,0.6)',
-    fontWeight: '600',
-  },
-  editPrimary: {
-    paddingVertical: 12,
-    paddingHorizontal: 16,
-  },
-  editPrimaryText: {
-    ...typography.body,
-    color: colors.goldLight,
-    fontWeight: '700',
-  },
-  permissionRoot: {
-    flex: 1,
-    backgroundColor: '#000',
-    justifyContent: 'center',
-    paddingHorizontal: spacing.xl,
-    gap: spacing.md,
-  },
-  permissionTitle: {
-    ...typography.h2,
-    color: '#fff',
-  },
-  permissionBody: {
-    ...typography.body,
-    color: colors.textSecondary,
-  },
-  permissionBtn: {
-    alignSelf: 'flex-start',
-    paddingVertical: spacing.sm,
-    paddingHorizontal: spacing.lg,
-    borderRadius: borderRadius.full,
-    backgroundColor: colors.gold,
-  },
-  permissionBtnText: {
-    ...typography.body,
-    color: colors.bgBase,
-    fontWeight: '700',
-  },
-});

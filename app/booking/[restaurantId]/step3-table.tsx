@@ -1,11 +1,22 @@
 import React, { useEffect } from 'react';
-import { View, ActivityIndicator, StyleSheet } from 'react-native';
+import { View, ActivityIndicator } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { colors } from '@/lib/theme';
+import { useColors, createStyles } from '@/lib/theme';
+
+const useStyles = createStyles((c) => ({
+  container: {
+    flex: 1,
+    backgroundColor: c.bgBase,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+}));
 
 /** Legacy route: table selection was removed; forward to preorder with auto-assigned table. */
 export default function Step3TableRedirect() {
   const router = useRouter();
+  const c = useColors();
+  const styles = useStyles();
   const { restaurantId, date, time, partySize } = useLocalSearchParams<{
     restaurantId: string;
     date?: string;
@@ -25,16 +36,7 @@ export default function Step3TableRedirect() {
 
   return (
     <View style={styles.container}>
-      <ActivityIndicator color={colors.gold} />
+      <ActivityIndicator color={c.gold} />
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: colors.bgBase,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-});

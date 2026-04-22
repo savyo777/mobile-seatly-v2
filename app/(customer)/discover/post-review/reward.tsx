@@ -3,9 +3,57 @@ import { Animated, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Button, ScreenWrapper } from '@/components/ui';
 import { SnapShareSheet } from '@/components/snaps/SnapShareSheet';
-import { borderRadius, colors, spacing, typography } from '@/lib/theme';
+import { useColors, createStyles, borderRadius, spacing, typography } from '@/lib/theme';
+
+const useStyles = createStyles((c) => ({
+  scroll: {
+    flexGrow: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: spacing.xl,
+    paddingHorizontal: spacing.lg,
+    paddingVertical: spacing['3xl'],
+  },
+  badgeWrap: {
+    alignItems: 'center',
+    gap: spacing.lg,
+  },
+  badge: {
+    width: 112,
+    height: 112,
+    borderRadius: borderRadius.full,
+    backgroundColor: 'rgba(201, 168, 76, 0.18)',
+    borderWidth: 1.5,
+    borderColor: 'rgba(201, 168, 76, 0.8)',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  badgeText: {
+    fontSize: 36,
+    color: '#DDD5C4',
+    fontWeight: '800',
+    letterSpacing: 0.6,
+  },
+  title: {
+    ...typography.h2,
+    color: c.textPrimary,
+    textAlign: 'center',
+  },
+  subtitle: {
+    ...typography.body,
+    color: c.textSecondary,
+    textAlign: 'center',
+    maxWidth: 320,
+  },
+  actions: {
+    width: '100%',
+    gap: spacing.md,
+  },
+}));
 
 export default function ReviewRewardScreen() {
+  const c = useColors();
+  const styles = useStyles();
   const router = useRouter();
   const { points, restaurantName, restaurantId, photoUri, rating } = useLocalSearchParams<{
     points: string;
@@ -82,49 +130,3 @@ export default function ReviewRewardScreen() {
     </ScreenWrapper>
   );
 }
-
-const styles = StyleSheet.create({
-  scroll: {
-    flexGrow: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: spacing.xl,
-    paddingHorizontal: spacing.lg,
-    paddingVertical: spacing['3xl'],
-  },
-  badgeWrap: {
-    alignItems: 'center',
-    gap: spacing.lg,
-  },
-  badge: {
-    width: 112,
-    height: 112,
-    borderRadius: borderRadius.full,
-    backgroundColor: 'rgba(201, 168, 76, 0.18)',
-    borderWidth: 1.5,
-    borderColor: 'rgba(201, 168, 76, 0.8)',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  badgeText: {
-    fontSize: 36,
-    color: colors.goldLight,
-    fontWeight: '800',
-    letterSpacing: 0.6,
-  },
-  title: {
-    ...typography.h2,
-    color: colors.textPrimary,
-    textAlign: 'center',
-  },
-  subtitle: {
-    ...typography.body,
-    color: colors.textSecondary,
-    textAlign: 'center',
-    maxWidth: 320,
-  },
-  actions: {
-    width: '100%',
-    gap: spacing.md,
-  },
-});

@@ -3,7 +3,7 @@ import { View, Text, StyleSheet, Pressable, ScrollView } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { colors, spacing, typography } from '@/lib/theme';
+import { useColors, createStyles, spacing, typography } from '@/lib/theme';
 
 type Props = {
   title: string;
@@ -11,9 +11,54 @@ type Props = {
   children?: React.ReactNode;
 };
 
+const useStyles = createStyles((c) => ({
+  root: {
+    flex: 1,
+    backgroundColor: c.bgBase,
+  },
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: spacing.sm,
+    paddingVertical: spacing.md,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: c.border,
+  },
+  backHit: {
+    width: 44,
+    height: 44,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  headerTitle: {
+    fontSize: 18,
+    color: c.textPrimary,
+    flex: 1,
+    textAlign: 'center',
+    fontWeight: '700',
+    letterSpacing: -0.3,
+  },
+  headerSpacer: {
+    width: 44,
+  },
+  body: {
+    paddingHorizontal: spacing.lg,
+    paddingTop: spacing.xl,
+  },
+  subtitle: {
+    ...typography.body,
+    color: c.textSecondary,
+    marginBottom: spacing.xl,
+    lineHeight: 22,
+    opacity: 0.95,
+  },
+}));
+
 export function ProfileStackScreen({ title, subtitle, children }: Props) {
   const router = useRouter();
   const insets = useSafeAreaInsets();
+  const c = useColors();
+  const styles = useStyles();
 
   return (
     <View style={[styles.root, { paddingTop: insets.top }]}>
@@ -25,7 +70,7 @@ export function ProfileStackScreen({ title, subtitle, children }: Props) {
           onPress={() => router.back()}
           style={styles.backHit}
         >
-          <Ionicons name="chevron-back" size={26} color={colors.gold} />
+          <Ionicons name="chevron-back" size={26} color={c.gold} />
         </Pressable>
         <Text style={styles.headerTitle} numberOfLines={1}>
           {title}
@@ -42,46 +87,3 @@ export function ProfileStackScreen({ title, subtitle, children }: Props) {
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  root: {
-    flex: 1,
-    backgroundColor: colors.bgBase,
-  },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: spacing.sm,
-    paddingVertical: spacing.md,
-    borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: 'rgba(255,255,255,0.06)',
-  },
-  backHit: {
-    width: 44,
-    height: 44,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  headerTitle: {
-    fontSize: 18,
-    color: colors.textPrimary,
-    flex: 1,
-    textAlign: 'center',
-    fontWeight: '700',
-    letterSpacing: -0.3,
-  },
-  headerSpacer: {
-    width: 44,
-  },
-  body: {
-    paddingHorizontal: spacing.lg,
-    paddingTop: spacing.xl,
-  },
-  subtitle: {
-    ...typography.body,
-    color: colors.textSecondary,
-    marginBottom: spacing.xl,
-    lineHeight: 22,
-    opacity: 0.95,
-  },
-});

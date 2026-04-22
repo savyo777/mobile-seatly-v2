@@ -12,10 +12,79 @@ import {
   type DiscoverCategorySlug,
 } from '@/lib/discover/discoverCategories';
 import { mockRestaurants, type Restaurant } from '@/lib/mock/restaurants';
-import { colors, spacing, typography } from '@/lib/theme';
+import { useColors, createStyles, spacing, typography } from '@/lib/theme';
+
+const useStyles = createStyles((c) => ({
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: spacing.lg,
+    paddingBottom: spacing.md,
+    gap: spacing.sm,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: c.border,
+  },
+  backBtn: {
+    paddingVertical: spacing.xs,
+    paddingRight: spacing.sm,
+    minWidth: 40,
+    justifyContent: 'center',
+  },
+  backPressed: {
+    opacity: 0.75,
+  },
+  backChevron: {
+    fontSize: 26,
+    lineHeight: 28,
+    color: c.gold,
+    fontWeight: '400',
+  },
+  headerTitle: {
+    flex: 1,
+    ...typography.h3,
+    fontSize: 17,
+    color: c.textPrimary,
+    fontWeight: '800',
+  },
+  listContent: {
+    paddingHorizontal: spacing.lg,
+    paddingTop: spacing.lg,
+  },
+  gridRow: {
+    marginBottom: spacing.md,
+    justifyContent: 'flex-start',
+  },
+  empty: {
+    ...typography.body,
+    color: c.textMuted,
+    textAlign: 'center',
+    paddingVertical: spacing['3xl'],
+    width: '100%',
+  },
+  invalidWrap: {
+    paddingHorizontal: spacing.lg,
+  },
+  backRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+    marginBottom: spacing.lg,
+  },
+  backText: {
+    ...typography.body,
+    color: c.gold,
+    fontWeight: '600',
+  },
+  invalidText: {
+    ...typography.body,
+    color: c.textSecondary,
+  },
+}));
 
 export default function DiscoverCategoryScreen() {
   const { t } = useTranslation();
+  const c = useColors();
+  const styles = useStyles();
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const { width } = useWindowDimensions();
@@ -118,70 +187,3 @@ export default function DiscoverCategoryScreen() {
     </ScreenWrapper>
   );
 }
-
-const styles = StyleSheet.create({
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: spacing.lg,
-    paddingBottom: spacing.md,
-    gap: spacing.sm,
-    borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: colors.border,
-  },
-  backBtn: {
-    paddingVertical: spacing.xs,
-    paddingRight: spacing.sm,
-    minWidth: 40,
-    justifyContent: 'center',
-  },
-  backPressed: {
-    opacity: 0.75,
-  },
-  backChevron: {
-    fontSize: 26,
-    lineHeight: 28,
-    color: colors.gold,
-    fontWeight: '400',
-  },
-  headerTitle: {
-    flex: 1,
-    ...typography.h3,
-    fontSize: 17,
-    color: colors.textPrimary,
-    fontWeight: '800',
-  },
-  listContent: {
-    paddingHorizontal: spacing.lg,
-    paddingTop: spacing.lg,
-  },
-  gridRow: {
-    marginBottom: spacing.md,
-    justifyContent: 'flex-start',
-  },
-  empty: {
-    ...typography.body,
-    color: colors.textMuted,
-    textAlign: 'center',
-    paddingVertical: spacing['3xl'],
-    width: '100%',
-  },
-  invalidWrap: {
-    paddingHorizontal: spacing.lg,
-  },
-  backRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.sm,
-    marginBottom: spacing.lg,
-  },
-  backText: {
-    ...typography.body,
-    color: colors.gold,
-    fontWeight: '600',
-  },
-  invalidText: {
-    ...typography.body,
-    color: colors.textSecondary,
-  },
-});

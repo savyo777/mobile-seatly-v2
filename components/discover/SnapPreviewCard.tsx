@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { ActivityIndicator, Image, Pressable, StyleSheet, Text, View } from 'react-native';
-import { borderRadius, colors, shadows, spacing, typography } from '@/lib/theme';
+import { borderRadius, createStyles, shadows, spacing, typography, useColors } from '@/lib/theme';
 import type { SnapPost, SnapUser } from '@/lib/mock/snaps';
 import { timeAgoLabel } from '@/lib/mock/snaps';
 
@@ -11,35 +11,7 @@ type SnapPreviewCardProps = {
   compact?: boolean;
 };
 
-export function SnapPreviewCard({ post, user, onPress, compact = false }: SnapPreviewCardProps) {
-  const [loadingImage, setLoadingImage] = useState(true);
-  return (
-    <Pressable onPress={onPress} style={({ pressed }) => [styles.card, compact && styles.compactCard, pressed && styles.pressed]}>
-      <View style={styles.imageWrap}>
-        {loadingImage ? (
-          <View style={styles.imageLoader}>
-            <ActivityIndicator color={colors.gold} size="small" />
-          </View>
-        ) : null}
-        <Image source={{ uri: post.image }} style={styles.image} onLoadEnd={() => setLoadingImage(false)} />
-      </View>
-      <View style={styles.body}>
-        <View style={styles.metaRow}>
-          <Text style={styles.username}>@{user?.username ?? 'guest'}</Text>
-          <Text style={styles.time}>{timeAgoLabel(post.timestamp)}</Text>
-        </View>
-        <Text style={styles.caption} numberOfLines={compact ? 2 : 3}>
-          {post.caption}
-        </Text>
-        <View style={styles.tagRow}>
-          <Text style={styles.tag}>Verified diner</Text>
-        </View>
-      </View>
-    </Pressable>
-  );
-}
-
-const styles = StyleSheet.create({
+const useStyles = createStyles((c) => ({
   card: {
     width: 270,
     borderRadius: borderRadius.xl,
@@ -58,7 +30,7 @@ const styles = StyleSheet.create({
   },
   imageWrap: {
     height: 180,
-    backgroundColor: colors.bgElevated,
+    backgroundColor: c.bgElevated,
   },
   imageLoader: {
     ...StyleSheet.absoluteFillObject,
@@ -81,16 +53,16 @@ const styles = StyleSheet.create({
   },
   username: {
     ...typography.bodySmall,
-    color: colors.goldLight,
+    color: c.goldLight,
     fontWeight: '700',
   },
   time: {
     ...typography.bodySmall,
-    color: colors.textMuted,
+    color: c.textMuted,
   },
   caption: {
     ...typography.body,
-    color: colors.textPrimary,
+    color: c.textPrimary,
     minHeight: 40,
   },
   tagRow: {
@@ -99,7 +71,7 @@ const styles = StyleSheet.create({
   },
   tag: {
     ...typography.bodySmall,
-    color: colors.goldLight,
+    color: c.goldLight,
     borderWidth: 1,
     borderColor: 'rgba(201, 168, 76, 0.45)',
     backgroundColor: 'rgba(201, 168, 76, 0.12)',
@@ -108,4 +80,34 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.sm,
     paddingVertical: 3,
   },
-});
+}));
+
+export function SnapPreviewCard({ post, user, onPress, compact = false }: SnapPreviewCardProps) {
+  const c = useColors();
+  const styles = useStyles();
+  const [loadingImage, setLoadingImage] = useState(true);
+  return (
+    <Pressable onPress={onPress} style={({ pressed }) => [styles.card, compact && styles.compactCard, pressed && styles.pressed]}>
+      <View style={styles.imageWrap}>
+        {loadingImage ? (
+          <View style={styles.imageLoader}>
+            <ActivityIndicator color={c.gold} size="small" />
+          </View>
+        ) : null}
+        <Image source={{ uri: post.image }} style={styles.image} onLoadEnd={() => setLoadingImage(false)} />
+      </View>
+      <View style={styles.body}>
+        <View style={styles.metaRow}>
+          <Text style={styles.username}>@{user?.username ?? 'guest'}</Text>
+          <Text style={styles.time}>{timeAgoLabel(post.timestamp)}</Text>
+        </View>
+        <Text style={styles.caption} numberOfLines={compact ? 2 : 3}>
+          {post.caption}
+        </Text>
+        <View style={styles.tagRow}>
+          <Text style={styles.tag}>Verified diner</Text>
+        </View>
+      </View>
+    </Pressable>
+  );
+}

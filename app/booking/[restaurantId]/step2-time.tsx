@@ -2,7 +2,6 @@ import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import {
   View,
   Text,
-  StyleSheet,
   TouchableOpacity,
   Pressable,
   ScrollView,
@@ -21,15 +20,191 @@ import {
   nextBookableDateAfter,
 } from '@/lib/booking/getAvailability';
 import { mockRestaurants } from '@/lib/mock/restaurants';
-import { colors, spacing, borderRadius } from '@/lib/theme';
+import { useColors, createStyles, spacing, borderRadius } from '@/lib/theme';
 import type { DateKey } from '@/lib/booking/availabilityTypes';
 
 const PARTY_OPTIONS = [1, 2, 3, 4, 5, 6, 7, 8];
+
+const SLOT_COLS = 3;
+const SLOT_GAP = 10;
+
+const useStyles = createStyles((c) => ({
+  container: { flex: 1, backgroundColor: c.bgBase },
+
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 20,
+    paddingVertical: 12,
+  },
+  backBtn: { width: 40, height: 40, alignItems: 'center', justifyContent: 'center' },
+  headerCenter: { flex: 1, alignItems: 'center' },
+  restaurantName: {
+    fontSize: 16,
+    fontWeight: '700',
+    color: c.textPrimary,
+  },
+  headerSub: {
+    fontSize: 12,
+    color: c.textMuted,
+    marginTop: 2,
+  },
+
+  scroll: { flex: 1 },
+  body: {
+    paddingHorizontal: 20,
+    paddingTop: 8,
+    gap: 12,
+  },
+
+  sectionLabel: {
+    fontSize: 11,
+    fontWeight: '700',
+    color: c.textMuted,
+    textTransform: 'uppercase',
+    letterSpacing: 0.8,
+    marginBottom: -4,
+  },
+
+  // Party size chips
+  partyRow: { gap: 8, paddingBottom: 2 },
+  partyChip: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    borderWidth: 1,
+    borderColor: c.border,
+    backgroundColor: c.bgSurface,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  partyChipSelected: {
+    backgroundColor: c.gold,
+    borderColor: c.gold,
+  },
+  partyChipText: {
+    fontSize: 15,
+    fontWeight: '600',
+    color: c.textSecondary,
+  },
+  partyChipTextSelected: {
+    color: c.bgBase,
+    fontWeight: '700',
+  },
+
+  // Date row
+  dateRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 14,
+    paddingHorizontal: 16,
+    backgroundColor: c.bgSurface,
+    borderRadius: borderRadius.lg,
+    borderWidth: 1,
+    borderColor: c.border,
+    gap: 10,
+  },
+  dateRowLabel: {
+    flex: 1,
+    fontSize: 16,
+    fontWeight: '600',
+    color: c.textPrimary,
+  },
+  datePill: {
+    paddingVertical: 5,
+    paddingHorizontal: 12,
+    borderRadius: borderRadius.full,
+    backgroundColor: c.bgElevated,
+    borderWidth: 1,
+    borderColor: c.border,
+  },
+  datePillText: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: c.textSecondary,
+  },
+
+  // Time slots grid
+  slotsGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: SLOT_GAP,
+  },
+  slotPill: {
+    paddingVertical: 12,
+    paddingHorizontal: 8,
+    borderRadius: borderRadius.lg,
+    borderWidth: 1,
+    borderColor: c.border,
+    backgroundColor: c.bgSurface,
+    alignItems: 'center',
+    minWidth: 90,
+    flex: 1,
+  },
+  slotPillSelected: {
+    backgroundColor: c.gold,
+    borderColor: c.gold,
+  },
+  slotPillUnavailable: {
+    opacity: 0.3,
+  },
+  slotText: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: c.textPrimary,
+  },
+  slotTextSelected: {
+    color: c.bgBase,
+    fontWeight: '700',
+  },
+  slotTextUnavailable: {
+    color: c.textMuted,
+  },
+
+  // No times
+  noTimesBox: {
+    alignItems: 'center',
+    paddingVertical: spacing.xl,
+    gap: spacing.sm,
+  },
+  noTimesText: {
+    fontSize: 14,
+    color: c.textMuted,
+  },
+  noTimesLink: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: c.gold,
+  },
+
+  // Footer
+  footer: {
+    paddingHorizontal: 20,
+    paddingTop: 12,
+    backgroundColor: c.bgBase,
+    borderTopWidth: 1,
+    borderTopColor: c.border,
+    gap: 8,
+  },
+  selectionBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 5,
+  },
+  selectionText: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: c.gold,
+  },
+}));
 
 export default function Step2Time() {
   const { restaurantId, date } = useLocalSearchParams<{ restaurantId: string; date: string }>();
   const router = useRouter();
   const insets = useSafeAreaInsets();
+  const c = useColors();
+  const styles = useStyles();
   const rid = restaurantId ?? '';
 
   const firstDate = useMemo(() => firstBookableDateKey(rid), [rid]);
@@ -92,7 +267,7 @@ export default function Step2Time() {
       {/* Header */}
       <View style={styles.header}>
         <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
-          <Ionicons name="chevron-back" size={24} color={colors.textPrimary} />
+          <Ionicons name="chevron-back" size={24} color={c.textPrimary} />
         </TouchableOpacity>
         <View style={styles.headerCenter}>
           <Text style={styles.restaurantName} numberOfLines={1}>{restaurant?.name}</Text>
@@ -138,7 +313,7 @@ export default function Step2Time() {
         {/* Date */}
         <Text style={styles.sectionLabel}>Date</Text>
         <Pressable style={styles.dateRow} onPress={() => setCalendarOpen(true)}>
-          <Ionicons name="calendar-outline" size={20} color={colors.gold} />
+          <Ionicons name="calendar-outline" size={20} color={c.gold} />
           <Text style={styles.dateRowLabel}>{pillLabel}</Text>
           <View style={styles.datePill}>
             <Text style={styles.datePillText}>Change</Text>
@@ -184,7 +359,7 @@ export default function Step2Time() {
       <View style={[styles.footer, { paddingBottom: insets.bottom + 16 }]}>
         {selectedLabel ? (
           <View style={styles.selectionBadge}>
-            <Ionicons name="checkmark-circle" size={15} color={colors.gold} />
+            <Ionicons name="checkmark-circle" size={15} color={c.gold} />
             <Text style={styles.selectionText}>
               {selectedLabel} · {partySize} {partySize === 1 ? 'guest' : 'guests'}
             </Text>
@@ -207,177 +382,3 @@ export default function Step2Time() {
     </View>
   );
 }
-
-const SLOT_COLS = 3;
-const SLOT_GAP = 10;
-
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: colors.bgBase },
-
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 20,
-    paddingVertical: 12,
-  },
-  backBtn: { width: 40, height: 40, alignItems: 'center', justifyContent: 'center' },
-  headerCenter: { flex: 1, alignItems: 'center' },
-  restaurantName: {
-    fontSize: 16,
-    fontWeight: '700',
-    color: colors.textPrimary,
-  },
-  headerSub: {
-    fontSize: 12,
-    color: colors.textMuted,
-    marginTop: 2,
-  },
-
-  scroll: { flex: 1 },
-  body: {
-    paddingHorizontal: 20,
-    paddingTop: 8,
-    gap: 12,
-  },
-
-  sectionLabel: {
-    fontSize: 11,
-    fontWeight: '700',
-    color: colors.textMuted,
-    textTransform: 'uppercase',
-    letterSpacing: 0.8,
-    marginBottom: -4,
-  },
-
-  // Party size chips
-  partyRow: { gap: 8, paddingBottom: 2 },
-  partyChip: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    borderWidth: 1,
-    borderColor: colors.border,
-    backgroundColor: colors.bgSurface,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  partyChipSelected: {
-    backgroundColor: colors.gold,
-    borderColor: colors.gold,
-  },
-  partyChipText: {
-    fontSize: 15,
-    fontWeight: '600',
-    color: colors.textSecondary,
-  },
-  partyChipTextSelected: {
-    color: colors.bgBase,
-    fontWeight: '700',
-  },
-
-  // Date row
-  dateRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingVertical: 14,
-    paddingHorizontal: 16,
-    backgroundColor: colors.bgSurface,
-    borderRadius: borderRadius.lg,
-    borderWidth: 1,
-    borderColor: colors.border,
-    gap: 10,
-  },
-  dateRowLabel: {
-    flex: 1,
-    fontSize: 16,
-    fontWeight: '600',
-    color: colors.textPrimary,
-  },
-  datePill: {
-    paddingVertical: 5,
-    paddingHorizontal: 12,
-    borderRadius: borderRadius.full,
-    backgroundColor: colors.bgElevated,
-    borderWidth: 1,
-    borderColor: colors.border,
-  },
-  datePillText: {
-    fontSize: 12,
-    fontWeight: '600',
-    color: colors.textSecondary,
-  },
-
-  // Time slots grid
-  slotsGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: SLOT_GAP,
-  },
-  slotPill: {
-    paddingVertical: 12,
-    paddingHorizontal: 8,
-    borderRadius: borderRadius.lg,
-    borderWidth: 1,
-    borderColor: colors.border,
-    backgroundColor: colors.bgSurface,
-    alignItems: 'center',
-    minWidth: 90,
-    flex: 1,
-  },
-  slotPillSelected: {
-    backgroundColor: colors.gold,
-    borderColor: colors.gold,
-  },
-  slotPillUnavailable: {
-    opacity: 0.3,
-  },
-  slotText: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: colors.textPrimary,
-  },
-  slotTextSelected: {
-    color: colors.bgBase,
-    fontWeight: '700',
-  },
-  slotTextUnavailable: {
-    color: colors.textMuted,
-  },
-
-  // No times
-  noTimesBox: {
-    alignItems: 'center',
-    paddingVertical: spacing.xl,
-    gap: spacing.sm,
-  },
-  noTimesText: {
-    fontSize: 14,
-    color: colors.textMuted,
-  },
-  noTimesLink: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: colors.gold,
-  },
-
-  // Footer
-  footer: {
-    paddingHorizontal: 20,
-    paddingTop: 12,
-    backgroundColor: colors.bgBase,
-    borderTopWidth: 1,
-    borderTopColor: colors.border,
-    gap: 8,
-  },
-  selectionBadge: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 5,
-  },
-  selectionText: {
-    fontSize: 13,
-    fontWeight: '600',
-    color: colors.gold,
-  },
-});

@@ -1,5 +1,5 @@
 import React, { useMemo, useState } from 'react';
-import { View, FlatList, Pressable, Text, StyleSheet } from 'react-native';
+import { View, FlatList, Pressable, Text } from 'react-native';
 import { useRouter } from 'expo-router';
 import { RestaurantDiscoveryMap } from '@/components/map/RestaurantDiscoveryMap';
 import { RestaurantMapDetailSheet } from '@/components/map/RestaurantMapDetailSheet';
@@ -13,7 +13,7 @@ import {
 } from '@/lib/map/mapFilters';
 import { formatDistanceMeters } from '@/lib/map/geo';
 import { useLocation } from '@/lib/location/useLocation';
-import { colors, spacing, borderRadius, typography } from '@/lib/theme';
+import { createStyles, spacing, borderRadius, typography } from '@/lib/theme';
 import { Ionicons } from '@expo/vector-icons';
 
 const FILTERS: { id: MapFilterId; label: string }[] = [
@@ -24,8 +24,45 @@ const FILTERS: { id: MapFilterId; label: string }[] = [
   { id: 'openNow', label: 'Open now' },
 ];
 
+const useStyles = createStyles((c) => ({
+  container: {
+    flex: 1,
+  },
+  filtersWrap: {
+    position: 'absolute',
+    top: spacing.md,
+    left: 0,
+    right: 0,
+  },
+  filterRow: {
+    paddingHorizontal: spacing.lg,
+    gap: spacing.sm,
+  },
+  chip: {
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.xs + 2,
+    borderRadius: borderRadius.full,
+    backgroundColor: c.bgSurface,
+    borderWidth: 1,
+    borderColor: c.border,
+  },
+  chipActive: {
+    backgroundColor: c.gold,
+    borderColor: c.gold,
+  },
+  chipLabel: {
+    ...typography.bodySmall,
+    fontWeight: '600',
+    color: c.textSecondary,
+  },
+  chipLabelActive: {
+    color: c.bgBase,
+  },
+}));
+
 export function DiscoverMapView() {
   const router = useRouter();
+  const styles = useStyles();
   const { lat, lng, locationReady } = useLocation();
   const [filter, setFilter] = useState<MapFilterId>('nearby');
   const [focusedId, setFocusedId] = useState<string | null>(null);
@@ -99,39 +136,3 @@ export function DiscoverMapView() {
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-  },
-  filtersWrap: {
-    position: 'absolute',
-    top: spacing.md,
-    left: 0,
-    right: 0,
-  },
-  filterRow: {
-    paddingHorizontal: spacing.lg,
-    gap: spacing.sm,
-  },
-  chip: {
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.xs + 2,
-    borderRadius: borderRadius.full,
-    backgroundColor: colors.bgSurface,
-    borderWidth: 1,
-    borderColor: colors.border,
-  },
-  chipActive: {
-    backgroundColor: colors.gold,
-    borderColor: colors.gold,
-  },
-  chipLabel: {
-    ...typography.bodySmall,
-    fontWeight: '600',
-    color: colors.textSecondary,
-  },
-  chipLabelActive: {
-    color: colors.bgBase,
-  },
-});

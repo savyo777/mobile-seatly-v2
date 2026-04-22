@@ -9,13 +9,148 @@ import { ProfileSectionTitle } from '@/components/profile/ProfileSectionTitle';
 import { Card, Button, Badge } from '@/components/ui';
 import { mockPaymentMethods, mockWalletCredits, type PaymentMethod } from '@/lib/mock/profileScreens';
 import { formatCurrency } from '@/lib/utils/formatCurrency';
-import { colors, spacing, typography, borderRadius, shadows } from '@/lib/theme';
+import { useColors, createStyles, spacing, typography, borderRadius, shadows } from '@/lib/theme';
+
+const useStyles = createStyles((c) => ({
+  walletHero: {
+    borderRadius: borderRadius.xl,
+    padding: spacing.lg,
+    marginBottom: spacing.xl,
+    borderWidth: 1,
+    borderColor: 'rgba(201, 168, 76, 0.2)',
+  },
+  walletHeroLabel: {
+    ...typography.label,
+    fontSize: 10,
+    letterSpacing: 1.5,
+    color: c.textMuted,
+    marginBottom: spacing.xs,
+  },
+  walletHeroAmt: {
+    fontSize: 28,
+    fontWeight: '800',
+    color: c.gold,
+    letterSpacing: -0.5,
+  },
+  walletHeroHint: {
+    ...typography.bodySmall,
+    color: c.textSecondary,
+    marginTop: spacing.sm,
+  },
+  card: {
+    marginBottom: spacing.md,
+    borderColor: 'rgba(255,255,255,0.08)',
+    backgroundColor: 'rgba(255,255,255,0.03)',
+    ...shadows.card,
+  },
+  cardTop: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+    marginBottom: spacing.md,
+  },
+  cardLeft: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: spacing.md,
+    flex: 1,
+  },
+  brandIcon: {
+    width: 44,
+    height: 44,
+    borderRadius: borderRadius.md,
+    backgroundColor: c.bgElevated,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1,
+    borderColor: c.border,
+  },
+  brandLabel: {
+    ...typography.bodyLarge,
+    color: c.textPrimary,
+    fontWeight: '700',
+  },
+  meta: {
+    ...typography.bodySmall,
+    color: c.textMuted,
+    marginTop: 4,
+  },
+  cardActions: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: spacing.md,
+    borderTopWidth: StyleSheet.hairlineWidth,
+    borderTopColor: c.border,
+    paddingTop: spacing.md,
+  },
+  linkBtn: {
+    paddingVertical: spacing.xs,
+  },
+  linkText: {
+    ...typography.bodySmall,
+    color: c.gold,
+    fontWeight: '600',
+  },
+  linkDanger: {
+    color: '#E8A0A0',
+  },
+  addBtn: {
+    marginBottom: spacing.lg,
+  },
+  appleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: spacing.md,
+  },
+  pill: {
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.xs,
+    borderRadius: borderRadius.full,
+    borderWidth: 1,
+    borderColor: c.border,
+    backgroundColor: c.bgElevated,
+  },
+  pillOn: {
+    borderColor: c.gold,
+    backgroundColor: 'rgba(201, 168, 76, 0.15)',
+  },
+  pillText: {
+    ...typography.bodySmall,
+    color: c.textMuted,
+    fontWeight: '700',
+  },
+  pillTextOn: {
+    color: c.gold,
+  },
+  addressName: {
+    ...typography.bodyLarge,
+    color: c.textPrimary,
+    fontWeight: '700',
+    marginBottom: spacing.xs,
+  },
+  addressLine: {
+    ...typography.body,
+    color: c.textSecondary,
+  },
+  editAddr: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginTop: spacing.md,
+    paddingTop: spacing.md,
+    borderTopWidth: StyleSheet.hairlineWidth,
+    borderTopColor: c.border,
+  },
+}));
 
 export default function PaymentScreen() {
   const { t } = useTranslation();
+  const c = useColors();
+  const styles = useStyles();
   const [methods, setMethods] = useState(mockPaymentMethods);
   const [applePay, setApplePay] = useState(true);
-  const creditTotal = useMemo(() => mockWalletCredits.reduce((s, c) => s + c.amount, 0), []);
+  const creditTotal = useMemo(() => mockWalletCredits.reduce((s, cr) => s + cr.amount, 0), []);
 
   const setDefault = (id: string) => {
     setMethods((prev) => prev.map((m) => ({ ...m, isDefault: m.id === id })));
@@ -51,7 +186,7 @@ export default function PaymentScreen() {
           <View style={styles.cardTop}>
             <View style={styles.cardLeft}>
               <View style={styles.brandIcon}>
-                <Ionicons name="card" size={22} color={colors.gold} />
+                <Ionicons name="card" size={22} color={c.gold} />
               </View>
               <View>
                 <Text style={styles.brandLabel}>
@@ -86,7 +221,7 @@ export default function PaymentScreen() {
       <Card style={styles.card}>
         <View style={styles.appleRow}>
           <View style={styles.cardLeft}>
-            <Ionicons name="logo-apple" size={24} color={colors.textPrimary} />
+            <Ionicons name="logo-apple" size={24} color={c.textPrimary} />
             <View>
               <Text style={styles.brandLabel}>Apple Pay</Text>
               <Text style={styles.meta}>Pay in one tap at participating restaurants</Text>
@@ -109,142 +244,9 @@ export default function PaymentScreen() {
         <Text style={styles.addressLine}>Canada</Text>
         <Pressable style={styles.editAddr} onPress={() => {}}>
           <Text style={styles.linkText}>Edit billing address</Text>
-          <ChevronGlyph color={colors.gold} size={16} />
+          <ChevronGlyph color={c.gold} size={16} />
         </Pressable>
       </Card>
     </ProfileStackScreen>
   );
 }
-
-const styles = StyleSheet.create({
-  walletHero: {
-    borderRadius: borderRadius.xl,
-    padding: spacing.lg,
-    marginBottom: spacing.xl,
-    borderWidth: 1,
-    borderColor: 'rgba(201, 168, 76, 0.2)',
-  },
-  walletHeroLabel: {
-    ...typography.label,
-    fontSize: 10,
-    letterSpacing: 1.5,
-    color: colors.textMuted,
-    marginBottom: spacing.xs,
-  },
-  walletHeroAmt: {
-    fontSize: 28,
-    fontWeight: '800',
-    color: colors.gold,
-    letterSpacing: -0.5,
-  },
-  walletHeroHint: {
-    ...typography.bodySmall,
-    color: colors.textSecondary,
-    marginTop: spacing.sm,
-  },
-  card: {
-    marginBottom: spacing.md,
-    borderColor: 'rgba(255,255,255,0.08)',
-    backgroundColor: 'rgba(255,255,255,0.03)',
-    ...shadows.card,
-  },
-  cardTop: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'flex-start',
-    marginBottom: spacing.md,
-  },
-  cardLeft: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    gap: spacing.md,
-    flex: 1,
-  },
-  brandIcon: {
-    width: 44,
-    height: 44,
-    borderRadius: borderRadius.md,
-    backgroundColor: colors.bgElevated,
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderWidth: 1,
-    borderColor: colors.border,
-  },
-  brandLabel: {
-    ...typography.bodyLarge,
-    color: colors.textPrimary,
-    fontWeight: '700',
-  },
-  meta: {
-    ...typography.bodySmall,
-    color: colors.textMuted,
-    marginTop: 4,
-  },
-  cardActions: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: spacing.md,
-    borderTopWidth: StyleSheet.hairlineWidth,
-    borderTopColor: colors.border,
-    paddingTop: spacing.md,
-  },
-  linkBtn: {
-    paddingVertical: spacing.xs,
-  },
-  linkText: {
-    ...typography.bodySmall,
-    color: colors.gold,
-    fontWeight: '600',
-  },
-  linkDanger: {
-    color: '#E8A0A0',
-  },
-  addBtn: {
-    marginBottom: spacing.lg,
-  },
-  appleRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    gap: spacing.md,
-  },
-  pill: {
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.xs,
-    borderRadius: borderRadius.full,
-    borderWidth: 1,
-    borderColor: colors.border,
-    backgroundColor: colors.bgElevated,
-  },
-  pillOn: {
-    borderColor: colors.gold,
-    backgroundColor: 'rgba(201, 168, 76, 0.15)',
-  },
-  pillText: {
-    ...typography.bodySmall,
-    color: colors.textMuted,
-    fontWeight: '700',
-  },
-  pillTextOn: {
-    color: colors.gold,
-  },
-  addressName: {
-    ...typography.bodyLarge,
-    color: colors.textPrimary,
-    fontWeight: '700',
-    marginBottom: spacing.xs,
-  },
-  addressLine: {
-    ...typography.body,
-    color: colors.textSecondary,
-  },
-  editAddr: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    marginTop: spacing.md,
-    paddingTop: spacing.md,
-    borderTopWidth: StyleSheet.hairlineWidth,
-    borderTopColor: colors.border,
-  },
-});

@@ -2,11 +2,67 @@ import React, { useMemo, useState } from 'react';
 import { Image, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Button, ScreenWrapper } from '@/components/ui';
-import { borderRadius, colors, spacing, typography } from '@/lib/theme';
+import { useColors, createStyles, borderRadius, spacing, typography } from '@/lib/theme';
 import { createSnapPost, snapRestaurants } from '@/lib/mock/snaps';
 import { mockCustomer } from '@/lib/mock/users';
 
+const useStyles = createStyles((c) => ({
+  root: {
+    flex: 1,
+    gap: spacing.md,
+  },
+  title: {
+    ...typography.h2,
+    color: c.textPrimary,
+  },
+  subtitle: {
+    ...typography.body,
+    color: c.textSecondary,
+  },
+  list: {
+    gap: spacing.sm,
+    paddingBottom: spacing.md,
+  },
+  card: {
+    borderRadius: borderRadius.lg,
+    borderWidth: 1,
+    borderColor: c.border,
+    backgroundColor: '#111111',
+    overflow: 'hidden',
+  },
+  cardSelected: {
+    borderColor: 'rgba(201, 168, 76, 0.8)',
+    backgroundColor: 'rgba(201, 168, 76, 0.08)',
+  },
+  cardLocked: {
+    borderColor: 'rgba(201, 168, 76, 0.95)',
+  },
+  cardPressed: {
+    opacity: 0.82,
+  },
+  photo: {
+    width: '100%',
+    height: 95,
+    backgroundColor: c.bgElevated,
+  },
+  cardBody: {
+    padding: spacing.sm,
+  },
+  name: {
+    ...typography.body,
+    color: c.textPrimary,
+    fontWeight: '700',
+  },
+  meta: {
+    ...typography.bodySmall,
+    color: c.textSecondary,
+    marginTop: 2,
+  },
+}));
+
 export default function SnapRestaurantScreen() {
+  const c = useColors();
+  const styles = useStyles();
   const router = useRouter();
   const { photoUri, caption, restaurantId } = useLocalSearchParams<{
     photoUri: string;
@@ -86,57 +142,3 @@ export default function SnapRestaurantScreen() {
     </ScreenWrapper>
   );
 }
-
-const styles = StyleSheet.create({
-  root: {
-    flex: 1,
-    gap: spacing.md,
-  },
-  title: {
-    ...typography.h2,
-    color: colors.textPrimary,
-  },
-  subtitle: {
-    ...typography.body,
-    color: colors.textSecondary,
-  },
-  list: {
-    gap: spacing.sm,
-    paddingBottom: spacing.md,
-  },
-  card: {
-    borderRadius: borderRadius.lg,
-    borderWidth: 1,
-    borderColor: colors.border,
-    backgroundColor: '#111111',
-    overflow: 'hidden',
-  },
-  cardSelected: {
-    borderColor: 'rgba(201, 168, 76, 0.8)',
-    backgroundColor: 'rgba(201, 168, 76, 0.08)',
-  },
-  cardLocked: {
-    borderColor: 'rgba(201, 168, 76, 0.95)',
-  },
-  cardPressed: {
-    opacity: 0.82,
-  },
-  photo: {
-    width: '100%',
-    height: 95,
-    backgroundColor: colors.bgElevated,
-  },
-  cardBody: {
-    padding: spacing.sm,
-  },
-  name: {
-    ...typography.body,
-    color: colors.textPrimary,
-    fontWeight: '700',
-  },
-  meta: {
-    ...typography.bodySmall,
-    color: colors.textSecondary,
-    marginTop: 2,
-  },
-});

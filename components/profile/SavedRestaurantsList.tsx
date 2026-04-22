@@ -1,8 +1,8 @@
 import React from 'react';
-import { View, Text, StyleSheet } from 'react-native';
+import { View, Text } from 'react-native';
 import { useRouter } from 'expo-router';
 import { getSavedRestaurants } from '@/lib/mock/profileScreens';
-import { colors, spacing, typography } from '@/lib/theme';
+import { useColors, createStyles, spacing, typography } from '@/lib/theme';
 import { SavedRestaurantCard } from '@/components/profile/SavedRestaurantCard';
 
 type Props = {
@@ -10,8 +10,17 @@ type Props = {
   subtitle?: string;
 };
 
+const useStyles = createStyles((c) => ({
+  screenSubtitle: {
+    ...typography.body,
+    color: c.textSecondary,
+    marginBottom: spacing.lg,
+  },
+}));
+
 export function SavedRestaurantsList({ subtitle }: Props) {
   const router = useRouter();
+  const styles = useStyles();
   const list = getSavedRestaurants();
 
   return (
@@ -27,11 +36,3 @@ export function SavedRestaurantsList({ subtitle }: Props) {
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  screenSubtitle: {
-    ...typography.body,
-    color: colors.textSecondary,
-    marginBottom: spacing.lg,
-  },
-});

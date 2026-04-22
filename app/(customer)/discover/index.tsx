@@ -35,7 +35,7 @@ import {
 import { getUnreadCount } from '@/lib/mock/notifications';
 import { mockCustomer } from '@/lib/mock/users';
 import type { SnapUser } from '@/lib/mock/snaps';
-import { colors, spacing, borderRadius, typography } from '@/lib/theme';
+import { useColors, createStyles, spacing, borderRadius, typography } from '@/lib/theme';
 
 const ME = mockCustomer.id;
 
@@ -63,8 +63,219 @@ function excludeById(list: Restaurant[], id: string | null): Restaurant[] {
 
 type ViewMode = 'list' | 'map';
 
+const useStyles = createStyles((c) => ({
+  stickyHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: spacing.lg,
+    paddingBottom: spacing.sm,
+    backgroundColor: c.bgBase,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: c.border,
+  },
+  logo: {
+    ...typography.h2,
+    color: c.gold,
+    letterSpacing: 4,
+    fontWeight: '700',
+  },
+  headerRight: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+  },
+  bellBtn: {
+    padding: 4,
+  },
+  bellDot: {
+    position: 'absolute',
+    top: 2,
+    right: 2,
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: c.danger,
+  },
+  viewToggle: {
+    flexDirection: 'row',
+    backgroundColor: c.bgSurface,
+    borderRadius: borderRadius.md,
+    borderWidth: 1,
+    borderColor: c.border,
+    padding: 2,
+  },
+  toggleBtn: {
+    paddingHorizontal: spacing.md,
+    paddingVertical: 5,
+    borderRadius: borderRadius.sm,
+  },
+  toggleBtnActive: {
+    backgroundColor: c.gold,
+  },
+  toggleLabel: {
+    ...typography.bodySmall,
+    fontWeight: '700',
+    color: c.textMuted,
+  },
+  toggleLabelActive: {
+    color: c.bgBase,
+  },
+  headerBlock: {
+    paddingBottom: 0,
+  },
+  pressed: {
+    opacity: 0.7,
+  },
+  greetingBlock: {
+    marginTop: spacing.lg,
+    marginBottom: spacing.sm,
+  },
+  greetingLine1: {
+    fontSize: 28,
+    fontWeight: '800',
+    color: c.textPrimary,
+    letterSpacing: -0.6,
+    lineHeight: 34,
+  },
+  greetingLine2: {
+    fontSize: 28,
+    fontWeight: '800',
+    color: c.gold,
+    letterSpacing: -0.6,
+    lineHeight: 34,
+  },
+  vibeChipsRow: {
+    gap: spacing.sm,
+    paddingTop: spacing.sm,
+    paddingBottom: spacing.xs,
+  },
+  vibeChip: {
+    borderWidth: 1,
+    borderColor: c.border,
+    borderRadius: borderRadius.full,
+    paddingHorizontal: spacing.md,
+    paddingVertical: 8,
+    backgroundColor: c.bgSurface,
+  },
+  vibeChipSelected: {
+    borderColor: c.gold,
+    backgroundColor: c.gold,
+  },
+  vibeChipPressed: {
+    opacity: 0.85,
+  },
+  vibeChipText: {
+    ...typography.bodySmall,
+    color: c.textMuted,
+    fontWeight: '600',
+  },
+  vibeChipTextSelected: {
+    color: c.bgBase,
+    fontWeight: '700',
+  },
+  chipsRow: {
+    gap: spacing.sm,
+    paddingTop: spacing.md,
+    paddingBottom: spacing.lg,
+  },
+  chip: {
+    borderWidth: 1,
+    borderColor: c.border,
+    borderRadius: borderRadius.full,
+    paddingHorizontal: spacing.md,
+    paddingVertical: 8,
+    backgroundColor: c.bgSurface,
+  },
+  chipSelected: {
+    borderColor: c.gold,
+    backgroundColor: c.gold,
+  },
+  chipText: {
+    ...typography.bodySmall,
+    color: c.textMuted,
+    fontWeight: '600',
+  },
+  chipTextSelected: {
+    color: c.bgBase,
+    fontWeight: '700',
+  },
+  content: {
+    paddingHorizontal: spacing.lg,
+    gap: spacing.sm,
+  },
+  empty: {
+    paddingVertical: spacing['4xl'],
+    alignItems: 'center',
+  },
+  emptyText: {
+    ...typography.body,
+    color: c.textMuted,
+  },
+}));
+
+const usePeopleStyles = createStyles((c) => ({
+  list: {
+    paddingTop: spacing.sm,
+  },
+  row: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: spacing.md,
+    paddingHorizontal: spacing.lg,
+    gap: spacing.md,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: c.border,
+  },
+  avatar: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: c.bgElevated,
+  },
+  avatarFallback: {
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  username: {
+    ...typography.body,
+    fontWeight: '600',
+    color: c.textPrimary,
+    flex: 1,
+  },
+  followBtn: {
+    paddingHorizontal: spacing.md,
+    paddingVertical: 6,
+    borderRadius: borderRadius.sm,
+    backgroundColor: c.gold,
+  },
+  followBtnActive: {
+    backgroundColor: 'transparent',
+    borderWidth: 1,
+    borderColor: c.border,
+  },
+  followBtnText: {
+    ...typography.bodySmall,
+    fontWeight: '700',
+    color: c.bgBase,
+  },
+  followBtnTextActive: {
+    color: c.textPrimary,
+  },
+  empty: {
+    paddingTop: spacing['4xl'],
+    alignItems: 'center',
+  },
+  emptyText: {
+    ...typography.body,
+    color: c.textMuted,
+  },
+}));
+
 export default function DiscoverScreen() {
   const { t } = useTranslation();
+  const c = useColors();
+  const styles = useStyles();
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const [query, setQuery] = useState('');
@@ -253,7 +464,7 @@ export default function DiscoverScreen() {
             hitSlop={8}
             style={styles.bellBtn}
           >
-            <Ionicons name="notifications-outline" size={22} color={colors.textPrimary} />
+            <Ionicons name="notifications-outline" size={22} color={c.textPrimary} />
             {unreadCount > 0 ? <View style={styles.bellDot} /> : null}
           </Pressable>
         </View>
@@ -269,7 +480,7 @@ export default function DiscoverScreen() {
           { paddingBottom: insets.bottom + spacing['3xl'] },
         ]}
         refreshControl={
-          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.gold} />
+          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={c.gold} />
         }
       >
         <View style={styles.headerBlock}>
@@ -280,6 +491,7 @@ export default function DiscoverScreen() {
             placeholder="Restaurants, cuisines, neighborhoods..."
             value={query}
             onChangeText={onSearchChange}
+            icon="search-outline"
           />
 
           {/* Quick filter chips */}
@@ -421,6 +633,8 @@ function PeopleResults({
   users: SnapUser[];
   router: ReturnType<typeof useRouter>;
 }) {
+  const c = useColors();
+  const peopleStyles = usePeopleStyles();
   const [followState, setFollowState] = useState<Record<string, boolean>>(() => {
     const init: Record<string, boolean> = {};
     users.forEach((u) => { init[u.id] = isFollowing(ME, u.id); });
@@ -457,7 +671,7 @@ function PeopleResults({
               <Image source={{ uri: user.avatarUrl }} style={peopleStyles.avatar} />
             ) : (
               <View style={[peopleStyles.avatar, peopleStyles.avatarFallback]}>
-                <Ionicons name="person" size={18} color={colors.textMuted} />
+                <Ionicons name="person" size={18} color={c.textMuted} />
               </View>
             )}
             <Text style={peopleStyles.username} numberOfLines={1}>
@@ -479,212 +693,3 @@ function PeopleResults({
     </View>
   );
 }
-
-const peopleStyles = StyleSheet.create({
-  list: {
-    paddingTop: spacing.sm,
-  },
-  row: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingVertical: spacing.md,
-    paddingHorizontal: spacing.lg,
-    gap: spacing.md,
-    borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: colors.border,
-  },
-  avatar: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    backgroundColor: colors.bgElevated,
-  },
-  avatarFallback: {
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  username: {
-    ...typography.body,
-    fontWeight: '600',
-    color: colors.textPrimary,
-    flex: 1,
-  },
-  followBtn: {
-    paddingHorizontal: spacing.md,
-    paddingVertical: 6,
-    borderRadius: borderRadius.sm,
-    backgroundColor: colors.gold,
-  },
-  followBtnActive: {
-    backgroundColor: 'transparent',
-    borderWidth: 1,
-    borderColor: colors.border,
-  },
-  followBtnText: {
-    ...typography.bodySmall,
-    fontWeight: '700',
-    color: colors.bgBase,
-  },
-  followBtnTextActive: {
-    color: colors.textPrimary,
-  },
-  empty: {
-    paddingTop: spacing['4xl'],
-    alignItems: 'center',
-  },
-  emptyText: {
-    ...typography.body,
-    color: colors.textMuted,
-  },
-});
-
-const styles = StyleSheet.create({
-  stickyHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: spacing.lg,
-    paddingBottom: spacing.sm,
-    backgroundColor: colors.bgBase,
-    borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: colors.border,
-  },
-  logo: {
-    ...typography.h2,
-    color: colors.gold,
-    letterSpacing: 4,
-    fontWeight: '700',
-  },
-  headerRight: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.sm,
-  },
-  bellBtn: {
-    padding: 4,
-  },
-  bellDot: {
-    position: 'absolute',
-    top: 2,
-    right: 2,
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-    backgroundColor: colors.danger,
-  },
-  viewToggle: {
-    flexDirection: 'row',
-    backgroundColor: colors.bgSurface,
-    borderRadius: borderRadius.md,
-    borderWidth: 1,
-    borderColor: colors.border,
-    padding: 2,
-  },
-  toggleBtn: {
-    paddingHorizontal: spacing.md,
-    paddingVertical: 5,
-    borderRadius: borderRadius.sm,
-  },
-  toggleBtnActive: {
-    backgroundColor: colors.gold,
-  },
-  toggleLabel: {
-    ...typography.bodySmall,
-    fontWeight: '700',
-    color: colors.textMuted,
-  },
-  toggleLabelActive: {
-    color: colors.bgBase,
-  },
-  headerBlock: {
-    paddingBottom: 0,
-  },
-  pressed: {
-    opacity: 0.7,
-  },
-  greetingBlock: {
-    marginTop: spacing.lg,
-    marginBottom: spacing.sm,
-  },
-  greetingLine1: {
-    fontSize: 28,
-    fontWeight: '800',
-    color: colors.textPrimary,
-    letterSpacing: -0.6,
-    lineHeight: 34,
-  },
-  greetingLine2: {
-    fontSize: 28,
-    fontWeight: '800',
-    color: colors.gold,
-    letterSpacing: -0.6,
-    lineHeight: 34,
-  },
-  vibeChipsRow: {
-    gap: spacing.sm,
-    paddingTop: spacing.sm,
-    paddingBottom: spacing.xs,
-  },
-  vibeChip: {
-    borderWidth: 1,
-    borderColor: colors.border,
-    borderRadius: borderRadius.full,
-    paddingHorizontal: spacing.md,
-    paddingVertical: 8,
-    backgroundColor: colors.bgSurface,
-  },
-  vibeChipSelected: {
-    borderColor: colors.gold,
-    backgroundColor: colors.gold,
-  },
-  vibeChipPressed: {
-    opacity: 0.85,
-  },
-  vibeChipText: {
-    ...typography.bodySmall,
-    color: colors.textMuted,
-    fontWeight: '600',
-  },
-  vibeChipTextSelected: {
-    color: colors.bgBase,
-    fontWeight: '700',
-  },
-  chipsRow: {
-    gap: spacing.sm,
-    paddingTop: spacing.md,
-    paddingBottom: spacing.lg,
-  },
-  chip: {
-    borderWidth: 1,
-    borderColor: colors.border,
-    borderRadius: borderRadius.full,
-    paddingHorizontal: spacing.md,
-    paddingVertical: 8,
-    backgroundColor: colors.bgSurface,
-  },
-  chipSelected: {
-    borderColor: colors.gold,
-    backgroundColor: colors.gold,
-  },
-  chipText: {
-    ...typography.bodySmall,
-    color: colors.textMuted,
-    fontWeight: '600',
-  },
-  chipTextSelected: {
-    color: colors.bgBase,
-    fontWeight: '700',
-  },
-  content: {
-    paddingHorizontal: spacing.lg,
-    gap: spacing.sm,
-  },
-  empty: {
-    paddingVertical: spacing['4xl'],
-    alignItems: 'center',
-  },
-  emptyText: {
-    ...typography.body,
-    color: colors.textMuted,
-  },
-});

@@ -4,7 +4,7 @@ import { useTranslation } from 'react-i18next';
 import { Ionicons } from '@expo/vector-icons';
 import { ScreenWrapper } from '@/components/ui';
 import { SubpageHeader } from '@/components/owner/SubpageHeader';
-import { colors, spacing, borderRadius, typography } from '@/lib/theme';
+import { useColors, createStyles, spacing, borderRadius, typography } from '@/lib/theme';
 import { mockStaffNotifications, type AppNotification } from '@/lib/mock/notifications';
 
 function iconForType(type: AppNotification['type']): keyof typeof Ionicons.glyphMap {
@@ -42,8 +42,51 @@ function timeAgo(iso: string, locale: string): string {
   return rtf.format(-day, 'day');
 }
 
+const useStyles = createStyles((c) => ({
+  list: {
+    paddingBottom: spacing['4xl'],
+  },
+  item: {
+    flexDirection: 'row',
+    padding: spacing.lg,
+    borderRadius: borderRadius.lg,
+    backgroundColor: c.bgSurface,
+    borderWidth: 1,
+    borderColor: c.border,
+    marginBottom: spacing.md,
+  },
+  itemUnread: {
+    borderLeftWidth: 4,
+    borderLeftColor: c.gold,
+  },
+  iconWrap: {
+    marginRight: spacing.md,
+    paddingTop: 2,
+  },
+  textCol: {
+    flex: 1,
+  },
+  title: {
+    ...typography.bodyLarge,
+    fontWeight: '700',
+    color: c.textPrimary,
+    marginBottom: spacing.xs,
+  },
+  body: {
+    ...typography.body,
+    color: c.textSecondary,
+  },
+  time: {
+    ...typography.bodySmall,
+    color: c.textMuted,
+    marginTop: spacing.sm,
+  },
+}));
+
 export default function StaffNotificationsScreen() {
   const { t, i18n } = useTranslation();
+  const c = useColors();
+  const styles = useStyles();
   const [readIds, setReadIds] = useState<Set<string>>(() => new Set(mockStaffNotifications.filter((n) => n.isRead).map((n) => n.id)));
 
   const onPress = useCallback((id: string) => {
@@ -60,7 +103,7 @@ export default function StaffNotificationsScreen() {
       <TouchableOpacity activeOpacity={0.85} onPress={() => onPress(item.id)}>
         <View style={[styles.item, isUnread && styles.itemUnread]}>
           <View style={styles.iconWrap}>
-            <Ionicons name={iconForType(item.type)} size={22} color={isUnread ? colors.gold : colors.textMuted} />
+            <Ionicons name={iconForType(item.type)} size={22} color={isUnread ? c.gold : c.textMuted} />
           </View>
           <View style={styles.textCol}>
             <Text style={styles.title}>{item.title}</Text>
@@ -85,44 +128,3 @@ export default function StaffNotificationsScreen() {
     </ScreenWrapper>
   );
 }
-
-const styles = StyleSheet.create({
-  list: {
-    paddingBottom: spacing['4xl'],
-  },
-  item: {
-    flexDirection: 'row',
-    padding: spacing.lg,
-    borderRadius: borderRadius.lg,
-    backgroundColor: colors.bgSurface,
-    borderWidth: 1,
-    borderColor: colors.border,
-    marginBottom: spacing.md,
-  },
-  itemUnread: {
-    borderLeftWidth: 4,
-    borderLeftColor: colors.gold,
-  },
-  iconWrap: {
-    marginRight: spacing.md,
-    paddingTop: 2,
-  },
-  textCol: {
-    flex: 1,
-  },
-  title: {
-    ...typography.bodyLarge,
-    fontWeight: '700',
-    color: colors.textPrimary,
-    marginBottom: spacing.xs,
-  },
-  body: {
-    ...typography.body,
-    color: colors.textSecondary,
-  },
-  time: {
-    ...typography.bodySmall,
-    color: colors.textMuted,
-    marginTop: spacing.sm,
-  },
-});
