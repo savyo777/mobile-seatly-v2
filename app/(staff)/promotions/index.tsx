@@ -34,11 +34,17 @@ import {
   type PromoStatus,
   type PromoType,
 } from '@/lib/mock/ownerApp';
-import { ownerColors, ownerRadii, ownerSpace } from '@/lib/theme/ownerTheme';
+import { createStyles, useColors } from '@/lib/theme';
+import {
+  ownerColors,
+  ownerColorsFromPalette,
+  ownerRadii,
+  ownerSpace,
+  OWNER_TAB_SCROLL_BOTTOM_PADDING,
+} from '@/lib/theme/ownerTheme';
 import { formatCurrency } from '@/lib/utils/formatCurrency';
 
 const TODAY = '2026-04-18';
-const TAB_BAR_SCROLL_PADDING = 110;
 const SECTION_PREVIEW = 3;
 const ALL_PREVIEW = 2;
 
@@ -268,6 +274,8 @@ function LivePulse({ active, children }: { active: boolean; children: React.Reac
 
 export default function OwnerPromotionsScreen() {
   const { t } = useTranslation();
+  const styles = usePromoScreenStyles();
+  const palette = useColors();
   const insets = useSafeAreaInsets();
   const swipeRefs = useRef<Map<string, Swipeable | null>>(new Map());
 
@@ -286,24 +294,18 @@ export default function OwnerPromotionsScreen() {
   const dashboard = useMemo(() => {
     const live = promotions.filter((p) => p.status === 'live');
     const revenueToday = live.reduce((s, p) => s + Math.floor(p.analytics.revenueGenerated * 0.07), 0);
-    const totalR = promotions.reduce((s, p) => s + p.analytics.redemptions, 0);
-    const totalG = promotions.reduce((s, p) => s + p.analytics.guestsReached, 0);
-    const conversion = totalG > 0 ? totalR / totalG : 0;
     const lifts = promotions.filter((p) => p.estimatedLiftPct > 0).map((p) => p.estimatedLiftPct);
     const avgLift = lifts.length ? lifts.reduce((a, b) => a + b, 0) / lifts.length : 3;
     const trendPct = Math.min(12, Math.max(-4, avgLift * 0.35 + (live.length > 1 ? 1.2 : -0.5)));
     return {
       revenueToday,
       activeCount: live.length,
-      conversion,
       trendPct,
       trendPositive: trendPct >= 0,
     };
   }, [promotions]);
 
   const revDisplay = useRollingInt(dashboard.revenueToday);
-  const convPctInt = Math.round(dashboard.conversion * 100);
-  const convDisplay = useRollingInt(convPctInt);
 
   const liveList = useMemo(() => promotions.filter((p) => p.status === 'live'), [promotions]);
   const startingSoon = useMemo(() => {
@@ -603,7 +605,7 @@ export default function OwnerPromotionsScreen() {
   );
 
   const detailPromo = detail;
-  const fabBottom = TAB_BAR_SCROLL_PADDING + insets.bottom;
+  const fabBottom = OWNER_TAB_SCROLL_BOTTOM_PADDING + insets.bottom;
 
   const renderStatus = (s: PromoStatus) => {
     const st = statusBadgeStyle(s);
@@ -634,11 +636,6 @@ export default function OwnerPromotionsScreen() {
           <View style={styles.perfCell}>
             <Text style={styles.perfVal}>{dashboard.activeCount}</Text>
             <Text style={styles.perfLbl}>{t('owner.promoDashActive')}</Text>
-          </View>
-          <View style={styles.perfSep} />
-          <View style={styles.perfCell}>
-            <Text style={styles.perfVal}>{Math.min(100, convDisplay)}%</Text>
-            <Text style={styles.perfLbl}>{t('owner.promoDashConversion')}</Text>
           </View>
           <View style={styles.perfTrend}>
             <Text
@@ -724,7 +721,7 @@ export default function OwnerPromotionsScreen() {
         accessibilityRole="button"
         accessibilityLabel={t('owner.promoFabA11y')}
       >
-        <Ionicons name="add" size={28} color="#0a0a0a" />
+        <Ionicons name="add" size={30} color="#FFFFFF" />
       </Pressable>
 
       <ScheduleBottomSheet
@@ -739,7 +736,7 @@ export default function OwnerPromotionsScreen() {
           value={draft.name}
           onChangeText={(name) => setDraft((d) => ({ ...d, name }))}
           placeholder={t('owner.promoName')}
-          placeholderTextColor={ownerColors.textMuted}
+          placeholderTextColor={palette.textMuted}
           style={styles.input}
         />
 
@@ -768,7 +765,7 @@ export default function OwnerPromotionsScreen() {
               value={draft.startDate}
               onChangeText={(startDate) => setDraft((d) => ({ ...d, startDate }))}
               placeholder="YYYY-MM-DD"
-              placeholderTextColor={ownerColors.textMuted}
+              placeholderTextColor={palette.textMuted}
               style={styles.input}
               autoCapitalize="none"
             />
@@ -779,7 +776,7 @@ export default function OwnerPromotionsScreen() {
               value={draft.endDate}
               onChangeText={(endDate) => setDraft((d) => ({ ...d, endDate }))}
               placeholder="YYYY-MM-DD"
-              placeholderTextColor={ownerColors.textMuted}
+              placeholderTextColor={palette.textMuted}
               style={styles.input}
               autoCapitalize="none"
             />
@@ -846,7 +843,7 @@ export default function OwnerPromotionsScreen() {
               value={draft.appliesTo[k]}
               onValueChange={(v) => setDraft((d) => ({ ...d, appliesTo: { ...d.appliesTo, [k]: v } }))}
               trackColor={{ false: '#3f3f46', true: 'rgba(212, 175, 55, 0.45)' }}
-              thumbColor={draft.appliesTo[k] ? ownerColors.gold : '#a1a1aa'}
+              thumbColor={draft.appliesTo[k] ? palette.gold : palette.textMuted}
             />
           </View>
         ))}
@@ -857,7 +854,7 @@ export default function OwnerPromotionsScreen() {
             value={draft.autoApply}
             onValueChange={(autoApply) => setDraft((d) => ({ ...d, autoApply }))}
             trackColor={{ false: '#3f3f46', true: 'rgba(212, 175, 55, 0.45)' }}
-            thumbColor={draft.autoApply ? ownerColors.gold : '#a1a1aa'}
+            thumbColor={draft.autoApply ? palette.gold : palette.textMuted}
           />
         </View>
 
@@ -866,7 +863,7 @@ export default function OwnerPromotionsScreen() {
           value={draft.targetAudience}
           onChangeText={(targetAudience) => setDraft((d) => ({ ...d, targetAudience }))}
           placeholder={t('owner.promoTarget')}
-          placeholderTextColor={ownerColors.textMuted}
+          placeholderTextColor={palette.textMuted}
           style={styles.input}
         />
 
@@ -875,7 +872,7 @@ export default function OwnerPromotionsScreen() {
           value={draft.whereApplies}
           onChangeText={(whereApplies) => setDraft((d) => ({ ...d, whereApplies }))}
           placeholder={t('owner.promoWhere')}
-          placeholderTextColor={ownerColors.textMuted}
+          placeholderTextColor={palette.textMuted}
           style={styles.input}
         />
 
@@ -884,7 +881,7 @@ export default function OwnerPromotionsScreen() {
           value={draft.description}
           onChangeText={(description) => setDraft((d) => ({ ...d, description }))}
           placeholder={t('owner.promoNotes')}
-          placeholderTextColor={ownerColors.textMuted}
+          placeholderTextColor={palette.textMuted}
           style={[styles.input, styles.inputMultiline]}
           multiline
         />
@@ -998,10 +995,12 @@ export default function OwnerPromotionsScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const usePromoScreenStyles = createStyles((c) => {
+  const o = ownerColorsFromPalette(c);
+  return {
   safe: {
     flex: 1,
-    backgroundColor: ownerColors.bg,
+    backgroundColor: o.bg,
   },
   scrollContent: {
     paddingHorizontal: ownerSpace.md,
@@ -1010,40 +1009,46 @@ const styles = StyleSheet.create({
   perfBar: {
     flexDirection: 'row',
     alignItems: 'stretch',
-    backgroundColor: 'rgba(255,255,255,0.04)',
-    borderRadius: ownerRadii.md,
+    backgroundColor: c.bgSurface,
+    borderRadius: ownerRadii['2xl'],
     borderWidth: StyleSheet.hairlineWidth,
-    borderColor: ownerColors.border,
-    paddingVertical: 12,
-    paddingHorizontal: 10,
+    borderColor: o.border,
+    paddingVertical: 16,
+    paddingHorizontal: 12,
     marginBottom: ownerSpace.md,
-    gap: 4,
+    gap: 6,
+    shadowColor: '#000',
+    shadowOpacity: 0.08,
+    shadowRadius: 10,
+    shadowOffset: { width: 0, height: 4 },
+    elevation: 2,
   },
   perfCell: {
     flex: 1,
     minWidth: 0,
     alignItems: 'center',
     justifyContent: 'center',
+    gap: 6,
   },
   perfSep: {
     width: StyleSheet.hairlineWidth,
-    backgroundColor: ownerColors.border,
+    backgroundColor: o.border,
     marginVertical: 4,
   },
   perfVal: {
-    fontSize: 15,
+    fontSize: 20,
     fontWeight: '800',
-    color: ownerColors.text,
-    letterSpacing: -0.3,
+    color: o.text,
+    letterSpacing: -0.6,
   },
   perfLbl: {
-    fontSize: 9,
+    fontSize: 10,
     fontWeight: '700',
-    color: ownerColors.textMuted,
+    color: o.textMuted,
     textAlign: 'center',
-    marginTop: 4,
+    marginTop: 2,
     textTransform: 'uppercase',
-    letterSpacing: 0.4,
+    letterSpacing: 0.6,
   },
   perfTrend: {
     justifyContent: 'center',
@@ -1068,29 +1073,34 @@ const styles = StyleSheet.create({
   sectionTitle: {
     fontSize: 11,
     fontWeight: '800',
-    color: ownerColors.textMuted,
+    color: o.textMuted,
     letterSpacing: 1.2,
     textTransform: 'uppercase',
   },
   viewAll: {
     fontSize: 12,
     fontWeight: '800',
-    color: ownerColors.gold,
+    color: o.gold,
   },
   sectionEmpty: {
     fontSize: 13,
-    color: ownerColors.textMuted,
+    color: o.textMuted,
     marginBottom: ownerSpace.md,
     fontStyle: 'italic',
   },
   cardShell: {
     flexDirection: 'row',
-    borderRadius: ownerRadii.md,
+    borderRadius: ownerRadii.xl,
     borderWidth: StyleSheet.hairlineWidth,
-    borderColor: ownerColors.border,
-    backgroundColor: ownerColors.bgGlass,
+    borderColor: o.border,
+    backgroundColor: c.bgSurface,
     marginBottom: 10,
     overflow: 'hidden',
+    shadowColor: '#000',
+    shadowOpacity: 0.06,
+    shadowRadius: 8,
+    shadowOffset: { width: 0, height: 3 },
+    elevation: 1,
   },
   cardExpired: {
     opacity: 0.78,
@@ -1115,7 +1125,7 @@ const styles = StyleSheet.create({
   cardTitle: {
     fontSize: 16,
     fontWeight: '800',
-    color: ownerColors.text,
+    color: o.text,
     flex: 1,
     letterSpacing: -0.2,
   },
@@ -1145,7 +1155,7 @@ const styles = StyleSheet.create({
   cardMetaLine: {
     fontSize: 13,
     fontWeight: '600',
-    color: ownerColors.textSecondary,
+    color: o.textSecondary,
     marginBottom: 10,
   },
   row3: {
@@ -1158,18 +1168,18 @@ const styles = StyleSheet.create({
   metricBig: {
     fontSize: 18,
     fontWeight: '800',
-    color: ownerColors.text,
+    color: o.text,
     letterSpacing: -0.3,
   },
   metricPrefix: {
     fontSize: 11,
     fontWeight: '800',
-    color: ownerColors.textMuted,
+    color: o.textMuted,
   },
   reasonLine: {
     fontSize: 12,
     fontWeight: '600',
-    color: ownerColors.gold,
+    color: o.gold,
     marginBottom: 8,
     opacity: 0.95,
   },
@@ -1206,7 +1216,7 @@ const styles = StyleSheet.create({
     borderRadius: 14,
     backgroundColor: 'rgba(255,255,255,0.08)',
     borderWidth: StyleSheet.hairlineWidth,
-    borderColor: ownerColors.border,
+    borderColor: o.border,
     padding: 2,
     justifyContent: 'center',
   },
@@ -1241,7 +1251,7 @@ const styles = StyleSheet.create({
     borderRadius: ownerRadii.sm,
     backgroundColor: 'rgba(255,255,255,0.06)',
     borderWidth: StyleSheet.hairlineWidth,
-    borderColor: ownerColors.border,
+    borderColor: o.border,
   },
   quickBtnDisabled: {
     opacity: 0.4,
@@ -1250,7 +1260,7 @@ const styles = StyleSheet.create({
   quickBtnText: {
     fontSize: 12,
     fontWeight: '800',
-    color: ownerColors.textSecondary,
+    color: o.textSecondary,
   },
   quickBtnGold: {
     paddingHorizontal: 12,
@@ -1263,7 +1273,7 @@ const styles = StyleSheet.create({
   quickBtnGoldText: {
     fontSize: 12,
     fontWeight: '800',
-    color: ownerColors.gold,
+    color: o.gold,
   },
   cardPressed: { opacity: 0.92 },
   swipeRow: {
@@ -1285,9 +1295,9 @@ const styles = StyleSheet.create({
     borderColor: 'rgba(212, 175, 55, 0.45)',
   },
   swipeNeutral: {
-    backgroundColor: ownerColors.bgGlass,
+    backgroundColor: o.bgGlass,
     borderWidth: StyleSheet.hairlineWidth,
-    borderColor: ownerColors.border,
+    borderColor: o.border,
   },
   swipeDelete: {
     backgroundColor: 'rgba(239, 68, 68, 0.14)',
@@ -1298,23 +1308,23 @@ const styles = StyleSheet.create({
   swipeBtnText: {
     fontSize: 9,
     fontWeight: '800',
-    color: ownerColors.text,
+    color: o.text,
     textTransform: 'uppercase',
     textAlign: 'center',
   },
   fab: {
     position: 'absolute',
     right: 20,
-    width: 56,
-    height: 56,
-    borderRadius: 28,
-    backgroundColor: ownerColors.gold,
+    width: 60,
+    height: 60,
+    borderRadius: 30,
+    backgroundColor: o.gold,
     alignItems: 'center',
     justifyContent: 'center',
-    shadowColor: '#000',
+    shadowColor: o.gold,
     shadowOpacity: 0.45,
-    shadowRadius: 12,
-    shadowOffset: { width: 0, height: 6 },
+    shadowRadius: 14,
+    shadowOffset: { width: 0, height: 8 },
     elevation: 12,
   },
   fabPressed: { opacity: 0.9 },
@@ -1326,18 +1336,18 @@ const styles = StyleSheet.create({
   fieldLabel: {
     fontSize: 12,
     fontWeight: '800',
-    color: ownerColors.textMuted,
+    color: o.textMuted,
     marginBottom: 6,
     marginTop: 12,
   },
   input: {
     borderWidth: StyleSheet.hairlineWidth,
-    borderColor: ownerColors.border,
+    borderColor: o.border,
     borderRadius: ownerRadii.md,
     paddingHorizontal: 12,
     paddingVertical: 10,
-    color: ownerColors.text,
-    backgroundColor: ownerColors.bgGlass,
+    color: o.text,
+    backgroundColor: o.bgGlass,
     fontSize: 15,
   },
   inputMultiline: {
@@ -1354,8 +1364,8 @@ const styles = StyleSheet.create({
     paddingVertical: 8,
     borderRadius: ownerRadii.md,
     borderWidth: StyleSheet.hairlineWidth,
-    borderColor: ownerColors.border,
-    backgroundColor: ownerColors.bgGlass,
+    borderColor: o.border,
+    backgroundColor: o.bgGlass,
     maxWidth: '48%',
   },
   typeChipOn: {
@@ -1365,10 +1375,10 @@ const styles = StyleSheet.create({
   typeChipText: {
     fontSize: 12,
     fontWeight: '700',
-    color: ownerColors.textSecondary,
+    color: o.textSecondary,
   },
   typeChipTextOn: {
-    color: ownerColors.gold,
+    color: o.gold,
   },
   formRow2: {
     flexDirection: 'row',
@@ -1385,10 +1395,10 @@ const styles = StyleSheet.create({
     height: 40,
     borderRadius: 20,
     borderWidth: StyleSheet.hairlineWidth,
-    borderColor: ownerColors.border,
+    borderColor: o.border,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: ownerColors.bgGlass,
+    backgroundColor: o.bgGlass,
   },
   dowChipOn: {
     borderColor: 'rgba(212, 175, 55, 0.5)',
@@ -1397,10 +1407,10 @@ const styles = StyleSheet.create({
   dowChipText: {
     fontSize: 11,
     fontWeight: '800',
-    color: ownerColors.textMuted,
+    color: o.textMuted,
   },
   dowChipTextOn: {
-    color: ownerColors.gold,
+    color: o.gold,
   },
   switchRow: {
     flexDirection: 'row',
@@ -1408,12 +1418,12 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     paddingVertical: 8,
     borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: ownerColors.border,
+    borderBottomColor: o.border,
   },
   switchLabel: {
     fontSize: 14,
     fontWeight: '600',
-    color: ownerColors.text,
+    color: o.text,
     flex: 1,
     paddingRight: 12,
   },
@@ -1426,12 +1436,12 @@ const styles = StyleSheet.create({
   detailLift: {
     fontSize: 14,
     fontWeight: '800',
-    color: ownerColors.gold,
+    color: o.gold,
   },
   detailSection: {
     fontSize: 11,
     fontWeight: '800',
-    color: ownerColors.textMuted,
+    color: o.textMuted,
     letterSpacing: 0.8,
     textTransform: 'uppercase',
     marginTop: 14,
@@ -1439,7 +1449,7 @@ const styles = StyleSheet.create({
   },
   detailBody: {
     fontSize: 15,
-    color: ownerColors.textSecondary,
+    color: o.textSecondary,
     lineHeight: 22,
   },
   analyticsGrid: {
@@ -1452,20 +1462,20 @@ const styles = StyleSheet.create({
     padding: 12,
     borderRadius: ownerRadii.md,
     borderWidth: StyleSheet.hairlineWidth,
-    borderColor: ownerColors.border,
-    backgroundColor: ownerColors.bgGlass,
+    borderColor: o.border,
+    backgroundColor: o.bgGlass,
     alignItems: 'center',
   },
   analyticsVal: {
     fontSize: 16,
     fontWeight: '800',
-    color: ownerColors.text,
+    color: o.text,
     marginBottom: 4,
   },
   analyticsLbl: {
     fontSize: 10,
     fontWeight: '700',
-    color: ownerColors.textMuted,
+    color: o.textMuted,
     textAlign: 'center',
   },
   destructiveBtn: {
@@ -1491,4 +1501,5 @@ const styles = StyleSheet.create({
     fontWeight: '800',
     color: 'rgba(252, 165, 165, 0.98)',
   },
+};
 });

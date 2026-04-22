@@ -1,25 +1,40 @@
 import React, { useMemo, useState } from 'react';
-import { View, Text, StyleSheet } from 'react-native';
+import { View, Text, Pressable, StyleSheet } from 'react-native';
 import { useTranslation } from 'react-i18next';
-import Animated, { FadeInUp } from 'react-native-reanimated';
+import { Ionicons } from '@expo/vector-icons';
 import { OwnerScreen } from '@/components/owner/OwnerScreen';
-import { PeriodToggle } from '@/components/owner/PeriodToggle';
-import { GlassCard } from '@/components/owner/GlassCard';
-import { SubpageHeader } from '@/components/owner/SubpageHeader';
+import { OwnerHeader } from '@/components/owner/OwnerHeader';
+import { StatCard } from '@/components/owner/StatCard';
+import { SectionCard } from '@/components/owner/SectionCard';
 import {
   ANALYTICS_INSIGHTS,
   ANALYTICS_METRICS,
   BUSY_HEATMAP,
-  CRM_SPOTLIGHT,
   REVENUE_DATA,
   type RevenuePeriod,
 } from '@/lib/mock/ownerApp';
 import { formatCurrency } from '@/lib/utils/formatCurrency';
-import { ownerColors, ownerRadii } from '@/lib/theme/ownerTheme';
+import { useColors, createStyles, spacing, borderRadius } from '@/lib/theme';
 
-function barColor(series: number[], index: number): string {
-  if (index === 0) return ownerColors.chartPositive;
-  return series[index] >= series[index - 1] ? ownerColors.chartPositive : ownerColors.chartNegative;
+type PerfRange = 'today' | '7d' | '30d' | 'mtd';
+
+const RANGE_MAP: Record<PerfRange, RevenuePeriod> = {
+  today: 'day',
+  '7d': 'week',
+  '30d': 'month',
+  mtd: 'month',
+};
+
+const RANGES: { key: PerfRange; label: string }[] = [
+  { key: 'today', label: 'Today' },
+  { key: '7d', label: '7d' },
+  { key: '30d', label: '30d' },
+  { key: 'mtd', label: 'MTD' },
+];
+
+function barColor(series: number[], index: number, pos: string, neg: string): string {
+  if (index === 0) return pos;
+  return series[index] >= series[index - 1] ? pos : neg;
 }
 
 function heatRgb(p: number): string {
@@ -29,182 +44,64 @@ function heatRgb(p: number): string {
   return `rgba(${r},${g},${b},0.88)`;
 }
 
-export default function OwnerAnalyticsScreen() {
-  const { t } = useTranslation();
-  const [period, setPeriod] = useState<RevenuePeriod>('week');
-
-  const m = ANALYTICS_METRICS[period];
-  const series = REVENUE_DATA[period].series;
-  const maxBar = Math.max(...series, 1);
-
-  const heatColors = useMemo(() => {
-    const max = Math.max(...BUSY_HEATMAP, 1);
-    return BUSY_HEATMAP.map((v) => v / max);
-  }, []);
-
-  return (
-    <OwnerScreen>
-      <SubpageHeader title={t('owner.analyticsTitle')} fallbackTab="more" />
-      <PeriodToggle value={period} onChange={setPeriod} />
-
-      <Animated.View entering={FadeInUp.delay(80)} style={styles.grid}>
-        <MetricTile label={t('owner.metricRevenue')} value={formatCurrency(m.revenue, 'cad')} />
-        <MetricTile label={t('owner.metricCovers')} value={String(m.covers)} />
-        <MetricTile label={t('owner.metricAvgSpend')} value={formatCurrency(m.avgSpend, 'cad')} />
-        <MetricTile label={t('owner.metricNoShow')} value={`${m.noShowPct}%`} accent />
-        <MetricTile label={t('owner.metricTurnover')} value={`${m.turnover}x`} wide />
-      </Animated.View>
-
-      <Text style={styles.section}>{t('owner.chartDaily')}</Text>
-      <GlassCard style={styles.chartCard}>
-        <View style={styles.barRow}>
-          {series.map((v, i) => (
-            <View key={i} style={styles.barCol}>
-              <View style={styles.barTrack}>
-                <View
-                  style={[
-                    styles.barFill,
-                    { height: `${Math.max(8, (v / maxBar) * 100)}%`, backgroundColor: barColor(series, i) },
-                  ]}
-                />
-              </View>
-            </View>
-          ))}
-        </View>
-      </GlassCard>
-
-      <Text style={styles.section}>{t('owner.chartTrend')}</Text>
-      <GlassCard style={styles.trendCard}>
-        <View style={styles.trendRow}>
-          {series.map((v, i) => (
-            <View key={i} style={styles.trendPointWrap}>
-              <View style={[styles.trendDot, { opacity: 0.35 + (v / maxBar) * 0.65 }]} />
-            </View>
-          ))}
-        </View>
-        <View style={styles.trendLine} />
-      </GlassCard>
-
-      <Text style={styles.section}>{t('owner.chartHeat')}</Text>
-      <GlassCard style={styles.heatCard}>
-        <View style={styles.heatRow}>
-          {heatColors.map((p, h) => (
-            <View key={h} style={[styles.heatCell, { backgroundColor: heatRgb(p) }]} />
-          ))}
-        </View>
-        <Text style={styles.heatHint}>{t('owner.chartHeatHint')}</Text>
-      </GlassCard>
-
-      <Text style={styles.section}>{t('owner.analyticsInsightsTitle')}</Text>
-      <GlassCard style={styles.insightCard}>
-        <Text style={styles.insightLine}>
-          <Text style={styles.insightKey}>{t('owner.insightPeak')} </Text>
-          {ANALYTICS_INSIGHTS.peakHours}
-        </Text>
-        <Text style={[styles.insightLine, styles.insightSpacer]}>
-          <Text style={styles.insightKey}>{t('owner.insightDead')} </Text>
-          {ANALYTICS_INSIGHTS.deadHours}
-        </Text>
-        <Text style={styles.insightLine}>
-          <Text style={styles.insightKey}>{t('owner.insightBestDays')} </Text>
-          {ANALYTICS_INSIGHTS.bestDays}
-        </Text>
-      </GlassCard>
-
-      <Text style={styles.section}>{t('owner.crmTitle')}</Text>
-      {CRM_SPOTLIGHT.map((c) => (
-        <GlassCard key={c.id} style={styles.crmCard}>
-          <View style={styles.crmTop}>
-            <Text style={styles.crmName}>{c.name}</Text>
-            {c.isVIP ? (
-              <View style={styles.vipPill}>
-                <Text style={styles.vipText}>{t('owner.crmVip')}</Text>
-              </View>
-            ) : null}
-          </View>
-          <Text style={styles.crmMeta}>
-            {t('owner.crmVisits', { count: c.totalVisits })} · {t('owner.crmAvg', { amount: formatCurrency(c.avgSpend, 'cad') })}{' '}
-            · {c.frequency}
-          </Text>
-          <Text style={styles.crmPref}>
-            {t('owner.crmPref')}: {c.preference}
-          </Text>
-        </GlassCard>
-      ))}
-
-      <GlassCard style={styles.compareCard}>
-        <Text style={styles.compareText}>{t('owner.compareWeek')}</Text>
-        <Text style={styles.compareSub}>{t('owner.compareMonth')}</Text>
-      </GlassCard>
-    </OwnerScreen>
-  );
-}
-
-function MetricTile({
-  label,
-  value,
-  accent,
-  wide,
-}: {
-  label: string;
-  value: string;
-  accent?: boolean;
-  wide?: boolean;
-}) {
-  return (
-    <View style={[styles.tile, accent && styles.tileAccent, wide && styles.tileWide]}>
-      <Text style={styles.tileLabel}>{label}</Text>
-      <Text style={styles.tileValue}>{value}</Text>
-    </View>
-  );
-}
-
-const styles = StyleSheet.create({
-  grid: {
+const useStyles = createStyles((c) => ({
+  chipRow: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: 12,
-    marginTop: 16,
-    marginBottom: 8,
+    gap: spacing.sm,
+    paddingHorizontal: spacing.lg,
+    marginBottom: spacing.md,
   },
-  tile: {
-    width: '47%',
-    padding: 16,
-    borderRadius: ownerRadii['2xl'],
-    backgroundColor: ownerColors.bgGlass,
-    borderWidth: 1,
-    borderColor: ownerColors.border,
+  chip: {
+    paddingHorizontal: spacing.md,
+    paddingVertical: 8,
+    minHeight: 44,
+    justifyContent: 'center',
+    borderRadius: borderRadius.full,
+    backgroundColor: c.bgSurface,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: c.border,
   },
-  tileWide: {
-    width: '100%',
+  chipActive: {
+    backgroundColor: c.gold,
+    borderColor: c.gold,
   },
-  tileAccent: {
-    borderColor: 'rgba(212, 175, 55, 0.45)',
-  },
-  tileLabel: {
-    fontSize: 12,
-    fontWeight: '700',
-    color: ownerColors.textMuted,
-    marginBottom: 8,
-    textTransform: 'uppercase',
-    letterSpacing: 0.6,
-  },
-  tileValue: {
-    fontSize: 22,
-    fontWeight: '800',
-    color: ownerColors.text,
-  },
-  section: {
+  chipText: {
     fontSize: 13,
-    fontWeight: '800',
-    color: ownerColors.textMuted,
-    letterSpacing: 1,
-    marginTop: 20,
-    marginBottom: 10,
+    fontWeight: '600',
+    color: c.textMuted,
+  },
+  chipTextActive: {
+    color: c.bgBase,
+  },
+  kpiGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    paddingHorizontal: spacing.lg,
+    gap: spacing.sm,
+    marginBottom: spacing.md,
+  },
+  kpiHalf: {
+    width: '48%',
+    flexGrow: 1,
+    maxWidth: '50%',
   },
   chartCard: {
-    padding: 16,
-    marginBottom: 8,
+    marginHorizontal: spacing.lg,
+    marginBottom: spacing.md,
+    backgroundColor: c.bgSurface,
+    borderRadius: borderRadius.lg,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: c.border,
+    padding: spacing.xl,
+  },
+  chartLabel: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: c.textMuted,
+    letterSpacing: 1,
+    textTransform: 'uppercase',
+    marginBottom: spacing.md,
   },
   barRow: {
     flexDirection: 'row',
@@ -219,47 +116,15 @@ const styles = StyleSheet.create({
   },
   barTrack: {
     flex: 1,
-    borderRadius: ownerRadii.xl,
-    backgroundColor: 'rgba(255,255,255,0.06)',
+    borderRadius: borderRadius.md,
+    backgroundColor: c.bgElevated,
     justifyContent: 'flex-end',
     overflow: 'hidden',
   },
   barFill: {
     width: '100%',
-    borderRadius: ownerRadii.xl,
-  },
-  trendCard: {
-    padding: 20,
-    marginBottom: 8,
-    minHeight: 72,
-    justifyContent: 'center',
-  },
-  trendRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'flex-end',
-    height: 40,
-  },
-  trendPointWrap: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'flex-end',
-  },
-  trendDot: {
-    width: 10,
-    height: 10,
-    borderRadius: 5,
-    backgroundColor: ownerColors.gold,
-  },
-  trendLine: {
-    height: 2,
-    backgroundColor: 'rgba(212, 175, 55, 0.35)',
-    marginTop: -6,
-    borderRadius: 1,
-  },
-  heatCard: {
-    padding: 16,
-    marginBottom: 16,
+    borderRadius: borderRadius.md,
+    minHeight: 8,
   },
   heatRow: {
     flexDirection: 'row',
@@ -274,81 +139,272 @@ const styles = StyleSheet.create({
   },
   heatHint: {
     fontSize: 12,
-    color: ownerColors.textMuted,
-    marginTop: 10,
+    color: c.textMuted,
+    marginTop: spacing.md,
+    fontWeight: '500',
   },
-  insightCard: {
-    padding: 18,
-    marginBottom: 8,
-    borderColor: 'rgba(212, 175, 55, 0.2)',
+  insightRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: spacing.md,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.md,
+    minHeight: 56,
   },
-  insightLine: {
-    fontSize: 15,
-    fontWeight: '600',
-    color: ownerColors.textSecondary,
-    lineHeight: 22,
+  insightDivider: {
+    borderTopWidth: StyleSheet.hairlineWidth,
+    borderTopColor: c.border,
   },
-  insightSpacer: {
-    marginTop: 12,
-    marginBottom: 12,
+  insightTextWrap: {
+    flex: 1,
+    minWidth: 0,
+    gap: 4,
   },
-  insightKey: {
-    color: ownerColors.gold,
-    fontWeight: '800',
+  insightTitle: {
+    fontSize: 14,
+    fontWeight: '700',
+    color: c.gold,
   },
-  crmCard: {
-    padding: 16,
-    marginBottom: 10,
+  insightSub: {
+    fontSize: 13,
+    color: c.textMuted,
+    fontWeight: '500',
+    lineHeight: 18,
   },
-  crmTop: {
+  kvRow: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    marginBottom: 8,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.md,
+    minHeight: 52,
+    gap: spacing.md,
   },
-  crmName: {
-    fontSize: 17,
-    fontWeight: '800',
-    color: ownerColors.text,
+  kvDivider: {
+    borderTopWidth: StyleSheet.hairlineWidth,
+    borderTopColor: c.border,
+  },
+  kvLabel: {
+    fontSize: 13,
+    color: c.textMuted,
+    fontWeight: '500',
     flex: 1,
   },
-  vipPill: {
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-    borderRadius: ownerRadii.xl,
-    borderWidth: 1,
-    borderColor: ownerColors.gold,
-    backgroundColor: ownerColors.goldSubtle,
-  },
-  vipText: {
-    fontSize: 11,
-    fontWeight: '800',
-    color: ownerColors.gold,
-    letterSpacing: 0.6,
-  },
-  crmMeta: {
+  kvValue: {
     fontSize: 14,
-    color: ownerColors.textMuted,
-    marginBottom: 6,
-  },
-  crmPref: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: ownerColors.textSecondary,
-  },
-  compareCard: {
-    padding: 20,
-    marginBottom: 24,
-    borderColor: 'rgba(212, 175, 55, 0.25)',
-  },
-  compareText: {
-    fontSize: 16,
     fontWeight: '700',
-    color: ownerColors.text,
-    marginBottom: 6,
+    color: c.textPrimary,
   },
-  compareSub: {
-    fontSize: 14,
-    color: ownerColors.textMuted,
+  kvValueGold: {
+    color: c.gold,
   },
-});
+}));
+
+type KVRowItem = {
+  label: string;
+  value: string;
+  accent?: boolean;
+};
+
+export default function OwnerAnalyticsScreen() {
+  const { t } = useTranslation();
+  const c = useColors();
+  const styles = useStyles();
+  const [range, setRange] = useState<PerfRange>('7d');
+
+  const period = RANGE_MAP[range];
+  const m = ANALYTICS_METRICS[period];
+  const series = REVENUE_DATA[period].series;
+  const maxBar = Math.max(...series, 1);
+
+  const heatColors = useMemo(() => {
+    const max = Math.max(...BUSY_HEATMAP, 1);
+    return BUSY_HEATMAP.map((v) => v / max);
+  }, []);
+
+  const insights = useMemo(
+    () => [
+      {
+        key: 'peak',
+        icon: 'trending-up-outline' as const,
+        title: t('owner.insightPeak'),
+        body: ANALYTICS_INSIGHTS.peakHours,
+      },
+      {
+        key: 'dead',
+        icon: 'moon-outline' as const,
+        title: t('owner.insightDead'),
+        body: ANALYTICS_INSIGHTS.deadHours,
+      },
+      {
+        key: 'best',
+        icon: 'calendar-outline' as const,
+        title: t('owner.insightBestDays'),
+        body: ANALYTICS_INSIGHTS.bestDays,
+      },
+    ],
+    [t],
+  );
+
+  return (
+    <OwnerScreen contentContainerStyle={{ paddingHorizontal: 0 }}>
+      <OwnerHeader title={t('owner.analyticsTitle')} subtitle="Nova Ristorante" />
+      <View style={styles.chipRow}>
+        {RANGES.map((r) => (
+          <Pressable
+            key={r.key}
+            onPress={() => setRange(r.key)}
+            style={[styles.chip, range === r.key && styles.chipActive]}
+          >
+            <Text style={[styles.chipText, range === r.key && styles.chipTextActive]}>{r.label}</Text>
+          </Pressable>
+        ))}
+      </View>
+
+      <View style={styles.kpiGrid}>
+        <StatCard
+          style={styles.kpiHalf}
+          label={t('owner.metricRevenue')}
+          accentValue
+          value={formatCurrency(m.revenue, 'cad')}
+        />
+        <StatCard style={styles.kpiHalf} label={t('owner.metricCovers')} value={String(m.covers)} />
+        <StatCard
+          style={styles.kpiHalf}
+          label={t('owner.metricAvgSpend')}
+          value={formatCurrency(m.avgSpend, 'cad')}
+        />
+        <StatCard style={styles.kpiHalf} label={t('owner.metricNoShow')} value={`${m.noShowPct}%`} />
+      </View>
+
+      <View style={styles.chartCard}>
+        <Text style={styles.chartLabel}>{t('owner.chartDaily')}</Text>
+        <View style={styles.barRow}>
+          {series.map((v, i) => {
+            const h = Math.max(8, Math.round((v / maxBar) * 120));
+            return (
+              <View key={i} style={styles.barCol}>
+                <View style={styles.barTrack}>
+                  <View
+                    style={[
+                      styles.barFill,
+                      {
+                        height: h,
+                        backgroundColor: barColor(series, i, c.success, c.danger),
+                      },
+                    ]}
+                  />
+                </View>
+              </View>
+            );
+          })}
+        </View>
+      </View>
+
+      <SectionCard sectionTitle={t('owner.chartHeat')} marginBottom={spacing.lg}>
+        <View style={{ padding: spacing.md }}>
+          <View style={styles.heatRow}>
+            {heatColors.map((p, h) => (
+              <View key={h} style={[styles.heatCell, { backgroundColor: heatRgb(p) }]} />
+            ))}
+          </View>
+          <Text style={styles.heatHint}>{t('owner.chartHeatHint')}</Text>
+        </View>
+      </SectionCard>
+
+      <SectionCard sectionTitle="Revenue breakdown">
+        {(
+          [
+            { label: 'Food', value: formatCurrency(m.revenue * 0.62, 'cad') },
+            { label: 'Drinks', value: formatCurrency(m.revenue * 0.32, 'cad') },
+            { label: 'Tips', value: formatCurrency(m.revenue * 0.12, 'cad') },
+            { label: 'Discounts given', value: `- ${formatCurrency(m.revenue * 0.03, 'cad')}` },
+            { label: 'Deposits', value: formatCurrency(m.revenue * 0.04, 'cad') },
+            { label: 'Gift cards sold', value: formatCurrency(m.revenue * 0.02, 'cad') },
+            { label: 'Event revenue', value: formatCurrency(m.revenue * 0.06, 'cad') },
+            { label: 'Promo uses', value: `${Math.round(m.covers * 0.08)}` },
+          ] as KVRowItem[]
+        ).map((row, i) => (
+          <View key={row.label} style={[styles.kvRow, i > 0 && styles.kvDivider]}>
+            <Text style={styles.kvLabel}>{row.label}</Text>
+            <Text style={[styles.kvValue, row.accent && styles.kvValueGold]}>{row.value}</Text>
+          </View>
+        ))}
+      </SectionCard>
+
+      <SectionCard sectionTitle="Guest mix">
+        {(
+          [
+            { label: 'New guests', value: String(Math.round(m.covers * 0.28)) },
+            { label: 'Returning guests', value: String(Math.round(m.covers * 0.72)) },
+            { label: 'VIP covers', value: String(Math.round(m.covers * 0.12)) },
+            { label: 'Walk-ins', value: String(Math.round(m.covers * 0.18)) },
+            { label: 'Preorders', value: String(Math.round(m.covers * 0.22)) },
+          ] as KVRowItem[]
+        ).map((row, i) => (
+          <View key={row.label} style={[styles.kvRow, i > 0 && styles.kvDivider]}>
+            <Text style={styles.kvLabel}>{row.label}</Text>
+            <Text style={styles.kvValue}>{row.value}</Text>
+          </View>
+        ))}
+      </SectionCard>
+
+      <SectionCard sectionTitle="Operations">
+        {(
+          [
+            { label: 'Avg table turn', value: '78 min' },
+            { label: 'Labour cost', value: formatCurrency(m.revenue * 0.24, 'cad') },
+            { label: 'Turnover', value: `${m.turnover}x` },
+          ] as KVRowItem[]
+        ).map((row, i) => (
+          <View key={row.label} style={[styles.kvRow, i > 0 && styles.kvDivider]}>
+            <Text style={styles.kvLabel}>{row.label}</Text>
+            <Text style={styles.kvValue}>{row.value}</Text>
+          </View>
+        ))}
+      </SectionCard>
+
+      <SectionCard sectionTitle="Top dishes">
+        {[
+          { name: 'Tagliatelle al ragù', count: 82, revenue: 2214 },
+          { name: 'Branzino', count: 61, revenue: 2684 },
+          { name: 'Burrata', count: 54, revenue: 864 },
+          { name: 'Negroni', count: 48, revenue: 672 },
+        ].map((d, i) => (
+          <View key={d.name} style={[styles.kvRow, i > 0 && styles.kvDivider]}>
+            <Text style={styles.kvLabel}>
+              {d.name} · {d.count}
+            </Text>
+            <Text style={styles.kvValue}>{formatCurrency(d.revenue, 'cad')}</Text>
+          </View>
+        ))}
+      </SectionCard>
+
+      <SectionCard sectionTitle="Booking sources">
+        {[
+          { label: 'App', pct: 48 },
+          { label: 'Web', pct: 24 },
+          { label: 'Phone', pct: 16 },
+          { label: 'Walk-in', pct: 12 },
+        ].map((s, i) => (
+          <View key={s.label} style={[styles.kvRow, i > 0 && styles.kvDivider]}>
+            <Text style={styles.kvLabel}>{s.label}</Text>
+            <Text style={styles.kvValue}>{s.pct}%</Text>
+          </View>
+        ))}
+      </SectionCard>
+
+      <SectionCard sectionTitle={t('owner.analyticsInsightsTitle')} marginBottom={spacing['2xl']}>
+        {insights.map((row, i) => (
+          <View key={row.key} style={[styles.insightRow, i > 0 && styles.insightDivider]}>
+            <Ionicons name={row.icon} size={22} color={c.textMuted} />
+            <View style={styles.insightTextWrap}>
+              <Text style={styles.insightTitle}>{row.title}</Text>
+              <Text style={styles.insightSub}>{row.body}</Text>
+            </View>
+          </View>
+        ))}
+      </SectionCard>
+    </OwnerScreen>
+  );
+}

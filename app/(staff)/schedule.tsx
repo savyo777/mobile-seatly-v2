@@ -25,18 +25,11 @@ import {
   SheetPrimaryButton,
   SheetSecondaryButton,
 } from '@/components/owner/ScheduleBottomSheet';
+import { createStyles, useColors } from '@/lib/theme';
 import { ownerRadii } from '@/lib/theme/ownerTheme';
 import { ownerSpace } from '@/lib/theme/ownerTheme';
+import { OWNER_TAB_SCROLL_BOTTOM_PADDING } from '@/lib/theme/ownerTheme';
 
-const BG = '#000000';
-const CARD = '#111111';
-const CARD_RAISED = '#1A1A1A';
-const GOLD = '#C6A85B';
-const TEXT = '#FFFFFF';
-const TEXT_MUTED = '#A1A1AA';
-const TEXT_SOFT = '#71717A';
-const BORDER = 'rgba(255,255,255,0.08)';
-const TAB_BAR_SCROLL_PADDING = 110;
 const PAD_H = 16;
 const SECTION_GAP = 22;
 
@@ -276,6 +269,8 @@ const screenH = Dimensions.get('window').height;
 export default function StaffScheduleScreen() {
   const { t } = useTranslation();
   const router = useRouter();
+  const palette = useColors();
+  const styles = useScheduleStyles();
   const insets = useSafeAreaInsets();
   const [weekOffset, setWeekOffset] = useState(0);
   const [weekOverrides, setWeekOverrides] = useState<Record<string, OwnerDay[]>>({});
@@ -350,7 +345,7 @@ export default function StaffScheduleScreen() {
     return { shifts, hoursStr, next };
   }, [weekDays, dayLabels, t]);
 
-  const paddingBottom = TAB_BAR_SCROLL_PADDING + insets.bottom;
+  const paddingBottom = OWNER_TAB_SCROLL_BOTTOM_PADDING + insets.bottom;
   const sheetMaxH = Math.min(screenH * 0.88, screenH - insets.top - 24);
 
   const openDetail = useCallback(
@@ -542,14 +537,14 @@ export default function StaffScheduleScreen() {
         style={({ pressed }) => [styles.headerIconGhost, pressed && styles.pressed]}
         accessibilityLabel={t('staff.scheduleJumpWeek')}
       >
-        <Ionicons name="calendar-outline" size={20} color={GOLD} />
+        <Ionicons name="calendar-outline" size={20} color={palette.gold} />
       </Pressable>
       <Pressable
         onPress={() => router.push('/(staff)/settings' as never)}
         style={({ pressed }) => [styles.headerIconGhost, pressed && styles.pressed]}
         accessibilityLabel={t('owner.settingsTitle')}
       >
-        <Ionicons name="settings-outline" size={20} color={GOLD} />
+        <Ionicons name="settings-outline" size={20} color={palette.gold} />
       </Pressable>
     </View>
   );
@@ -583,13 +578,14 @@ export default function StaffScheduleScreen() {
           contentContainerStyle={[styles.scrollContent, { paddingBottom }]}
           keyboardShouldPersistTaps="handled"
         >
-          <SubpageHeader
-            compact
-            title={t('staff.mySchedule')}
-            subtitle={undefined}
-            fallbackTab="more"
-            rightAction={headerRight}
-          />
+          <View style={styles.ownerHeaderRow}>
+            <View style={styles.ownerHeaderTextCol}>
+              <Text style={styles.ownerHeaderKicker}>This week</Text>
+              <Text style={styles.ownerHeaderTitle}>{t('staff.mySchedule')}</Text>
+              <Text style={styles.ownerHeaderSubtitle}>Nova Ristorante</Text>
+            </View>
+            {headerRight}
+          </View>
 
           <View style={styles.divider} />
 
@@ -603,24 +599,22 @@ export default function StaffScheduleScreen() {
               onPress={openCreate}
               style={({ pressed }) => [styles.chipPrimary, pressed && styles.chipPrimaryPressed]}
             >
-              <Ionicons name="add" size={18} color={BG} />
+              <Ionicons name="add" size={18} color="#FFFFFF" />
               <Text style={styles.chipPrimaryText}>{t('staff.scheduleAddShift')}</Text>
             </Pressable>
             <Pressable
               onPress={() => router.push('/(staff)/staff' as never)}
               style={({ pressed }) => [styles.chipSecondary, pressed && styles.chipSecondaryPressed]}
             >
-              <Ionicons name="people-outline" size={18} color={GOLD} />
+              <Ionicons name="people-outline" size={18} color={palette.gold} />
               <Text style={styles.chipSecondaryText}>{t('staff.scheduleManageStaff')}</Text>
             </Pressable>
             <Pressable
               onPress={() => setAutoOpen(true)}
               style={({ pressed }) => [styles.chipSecondary, pressed && styles.chipSecondaryPressed]}
             >
-              <Ionicons name="sparkles" size={18} color={GOLD} />
-              <Text style={styles.chipSecondaryText}>
-                {t('staff.scheduleAutoSchedule')} · {t('staff.scheduleChipAi')}
-              </Text>
+              <Ionicons name="sparkles" size={18} color={palette.gold} />
+              <Text style={styles.chipSecondaryText}>{t('staff.scheduleAutoSchedule')}</Text>
             </Pressable>
           </ScrollView>
 
@@ -633,7 +627,7 @@ export default function StaffScheduleScreen() {
               style={({ pressed }) => [styles.weekArrow, pressed && styles.pressed]}
               accessibilityLabel={t('staff.schedulePrevWeek')}
             >
-              <Ionicons name="chevron-back" size={22} color={TEXT} />
+              <Ionicons name="chevron-back" size={22} color={palette.textPrimary} />
             </Pressable>
             <Text style={styles.weekRange}>{weekRangeText}</Text>
             <Pressable
@@ -644,7 +638,7 @@ export default function StaffScheduleScreen() {
               style={({ pressed }) => [styles.weekArrow, pressed && styles.pressed]}
               accessibilityLabel={t('staff.scheduleNextWeek')}
             >
-              <Ionicons name="chevron-forward" size={22} color={TEXT} />
+              <Ionicons name="chevron-forward" size={22} color={palette.textPrimary} />
             </Pressable>
           </View>
 
@@ -799,7 +793,7 @@ export default function StaffScheduleScreen() {
                     onChangeText={setNoteDraft}
                     onBlur={saveNotes}
                     placeholder={t('staff.scheduleShiftNotes')}
-                    placeholderTextColor={TEXT_SOFT}
+                    placeholderTextColor={palette.textSecondary}
                     style={styles.notesInput}
                     multiline
                   />
@@ -835,7 +829,7 @@ export default function StaffScheduleScreen() {
                     style={({ pressed }) => [styles.sheetAction, pressed && styles.pressed]}
                     onPress={row.onPress}
                   >
-                    <Ionicons name={row.icon} size={22} color={GOLD} />
+                    <Ionicons name={row.icon} size={22} color={palette.gold} />
                     <Text style={styles.sheetActionText}>{row.label}</Text>
                   </Pressable>
                 ))}
@@ -884,14 +878,14 @@ export default function StaffScheduleScreen() {
           value={formStart}
           onChangeText={setFormStart}
           style={styles.input}
-          placeholderTextColor={TEXT_SOFT}
+          placeholderTextColor={palette.textSecondary}
         />
         <Text style={styles.formLabel}>{t('staff.scheduleEndLabel')}</Text>
         <TextInput
           value={formEnd}
           onChangeText={setFormEnd}
           style={styles.input}
-          placeholderTextColor={TEXT_SOFT}
+          placeholderTextColor={palette.textSecondary}
         />
         <Text style={styles.formLabel}>{t('staff.scheduleRolesLabel')}</Text>
         <View style={styles.pillRow}>
@@ -940,14 +934,14 @@ export default function StaffScheduleScreen() {
           value={formStart}
           onChangeText={setFormStart}
           style={styles.input}
-          placeholderTextColor={TEXT_SOFT}
+          placeholderTextColor={palette.textSecondary}
         />
         <Text style={styles.formLabel}>{t('staff.scheduleEndLabel')}</Text>
         <TextInput
           value={formEnd}
           onChangeText={setFormEnd}
           style={styles.input}
-          placeholderTextColor={TEXT_SOFT}
+          placeholderTextColor={palette.textSecondary}
         />
         <Text style={styles.formLabel}>{t('staff.scheduleRolesLabel')}</Text>
         <View style={styles.pillRow}>
@@ -995,19 +989,19 @@ export default function StaffScheduleScreen() {
         <Text style={styles.formLabel}>{t('staff.scheduleRolesLabel')}</Text>
         <View style={styles.switchRow}>
           <Text style={styles.switchLbl}>{t('staff.shiftRoleServer')}</Text>
-          <Switch value={autoServer} onValueChange={setAutoServer} trackColor={{ false: '#333', true: GOLD }} />
+          <Switch value={autoServer} onValueChange={setAutoServer} trackColor={{ false: palette.bgElevated, true: palette.gold }} />
         </View>
         <View style={styles.switchRow}>
           <Text style={styles.switchLbl}>{t('staff.shiftRoleHost')}</Text>
-          <Switch value={autoHost} onValueChange={setAutoHost} trackColor={{ false: '#333', true: GOLD }} />
+          <Switch value={autoHost} onValueChange={setAutoHost} trackColor={{ false: palette.bgElevated, true: palette.gold }} />
         </View>
         <View style={styles.switchRow}>
           <Text style={styles.switchLbl}>{t('staff.shiftRoleBar')}</Text>
-          <Switch value={autoBar} onValueChange={setAutoBar} trackColor={{ false: '#333', true: GOLD }} />
+          <Switch value={autoBar} onValueChange={setAutoBar} trackColor={{ false: palette.bgElevated, true: palette.gold }} />
         </View>
         <View style={styles.switchRow}>
           <Text style={styles.switchLbl}>{t('staff.schedulePeakLabel')}</Text>
-          <Switch value={autoPeak} onValueChange={setAutoPeak} trackColor={{ false: '#333', true: GOLD }} />
+          <Switch value={autoPeak} onValueChange={setAutoPeak} trackColor={{ false: palette.bgElevated, true: palette.gold }} />
         </View>
         <View style={styles.formActions}>
           <SheetSecondaryButton label={t('common.cancel')} onPress={() => setAutoOpen(false)} />
@@ -1061,7 +1055,7 @@ export default function StaffScheduleScreen() {
             onPress={() => assignStaff(k)}
           >
             <Text style={styles.assignTxt}>{t(k)}</Text>
-            <Ionicons name="chevron-forward" size={18} color={TEXT_MUTED} />
+            <Ionicons name="chevron-forward" size={18} color={palette.textMuted} />
           </Pressable>
         ))}
       </ScheduleBottomSheet>
@@ -1143,10 +1137,10 @@ export default function StaffScheduleScreen() {
 
 const DAY_IDX = [0, 1, 2, 3, 4, 5, 6];
 
-const styles = StyleSheet.create({
+const useScheduleStyles = createStyles((c) => ({
   root: {
     flex: 1,
-    backgroundColor: BG,
+    backgroundColor: c.bgBase,
     width: '100%',
     maxWidth: '100%',
   },
@@ -1155,14 +1149,47 @@ const styles = StyleSheet.create({
     paddingTop: 6,
     flexGrow: 1,
   },
+  ownerHeaderRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    justifyContent: 'space-between',
+    gap: 12,
+    paddingTop: 4,
+    paddingBottom: 8,
+  },
+  ownerHeaderTextCol: {
+    flex: 1,
+    minWidth: 0,
+  },
+  ownerHeaderKicker: {
+    fontSize: 11,
+    fontWeight: '800',
+    color: c.gold,
+    letterSpacing: 1.4,
+    textTransform: 'uppercase',
+    marginBottom: 4,
+  },
+  ownerHeaderTitle: {
+    fontSize: 34,
+    fontWeight: '800',
+    color: c.textPrimary,
+    letterSpacing: -0.8,
+    lineHeight: 40,
+  },
+  ownerHeaderSubtitle: {
+    marginTop: 4,
+    fontSize: 14,
+    fontWeight: '500',
+    color: c.textSecondary,
+  },
   divider: {
     height: StyleSheet.hairlineWidth,
-    backgroundColor: BORDER,
+    backgroundColor: c.border,
     marginBottom: SECTION_GAP,
   },
   dividerLight: {
     height: StyleSheet.hairlineWidth,
-    backgroundColor: BORDER,
+    backgroundColor: c.border,
     marginTop: 4,
     marginBottom: 6,
   },
@@ -1172,8 +1199,8 @@ const styles = StyleSheet.create({
     height: 36,
     borderRadius: ownerRadii.md,
     borderWidth: StyleSheet.hairlineWidth,
-    borderColor: BORDER,
-    backgroundColor: CARD_RAISED,
+    borderColor: c.border,
+    backgroundColor: c.bgElevated,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -1196,8 +1223,8 @@ const styles = StyleSheet.create({
     height: 48,
     paddingHorizontal: 18,
     borderRadius: 24,
-    backgroundColor: GOLD,
-    shadowColor: GOLD,
+    backgroundColor: c.gold,
+    shadowColor: c.gold,
     shadowOpacity: 0.28,
     shadowRadius: 10,
     shadowOffset: { width: 0, height: 3 },
@@ -1210,7 +1237,7 @@ const styles = StyleSheet.create({
   chipPrimaryText: {
     fontSize: 14,
     fontWeight: '800',
-    color: BG,
+    color: '#FFFFFF',
     lineHeight: 18,
     letterSpacing: -0.2,
   },
@@ -1222,9 +1249,9 @@ const styles = StyleSheet.create({
     height: 48,
     paddingHorizontal: 18,
     borderRadius: 24,
-    backgroundColor: '#1A1A1A',
+    backgroundColor: c.bgElevated,
     borderWidth: StyleSheet.hairlineWidth,
-    borderColor: 'rgba(255,255,255,0.08)',
+    borderColor: c.border,
   },
   chipSecondaryPressed: {
     transform: [{ scale: 0.97 }],
@@ -1233,7 +1260,7 @@ const styles = StyleSheet.create({
   chipSecondaryText: {
     fontSize: 14,
     fontWeight: '700',
-    color: GOLD,
+    color: c.gold,
     lineHeight: 18,
     letterSpacing: -0.15,
   },
@@ -1249,8 +1276,8 @@ const styles = StyleSheet.create({
     height: 40,
     borderRadius: ownerRadii.md,
     borderWidth: StyleSheet.hairlineWidth,
-    borderColor: BORDER,
-    backgroundColor: CARD,
+    borderColor: c.border,
+    backgroundColor: c.bgSurface,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -1259,29 +1286,29 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     fontSize: 15,
     fontWeight: '700',
-    color: TEXT,
+    color: c.textPrimary,
     letterSpacing: -0.2,
     paddingHorizontal: 8,
   },
   summaryLine: {
     fontSize: 13,
     fontWeight: '500',
-    color: TEXT_MUTED,
+    color: c.textMuted,
     marginBottom: SECTION_GAP,
     lineHeight: 18,
   },
   dayList: { gap: 14, width: '100%', paddingBottom: 8 },
   dayCard: {
     borderRadius: 18,
-    backgroundColor: CARD,
+    backgroundColor: c.bgSurface,
     borderWidth: StyleSheet.hairlineWidth,
-    borderColor: BORDER,
+    borderColor: c.border,
     padding: 14,
   },
-  dayCardEmpty: { backgroundColor: CARD_RAISED, paddingVertical: 12 },
+  dayCardEmpty: { backgroundColor: c.bgElevated, paddingVertical: 12 },
   dayCardToday: {
-    borderColor: 'rgba(198, 168, 91, 0.45)',
-    shadowColor: GOLD,
+    borderColor: `${c.gold}73`,
+    shadowColor: c.gold,
     shadowOpacity: 0.15,
     shadowRadius: 10,
     shadowOffset: { width: 0, height: 0 },
@@ -1296,19 +1323,19 @@ const styles = StyleSheet.create({
   dayHeader: {
     fontSize: 12,
     fontWeight: '800',
-    color: TEXT_SOFT,
+    color: c.textSecondary,
     letterSpacing: 1,
   },
   doubleBadge: {
     fontSize: 10,
     fontWeight: '800',
-    color: GOLD,
+    color: c.gold,
     letterSpacing: 0.8,
     textTransform: 'uppercase',
   },
   hintRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: 8 },
-  hintMini: { fontSize: 11, fontWeight: '600', color: TEXT_MUTED },
-  noShifts: { fontSize: 14, fontWeight: '500', color: TEXT_SOFT, opacity: 0.85 },
+  hintMini: { fontSize: 11, fontWeight: '600', color: c.textMuted },
+  noShifts: { fontSize: 14, fontWeight: '500', color: c.textSecondary, opacity: 0.85 },
   shiftRow: {
     flexDirection: 'row',
     alignItems: 'flex-start',
@@ -1317,7 +1344,7 @@ const styles = StyleSheet.create({
   },
   shiftRowSplit: {
     borderTopWidth: StyleSheet.hairlineWidth,
-    borderTopColor: BORDER,
+    borderTopColor: c.border,
     marginTop: 4,
     paddingTop: 14,
   },
@@ -1332,25 +1359,25 @@ const styles = StyleSheet.create({
     borderWidth: StyleSheet.hairlineWidth,
     borderColor: 'rgba(198, 168, 91, 0.35)',
   },
-  avatarTxt: { fontSize: 16, fontWeight: '800', color: GOLD },
+  avatarTxt: { fontSize: 16, fontWeight: '800', color: c.gold },
   shiftBody: { flex: 1, minWidth: 0 },
   shiftTime: {
     fontSize: 22,
     fontWeight: '800',
-    color: TEXT,
+    color: c.textPrimary,
     letterSpacing: -0.5,
     marginBottom: 4,
   },
   nameRow: { flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 4 },
-  staffName: { fontSize: 15, fontWeight: '700', color: TEXT },
-  shiftRole: { fontSize: 14, fontWeight: '600', color: TEXT_MUTED, marginBottom: 2 },
-  shiftLoc: { fontSize: 13, fontWeight: '500', color: TEXT_SOFT, marginBottom: 8 },
+  staffName: { fontSize: 15, fontWeight: '700', color: c.textPrimary },
+  shiftRole: { fontSize: 14, fontWeight: '600', color: c.textMuted, marginBottom: 2 },
+  shiftLoc: { fontSize: 13, fontWeight: '500', color: c.textSecondary, marginBottom: 8 },
   badgeRow: { alignSelf: 'flex-start', flexDirection: 'row', flexWrap: 'wrap', gap: 6 },
   badgeScheduled: {
     fontSize: 11,
     fontWeight: '800',
-    color: BG,
-    backgroundColor: GOLD,
+    color: c.bgBase,
+    backgroundColor: c.gold,
     paddingHorizontal: 8,
     paddingVertical: 4,
     borderRadius: 8,
@@ -1359,7 +1386,7 @@ const styles = StyleSheet.create({
   badgeCompleted: {
     fontSize: 11,
     fontWeight: '800',
-    color: TEXT,
+    color: c.textPrimary,
     backgroundColor: 'rgba(255,255,255,0.1)',
     paddingHorizontal: 8,
     paddingVertical: 4,
@@ -1389,73 +1416,73 @@ const styles = StyleSheet.create({
   toast: {
     position: 'absolute',
     alignSelf: 'center',
-    backgroundColor: CARD_RAISED,
+    backgroundColor: c.bgElevated,
     paddingHorizontal: 16,
     paddingVertical: 12,
     borderRadius: 14,
     borderWidth: StyleSheet.hairlineWidth,
-    borderColor: BORDER,
+    borderColor: c.border,
     maxWidth: '90%',
   },
-  toastText: { color: TEXT, fontSize: 14, fontWeight: '600', textAlign: 'center' },
+  toastText: { color: c.textPrimary, fontSize: 14, fontWeight: '600', textAlign: 'center' },
   modalRoot: { flex: 1, justifyContent: 'flex-end' },
   modalDim: { ...StyleSheet.absoluteFillObject, backgroundColor: 'rgba(0,0,0,0.55)' },
   sheetOuter: {
-    backgroundColor: CARD_RAISED,
+    backgroundColor: c.bgElevated,
     borderTopLeftRadius: 20,
     borderTopRightRadius: 20,
     paddingHorizontal: 20,
     paddingTop: 8,
     borderWidth: StyleSheet.hairlineWidth,
-    borderColor: BORDER,
+    borderColor: c.border,
   },
   sheetGrab: {
     alignSelf: 'center',
     width: 40,
     height: 4,
     borderRadius: 2,
-    backgroundColor: BORDER,
+    backgroundColor: c.border,
     marginBottom: 10,
   },
   sheetKicker: {
     fontSize: 11,
     fontWeight: '800',
-    color: GOLD,
+    color: c.gold,
     letterSpacing: 1,
     textTransform: 'uppercase',
     marginBottom: 4,
   },
-  sheetDate: { fontSize: 20, fontWeight: '800', color: TEXT, marginBottom: 12 },
+  sheetDate: { fontSize: 20, fontWeight: '800', color: c.textPrimary, marginBottom: 12 },
   sheetScroll: { maxHeight: screenH * 0.5 },
   sheetDetailBlock: {
     marginBottom: 12,
     paddingBottom: 12,
     borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: BORDER,
+    borderBottomColor: c.border,
   },
   sheetTimeBig: {
     fontSize: 24,
     fontWeight: '800',
-    color: TEXT,
+    color: c.textPrimary,
     marginBottom: 8,
     letterSpacing: -0.4,
   },
-  sheetName: { fontSize: 16, fontWeight: '800', color: TEXT, marginBottom: 4 },
-  sheetLine: { fontSize: 14, fontWeight: '600', color: TEXT_MUTED, marginBottom: 4 },
-  sheetMuted: { fontSize: 13, color: TEXT_SOFT, marginBottom: 8 },
+  sheetName: { fontSize: 16, fontWeight: '800', color: c.textPrimary, marginBottom: 4 },
+  sheetLine: { fontSize: 14, fontWeight: '600', color: c.textMuted, marginBottom: 4 },
+  sheetMuted: { fontSize: 13, color: c.textSecondary, marginBottom: 8 },
   notesLabel: {
     fontSize: 12,
     fontWeight: '700',
-    color: TEXT_MUTED,
+    color: c.textMuted,
     marginBottom: 6,
     marginTop: 4,
   },
   notesInput: {
-    backgroundColor: CARD,
+    backgroundColor: c.bgSurface,
     borderRadius: 12,
     borderWidth: StyleSheet.hairlineWidth,
-    borderColor: BORDER,
-    color: TEXT,
+    borderColor: c.border,
+    color: c.textPrimary,
     padding: 12,
     minHeight: 72,
     textAlignVertical: 'top',
@@ -1467,24 +1494,24 @@ const styles = StyleSheet.create({
     gap: 12,
     paddingVertical: 14,
     borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: BORDER,
+    borderBottomColor: c.border,
   },
-  sheetActionText: { flex: 1, fontSize: 16, fontWeight: '600', color: TEXT },
+  sheetActionText: { flex: 1, fontSize: 16, fontWeight: '600', color: c.textPrimary },
   sheetDone: { alignSelf: 'center', paddingVertical: 14 },
-  sheetDoneText: { fontSize: 16, fontWeight: '600', color: TEXT_MUTED },
+  sheetDoneText: { fontSize: 16, fontWeight: '600', color: c.textMuted },
   formLabel: {
     fontSize: 12,
     fontWeight: '700',
-    color: TEXT_MUTED,
+    color: c.textMuted,
     marginBottom: 8,
     marginTop: 4,
   },
   input: {
-    backgroundColor: CARD,
+    backgroundColor: c.bgSurface,
     borderRadius: 12,
     borderWidth: StyleSheet.hairlineWidth,
-    borderColor: BORDER,
-    color: TEXT,
+    borderColor: c.border,
+    color: c.textPrimary,
     padding: 12,
     fontSize: 14,
     marginBottom: 12,
@@ -1496,11 +1523,11 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     backgroundColor: 'rgba(255,255,255,0.06)',
     borderWidth: StyleSheet.hairlineWidth,
-    borderColor: BORDER,
+    borderColor: c.border,
   },
-  dayPickBtnOn: { borderColor: GOLD, backgroundColor: 'rgba(198, 168, 91, 0.2)' },
-  dayPickTxt: { fontSize: 12, fontWeight: '700', color: TEXT_MUTED },
-  dayPickTxtOn: { color: GOLD },
+  dayPickBtnOn: { borderColor: c.gold, backgroundColor: 'rgba(198, 168, 91, 0.2)' },
+  dayPickTxt: { fontSize: 12, fontWeight: '700', color: c.textMuted },
+  dayPickTxtOn: { color: c.gold },
   pillRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: 12 },
   pill: {
     paddingVertical: 8,
@@ -1508,11 +1535,11 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     backgroundColor: 'rgba(255,255,255,0.06)',
     borderWidth: StyleSheet.hairlineWidth,
-    borderColor: BORDER,
+    borderColor: c.border,
   },
-  pillOn: { borderColor: GOLD, backgroundColor: 'rgba(198, 168, 91, 0.15)' },
-  pillTxt: { fontSize: 13, fontWeight: '600', color: TEXT_MUTED },
-  pillTxtOn: { color: GOLD },
+  pillOn: { borderColor: c.gold, backgroundColor: 'rgba(198, 168, 91, 0.15)' },
+  pillTxt: { fontSize: 13, fontWeight: '600', color: c.textMuted },
+  pillTxtOn: { color: c.gold },
   formActions: { gap: 10, marginTop: 16, marginBottom: 8 },
   levelRow: { flexDirection: 'row', gap: 8, marginBottom: 16, justifyContent: 'space-between' },
   levelDot: {
@@ -1522,11 +1549,11 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(255,255,255,0.06)',
     alignItems: 'center',
     borderWidth: StyleSheet.hairlineWidth,
-    borderColor: BORDER,
+    borderColor: c.border,
   },
-  levelDotOn: { borderColor: GOLD, backgroundColor: 'rgba(198, 168, 91, 0.2)' },
-  levelDotTxt: { fontSize: 16, fontWeight: '800', color: TEXT_MUTED },
-  levelDotTxtOn: { color: GOLD },
+  levelDotOn: { borderColor: c.gold, backgroundColor: 'rgba(198, 168, 91, 0.2)' },
+  levelDotTxt: { fontSize: 16, fontWeight: '800', color: c.textMuted },
+  levelDotTxtOn: { color: c.gold },
   switchRow: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -1534,25 +1561,26 @@ const styles = StyleSheet.create({
     marginBottom: 8,
     paddingVertical: 4,
   },
-  switchLbl: { fontSize: 15, color: TEXT, flex: 1 },
+  switchLbl: { fontSize: 15, color: c.textPrimary, flex: 1 },
   weekPickRow: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingVertical: 14,
     borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: BORDER,
+    borderBottomColor: c.border,
   },
   weekPickRowOn: { backgroundColor: 'rgba(198, 168, 91, 0.08)' },
-  weekPickTxt: { fontSize: 15, fontWeight: '600', color: TEXT, flex: 1 },
-  weekPickBadge: { fontSize: 12, fontWeight: '800', color: GOLD },
+  weekPickTxt: { fontSize: 15, fontWeight: '600', color: c.textPrimary, flex: 1 },
+  weekPickBadge: { fontSize: 12, fontWeight: '800', color: c.gold },
   assignRow: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingVertical: 14,
     borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: BORDER,
+    borderBottomColor: c.border,
   },
-  assignTxt: { fontSize: 16, fontWeight: '600', color: TEXT },
-});
+  assignTxt: { fontSize: 16, fontWeight: '600', color: c.textPrimary },
+}));
+

@@ -776,3 +776,82 @@ export const OWNER_PROMO_ROWS: OwnerPromoRow[] = OWNER_PROMOTIONS.map((p) => ({
   subtitle: p.whereApplies,
   active: p.status === 'live',
 }));
+
+export interface BusinessHoursRow {
+  /** 0 = Mon … 6 = Sun */
+  day: number;
+  label: string;
+  /** 24h "HH:MM"; null = closed */
+  open: string | null;
+  close: string | null;
+}
+
+export const OWNER_BUSINESS_HOURS: BusinessHoursRow[] = [
+  { day: 0, label: 'Monday', open: '17:00', close: '22:30' },
+  { day: 1, label: 'Tuesday', open: '17:00', close: '22:30' },
+  { day: 2, label: 'Wednesday', open: '17:00', close: '22:30' },
+  { day: 3, label: 'Thursday', open: '17:00', close: '23:00' },
+  { day: 4, label: 'Friday', open: '17:00', close: '23:30' },
+  { day: 5, label: 'Saturday', open: '11:00', close: '23:30' },
+  { day: 6, label: 'Sunday', open: '11:00', close: '21:00' },
+];
+
+export interface OwnerBusinessProfile {
+  name: string;
+  cuisine: string;
+  neighborhood: string;
+  description: string;
+  phone: string;
+  email: string;
+  address: string;
+  website: string;
+  rating: number;
+  reviewCount: number;
+  followerCount: number;
+  coverPhotoSeed: string;
+}
+
+export const OWNER_BUSINESS_PROFILE: OwnerBusinessProfile = {
+  name: 'Nova Ristorante',
+  cuisine: 'Italian · Modern',
+  neighborhood: 'Old Port, Montréal',
+  description:
+    'Seasonal Italian cooking, natural wines, and warm hospitality in the heart of Old Port.',
+  phone: '+1 (514) 555-0199',
+  email: 'hello@novaristorante.com',
+  address: '420 Rue Saint-Paul O, Montréal, QC H2Y 2A5',
+  website: 'novaristorante.com',
+  rating: 4.7,
+  reviewCount: 324,
+  followerCount: 1248,
+  coverPhotoSeed: 'nova-ristorante',
+};
+
+/** Returns whether the restaurant is currently open based on OWNER_BUSINESS_HOURS and the supplied Date. */
+export function isBusinessOpenNow(
+  now: Date = new Date(),
+  hours: BusinessHoursRow[] = OWNER_BUSINESS_HOURS,
+): { open: boolean; nextChange: string } {
+  // Convert JS getDay() (0 Sun … 6 Sat) to our 0 Mon … 6 Sun layout
+  const jsDow = now.getDay();
+  const dow = (jsDow + 6) % 7;
+  const row = hours.find((h) => h.day === dow);
+  if (!row || !row.open || !row.close) {
+    return { open: false, nextChange: 'Closed today' };
+  }
+  const [oh, om] = row.open.split(':').map(Number);
+  const [ch, cm] = row.close.split(':').map(Number);
+  const mins = now.getHours() * 60 + now.getMinutes();
+  const openMins = oh * 60 + om;
+  const closeMins = ch * 60 + cm;
+  const isOpen = mins >= openMins && mins < closeMins;
+  const fmt = (h: number, m: number) => {
+    const ampm = h >= 12 ? 'PM' : 'AM';
+    const hh = h % 12 === 0 ? 12 : h % 12;
+    return `${hh}:${String(m).padStart(2, '0')} ${ampm}`;
+  };
+  return {
+    open: isOpen,
+    nextChange: isOpen ? `Closes ${fmt(ch, cm)}` : `Opens ${fmt(oh, om)}`,
+  };
+}

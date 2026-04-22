@@ -58,9 +58,9 @@ export default function CustomerTabsLayout() {
   return (
     <View style={styles.root}>
     <Tabs
-      sceneContainerStyle={{ backgroundColor: c.bgBase }}
       screenOptions={{
         headerShown: false,
+        sceneStyle: { backgroundColor: c.bgBase },
         tabBarActiveTintColor: c.gold,
         tabBarInactiveTintColor: c.textMuted,
         // Do not set height or paddingBottom here — they override React Navigation's

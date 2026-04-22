@@ -898,7 +898,7 @@ export default {
     operationsTitle: 'Opérations',
     marketingTitle: 'Marketing',
     marketingEdit: 'Modifier promo',
-    analyticsTitle: 'Analytique',
+    analyticsTitle: 'Performance',
     analyticsInsightsTitle: 'Insights',
     insightPeak: 'Pic ·',
     insightDead: 'Creux ·',

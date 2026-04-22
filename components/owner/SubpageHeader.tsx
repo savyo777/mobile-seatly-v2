@@ -23,7 +23,7 @@ const FALLBACK_TAB_HREF: Record<RootFallbackTab, Href> = {
   reservations: '/(staff)/reservations',
   floor: '/(staff)/floor',
   menu: '/(staff)/menu',
-  more: '/(staff)/more',
+  more: '/(staff)/profile',
 };
 
 export function SubpageHeader({

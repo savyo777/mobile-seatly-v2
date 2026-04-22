@@ -1,12 +1,10 @@
-// ─── Theme system ─────────────────────────────────────────────────────────────
-export { ThemeProvider, useTheme } from '@/lib/theme/ThemeProvider';
-export { useColors } from '@/lib/theme/useColors';
-export { createStyles } from '@/lib/theme/createStyles';
-export { darkColors, lightColors } from '@/lib/theme/palettes';
-export type { Palette, } from '@/lib/theme/palettes';
-export type { ThemeMode } from '@/lib/theme/ThemeProvider';
+export { ThemeProvider, useTheme } from './ThemeProvider';
+export type { ThemeMode } from './ThemeProvider';
+export { useColors } from './useColors';
+export { createStyles } from './createStyles';
+export { darkColors, lightColors } from './palettes';
+export type { Palette } from './palettes';
 
-// ─── Non-color tokens (unchanged) ─────────────────────────────────────────────
 export const spacing = {
   xs: 4,
   sm: 8,
@@ -58,5 +56,12 @@ export const shadows = {
     shadowRadius: 12,
     shadowOffset: { width: 0, height: 4 },
     elevation: 3,
+  },
+  lift: {
+    shadowColor: '#000000',
+    shadowOpacity: 0.18,
+    shadowRadius: 20,
+    shadowOffset: { width: 0, height: 10 },
+    elevation: 8,
   },
 } as const;

@@ -1,40 +1,52 @@
-import { appPalette } from '@/lib/theme/appPalette';
+import type { Palette } from '@/lib/theme/palettes';
+import { darkColors, lightColors } from '@/lib/theme/palettes';
 
 /**
- * Restaurant / owner app — same palette as customer (`appPalette`).
- * Gold only for actions, active filters, and key accents.
+ * Owner mobile UI tokens — derived from the same `Palette` as the customer app so
+ * light/dark stay consistent.
+ *
+ * Layout conventions:
+ * - Hero cover height on Profile: ~120–160pt; diner detail uses ~250pt for guest-facing richness.
+ * - Section vertical rhythm: use `spacing` from `@/lib/theme` (8pt grid).
+ * - One gold accent per viewport: reserve `gold` for primary metric, active filter, or single CTA.
  */
-export const ownerColors = {
-  bg: appPalette.bgBase,
-  bgSurface: appPalette.bgSurface,
-  bgCard: appPalette.bgSurface,
-  bgElevated: appPalette.bgElevated,
-  bgGlass: 'rgba(255,255,255,0.035)',
-  border: appPalette.border,
-  borderStrong: 'rgba(255,255,255,0.09)',
+export function ownerColorsFromPalette(p: Palette) {
+  const isLight = p.bgBase === lightColors.bgBase;
+  return {
+    bg: p.bgBase,
+    bgSurface: p.bgSurface,
+    bgCard: p.bgSurface,
+    bgElevated: p.bgElevated,
+    bgGlass: isLight ? 'rgba(15,14,12,0.06)' : 'rgba(255,255,255,0.035)',
+    border: p.border,
+    borderStrong: isLight ? 'rgba(0,0,0,0.12)' : 'rgba(255,255,255,0.09)',
 
-  gold: appPalette.gold,
-  goldMuted: 'rgba(201, 162, 74, 0.2)',
-  goldSubtle: appPalette.goldSubtle,
+    gold: p.gold,
+    goldMuted: isLight ? 'rgba(168,131,42,0.18)' : 'rgba(201, 162, 74, 0.2)',
+    goldSubtle: isLight ? 'rgba(168,131,42,0.12)' : 'rgba(201,162,74,0.12)',
 
-  chartPositive: '#22C55E',
-  chartNegative: '#EF4444',
-  chartPositiveMuted: 'rgba(34, 197, 94, 0.3)',
-  chartNegativeMuted: 'rgba(239, 68, 68, 0.3)',
+    chartPositive: p.success,
+    chartNegative: p.danger,
+    chartPositiveMuted: isLight ? 'rgba(22,163,74,0.25)' : 'rgba(34, 197, 94, 0.3)',
+    chartNegativeMuted: isLight ? 'rgba(220,38,38,0.25)' : 'rgba(239, 68, 68, 0.3)',
 
-  success: '#22C55E',
-  danger: '#EF4444',
-  warning: '#D4A574',
+    success: p.success,
+    danger: p.danger,
+    warning: p.warning,
 
-  text: appPalette.textPrimary,
-  textSecondary: appPalette.textSecondary,
-  textMuted: appPalette.textMuted,
+    text: p.textPrimary,
+    textSecondary: p.textSecondary,
+    textMuted: p.textMuted,
 
-  tableAvailable: '#22C55E',
-  tableReserved: appPalette.gold,
-  tableOccupied: '#EF4444',
-  tableCleaning: appPalette.textMuted,
-} as const;
+    tableAvailable: p.tableEmpty,
+    tableReserved: p.tableReserved,
+    tableOccupied: p.tableOccupied,
+    tableCleaning: p.tableCleaning,
+  } as const;
+}
+
+/** Static alias for legacy imports (dark palette only). Prefer `ownerColorsFromPalette(useColors())` in new code. */
+export const ownerColors = ownerColorsFromPalette(darkColors);
 
 export const ownerRadii = {
   sm: 10,
@@ -51,6 +63,9 @@ export const ownerSpace = {
   lg: 24,
   xl: 32,
 } as const;
+
+/** Extra bottom inset for scroll content above the custom tab bar (center + button). */
+export const OWNER_TAB_SCROLL_BOTTOM_PADDING = 118;
 
 /** Subtle lift — no colored glow */
 export const ownerShadow = {

@@ -6,7 +6,7 @@ export interface Reservation {
   tableId?: string;
   partySize: number;
   reservedAt: string;
-  status: 'confirmed' | 'seated' | 'completed' | 'cancelled' | 'no_show';
+  status: 'pending' | 'confirmed' | 'seated' | 'completed' | 'cancelled' | 'no_show';
   source: 'app' | 'web' | 'phone' | 'walkin';
   confirmationCode: string;
   specialRequest?: string;
