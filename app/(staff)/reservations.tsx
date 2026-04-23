@@ -38,87 +38,168 @@ function initials(name: string): string {
 const useStyles = createStyles((c) => ({
   root: { flex: 1, backgroundColor: c.bgBase },
 
-  chipRow: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: spacing.sm,
+  /** Uber-style segmented control — one clear choice at the top */
+  segmentWrap: {
     paddingHorizontal: spacing.lg,
     marginBottom: spacing.md,
   },
-  chip: {
-    paddingHorizontal: spacing.md,
-    paddingVertical: 8,
-    minHeight: 40,
-    justifyContent: 'center',
-    borderRadius: borderRadius.full,
+  segmentTrack: {
+    flexDirection: 'row',
     backgroundColor: c.bgSurface,
+    borderRadius: borderRadius.md,
     borderWidth: StyleSheet.hairlineWidth,
     borderColor: c.border,
+    padding: 3,
   },
-  chipActive: {
-    backgroundColor: c.textPrimary,
-    borderColor: c.textPrimary,
+  segmentSlot: { flex: 1 },
+  segmentBtn: {
+    paddingVertical: 11,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderRadius: borderRadius.sm,
   },
-  chipText: {
-    fontSize: 13,
+  segmentBtnActive: {
+    backgroundColor: c.gold,
+  },
+  segmentLabel: {
+    fontSize: 14,
     fontWeight: '700',
     color: c.textMuted,
   },
-  chipTextActive: {
+  segmentLabelActive: {
     color: c.bgBase,
+  },
+
+  listMeta: {
+    paddingHorizontal: spacing.lg,
+    marginBottom: spacing.sm,
+  },
+  listMetaText: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: c.textMuted,
   },
 
   stickyHeader: {
     backgroundColor: c.bgBase,
     paddingHorizontal: spacing.lg,
-    paddingTop: 8,
-    paddingBottom: 6,
-  },
-  stickyHeaderInner: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    paddingTop: spacing.md,
+    paddingBottom: spacing.xs,
   },
   stickyHeaderText: {
-    fontSize: 16,
-    fontWeight: '800',
-    color: c.textPrimary,
-    letterSpacing: -0.2,
+    fontSize: 13,
+    fontWeight: '700',
+    color: c.textMuted,
+    letterSpacing: 0.2,
   },
 
-  cardMargin: {
-    paddingHorizontal: spacing.lg,
-    marginBottom: spacing.md,
-  },
-  rowCard: {
+  /** One reservation = one card (Uber trip-card DNA: accent, hierarchy, breath) */
+  bookingCard: {
+    marginHorizontal: spacing.lg,
+    marginBottom: spacing.sm,
+    borderRadius: borderRadius.lg,
     backgroundColor: c.bgSurface,
-    borderRadius: borderRadius.xl,
     borderWidth: StyleSheet.hairlineWidth,
     borderColor: c.border,
+    flexDirection: 'row',
+    alignItems: 'stretch',
     overflow: 'hidden',
     shadowColor: '#000',
-    shadowOpacity: 0.06,
-    shadowRadius: 8,
-    shadowOffset: { width: 0, height: 3 },
-    elevation: 1,
+    shadowOpacity: 0.05,
+    shadowRadius: 10,
+    shadowOffset: { width: 0, height: 2 },
+    elevation: 2,
   },
-  row: {
+  bookingCardPressed: {
+    opacity: 0.92,
+    transform: [{ scale: 0.995 }],
+  },
+  statusAccent: {
+    width: 4,
+    backgroundColor: c.border,
+  },
+  bookingInner: {
+    flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
+    paddingVertical: spacing.md,
+    paddingRight: spacing.sm,
+    paddingLeft: spacing.md,
     gap: spacing.md,
-    paddingHorizontal: spacing.md,
-    paddingVertical: 14,
-    minHeight: 68,
+    minHeight: 76,
   },
-  rowDivider: {
-    borderTopWidth: StyleSheet.hairlineWidth,
-    borderTopColor: c.border,
+  timeBlock: {
+    width: 52,
+    alignItems: 'flex-start',
   },
-  avatar: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: c.bgElevated,
+  timeClock: {
+    fontSize: 22,
+    fontWeight: '800',
+    color: c.textPrimary,
+    letterSpacing: -0.6,
+    lineHeight: 26,
+  },
+  timeMeridiem: {
+    fontSize: 11,
+    fontWeight: '700',
+    color: c.textMuted,
+    marginTop: 1,
+    letterSpacing: 0.3,
+  },
+  bookingMain: {
+    flex: 1,
+    minWidth: 0,
+    gap: 4,
+  },
+  nameRow: {
+    flexDirection: 'row',
     alignItems: 'center',
+    gap: 6,
+  },
+  guestName: {
+    fontSize: 17,
+    fontWeight: '700',
+    color: c.textPrimary,
+    letterSpacing: -0.3,
+    flexShrink: 1,
+  },
+  walkInTag: {
+    alignSelf: 'flex-start',
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: borderRadius.full,
+    backgroundColor: c.bgElevated,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: c.border,
+  },
+  walkInTagText: {
+    fontSize: 11,
+    fontWeight: '700',
+    color: c.textSecondary,
+    letterSpacing: 0.1,
+  },
+  metaLine: {
+    fontSize: 13,
+    fontWeight: '500',
+    color: c.textMuted,
+  },
+  statusRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    marginTop: 2,
+  },
+  statusDot: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+  },
+  statusWord: {
+    fontSize: 12,
+    fontWeight: '700',
+  },
+  chevronWrap: {
+    paddingLeft: 2,
     justifyContent: 'center',
   },
   avatarText: {
@@ -126,56 +207,6 @@ const useStyles = createStyles((c) => ({
     fontWeight: '800',
     color: c.gold,
     letterSpacing: -0.2,
-  },
-  centerCol: {
-    flex: 1,
-    minWidth: 0,
-    gap: 2,
-  },
-  guestRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-  },
-  guest: {
-    fontSize: 15,
-    fontWeight: '700',
-    color: c.textPrimary,
-  },
-  vipBadge: {
-    fontSize: 10,
-    fontWeight: '800',
-    color: c.gold,
-    letterSpacing: 0.5,
-    paddingHorizontal: 6,
-    paddingVertical: 2,
-    backgroundColor: `${c.gold}1F`,
-    borderRadius: 6,
-  },
-  meta: {
-    fontSize: 12,
-    color: c.textMuted,
-    fontWeight: '500',
-  },
-  timeCol: {
-    alignItems: 'flex-end',
-    gap: 4,
-  },
-  timeText: {
-    fontSize: 13,
-    fontWeight: '800',
-    color: c.textPrimary,
-    letterSpacing: -0.1,
-  },
-  pill: {
-    paddingHorizontal: 9,
-    paddingVertical: 3,
-    borderRadius: borderRadius.full,
-  },
-  pillText: {
-    fontSize: 11,
-    fontWeight: '700',
-    letterSpacing: 0.1,
   },
 
   empty: {
@@ -449,6 +480,13 @@ function parseMinutes(t: string): number {
   return h * 60 + mins;
 }
 
+/** Split "6:00 PM" → big clock + meridiem (Uber-style time column). */
+function splitTime(human: string): { clock: string; ap: string } {
+  const m = human.match(/^(\d{1,2}:\d{2})\s*(AM|PM)/i);
+  if (!m) return { clock: human, ap: '' };
+  return { clock: m[1], ap: m[2].toUpperCase() };
+}
+
 export default function OwnerReservationsScreen() {
   const c = useColors();
   const styles = useStyles();
@@ -462,17 +500,41 @@ export default function OwnerReservationsScreen() {
     return OWNER_RESERVATIONS.filter((_, i) => i % 2 === 1);
   }, [dateFilter]);
 
-  const nowSummary = useMemo(() => {
-    const seated = OWNER_RESERVATIONS.filter((r) => r.status === 'seated').length;
-    const capacity = OWNER_FLOOR_TABLES.length;
-    const upcomingNext60 = OWNER_RESERVATIONS.filter(
+  const glance = useMemo(() => {
+    const total = filtered.length;
+    const seated = filtered.filter((r) => r.status === 'seated').length;
+    const upcoming = filtered.filter(
       (r) => r.status === 'confirmed' || r.status === 'pending',
     ).length;
-    const next = [...OWNER_RESERVATIONS]
-      .filter((r) => r.status === 'confirmed' || r.status === 'pending')
+    const next = [...filtered]
+      .filter((r) => r.status === 'confirmed' || r.status === 'pending' || r.status === 'risk')
       .sort((a, b) => parseMinutes(a.startTime) - parseMinutes(b.startTime))[0];
-    return { seated, capacity, upcomingNext60, next };
-  }, []);
+    return { total, seated, upcoming, next };
+  }, [filtered]);
+
+  const capacity = OWNER_FLOOR_TABLES.length;
+
+  const headerSubtitle = useMemo(() => {
+    switch (dateFilter) {
+      case 'today':
+        return 'Tonight — who is seated and who is on the way';
+      case 'tomorrow':
+        return 'Plan ahead for tomorrow';
+      default:
+        return 'Everything you have on the books';
+    }
+  }, [dateFilter]);
+
+  const summaryHeading = useMemo(() => {
+    switch (dateFilter) {
+      case 'today':
+        return 'Right now';
+      case 'tomorrow':
+        return 'Tomorrow';
+      default:
+        return 'This week';
+    }
+  }, [dateFilter]);
 
   const sections = useMemo(() => {
     const sorted = [...filtered].sort(
@@ -486,7 +548,7 @@ export default function OwnerReservationsScreen() {
     }
     return Array.from(map.entries()).map(([title, rows]) => ({
       title,
-      data: [{ sectionId: title, rows }],
+      data: rows,
     }));
   }, [filtered]);
 
@@ -495,59 +557,104 @@ export default function OwnerReservationsScreen() {
     fn();
   };
 
+  const onSelectFilter = (key: DateFilter) => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
+    setDateFilter(key);
+  };
+
   return (
     <View style={styles.root}>
       <SectionList
         sections={sections}
-        keyExtractor={(item) => item.sectionId}
+        keyExtractor={(item) => item.id}
         stickySectionHeadersEnabled
         ListHeaderComponent={
           <>
-            <View style={{ paddingTop: insets.top + spacing.xs }} />
-            <OwnerHeader
-              title="Bookings"
-              subtitle="Tonight — who's seated and who's on the way"
-            />
+            <View style={{ paddingTop: insets.top + spacing.sm }} />
+
+            <View style={styles.segmentWrap}>
+              <View style={styles.segmentTrack} accessibilityRole="tablist">
+                {DATE_FILTERS.map((f) => {
+                  const active = dateFilter === f.key;
+                  return (
+                    <View key={f.key} style={styles.segmentSlot}>
+                      <Pressable
+                        onPress={() => onSelectFilter(f.key)}
+                        style={[styles.segmentBtn, active && styles.segmentBtnActive]}
+                        accessibilityRole="tab"
+                        accessibilityState={{ selected: active }}
+                        accessibilityLabel={`${f.label}. ${active ? 'Selected' : 'Show'} reservations for ${f.label.toLowerCase()}.`}
+                      >
+                        <Text
+                          style={[styles.segmentLabel, active && styles.segmentLabelActive]}
+                        >
+                          {f.label}
+                        </Text>
+                      </Pressable>
+                    </View>
+                  );
+                })}
+              </View>
+            </View>
+
+            <OwnerHeader title="Bookings" subtitle={headerSubtitle} />
 
             <View style={styles.summaryCard}>
               <View>
-                <Text style={styles.summaryTitle}>Right now</Text>
+                <Text style={styles.summaryTitle}>{summaryHeading}</Text>
                 <Text style={styles.summarySub}>
-                  {nowSummary.seated} of {nowSummary.capacity} tables seated ·{' '}
-                  {nowSummary.upcomingNext60} reservation
-                  {nowSummary.upcomingNext60 === 1 ? '' : 's'} still to arrive
+                  {dateFilter === 'today' ? (
+                    <>
+                      {glance.seated} of {capacity} tables seated · {glance.upcoming} still
+                      expected
+                    </>
+                  ) : (
+                    <>
+                      {glance.total} reservation{glance.total === 1 ? '' : 's'} ·{' '}
+                      {glance.upcoming} still expected
+                    </>
+                  )}
                 </Text>
               </View>
               <View style={styles.summaryStats}>
-                <View style={styles.summaryStat}>
-                  <Text style={[styles.summaryStatValue, styles.summaryStatValueAccent]}>
-                    {nowSummary.seated}
-                    <Text style={{ fontSize: 16, fontWeight: '700', color: c.textMuted }}>
-                      /{nowSummary.capacity}
+                {dateFilter === 'today' ? (
+                  <View style={styles.summaryStat}>
+                    <Text style={[styles.summaryStatValue, styles.summaryStatValueAccent]}>
+                      {glance.seated}
+                      <Text style={{ fontSize: 16, fontWeight: '700', color: c.textMuted }}>
+                        /{capacity}
+                      </Text>
                     </Text>
-                  </Text>
-                  <Text style={styles.summaryStatLabel}>Tables seated</Text>
-                </View>
+                    <Text style={styles.summaryStatLabel}>Tables seated</Text>
+                  </View>
+                ) : (
+                  <View style={styles.summaryStat}>
+                    <Text style={[styles.summaryStatValue, styles.summaryStatValueAccent]}>
+                      {glance.total}
+                    </Text>
+                    <Text style={styles.summaryStatLabel}>On the list</Text>
+                  </View>
+                )}
                 <View style={styles.summaryStat}>
-                  <Text style={styles.summaryStatValue}>{nowSummary.upcomingNext60}</Text>
+                  <Text style={styles.summaryStatValue}>{glance.upcoming}</Text>
                   <Text style={styles.summaryStatLabel}>Still coming</Text>
                 </View>
               </View>
-              {nowSummary.next ? (
+              {glance.next ? (
                 <Pressable
                   style={styles.nextRow}
-                  onPress={press(() => setSelected(nowSummary.next!))}
+                  onPress={press(() => setSelected(glance.next!))}
                   accessibilityRole="button"
-                  accessibilityLabel={`Next reservation ${nowSummary.next.guestName}`}
+                  accessibilityLabel={`Next reservation ${glance.next.guestName}`}
                 >
                   <View style={styles.nextAvatar}>
-                    <Text style={styles.avatarText}>{initials(nowSummary.next.guestName)}</Text>
+                    <Text style={styles.avatarText}>{initials(glance.next.guestName)}</Text>
                   </View>
                   <View style={styles.nextCol}>
                     <Text style={styles.nextLabel}>Up next</Text>
                     <Text style={styles.nextText} numberOfLines={1}>
-                      {nowSummary.next.startTime} · {nowSummary.next.guestName} · party of{' '}
-                      {nowSummary.next.partySize}
+                      {glance.next.startTime} · {glance.next.guestName} · party of{' '}
+                      {glance.next.partySize}
                     </Text>
                   </View>
                   <Ionicons name="chevron-forward" size={18} color={c.textMuted} />
@@ -555,86 +662,81 @@ export default function OwnerReservationsScreen() {
               ) : null}
             </View>
 
-            <View style={styles.chipRow}>
-              {DATE_FILTERS.map((f) => (
-                <Pressable
-                  key={f.key}
-                  onPress={press(() => setDateFilter(f.key))}
-                  style={[styles.chip, dateFilter === f.key && styles.chipActive]}
-                  accessibilityRole="button"
-                  accessibilityState={{ selected: dateFilter === f.key }}
-                >
-                  <Text
-                    style={[styles.chipText, dateFilter === f.key && styles.chipTextActive]}
-                  >
-                    {f.label}
-                  </Text>
-                </Pressable>
-              ))}
-            </View>
-            {filtered.length === 0 ? (
-              <View style={styles.empty}>
-                <Ionicons name="calendar-outline" size={24} color={c.textMuted} />
-                <Text style={styles.emptyText}>No reservations for this range.</Text>
+            {filtered.length > 0 ? (
+              <View style={styles.listMeta}>
+                <Text style={styles.listMetaText}>
+                  {glance.total} booking{glance.total === 1 ? '' : 's'} · tap a card for details
+                </Text>
               </View>
             ) : null}
           </>
         }
+        ListEmptyComponent={
+          <View style={styles.empty}>
+            <Ionicons name="calendar-outline" size={28} color={c.textMuted} />
+            <Text style={styles.emptyText}>No reservations for this view.</Text>
+            <Text style={[styles.emptyText, { marginTop: 4, fontSize: 13 }]}>
+              Try Today, Tomorrow, or Week above.
+            </Text>
+          </View>
+        }
         renderSectionHeader={({ section: { title } }) => (
           <View style={styles.stickyHeader}>
-            <View style={styles.stickyHeaderInner}>
-              <Text style={styles.stickyHeaderText}>{title}</Text>
-            </View>
+            <Text style={styles.stickyHeaderText}>{title}</Text>
           </View>
         )}
-        renderItem={({ item: group }) => (
-          <View style={styles.cardMargin}>
-            <View style={styles.rowCard}>
-              {group.rows.map((row, index) => {
-                const pres = statusPresentation(row.status, c);
-                const isFirst = index === 0;
-                return (
-                  <Pressable
-                    key={row.id}
-                    onPress={press(() => setSelected(row))}
-                    style={({ pressed }) => [
-                      styles.row,
-                      !isFirst && styles.rowDivider,
-                      pressed && { backgroundColor: c.bgElevated },
-                    ]}
-                    accessibilityRole="button"
-                    accessibilityLabel={`${row.guestName}, ${row.startTime}, ${pres.label}`}
-                  >
-                    <View style={styles.avatar}>
-                      <Text style={styles.avatarText}>{initials(row.guestName)}</Text>
-                    </View>
-                    <View style={styles.centerCol}>
-                      <View style={styles.guestRow}>
-                        <Text style={styles.guest} numberOfLines={1}>
-                          {row.guestName}
-                        </Text>
-                        {row.vip ? <Text style={styles.vipBadge}>VIP</Text> : null}
+        renderItem={({ item: row }) => {
+          const pres = statusPresentation(row.status, c);
+          const { clock, ap } = splitTime(row.startTime);
+          const tableBit = row.table ? ` · ${row.table}` : '';
+          return (
+            <Pressable
+              onPress={press(() => setSelected(row))}
+              style={({ pressed }) => [styles.bookingCard, pressed && styles.bookingCardPressed]}
+              accessibilityRole="button"
+              accessibilityLabel={`${row.guestName}, ${row.startTime}, ${pres.label}`}
+            >
+              <View style={[styles.statusAccent, { backgroundColor: pres.rail }]} />
+              <View style={styles.bookingInner}>
+                <View style={styles.timeBlock}>
+                  <Text style={styles.timeClock}>{clock}</Text>
+                  {ap ? <Text style={styles.timeMeridiem}>{ap}</Text> : null}
+                </View>
+                <View style={styles.bookingMain}>
+                  <View style={styles.nameRow}>
+                    <Text style={styles.guestName} numberOfLines={1}>
+                      {row.guestName}
+                    </Text>
+                    {row.vip ? (
+                      <Ionicons name="star" size={14} color={c.gold} accessibilityLabel="VIP" />
+                    ) : null}
+                  </View>
+                  <Text style={styles.metaLine} numberOfLines={1}>
+                    Party of {row.partySize}
+                    {tableBit}
+                  </Text>
+                  <View style={styles.statusRow}>
+                    <View style={[styles.statusDot, { backgroundColor: pres.text }]} />
+                    <Text style={[styles.statusWord, { color: pres.text }]}>{pres.label}</Text>
+                    {row.walkIn ? (
+                      <View style={styles.walkInTag}>
+                        <Text style={styles.walkInTagText}>Walk-in</Text>
                       </View>
-                      <Text style={styles.meta} numberOfLines={1}>
-                        {row.partySize} guests{row.table ? ` · ${row.table}` : ''}
-                      </Text>
-                    </View>
-                    <View style={styles.timeCol}>
-                      <Text style={styles.timeText}>{row.startTime}</Text>
-                      <View style={[styles.pill, { backgroundColor: pres.bg }]}>
-                        <Text style={[styles.pillText, { color: pres.text }]}>
-                          {pres.label}
-                        </Text>
-                      </View>
-                    </View>
-                  </Pressable>
-                );
-              })}
-            </View>
-          </View>
-        )}
-        contentContainerStyle={{ paddingBottom: scrollPad }}
-        SectionSeparatorComponent={() => <View style={{ height: spacing.xs }} />}
+                    ) : null}
+                  </View>
+                </View>
+                <View style={styles.chevronWrap}>
+                  <Ionicons name="chevron-forward" size={20} color={c.textMuted} />
+                </View>
+              </View>
+            </Pressable>
+          );
+        }}
+        contentContainerStyle={{
+          paddingBottom: scrollPad,
+          flexGrow: 1,
+        }}
+        SectionSeparatorComponent={() => null}
       />
 
       <Modal visible={selected !== null} transparent animationType="slide">
