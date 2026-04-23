@@ -580,9 +580,8 @@ export default function StaffScheduleScreen() {
         >
           <View style={styles.ownerHeaderRow}>
             <View style={styles.ownerHeaderTextCol}>
-              <Text style={styles.ownerHeaderKicker}>This week</Text>
-              <Text style={styles.ownerHeaderTitle}>{t('staff.mySchedule')}</Text>
-              <Text style={styles.ownerHeaderSubtitle}>Nova Ristorante</Text>
+              <Text style={styles.ownerHeaderTitle}>Staff Schedule</Text>
+              <Text style={styles.ownerHeaderSubtitle}>Nova Ristorante · This week</Text>
             </View>
             {headerRight}
           </View>
@@ -1170,15 +1169,15 @@ const useScheduleStyles = createStyles((c) => ({
     marginBottom: 4,
   },
   ownerHeaderTitle: {
-    fontSize: 34,
+    fontSize: 30,
     fontWeight: '800',
     color: c.textPrimary,
-    letterSpacing: -0.8,
-    lineHeight: 40,
+    letterSpacing: -0.7,
+    lineHeight: 36,
   },
   ownerHeaderSubtitle: {
     marginTop: 4,
-    fontSize: 14,
+    fontSize: 13,
     fontWeight: '500',
     color: c.textSecondary,
   },

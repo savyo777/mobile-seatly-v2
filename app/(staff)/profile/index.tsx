@@ -28,19 +28,12 @@ const useStyles = createStyles((c) => ({
     paddingTop: spacing.sm,
     paddingBottom: spacing.sm,
   },
-  topKicker: {
-    fontSize: 11,
-    fontWeight: '800',
-    color: c.gold,
-    letterSpacing: 1.4,
-    textTransform: 'uppercase',
-  },
   topTitle: {
-    fontSize: 28,
+    fontSize: 30,
     fontWeight: '800',
     color: c.textPrimary,
-    letterSpacing: -0.6,
-    marginTop: 2,
+    letterSpacing: -0.7,
+    lineHeight: 36,
   },
   iconBtn: {
     width: 44,
@@ -239,8 +232,7 @@ export default function OwnerProfileScreen() {
       >
         <View style={styles.topBar}>
           <View>
-            <Text style={styles.topKicker}>Your business</Text>
-            <Text style={styles.topTitle}>Profile</Text>
+            <Text style={styles.topTitle}>My Business</Text>
           </View>
           <Pressable
             style={({ pressed }) => [styles.iconBtn, pressed && styles.iconBtnPressed]}

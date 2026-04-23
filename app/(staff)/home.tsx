@@ -4,7 +4,6 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { useColors, createStyles, spacing, borderRadius } from '@/lib/theme';
-import { OwnerHeader } from '@/components/owner/OwnerHeader';
 import { HomeHero } from '@/components/owner/HomeHero';
 import {
   REVENUE_DATA,
@@ -20,19 +19,68 @@ import { useOwnerTabScrollPadding } from '@/hooks/useOwnerTabScrollPadding';
 
 const useStyles = createStyles((c) => ({
   root: { flex: 1, backgroundColor: c.bgBase },
-  greetingKicker: {
+
+  // ── Top bar ──────────────────────────────────────────────────────────────
+  topBar: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
     paddingHorizontal: spacing.lg,
-    marginBottom: 2,
+    paddingBottom: spacing.sm,
   },
-  kickerText: {
-    fontSize: 12,
-    fontWeight: '700',
+  topLeft: { gap: 2 },
+  greeting: {
+    fontSize: 13,
+    fontWeight: '600',
     color: c.gold,
-    letterSpacing: 1.2,
-    textTransform: 'uppercase',
+    letterSpacing: 0.2,
+  },
+  title: {
+    fontSize: 30,
+    fontWeight: '800',
+    color: c.textPrimary,
+    letterSpacing: -0.7,
+    lineHeight: 36,
+  },
+  subtitle: {
+    fontSize: 13,
+    fontWeight: '500',
+    color: c.textSecondary,
+    marginTop: 2,
+  },
+  notifBtn: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: c.bgSurface,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: c.border,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  notifPressed: {
+    backgroundColor: c.bgElevated,
+    transform: [{ scale: 0.96 }],
+  },
+  badgeWrap: {
+    position: 'absolute',
+    top: 7,
+    right: 7,
+    minWidth: 16,
+    height: 16,
+    borderRadius: 8,
+    backgroundColor: c.danger,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 3,
+  },
+  badgeText: {
+    fontSize: 9,
+    fontWeight: '800',
+    color: '#fff',
   },
 
-  // One compact "Tonight at a glance" card: 3 metrics, no icons, one line each
+  // ── Tonight snapshot ─────────────────────────────────────────────────────
   snapshotCard: {
     marginHorizontal: spacing.lg,
     marginBottom: spacing.md,
@@ -49,24 +97,23 @@ const useStyles = createStyles((c) => ({
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    gap: 4,
+    gap: 5,
     paddingHorizontal: 4,
   },
   snapshotValue: {
-    fontSize: 26,
+    fontSize: 30,
     fontWeight: '800',
     color: c.textPrimary,
-    letterSpacing: -0.6,
+    letterSpacing: -0.8,
+    lineHeight: 34,
   },
-  snapshotValueGold: {
-    color: c.gold,
-  },
+  snapshotValueGold: { color: c.gold },
   snapshotLabel: {
-    fontSize: 11,
-    fontWeight: '700',
+    fontSize: 12,
+    fontWeight: '600',
     color: c.textMuted,
-    letterSpacing: 0.3,
     textAlign: 'center',
+    lineHeight: 15,
   },
   snapshotDivider: {
     width: StyleSheet.hairlineWidth,
@@ -74,30 +121,28 @@ const useStyles = createStyles((c) => ({
     marginVertical: 4,
   },
 
-  // Section title (used above Attention + Actions)
-  sectionTitleRow: {
+  // ── Section labels (plain, conversational) ───────────────────────────────
+  sectionRow: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingHorizontal: spacing.lg,
     marginBottom: spacing.sm,
-    marginTop: spacing.sm,
+    marginTop: spacing.xs,
   },
-  sectionTitle: {
+  sectionLabel: {
+    fontSize: 15,
+    fontWeight: '700',
+    color: c.textPrimary,
+    letterSpacing: -0.1,
+  },
+  seeAllBtn: {
     fontSize: 13,
-    fontWeight: '800',
-    color: c.textSecondary,
-    letterSpacing: 0.8,
-    textTransform: 'uppercase',
-  },
-  seeAll: {
-    fontSize: 12,
-    fontWeight: '800',
+    fontWeight: '700',
     color: c.gold,
-    letterSpacing: 0.3,
   },
 
-  // Attention list (zero or top 2 items)
+  // ── Alerts ───────────────────────────────────────────────────────────────
   attentionCard: {
     marginHorizontal: spacing.lg,
     marginBottom: spacing.md,
@@ -112,26 +157,32 @@ const useStyles = createStyles((c) => ({
     alignItems: 'center',
     gap: spacing.md,
     paddingHorizontal: spacing.md,
-    paddingVertical: 14,
-    minHeight: 60,
+    paddingVertical: 16,
+    minHeight: 64,
   },
-  alertDivider: {
+  alertRowDivider: {
     borderTopWidth: StyleSheet.hairlineWidth,
     borderTopColor: c.border,
   },
   alertIcon: {
-    width: 32,
-    height: 32,
-    borderRadius: 11,
+    width: 36,
+    height: 36,
+    borderRadius: 12,
     alignItems: 'center',
     justifyContent: 'center',
+    flexShrink: 0,
   },
-  alertText: {
-    flex: 1,
+  alertTextCol: { flex: 1, gap: 2 },
+  alertTitle: {
     fontSize: 14,
+    fontWeight: '700',
     color: c.textPrimary,
-    fontWeight: '600',
     lineHeight: 19,
+  },
+  alertSub: {
+    fontSize: 12,
+    fontWeight: '500',
+    color: c.textMuted,
   },
   allClearCard: {
     marginHorizontal: spacing.lg,
@@ -140,41 +191,38 @@ const useStyles = createStyles((c) => ({
     borderRadius: borderRadius.xl,
     borderWidth: StyleSheet.hairlineWidth,
     borderColor: c.border,
-    paddingVertical: spacing.lg,
+    paddingVertical: spacing.xl,
     paddingHorizontal: spacing.md,
     alignItems: 'center',
-    gap: 6,
+    gap: 8,
   },
-  allClearIconWrap: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
+  allClearCircle: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
     backgroundColor: `${c.success}1A`,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  allClearText: {
-    fontSize: 14,
-    color: c.textPrimary,
+  allClearTitle: {
+    fontSize: 15,
     fontWeight: '700',
-    letterSpacing: -0.1,
+    color: c.textPrimary,
   },
   allClearSub: {
-    fontSize: 12,
+    fontSize: 13,
     color: c.textMuted,
     fontWeight: '500',
   },
 
-  // Two big actions — 72pt tall, generous spacing, clear primary/secondary
-  actionsRow: {
-    flexDirection: 'row',
-    gap: spacing.sm,
+  // ── Big action buttons ───────────────────────────────────────────────────
+  actionsCol: {
     paddingHorizontal: spacing.lg,
+    gap: spacing.sm,
     marginBottom: spacing.md,
   },
   actionBtn: {
-    flex: 1,
-    minHeight: 72,
+    minHeight: 76,
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.md,
     borderRadius: borderRadius.xl,
@@ -196,52 +244,44 @@ const useStyles = createStyles((c) => ({
     borderColor: c.border,
   },
   actionIconWrap: {
-    width: 40,
-    height: 40,
-    borderRadius: 14,
+    width: 44,
+    height: 44,
+    borderRadius: 15,
     alignItems: 'center',
     justifyContent: 'center',
+    flexShrink: 0,
   },
-  actionIconPrimary: {
-    backgroundColor: 'rgba(255,255,255,0.22)',
-  },
-  actionIconSecondary: {
-    backgroundColor: `${c.gold}1A`,
-  },
-  actionLabelCol: {
-    flex: 1,
-    gap: 2,
-  },
-  actionLabelPrimary: {
-    fontSize: 15,
+  actionIconPrimary: { backgroundColor: 'rgba(255,255,255,0.22)' },
+  actionIconSecondary: { backgroundColor: `${c.gold}1A` },
+  actionTextCol: { flex: 1, gap: 3 },
+  actionTitle: {
+    fontSize: 16,
     fontWeight: '800',
     color: '#FFFFFF',
     letterSpacing: -0.2,
   },
-  actionSublabelPrimary: {
-    fontSize: 11,
-    fontWeight: '700',
-    color: 'rgba(255,255,255,0.8)',
-    letterSpacing: 0.2,
-  },
-  actionLabelSecondary: {
-    fontSize: 15,
+  actionTitleSecondary: {
+    fontSize: 16,
     fontWeight: '800',
     color: c.textPrimary,
     letterSpacing: -0.2,
   },
-  actionSublabelSecondary: {
-    fontSize: 11,
-    fontWeight: '700',
+  actionSub: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: 'rgba(255,255,255,0.85)',
+  },
+  actionSubSecondary: {
+    fontSize: 12,
+    fontWeight: '600',
     color: c.textMuted,
-    letterSpacing: 0.2,
   },
   actionPressed: {
     opacity: 0.9,
     transform: [{ scale: 0.98 }],
   },
 
-  // Secondary link row for less-used destinations
+  // ── Small link row ───────────────────────────────────────────────────────
   linkRow: {
     flexDirection: 'row',
     gap: spacing.sm,
@@ -263,10 +303,9 @@ const useStyles = createStyles((c) => ({
   },
   linkLabel: {
     flex: 1,
-    fontSize: 13,
+    fontSize: 14,
     fontWeight: '700',
     color: c.textPrimary,
-    letterSpacing: -0.1,
   },
 }));
 
@@ -296,10 +335,11 @@ export default function OwnerHomeScreen() {
   const healthSummary = useMemo(
     () =>
       trendUp
-        ? `Tracking ${day.trendPct}% ahead of last week — momentum is good.`
-        : `Pacing ${Math.abs(day.trendPct)}% behind last week — consider a quick promo.`,
+        ? `Tracking ${day.trendPct}% ahead of last week.`
+        : `Pacing ${Math.abs(day.trendPct)}% behind last week — a promo could help.`,
     [trendUp, day.trendPct],
   );
+
   const waitAvg =
     WALKIN_QUEUE.length > 0
       ? Math.round(WALKIN_QUEUE.reduce((a, b) => a + b.waitMins, 0) / WALKIN_QUEUE.length)
@@ -307,10 +347,8 @@ export default function OwnerHomeScreen() {
   const tablesOccupied = OWNER_FLOOR_TABLES.filter((t) => t.status === 'occupied').length;
   const tablesTotal = OWNER_FLOOR_TABLES.length;
 
-  const now = new Date();
-  const hour = now.getHours();
+  const hour = new Date().getHours();
   const greeting = greetingFor(hour);
-
   const criticalCount = OWNER_ALERTS_STRIP.filter((a) => a.severity === 'critical').length;
   const topAlerts = OWNER_ALERTS_STRIP.slice(0, 2);
 
@@ -319,26 +357,35 @@ export default function OwnerHomeScreen() {
       <ScrollView
         showsVerticalScrollIndicator={false}
         contentContainerStyle={{
-          paddingTop: insets.top + spacing.xs,
+          paddingTop: insets.top + spacing.sm,
           paddingBottom: scrollPad,
         }}
       >
-        <View style={styles.greetingKicker}>
-          <Text style={styles.kickerText}>
-            {greeting}, {OWNER_FIRST_NAME}
-          </Text>
+        {/* ── Single clean header ── */}
+        <View style={styles.topBar}>
+          <View style={styles.topLeft}>
+            <Text style={styles.greeting}>{greeting}, {OWNER_FIRST_NAME}</Text>
+            <Text style={styles.title}>Tonight</Text>
+            <Text style={styles.subtitle}>Nova Ristorante</Text>
+          </View>
+          <Pressable
+            onPress={() => router.push('/(staff)/notifications' as never)}
+            style={({ pressed }) => [styles.notifBtn, pressed && styles.notifPressed]}
+            accessibilityRole="button"
+            accessibilityLabel="Notifications"
+          >
+            <Ionicons name="notifications-outline" size={20} color={c.textPrimary} />
+            {criticalCount > 0 && (
+              <View style={styles.badgeWrap}>
+                <Text style={styles.badgeText}>{criticalCount}</Text>
+              </View>
+            )}
+          </Pressable>
         </View>
-        <OwnerHeader
-          title="Tonight"
-          subtitle="Nova Ristorante"
-          rightIcon="notifications-outline"
-          onRightPress={() => router.push('/(staff)/notifications')}
-          accessibilityLabelRight="Notifications"
-          rightBadgeCount={criticalCount}
-        />
 
+        {/* ── Revenue hero (tap for full analytics) ── */}
         <HomeHero
-          label="Revenue · today"
+          label="Revenue today"
           value={formatCurrency(day.total, 'cad')}
           trendLabel={`${trendUp ? '+' : ''}${day.trendPct}%`}
           trendPositive={trendUp}
@@ -348,67 +395,63 @@ export default function OwnerHomeScreen() {
           onPress={() => router.push('/(staff)/analytics' as never)}
         />
 
-        {/* Tonight at a glance — 3 numbers, plain labels, one compact card */}
-        <View
-          style={styles.snapshotCard}
-          accessibilityRole="summary"
-          accessibilityLabel={`Tonight: ${tablesOccupied} of ${tablesTotal} tables seated, ${LIVE_METRICS.tonightCovers} covers booked, ${WAITLIST_ENTRIES.length} on waitlist with ${waitAvg} minute average wait.`}
-        >
+        {/* ── Tonight at a glance ── */}
+        <View style={styles.snapshotCard}>
           <View style={styles.snapshotCell}>
             <Text style={[styles.snapshotValue, styles.snapshotValueGold]}>
               {tablesOccupied}
-              <Text style={{ fontSize: 18, color: c.textMuted }}>/{tablesTotal}</Text>
+              <Text style={{ fontSize: 20, color: c.textMuted }}>/{tablesTotal}</Text>
             </Text>
-            <Text style={styles.snapshotLabel}>Seated now</Text>
+            <Text style={styles.snapshotLabel}>Tables{'\n'}seated</Text>
           </View>
           <View style={styles.snapshotDivider} />
           <View style={styles.snapshotCell}>
             <Text style={styles.snapshotValue}>{LIVE_METRICS.tonightCovers}</Text>
-            <Text style={styles.snapshotLabel}>Guests tonight</Text>
+            <Text style={styles.snapshotLabel}>Guests{'\n'}tonight</Text>
           </View>
           <View style={styles.snapshotDivider} />
           <View style={styles.snapshotCell}>
             <Text style={styles.snapshotValue}>{WAITLIST_ENTRIES.length}</Text>
             <Text style={styles.snapshotLabel}>
-              {WAITLIST_ENTRIES.length === 0 ? 'No wait' : `Waiting · ${waitAvg}m`}
+              {WAITLIST_ENTRIES.length === 0 ? 'No wait' : `Waiting\n${waitAvg}m avg`}
             </Text>
           </View>
         </View>
 
-        {/* Needs attention */}
-        <View style={styles.sectionTitleRow}>
-          <Text style={styles.sectionTitle}>Needs your attention</Text>
-          {OWNER_ALERTS_STRIP.length > topAlerts.length ? (
+        {/* ── Alerts ── */}
+        <View style={styles.sectionRow}>
+          <Text style={styles.sectionLabel}>Heads up</Text>
+          {OWNER_ALERTS_STRIP.length > topAlerts.length && (
             <Pressable
               onPress={() => router.push('/(staff)/notifications' as never)}
               hitSlop={8}
               accessibilityRole="button"
-              accessibilityLabel="See all notifications"
             >
-              <Text style={styles.seeAll}>See all</Text>
+              <Text style={styles.seeAllBtn}>See all</Text>
             </Pressable>
-          ) : null}
+          )}
         </View>
 
         {OWNER_ALERTS_STRIP.length === 0 ? (
           <View style={styles.allClearCard}>
-            <View style={styles.allClearIconWrap}>
+            <View style={styles.allClearCircle}>
               <Ionicons name="checkmark" size={22} color={c.success} />
             </View>
-            <Text style={styles.allClearText}>All clear</Text>
-            <Text style={styles.allClearSub}>Nothing needs you right now</Text>
+            <Text style={styles.allClearTitle}>You're all good!</Text>
+            <Text style={styles.allClearSub}>No issues need your attention right now</Text>
           </View>
         ) : (
           <View style={styles.attentionCard}>
             {topAlerts.map((a, i) => {
               const tone = alertTone(a.severity, c);
+              const isWarning = a.severity === 'critical' || a.severity === 'warning';
               return (
                 <Pressable
                   key={a.id}
                   onPress={() => router.push('/(staff)/notifications' as never)}
                   style={({ pressed }) => [
                     styles.alertRow,
-                    i > 0 && styles.alertDivider,
+                    i > 0 && styles.alertRowDivider,
                     pressed && { backgroundColor: c.bgElevated },
                   ]}
                   accessibilityRole="button"
@@ -416,14 +459,15 @@ export default function OwnerHomeScreen() {
                 >
                   <View style={[styles.alertIcon, { backgroundColor: tone.bg }]}>
                     <Ionicons
-                      name={a.severity === 'critical' ? 'warning' : 'alert-circle-outline'}
-                      size={16}
+                      name={isWarning ? 'warning-outline' : 'information-circle-outline'}
+                      size={18}
                       color={tone.fg}
                     />
                   </View>
-                  <Text style={styles.alertText} numberOfLines={2}>
-                    {a.message}
-                  </Text>
+                  <View style={styles.alertTextCol}>
+                    <Text style={styles.alertTitle} numberOfLines={2}>{a.message}</Text>
+                    <Text style={styles.alertSub}>Tap to view details</Text>
+                  </View>
                   <Ionicons name="chevron-forward" size={16} color={c.textMuted} />
                 </Pressable>
               );
@@ -431,12 +475,12 @@ export default function OwnerHomeScreen() {
           </View>
         )}
 
-        {/* Two big, obvious actions */}
-        <View style={styles.sectionTitleRow}>
-          <Text style={styles.sectionTitle}>Do now</Text>
+        {/* ── Main actions (stacked for clarity) ── */}
+        <View style={styles.sectionRow}>
+          <Text style={styles.sectionLabel}>Quick access</Text>
         </View>
 
-        <View style={styles.actionsRow}>
+        <View style={styles.actionsCol}>
           <Pressable
             onPress={() => router.push('/(staff)/reservations' as never)}
             style={({ pressed }) => [
@@ -445,17 +489,18 @@ export default function OwnerHomeScreen() {
               pressed && styles.actionPressed,
             ]}
             accessibilityRole="button"
-            accessibilityLabel="Open reservations"
+            accessibilityLabel="Open bookings"
           >
             <View style={[styles.actionIconWrap, styles.actionIconPrimary]}>
-              <Ionicons name="calendar" size={22} color="#FFFFFF" />
+              <Ionicons name="calendar" size={24} color="#FFFFFF" />
             </View>
-            <View style={styles.actionLabelCol}>
-              <Text style={styles.actionLabelPrimary}>Reservations</Text>
-              <Text style={styles.actionSublabelPrimary}>
-                {LIVE_METRICS.tonightCovers} guests tonight
+            <View style={styles.actionTextCol}>
+              <Text style={styles.actionTitle}>Bookings</Text>
+              <Text style={styles.actionSub}>
+                {LIVE_METRICS.tonightCovers} guests booked tonight
               </Text>
             </View>
+            <Ionicons name="chevron-forward" size={18} color="rgba(255,255,255,0.7)" />
           </Pressable>
 
           <Pressable
@@ -469,36 +514,55 @@ export default function OwnerHomeScreen() {
             accessibilityLabel="Open waitlist"
           >
             <View style={[styles.actionIconWrap, styles.actionIconSecondary]}>
-              <Ionicons name="people" size={22} color={c.gold} />
+              <Ionicons name="people" size={24} color={c.gold} />
             </View>
-            <View style={styles.actionLabelCol}>
-              <Text style={styles.actionLabelSecondary}>Waitlist</Text>
-              <Text style={styles.actionSublabelSecondary}>
+            <View style={styles.actionTextCol}>
+              <Text style={styles.actionTitleSecondary}>Waitlist</Text>
+              <Text style={styles.actionSubSecondary}>
                 {WAITLIST_ENTRIES.length === 0
-                  ? 'No one waiting'
-                  : `${WAITLIST_ENTRIES.length} waiting · ${waitAvg}m avg`}
+                  ? 'No one waiting right now'
+                  : `${WAITLIST_ENTRIES.length} guests waiting · ${waitAvg}m avg wait`}
               </Text>
             </View>
+            <Ionicons name="chevron-forward" size={18} color={c.textMuted} />
+          </Pressable>
+
+          <Pressable
+            onPress={() => router.push('/(staff)/promotions' as never)}
+            style={({ pressed }) => [
+              styles.actionBtn,
+              styles.actionSecondary,
+              pressed && styles.actionPressed,
+            ]}
+            accessibilityRole="button"
+            accessibilityLabel="Open promotions"
+          >
+            <View style={[styles.actionIconWrap, styles.actionIconSecondary]}>
+              <Ionicons name="pricetag" size={24} color={c.gold} />
+            </View>
+            <View style={styles.actionTextCol}>
+              <Text style={styles.actionTitleSecondary}>Promotions</Text>
+              <Text style={styles.actionSubSecondary}>Manage your deals and offers</Text>
+            </View>
+            <Ionicons name="chevron-forward" size={18} color={c.textMuted} />
           </Pressable>
         </View>
 
-        {/* Quiet links for less-used destinations */}
+        {/* ── Secondary links ── */}
         <View style={styles.linkRow}>
           <Pressable
             onPress={() => router.push('/(staff)/floor' as never)}
             style={({ pressed }) => [styles.linkBtn, pressed && styles.actionPressed]}
             accessibilityRole="button"
-            accessibilityLabel="Open floor plan"
           >
             <Ionicons name="grid-outline" size={18} color={c.gold} />
-            <Text style={styles.linkLabel}>Floor</Text>
+            <Text style={styles.linkLabel}>Floor plan</Text>
             <Ionicons name="chevron-forward" size={16} color={c.textMuted} />
           </Pressable>
           <Pressable
             onPress={() => router.push('/(staff)/analytics' as never)}
             style={({ pressed }) => [styles.linkBtn, pressed && styles.actionPressed]}
             accessibilityRole="button"
-            accessibilityLabel="Open analytics"
           >
             <Ionicons name="trending-up-outline" size={18} color={c.gold} />
             <Text style={styles.linkLabel}>Analytics</Text>

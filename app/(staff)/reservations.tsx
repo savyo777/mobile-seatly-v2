@@ -89,10 +89,10 @@ const useStyles = createStyles((c) => ({
     backgroundColor: c.gold,
   },
   stickyHeaderText: {
-    fontSize: 13,
-    fontWeight: '800',
+    fontSize: 15,
+    fontWeight: '700',
     color: c.textPrimary,
-    letterSpacing: 0,
+    letterSpacing: -0.1,
   },
 
   cardMargin: {
@@ -116,8 +116,8 @@ const useStyles = createStyles((c) => ({
     alignItems: 'center',
     gap: spacing.md,
     paddingHorizontal: spacing.md,
-    paddingVertical: 14,
-    minHeight: 64,
+    paddingVertical: 16,
+    minHeight: 72,
   },
   rowDivider: {
     borderTopWidth: StyleSheet.hairlineWidth,
@@ -153,7 +153,7 @@ const useStyles = createStyles((c) => ({
     gap: 6,
   },
   guest: {
-    fontSize: 14,
+    fontSize: 15,
     fontWeight: '700',
     color: c.textPrimary,
   },
@@ -549,9 +549,8 @@ export default function OwnerReservationsScreen() {
           <>
             <View style={{ paddingTop: insets.top + spacing.xs }} />
             <OwnerHeader
-              kicker="Tonight"
-              title="Reservations"
-              subtitle={`${nowSummary.seated} seated · ${nowSummary.upcomingNext60} upcoming`}
+              title="Bookings"
+              subtitle={`Tonight · ${nowSummary.seated} seated · ${nowSummary.upcomingNext60} upcoming`}
             />
 
             <View style={styles.nowWrap}>
