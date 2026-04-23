@@ -1,6 +1,6 @@
 import React from 'react';
-import { Text, StyleSheet, type TextProps } from 'react-native';
-import { ownerColors, ownerSpace } from '@/lib/theme/ownerTheme';
+import { Text, type TextProps } from 'react-native';
+import { createStyles, spacing } from '@/lib/theme';
 
 type Props = TextProps & {
   children: React.ReactNode;
@@ -13,10 +13,11 @@ type Props = TextProps & {
 export function OwnerSectionLabel({
   children,
   style,
-  marginBottom = ownerSpace.sm,
+  marginBottom = spacing.sm,
   marginTop = 0,
   ...rest
 }: Props) {
+  const styles = useStyles();
   return (
     <Text style={[styles.label, { marginBottom, marginTop }, style]} {...rest}>
       {children}
@@ -24,12 +25,12 @@ export function OwnerSectionLabel({
   );
 }
 
-const styles = StyleSheet.create({
+const useStyles = createStyles((c) => ({
   label: {
     fontSize: 11,
     fontWeight: '700',
-    color: ownerColors.textMuted,
+    color: c.textMuted,
     letterSpacing: 1,
     textTransform: 'uppercase',
   },
-});
+}));

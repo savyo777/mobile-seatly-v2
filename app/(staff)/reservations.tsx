@@ -21,11 +21,20 @@ import {
 } from '@/lib/mock/ownerApp';
 
 type DateFilter = 'today' | 'tomorrow' | 'week';
+type StatusFilter = 'all' | 'confirmed' | 'pending' | 'seated' | 'risk';
 
 const DATE_FILTERS: { key: DateFilter; label: string }[] = [
   { key: 'today', label: 'Today' },
   { key: 'tomorrow', label: 'Tomorrow' },
   { key: 'week', label: 'Week' },
+];
+
+const STATUS_FILTERS: { key: StatusFilter; label: string }[] = [
+  { key: 'all', label: 'All' },
+  { key: 'confirmed', label: 'Booked' },
+  { key: 'pending', label: 'Pending' },
+  { key: 'seated', label: 'Seated' },
+  { key: 'risk', label: 'Risk' },
 ];
 
 function initials(name: string): string {
@@ -68,6 +77,45 @@ const useStyles = createStyles((c) => ({
   },
   segmentLabelActive: {
     color: c.bgBase,
+  },
+  statusWrap: {
+    paddingHorizontal: spacing.lg,
+    marginBottom: spacing.md,
+  },
+  statusRow: {
+    flexDirection: 'row',
+    gap: spacing.sm,
+  },
+  statusChip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    paddingHorizontal: spacing.md,
+    paddingVertical: 8,
+    borderRadius: borderRadius.full,
+    backgroundColor: c.bgSurface,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: c.border,
+  },
+  statusChipOn: {
+    borderColor: c.gold,
+    backgroundColor: `${c.gold}16`,
+  },
+  statusChipText: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: c.textMuted,
+  },
+  statusChipTextOn: {
+    color: c.gold,
+  },
+  statusCount: {
+    fontSize: 11,
+    fontWeight: '800',
+    color: c.textMuted,
+  },
+  statusCountOn: {
+    color: c.gold,
   },
 
   listMeta: {
@@ -183,7 +231,7 @@ const useStyles = createStyles((c) => ({
     fontWeight: '500',
     color: c.textMuted,
   },
-  statusRow: {
+  bookingStatusRow: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 6,
@@ -267,6 +315,36 @@ const useStyles = createStyles((c) => ({
     fontWeight: '600',
     color: c.textMuted,
     marginTop: 4,
+  },
+  quickRow: {
+    flexDirection: 'row',
+    gap: spacing.sm,
+    paddingHorizontal: spacing.lg,
+    marginBottom: spacing.md,
+  },
+  quickBtn: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: spacing.xs,
+    minHeight: 44,
+    borderRadius: borderRadius.md,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: c.border,
+    backgroundColor: c.bgSurface,
+  },
+  quickBtnPrimary: {
+    backgroundColor: `${c.gold}16`,
+    borderColor: `${c.gold}55`,
+  },
+  quickBtnText: {
+    fontSize: 13,
+    fontWeight: '700',
+    color: c.textPrimary,
+  },
+  quickBtnTextPrimary: {
+    color: c.gold,
   },
   nextRow: {
     flexDirection: 'row',
@@ -493,12 +571,18 @@ export default function OwnerReservationsScreen() {
   const insets = useSafeAreaInsets();
   const scrollPad = useOwnerTabScrollPadding();
   const [dateFilter, setDateFilter] = useState<DateFilter>('today');
+  const [statusFilter, setStatusFilter] = useState<StatusFilter>('all');
   const [selected, setSelected] = useState<OwnerReservationSlot | null>(null);
 
-  const filtered = useMemo(() => {
+  const dateFiltered = useMemo(() => {
     if (dateFilter === 'today' || dateFilter === 'week') return OWNER_RESERVATIONS;
     return OWNER_RESERVATIONS.filter((_, i) => i % 2 === 1);
   }, [dateFilter]);
+
+  const filtered = useMemo(() => {
+    if (statusFilter === 'all') return dateFiltered;
+    return dateFiltered.filter((r) => r.status === statusFilter);
+  }, [dateFiltered, statusFilter]);
 
   const glance = useMemo(() => {
     const total = filtered.length;
@@ -517,11 +601,11 @@ export default function OwnerReservationsScreen() {
   const headerSubtitle = useMemo(() => {
     switch (dateFilter) {
       case 'today':
-        return 'Tonight — who is seated and who is on the way';
+        return 'Tonight — live reservation control';
       case 'tomorrow':
-        return 'Plan ahead for tomorrow';
+        return 'Tomorrow — plan before service starts';
       default:
-        return 'Everything you have on the books';
+        return 'This week — bookings and risk points';
     }
   }, [dateFilter]);
 
@@ -562,6 +646,22 @@ export default function OwnerReservationsScreen() {
     setDateFilter(key);
   };
 
+  const onSelectStatus = (key: StatusFilter) => {
+    Haptics.selectionAsync().catch(() => {});
+    setStatusFilter(key);
+  };
+
+  const statusCounts = useMemo(
+    () => ({
+      all: dateFiltered.length,
+      confirmed: dateFiltered.filter((r) => r.status === 'confirmed').length,
+      pending: dateFiltered.filter((r) => r.status === 'pending').length,
+      seated: dateFiltered.filter((r) => r.status === 'seated').length,
+      risk: dateFiltered.filter((r) => r.status === 'risk').length,
+    }),
+    [dateFiltered],
+  );
+
   return (
     <View style={styles.root}>
       <SectionList
@@ -599,6 +699,55 @@ export default function OwnerReservationsScreen() {
 
             <OwnerHeader title="Bookings" subtitle={headerSubtitle} />
 
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={styles.statusWrap}
+            >
+              <View style={styles.statusRow}>
+                {STATUS_FILTERS.map((f) => {
+                  const active = statusFilter === f.key;
+                  return (
+                    <Pressable
+                      key={f.key}
+                      onPress={() => onSelectStatus(f.key)}
+                      style={[styles.statusChip, active && styles.statusChipOn]}
+                      accessibilityRole="button"
+                      accessibilityLabel={`Filter by ${f.label}`}
+                    >
+                      <Text style={[styles.statusChipText, active && styles.statusChipTextOn]}>
+                        {f.label}
+                      </Text>
+                      <Text style={[styles.statusCount, active && styles.statusCountOn]}>
+                        {statusCounts[f.key]}
+                      </Text>
+                    </Pressable>
+                  );
+                })}
+              </View>
+            </ScrollView>
+
+            <View style={styles.quickRow}>
+              <Pressable
+                style={[styles.quickBtn, styles.quickBtnPrimary]}
+                onPress={press(() => setSelected(glance.next ?? filtered[0] ?? null))}
+                accessibilityRole="button"
+                accessibilityLabel="Open next booking"
+              >
+                <Ionicons name="flash-outline" size={16} color={c.gold} />
+                <Text style={[styles.quickBtnText, styles.quickBtnTextPrimary]}>Next booking</Text>
+              </Pressable>
+              <Pressable
+                style={styles.quickBtn}
+                onPress={press(() => setDateFilter('today'))}
+                accessibilityRole="button"
+                accessibilityLabel="Focus on today"
+              >
+                <Ionicons name="today-outline" size={16} color={c.textSecondary} />
+                <Text style={styles.quickBtnText}>Today view</Text>
+              </Pressable>
+            </View>
+
             <View style={styles.summaryCard}>
               <View>
                 <Text style={styles.summaryTitle}>{summaryHeading}</Text>
@@ -610,8 +759,8 @@ export default function OwnerReservationsScreen() {
                     </>
                   ) : (
                     <>
-                      {glance.total} reservation{glance.total === 1 ? '' : 's'} ·{' '}
-                      {glance.upcoming} still expected
+                      {glance.total} reservation{glance.total === 1 ? '' : 's'} · {glance.upcoming}{' '}
+                      still expected
                     </>
                   )}
                 </Text>
@@ -715,7 +864,7 @@ export default function OwnerReservationsScreen() {
                     Party of {row.partySize}
                     {tableBit}
                   </Text>
-                  <View style={styles.statusRow}>
+                  <View style={styles.bookingStatusRow}>
                     <View style={[styles.statusDot, { backgroundColor: pres.text }]} />
                     <Text style={[styles.statusWord, { color: pres.text }]}>{pres.label}</Text>
                     {row.walkIn ? (

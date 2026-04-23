@@ -91,16 +91,10 @@ const useStyles = createStyles((c) => ({
     marginBottom: spacing.lg,
   },
   sheetTitle: {
-    fontSize: 22,
+    fontSize: 21,
     fontWeight: '800',
     color: c.textPrimary,
     letterSpacing: -0.5,
-    marginBottom: 4,
-  },
-  sheetSub: {
-    fontSize: 13,
-    color: c.textMuted,
-    fontWeight: '500',
     marginBottom: spacing.lg,
   },
   actionItem: {
@@ -286,8 +280,7 @@ export default function OwnerTabsLayout() {
                 style={[styles.sheet, { paddingBottom: Math.max(insets.bottom, spacing.xl) }]}
               >
                 <View style={styles.sheetGrab} />
-                <Text style={styles.sheetTitle}>What would you like to do?</Text>
-                <Text style={styles.sheetSub}>Choose an action to get started</Text>
+                <Text style={styles.sheetTitle}>Quick actions</Text>
 
                 {QUICK_ACTIONS.map((action, i) => (
                   <Pressable

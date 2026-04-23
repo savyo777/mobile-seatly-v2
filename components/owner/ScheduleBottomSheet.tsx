@@ -10,12 +10,7 @@ import {
   Dimensions,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-
-const BG = '#111111';
-const BORDER = 'rgba(255,255,255,0.08)';
-const GOLD = '#C6A85B';
-const TEXT = '#FFFFFF';
-const TEXT_MUTED = '#A1A1AA';
+import { borderRadius, createStyles, spacing, useColors } from '@/lib/theme';
 
 type Props = {
   visible: boolean;
@@ -41,9 +36,10 @@ export function ScheduleBottomSheet({
   scrollable = true,
   footer,
 }: Props) {
+  const styles = useStyles();
   const insets = useSafeAreaInsets();
   const maxH = Math.min(screenH * maxHeightFraction, screenH - insets.top - 16);
-  const padBottom = Math.max(insets.bottom, 16);
+  const padBottom = Math.max(insets.bottom, spacing.lg);
 
   const body = scrollable ? (
     <ScrollView
@@ -85,6 +81,7 @@ type CenterModalProps = {
 };
 
 export function ScheduleCenterModal({ visible, onClose, title, message, children, actions }: CenterModalProps) {
+  const styles = useStyles();
   return (
     <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
       <View style={styles.centerRoot}>
@@ -109,9 +106,11 @@ export function SheetPrimaryButton({
   onPress: () => void;
   style?: ViewStyle;
 }) {
+  const styles = useStyles();
+  const c = useColors();
   return (
     <Pressable onPress={onPress} style={({ pressed }) => [styles.btnGold, pressed && styles.btnPressed, style]}>
-      <Text style={styles.btnGoldText}>{label}</Text>
+      <Text style={[styles.btnGoldText, { color: c.bgBase }]}>{label}</Text>
     </Pressable>
   );
 }
@@ -125,6 +124,7 @@ export function SheetSecondaryButton({
   onPress: () => void;
   style?: ViewStyle;
 }) {
+  const styles = useStyles();
   return (
     <Pressable onPress={onPress} style={({ pressed }) => [styles.btnGray, pressed && styles.btnPressed, style]}>
       <Text style={styles.btnGrayText}>{label}</Text>
@@ -132,7 +132,7 @@ export function SheetSecondaryButton({
   );
 }
 
-const styles = StyleSheet.create({
+const useStyles = createStyles((c) => ({
   root: {
     flex: 1,
     justifyContent: 'flex-end',
@@ -142,15 +142,15 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(0,0,0,0.6)',
   },
   sheet: {
-    backgroundColor: BG,
-    borderTopLeftRadius: 20,
-    borderTopRightRadius: 20,
+    backgroundColor: c.bgSurface,
+    borderTopLeftRadius: borderRadius.xl,
+    borderTopRightRadius: borderRadius.xl,
     borderWidth: StyleSheet.hairlineWidth,
-    borderColor: BORDER,
-    paddingHorizontal: 20,
-    paddingTop: 8,
+    borderColor: c.border,
+    paddingHorizontal: spacing.xl,
+    paddingTop: spacing.sm,
     shadowColor: '#000',
-    shadowOpacity: 0.45,
+    shadowOpacity: 0.35,
     shadowRadius: 24,
     shadowOffset: { width: 0, height: -8 },
     elevation: 24,
@@ -160,21 +160,21 @@ const styles = StyleSheet.create({
     width: 40,
     height: 4,
     borderRadius: 2,
-    backgroundColor: 'rgba(255,255,255,0.12)',
-    marginBottom: 12,
+    backgroundColor: c.border,
+    marginBottom: spacing.md,
   },
   title: {
     fontSize: 18,
     fontWeight: '800',
-    color: TEXT,
+    color: c.textPrimary,
     letterSpacing: -0.3,
     marginBottom: 4,
   },
   subtitle: {
     fontSize: 14,
     fontWeight: '500',
-    color: TEXT_MUTED,
-    marginBottom: 12,
+    color: c.textMuted,
+    marginBottom: spacing.md,
     lineHeight: 20,
   },
   scroll: { flexGrow: 0 },
@@ -183,59 +183,60 @@ const styles = StyleSheet.create({
   centerRoot: {
     flex: 1,
     justifyContent: 'center',
-    paddingHorizontal: 24,
+    paddingHorizontal: spacing['2xl'],
   },
   centerCard: {
-    backgroundColor: BG,
-    borderRadius: 20,
+    backgroundColor: c.bgSurface,
+    borderRadius: borderRadius.xl,
     borderWidth: StyleSheet.hairlineWidth,
-    borderColor: BORDER,
-    padding: 20,
+    borderColor: c.border,
+    padding: spacing.xl,
     shadowColor: '#000',
-    shadowOpacity: 0.5,
-    shadowRadius: 20,
+    shadowOpacity: 0.35,
+    shadowRadius: 16,
     shadowOffset: { width: 0, height: 8 },
     elevation: 16,
   },
   centerTitle: {
     fontSize: 18,
     fontWeight: '800',
-    color: TEXT,
+    color: c.textPrimary,
     marginBottom: 8,
   },
   centerMsg: {
     fontSize: 15,
-    color: TEXT_MUTED,
+    color: c.textMuted,
     lineHeight: 22,
-    marginBottom: 16,
+    marginBottom: spacing.lg,
   },
   centerActions: {
     gap: 10,
     marginTop: 8,
   },
   btnGold: {
-    backgroundColor: GOLD,
+    backgroundColor: c.gold,
     paddingVertical: 14,
-    borderRadius: 14,
+    borderRadius: borderRadius.md,
     alignItems: 'center',
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: c.gold,
   },
   btnGoldText: {
     fontSize: 16,
     fontWeight: '800',
-    color: '#000000',
   },
   btnGray: {
-    backgroundColor: 'rgba(255,255,255,0.08)',
+    backgroundColor: c.bgElevated,
     paddingVertical: 14,
-    borderRadius: 14,
+    borderRadius: borderRadius.md,
     alignItems: 'center',
     borderWidth: StyleSheet.hairlineWidth,
-    borderColor: BORDER,
+    borderColor: c.border,
   },
   btnGrayText: {
     fontSize: 16,
     fontWeight: '700',
-    color: TEXT,
+    color: c.textPrimary,
   },
   btnPressed: { opacity: 0.88 },
-});
+}));

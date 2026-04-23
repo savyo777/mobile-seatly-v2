@@ -1,6 +1,5 @@
 import React, { useMemo } from 'react';
 import { View, Text, Pressable, ScrollView, StyleSheet, Alert } from 'react-native';
-import { LinearGradient } from 'expo-linear-gradient';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
@@ -9,7 +8,6 @@ import { StatCard } from '@/components/owner/StatCard';
 import { SectionCard } from '@/components/owner/SectionCard';
 import { ChevronSettingRow } from '@/components/profile/ChevronSettingRow';
 import { useColors, createStyles, spacing, borderRadius } from '@/lib/theme';
-import { useTheme } from '@/lib/theme/ThemeProvider';
 import { useOwnerTabScrollPadding } from '@/hooks/useOwnerTabScrollPadding';
 import {
   OWNER_BUSINESS_PROFILE,
@@ -60,84 +58,57 @@ const useStyles = createStyles((c) => ({
     opacity: 0.7,
   },
 
-  heroCard: {
+  businessHubRow: {
     marginHorizontal: spacing.lg,
     marginBottom: spacing.md,
     marginTop: spacing.xs,
-    overflow: 'hidden',
     borderRadius: borderRadius.xl,
+    backgroundColor: c.bgSurface,
     borderWidth: StyleSheet.hairlineWidth,
     borderColor: c.border,
-    shadowColor: '#000',
-    shadowOpacity: 0.12,
-    shadowRadius: 12,
-    shadowOffset: { width: 0, height: 6 },
-    elevation: 4,
-  },
-  cover: {
-    width: '100%',
-    height: 144,
-    backgroundColor: c.bgElevated,
-    position: 'relative',
-  },
-  coverOverlay: {
-    ...StyleSheet.absoluteFillObject,
-    backgroundColor: 'rgba(0,0,0,0.18)',
-  },
-  heroBody: {
-    padding: spacing.lg,
-    paddingTop: spacing.xl + 12,
-    backgroundColor: c.bgSurface,
-    gap: 4,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.md,
+    padding: spacing.md,
   },
   logoWrap: {
-    position: 'absolute',
-    left: spacing.lg,
-    top: 144 - 36,
-    width: 72,
-    height: 72,
-    borderRadius: 20,
-    backgroundColor: c.bgBase,
-    padding: 3,
+    width: 56,
+    height: 56,
+    borderRadius: 16,
+    backgroundColor: `${c.gold}16`,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: `${c.gold}55`,
     alignItems: 'center',
     justifyContent: 'center',
-    shadowColor: '#000',
-    shadowOpacity: 0.25,
-    shadowRadius: 10,
-    shadowOffset: { width: 0, height: 4 },
-    elevation: 4,
-  },
-  logoInner: {
-    width: '100%',
-    height: '100%',
-    borderRadius: 17,
-    backgroundColor: c.bgElevated,
-    alignItems: 'center',
-    justifyContent: 'center',
-    overflow: 'hidden',
+    flexShrink: 0,
   },
   logoInitials: {
-    fontSize: 24,
+    fontSize: 19,
     fontWeight: '800',
     color: c.gold,
     letterSpacing: -0.5,
   },
-  heroName: {
-    fontSize: 22,
+  businessMeta: {
+    flex: 1,
+    minWidth: 0,
+  },
+  businessName: {
+    fontSize: 17,
     fontWeight: '800',
     color: c.textPrimary,
-    letterSpacing: -0.4,
+    letterSpacing: -0.2,
   },
-  heroMeta: {
+  businessDetail: {
     fontSize: 13,
-    color: c.textSecondary,
+    color: c.textMuted,
     fontWeight: '600',
+    marginTop: 2,
   },
   heroStatusRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: spacing.sm,
-    marginTop: 10,
+    gap: spacing.xs,
+    marginTop: spacing.sm,
   },
   openPill: {
     flexDirection: 'row',
@@ -163,32 +134,46 @@ const useStyles = createStyles((c) => ({
     fontSize: 12,
     color: c.textMuted,
     fontWeight: '600',
+    flexShrink: 1,
   },
-  heroActionRow: {
+  actionGrid: {
     flexDirection: 'row',
-    borderTopWidth: StyleSheet.hairlineWidth,
-    borderTopColor: c.border,
-    backgroundColor: c.bgSurface,
+    paddingHorizontal: spacing.lg,
+    gap: spacing.sm,
+    marginBottom: spacing.md,
   },
-  heroActionBtn: {
+  actionTile: {
     flex: 1,
-    paddingVertical: 14,
+    minHeight: 74,
+    borderRadius: borderRadius.md,
+    backgroundColor: c.bgSurface,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: c.border,
     alignItems: 'center',
     justifyContent: 'center',
-    gap: 4,
+    gap: 7,
+    paddingHorizontal: spacing.xs,
   },
-  heroActionLabel: {
-    fontSize: 11,
-    fontWeight: '700',
-    color: c.textSecondary,
-    letterSpacing: 0.2,
-  },
-  heroActionDivider: {
-    width: StyleSheet.hairlineWidth,
-    backgroundColor: c.border,
-  },
-  heroActionPressed: {
+  actionTilePressed: {
     backgroundColor: c.bgElevated,
+    borderColor: `${c.gold}40`,
+  },
+  actionIconWrap: {
+    width: 34,
+    height: 34,
+    borderRadius: 10,
+    backgroundColor: c.bgElevated,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  actionIconWrapPrimary: {
+    backgroundColor: `${c.gold}16`,
+  },
+  actionLabel: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: c.textPrimary,
+    textAlign: 'center',
   },
 
   miniStatsRow: {
@@ -211,7 +196,6 @@ function initials(name: string): string {
 
 export default function OwnerProfileScreen() {
   const c = useColors();
-  const { effective } = useTheme();
   const styles = useStyles();
   const insets = useSafeAreaInsets();
   const scrollPad = useOwnerTabScrollPadding();
@@ -221,15 +205,29 @@ export default function OwnerProfileScreen() {
   const openState = useMemo(() => isBusinessOpenNow(), []);
   const activePromos = OWNER_PROMOTIONS.filter((p) => p.status === 'live').length;
 
-  const heroGradient =
-    effective === 'dark'
-      ? ([c.goldDark, '#1C1812', c.bgSurface] as const)
-      : ([c.gold, '#ECE4D0', c.bgSurface] as const);
-
   const press = (fn: () => void) => () => {
     Haptics.selectionAsync().catch(() => {});
     fn();
   };
+
+  const actionTiles = [
+    {
+      label: 'Edit',
+      icon: 'create-outline' as const,
+      route: '/(staff)/profile/edit',
+      primary: true,
+    },
+    {
+      label: 'Promos',
+      icon: 'pricetag-outline' as const,
+      route: '/(staff)/promotions',
+    },
+    {
+      label: 'Analytics',
+      icon: 'bar-chart-outline' as const,
+      route: '/(staff)/analytics',
+    },
+  ];
 
   return (
     <View style={styles.root}>
@@ -254,26 +252,20 @@ export default function OwnerProfileScreen() {
           </Pressable>
         </View>
 
-        <View style={styles.heroCard}>
-          <View style={styles.cover}>
-            <LinearGradient
-              colors={[...heroGradient]}
-              start={{ x: 0, y: 0 }}
-              end={{ x: 1, y: 1 }}
-              style={StyleSheet.absoluteFillObject}
-            />
-            <View style={styles.coverOverlay} />
-          </View>
+        <Pressable
+          onPress={press(() => router.push('/(staff)/profile/edit' as never))}
+          style={({ pressed }) => [styles.businessHubRow, pressed && { opacity: 0.82 }]}
+          accessibilityRole="button"
+          accessibilityLabel="Edit business profile"
+        >
           <View style={styles.logoWrap}>
-            <View style={styles.logoInner}>
-              <Text style={styles.logoInitials}>{initials(profile.name)}</Text>
-            </View>
+            <Text style={styles.logoInitials}>{initials(profile.name)}</Text>
           </View>
-          <View style={styles.heroBody}>
-            <Text style={styles.heroName} numberOfLines={1}>
+          <View style={styles.businessMeta}>
+            <Text style={styles.businessName} numberOfLines={1}>
               {profile.name}
             </Text>
-            <Text style={styles.heroMeta} numberOfLines={1}>
+            <Text style={styles.businessDetail} numberOfLines={1}>
               {profile.cuisine} · {profile.neighborhood}
             </Text>
             <View style={styles.heroStatusRow}>
@@ -306,34 +298,26 @@ export default function OwnerProfileScreen() {
               <Text style={styles.heroChangeText}>{openState.nextChange}</Text>
             </View>
           </View>
-          <View style={styles.heroActionRow}>
+          <Ionicons name="chevron-forward" size={18} color={c.textMuted} />
+        </Pressable>
+
+        <View style={styles.actionGrid}>
+          {actionTiles.map((action) => (
             <Pressable
-              style={({ pressed }) => [styles.heroActionBtn, pressed && styles.heroActionPressed]}
-              onPress={press(() => router.push('/(staff)/profile/edit' as never))}
-              accessibilityLabel="Edit business profile"
+              key={action.label}
+              style={({ pressed }) => [styles.actionTile, pressed && styles.actionTilePressed]}
+              onPress={press(() => router.push(action.route as never))}
+              accessibilityRole="button"
+              accessibilityLabel={action.label}
             >
-              <Ionicons name="create-outline" size={18} color={c.textPrimary} />
-              <Text style={styles.heroActionLabel}>Edit</Text>
+              <View style={[styles.actionIconWrap, action.primary && styles.actionIconWrapPrimary]}>
+                <Ionicons name={action.icon} size={18} color={action.primary ? c.gold : c.textSecondary} />
+              </View>
+              <Text style={styles.actionLabel} numberOfLines={1}>
+                {action.label}
+              </Text>
             </Pressable>
-            <View style={styles.heroActionDivider} />
-            <Pressable
-              style={({ pressed }) => [styles.heroActionBtn, pressed && styles.heroActionPressed]}
-              onPress={press(() => router.push('/(staff)/promotions' as never))}
-              accessibilityLabel="Open promotions"
-            >
-              <Ionicons name="pricetag-outline" size={18} color={c.textPrimary} />
-              <Text style={styles.heroActionLabel}>Promotions</Text>
-            </Pressable>
-            <View style={styles.heroActionDivider} />
-            <Pressable
-              style={({ pressed }) => [styles.heroActionBtn, pressed && styles.heroActionPressed]}
-              onPress={press(() => router.push('/(staff)/analytics' as never))}
-              accessibilityLabel="Open analytics"
-            >
-              <Ionicons name="bar-chart-outline" size={18} color={c.textPrimary} />
-              <Text style={styles.heroActionLabel}>Analytics</Text>
-            </Pressable>
-          </View>
+          ))}
         </View>
 
         <View style={styles.miniStatsRow}>

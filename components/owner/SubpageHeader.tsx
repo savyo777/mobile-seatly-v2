@@ -2,7 +2,7 @@ import React, { useCallback } from 'react';
 import { View, Text, StyleSheet, Pressable } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { Href, useNavigation, useRouter } from 'expo-router';
-import { ownerColors, ownerRadii, ownerSpace } from '@/lib/theme/ownerTheme';
+import { createStyles, borderRadius, spacing, useColors } from '@/lib/theme';
 
 type RootFallbackTab = 'home' | 'reservations' | 'floor' | 'menu' | 'more';
 
@@ -35,6 +35,8 @@ export function SubpageHeader({
   fallbackHref,
   rightAction,
 }: SubpageHeaderProps) {
+  const c = useColors();
+  const styles = useStyles();
   const router = useRouter();
   const navigation = useNavigation();
   const safeFallbackHref = fallbackHref ?? FALLBACK_TAB_HREF[fallbackTab];
@@ -56,7 +58,7 @@ export function SubpageHeader({
           accessibilityRole="button"
           accessibilityLabel="Go back"
         >
-          <Ionicons name="chevron-back" size={20} color={ownerColors.text} />
+          <Ionicons name="chevron-back" size={20} color={c.textPrimary} />
         </Pressable>
         <View
           style={[
@@ -84,9 +86,9 @@ export function SubpageHeader({
   );
 }
 
-const styles = StyleSheet.create({
+const useStyles = createStyles((c) => ({
   wrap: {
-    marginBottom: ownerSpace.sm,
+    marginBottom: spacing.sm,
     position: 'relative',
     width: '100%',
     maxWidth: '100%',
@@ -98,23 +100,23 @@ const styles = StyleSheet.create({
   row: {
     flexDirection: 'row',
     alignItems: 'flex-start',
-    gap: ownerSpace.sm,
+    gap: spacing.sm,
     width: '100%',
     maxWidth: '100%',
   },
   backBtn: {
-    width: 34,
-    height: 34,
-    borderRadius: ownerRadii.md,
+    width: 36,
+    height: 36,
+    borderRadius: borderRadius.md,
     borderWidth: StyleSheet.hairlineWidth,
-    borderColor: ownerColors.border,
-    backgroundColor: ownerColors.bgSurface,
+    borderColor: c.border,
+    backgroundColor: c.bgElevated,
     alignItems: 'center',
     justifyContent: 'center',
-    marginTop: 2,
+    marginTop: 4,
   },
   backBtnPressed: {
-    opacity: 0.88,
+    opacity: 0.7,
   },
   titleWrap: {
     flex: 1,
@@ -127,8 +129,8 @@ const styles = StyleSheet.create({
     paddingRight: 188,
   },
   rightSpacer: {
-    width: 34,
-    minHeight: 34,
+    width: 36,
+    minHeight: 36,
   },
   headerRightAbs: {
     position: 'absolute',
@@ -142,10 +144,10 @@ const styles = StyleSheet.create({
     gap: 10,
   },
   title: {
-    fontSize: 26,
+    fontSize: 28,
     fontWeight: '800',
-    color: ownerColors.text,
-    letterSpacing: -0.4,
+    color: c.textPrimary,
+    letterSpacing: -0.5,
   },
   titleCompact: {
     fontSize: 22,
@@ -153,13 +155,13 @@ const styles = StyleSheet.create({
   },
   subtitle: {
     marginTop: 4,
-    fontSize: 15,
+    fontSize: 13,
     fontWeight: '500',
-    color: ownerColors.textMuted,
+    color: c.textMuted,
   },
   subtitleCompact: {
     marginTop: 2,
     fontSize: 13,
     fontWeight: '500',
   },
-});
+}));

@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react';
+import React from 'react';
 import { View, Text, ScrollView, StyleSheet, Pressable } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
@@ -14,15 +14,17 @@ import {
   OWNER_FLOOR_TABLES,
   OWNER_FIRST_NAME,
   OWNER_RESERVATIONS,
+  type OwnerReservationSlot,
 } from '@/lib/mock/ownerApp';
 import { useOwnerTabScrollPadding } from '@/hooks/useOwnerTabScrollPadding';
 
 type IoniconName = React.ComponentProps<typeof Ionicons>['name'];
 
+const RESTAURANT_NAME = 'Nova Ristorante';
+
 const useStyles = createStyles((c) => ({
   root: { flex: 1, backgroundColor: c.bgBase },
 
-  // ── Header (matches diner profile top bar exactly) ───────────────────────
   topBar: {
     flexDirection: 'row',
     alignItems: 'flex-start',
@@ -31,27 +33,55 @@ const useStyles = createStyles((c) => ({
     paddingBottom: spacing.md,
   },
   topBarText: { flex: 1, paddingRight: spacing.md },
-  // Two-line greeting — same as diner discover screen
   greetingLine1: {
     fontSize: 28,
     fontWeight: '800',
     color: c.textPrimary,
-    letterSpacing: -0.6,
+    letterSpacing: -0.5,
     lineHeight: 34,
   },
   greetingLine2: {
     fontSize: 28,
     fontWeight: '800',
     color: c.gold,
-    letterSpacing: -0.6,
+    letterSpacing: -0.5,
     lineHeight: 34,
+  },
+  sublineRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+    marginTop: 4,
   },
   subline: {
     fontSize: 13,
     color: c.textMuted,
-    marginTop: 4,
+    fontWeight: '500',
   },
-  // Settings/notif button — mirrors diner profile settingsBtn exactly
+  livePill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: borderRadius.full,
+    backgroundColor: `${c.success}16`,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: `${c.success}55`,
+  },
+  liveDot: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+    backgroundColor: c.success,
+  },
+  liveText: {
+    fontSize: 10,
+    fontWeight: '800',
+    color: c.success,
+    letterSpacing: 0.4,
+    textTransform: 'uppercase',
+  },
   notifBtn: {
     width: 38,
     height: 38,
@@ -76,47 +106,87 @@ const useStyles = createStyles((c) => ({
     borderColor: c.bgBase,
   },
 
-  // ── Tonight snapshot ─────────────────────────────────────────────────────
-  // Same card style as diner profile hub row
-  snapshotCard: {
+  commandCard: {
     marginHorizontal: spacing.lg,
     marginBottom: spacing.xl,
     borderRadius: borderRadius.xl,
     backgroundColor: c.bgSurface,
     borderWidth: StyleSheet.hairlineWidth,
     borderColor: c.border,
+    padding: spacing.lg,
+  },
+  commandTopRow: {
     flexDirection: 'row',
-    paddingVertical: spacing.lg,
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+    gap: spacing.md,
+    marginBottom: spacing.lg,
   },
-  snapshotCell: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 6,
-    paddingHorizontal: spacing.sm,
+  commandLabel: {
+    fontSize: 12,
+    fontWeight: '800',
+    color: c.gold,
+    letterSpacing: 0.5,
+    textTransform: 'uppercase',
+    marginBottom: 6,
   },
-  snapshotDivider: {
-    width: StyleSheet.hairlineWidth,
-    backgroundColor: c.border,
-    marginVertical: 4,
-  },
-  snapshotValue: {
-    fontSize: 32,
+  commandTitle: {
+    fontSize: 24,
     fontWeight: '800',
     color: c.textPrimary,
-    letterSpacing: -1,
-    lineHeight: 36,
+    letterSpacing: -0.6,
+    lineHeight: 30,
   },
-  snapshotValueGold: { color: c.gold },
-  snapshotLabel: {
-    fontSize: 12,
-    fontWeight: '500',
+  commandSub: {
+    fontSize: 13,
     color: c.textMuted,
-    textAlign: 'center',
-    lineHeight: 16,
+    fontWeight: '500',
+    marginTop: 4,
+    lineHeight: 18,
+  },
+  commandIcon: {
+    width: 44,
+    height: 44,
+    borderRadius: 14,
+    backgroundColor: `${c.gold}16`,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: `${c.gold}42`,
+    flexShrink: 0,
+  },
+  commandStats: {
+    flexDirection: 'row',
+    borderTopWidth: StyleSheet.hairlineWidth,
+    borderTopColor: c.border,
+    paddingTop: spacing.md,
+  },
+  commandStat: {
+    flex: 1,
+    minWidth: 0,
+  },
+  commandDivider: {
+    width: StyleSheet.hairlineWidth,
+    backgroundColor: c.border,
+    marginHorizontal: spacing.md,
+  },
+  statValue: {
+    fontSize: 25,
+    fontWeight: '800',
+    color: c.textPrimary,
+    letterSpacing: -0.6,
+    lineHeight: 30,
+  },
+  statValueAccent: {
+    color: c.gold,
+  },
+  statLabel: {
+    fontSize: 11,
+    color: c.textMuted,
+    fontWeight: '700',
+    marginTop: 2,
   },
 
-  // ── Section headers (exact DiscoverHorizontalSection pattern) ────────────
   sectionHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -138,12 +208,11 @@ const useStyles = createStyles((c) => ({
   },
   seeAllText: {
     fontSize: 12,
-    fontWeight: '600',
+    fontWeight: '700',
     color: c.gold,
   },
 
-  // ── Alert card ───────────────────────────────────────────────────────────
-  alertCard: {
+  attentionCard: {
     marginHorizontal: spacing.lg,
     marginBottom: spacing.xl,
     borderRadius: borderRadius.xl,
@@ -152,66 +221,51 @@ const useStyles = createStyles((c) => ({
     borderColor: c.border,
     overflow: 'hidden',
   },
-  alertRow: {
+  attentionRow: {
     flexDirection: 'row',
     alignItems: 'center',
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.md,
     gap: spacing.md,
-    minHeight: 60,
+    minHeight: 62,
   },
-  alertRowDivider: {
+  rowDivider: {
     borderTopWidth: StyleSheet.hairlineWidth,
     borderTopColor: c.border,
   },
-  alertRowPressed: { backgroundColor: c.bgElevated },
-  alertIconBox: {
+  rowPressed: { backgroundColor: c.bgElevated },
+  attentionIcon: {
     width: 36,
     height: 36,
-    borderRadius: 10,
+    borderRadius: 11,
     alignItems: 'center',
     justifyContent: 'center',
     flexShrink: 0,
   },
-  alertTextCol: { flex: 1 },
-  alertMsg: {
+  attentionTextCol: { flex: 1, minWidth: 0 },
+  attentionTitle: {
     fontSize: 14,
-    fontWeight: '600',
+    fontWeight: '700',
     color: c.textPrimary,
     lineHeight: 19,
   },
-  alertSub: { fontSize: 12, color: c.textMuted, marginTop: 2 },
-
-  // All-clear
-  allClearCard: {
-    marginHorizontal: spacing.lg,
-    marginBottom: spacing.xl,
-    borderRadius: borderRadius.xl,
-    backgroundColor: c.bgSurface,
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: c.border,
-    paddingVertical: spacing.xl,
-    paddingHorizontal: spacing.lg,
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.md,
+  attentionSub: {
+    fontSize: 12,
+    color: c.textMuted,
+    fontWeight: '500',
+    marginTop: 2,
   },
   allClearIcon: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
+    width: 36,
+    height: 36,
+    borderRadius: 18,
     backgroundColor: `${c.success}18`,
     alignItems: 'center',
     justifyContent: 'center',
     flexShrink: 0,
   },
-  allClearTextCol: { flex: 1 },
-  allClearTitle: { fontSize: 15, fontWeight: '700', color: c.textPrimary },
-  allClearSub: { fontSize: 13, color: c.textMuted, marginTop: 2 },
 
-  // ── Cal AI-style grouped action list ─────────────────────────────────────
-  // One card, rows with dividers — identical to ChevronSettingRow container
-  actionCard: {
+  timelineCard: {
     marginHorizontal: spacing.lg,
     marginBottom: spacing.xl,
     borderRadius: borderRadius.xl,
@@ -220,7 +274,7 @@ const useStyles = createStyles((c) => ({
     borderColor: c.border,
     overflow: 'hidden',
   },
-  actionRow: {
+  timelineRow: {
     flexDirection: 'row',
     alignItems: 'center',
     paddingHorizontal: spacing.md,
@@ -228,69 +282,114 @@ const useStyles = createStyles((c) => ({
     gap: spacing.md,
     minHeight: 68,
   },
-  actionRowDivider: {
-    borderTopWidth: StyleSheet.hairlineWidth,
-    borderTopColor: c.border,
+  timeBlock: {
+    width: 62,
   },
-  actionRowPressed: { backgroundColor: c.bgElevated },
-  actionIconBox: {
-    width: 44,
-    height: 44,
-    borderRadius: 14,
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: c.bgElevated,
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: c.border,
-    flexShrink: 0,
+  timeText: {
+    fontSize: 15,
+    fontWeight: '800',
+    color: c.textPrimary,
+    letterSpacing: -0.2,
   },
-  actionTextCol: { flex: 1 },
-  actionLabel: {
+  partyText: {
+    fontSize: 11,
+    fontWeight: '700',
+    color: c.textMuted,
+    marginTop: 2,
+  },
+  guestCol: {
+    flex: 1,
+    minWidth: 0,
+  },
+  guestName: {
     fontSize: 15,
     fontWeight: '700',
     color: c.textPrimary,
     letterSpacing: -0.1,
   },
-  actionSub: { fontSize: 13, color: c.textMuted, marginTop: 2 },
-
-  // First row gets the gold icon treatment (primary action)
-  actionIconPrimary: {
-    backgroundColor: `${c.gold}18`,
-    borderColor: `${c.gold}33`,
+  guestMeta: {
+    fontSize: 12,
+    color: c.textMuted,
+    fontWeight: '500',
+    marginTop: 3,
+  },
+  statusPill: {
+    paddingHorizontal: 9,
+    paddingVertical: 5,
+    borderRadius: borderRadius.full,
+    borderWidth: StyleSheet.hairlineWidth,
+  },
+  statusText: {
+    fontSize: 10,
+    fontWeight: '800',
+    letterSpacing: 0.3,
+    textTransform: 'uppercase',
   },
 
-  // ── Small secondary links row ─────────────────────────────────────────────
-  linkRow: {
+  actionGrid: {
     flexDirection: 'row',
+    flexWrap: 'wrap',
     gap: spacing.sm,
     paddingHorizontal: spacing.lg,
     marginBottom: spacing.xl,
   },
-  linkBtn: {
-    flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.sm,
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.md,
-    borderRadius: borderRadius.lg,
+  actionTile: {
+    width: '47.5%',
+    flexGrow: 1,
+    minWidth: '45%',
+    minHeight: 86,
+    borderRadius: borderRadius.md,
     backgroundColor: c.bgSurface,
     borderWidth: StyleSheet.hairlineWidth,
     borderColor: c.border,
-    minHeight: 48,
+    padding: spacing.md,
+    justifyContent: 'space-between',
   },
-  linkLabel: { flex: 1, fontSize: 14, fontWeight: '600', color: c.textPrimary },
-  linkPressed: { opacity: 0.7 },
+  actionTilePressed: {
+    backgroundColor: c.bgElevated,
+    borderColor: `${c.gold}44`,
+  },
+  actionIconWrap: {
+    width: 36,
+    height: 36,
+    borderRadius: 11,
+    backgroundColor: c.bgElevated,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: spacing.md,
+  },
+  actionIconPrimary: {
+    backgroundColor: `${c.gold}16`,
+  },
+  actionLabel: {
+    fontSize: 14,
+    fontWeight: '800',
+    color: c.textPrimary,
+    letterSpacing: -0.1,
+  },
+  actionSub: {
+    fontSize: 11,
+    color: c.textMuted,
+    fontWeight: '600',
+    marginTop: 2,
+  },
 }));
 
 function alertTone(severity: string, c: ReturnType<typeof useColors>) {
-  if (severity === 'critical') return { bg: `${c.danger}22`, fg: c.danger };
-  if (severity === 'warning')  return { bg: `${c.warning}22`, fg: c.warning };
+  if (severity === 'critical') return { bg: `${c.danger}18`, fg: c.danger };
+  if (severity === 'warning') return { bg: `${c.warning}20`, fg: c.warning };
   return { bg: c.bgElevated, fg: c.textSecondary };
 }
 
+function statusTone(status: OwnerReservationSlot['status'], c: ReturnType<typeof useColors>) {
+  if (status === 'risk') return { bg: `${c.danger}16`, border: `${c.danger}44`, fg: c.danger, label: 'Risk' };
+  if (status === 'pending') return { bg: `${c.warning}18`, border: `${c.warning}44`, fg: c.warning, label: 'Pending' };
+  if (status === 'seated') return { bg: `${c.success}16`, border: `${c.success}44`, fg: c.success, label: 'Seated' };
+  return { bg: c.bgElevated, border: c.border, fg: c.textSecondary, label: 'Booked' };
+}
+
 function greetingFor(hour: number) {
-  if (hour < 5)  return 'Late night,';
+  if (hour < 5) return 'Late night,';
   if (hour < 12) return 'Good morning,';
   if (hour < 17) return 'Good afternoon,';
   if (hour < 22) return 'Good evening,';
@@ -308,37 +407,48 @@ export default function OwnerHomeScreen() {
     WALKIN_QUEUE.length > 0
       ? Math.round(WALKIN_QUEUE.reduce((a, b) => a + b.waitMins, 0) / WALKIN_QUEUE.length)
       : 0;
-  const tablesOccupied = OWNER_FLOOR_TABLES.filter((t) => t.status === 'occupied').length;
-  const tablesTotal    = OWNER_FLOOR_TABLES.length;
-
-  const hour           = new Date().getHours();
-  const greeting       = greetingFor(hour);
-  const criticalCount  = OWNER_ALERTS_STRIP.filter((a) => a.severity === 'critical').length;
-  const topAlerts      = OWNER_ALERTS_STRIP.slice(0, 3);
+  const seatedTables = OWNER_FLOOR_TABLES.filter((t) => t.status === 'occupied').length;
+  const tablesTotal = OWNER_FLOOR_TABLES.length;
+  const hour = new Date().getHours();
+  const greeting = greetingFor(hour);
+  const criticalCount = OWNER_ALERTS_STRIP.filter((a) => a.severity === 'critical').length;
   const bookingsTonight = OWNER_RESERVATIONS.length;
+  const riskCount = OWNER_RESERVATIONS.filter((r) => r.status === 'risk').length;
+  const pendingCount = OWNER_RESERVATIONS.filter((r) => r.status === 'pending').length;
+  const topAlerts = OWNER_ALERTS_STRIP.slice(0, 2);
+  const timeline = OWNER_RESERVATIONS.slice(0, 4);
 
-  // Grouped action list (Cal AI style)
-  const actions: { icon: IoniconName; label: string; sub: string; route: string; primary?: boolean }[] = [
+  const quickActions: {
+    icon: IoniconName;
+    label: string;
+    sub: string;
+    route: string;
+    primary?: boolean;
+  }[] = [
     {
       icon: 'calendar-outline',
-      label: 'Bookings',
-      sub: `${LIVE_METRICS.tonightCovers} guests booked tonight`,
+      label: 'Reservations',
+      sub: `${bookingsTonight} tonight`,
       route: '/(staff)/reservations',
       primary: true,
     },
     {
-      icon: 'people-outline',
-      label: 'Waitlist',
-      sub: WAITLIST_ENTRIES.length === 0
-        ? 'No one waiting right now'
-        : `${WAITLIST_ENTRIES.length} guests waiting · ${waitAvg}m avg`,
-      route: '/(staff)/waitlist',
+      icon: 'pricetag-outline',
+      label: 'Post promo',
+      sub: 'Fill slow slots',
+      route: '/(staff)/promotions/new',
     },
     {
-      icon: 'pricetag-outline',
-      label: 'Promotions',
-      sub: 'View and manage your deals',
-      route: '/(staff)/promotions',
+      icon: 'grid-outline',
+      label: 'Floor',
+      sub: `${seatedTables}/${tablesTotal} seated`,
+      route: '/(staff)/floor',
+    },
+    {
+      icon: 'people-outline',
+      label: 'Waitlist',
+      sub: WAITLIST_ENTRIES.length === 0 ? 'Clear' : `${WAITLIST_ENTRIES.length} waiting`,
+      route: '/(staff)/waitlist',
     },
   ];
 
@@ -351,12 +461,17 @@ export default function OwnerHomeScreen() {
           paddingBottom: scrollPad,
         }}
       >
-        {/* ── Header — matches diner profile topBar ── */}
         <View style={styles.topBar}>
           <View style={styles.topBarText}>
             <Text style={styles.greetingLine1}>{greeting}</Text>
             <Text style={styles.greetingLine2}>{OWNER_FIRST_NAME}</Text>
-            <Text style={styles.subline}>Nova Ristorante</Text>
+            <View style={styles.sublineRow}>
+              <Text style={styles.subline}>{RESTAURANT_NAME}</Text>
+              <View style={styles.livePill}>
+                <View style={styles.liveDot} />
+                <Text style={styles.liveText}>Live</Text>
+              </View>
+            </View>
           </View>
           <Pressable
             onPress={() => router.push('/(staff)/notifications' as never)}
@@ -369,46 +484,45 @@ export default function OwnerHomeScreen() {
           </Pressable>
         </View>
 
-        {/* ── Booking trend — line chart (tables / reservations, not revenue) ── */}
-        <HomeBookingTrendCard
-          label="Bookings this week"
-          headlineValue={String(bookingsTonight)}
-          headlineHint="reservations on the books for tonight"
-          dayLabels={BOOKING_TREND_WEEK.dayLabels}
-          counts={BOOKING_TREND_WEEK.counts}
-          vsPrevWeekPct={BOOKING_TREND_WEEK.vsPrevWeekPct}
+        <Pressable
           onPress={() => router.push('/(staff)/reservations' as never)}
-        />
-
-        {/* ── Tonight snapshot — 3 Uber-style status cells ── */}
-        <View style={styles.snapshotCard}>
-          <View style={styles.snapshotCell}>
-            <Text style={[styles.snapshotValue, styles.snapshotValueGold]}>
-              {tablesOccupied}
-              <Text style={{ fontSize: 20, fontWeight: '600', color: c.textMuted }}>
-                /{tablesTotal}
+          style={({ pressed }) => [styles.commandCard, pressed && styles.rowPressed]}
+          accessibilityRole="button"
+          accessibilityLabel="Open reservations"
+        >
+          <View style={styles.commandTopRow}>
+            <View style={{ flex: 1 }}>
+              <Text style={styles.commandLabel}>Tonight</Text>
+              <Text style={styles.commandTitle}>{bookingsTonight} reservations on deck</Text>
+              <Text style={styles.commandSub}>
+                {LIVE_METRICS.tonightCovers} covers booked. {pendingCount} need confirmation.
               </Text>
-            </Text>
-            <Text style={styles.snapshotLabel}>Tables{'\n'}seated</Text>
+            </View>
+            <View style={styles.commandIcon}>
+              <Ionicons name="calendar" size={22} color={c.gold} />
+            </View>
           </View>
-          <View style={styles.snapshotDivider} />
-          <View style={styles.snapshotCell}>
-            <Text style={styles.snapshotValue}>{LIVE_METRICS.tonightCovers}</Text>
-            <Text style={styles.snapshotLabel}>Guests{'\n'}tonight</Text>
+          <View style={styles.commandStats}>
+            <View style={styles.commandStat}>
+              <Text style={[styles.statValue, styles.statValueAccent]}>{bookingsTonight}</Text>
+              <Text style={styles.statLabel}>Reservations</Text>
+            </View>
+            <View style={styles.commandDivider} />
+            <View style={styles.commandStat}>
+              <Text style={styles.statValue}>{LIVE_METRICS.tonightCovers}</Text>
+              <Text style={styles.statLabel}>Covers</Text>
+            </View>
+            <View style={styles.commandDivider} />
+            <View style={styles.commandStat}>
+              <Text style={styles.statValue}>{WAITLIST_ENTRIES.length}</Text>
+              <Text style={styles.statLabel}>{waitAvg > 0 ? `${waitAvg}m wait` : 'Waitlist'}</Text>
+            </View>
           </View>
-          <View style={styles.snapshotDivider} />
-          <View style={styles.snapshotCell}>
-            <Text style={styles.snapshotValue}>{WAITLIST_ENTRIES.length}</Text>
-            <Text style={styles.snapshotLabel}>
-              {WAITLIST_ENTRIES.length === 0 ? 'No\nwait' : `Waiting\n${waitAvg}m avg`}
-            </Text>
-          </View>
-        </View>
+        </Pressable>
 
-        {/* ── Heads up — DiscoverHorizontalSection header pattern ── */}
         <View style={styles.sectionHeader}>
-          <Text style={styles.sectionTitle}>Heads up</Text>
-          {OWNER_ALERTS_STRIP.length > topAlerts.length && (
+          <Text style={styles.sectionTitle}>Needs attention</Text>
+          {OWNER_ALERTS_STRIP.length > topAlerts.length ? (
             <Pressable
               onPress={() => router.push('/(staff)/notifications' as never)}
               style={styles.seeAllBtn}
@@ -417,108 +531,139 @@ export default function OwnerHomeScreen() {
               <Text style={styles.seeAllText}>See all</Text>
               <Ionicons name="chevron-forward" size={14} color={c.gold} />
             </Pressable>
-          )}
+          ) : null}
         </View>
 
-        {OWNER_ALERTS_STRIP.length === 0 ? (
-          <View style={styles.allClearCard}>
-            <View style={styles.allClearIcon}>
-              <Ionicons name="checkmark" size={20} color={c.success} />
+        <View style={styles.attentionCard}>
+          {topAlerts.length === 0 ? (
+            <View style={styles.attentionRow}>
+              <View style={styles.allClearIcon}>
+                <Ionicons name="checkmark" size={18} color={c.success} />
+              </View>
+              <View style={styles.attentionTextCol}>
+                <Text style={styles.attentionTitle}>Everything looks controlled</Text>
+                <Text style={styles.attentionSub}>No urgent reservation or floor issues</Text>
+              </View>
             </View>
-            <View style={styles.allClearTextCol}>
-              <Text style={styles.allClearTitle}>You're all good!</Text>
-              <Text style={styles.allClearSub}>No issues need your attention right now</Text>
-            </View>
-          </View>
-        ) : (
-          <View style={styles.alertCard}>
-            {topAlerts.map((a, i) => {
-              const tone = alertTone(a.severity, c);
+          ) : (
+            topAlerts.map((alert, index) => {
+              const tone = alertTone(alert.severity, c);
               return (
                 <Pressable
-                  key={a.id}
+                  key={alert.id}
                   onPress={() => router.push('/(staff)/notifications' as never)}
                   style={({ pressed }) => [
-                    styles.alertRow,
-                    i > 0 && styles.alertRowDivider,
-                    pressed && styles.alertRowPressed,
+                    styles.attentionRow,
+                    index > 0 && styles.rowDivider,
+                    pressed && styles.rowPressed,
                   ]}
                   accessibilityRole="button"
-                  accessibilityLabel={a.message}
+                  accessibilityLabel={alert.message}
                 >
-                  <View style={[styles.alertIconBox, { backgroundColor: tone.bg }]}>
+                  <View style={[styles.attentionIcon, { backgroundColor: tone.bg }]}>
                     <Ionicons
-                      name={a.severity === 'critical' ? 'warning-outline' : 'information-circle-outline'}
+                      name={alert.severity === 'critical' ? 'warning-outline' : 'time-outline'}
                       size={18}
                       color={tone.fg}
                     />
                   </View>
-                  <View style={styles.alertTextCol}>
-                    <Text style={styles.alertMsg} numberOfLines={2}>{a.message}</Text>
-                    <Text style={styles.alertSub}>Tap to view</Text>
+                  <View style={styles.attentionTextCol}>
+                    <Text style={styles.attentionTitle} numberOfLines={2}>
+                      {alert.message}
+                    </Text>
+                    <Text style={styles.attentionSub}>
+                      {alert.severity === 'critical' ? 'Handle now' : 'Watch closely'}
+                    </Text>
                   </View>
                   <Ionicons name="chevron-forward" size={16} color={c.textMuted} />
                 </Pressable>
               );
-            })}
-          </View>
-        )}
-
-        {/* ── Quick access — Cal AI grouped list in one card ── */}
-        <View style={styles.sectionHeader}>
-          <Text style={styles.sectionTitle}>Quick access</Text>
+            })
+          )}
         </View>
 
-        <View style={styles.actionCard}>
-          {actions.map((action, i) => (
+        <View style={styles.sectionHeader}>
+          <Text style={styles.sectionTitle}>Reservation flow</Text>
+          <Pressable
+            onPress={() => router.push('/(staff)/reservations' as never)}
+            style={styles.seeAllBtn}
+            hitSlop={8}
+          >
+            <Text style={styles.seeAllText}>Manage</Text>
+            <Ionicons name="chevron-forward" size={14} color={c.gold} />
+          </Pressable>
+        </View>
+
+        <View style={styles.timelineCard}>
+          {timeline.map((reservation, index) => {
+            const tone = statusTone(reservation.status, c);
+            return (
+              <Pressable
+                key={reservation.id}
+                onPress={() => router.push('/(staff)/reservations' as never)}
+                style={({ pressed }) => [
+                  styles.timelineRow,
+                  index > 0 && styles.rowDivider,
+                  pressed && styles.rowPressed,
+                ]}
+                accessibilityRole="button"
+                accessibilityLabel={`${reservation.guestName} at ${reservation.startTime}`}
+              >
+                <View style={styles.timeBlock}>
+                  <Text style={styles.timeText}>{reservation.startTime}</Text>
+                  <Text style={styles.partyText}>Party {reservation.partySize}</Text>
+                </View>
+                <View style={styles.guestCol}>
+                  <Text style={styles.guestName} numberOfLines={1}>
+                    {reservation.guestName}
+                  </Text>
+                  <Text style={styles.guestMeta} numberOfLines={1}>
+                    {reservation.table ? reservation.table : 'Table not assigned'}
+                    {reservation.vip ? ' · VIP' : ''}
+                    {reservation.notes ? ` · ${reservation.notes}` : ''}
+                  </Text>
+                </View>
+                <View style={[styles.statusPill, { backgroundColor: tone.bg, borderColor: tone.border }]}>
+                  <Text style={[styles.statusText, { color: tone.fg }]}>{tone.label}</Text>
+                </View>
+              </Pressable>
+            );
+          })}
+        </View>
+
+        <View style={styles.sectionHeader}>
+          <Text style={styles.sectionTitle}>Quick actions</Text>
+        </View>
+
+        <View style={styles.actionGrid}>
+          {quickActions.map((action) => (
             <Pressable
               key={action.label}
               onPress={() => router.push(action.route as never)}
-              style={({ pressed }) => [
-                styles.actionRow,
-                i > 0 && styles.actionRowDivider,
-                pressed && styles.actionRowPressed,
-              ]}
+              style={({ pressed }) => [styles.actionTile, pressed && styles.actionTilePressed]}
               accessibilityRole="button"
               accessibilityLabel={action.label}
             >
-              <View style={[styles.actionIconBox, action.primary && styles.actionIconPrimary]}>
-                <Ionicons
-                  name={action.icon}
-                  size={20}
-                  color={action.primary ? c.gold : c.textSecondary}
-                />
+              <View style={[styles.actionIconWrap, action.primary && styles.actionIconPrimary]}>
+                <Ionicons name={action.icon} size={19} color={action.primary ? c.gold : c.textSecondary} />
               </View>
-              <View style={styles.actionTextCol}>
+              <View>
                 <Text style={styles.actionLabel}>{action.label}</Text>
                 <Text style={styles.actionSub}>{action.sub}</Text>
               </View>
-              <Ionicons name="chevron-forward" size={16} color={c.textMuted} />
             </Pressable>
           ))}
         </View>
 
-        {/* ── Secondary links ── */}
-        <View style={styles.linkRow}>
-          <Pressable
-            onPress={() => router.push('/(staff)/floor' as never)}
-            style={({ pressed }) => [styles.linkBtn, pressed && styles.linkPressed]}
-            accessibilityRole="button"
-          >
-            <Ionicons name="grid-outline" size={18} color={c.gold} />
-            <Text style={styles.linkLabel}>Floor plan</Text>
-            <Ionicons name="chevron-forward" size={14} color={c.textMuted} />
-          </Pressable>
-          <Pressable
-            onPress={() => router.push('/(staff)/analytics' as never)}
-            style={({ pressed }) => [styles.linkBtn, pressed && styles.linkPressed]}
-            accessibilityRole="button"
-          >
-            <Ionicons name="bar-chart-outline" size={18} color={c.gold} />
-            <Text style={styles.linkLabel}>Analytics</Text>
-            <Ionicons name="chevron-forward" size={14} color={c.textMuted} />
-          </Pressable>
-        </View>
+        <HomeBookingTrendCard
+          label="Reservation momentum"
+          headlineValue={`${riskCount} risk`}
+          headlineHint={`${BOOKING_TREND_WEEK.vsPrevWeekPct}% more bookings than last week`}
+          dayLabels={BOOKING_TREND_WEEK.dayLabels}
+          counts={BOOKING_TREND_WEEK.counts}
+          vsPrevWeekPct={BOOKING_TREND_WEEK.vsPrevWeekPct}
+          onPress={() => router.push('/(staff)/reservations' as never)}
+        />
       </ScrollView>
     </View>
   );

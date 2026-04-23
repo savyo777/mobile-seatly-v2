@@ -1,7 +1,7 @@
 import React from 'react';
 import { Text, Pressable, StyleSheet, ScrollView } from 'react-native';
 import type { RevenuePeriod } from '@/lib/mock/ownerApp';
-import { ownerColors, ownerRadii, ownerSpace } from '@/lib/theme/ownerTheme';
+import { createStyles, spacing, borderRadius } from '@/lib/theme';
 
 const PERIODS: { key: RevenuePeriod; label: string }[] = [
   { key: 'day', label: 'Day' },
@@ -18,6 +18,8 @@ type Props = {
 };
 
 export function PeriodToggle({ value, onChange }: Props) {
+  const styles = useStyles();
+
   return (
     <ScrollView
       horizontal
@@ -44,33 +46,33 @@ export function PeriodToggle({ value, onChange }: Props) {
   );
 }
 
-const styles = StyleSheet.create({
+const useStyles = createStyles((c) => ({
   row: {
     flexDirection: 'row',
-    gap: ownerSpace.xs,
+    gap: spacing.xs,
     paddingVertical: 2,
   },
   chip: {
     paddingVertical: 7,
-    paddingHorizontal: ownerSpace.sm,
-    borderRadius: ownerRadii.sm,
-    backgroundColor: ownerColors.bgSurface,
+    paddingHorizontal: spacing.sm,
+    borderRadius: borderRadius.sm,
+    backgroundColor: c.bgSurface,
     borderWidth: StyleSheet.hairlineWidth,
-    borderColor: ownerColors.border,
+    borderColor: c.border,
   },
   chipActive: {
-    backgroundColor: ownerColors.goldSubtle,
-    borderColor: ownerColors.gold,
+    backgroundColor: `${c.gold}16`,
+    borderColor: c.gold,
   },
   chipText: {
     fontSize: 14,
     fontWeight: '600',
-    color: ownerColors.textMuted,
+    color: c.textMuted,
   },
   chipTextActive: {
-    color: ownerColors.gold,
+    color: c.gold,
   },
   pressed: {
     opacity: 0.85,
   },
-});
+}));
