@@ -1169,14 +1169,13 @@ const useScheduleStyles = createStyles((c) => ({
     marginBottom: 4,
   },
   ownerHeaderTitle: {
-    fontSize: 30,
+    fontSize: 28,
     fontWeight: '800',
     color: c.textPrimary,
-    letterSpacing: -0.7,
-    lineHeight: 36,
+    letterSpacing: -0.5,
   },
   ownerHeaderSubtitle: {
-    marginTop: 4,
+    marginTop: 2,
     fontSize: 13,
     fontWeight: '500',
     color: c.textSecondary,

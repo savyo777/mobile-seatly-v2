@@ -17,137 +17,137 @@ import {
 import { formatCurrency } from '@/lib/utils/formatCurrency';
 import { useOwnerTabScrollPadding } from '@/hooks/useOwnerTabScrollPadding';
 
+type IoniconName = React.ComponentProps<typeof Ionicons>['name'];
+
 const useStyles = createStyles((c) => ({
   root: { flex: 1, backgroundColor: c.bgBase },
 
-  // ── Top bar ──────────────────────────────────────────────────────────────
+  // ── Header (matches diner profile top bar exactly) ───────────────────────
   topBar: {
     flexDirection: 'row',
-    alignItems: 'center',
+    alignItems: 'flex-start',
     justifyContent: 'space-between',
     paddingHorizontal: spacing.lg,
-    paddingBottom: spacing.sm,
+    paddingBottom: spacing.md,
   },
-  topLeft: { gap: 2 },
-  greeting: {
-    fontSize: 13,
-    fontWeight: '600',
-    color: c.gold,
-    letterSpacing: 0.2,
-  },
-  title: {
-    fontSize: 30,
+  topBarText: { flex: 1, paddingRight: spacing.md },
+  // Two-line greeting — same as diner discover screen
+  greetingLine1: {
+    fontSize: 28,
     fontWeight: '800',
     color: c.textPrimary,
-    letterSpacing: -0.7,
-    lineHeight: 36,
+    letterSpacing: -0.6,
+    lineHeight: 34,
   },
-  subtitle: {
+  greetingLine2: {
+    fontSize: 28,
+    fontWeight: '800',
+    color: c.gold,
+    letterSpacing: -0.6,
+    lineHeight: 34,
+  },
+  subline: {
     fontSize: 13,
-    fontWeight: '500',
-    color: c.textSecondary,
-    marginTop: 2,
+    color: c.textMuted,
+    marginTop: 4,
   },
+  // Settings/notif button — mirrors diner profile settingsBtn exactly
   notifBtn: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    backgroundColor: c.bgSurface,
+    width: 38,
+    height: 38,
+    borderRadius: 19,
+    backgroundColor: c.bgElevated,
     borderWidth: StyleSheet.hairlineWidth,
     borderColor: c.border,
     alignItems: 'center',
     justifyContent: 'center',
+    marginTop: 4,
   },
-  notifPressed: {
-    backgroundColor: c.bgElevated,
-    transform: [{ scale: 0.96 }],
-  },
-  badgeWrap: {
+  notifPressed: { opacity: 0.7 },
+  badgeDot: {
     position: 'absolute',
-    top: 7,
-    right: 7,
-    minWidth: 16,
-    height: 16,
-    borderRadius: 8,
+    top: 6,
+    right: 6,
+    width: 8,
+    height: 8,
+    borderRadius: 4,
     backgroundColor: c.danger,
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingHorizontal: 3,
-  },
-  badgeText: {
-    fontSize: 9,
-    fontWeight: '800',
-    color: '#fff',
+    borderWidth: 1.5,
+    borderColor: c.bgBase,
   },
 
   // ── Tonight snapshot ─────────────────────────────────────────────────────
+  // Same card style as diner profile hub row
   snapshotCard: {
     marginHorizontal: spacing.lg,
-    marginBottom: spacing.md,
-    backgroundColor: c.bgSurface,
+    marginBottom: spacing.xl,
     borderRadius: borderRadius.xl,
+    backgroundColor: c.bgSurface,
     borderWidth: StyleSheet.hairlineWidth,
     borderColor: c.border,
-    paddingVertical: spacing.lg,
-    paddingHorizontal: spacing.md,
     flexDirection: 'row',
-    alignItems: 'stretch',
+    paddingVertical: spacing.lg,
   },
   snapshotCell: {
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    gap: 5,
-    paddingHorizontal: 4,
-  },
-  snapshotValue: {
-    fontSize: 30,
-    fontWeight: '800',
-    color: c.textPrimary,
-    letterSpacing: -0.8,
-    lineHeight: 34,
-  },
-  snapshotValueGold: { color: c.gold },
-  snapshotLabel: {
-    fontSize: 12,
-    fontWeight: '600',
-    color: c.textMuted,
-    textAlign: 'center',
-    lineHeight: 15,
+    gap: 6,
+    paddingHorizontal: spacing.sm,
   },
   snapshotDivider: {
     width: StyleSheet.hairlineWidth,
     backgroundColor: c.border,
     marginVertical: 4,
   },
-
-  // ── Section labels (plain, conversational) ───────────────────────────────
-  sectionRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: spacing.lg,
-    marginBottom: spacing.sm,
-    marginTop: spacing.xs,
-  },
-  sectionLabel: {
-    fontSize: 15,
-    fontWeight: '700',
+  snapshotValue: {
+    fontSize: 32,
+    fontWeight: '800',
     color: c.textPrimary,
-    letterSpacing: -0.1,
+    letterSpacing: -1,
+    lineHeight: 36,
+  },
+  snapshotValueGold: { color: c.gold },
+  snapshotLabel: {
+    fontSize: 12,
+    fontWeight: '500',
+    color: c.textMuted,
+    textAlign: 'center',
+    lineHeight: 16,
+  },
+
+  // ── Section headers (exact DiscoverHorizontalSection pattern) ────────────
+  sectionHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: spacing.lg,
+    marginBottom: spacing.md,
+  },
+  sectionTitle: {
+    fontSize: 18,
+    fontWeight: '800',
+    color: c.textPrimary,
+    letterSpacing: -0.3,
+    flex: 1,
   },
   seeAllBtn: {
-    fontSize: 13,
-    fontWeight: '700',
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 2,
+  },
+  seeAllText: {
+    fontSize: 12,
+    fontWeight: '600',
     color: c.gold,
   },
 
-  // ── Alerts ───────────────────────────────────────────────────────────────
-  attentionCard: {
+  // ── Alert card ───────────────────────────────────────────────────────────
+  alertCard: {
     marginHorizontal: spacing.lg,
-    marginBottom: spacing.md,
-    backgroundColor: c.bgSurface,
+    marginBottom: spacing.xl,
     borderRadius: borderRadius.xl,
+    backgroundColor: c.bgSurface,
     borderWidth: StyleSheet.hairlineWidth,
     borderColor: c.border,
     overflow: 'hidden',
@@ -155,172 +155,146 @@ const useStyles = createStyles((c) => ({
   alertRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: spacing.md,
     paddingHorizontal: spacing.md,
-    paddingVertical: 16,
-    minHeight: 64,
+    paddingVertical: spacing.md,
+    gap: spacing.md,
+    minHeight: 60,
   },
   alertRowDivider: {
     borderTopWidth: StyleSheet.hairlineWidth,
     borderTopColor: c.border,
   },
-  alertIcon: {
+  alertRowPressed: { backgroundColor: c.bgElevated },
+  alertIconBox: {
     width: 36,
     height: 36,
-    borderRadius: 12,
+    borderRadius: 10,
     alignItems: 'center',
     justifyContent: 'center',
     flexShrink: 0,
   },
-  alertTextCol: { flex: 1, gap: 2 },
-  alertTitle: {
+  alertTextCol: { flex: 1 },
+  alertMsg: {
     fontSize: 14,
-    fontWeight: '700',
+    fontWeight: '600',
     color: c.textPrimary,
     lineHeight: 19,
   },
-  alertSub: {
-    fontSize: 12,
-    fontWeight: '500',
-    color: c.textMuted,
-  },
+  alertSub: { fontSize: 12, color: c.textMuted, marginTop: 2 },
+
+  // All-clear
   allClearCard: {
     marginHorizontal: spacing.lg,
-    marginBottom: spacing.md,
-    backgroundColor: c.bgSurface,
+    marginBottom: spacing.xl,
     borderRadius: borderRadius.xl,
+    backgroundColor: c.bgSurface,
     borderWidth: StyleSheet.hairlineWidth,
     borderColor: c.border,
     paddingVertical: spacing.xl,
-    paddingHorizontal: spacing.md,
-    alignItems: 'center',
-    gap: 8,
-  },
-  allClearCircle: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    backgroundColor: `${c.success}1A`,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  allClearTitle: {
-    fontSize: 15,
-    fontWeight: '700',
-    color: c.textPrimary,
-  },
-  allClearSub: {
-    fontSize: 13,
-    color: c.textMuted,
-    fontWeight: '500',
-  },
-
-  // ── Big action buttons ───────────────────────────────────────────────────
-  actionsCol: {
     paddingHorizontal: spacing.lg,
-    gap: spacing.sm,
-    marginBottom: spacing.md,
-  },
-  actionBtn: {
-    minHeight: 76,
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.md,
-    borderRadius: borderRadius.xl,
     flexDirection: 'row',
     alignItems: 'center',
     gap: spacing.md,
   },
-  actionPrimary: {
-    backgroundColor: c.gold,
-    shadowColor: c.gold,
-    shadowOpacity: 0.3,
-    shadowRadius: 14,
-    shadowOffset: { width: 0, height: 6 },
-    elevation: 6,
-  },
-  actionSecondary: {
-    backgroundColor: c.bgSurface,
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: c.border,
-  },
-  actionIconWrap: {
-    width: 44,
-    height: 44,
-    borderRadius: 15,
+  allClearIcon: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: `${c.success}18`,
     alignItems: 'center',
     justifyContent: 'center',
     flexShrink: 0,
   },
-  actionIconPrimary: { backgroundColor: 'rgba(255,255,255,0.22)' },
-  actionIconSecondary: { backgroundColor: `${c.gold}1A` },
-  actionTextCol: { flex: 1, gap: 3 },
-  actionTitle: {
-    fontSize: 16,
-    fontWeight: '800',
-    color: '#FFFFFF',
-    letterSpacing: -0.2,
+  allClearTextCol: { flex: 1 },
+  allClearTitle: { fontSize: 15, fontWeight: '700', color: c.textPrimary },
+  allClearSub: { fontSize: 13, color: c.textMuted, marginTop: 2 },
+
+  // ── Cal AI-style grouped action list ─────────────────────────────────────
+  // One card, rows with dividers — identical to ChevronSettingRow container
+  actionCard: {
+    marginHorizontal: spacing.lg,
+    marginBottom: spacing.xl,
+    borderRadius: borderRadius.xl,
+    backgroundColor: c.bgSurface,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: c.border,
+    overflow: 'hidden',
   },
-  actionTitleSecondary: {
-    fontSize: 16,
-    fontWeight: '800',
+  actionRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.md,
+    gap: spacing.md,
+    minHeight: 68,
+  },
+  actionRowDivider: {
+    borderTopWidth: StyleSheet.hairlineWidth,
+    borderTopColor: c.border,
+  },
+  actionRowPressed: { backgroundColor: c.bgElevated },
+  actionIconBox: {
+    width: 44,
+    height: 44,
+    borderRadius: 14,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: c.bgElevated,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: c.border,
+    flexShrink: 0,
+  },
+  actionTextCol: { flex: 1 },
+  actionLabel: {
+    fontSize: 15,
+    fontWeight: '700',
     color: c.textPrimary,
-    letterSpacing: -0.2,
+    letterSpacing: -0.1,
   },
-  actionSub: {
-    fontSize: 12,
-    fontWeight: '600',
-    color: 'rgba(255,255,255,0.85)',
-  },
-  actionSubSecondary: {
-    fontSize: 12,
-    fontWeight: '600',
-    color: c.textMuted,
-  },
-  actionPressed: {
-    opacity: 0.9,
-    transform: [{ scale: 0.98 }],
+  actionSub: { fontSize: 13, color: c.textMuted, marginTop: 2 },
+
+  // First row gets the gold icon treatment (primary action)
+  actionIconPrimary: {
+    backgroundColor: `${c.gold}18`,
+    borderColor: `${c.gold}33`,
   },
 
-  // ── Small link row ───────────────────────────────────────────────────────
+  // ── Small secondary links row ─────────────────────────────────────────────
   linkRow: {
     flexDirection: 'row',
     gap: spacing.sm,
     paddingHorizontal: spacing.lg,
-    marginBottom: spacing.md,
+    marginBottom: spacing.xl,
   },
   linkBtn: {
     flex: 1,
-    minHeight: 52,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
     paddingHorizontal: spacing.md,
-    paddingVertical: spacing.sm,
+    paddingVertical: spacing.md,
     borderRadius: borderRadius.lg,
     backgroundColor: c.bgSurface,
     borderWidth: StyleSheet.hairlineWidth,
     borderColor: c.border,
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.sm,
+    minHeight: 48,
   },
-  linkLabel: {
-    flex: 1,
-    fontSize: 14,
-    fontWeight: '700',
-    color: c.textPrimary,
-  },
+  linkLabel: { flex: 1, fontSize: 14, fontWeight: '600', color: c.textPrimary },
+  linkPressed: { opacity: 0.7 },
 }));
 
-function alertTone(s: string, c: ReturnType<typeof useColors>): { bg: string; fg: string } {
-  if (s === 'critical') return { bg: `${c.danger}22`, fg: c.danger };
-  if (s === 'warning') return { bg: `${c.warning}22`, fg: c.warning };
+function alertTone(severity: string, c: ReturnType<typeof useColors>) {
+  if (severity === 'critical') return { bg: `${c.danger}22`, fg: c.danger };
+  if (severity === 'warning')  return { bg: `${c.warning}22`, fg: c.warning };
   return { bg: c.bgElevated, fg: c.textSecondary };
 }
 
-function greetingFor(hour: number): string {
-  if (hour < 5) return 'Late night';
-  if (hour < 12) return 'Good morning';
-  if (hour < 17) return 'Good afternoon';
-  if (hour < 22) return 'Good evening';
-  return 'Good night';
+function greetingFor(hour: number) {
+  if (hour < 5)  return 'Late night,';
+  if (hour < 12) return 'Good morning,';
+  if (hour < 17) return 'Good afternoon,';
+  if (hour < 22) return 'Good evening,';
+  return 'Good night,';
 }
 
 export default function OwnerHomeScreen() {
@@ -335,8 +309,8 @@ export default function OwnerHomeScreen() {
   const healthSummary = useMemo(
     () =>
       trendUp
-        ? `Tracking ${day.trendPct}% ahead of last week.`
-        : `Pacing ${Math.abs(day.trendPct)}% behind last week — a promo could help.`,
+        ? `+${day.trendPct}% vs last week — looking good.`
+        : `${day.trendPct}% vs last week — a promo could help.`,
     [trendUp, day.trendPct],
   );
 
@@ -345,12 +319,37 @@ export default function OwnerHomeScreen() {
       ? Math.round(WALKIN_QUEUE.reduce((a, b) => a + b.waitMins, 0) / WALKIN_QUEUE.length)
       : 0;
   const tablesOccupied = OWNER_FLOOR_TABLES.filter((t) => t.status === 'occupied').length;
-  const tablesTotal = OWNER_FLOOR_TABLES.length;
+  const tablesTotal    = OWNER_FLOOR_TABLES.length;
 
-  const hour = new Date().getHours();
-  const greeting = greetingFor(hour);
-  const criticalCount = OWNER_ALERTS_STRIP.filter((a) => a.severity === 'critical').length;
-  const topAlerts = OWNER_ALERTS_STRIP.slice(0, 2);
+  const hour           = new Date().getHours();
+  const greeting       = greetingFor(hour);
+  const criticalCount  = OWNER_ALERTS_STRIP.filter((a) => a.severity === 'critical').length;
+  const topAlerts      = OWNER_ALERTS_STRIP.slice(0, 3);
+
+  // Grouped action list (Cal AI style)
+  const actions: { icon: IoniconName; label: string; sub: string; route: string; primary?: boolean }[] = [
+    {
+      icon: 'calendar-outline',
+      label: 'Bookings',
+      sub: `${LIVE_METRICS.tonightCovers} guests booked tonight`,
+      route: '/(staff)/reservations',
+      primary: true,
+    },
+    {
+      icon: 'people-outline',
+      label: 'Waitlist',
+      sub: WAITLIST_ENTRIES.length === 0
+        ? 'No one waiting right now'
+        : `${WAITLIST_ENTRIES.length} guests waiting · ${waitAvg}m avg`,
+      route: '/(staff)/waitlist',
+    },
+    {
+      icon: 'pricetag-outline',
+      label: 'Promotions',
+      sub: 'View and manage your deals',
+      route: '/(staff)/promotions',
+    },
+  ];
 
   return (
     <View style={styles.root}>
@@ -361,12 +360,12 @@ export default function OwnerHomeScreen() {
           paddingBottom: scrollPad,
         }}
       >
-        {/* ── Single clean header ── */}
+        {/* ── Header — matches diner profile topBar ── */}
         <View style={styles.topBar}>
-          <View style={styles.topLeft}>
-            <Text style={styles.greeting}>{greeting}, {OWNER_FIRST_NAME}</Text>
-            <Text style={styles.title}>Tonight</Text>
-            <Text style={styles.subtitle}>Nova Ristorante</Text>
+          <View style={styles.topBarText}>
+            <Text style={styles.greetingLine1}>{greeting}</Text>
+            <Text style={styles.greetingLine2}>{OWNER_FIRST_NAME}</Text>
+            <Text style={styles.subline}>Nova Ristorante</Text>
           </View>
           <Pressable
             onPress={() => router.push('/(staff)/notifications' as never)}
@@ -374,16 +373,12 @@ export default function OwnerHomeScreen() {
             accessibilityRole="button"
             accessibilityLabel="Notifications"
           >
-            <Ionicons name="notifications-outline" size={20} color={c.textPrimary} />
-            {criticalCount > 0 && (
-              <View style={styles.badgeWrap}>
-                <Text style={styles.badgeText}>{criticalCount}</Text>
-              </View>
-            )}
+            <Ionicons name="notifications-outline" size={18} color={c.textPrimary} />
+            {criticalCount > 0 && <View style={styles.badgeDot} />}
           </Pressable>
         </View>
 
-        {/* ── Revenue hero (tap for full analytics) ── */}
+        {/* ── Revenue hero — tap to open full analytics ── */}
         <HomeHero
           label="Revenue today"
           value={formatCurrency(day.total, 'cad')}
@@ -395,12 +390,14 @@ export default function OwnerHomeScreen() {
           onPress={() => router.push('/(staff)/analytics' as never)}
         />
 
-        {/* ── Tonight at a glance ── */}
+        {/* ── Tonight snapshot — 3 Uber-style status cells ── */}
         <View style={styles.snapshotCard}>
           <View style={styles.snapshotCell}>
             <Text style={[styles.snapshotValue, styles.snapshotValueGold]}>
               {tablesOccupied}
-              <Text style={{ fontSize: 20, color: c.textMuted }}>/{tablesTotal}</Text>
+              <Text style={{ fontSize: 20, fontWeight: '600', color: c.textMuted }}>
+                /{tablesTotal}
+              </Text>
             </Text>
             <Text style={styles.snapshotLabel}>Tables{'\n'}seated</Text>
           </View>
@@ -413,38 +410,40 @@ export default function OwnerHomeScreen() {
           <View style={styles.snapshotCell}>
             <Text style={styles.snapshotValue}>{WAITLIST_ENTRIES.length}</Text>
             <Text style={styles.snapshotLabel}>
-              {WAITLIST_ENTRIES.length === 0 ? 'No wait' : `Waiting\n${waitAvg}m avg`}
+              {WAITLIST_ENTRIES.length === 0 ? 'No\nwait' : `Waiting\n${waitAvg}m avg`}
             </Text>
           </View>
         </View>
 
-        {/* ── Alerts ── */}
-        <View style={styles.sectionRow}>
-          <Text style={styles.sectionLabel}>Heads up</Text>
+        {/* ── Heads up — DiscoverHorizontalSection header pattern ── */}
+        <View style={styles.sectionHeader}>
+          <Text style={styles.sectionTitle}>Heads up</Text>
           {OWNER_ALERTS_STRIP.length > topAlerts.length && (
             <Pressable
               onPress={() => router.push('/(staff)/notifications' as never)}
+              style={styles.seeAllBtn}
               hitSlop={8}
-              accessibilityRole="button"
             >
-              <Text style={styles.seeAllBtn}>See all</Text>
+              <Text style={styles.seeAllText}>See all</Text>
+              <Ionicons name="chevron-forward" size={14} color={c.gold} />
             </Pressable>
           )}
         </View>
 
         {OWNER_ALERTS_STRIP.length === 0 ? (
           <View style={styles.allClearCard}>
-            <View style={styles.allClearCircle}>
-              <Ionicons name="checkmark" size={22} color={c.success} />
+            <View style={styles.allClearIcon}>
+              <Ionicons name="checkmark" size={20} color={c.success} />
             </View>
-            <Text style={styles.allClearTitle}>You're all good!</Text>
-            <Text style={styles.allClearSub}>No issues need your attention right now</Text>
+            <View style={styles.allClearTextCol}>
+              <Text style={styles.allClearTitle}>You're all good!</Text>
+              <Text style={styles.allClearSub}>No issues need your attention right now</Text>
+            </View>
           </View>
         ) : (
-          <View style={styles.attentionCard}>
+          <View style={styles.alertCard}>
             {topAlerts.map((a, i) => {
               const tone = alertTone(a.severity, c);
-              const isWarning = a.severity === 'critical' || a.severity === 'warning';
               return (
                 <Pressable
                   key={a.id}
@@ -452,21 +451,21 @@ export default function OwnerHomeScreen() {
                   style={({ pressed }) => [
                     styles.alertRow,
                     i > 0 && styles.alertRowDivider,
-                    pressed && { backgroundColor: c.bgElevated },
+                    pressed && styles.alertRowPressed,
                   ]}
                   accessibilityRole="button"
                   accessibilityLabel={a.message}
                 >
-                  <View style={[styles.alertIcon, { backgroundColor: tone.bg }]}>
+                  <View style={[styles.alertIconBox, { backgroundColor: tone.bg }]}>
                     <Ionicons
-                      name={isWarning ? 'warning-outline' : 'information-circle-outline'}
+                      name={a.severity === 'critical' ? 'warning-outline' : 'information-circle-outline'}
                       size={18}
                       color={tone.fg}
                     />
                   </View>
                   <View style={styles.alertTextCol}>
-                    <Text style={styles.alertTitle} numberOfLines={2}>{a.message}</Text>
-                    <Text style={styles.alertSub}>Tap to view details</Text>
+                    <Text style={styles.alertMsg} numberOfLines={2}>{a.message}</Text>
+                    <Text style={styles.alertSub}>Tap to view</Text>
                   </View>
                   <Ionicons name="chevron-forward" size={16} color={c.textMuted} />
                 </Pressable>
@@ -475,98 +474,59 @@ export default function OwnerHomeScreen() {
           </View>
         )}
 
-        {/* ── Main actions (stacked for clarity) ── */}
-        <View style={styles.sectionRow}>
-          <Text style={styles.sectionLabel}>Quick access</Text>
+        {/* ── Quick access — Cal AI grouped list in one card ── */}
+        <View style={styles.sectionHeader}>
+          <Text style={styles.sectionTitle}>Quick access</Text>
         </View>
 
-        <View style={styles.actionsCol}>
-          <Pressable
-            onPress={() => router.push('/(staff)/reservations' as never)}
-            style={({ pressed }) => [
-              styles.actionBtn,
-              styles.actionPrimary,
-              pressed && styles.actionPressed,
-            ]}
-            accessibilityRole="button"
-            accessibilityLabel="Open bookings"
-          >
-            <View style={[styles.actionIconWrap, styles.actionIconPrimary]}>
-              <Ionicons name="calendar" size={24} color="#FFFFFF" />
-            </View>
-            <View style={styles.actionTextCol}>
-              <Text style={styles.actionTitle}>Bookings</Text>
-              <Text style={styles.actionSub}>
-                {LIVE_METRICS.tonightCovers} guests booked tonight
-              </Text>
-            </View>
-            <Ionicons name="chevron-forward" size={18} color="rgba(255,255,255,0.7)" />
-          </Pressable>
-
-          <Pressable
-            onPress={() => router.push('/(staff)/waitlist' as never)}
-            style={({ pressed }) => [
-              styles.actionBtn,
-              styles.actionSecondary,
-              pressed && styles.actionPressed,
-            ]}
-            accessibilityRole="button"
-            accessibilityLabel="Open waitlist"
-          >
-            <View style={[styles.actionIconWrap, styles.actionIconSecondary]}>
-              <Ionicons name="people" size={24} color={c.gold} />
-            </View>
-            <View style={styles.actionTextCol}>
-              <Text style={styles.actionTitleSecondary}>Waitlist</Text>
-              <Text style={styles.actionSubSecondary}>
-                {WAITLIST_ENTRIES.length === 0
-                  ? 'No one waiting right now'
-                  : `${WAITLIST_ENTRIES.length} guests waiting · ${waitAvg}m avg wait`}
-              </Text>
-            </View>
-            <Ionicons name="chevron-forward" size={18} color={c.textMuted} />
-          </Pressable>
-
-          <Pressable
-            onPress={() => router.push('/(staff)/promotions' as never)}
-            style={({ pressed }) => [
-              styles.actionBtn,
-              styles.actionSecondary,
-              pressed && styles.actionPressed,
-            ]}
-            accessibilityRole="button"
-            accessibilityLabel="Open promotions"
-          >
-            <View style={[styles.actionIconWrap, styles.actionIconSecondary]}>
-              <Ionicons name="pricetag" size={24} color={c.gold} />
-            </View>
-            <View style={styles.actionTextCol}>
-              <Text style={styles.actionTitleSecondary}>Promotions</Text>
-              <Text style={styles.actionSubSecondary}>Manage your deals and offers</Text>
-            </View>
-            <Ionicons name="chevron-forward" size={18} color={c.textMuted} />
-          </Pressable>
+        <View style={styles.actionCard}>
+          {actions.map((action, i) => (
+            <Pressable
+              key={action.label}
+              onPress={() => router.push(action.route as never)}
+              style={({ pressed }) => [
+                styles.actionRow,
+                i > 0 && styles.actionRowDivider,
+                pressed && styles.actionRowPressed,
+              ]}
+              accessibilityRole="button"
+              accessibilityLabel={action.label}
+            >
+              <View style={[styles.actionIconBox, action.primary && styles.actionIconPrimary]}>
+                <Ionicons
+                  name={action.icon}
+                  size={20}
+                  color={action.primary ? c.gold : c.textSecondary}
+                />
+              </View>
+              <View style={styles.actionTextCol}>
+                <Text style={styles.actionLabel}>{action.label}</Text>
+                <Text style={styles.actionSub}>{action.sub}</Text>
+              </View>
+              <Ionicons name="chevron-forward" size={16} color={c.textMuted} />
+            </Pressable>
+          ))}
         </View>
 
         {/* ── Secondary links ── */}
         <View style={styles.linkRow}>
           <Pressable
             onPress={() => router.push('/(staff)/floor' as never)}
-            style={({ pressed }) => [styles.linkBtn, pressed && styles.actionPressed]}
+            style={({ pressed }) => [styles.linkBtn, pressed && styles.linkPressed]}
             accessibilityRole="button"
           >
             <Ionicons name="grid-outline" size={18} color={c.gold} />
             <Text style={styles.linkLabel}>Floor plan</Text>
-            <Ionicons name="chevron-forward" size={16} color={c.textMuted} />
+            <Ionicons name="chevron-forward" size={14} color={c.textMuted} />
           </Pressable>
           <Pressable
             onPress={() => router.push('/(staff)/analytics' as never)}
-            style={({ pressed }) => [styles.linkBtn, pressed && styles.actionPressed]}
+            style={({ pressed }) => [styles.linkBtn, pressed && styles.linkPressed]}
             accessibilityRole="button"
           >
-            <Ionicons name="trending-up-outline" size={18} color={c.gold} />
+            <Ionicons name="bar-chart-outline" size={18} color={c.gold} />
             <Text style={styles.linkLabel}>Analytics</Text>
-            <Ionicons name="chevron-forward" size={16} color={c.textMuted} />
+            <Ionicons name="chevron-forward" size={14} color={c.textMuted} />
           </Pressable>
         </View>
       </ScrollView>

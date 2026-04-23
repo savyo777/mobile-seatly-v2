@@ -89,10 +89,10 @@ const useStyles = createStyles((c) => ({
     backgroundColor: c.gold,
   },
   stickyHeaderText: {
-    fontSize: 15,
-    fontWeight: '700',
+    fontSize: 16,
+    fontWeight: '800',
     color: c.textPrimary,
-    letterSpacing: -0.1,
+    letterSpacing: -0.2,
   },
 
   cardMargin: {

@@ -20,34 +20,44 @@ import {
 const useStyles = createStyles((c) => ({
   root: { flex: 1, backgroundColor: c.bgBase },
 
+  // Top bar — mirrors diner profile/index.tsx topBar exactly
   topBar: {
     flexDirection: 'row',
-    alignItems: 'center',
+    alignItems: 'flex-start',
     justifyContent: 'space-between',
     paddingHorizontal: spacing.lg,
     paddingTop: spacing.sm,
-    paddingBottom: spacing.sm,
+    paddingBottom: spacing.md,
+  },
+  topBarText: {
+    flex: 1,
+    paddingRight: spacing.md,
   },
   topTitle: {
-    fontSize: 30,
+    fontSize: 28,
     fontWeight: '800',
     color: c.textPrimary,
-    letterSpacing: -0.7,
-    lineHeight: 36,
+    letterSpacing: -0.5,
   },
+  topSubline: {
+    fontSize: 13,
+    color: c.textMuted,
+    marginTop: 2,
+  },
+  // 38×38 — mirrors diner settingsBtn exactly
   iconBtn: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    backgroundColor: c.bgSurface,
+    width: 38,
+    height: 38,
+    borderRadius: 19,
+    backgroundColor: c.bgElevated,
     borderWidth: StyleSheet.hairlineWidth,
     borderColor: c.border,
     alignItems: 'center',
     justifyContent: 'center',
+    marginTop: 4,
   },
   iconBtnPressed: {
-    backgroundColor: c.bgElevated,
-    transform: [{ scale: 0.96 }],
+    opacity: 0.7,
   },
 
   heroCard: {
@@ -57,12 +67,12 @@ const useStyles = createStyles((c) => ({
     overflow: 'hidden',
     borderRadius: borderRadius.xl,
     borderWidth: StyleSheet.hairlineWidth,
-    borderColor: `${c.gold}44`,
+    borderColor: c.border,
     shadowColor: '#000',
-    shadowOpacity: 0.2,
-    shadowRadius: 18,
-    shadowOffset: { width: 0, height: 10 },
-    elevation: 6,
+    shadowOpacity: 0.12,
+    shadowRadius: 12,
+    shadowOffset: { width: 0, height: 6 },
+    elevation: 4,
   },
   cover: {
     width: '100%',
@@ -231,15 +241,16 @@ export default function OwnerProfileScreen() {
         }}
       >
         <View style={styles.topBar}>
-          <View>
+          <View style={styles.topBarText}>
             <Text style={styles.topTitle}>My Business</Text>
+            <Text style={styles.topSubline}>{profile.name}</Text>
           </View>
           <Pressable
             style={({ pressed }) => [styles.iconBtn, pressed && styles.iconBtnPressed]}
             onPress={press(() => router.push('/(staff)/settings' as never))}
             accessibilityLabel="Open settings"
           >
-            <Ionicons name="settings-outline" size={20} color={c.textPrimary} />
+            <Ionicons name="settings-outline" size={18} color={c.textPrimary} />
           </Pressable>
         </View>
 

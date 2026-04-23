@@ -22,44 +22,36 @@ type Props = {
 };
 
 const useStyles = createStyles((c) => ({
+  // Section header — mirrors DiscoverHorizontalSection exactly
   headerRow: {
     flexDirection: 'row',
-    alignItems: 'center',
     justifyContent: 'space-between',
+    alignItems: 'center',
     paddingHorizontal: spacing.lg,
-    marginBottom: spacing.sm,
-    gap: spacing.sm,
+    marginBottom: spacing.md,
   },
   headerLeft: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
     flex: 1,
-    minWidth: 0,
+    paddingRight: spacing.sm,
   },
+  // 18/800 title matching diner section titles
   sectionLabel: {
-    fontSize: 12,
-    fontWeight: '700',
-    color: c.textMuted,
-    letterSpacing: 1.2,
-    textTransform: 'uppercase',
+    fontSize: 18,
+    fontWeight: '800',
+    color: c.textPrimary,
+    letterSpacing: -0.3,
   },
   action: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 2,
-    paddingHorizontal: 6,
-    paddingVertical: 4,
   },
   actionLabel: {
     fontSize: 12,
-    fontWeight: '700',
+    fontWeight: '600',
     color: c.gold,
-    letterSpacing: 0.2,
   },
-  actionPressed: {
-    opacity: 0.6,
-  },
+  actionPressed: { opacity: 0.65 },
   card: {
     marginHorizontal: spacing.lg,
     backgroundColor: c.bgSurface,
@@ -93,7 +85,6 @@ export function SectionCard({
       {(sectionTitle || actionLabel) && (
         <View style={styles.headerRow}>
           <View style={styles.headerLeft}>
-            {icon ? <Ionicons name={icon} size={13} color={c.textMuted} /> : null}
             {sectionTitle ? (
               <Text style={styles.sectionLabel} numberOfLines={1}>
                 {sectionTitle}
@@ -109,7 +100,7 @@ export function SectionCard({
               hitSlop={8}
             >
               <Text style={styles.actionLabel}>{actionLabel}</Text>
-              <Ionicons name="chevron-forward" size={13} color={c.gold} />
+              <Ionicons name="chevron-forward" size={14} color={c.gold} />
             </Pressable>
           ) : null}
         </View>

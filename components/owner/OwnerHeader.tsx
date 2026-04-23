@@ -19,6 +19,7 @@ type Props = {
   rightBadgeCount?: number;
 };
 
+// Mirrors diner profile/index.tsx topBar style throughout
 const useStyles = createStyles((c) => ({
   row: {
     flexDirection: 'row',
@@ -30,54 +31,40 @@ const useStyles = createStyles((c) => ({
   },
   textCol: {
     flex: 1,
-    minWidth: 0,
+    paddingRight: spacing.md,
   },
   kicker: {
-    fontSize: 11,
-    fontWeight: '700',
-    color: c.gold,
-    letterSpacing: 1.4,
-    textTransform: 'uppercase',
-    marginBottom: 4,
+    fontSize: 13,
+    fontWeight: '500',
+    color: c.textMuted,
+    marginBottom: 2,
   },
+  // 28/800, -0.5 — matches diner headline exactly
   title: {
-    fontSize: 34,
+    fontSize: 28,
     fontWeight: '800',
     color: c.textPrimary,
-    letterSpacing: -0.8,
-    lineHeight: 40,
+    letterSpacing: -0.5,
   },
+  // 13/normal, textMuted — matches diner subline exactly
   subtitle: {
-    marginTop: 4,
-    fontSize: 14,
-    fontWeight: '500',
-    color: c.textSecondary,
-    lineHeight: 20,
+    marginTop: 2,
+    fontSize: 13,
+    color: c.textMuted,
   },
+  // 38×38, bgElevated — matches diner settingsBtn exactly
   iconBtn: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    backgroundColor: c.bgSurface,
+    width: 38,
+    height: 38,
+    borderRadius: 19,
+    backgroundColor: c.bgElevated,
     borderWidth: StyleSheet.hairlineWidth,
     borderColor: c.border,
     alignItems: 'center',
     justifyContent: 'center',
-    marginTop: 2,
+    marginTop: 4,
   },
-  pressed: {
-    backgroundColor: c.bgElevated,
-    transform: [{ scale: 0.96 }],
-  },
-  badgeDot: {
-    position: 'absolute',
-    top: 8,
-    right: 8,
-    minWidth: 8,
-    height: 8,
-    borderRadius: 4,
-    backgroundColor: c.danger,
-  },
+  pressed: { opacity: 0.7 },
   badgeCount: {
     position: 'absolute',
     top: 4,
@@ -135,7 +122,7 @@ export function OwnerHeader({
           accessibilityLabel={accessibilityLabelRight}
           hitSlop={8}
         >
-          <Ionicons name={rightIcon} size={20} color={c.textPrimary} />
+          <Ionicons name={rightIcon} size={18} color={c.textPrimary} />
           {rightBadgeCount && rightBadgeCount > 0 ? (
             <View style={styles.badgeCount}>
               <Text style={styles.badgeCountText}>
