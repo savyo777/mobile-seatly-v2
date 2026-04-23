@@ -26,6 +26,11 @@ const useStyles = createStyles((c) => ({
     borderColor: c.border,
     borderRadius: borderRadius.xl,
     overflow: 'hidden',
+    shadowColor: '#000',
+    shadowOpacity: 0.06,
+    shadowRadius: 10,
+    shadowOffset: { width: 0, height: 4 },
+    elevation: 2,
   },
   secondary: {
     backgroundColor: c.bgElevated,

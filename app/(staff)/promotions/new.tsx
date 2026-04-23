@@ -87,11 +87,9 @@ const useStyles = createStyles((c) => ({
     borderTopColor: c.border,
   },
   fieldLabel: {
-    fontSize: 12,
-    fontWeight: '700',
+    fontSize: 13,
+    fontWeight: '600',
     color: c.textMuted,
-    textTransform: 'uppercase',
-    letterSpacing: 0.8,
   },
   input: {
     fontSize: 16,

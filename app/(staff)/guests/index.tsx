@@ -170,8 +170,7 @@ const useStyles = createStyles((c) => ({
     fontSize: 11,
     color: c.textMuted,
     fontWeight: '600',
-    textTransform: 'uppercase',
-    letterSpacing: 0.5,
+    letterSpacing: 0.1,
   },
   riskDot: {
     width: 8,

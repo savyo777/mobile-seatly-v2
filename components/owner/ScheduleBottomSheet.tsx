@@ -139,7 +139,7 @@ const useStyles = createStyles((c) => ({
   },
   dim: {
     ...StyleSheet.absoluteFillObject,
-    backgroundColor: 'rgba(0,0,0,0.6)',
+    backgroundColor: 'rgba(0,0,0,0.52)',
   },
   sheet: {
     backgroundColor: c.bgSurface,
@@ -198,9 +198,10 @@ const useStyles = createStyles((c) => ({
     elevation: 16,
   },
   centerTitle: {
-    fontSize: 18,
+    fontSize: 20,
     fontWeight: '800',
     color: c.textPrimary,
+    letterSpacing: -0.4,
     marginBottom: 8,
   },
   centerMsg: {

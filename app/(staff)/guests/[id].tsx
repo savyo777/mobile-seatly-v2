@@ -132,10 +132,9 @@ const useStyles = createStyles((c) => ({
   },
   actionLabel: {
     fontSize: 11,
-    fontWeight: '700',
+    fontWeight: '600',
     color: c.textSecondary,
-    textTransform: 'uppercase',
-    letterSpacing: 0.5,
+    letterSpacing: 0.1,
   },
 
   blockedBanner: {
@@ -228,11 +227,10 @@ const useStyles = createStyles((c) => ({
     gap: 6,
   },
   noteCategory: {
-    fontSize: 11,
-    fontWeight: '800',
+    fontSize: 12,
+    fontWeight: '700',
     color: c.gold,
-    textTransform: 'uppercase',
-    letterSpacing: 0.8,
+    letterSpacing: 0.1,
   },
   notePinned: { color: c.gold },
   noteBody: {
@@ -293,9 +291,8 @@ const useStyles = createStyles((c) => ({
   },
   severityText: {
     fontSize: 11,
-    fontWeight: '800',
-    letterSpacing: 0.5,
-    textTransform: 'uppercase',
+    fontWeight: '700',
+    letterSpacing: 0.1,
   },
   incidentMeta: {
     fontSize: 12,
@@ -327,10 +324,9 @@ const useStyles = createStyles((c) => ({
   },
   commStatus: {
     fontSize: 11,
-    fontWeight: '700',
+    fontWeight: '600',
     color: c.textSecondary,
-    textTransform: 'uppercase',
-    letterSpacing: 0.5,
+    letterSpacing: 0.1,
   },
 
   ltRow: {

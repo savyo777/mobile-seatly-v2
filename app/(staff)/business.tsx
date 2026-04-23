@@ -14,28 +14,30 @@ const useStyles = createStyles((c) => ({
   root: { flex: 1, backgroundColor: c.bgBase },
 
   topBar: { paddingHorizontal: spacing.lg, paddingBottom: spacing.md },
-  titleRow: { flexDirection: 'row', alignItems: 'center', gap: 5, marginBottom: 2 },
-  goldDot: { width: 5, height: 5, borderRadius: 3, backgroundColor: c.gold },
-  label: { fontSize: 11, fontWeight: '700', color: c.textMuted, letterSpacing: 1.2 },
+  topSubline: { fontSize: 13, fontWeight: '500', color: c.textMuted, marginBottom: 2 },
   title: { fontSize: 28, fontWeight: '800', color: c.textPrimary, letterSpacing: -0.5 },
 
   sectionPad: { paddingHorizontal: spacing.lg, marginBottom: spacing.md },
   sectionLabel: {
-    fontSize: 11,
-    fontWeight: '700',
-    color: c.textMuted,
-    letterSpacing: 1.2,
-    textTransform: 'uppercase',
+    fontSize: 18,
+    fontWeight: '800',
+    color: c.textPrimary,
+    letterSpacing: -0.3,
     marginBottom: spacing.sm,
   },
 
   // Staff
   staffCard: {
-    backgroundColor: c.bgElevated,
+    backgroundColor: c.bgSurface,
     borderRadius: borderRadius.xl,
     borderWidth: StyleSheet.hairlineWidth,
     borderColor: c.border,
     overflow: 'hidden',
+    shadowColor: '#000',
+    shadowOpacity: 0.06,
+    shadowRadius: 10,
+    shadowOffset: { width: 0, height: 4 },
+    elevation: 2,
   },
   staffRow: {
     flexDirection: 'row',
@@ -68,11 +70,16 @@ const useStyles = createStyles((c) => ({
 
   // Expenses
   expenseCard: {
-    backgroundColor: c.bgElevated,
+    backgroundColor: c.bgSurface,
     borderRadius: borderRadius.xl,
     borderWidth: StyleSheet.hairlineWidth,
     borderColor: c.border,
     overflow: 'hidden',
+    shadowColor: '#000',
+    shadowOpacity: 0.06,
+    shadowRadius: 10,
+    shadowOffset: { width: 0, height: 4 },
+    elevation: 2,
   },
   expenseRow: {
     flexDirection: 'row',
@@ -89,11 +96,16 @@ const useStyles = createStyles((c) => ({
 
   // Export
   exportCard: {
-    backgroundColor: c.bgElevated,
+    backgroundColor: c.bgSurface,
     borderRadius: borderRadius.xl,
     borderWidth: StyleSheet.hairlineWidth,
     borderColor: c.border,
     overflow: 'hidden',
+    shadowColor: '#000',
+    shadowOpacity: 0.06,
+    shadowRadius: 10,
+    shadowOffset: { width: 0, height: 4 },
+    elevation: 2,
   },
   exportRow: {
     flexDirection: 'row',
@@ -127,10 +139,7 @@ export default function OwnerBusinessScreen() {
       >
         {/* Top bar */}
         <View style={styles.topBar}>
-          <View style={styles.titleRow}>
-            <View style={styles.goldDot} />
-            <Text style={styles.label}>OPERATIONS</Text>
-          </View>
+          <Text style={styles.topSubline}>Operations</Text>
           <Text style={styles.title}>Business</Text>
         </View>
 

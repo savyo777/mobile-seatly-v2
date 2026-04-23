@@ -21,9 +21,7 @@ const useStyles = createStyles((c) => ({
     paddingBottom: spacing.md,
   },
   titleBlock: {},
-  titleRow: { flexDirection: 'row', alignItems: 'center', gap: 5, marginBottom: 2 },
-  goldDot: { width: 5, height: 5, borderRadius: 3, backgroundColor: c.gold },
-  label: { fontSize: 11, fontWeight: '700', color: c.textMuted, letterSpacing: 1.2 },
+  topSubline: { fontSize: 13, fontWeight: '500', color: c.textMuted, marginBottom: 2 },
   title: { fontSize: 28, fontWeight: '800', color: c.textPrimary, letterSpacing: -0.5 },
 
   newBtn: {
@@ -39,21 +37,25 @@ const useStyles = createStyles((c) => ({
 
   sectionPad: { paddingHorizontal: spacing.lg, marginBottom: spacing.md },
   sectionLabel: {
-    fontSize: 11,
-    fontWeight: '700',
-    color: c.textMuted,
-    letterSpacing: 1.2,
-    textTransform: 'uppercase',
+    fontSize: 18,
+    fontWeight: '800',
+    color: c.textPrimary,
+    letterSpacing: -0.3,
     marginBottom: spacing.sm,
   },
 
   // Event rows
   eventsCard: {
-    backgroundColor: c.bgElevated,
+    backgroundColor: c.bgSurface,
     borderRadius: borderRadius.xl,
     borderWidth: StyleSheet.hairlineWidth,
     borderColor: c.border,
     overflow: 'hidden',
+    shadowColor: '#000',
+    shadowOpacity: 0.06,
+    shadowRadius: 10,
+    shadowOffset: { width: 0, height: 4 },
+    elevation: 2,
   },
   eventRow: {
     flexDirection: 'row',
@@ -75,11 +77,16 @@ const useStyles = createStyles((c) => ({
 
   // Promo rows
   promoCard: {
-    backgroundColor: c.bgElevated,
+    backgroundColor: c.bgSurface,
     borderRadius: borderRadius.xl,
     borderWidth: StyleSheet.hairlineWidth,
     borderColor: c.border,
     overflow: 'hidden',
+    shadowColor: '#000',
+    shadowOpacity: 0.06,
+    shadowRadius: 10,
+    shadowOffset: { width: 0, height: 4 },
+    elevation: 2,
   },
   promoRow: {
     flexDirection: 'row',
@@ -130,10 +137,7 @@ export default function OwnerPromoteScreen() {
         {/* Top bar */}
         <View style={styles.topBar}>
           <View style={styles.titleBlock}>
-            <View style={styles.titleRow}>
-              <View style={styles.goldDot} />
-              <Text style={styles.label}>MARKETING</Text>
-            </View>
+            <Text style={styles.topSubline}>Marketing</Text>
             <Text style={styles.title}>Promote</Text>
           </View>
           <Pressable style={styles.newBtn}>

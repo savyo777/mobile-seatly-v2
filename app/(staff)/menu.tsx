@@ -577,21 +577,17 @@ const styles = StyleSheet.create({
     marginTop: 3,
   },
   statusTxt: {
-    fontSize: 11,
+    fontSize: 12,
     fontWeight: '600',
     color: ownerColors.textMuted,
-    textTransform: 'uppercase',
-    letterSpacing: 0.4,
   },
   statusOff: {
     opacity: 0.65,
   },
   featuredTxt: {
-    fontSize: 11,
-    fontWeight: '700',
+    fontSize: 12,
+    fontWeight: '600',
     color: ownerColors.gold,
-    textTransform: 'uppercase',
-    letterSpacing: 0.4,
   },
   price: {
     fontSize: 15,
@@ -677,12 +673,10 @@ const styles = StyleSheet.create({
     marginTop: 2,
   },
   gridMeta: {
-    fontSize: 10,
+    fontSize: 11,
     fontWeight: '600',
     color: ownerColors.textMuted,
     marginTop: 4,
-    textTransform: 'uppercase',
-    letterSpacing: 0.3,
   },
   empty: {
     textAlign: 'center',
@@ -739,11 +733,9 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
   },
   actionsTitle: {
-    fontSize: 11,
-    fontWeight: '700',
+    fontSize: 13,
+    fontWeight: '600',
     color: ownerColors.textMuted,
-    textTransform: 'uppercase',
-    letterSpacing: 0.85,
     paddingHorizontal: ownerSpace.md,
     paddingTop: ownerSpace.sm,
     paddingBottom: ownerSpace.xs,
@@ -794,13 +786,11 @@ const styles = StyleSheet.create({
     marginBottom: ownerSpace.md,
   },
   fieldLabel: {
-    fontSize: 12,
+    fontSize: 13,
     fontWeight: '600',
     color: ownerColors.textMuted,
     marginBottom: 6,
     marginTop: ownerSpace.sm,
-    textTransform: 'uppercase',
-    letterSpacing: 0.5,
   },
   input: {
     backgroundColor: ownerColors.bgElevated,

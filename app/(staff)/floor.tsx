@@ -1,13 +1,11 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet } from 'react-native';
+import { View, StyleSheet } from 'react-native';
 import { useTranslation } from 'react-i18next';
-import Animated, { FadeIn } from 'react-native-reanimated';
 import { OwnerScreen } from '@/components/owner/OwnerScreen';
+import { SubpageHeader } from '@/components/owner/SubpageHeader';
 import { FloorCanvas } from '@/components/owner/FloorCanvas';
 import { TableDetailSheet } from '@/components/owner/TableDetailSheet';
 import { OWNER_FLOOR_TABLES, type OwnerFloorTable } from '@/lib/mock/ownerApp';
-import { ownerColors } from '@/lib/theme/ownerTheme';
-import { ownerSpace } from '@/lib/theme/ownerTheme';
 
 export default function OwnerFloorScreen() {
   const { t } = useTranslation();
@@ -23,10 +21,11 @@ export default function OwnerFloorScreen() {
 
   return (
     <OwnerScreen scrollable={false}>
-      <Animated.View entering={FadeIn.duration(380)}>
-        <Text style={styles.title}>{t('owner.floorLive')}</Text>
-        <Text style={styles.sub}>Nova Ristorante · Live</Text>
-      </Animated.View>
+      <SubpageHeader
+        title={t('owner.floorLive')}
+        subtitle="Nova Ristorante · Live"
+        fallbackTab="home"
+      />
       <View style={styles.flex}>
         <FloorCanvas tables={OWNER_FLOOR_TABLES} onTablePress={onTablePress} />
       </View>
@@ -45,19 +44,6 @@ export default function OwnerFloorScreen() {
 }
 
 const styles = StyleSheet.create({
-  title: {
-    fontSize: 28,
-    fontWeight: '800',
-    color: ownerColors.text,
-    letterSpacing: -0.5,
-    marginBottom: 4,
-  },
-  sub: {
-    fontSize: 15,
-    color: ownerColors.textMuted,
-    marginBottom: ownerSpace.md,
-    fontWeight: '500',
-  },
   flex: {
     flex: 1,
     minHeight: 380,

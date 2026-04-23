@@ -96,11 +96,10 @@ const useStyles = createStyles((c) => ({
     padding: spacing.xl,
   },
   chartLabel: {
-    fontSize: 13,
-    fontWeight: '600',
-    color: c.textMuted,
-    letterSpacing: 1,
-    textTransform: 'uppercase',
+    fontSize: 15,
+    fontWeight: '800',
+    color: c.textPrimary,
+    letterSpacing: -0.2,
     marginBottom: spacing.md,
   },
   barRow: {

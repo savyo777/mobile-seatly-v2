@@ -338,11 +338,10 @@ const styles = StyleSheet.create({
     opacity: 0.85,
   },
   sectionLabel: {
-    fontSize: 11,
+    fontSize: 18,
     fontWeight: '800',
-    color: ownerColors.textMuted,
-    letterSpacing: 1.2,
-    textTransform: 'uppercase',
+    color: ownerColors.text,
+    letterSpacing: -0.3,
     marginBottom: ownerSpace.sm,
   },
   feedSectionLabel: {
@@ -377,11 +376,9 @@ const styles = StyleSheet.create({
     marginBottom: ownerSpace.sm,
   },
   stationLabel: {
-    fontSize: 11,
-    fontWeight: '800',
+    fontSize: 12,
+    fontWeight: '700',
     color: ownerColors.gold,
-    letterSpacing: 0.9,
-    textTransform: 'uppercase',
   },
   tableLabel: {
     fontSize: 17,
@@ -409,10 +406,8 @@ const styles = StyleSheet.create({
     borderWidth: StyleSheet.hairlineWidth,
   },
   statusPillText: {
-    fontSize: 11,
-    fontWeight: '800',
-    letterSpacing: 0.4,
-    textTransform: 'uppercase',
+    fontSize: 12,
+    fontWeight: '700',
   },
   pillProgress: {
     borderColor: ownerColors.goldMuted,
@@ -480,11 +475,9 @@ const styles = StyleSheet.create({
     opacity: 0.88,
   },
   swipeBtnText: {
-    fontSize: 12,
-    fontWeight: '800',
+    fontSize: 13,
+    fontWeight: '700',
     color: ownerColors.text,
-    textTransform: 'uppercase',
-    letterSpacing: 0.3,
   },
   feedTimeline: {
     paddingLeft: 2,
@@ -575,11 +568,9 @@ const styles = StyleSheet.create({
     marginBottom: ownerSpace.sm,
   },
   modalStation: {
-    fontSize: 12,
-    fontWeight: '800',
+    fontSize: 13,
+    fontWeight: '700',
     color: ownerColors.gold,
-    letterSpacing: 0.8,
-    textTransform: 'uppercase',
   },
   modalTable: {
     fontSize: 20,

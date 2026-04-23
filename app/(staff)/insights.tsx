@@ -24,14 +24,7 @@ const useStyles = createStyles((c) => ({
   root: { flex: 1, backgroundColor: c.bgBase },
 
   topBar: { paddingHorizontal: spacing.lg, paddingBottom: spacing.md },
-  titleRow: { flexDirection: 'row', alignItems: 'center', gap: 5, marginBottom: 2 },
-  goldDot: { width: 5, height: 5, borderRadius: 3, backgroundColor: c.gold },
-  label: {
-    fontSize: 11,
-    fontWeight: '700',
-    color: c.textMuted,
-    letterSpacing: 1.2,
-  },
+  topSubline: { fontSize: 13, fontWeight: '500', color: c.textMuted, marginBottom: 2 },
   title: {
     fontSize: 28,
     fontWeight: '800',
@@ -41,11 +34,10 @@ const useStyles = createStyles((c) => ({
 
   sectionPad: { paddingHorizontal: spacing.lg, marginBottom: spacing.md },
   sectionLabel: {
-    fontSize: 11,
-    fontWeight: '700',
-    color: c.textMuted,
-    letterSpacing: 1.2,
-    textTransform: 'uppercase',
+    fontSize: 18,
+    fontWeight: '800',
+    color: c.textPrimary,
+    letterSpacing: -0.3,
     marginBottom: spacing.sm,
   },
 
@@ -66,7 +58,7 @@ const useStyles = createStyles((c) => ({
   tilesRow: { flexDirection: 'row', gap: spacing.sm, marginBottom: spacing.md },
   tile: {
     flex: 1,
-    backgroundColor: c.bgElevated,
+    backgroundColor: c.bgSurface,
     borderRadius: borderRadius.lg,
     borderWidth: StyleSheet.hairlineWidth,
     borderColor: c.border,
@@ -83,11 +75,16 @@ const useStyles = createStyles((c) => ({
 
   // Revenue card
   revenueCard: {
-    backgroundColor: c.bgElevated,
+    backgroundColor: c.bgSurface,
     borderRadius: borderRadius.xl,
     borderWidth: StyleSheet.hairlineWidth,
     borderColor: c.border,
     padding: spacing.lg,
+    shadowColor: '#000',
+    shadowOpacity: 0.06,
+    shadowRadius: 10,
+    shadowOffset: { width: 0, height: 4 },
+    elevation: 2,
   },
   revenueNum: {
     fontSize: 34,
@@ -113,11 +110,16 @@ const useStyles = createStyles((c) => ({
 
   // Highlights
   highlightCard: {
-    backgroundColor: c.bgElevated,
+    backgroundColor: c.bgSurface,
     borderRadius: borderRadius.xl,
     borderWidth: StyleSheet.hairlineWidth,
     borderColor: c.border,
     overflow: 'hidden',
+    shadowColor: '#000',
+    shadowOpacity: 0.06,
+    shadowRadius: 10,
+    shadowOffset: { width: 0, height: 4 },
+    elevation: 2,
   },
   highlightRow: {
     flexDirection: 'row',
@@ -131,11 +133,16 @@ const useStyles = createStyles((c) => ({
 
   // CRM spotlight
   crmCard: {
-    backgroundColor: c.bgElevated,
+    backgroundColor: c.bgSurface,
     borderRadius: borderRadius.xl,
     borderWidth: StyleSheet.hairlineWidth,
     borderColor: c.border,
     overflow: 'hidden',
+    shadowColor: '#000',
+    shadowOpacity: 0.06,
+    shadowRadius: 10,
+    shadowOffset: { width: 0, height: 4 },
+    elevation: 2,
   },
   crmRow: {
     flexDirection: 'row',
@@ -163,18 +170,21 @@ const useStyles = createStyles((c) => ({
 
   // AI insight
   aiCard: {
-    backgroundColor: c.bgElevated,
+    backgroundColor: c.bgSurface,
     borderRadius: borderRadius.xl,
     borderWidth: StyleSheet.hairlineWidth,
-    borderColor: 'rgba(201,162,74,0.25)',
+    borderColor: c.border,
     padding: spacing.lg,
+    shadowColor: '#000',
+    shadowOpacity: 0.06,
+    shadowRadius: 10,
+    shadowOffset: { width: 0, height: 4 },
+    elevation: 2,
   },
   aiLabel: {
-    fontSize: 10,
-    fontWeight: '800',
-    color: c.gold,
-    letterSpacing: 1.2,
-    textTransform: 'uppercase',
+    fontSize: 13,
+    fontWeight: '600',
+    color: c.textMuted,
     marginBottom: spacing.sm,
   },
   aiText: { fontSize: 15, fontWeight: '600', color: c.textPrimary, lineHeight: 22 },
@@ -208,10 +218,7 @@ export default function OwnerInsightsScreen() {
       >
         {/* Top bar */}
         <View style={styles.topBar}>
-          <View style={styles.titleRow}>
-            <View style={styles.goldDot} />
-            <Text style={styles.label}>PERFORMANCE</Text>
-          </View>
+          <Text style={styles.topSubline}>Performance</Text>
           <Text style={styles.title}>Insights</Text>
         </View>
 

@@ -318,11 +318,10 @@ const styles = StyleSheet.create({
     opacity: 0.85,
   },
   sectionLabel: {
-    fontSize: 11,
+    fontSize: 18,
     fontWeight: '800',
-    color: ownerColors.textMuted,
-    letterSpacing: 1.2,
-    textTransform: 'uppercase',
+    color: ownerColors.text,
+    letterSpacing: -0.3,
     marginBottom: ownerSpace.sm,
   },
   sectionSpacer: {
@@ -381,11 +380,10 @@ const styles = StyleSheet.create({
     backgroundColor: ownerColors.goldSubtle,
   },
   tagWalkInText: {
-    fontSize: 10,
-    fontWeight: '800',
+    fontSize: 11,
+    fontWeight: '700',
     color: ownerColors.gold,
-    letterSpacing: 0.4,
-    textTransform: 'uppercase',
+    letterSpacing: 0.1,
   },
   walkInParty: {
     fontSize: 13,
@@ -444,9 +442,8 @@ const styles = StyleSheet.create({
   },
   statusPillText: {
     fontSize: 11,
-    fontWeight: '800',
-    letterSpacing: 0.3,
-    textTransform: 'uppercase',
+    fontWeight: '700',
+    letterSpacing: 0.1,
   },
   statusTxtWaiting: {
     color: ownerColors.gold,

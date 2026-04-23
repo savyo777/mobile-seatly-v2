@@ -53,24 +53,24 @@ const useStyles = createStyles((c) => ({
     paddingVertical: 2,
   },
   chip: {
-    paddingVertical: 7,
-    paddingHorizontal: spacing.sm,
+    paddingVertical: 8,
+    paddingHorizontal: spacing.md,
     borderRadius: borderRadius.sm,
     backgroundColor: c.bgSurface,
     borderWidth: StyleSheet.hairlineWidth,
     borderColor: c.border,
   },
   chipActive: {
-    backgroundColor: `${c.gold}16`,
+    backgroundColor: c.gold,
     borderColor: c.gold,
   },
   chipText: {
-    fontSize: 14,
-    fontWeight: '600',
+    fontSize: 13,
+    fontWeight: '700',
     color: c.textMuted,
   },
   chipTextActive: {
-    color: c.gold,
+    color: c.bgBase,
   },
   pressed: {
     opacity: 0.85,

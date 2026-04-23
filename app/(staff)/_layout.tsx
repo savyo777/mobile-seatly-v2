@@ -91,10 +91,10 @@ const useStyles = createStyles((c) => ({
     marginBottom: spacing.lg,
   },
   sheetTitle: {
-    fontSize: 21,
+    fontSize: 22,
     fontWeight: '800',
     color: c.textPrimary,
-    letterSpacing: -0.5,
+    letterSpacing: -0.4,
     marginBottom: spacing.lg,
   },
   actionItem: {

@@ -66,7 +66,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 8,
     paddingVertical: 4,
     borderRadius: ownerRadii.xl,
-    borderWidth: 1,
+    borderWidth: StyleSheet.hairlineWidth,
     borderColor: ownerColors.border,
     backgroundColor: ownerColors.bgGlass,
   },

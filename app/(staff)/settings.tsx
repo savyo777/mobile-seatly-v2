@@ -75,7 +75,7 @@ const styles = StyleSheet.create({
   linkTitle: {
     fontSize: 16,
     fontWeight: '800',
-    color: ownerColors.gold,
+    color: ownerColors.text,
   },
   linkSub: {
     fontSize: 14,

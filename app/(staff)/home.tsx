@@ -76,11 +76,10 @@ const useStyles = createStyles((c) => ({
     backgroundColor: c.success,
   },
   liveText: {
-    fontSize: 10,
-    fontWeight: '800',
+    fontSize: 11,
+    fontWeight: '700',
     color: c.success,
-    letterSpacing: 0.4,
-    textTransform: 'uppercase',
+    letterSpacing: 0.1,
   },
   notifBtn: {
     width: 38,
@@ -123,11 +122,9 @@ const useStyles = createStyles((c) => ({
     marginBottom: spacing.lg,
   },
   commandLabel: {
-    fontSize: 12,
-    fontWeight: '800',
-    color: c.gold,
-    letterSpacing: 0.5,
-    textTransform: 'uppercase',
+    fontSize: 13,
+    fontWeight: '600',
+    color: c.textMuted,
     marginBottom: 6,
   },
   commandTitle: {
@@ -320,10 +317,9 @@ const useStyles = createStyles((c) => ({
     borderWidth: StyleSheet.hairlineWidth,
   },
   statusText: {
-    fontSize: 10,
-    fontWeight: '800',
-    letterSpacing: 0.3,
-    textTransform: 'uppercase',
+    fontSize: 11,
+    fontWeight: '700',
+    letterSpacing: 0.1,
   },
 
   actionGrid: {
@@ -347,7 +343,7 @@ const useStyles = createStyles((c) => ({
   },
   actionTilePressed: {
     backgroundColor: c.bgElevated,
-    borderColor: `${c.gold}44`,
+    borderColor: c.border,
   },
   actionIconWrap: {
     width: 36,

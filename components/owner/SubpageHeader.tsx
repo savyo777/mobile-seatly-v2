@@ -58,7 +58,7 @@ export function SubpageHeader({
           accessibilityRole="button"
           accessibilityLabel="Go back"
         >
-          <Ionicons name="chevron-back" size={20} color={c.textPrimary} />
+          <Ionicons name="chevron-back" size={22} color={c.textPrimary} />
         </Pressable>
         <View
           style={[
@@ -105,9 +105,9 @@ const useStyles = createStyles((c) => ({
     maxWidth: '100%',
   },
   backBtn: {
-    width: 36,
-    height: 36,
-    borderRadius: borderRadius.md,
+    width: 38,
+    height: 38,
+    borderRadius: 19,
     borderWidth: StyleSheet.hairlineWidth,
     borderColor: c.border,
     backgroundColor: c.bgElevated,
@@ -129,8 +129,8 @@ const useStyles = createStyles((c) => ({
     paddingRight: 188,
   },
   rightSpacer: {
-    width: 36,
-    minHeight: 36,
+    width: 38,
+    minHeight: 38,
   },
   headerRightAbs: {
     position: 'absolute',

@@ -1042,13 +1042,12 @@ const usePromoScreenStyles = createStyles((c) => {
     letterSpacing: -0.6,
   },
   perfLbl: {
-    fontSize: 10,
-    fontWeight: '700',
+    fontSize: 11,
+    fontWeight: '600',
     color: o.textMuted,
     textAlign: 'center',
     marginTop: 2,
-    textTransform: 'uppercase',
-    letterSpacing: 0.6,
+    letterSpacing: 0.1,
   },
   perfTrend: {
     justifyContent: 'center',
@@ -1071,15 +1070,14 @@ const usePromoScreenStyles = createStyles((c) => {
     marginTop: 4,
   },
   sectionTitle: {
-    fontSize: 11,
+    fontSize: 18,
     fontWeight: '800',
-    color: o.textMuted,
-    letterSpacing: 1.2,
-    textTransform: 'uppercase',
+    color: o.text,
+    letterSpacing: -0.3,
   },
   viewAll: {
     fontSize: 12,
-    fontWeight: '800',
+    fontWeight: '600',
     color: o.gold,
   },
   sectionEmpty: {
@@ -1147,10 +1145,9 @@ const usePromoScreenStyles = createStyles((c) => {
     borderWidth: 1,
   },
   statusPillText: {
-    fontSize: 9,
-    fontWeight: '800',
-    letterSpacing: 0.5,
-    textTransform: 'uppercase',
+    fontSize: 10,
+    fontWeight: '700',
+    letterSpacing: 0.1,
   },
   cardMetaLine: {
     fontSize: 13,
@@ -1196,11 +1193,10 @@ const usePromoScreenStyles = createStyles((c) => {
     backgroundColor: '#22C55E',
   },
   activeNowText: {
-    fontSize: 10,
-    fontWeight: '800',
+    fontSize: 11,
+    fontWeight: '700',
     color: '#86EFAC',
-    letterSpacing: 0.8,
-    textTransform: 'uppercase',
+    letterSpacing: 0.1,
   },
   row4: {
     flexDirection: 'row',
@@ -1306,10 +1302,9 @@ const usePromoScreenStyles = createStyles((c) => {
   },
   swipePressed: { opacity: 0.88 },
   swipeBtnText: {
-    fontSize: 9,
-    fontWeight: '800',
+    fontSize: 10,
+    fontWeight: '700',
     color: o.text,
-    textTransform: 'uppercase',
     textAlign: 'center',
   },
   fab: {
@@ -1439,11 +1434,9 @@ const usePromoScreenStyles = createStyles((c) => {
     color: o.gold,
   },
   detailSection: {
-    fontSize: 11,
-    fontWeight: '800',
-    color: o.textMuted,
-    letterSpacing: 0.8,
-    textTransform: 'uppercase',
+    fontSize: 15,
+    fontWeight: '700',
+    color: o.text,
     marginTop: 14,
     marginBottom: 6,
   },

@@ -51,7 +51,7 @@ const useStyles = createStyles((c) => ({
     padding: spacing.lg,
     borderRadius: borderRadius.lg,
     backgroundColor: c.bgSurface,
-    borderWidth: 1,
+    borderWidth: StyleSheet.hairlineWidth,
     borderColor: c.border,
     marginBottom: spacing.md,
   },

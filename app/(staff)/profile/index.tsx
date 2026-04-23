@@ -126,9 +126,8 @@ const useStyles = createStyles((c) => ({
   },
   openPillText: {
     fontSize: 11,
-    fontWeight: '800',
-    letterSpacing: 0.5,
-    textTransform: 'uppercase',
+    fontWeight: '700',
+    letterSpacing: 0.1,
   },
   heroChangeText: {
     fontSize: 12,
