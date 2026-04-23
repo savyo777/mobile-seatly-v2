@@ -1,88 +1,263 @@
 import React from 'react';
-import { View, Text, StyleSheet, Pressable, Switch, Alert } from 'react-native';
-import { useTranslation } from 'react-i18next';
+import { View, Text, Switch, Pressable, StyleSheet, Alert } from 'react-native';
+import { useRouter } from 'expo-router';
+import { Ionicons } from '@expo/vector-icons';
 import { OwnerScreen } from '@/components/owner/OwnerScreen';
-import { GlassCard } from '@/components/owner/GlassCard';
 import { SubpageHeader } from '@/components/owner/SubpageHeader';
-import { ownerColors } from '@/lib/theme/ownerTheme';
+import { useColors, createStyles, spacing, borderRadius } from '@/lib/theme';
 
-export default function OwnerSettingsScreen() {
-  const { t } = useTranslation();
-  const [pushOn, setPushOn] = React.useState(true);
-  const [soundOn, setSoundOn] = React.useState(true);
+// ── Types ──────────────────────────────────────────────────────────────────
 
-  return (
-    <OwnerScreen>
-      <SubpageHeader
-        title={t('owner.settingsTitle')}
-        subtitle={t('owner.settingsSubtitle')}
-        fallbackTab="more"
-      />
+type RowItem =
+  | { kind: 'nav'; label: string; value?: string; icon: string; route?: string; danger?: boolean }
+  | { kind: 'toggle'; label: string; icon: string; value: boolean; onChange: (v: boolean) => void };
 
-      <GlassCard style={styles.card}>
-        <View style={styles.row}>
-          <Text style={styles.label}>{t('owner.settingsPush')}</Text>
-          <Switch value={pushOn} onValueChange={setPushOn} trackColor={{ true: ownerColors.gold, false: ownerColors.border }} />
-        </View>
-        <View style={[styles.row, styles.rowBorder]}>
-          <Text style={styles.label}>{t('owner.settingsSound')}</Text>
-          <Switch value={soundOn} onValueChange={setSoundOn} trackColor={{ true: ownerColors.gold, false: ownerColors.border }} />
-        </View>
-      </GlassCard>
+type Section = { title: string; rows: RowItem[] };
 
-      <Pressable
-        onPress={() => Alert.alert(t('owner.settingsAccount'), t('owner.settingsAccountMock'))}
-        style={({ pressed }) => [styles.linkCard, pressed && styles.pressed]}
-      >
-        <GlassCard style={styles.card}>
-          <Text style={styles.linkTitle}>{t('owner.settingsAccount')}</Text>
-          <Text style={styles.linkSub}>{t('owner.settingsAccountHint')}</Text>
-        </GlassCard>
-      </Pressable>
+// ── Styles ─────────────────────────────────────────────────────────────────
 
-      <View style={{ height: 24 }} />
-    </OwnerScreen>
-  );
-}
-
-const styles = StyleSheet.create({
+const useStyles = createStyles((c) => ({
+  sectionLabel: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: c.textMuted,
+    letterSpacing: 0.7,
+    textTransform: 'uppercase',
+    marginBottom: spacing.xs,
+    marginTop: spacing.lg,
+    paddingHorizontal: 4,
+  },
   card: {
-    padding: 16,
-    marginBottom: 12,
+    borderRadius: borderRadius.xl,
+    backgroundColor: c.bgSurface,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: c.border,
+    overflow: 'hidden',
+    marginBottom: 2,
   },
   row: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
-    gap: 16,
-    paddingVertical: 4,
+    paddingHorizontal: spacing.md,
+    paddingVertical: 13,
+    minHeight: 52,
+    gap: spacing.sm,
   },
-  rowBorder: {
-    marginTop: 14,
-    paddingTop: 18,
+  rowDivider: {
     borderTopWidth: StyleSheet.hairlineWidth,
-    borderTopColor: ownerColors.border,
+    borderTopColor: c.border,
   },
-  label: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: ownerColors.text,
+  rowPressed: { backgroundColor: c.bgElevated },
+  iconWrap: {
+    width: 30,
+    height: 30,
+    borderRadius: 8,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: c.bgElevated,
+  },
+  rowLabel: {
     flex: 1,
+    fontSize: 15,
+    fontWeight: '600',
+    color: c.textPrimary,
   },
-  linkCard: {
-    marginBottom: 0,
-  },
-  linkTitle: {
-    fontSize: 16,
-    fontWeight: '800',
-    color: ownerColors.text,
-  },
-  linkSub: {
+  rowLabelDanger: { color: c.danger },
+  rowValue: {
     fontSize: 14,
-    color: ownerColors.textMuted,
-    marginTop: 6,
+    fontWeight: '500',
+    color: c.textMuted,
+    marginRight: 4,
   },
-  pressed: {
-    opacity: 0.88,
+  signOutWrap: {
+    alignItems: 'center',
+    paddingVertical: spacing.xl,
   },
-});
+  signOut: {
+    fontSize: 16,
+    fontWeight: '700',
+    color: c.danger,
+  },
+}));
+
+// ── Row components ─────────────────────────────────────────────────────────
+
+function NavRow({
+  item,
+  divider,
+  onPress,
+}: {
+  item: Extract<RowItem, { kind: 'nav' }>;
+  divider: boolean;
+  onPress: () => void;
+}) {
+  const c = useColors();
+  const styles = useStyles();
+  return (
+    <Pressable
+      style={({ pressed }) => [styles.row, divider && styles.rowDivider, pressed && styles.rowPressed]}
+      onPress={onPress}
+      accessibilityRole="button"
+      accessibilityLabel={item.label}
+    >
+      <View style={styles.iconWrap}>
+        <Ionicons name={item.icon as any} size={16} color={item.danger ? c.danger : c.gold} />
+      </View>
+      <Text style={[styles.rowLabel, item.danger && styles.rowLabelDanger]}>{item.label}</Text>
+      {item.value ? <Text style={styles.rowValue}>{item.value}</Text> : null}
+      <Ionicons name="chevron-forward" size={15} color={c.textMuted} />
+    </Pressable>
+  );
+}
+
+function ToggleRow({ item, divider }: { item: Extract<RowItem, { kind: 'toggle' }>; divider: boolean }) {
+  const c = useColors();
+  const styles = useStyles();
+  return (
+    <View style={[styles.row, divider && styles.rowDivider]}>
+      <View style={styles.iconWrap}>
+        <Ionicons name={item.icon as any} size={16} color={c.gold} />
+      </View>
+      <Text style={styles.rowLabel}>{item.label}</Text>
+      <Switch
+        value={item.value}
+        onValueChange={item.onChange}
+        trackColor={{ true: c.gold, false: c.border }}
+        thumbColor="#fff"
+      />
+    </View>
+  );
+}
+
+function SettingsSection({ section }: { section: Section }) {
+  const styles = useStyles();
+  const router = useRouter();
+
+  const handleNav = (item: Extract<RowItem, { kind: 'nav' }>) => {
+    if (item.route) {
+      router.push(item.route as never);
+    } else {
+      Alert.alert(item.label, 'Coming soon.');
+    }
+  };
+
+  return (
+    <>
+      <Text style={styles.sectionLabel}>{section.title}</Text>
+      <View style={styles.card}>
+        {section.rows.map((item, i) =>
+          item.kind === 'toggle' ? (
+            <ToggleRow key={item.label} item={item} divider={i > 0} />
+          ) : (
+            <NavRow key={item.label} item={item} divider={i > 0} onPress={() => handleNav(item)} />
+          ),
+        )}
+      </View>
+    </>
+  );
+}
+
+// ── Screen ─────────────────────────────────────────────────────────────────
+
+export default function OwnerSettingsScreen() {
+  const styles = useStyles();
+  const router = useRouter();
+
+  const [pushOn, setPushOn] = React.useState(true);
+  const [soundOn, setSoundOn] = React.useState(true);
+  const [emailDigest, setEmailDigest] = React.useState(true);
+
+  const sections: Section[] = [
+    {
+      title: 'Account',
+      rows: [
+        { kind: 'nav', label: 'Personal details', value: 'Mark H.', icon: 'person-outline' },
+        { kind: 'nav', label: 'Password & security', icon: 'lock-closed-outline' },
+        { kind: 'nav', label: 'Face ID / Touch ID', value: 'Enabled', icon: 'finger-print-outline' },
+      ],
+    },
+    {
+      title: 'Business',
+      rows: [
+        { kind: 'nav', label: 'Business hours', value: 'Mon–Sun', icon: 'time-outline' },
+        { kind: 'nav', label: 'Reservation settings', value: 'Max 10 · 60d window', icon: 'calendar-outline' },
+        { kind: 'nav', label: 'Holiday & closures', value: 'None scheduled', icon: 'ban-outline' },
+      ],
+    },
+    {
+      title: 'Payments & Billing',
+      rows: [
+        { kind: 'nav', label: 'Payout method', value: 'Stripe · ···· 4429', icon: 'card-outline' },
+        { kind: 'nav', label: 'Billing history', icon: 'receipt-outline' },
+        { kind: 'nav', label: 'Subscription plan', value: 'Pro', icon: 'star-outline' },
+      ],
+    },
+    {
+      title: 'Team',
+      rows: [
+        { kind: 'nav', label: 'Staff members', value: '5 members', icon: 'people-outline' },
+        { kind: 'nav', label: 'Roles & permissions', icon: 'shield-checkmark-outline' },
+        { kind: 'nav', label: 'Staff PIN codes', icon: 'keypad-outline' },
+      ],
+    },
+    {
+      title: 'Notifications',
+      rows: [
+        { kind: 'toggle', label: 'Push notifications', icon: 'notifications-outline', value: pushOn, onChange: setPushOn },
+        { kind: 'toggle', label: 'Sound alerts', icon: 'volume-high-outline', value: soundOn, onChange: setSoundOn },
+        { kind: 'toggle', label: 'Email digest', icon: 'mail-outline', value: emailDigest, onChange: setEmailDigest },
+        { kind: 'nav', label: 'Quiet hours', value: 'Off', icon: 'moon-outline' },
+      ],
+    },
+    {
+      title: 'App & Display',
+      rows: [
+        { kind: 'nav', label: 'Appearance', value: 'Dark', icon: 'contrast-outline' },
+        { kind: 'nav', label: 'Language', value: 'English', icon: 'language-outline' },
+      ],
+    },
+    {
+      title: 'Support & Legal',
+      rows: [
+        { kind: 'nav', label: 'Help & support', icon: 'help-circle-outline' },
+        { kind: 'nav', label: 'Privacy policy', icon: 'shield-outline' },
+        { kind: 'nav', label: 'Terms of service', icon: 'document-outline' },
+        { kind: 'nav', label: 'Rate Seatly', icon: 'heart-outline' },
+      ],
+    },
+    {
+      title: 'Danger Zone',
+      rows: [
+        { kind: 'nav', label: 'Delete account', icon: 'trash-outline', danger: true },
+      ],
+    },
+  ];
+
+  return (
+    <OwnerScreen>
+      <SubpageHeader
+        title="Settings"
+        fallbackTab="more"
+        onBack={() => router.replace('/(staff)/profile' as never)}
+      />
+
+      {sections.map((s) => (
+        <SettingsSection key={s.title} section={s} />
+      ))}
+
+      <Pressable
+        style={({ pressed }) => [styles.signOutWrap, { opacity: pressed ? 0.7 : 1 }]}
+        onPress={() =>
+          Alert.alert('Sign out', 'Are you sure you want to sign out?', [
+            { text: 'Cancel', style: 'cancel' },
+            { text: 'Sign out', style: 'destructive', onPress: () => {} },
+          ])
+        }
+        accessibilityRole="button"
+        accessibilityLabel="Sign out"
+      >
+        <Text style={styles.signOut}>Sign out</Text>
+      </Pressable>
+    </OwnerScreen>
+  );
+}

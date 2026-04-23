@@ -16,6 +16,8 @@ type SubpageHeaderProps = {
   fallbackTab?: RootFallbackTab;
   fallbackHref?: Href;
   rightAction?: React.ReactNode;
+  /** Override the back button handler entirely. */
+  onBack?: () => void;
 };
 
 const FALLBACK_TAB_HREF: Record<RootFallbackTab, Href> = {
@@ -34,6 +36,7 @@ export function SubpageHeader({
   fallbackTab = 'more',
   fallbackHref,
   rightAction,
+  onBack,
 }: SubpageHeaderProps) {
   const c = useColors();
   const styles = useStyles();
@@ -42,12 +45,16 @@ export function SubpageHeader({
   const safeFallbackHref = fallbackHref ?? FALLBACK_TAB_HREF[fallbackTab];
 
   const handleBack = useCallback(() => {
+    if (onBack) {
+      onBack();
+      return;
+    }
     if (navigation.canGoBack()) {
       navigation.goBack();
       return;
     }
     router.replace(safeFallbackHref);
-  }, [navigation, router, safeFallbackHref]);
+  }, [onBack, navigation, router, safeFallbackHref]);
 
   return (
     <View style={[styles.wrap, compact && styles.wrapCompact]}>

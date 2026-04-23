@@ -261,7 +261,7 @@ export default function OwnerTabsLayout() {
         <Tabs.Screen name="expenses"   options={{ href: null }} />
         <Tabs.Screen name="events"     options={{ href: null }} />
         <Tabs.Screen name="export"     options={{ href: null }} />
-        <Tabs.Screen name="settings"   options={{ href: null }} />
+        <Tabs.Screen name="settings"   options={{ href: null, tabBarStyle: { display: 'none' } }} />
       </Tabs>
 
       {/* Quick-add modal sheet */}

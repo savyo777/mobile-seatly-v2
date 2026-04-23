@@ -264,6 +264,21 @@ const useStyles = createStyles((c) => ({
     marginRight: spacing.sm,
   },
 
+  // ── Settings shortcut ──
+  settingsBtn: {
+    position: 'absolute',
+    top: 0,
+    right: spacing.lg,
+    width: 38,
+    height: 38,
+    borderRadius: 19,
+    backgroundColor: `${c.bgSurface}CC`,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: c.border,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+
   // ── Sign out ──
   signOutWrap: {
     alignItems: 'center',
@@ -358,6 +373,18 @@ export default function OwnerBusinessScreen() {
         {/* ── Hero with diagonal stripe ── */}
         <View style={[styles.heroWrap, { height: heroH }]}>
           <DiagonalPattern width={width} height={heroH} />
+          <Pressable
+            style={({ pressed }) => [
+              styles.settingsBtn,
+              { top: insets.top + spacing.sm },
+              pressed && styles.btnPressed,
+            ]}
+            onPress={() => router.push('/(staff)/settings' as never)}
+            accessibilityRole="button"
+            accessibilityLabel="Settings"
+          >
+            <Ionicons name="settings-outline" size={18} color={c.textSecondary} />
+          </Pressable>
           <View style={[styles.heroContent, { paddingTop: insets.top + spacing.xs }]}>
             <View style={styles.logoRow}>
               <View style={styles.logoBox}>
