@@ -11,7 +11,6 @@ import {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
-import { OwnerHeader } from '@/components/owner/OwnerHeader';
 import { useColors, createStyles, spacing, borderRadius } from '@/lib/theme';
 import { useOwnerTabScrollPadding } from '@/hooks/useOwnerTabScrollPadding';
 import {
@@ -47,7 +46,6 @@ function initials(name: string): string {
 const useStyles = createStyles((c) => ({
   root: { flex: 1, backgroundColor: c.bgBase },
 
-  /** Uber-style segmented control — one clear choice at the top */
   segmentWrap: {
     paddingHorizontal: spacing.lg,
     marginBottom: spacing.md,
@@ -62,22 +60,51 @@ const useStyles = createStyles((c) => ({
   },
   segmentSlot: { flex: 1 },
   segmentBtn: {
-    paddingVertical: 11,
+    paddingVertical: 12,
     alignItems: 'center',
     justifyContent: 'center',
     borderRadius: borderRadius.sm,
   },
-  segmentBtnActive: {
-    backgroundColor: c.gold,
+  segmentBtnActive: { backgroundColor: c.gold },
+  segmentLabel: { fontSize: 14, fontWeight: '700', color: c.textMuted },
+  segmentLabelActive: { color: c.bgBase },
+
+  pageHeader: {
+    paddingHorizontal: spacing.lg,
+    paddingBottom: spacing.md,
   },
-  segmentLabel: {
-    fontSize: 14,
+  kickerRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    marginBottom: 6,
+  },
+  kickerDot: {
+    width: 7,
+    height: 7,
+    borderRadius: 4,
+    backgroundColor: c.success,
+  },
+  kickerText: {
+    fontSize: 11,
     fontWeight: '700',
     color: c.textMuted,
+    letterSpacing: 0.8,
   },
-  segmentLabelActive: {
-    color: c.bgBase,
+  pageTitle: {
+    fontSize: 30,
+    fontWeight: '800',
+    color: c.textPrimary,
+    letterSpacing: -0.8,
+    lineHeight: 34,
   },
+  pageSub: {
+    fontSize: 14,
+    color: c.textMuted,
+    fontWeight: '500',
+    marginTop: 4,
+  },
+
   statusWrap: {
     paddingHorizontal: spacing.lg,
     marginBottom: spacing.md,
@@ -89,8 +116,8 @@ const useStyles = createStyles((c) => ({
   statusChip: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 4,
-    paddingHorizontal: spacing.md,
+    gap: 5,
+    paddingHorizontal: 12,
     paddingVertical: 8,
     borderRadius: borderRadius.full,
     backgroundColor: c.bgSurface,
@@ -99,23 +126,96 @@ const useStyles = createStyles((c) => ({
   },
   statusChipOn: {
     borderColor: c.gold,
-    backgroundColor: `${c.gold}16`,
+    backgroundColor: 'transparent',
+    borderWidth: 1.5,
   },
-  statusChipText: {
+  statusChipText: { fontSize: 13, fontWeight: '700', color: c.textMuted },
+  statusChipTextOn: { color: c.gold },
+  statusCount: { fontSize: 12, fontWeight: '800', color: c.textMuted },
+  statusCountOn: { color: c.gold },
+
+  rightNowCard: {
+    marginHorizontal: spacing.lg,
+    marginBottom: spacing.lg,
+    borderRadius: borderRadius.xl,
+    backgroundColor: c.bgSurface,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: c.border,
+    padding: spacing.lg,
+  },
+  rightNowTitle: {
+    fontSize: 18,
+    fontWeight: '800',
+    color: c.textPrimary,
+    letterSpacing: -0.3,
+    marginBottom: 4,
+  },
+  rightNowSub: {
+    fontSize: 13,
+    color: c.textMuted,
+    fontWeight: '500',
+    marginBottom: spacing.md,
+  },
+  rightNowStats: {
+    flexDirection: 'row',
+    gap: spacing.sm,
+    marginBottom: spacing.md,
+  },
+  rightNowStat: {
+    flex: 1,
+    backgroundColor: c.bgElevated,
+    borderRadius: borderRadius.lg,
+    padding: spacing.md,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: c.border,
+  },
+  rightNowStatValue: {
+    fontSize: 26,
+    fontWeight: '800',
+    color: c.textPrimary,
+    letterSpacing: -0.6,
+  },
+  rightNowStatValueAccent: { color: c.gold },
+  rightNowStatLabel: {
     fontSize: 12,
+    fontWeight: '600',
+    color: c.textMuted,
+    marginTop: 4,
+  },
+  upNextRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.md,
+    paddingTop: spacing.md,
+    borderTopWidth: StyleSheet.hairlineWidth,
+    borderTopColor: c.border,
+  },
+  upNextAvatar: {
+    width: 38,
+    height: 38,
+    borderRadius: 19,
+    backgroundColor: `${c.gold}22`,
+    alignItems: 'center',
+    justifyContent: 'center',
+    flexShrink: 0,
+  },
+  upNextAvatarText: {
+    fontSize: 12,
+    fontWeight: '800',
+    color: c.gold,
+  },
+  upNextCol: { flex: 1, minWidth: 0 },
+  upNextLabel: {
+    fontSize: 10,
     fontWeight: '700',
     color: c.textMuted,
+    letterSpacing: 0.6,
+    marginBottom: 2,
   },
-  statusChipTextOn: {
-    color: c.gold,
-  },
-  statusCount: {
-    fontSize: 11,
-    fontWeight: '800',
-    color: c.textMuted,
-  },
-  statusCountOn: {
-    color: c.gold,
+  upNextText: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: c.textPrimary,
   },
 
   listMeta: {
@@ -138,10 +238,8 @@ const useStyles = createStyles((c) => ({
     fontSize: 13,
     fontWeight: '700',
     color: c.textMuted,
-    letterSpacing: 0.2,
   },
 
-  /** One reservation = one card (Uber trip-card DNA: accent, hierarchy, breath) */
   bookingCard: {
     marginHorizontal: spacing.lg,
     marginBottom: spacing.sm,
@@ -152,122 +250,60 @@ const useStyles = createStyles((c) => ({
     flexDirection: 'row',
     alignItems: 'stretch',
     overflow: 'hidden',
-    shadowColor: '#000',
-    shadowOpacity: 0.05,
-    shadowRadius: 10,
-    shadowOffset: { width: 0, height: 2 },
-    elevation: 2,
   },
-  bookingCardPressed: {
-    opacity: 0.92,
-    transform: [{ scale: 0.995 }],
-  },
-  statusAccent: {
-    width: 4,
-    backgroundColor: c.border,
-  },
+  bookingCardPressed: { opacity: 0.88, backgroundColor: c.bgElevated },
+  statusAccent: { width: 4 },
   bookingInner: {
     flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
-    paddingVertical: spacing.md,
-    paddingRight: spacing.sm,
+    paddingVertical: 16,
+    paddingRight: spacing.md,
     paddingLeft: spacing.md,
     gap: spacing.md,
     minHeight: 76,
   },
-  timeBlock: {
-    width: 52,
-    alignItems: 'flex-start',
-  },
+  timeBlock: { width: 52 },
   timeClock: {
     fontSize: 22,
     fontWeight: '800',
     color: c.textPrimary,
-    letterSpacing: -0.6,
+    letterSpacing: -0.5,
     lineHeight: 26,
   },
   timeMeridiem: {
     fontSize: 11,
-    fontWeight: '700',
+    fontWeight: '600',
     color: c.textMuted,
-    marginTop: 1,
-    letterSpacing: 0.3,
+    marginTop: 2,
   },
-  bookingMain: {
-    flex: 1,
-    minWidth: 0,
-    gap: 4,
-  },
-  nameRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-  },
+  bookingMain: { flex: 1, minWidth: 0 },
+  nameRow: { flexDirection: 'row', alignItems: 'center', gap: 5, marginBottom: 3 },
   guestName: {
     fontSize: 17,
     fontWeight: '700',
     color: c.textPrimary,
-    letterSpacing: -0.3,
+    letterSpacing: -0.2,
     flexShrink: 1,
   },
   walkInTag: {
-    alignSelf: 'flex-start',
-    paddingHorizontal: 8,
-    paddingVertical: 3,
+    paddingHorizontal: 7,
+    paddingVertical: 2,
     borderRadius: borderRadius.full,
     backgroundColor: c.bgElevated,
     borderWidth: StyleSheet.hairlineWidth,
     borderColor: c.border,
   },
-  walkInTagText: {
-    fontSize: 11,
-    fontWeight: '700',
-    color: c.textSecondary,
-    letterSpacing: 0.1,
-  },
-  metaLine: {
-    fontSize: 13,
-    fontWeight: '500',
-    color: c.textMuted,
-  },
-  bookingStatusRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-    marginTop: 2,
-  },
-  statusDot: {
-    width: 6,
-    height: 6,
-    borderRadius: 3,
-  },
-  statusWord: {
-    fontSize: 12,
-    fontWeight: '700',
-  },
-  chevronWrap: {
-    paddingLeft: 2,
-    justifyContent: 'center',
-  },
-  avatarText: {
-    fontSize: 13,
-    fontWeight: '800',
-    color: c.gold,
-    letterSpacing: -0.2,
-  },
+  walkInTagText: { fontSize: 10, fontWeight: '700', color: c.textSecondary },
+  metaLine: { fontSize: 13, fontWeight: '500', color: c.textMuted },
+  bookingStatusRow: { flexDirection: 'row', alignItems: 'center', gap: 5, marginTop: 4 },
+  statusDot: { width: 6, height: 6, borderRadius: 3 },
+  statusWord: { fontSize: 12, fontWeight: '700' },
+  chevronWrap: { paddingLeft: 2, justifyContent: 'center' },
+  avatarText: { fontSize: 13, fontWeight: '800', color: c.gold },
 
-  empty: {
-    padding: spacing.xl,
-    alignItems: 'center',
-    gap: 8,
-  },
-  emptyText: {
-    fontSize: 14,
-    color: c.textMuted,
-    textAlign: 'center',
-    fontWeight: '500',
-  },
+  empty: { padding: spacing.xl, alignItems: 'center', gap: 8 },
+  emptyText: { fontSize: 14, color: c.textMuted, textAlign: 'center', fontWeight: '500' },
 
   summaryCard: {
     marginHorizontal: spacing.lg,
@@ -279,22 +315,9 @@ const useStyles = createStyles((c) => ({
     padding: spacing.lg,
     gap: spacing.md,
   },
-  summaryTitle: {
-    fontSize: 18,
-    fontWeight: '800',
-    color: c.textPrimary,
-    letterSpacing: -0.3,
-  },
-  summarySub: {
-    fontSize: 13,
-    color: c.textMuted,
-    fontWeight: '500',
-    marginTop: 2,
-  },
-  summaryStats: {
-    flexDirection: 'row',
-    gap: spacing.md,
-  },
+  summaryTitle: { fontSize: 18, fontWeight: '800', color: c.textPrimary, letterSpacing: -0.3 },
+  summarySub: { fontSize: 13, color: c.textMuted, fontWeight: '500', marginTop: 2 },
+  summaryStats: { flexDirection: 'row', gap: spacing.md },
   summaryStat: {
     flex: 1,
     backgroundColor: c.bgElevated,
@@ -303,79 +326,30 @@ const useStyles = createStyles((c) => ({
     borderWidth: StyleSheet.hairlineWidth,
     borderColor: c.border,
   },
-  summaryStatValue: {
-    fontSize: 26,
-    fontWeight: '800',
-    color: c.textPrimary,
-    letterSpacing: -0.5,
-  },
+  summaryStatValue: { fontSize: 26, fontWeight: '800', color: c.textPrimary, letterSpacing: -0.5 },
   summaryStatValueAccent: { color: c.gold },
-  summaryStatLabel: {
-    fontSize: 12,
-    fontWeight: '600',
-    color: c.textMuted,
-    marginTop: 4,
-  },
-  quickRow: {
-    flexDirection: 'row',
-    gap: spacing.sm,
-    paddingHorizontal: spacing.lg,
-    marginBottom: spacing.md,
-  },
+  summaryStatLabel: { fontSize: 12, fontWeight: '600', color: c.textMuted, marginTop: 4 },
+  quickRow: { flexDirection: 'row', gap: spacing.sm, paddingHorizontal: spacing.lg, marginBottom: spacing.md },
   quickBtn: {
-    flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: spacing.xs,
-    minHeight: 44,
-    borderRadius: borderRadius.md,
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: c.border,
-    backgroundColor: c.bgSurface,
+    flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
+    gap: spacing.xs, minHeight: 44, borderRadius: borderRadius.md,
+    borderWidth: StyleSheet.hairlineWidth, borderColor: c.border, backgroundColor: c.bgSurface,
   },
-  quickBtnPrimary: {
-    backgroundColor: `${c.gold}16`,
-    borderColor: `${c.gold}55`,
-  },
-  quickBtnText: {
-    fontSize: 13,
-    fontWeight: '700',
-    color: c.textPrimary,
-  },
-  quickBtnTextPrimary: {
-    color: c.gold,
-  },
+  quickBtnPrimary: { backgroundColor: `${c.gold}16`, borderColor: `${c.gold}55` },
+  quickBtnText: { fontSize: 13, fontWeight: '700', color: c.textPrimary },
+  quickBtnTextPrimary: { color: c.gold },
   nextRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.md,
-    paddingTop: spacing.sm,
-    borderTopWidth: StyleSheet.hairlineWidth,
-    borderTopColor: c.border,
+    flexDirection: 'row', alignItems: 'center', gap: spacing.md,
+    paddingTop: spacing.sm, borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: c.border,
   },
   nextAvatar: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: c.bgElevated,
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: c.border,
+    width: 40, height: 40, borderRadius: 20, backgroundColor: c.bgElevated,
+    alignItems: 'center', justifyContent: 'center',
+    borderWidth: StyleSheet.hairlineWidth, borderColor: c.border,
   },
   nextCol: { flex: 1, minWidth: 0 },
-  nextLabel: {
-    fontSize: 12,
-    fontWeight: '600',
-    color: c.textMuted,
-  },
-  nextText: {
-    fontSize: 15,
-    fontWeight: '700',
-    color: c.textPrimary,
-    marginTop: 2,
-  },
+  nextLabel: { fontSize: 12, fontWeight: '600', color: c.textMuted },
+  nextText: { fontSize: 15, fontWeight: '700', color: c.textPrimary, marginTop: 2 },
 
   modalOverlay: {
     flex: 1,
@@ -672,6 +646,7 @@ export default function OwnerReservationsScreen() {
           <>
             <View style={{ paddingTop: insets.top + spacing.sm }} />
 
+            {/* Date segment */}
             <View style={styles.segmentWrap}>
               <View style={styles.segmentTrack} accessibilityRole="tablist">
                 {DATE_FILTERS.map((f) => {
@@ -683,11 +658,8 @@ export default function OwnerReservationsScreen() {
                         style={[styles.segmentBtn, active && styles.segmentBtnActive]}
                         accessibilityRole="tab"
                         accessibilityState={{ selected: active }}
-                        accessibilityLabel={`${f.label}. ${active ? 'Selected' : 'Show'} reservations for ${f.label.toLowerCase()}.`}
                       >
-                        <Text
-                          style={[styles.segmentLabel, active && styles.segmentLabelActive]}
-                        >
+                        <Text style={[styles.segmentLabel, active && styles.segmentLabelActive]}>
                           {f.label}
                         </Text>
                       </Pressable>
@@ -697,8 +669,17 @@ export default function OwnerReservationsScreen() {
               </View>
             </View>
 
-            <OwnerHeader title="Bookings" subtitle={headerSubtitle} />
+            {/* Page header */}
+            <View style={styles.pageHeader}>
+              <View style={styles.kickerRow}>
+                <View style={styles.kickerDot} />
+                <Text style={styles.kickerText}>BOOKINGS</Text>
+              </View>
+              <Text style={styles.pageTitle}>Tonight's service</Text>
+              <Text style={styles.pageSub}>Live reservation control</Text>
+            </View>
 
+            {/* Status chips */}
             <ScrollView
               horizontal
               showsHorizontalScrollIndicator={false}
@@ -713,7 +694,6 @@ export default function OwnerReservationsScreen() {
                       onPress={() => onSelectStatus(f.key)}
                       style={[styles.statusChip, active && styles.statusChipOn]}
                       accessibilityRole="button"
-                      accessibilityLabel={`Filter by ${f.label}`}
                     >
                       <Text style={[styles.statusChipText, active && styles.statusChipTextOn]}>
                         {f.label}
@@ -727,83 +707,40 @@ export default function OwnerReservationsScreen() {
               </View>
             </ScrollView>
 
-            <View style={styles.quickRow}>
-              <Pressable
-                style={[styles.quickBtn, styles.quickBtnPrimary]}
-                onPress={press(() => setSelected(glance.next ?? filtered[0] ?? null))}
-                accessibilityRole="button"
-                accessibilityLabel="Open next booking"
-              >
-                <Ionicons name="flash-outline" size={16} color={c.gold} />
-                <Text style={[styles.quickBtnText, styles.quickBtnTextPrimary]}>Next booking</Text>
-              </Pressable>
-              <Pressable
-                style={styles.quickBtn}
-                onPress={press(() => setDateFilter('today'))}
-                accessibilityRole="button"
-                accessibilityLabel="Focus on today"
-              >
-                <Ionicons name="today-outline" size={16} color={c.textSecondary} />
-                <Text style={styles.quickBtnText}>Today view</Text>
-              </Pressable>
-            </View>
-
-            <View style={styles.summaryCard}>
-              <View>
-                <Text style={styles.summaryTitle}>{summaryHeading}</Text>
-                <Text style={styles.summarySub}>
-                  {dateFilter === 'today' ? (
-                    <>
-                      {glance.seated} of {capacity} tables seated · {glance.upcoming} still
-                      expected
-                    </>
-                  ) : (
-                    <>
-                      {glance.total} reservation{glance.total === 1 ? '' : 's'} · {glance.upcoming}{' '}
-                      still expected
-                    </>
-                  )}
-                </Text>
-              </View>
-              <View style={styles.summaryStats}>
-                {dateFilter === 'today' ? (
-                  <View style={styles.summaryStat}>
-                    <Text style={[styles.summaryStatValue, styles.summaryStatValueAccent]}>
-                      {glance.seated}
-                      <Text style={{ fontSize: 16, fontWeight: '700', color: c.textMuted }}>
-                        /{capacity}
-                      </Text>
+            {/* Right now card */}
+            <View style={styles.rightNowCard}>
+              <Text style={styles.rightNowTitle}>Right now</Text>
+              <Text style={styles.rightNowSub}>
+                {glance.seated} of {capacity} tables seated · {glance.upcoming} still expected
+              </Text>
+              <View style={styles.rightNowStats}>
+                <View style={styles.rightNowStat}>
+                  <Text style={[styles.rightNowStatValue, styles.rightNowStatValueAccent]}>
+                    {glance.seated}
+                    <Text style={{ fontSize: 15, fontWeight: '700', color: c.textMuted }}>
+                      /{capacity}
                     </Text>
-                    <Text style={styles.summaryStatLabel}>Tables seated</Text>
-                  </View>
-                ) : (
-                  <View style={styles.summaryStat}>
-                    <Text style={[styles.summaryStatValue, styles.summaryStatValueAccent]}>
-                      {glance.total}
-                    </Text>
-                    <Text style={styles.summaryStatLabel}>On the list</Text>
-                  </View>
-                )}
-                <View style={styles.summaryStat}>
-                  <Text style={styles.summaryStatValue}>{glance.upcoming}</Text>
-                  <Text style={styles.summaryStatLabel}>Still coming</Text>
+                  </Text>
+                  <Text style={styles.rightNowStatLabel}>Seated</Text>
+                </View>
+                <View style={styles.rightNowStat}>
+                  <Text style={styles.rightNowStatValue}>{glance.upcoming}</Text>
+                  <Text style={styles.rightNowStatLabel}>Still coming</Text>
                 </View>
               </View>
               {glance.next ? (
                 <Pressable
-                  style={styles.nextRow}
+                  style={styles.upNextRow}
                   onPress={press(() => setSelected(glance.next!))}
                   accessibilityRole="button"
-                  accessibilityLabel={`Next reservation ${glance.next.guestName}`}
                 >
-                  <View style={styles.nextAvatar}>
-                    <Text style={styles.avatarText}>{initials(glance.next.guestName)}</Text>
+                  <View style={styles.upNextAvatar}>
+                    <Text style={styles.upNextAvatarText}>{initials(glance.next.guestName)}</Text>
                   </View>
-                  <View style={styles.nextCol}>
-                    <Text style={styles.nextLabel}>Up next</Text>
-                    <Text style={styles.nextText} numberOfLines={1}>
-                      {glance.next.startTime} · {glance.next.guestName} · party of{' '}
-                      {glance.next.partySize}
+                  <View style={styles.upNextCol}>
+                    <Text style={styles.upNextLabel}>UP NEXT</Text>
+                    <Text style={styles.upNextText} numberOfLines={1}>
+                      {glance.next.startTime} · {glance.next.guestName} · ...
                     </Text>
                   </View>
                   <Ionicons name="chevron-forward" size={18} color={c.textMuted} />
@@ -857,25 +794,30 @@ export default function OwnerReservationsScreen() {
                       {row.guestName}
                     </Text>
                     {row.vip ? (
-                      <Ionicons name="star" size={14} color={c.gold} accessibilityLabel="VIP" />
+                      <Ionicons name="star" size={13} color={c.gold} accessibilityLabel="VIP" />
                     ) : null}
                   </View>
                   <Text style={styles.metaLine} numberOfLines={1}>
-                    Party of {row.partySize}
-                    {tableBit}
+                    Party of {row.partySize}{tableBit}
                   </Text>
-                  <View style={styles.bookingStatusRow}>
-                    <View style={[styles.statusDot, { backgroundColor: pres.text }]} />
-                    <Text style={[styles.statusWord, { color: pres.text }]}>{pres.label}</Text>
-                    {row.walkIn ? (
-                      <View style={styles.walkInTag}>
-                        <Text style={styles.walkInTagText}>Walk-in</Text>
-                      </View>
-                    ) : null}
-                  </View>
+                  {row.walkIn ? (
+                    <View style={[styles.walkInTag, { alignSelf: 'flex-start', marginTop: 4 }]}>
+                      <Text style={styles.walkInTagText}>Walk-in</Text>
+                    </View>
+                  ) : null}
                 </View>
-                <View style={styles.chevronWrap}>
-                  <Ionicons name="chevron-forward" size={20} color={c.textMuted} />
+                <View style={{
+                  paddingHorizontal: 9,
+                  paddingVertical: 5,
+                  borderRadius: borderRadius.full,
+                  backgroundColor: pres.bg,
+                  borderWidth: StyleSheet.hairlineWidth,
+                  borderColor: pres.text,
+                  alignItems: 'center',
+                }}>
+                  <Text style={{ fontSize: 10, fontWeight: '800', color: pres.text, letterSpacing: 0.3 }}>
+                    {pres.label.toUpperCase()}
+                  </Text>
                 </View>
               </View>
             </Pressable>

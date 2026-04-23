@@ -2,7 +2,7 @@ import type { Table } from '@/lib/mock/tables';
 
 export type RevenuePeriod = 'day' | 'week' | '2w' | 'month' | '6m' | 'year';
 
-export const OWNER_FIRST_NAME = 'Steven';
+export const OWNER_FIRST_NAME = 'Savannah';
 
 export const TONIGHT_SUMMARY = {
   revenue: 4280,
@@ -825,19 +825,91 @@ export interface OwnerBusinessProfile {
 
 export const OWNER_BUSINESS_PROFILE: OwnerBusinessProfile = {
   name: 'Nova Ristorante',
-  cuisine: 'Italian · Modern',
-  neighborhood: 'Old Port, Montréal',
+  cuisine: 'Italian',
+  neighborhood: 'King West, Toronto',
   description:
-    'Seasonal Italian cooking, natural wines, and warm hospitality in the heart of Old Port.',
-  phone: '+1 (514) 555-0199',
+    'Candlelit Northern Italian with a wood-fired hearth and a deep natural-wine list. Handmade pasta daily; seasonal tasting menu Thu–Sat.',
+  phone: '(416) 555-0142',
   email: 'hello@novaristorante.com',
-  address: '420 Rue Saint-Paul O, Montréal, QC H2Y 2A5',
+  address: '412 King St W, Toronto',
   website: 'novaristorante.com',
-  rating: 4.7,
-  reviewCount: 324,
+  rating: 4.8,
+  reviewCount: 512,
   followerCount: 1248,
   coverPhotoSeed: 'nova-ristorante',
 };
+
+export const OWNER_BUSINESS_PRICE = '$$$';
+export const OWNER_BUSINESS_INSTAGRAM = '@nova.ristorante';
+
+/** Bookings by hour for the schedule demand chart (4 PM – midnight). */
+export const BOOKINGS_BY_HOUR: { label: string; count: number; tier: 'peak' | 'busy' | 'slow' }[] = [
+  { label: '4p', count: 8, tier: 'slow' },
+  { label: '5p', count: 18, tier: 'busy' },
+  { label: '6p', count: 34, tier: 'busy' },
+  { label: '7p', count: 42, tier: 'peak' },
+  { label: '8p', count: 38, tier: 'peak' },
+  { label: '9p', count: 28, tier: 'busy' },
+  { label: '10p', count: 16, tier: 'busy' },
+  { label: '11p', count: 9, tier: 'slow' },
+  { label: '12a', count: 3, tier: 'slow' },
+];
+
+export const BOOKINGS_BY_HOUR_TOTAL = 196;
+export const BOOKINGS_BY_HOUR_PEAK = '7 PM';
+
+/** Day pills for the schedule screen (this week's booking counts). */
+export const SCHEDULE_WEEK_DAYS = [
+  { key: 'Mon', count: 78 },
+  { key: 'Tue', count: 93 },
+  { key: 'Wed', count: 107 },
+  { key: 'Thu', count: 138 },
+  { key: 'Fri', count: 162 },
+  { key: 'Sat', count: 184 },
+  { key: 'Sun', count: 94 },
+];
+
+export interface ShiftStaff {
+  id: string;
+  initials: string;
+  name: string;
+  role: string;
+  section: string;
+  startTime: string;
+  endTime: string;
+  hours: number;
+  onShift: boolean;
+}
+
+export const SHIFT_STAFF: ShiftStaff[] = [
+  { id: 'sh1', initials: 'AR', name: 'Alex Rivera', role: 'Lead server', section: 'Patio', startTime: '4:00', endTime: '11:00 PM', hours: 7, onShift: true },
+  { id: 'sh2', initials: 'SC', name: 'Sam Chen', role: 'Server', section: 'Main', startTime: '5:00', endTime: '11:00 PM', hours: 6, onShift: true },
+  { id: 'sh3', initials: 'JP', name: 'Jordan Pike', role: 'Host', section: 'Front', startTime: '4:30', endTime: '10:30 PM', hours: 6, onShift: true },
+  { id: 'sh4', initials: 'MY', name: 'Morgan Yu', role: 'Bar', section: 'Bar', startTime: '6:00', endTime: 'midnight', hours: 6, onShift: false },
+  { id: 'sh5', initials: 'PD', name: 'Priya Desai', role: 'Server', section: 'Main', startTime: '', endTime: '', hours: 0, onShift: false },
+];
+
+export const RESTAURANT_SERVICE_HOURS: { label: string; open: string; close: string; peak: boolean }[] = [
+  { label: 'Mon–Wed', open: '5:00 PM', close: '11:00 PM', peak: false },
+  { label: 'Thu', open: '5:00 PM', close: 'midnight', peak: true },
+  { label: 'Fri–Sat', open: '5:00 PM', close: '1:00 AM', peak: true },
+  { label: 'Sun', open: '5:00 PM', close: '10:00 PM', peak: false },
+];
+
+/** Structured attention items for the home screen. */
+export const HOME_ATTENTION_ITEMS: { id: string; icon: string; title: string; sub: string; severity: 'critical' | 'warning' | 'info' }[] = [
+  { id: 'ha1', icon: 'warning', title: '1 reservation at risk — 2 past no-shows', sub: 'Send a confirmation text', severity: 'critical' },
+  { id: 'ha2', icon: 'time', title: '2 reservations awaiting confirmation', sub: 'Nudge guests automatically', severity: 'warning' },
+  { id: 'ha3', icon: 'sparkles', title: 'Tuesday 6–7 PM is quiet — post a promo?', sub: '45% below average for that slot', severity: 'info' },
+];
+
+/** Reservation flow rows shown on the home screen. */
+export const HOME_RESERVATION_FLOW: { id: string; time: string; name: string; partyInfo: string; status: 'confirmed' | 'pending' | 'risk' | 'seated'; vip?: boolean }[] = [
+  { id: 'rf1', time: '6:45', period: 'PM', name: 'Marcus Holloway', partyInfo: 'Party 6 · M-8', status: 'confirmed' } as never,
+  { id: 'rf2', time: '7:00', period: 'PM', name: 'Sofia & Jules', partyInfo: 'Party 2 · P-1', status: 'confirmed', vip: true } as never,
+  { id: 'rf3', time: '7:15', period: 'PM', name: 'Aisha Raghavan', partyInfo: 'Party 3 · M-6', status: 'pending' } as never,
+  { id: 'rf4', time: '7:30', period: 'PM', name: 'Kenji Tanaka', partyInfo: 'Party 2 · no table', status: 'risk' } as never,
+];
 
 /** Returns whether the restaurant is currently open based on OWNER_BUSINESS_HOURS and the supplied Date. */
 export function isBusinessOpenNow(

@@ -1,420 +1,510 @@
-import React, { useMemo } from 'react';
-import { View, Text, Pressable, ScrollView, StyleSheet, Alert } from 'react-native';
+import React from 'react';
+import {
+  View,
+  Text,
+  ScrollView,
+  Pressable,
+  StyleSheet,
+  Alert,
+  useWindowDimensions,
+} from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
+import Svg, { Defs, Pattern, Rect, Line } from 'react-native-svg';
 import * as Haptics from 'expo-haptics';
-import { StatCard } from '@/components/owner/StatCard';
-import { SectionCard } from '@/components/owner/SectionCard';
-import { ChevronSettingRow } from '@/components/profile/ChevronSettingRow';
 import { useColors, createStyles, spacing, borderRadius } from '@/lib/theme';
 import { useOwnerTabScrollPadding } from '@/hooks/useOwnerTabScrollPadding';
 import {
   OWNER_BUSINESS_PROFILE,
-  isBusinessOpenNow,
-  OWNER_PROMOTIONS,
+  OWNER_BUSINESS_PRICE,
+  OWNER_BUSINESS_INSTAGRAM,
+  OWNER_RESERVATIONS,
 } from '@/lib/mock/ownerApp';
 
 const useStyles = createStyles((c) => ({
   root: { flex: 1, backgroundColor: c.bgBase },
 
-  // Top bar — mirrors diner profile/index.tsx topBar exactly
-  topBar: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    justifyContent: 'space-between',
+  // ── Hero ──
+  heroWrap: {
+    overflow: 'hidden',
+  },
+  heroContent: {
     paddingHorizontal: spacing.lg,
-    paddingTop: spacing.sm,
-    paddingBottom: spacing.md,
+    paddingBottom: spacing.xl,
   },
-  topBarText: {
-    flex: 1,
-    paddingRight: spacing.md,
-  },
-  topTitle: {
-    fontSize: 28,
-    fontWeight: '800',
-    color: c.textPrimary,
-    letterSpacing: -0.5,
-  },
-  topSubline: {
-    fontSize: 13,
-    color: c.textMuted,
-    marginTop: 2,
-  },
-  // 38×38 — mirrors diner settingsBtn exactly
-  iconBtn: {
-    width: 38,
-    height: 38,
-    borderRadius: 19,
-    backgroundColor: c.bgElevated,
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: c.border,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginTop: 4,
-  },
-  iconBtnPressed: {
-    opacity: 0.7,
-  },
-
-  businessHubRow: {
-    marginHorizontal: spacing.lg,
-    marginBottom: spacing.md,
-    marginTop: spacing.xs,
-    borderRadius: borderRadius.xl,
-    backgroundColor: c.bgSurface,
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: c.border,
+  logoRow: {
     flexDirection: 'row',
-    alignItems: 'center',
+    alignItems: 'flex-end',
     gap: spacing.md,
-    padding: spacing.md,
+    paddingTop: spacing.xl,
   },
-  logoWrap: {
-    width: 56,
-    height: 56,
-    borderRadius: 16,
-    backgroundColor: `${c.gold}16`,
-    borderWidth: StyleSheet.hairlineWidth,
+  logoBox: {
+    width: 68,
+    height: 68,
+    borderRadius: 18,
+    backgroundColor: `${c.bgBase}CC`,
+    borderWidth: 1.5,
     borderColor: `${c.gold}55`,
     alignItems: 'center',
     justifyContent: 'center',
-    flexShrink: 0,
   },
-  logoInitials: {
-    fontSize: 19,
+  logoLetter: {
+    fontSize: 32,
     fontWeight: '800',
     color: c.gold,
     letterSpacing: -0.5,
   },
-  businessMeta: {
+  heroTextCol: {
     flex: 1,
-    minWidth: 0,
+    paddingBottom: 4,
   },
-  businessName: {
-    fontSize: 17,
-    fontWeight: '800',
-    color: c.textPrimary,
-    letterSpacing: -0.2,
-  },
-  businessDetail: {
-    fontSize: 13,
-    color: c.textMuted,
-    fontWeight: '600',
-    marginTop: 2,
-  },
-  heroStatusRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.xs,
-    marginTop: spacing.sm,
-  },
-  openPill: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-    paddingHorizontal: 10,
-    paddingVertical: 5,
-    borderRadius: borderRadius.full,
-    borderWidth: StyleSheet.hairlineWidth,
-  },
-  openDot: {
-    width: 7,
-    height: 7,
-    borderRadius: 4,
-  },
-  openPillText: {
+  heroKicker: {
     fontSize: 11,
     fontWeight: '700',
-    letterSpacing: 0.1,
+    color: c.gold,
+    letterSpacing: 0.9,
+    marginBottom: 4,
   },
-  heroChangeText: {
-    fontSize: 12,
-    color: c.textMuted,
-    fontWeight: '600',
-    flexShrink: 1,
+  heroTitle: {
+    fontSize: 26,
+    fontWeight: '800',
+    color: c.textPrimary,
+    letterSpacing: -0.6,
+    lineHeight: 30,
   },
-  actionGrid: {
+  heroMeta: {
     flexDirection: 'row',
-    paddingHorizontal: spacing.lg,
+    alignItems: 'center',
+    flexWrap: 'wrap',
+    gap: 5,
+    marginTop: 10,
+  },
+  heroMetaText: {
+    fontSize: 13,
+    color: c.textMuted,
+    fontWeight: '500',
+  },
+  heroMetaDot: { color: c.textMuted, fontSize: 13 },
+  addressRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    marginTop: 6,
+  },
+  addressText: {
+    fontSize: 13,
+    color: c.textMuted,
+    fontWeight: '500',
+  },
+
+  // ── Buttons ──
+  heroButtons: {
+    flexDirection: 'row',
     gap: spacing.sm,
-    marginBottom: spacing.md,
+    marginTop: spacing.lg,
   },
-  actionTile: {
+  previewBtn: {
     flex: 1,
-    minHeight: 74,
-    borderRadius: borderRadius.md,
-    backgroundColor: c.bgSurface,
-    borderWidth: StyleSheet.hairlineWidth,
+    height: 46,
+    borderRadius: borderRadius.lg,
+    borderWidth: 1.5,
     borderColor: c.border,
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 7,
-    paddingHorizontal: spacing.xs,
-  },
-  actionTilePressed: {
-    backgroundColor: c.bgElevated,
-    borderColor: `${c.gold}40`,
-  },
-  actionIconWrap: {
-    width: 34,
-    height: 34,
-    borderRadius: 10,
-    backgroundColor: c.bgElevated,
+    backgroundColor: c.bgSurface,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  actionIconWrapPrimary: {
-    backgroundColor: `${c.gold}16`,
-  },
-  actionLabel: {
-    fontSize: 12,
+  previewBtnText: {
+    fontSize: 15,
     fontWeight: '700',
     color: c.textPrimary,
+  },
+  editBtn: {
+    flex: 1,
+    height: 46,
+    borderRadius: borderRadius.lg,
+    backgroundColor: c.gold,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  editBtnText: {
+    fontSize: 15,
+    fontWeight: '700',
+    color: '#000',
+  },
+  btnPressed: { opacity: 0.82 },
+
+  // ── Stats ──
+  statsRow: {
+    flexDirection: 'row',
+    marginHorizontal: spacing.lg,
+    marginTop: spacing.lg,
+    marginBottom: spacing.lg,
+    gap: spacing.sm,
+  },
+  statBox: {
+    flex: 1,
+    backgroundColor: c.bgSurface,
+    borderRadius: borderRadius.xl,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: c.border,
+    padding: spacing.md,
+    alignItems: 'center',
+    paddingVertical: 16,
+  },
+  statValue: {
+    fontSize: 26,
+    fontWeight: '800',
+    color: c.textPrimary,
+    letterSpacing: -0.6,
+  },
+  statValueGold: { color: c.gold },
+  statLabel: {
+    fontSize: 11,
+    fontWeight: '600',
+    color: c.textMuted,
+    marginTop: 4,
     textAlign: 'center',
   },
 
-  miniStatsRow: {
+  // ── Section ──
+  sectionRow: {
     flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
     paddingHorizontal: spacing.lg,
-    gap: spacing.sm,
-    marginBottom: spacing.md,
+    marginBottom: spacing.sm,
   },
-  miniStat: {
+  sectionTitle: {
+    fontSize: 20,
+    fontWeight: '800',
+    color: c.textPrimary,
+    letterSpacing: -0.3,
+  },
+  sectionAction: {
+    fontSize: 14,
+    fontWeight: '700',
+    color: c.gold,
+  },
+
+  // ── Photos ──
+  photosRow: {
+    flexDirection: 'row',
+    gap: spacing.sm,
+    paddingHorizontal: spacing.lg,
+    marginBottom: spacing.xl,
+  },
+  photoThumb: {
     flex: 1,
+    height: 90,
+    borderRadius: borderRadius.lg,
+    backgroundColor: c.bgSurface,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: c.border,
+    overflow: 'hidden',
+  },
+
+  // ── About / content ──
+  bodyText: {
+    fontSize: 14,
+    lineHeight: 22,
+    color: c.textSecondary,
+    fontWeight: '400',
+    paddingHorizontal: spacing.lg,
+    marginBottom: spacing.xl,
+  },
+
+  // ── Contact / settings card ──
+  listCard: {
+    marginHorizontal: spacing.lg,
+    marginBottom: spacing.xl,
+    borderRadius: borderRadius.xl,
+    backgroundColor: c.bgSurface,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: c.border,
+    overflow: 'hidden',
+  },
+  listRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: spacing.md,
+    paddingVertical: 14,
+    minHeight: 52,
+  },
+  listRowDivider: {
+    borderTopWidth: StyleSheet.hairlineWidth,
+    borderTopColor: c.border,
+  },
+  listRowPressed: { backgroundColor: c.bgElevated },
+  listLabel: {
+    fontSize: 15,
+    fontWeight: '500',
+    color: c.textMuted,
+    width: 100,
+    flexShrink: 0,
+  },
+  listValue: {
+    flex: 1,
+    fontSize: 15,
+    fontWeight: '600',
+    color: c.textPrimary,
+    textAlign: 'right',
+    paddingRight: spacing.sm,
+  },
+  settingsLabel: {
+    fontSize: 15,
+    fontWeight: '600',
+    color: c.textPrimary,
+    flex: 1,
+  },
+  settingsValue: {
+    fontSize: 14,
+    fontWeight: '500',
+    color: c.textMuted,
+    marginRight: spacing.sm,
+  },
+
+  // ── Sign out ──
+  signOutWrap: {
+    alignItems: 'center',
+    paddingVertical: spacing.xl,
+    marginBottom: spacing.lg,
+  },
+  signOut: {
+    fontSize: 16,
+    fontWeight: '700',
+    color: c.danger,
+    letterSpacing: -0.1,
   },
 }));
 
-function initials(name: string): string {
-  const parts = name.split(/\s+/).filter(Boolean);
-  if (parts.length === 0) return '?';
-  if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
-  return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
+function DiagonalPattern({ width, height }: { width: number; height: number }) {
+  const c = useColors();
+  return (
+    <Svg width={width} height={height} style={{ position: 'absolute', top: 0, left: 0 }}>
+      <Defs>
+        <Pattern id="diag" x={0} y={0} width={28} height={28} patternUnits="userSpaceOnUse">
+          <Line
+            x1={-4}
+            y1={32}
+            x2={32}
+            y2={-4}
+            stroke={`${c.gold}28`}
+            strokeWidth={10}
+          />
+        </Pattern>
+      </Defs>
+      <Rect x={0} y={0} width={width} height={height} fill={`${c.bgSurface}`} />
+      <Rect x={0} y={0} width={width} height={height} fill="url(#diag)" />
+    </Svg>
+  );
 }
 
-export default function OwnerProfileScreen() {
+function PhotoPlaceholder({ index }: { index: number }) {
+  const c = useColors();
+  const patterns = [
+    { bg1: '#2A2000', bg2: '#3A3000', rotation: '45' },
+    { bg1: '#001020', bg2: '#001835', rotation: '-30' },
+    { bg1: '#200010', bg2: '#300018', rotation: '60' },
+  ];
+  const p = patterns[index % patterns.length];
+  return (
+    <Svg width="100%" height="90" viewBox="0 0 120 90">
+      <Defs>
+        <Pattern id={`ph${index}`} x={0} y={0} width={20} height={20} patternUnits="userSpaceOnUse">
+          <Rect x={0} y={0} width={20} height={20} fill={p.bg1} />
+          <Line x1={-2} y1={22} x2={22} y2={-2} stroke={p.bg2} strokeWidth={8} />
+        </Pattern>
+      </Defs>
+      <Rect x={0} y={0} width={120} height={90} fill={`url(#ph${index})`} />
+    </Svg>
+  );
+}
+
+export default function OwnerBusinessScreen() {
   const c = useColors();
   const styles = useStyles();
   const insets = useSafeAreaInsets();
   const scrollPad = useOwnerTabScrollPadding();
   const router = useRouter();
+  const { width } = useWindowDimensions();
+  const heroH = 220 + insets.top;
 
-  const profile = OWNER_BUSINESS_PROFILE;
-  const openState = useMemo(() => isBusinessOpenNow(), []);
-  const activePromos = OWNER_PROMOTIONS.filter((p) => p.status === 'live').length;
+  const todayBookings = OWNER_RESERVATIONS.length;
+  const thisWeekBookings = 198;
+  const avgRating = OWNER_BUSINESS_PROFILE.rating;
 
-  const press = (fn: () => void) => () => {
-    Haptics.selectionAsync().catch(() => {});
-    fn();
-  };
+  const contactRows: { label: string; value: string }[] = [
+    { label: 'Phone', value: OWNER_BUSINESS_PROFILE.phone },
+    { label: 'Email', value: OWNER_BUSINESS_PROFILE.email },
+    { label: 'Instagram', value: OWNER_BUSINESS_INSTAGRAM },
+    { label: 'Website', value: OWNER_BUSINESS_PROFILE.website },
+  ];
 
-  const actionTiles = [
-    {
-      label: 'Edit',
-      icon: 'create-outline' as const,
-      route: '/(staff)/profile/edit',
-      primary: true,
-    },
-    {
-      label: 'Promos',
-      icon: 'pricetag-outline' as const,
-      route: '/(staff)/promotions',
-    },
-    {
-      label: 'Analytics',
-      icon: 'bar-chart-outline' as const,
-      route: '/(staff)/analytics',
-    },
+  const settingsRows: { label: string; value: string; route?: string }[] = [
+    { label: 'Payout & billing', value: 'Stripe · ···· 4429', route: '/(staff)/settings' },
+    { label: 'Team access', value: '5 members', route: '/(staff)/settings' },
+    { label: 'Notifications', value: 'Push + email', route: '/(staff)/notifications' },
+    { label: 'Close restaurant', value: 'Not scheduled' },
+    { label: 'Help & support', value: '' },
   ];
 
   return (
     <View style={styles.root}>
       <ScrollView
         showsVerticalScrollIndicator={false}
-        contentContainerStyle={{
-          paddingTop: insets.top + spacing.sm,
-          paddingBottom: scrollPad,
-        }}
+        contentContainerStyle={{ paddingBottom: scrollPad }}
       >
-        <View style={styles.topBar}>
-          <View style={styles.topBarText}>
-            <Text style={styles.topTitle}>My Business</Text>
-            <Text style={styles.topSubline}>{profile.name}</Text>
-          </View>
-          <Pressable
-            style={({ pressed }) => [styles.iconBtn, pressed && styles.iconBtnPressed]}
-            onPress={press(() => router.push('/(staff)/settings' as never))}
-            accessibilityLabel="Open settings"
-          >
-            <Ionicons name="settings-outline" size={18} color={c.textPrimary} />
-          </Pressable>
-        </View>
-
-        <Pressable
-          onPress={press(() => router.push('/(staff)/profile/edit' as never))}
-          style={({ pressed }) => [styles.businessHubRow, pressed && { opacity: 0.82 }]}
-          accessibilityRole="button"
-          accessibilityLabel="Edit business profile"
-        >
-          <View style={styles.logoWrap}>
-            <Text style={styles.logoInitials}>{initials(profile.name)}</Text>
-          </View>
-          <View style={styles.businessMeta}>
-            <Text style={styles.businessName} numberOfLines={1}>
-              {profile.name}
-            </Text>
-            <Text style={styles.businessDetail} numberOfLines={1}>
-              {profile.cuisine} · {profile.neighborhood}
-            </Text>
-            <View style={styles.heroStatusRow}>
-              <View
-                style={[
-                  styles.openPill,
-                  {
-                    backgroundColor: openState.open
-                      ? `${c.success}1F`
-                      : `${c.textMuted}22`,
-                    borderColor: openState.open ? `${c.success}66` : c.border,
-                  },
-                ]}
-              >
-                <View
-                  style={[
-                    styles.openDot,
-                    { backgroundColor: openState.open ? c.success : c.textMuted },
-                  ]}
-                />
-                <Text
-                  style={[
-                    styles.openPillText,
-                    { color: openState.open ? c.success : c.textMuted },
-                  ]}
-                >
-                  {openState.open ? 'Open' : 'Closed'}
+        {/* ── Hero with diagonal stripe ── */}
+        <View style={[styles.heroWrap, { height: heroH }]}>
+          <DiagonalPattern width={width} height={heroH} />
+          <View style={[styles.heroContent, { paddingTop: insets.top + spacing.xs }]}>
+            <View style={styles.logoRow}>
+              <View style={styles.logoBox}>
+                <Text style={styles.logoLetter}>
+                  {OWNER_BUSINESS_PROFILE.name.charAt(0)}
                 </Text>
               </View>
-              <Text style={styles.heroChangeText}>{openState.nextChange}</Text>
+              <View style={styles.heroTextCol}>
+                <Text style={styles.heroKicker}>BUSINESS PROFILE</Text>
+                <Text style={styles.heroTitle}>{OWNER_BUSINESS_PROFILE.name}</Text>
+              </View>
+            </View>
+            <View style={styles.heroMeta}>
+              <Ionicons name="star" size={13} color={c.gold} />
+              <Text style={styles.heroMetaText}>{OWNER_BUSINESS_PROFILE.rating.toFixed(1)}</Text>
+              <Text style={styles.heroMetaDot}>·</Text>
+              <Text style={styles.heroMetaText}>{OWNER_BUSINESS_PROFILE.reviewCount} reviews</Text>
+              <Text style={styles.heroMetaDot}>·</Text>
+              <Text style={styles.heroMetaText}>{OWNER_BUSINESS_PROFILE.cuisine}</Text>
+              <Text style={styles.heroMetaDot}>·</Text>
+              <Text style={styles.heroMetaText}>{OWNER_BUSINESS_PRICE}</Text>
+            </View>
+            <View style={styles.addressRow}>
+              <Ionicons name="location-outline" size={13} color={c.textMuted} />
+              <Text style={styles.addressText}>{OWNER_BUSINESS_PROFILE.address}</Text>
+            </View>
+            <View style={styles.heroButtons}>
+              <Pressable
+                style={({ pressed }) => [styles.previewBtn, pressed && styles.btnPressed]}
+                accessibilityRole="button"
+              >
+                <Text style={styles.previewBtnText}>Preview</Text>
+              </Pressable>
+              <Pressable
+                style={({ pressed }) => [styles.editBtn, pressed && styles.btnPressed]}
+                onPress={() => router.push('/(staff)/profile/edit' as never)}
+                accessibilityRole="button"
+              >
+                <Text style={styles.editBtnText}>Edit profile</Text>
+              </Pressable>
             </View>
           </View>
-          <Ionicons name="chevron-forward" size={18} color={c.textMuted} />
-        </Pressable>
+        </View>
 
-        <View style={styles.actionGrid}>
-          {actionTiles.map((action) => (
-            <Pressable
-              key={action.label}
-              style={({ pressed }) => [styles.actionTile, pressed && styles.actionTilePressed]}
-              onPress={press(() => router.push(action.route as never))}
-              accessibilityRole="button"
-              accessibilityLabel={action.label}
-            >
-              <View style={[styles.actionIconWrap, action.primary && styles.actionIconWrapPrimary]}>
-                <Ionicons name={action.icon} size={18} color={action.primary ? c.gold : c.textSecondary} />
-              </View>
-              <Text style={styles.actionLabel} numberOfLines={1}>
-                {action.label}
-              </Text>
+        {/* ── Stats row ── */}
+        <View style={styles.statsRow}>
+          <View style={styles.statBox}>
+            <Text style={[styles.statValue, styles.statValueGold]}>{todayBookings}</Text>
+            <Text style={styles.statLabel}>Tonight</Text>
+          </View>
+          <View style={styles.statBox}>
+            <Text style={styles.statValue}>{thisWeekBookings}</Text>
+            <Text style={styles.statLabel}>This week</Text>
+          </View>
+          <View style={styles.statBox}>
+            <Text style={styles.statValue}>{avgRating.toFixed(1)}</Text>
+            <Text style={styles.statLabel}>Avg rating</Text>
+          </View>
+        </View>
+
+        {/* ── Photos ── */}
+        <View style={styles.sectionRow}>
+          <Text style={styles.sectionTitle}>Photos</Text>
+          <Pressable accessibilityRole="button">
+            <Text style={styles.sectionAction}>+ Add</Text>
+          </Pressable>
+        </View>
+        <View style={styles.photosRow}>
+          {[0, 1, 2].map((i) => (
+            <Pressable key={i} style={styles.photoThumb} accessibilityRole="button">
+              <PhotoPlaceholder index={i} />
             </Pressable>
           ))}
         </View>
 
-        <View style={styles.miniStatsRow}>
-          <StatCard
-            style={styles.miniStat}
-            label="Rating"
-            icon="star"
-            tone="gold"
-            accentValue
-            value={profile.rating.toFixed(1)}
-            caption={`${profile.reviewCount} reviews`}
-          />
-          <StatCard
-            style={styles.miniStat}
-            label="Followers"
-            icon="people-outline"
-            tone="default"
-            value={
-              profile.followerCount >= 1000
-                ? `${(profile.followerCount / 1000).toFixed(1)}k`
-                : String(profile.followerCount)
-            }
-            caption="All time"
-          />
-          <StatCard
-            style={styles.miniStat}
-            label="Live promos"
-            icon="pricetag"
-            tone={activePromos > 0 ? 'success' : 'default'}
-            value={String(activePromos)}
-            caption={activePromos > 0 ? 'Running now' : 'None active'}
-          />
+        {/* ── About ── */}
+        <View style={styles.sectionRow}>
+          <Text style={styles.sectionTitle}>About</Text>
+          <Pressable
+            onPress={() => router.push('/(staff)/profile/edit' as never)}
+            accessibilityRole="button"
+          >
+            <Text style={styles.sectionAction}>Edit</Text>
+          </Pressable>
+        </View>
+        <Text style={styles.bodyText}>{OWNER_BUSINESS_PROFILE.description}</Text>
+
+        {/* ── Contact ── */}
+        <View style={styles.sectionRow}>
+          <Text style={styles.sectionTitle}>Contact</Text>
+        </View>
+        <View style={styles.listCard}>
+          {contactRows.map((row, i) => (
+            <Pressable
+              key={row.label}
+              style={({ pressed }) => [
+                styles.listRow,
+                i > 0 && styles.listRowDivider,
+                pressed && styles.listRowPressed,
+              ]}
+              accessibilityRole="button"
+              accessibilityLabel={`${row.label}: ${row.value}`}
+            >
+              <Text style={styles.listLabel}>{row.label}</Text>
+              <Text style={styles.listValue} numberOfLines={1}>{row.value}</Text>
+              <Ionicons name="chevron-forward" size={16} color={c.textMuted} />
+            </Pressable>
+          ))}
         </View>
 
-        <SectionCard
-          sectionTitle="Manage"
-          icon="construct-outline"
-        >
-          <ChevronSettingRow
-            title="Full analytics"
-            subtitle="Top dishes, guest mix, heatmaps, and more"
-            icon="bar-chart-outline"
-            iconMuted
-            onPress={press(() => router.push('/(staff)/analytics' as never))}
-          />
-          <ChevronSettingRow
-            title="Guests"
-            subtitle="CRM, VIPs, no-show risks"
-            icon="people-outline"
-            iconMuted
-            onPress={press(() => router.push('/(staff)/guests' as never))}
-          />
-          <ChevronSettingRow
-            title="Active promotions"
-            subtitle={`${activePromos} live`}
-            icon="pricetag-outline"
-            iconMuted
-            onPress={press(() => router.push('/(staff)/promotions' as never))}
-            isLast
-          />
-        </SectionCard>
+        {/* ── Settings ── */}
+        <View style={styles.sectionRow}>
+          <Text style={styles.sectionTitle}>Settings</Text>
+        </View>
+        <View style={styles.listCard}>
+          {settingsRows.map((row, i) => (
+            <Pressable
+              key={row.label}
+              style={({ pressed }) => [
+                styles.listRow,
+                i > 0 && styles.listRowDivider,
+                pressed && styles.listRowPressed,
+              ]}
+              onPress={() => row.route && router.push(row.route as never)}
+              accessibilityRole="button"
+            >
+              <Text style={styles.settingsLabel}>{row.label}</Text>
+              {row.value ? <Text style={styles.settingsValue}>{row.value}</Text> : null}
+              <Ionicons name="chevron-forward" size={16} color={c.textMuted} />
+            </Pressable>
+          ))}
+        </View>
 
-        <SectionCard sectionTitle="Account" icon="person-outline" marginBottom={spacing['2xl']}>
-          <ChevronSettingRow
-            title="Notifications"
-            subtitle="Alerts and reminders"
-            icon="notifications-outline"
-            iconMuted
-            onPress={press(() => router.push('/(staff)/notifications' as never))}
-          />
-          <ChevronSettingRow
-            title="Settings"
-            subtitle="Account and preferences"
-            icon="settings-outline"
-            iconMuted
-            onPress={press(() => router.push('/(staff)/settings' as never))}
-          />
-          <ChevronSettingRow
-            title="Switch to diner view"
-            subtitle="Open the guest-facing app"
-            icon="swap-horizontal-outline"
-            iconMuted
-            onPress={press(() => router.push('/(customer)/discover' as never))}
-          />
-          <ChevronSettingRow
-            title="Sign out"
-            subtitle="End owner session"
-            icon="log-out-outline"
-            iconMuted
-            onPress={() =>
-              Alert.alert('Sign out', 'Are you sure you want to sign out?', [
-                { text: 'Cancel', style: 'cancel' },
-                { text: 'Sign out', style: 'destructive' },
-              ])
-            }
-            isLast
-          />
-        </SectionCard>
+        {/* ── Sign out ── */}
+        <Pressable
+          style={({ pressed }) => [styles.signOutWrap, { opacity: pressed ? 0.7 : 1 }]}
+          onPress={() =>
+            Alert.alert('Sign out', 'Are you sure you want to sign out?', [
+              { text: 'Cancel', style: 'cancel' },
+              { text: 'Sign out', style: 'destructive', onPress: () => {} },
+            ])
+          }
+          accessibilityRole="button"
+          accessibilityLabel="Sign out"
+        >
+          <Text style={styles.signOut}>Sign out</Text>
+        </Pressable>
       </ScrollView>
     </View>
   );

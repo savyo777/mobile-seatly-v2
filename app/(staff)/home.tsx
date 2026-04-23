@@ -1,217 +1,289 @@
 import React from 'react';
-import { View, Text, ScrollView, StyleSheet, Pressable } from 'react-native';
+import {
+  View,
+  Text,
+  ScrollView,
+  StyleSheet,
+  Pressable,
+  useWindowDimensions,
+} from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
-import { useColors, createStyles, spacing, borderRadius } from '@/lib/theme';
-import { HomeBookingTrendCard } from '@/components/owner/HomeBookingTrendCard';
+import { useTranslation } from 'react-i18next';
+import Svg, { Rect, Polyline, Circle, Path, Defs, LinearGradient, Stop } from 'react-native-svg';
+import { useColors, createStyles, spacing, borderRadius, typography } from '@/lib/theme';
 import {
   BOOKING_TREND_WEEK,
+  BOOKINGS_BY_HOUR,
+  BOOKINGS_BY_HOUR_PEAK,
+  BOOKINGS_BY_HOUR_TOTAL,
   LIVE_METRICS,
-  OWNER_ALERTS_STRIP,
-  WAITLIST_ENTRIES,
-  WALKIN_QUEUE,
+  HOME_ATTENTION_ITEMS,
   OWNER_FLOOR_TABLES,
   OWNER_FIRST_NAME,
   OWNER_RESERVATIONS,
-  type OwnerReservationSlot,
 } from '@/lib/mock/ownerApp';
+import { OWNER_GUESTS } from '@/lib/mock/guests';
 import { useOwnerTabScrollPadding } from '@/hooks/useOwnerTabScrollPadding';
+
+const RESTAURANT_NAME = 'Nova Ristorante';
+const RESTAURANT_ADDRESS = '412 King St W';
 
 type IoniconName = React.ComponentProps<typeof Ionicons>['name'];
 
-const RESTAURANT_NAME = 'Nova Ristorante';
+function greetingFor(hour: number) {
+  if (hour < 12) return 'Good morning';
+  if (hour < 17) return 'Good afternoon';
+  if (hour < 22) return 'Good evening';
+  return 'Good night';
+}
 
 const useStyles = createStyles((c) => ({
   root: { flex: 1, backgroundColor: c.bgBase },
 
-  topBar: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    justifyContent: 'space-between',
-    paddingHorizontal: spacing.lg,
-    paddingBottom: spacing.md,
-  },
-  topBarText: { flex: 1, paddingRight: spacing.md },
-  greetingLine1: {
-    fontSize: 28,
-    fontWeight: '800',
-    color: c.textPrimary,
-    letterSpacing: -0.5,
-    lineHeight: 34,
-  },
-  greetingLine2: {
-    fontSize: 28,
-    fontWeight: '800',
-    color: c.gold,
-    letterSpacing: -0.5,
-    lineHeight: 34,
-  },
-  sublineRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.sm,
-    marginTop: 4,
-  },
-  subline: {
-    fontSize: 13,
-    color: c.textMuted,
-    fontWeight: '500',
-  },
-  livePill: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 5,
-    paddingHorizontal: 8,
-    paddingVertical: 3,
-    borderRadius: borderRadius.full,
-    backgroundColor: `${c.success}16`,
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: `${c.success}55`,
-  },
-  liveDot: {
-    width: 6,
-    height: 6,
-    borderRadius: 3,
-    backgroundColor: c.success,
-  },
-  liveText: {
-    fontSize: 11,
-    fontWeight: '700',
-    color: c.success,
-    letterSpacing: 0.1,
-  },
-  notifBtn: {
-    width: 38,
-    height: 38,
-    borderRadius: 19,
-    backgroundColor: c.bgElevated,
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: c.border,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginTop: 4,
-  },
-  notifPressed: { opacity: 0.7 },
-  badgeDot: {
-    position: 'absolute',
-    top: 6,
-    right: 6,
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-    backgroundColor: c.danger,
-    borderWidth: 1.5,
-    borderColor: c.bgBase,
-  },
-
-  commandCard: {
+  hourChartCard: {
     marginHorizontal: spacing.lg,
-    marginBottom: spacing.xl,
+    marginBottom: spacing.lg,
     borderRadius: borderRadius.xl,
     backgroundColor: c.bgSurface,
     borderWidth: StyleSheet.hairlineWidth,
     borderColor: c.border,
     padding: spacing.lg,
   },
-  commandTopRow: {
+  hourChartTop: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
     alignItems: 'flex-start',
-    gap: spacing.md,
-    marginBottom: spacing.lg,
+    justifyContent: 'space-between',
+    marginBottom: spacing.md,
   },
-  commandLabel: {
-    fontSize: 13,
+  hourKicker: {
+    fontSize: 11,
+    fontWeight: '700',
+    color: c.textMuted,
+    letterSpacing: 0.9,
+    marginBottom: 4,
+  },
+  hourTitle: {
+    fontSize: 22,
+    fontWeight: '800',
+    color: c.textPrimary,
+    letterSpacing: -0.5,
+  },
+  hourTotalValue: {
+    fontSize: 36,
+    fontWeight: '800',
+    color: c.gold,
+    letterSpacing: -1,
+    lineHeight: 40,
+    textAlign: 'right',
+  },
+  hourTotalLabel: {
+    fontSize: 12,
     fontWeight: '600',
     color: c.textMuted,
+    textAlign: 'right',
+    marginTop: 2,
+  },
+  hourLineChartBlock: {
+    marginBottom: spacing.md,
+  },
+  hourAxisRow: {
+    flexDirection: 'row',
+    marginTop: 4,
+    paddingHorizontal: 2,
+  },
+  hourAxisLabel: {
+    flex: 1,
+    fontSize: 10,
+    fontWeight: '600',
+    color: c.textMuted,
+    textAlign: 'center',
+  },
+  hourAxisLabelPeak: { color: c.gold },
+  hourLegend: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: spacing.md,
+    paddingTop: spacing.sm,
+    borderTopWidth: StyleSheet.hairlineWidth,
+    borderTopColor: c.border,
+  },
+  hourLegendItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+  },
+  hourLegendDot: {
+    width: 9,
+    height: 9,
+    borderRadius: 5,
+  },
+  hourLegendText: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: c.textMuted,
+  },
+
+  /** Matches diner `discover/index.tsx` sticky header brand row */
+  brandBar: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: spacing.lg,
+    paddingTop: spacing.xs,
+    paddingBottom: spacing.sm,
+    backgroundColor: c.bgBase,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: c.border,
+  },
+  brandLogo: {
+    ...typography.h2,
+    color: c.gold,
+    letterSpacing: 4,
+    fontWeight: '700',
+  },
+  brandBellBtn: {
+    padding: 4,
+  },
+  brandBellPressed: { opacity: 0.7 },
+  brandBellDot: {
+    position: 'absolute',
+    top: 2,
+    right: 2,
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: c.danger,
+  },
+
+  topBar: {
+    paddingHorizontal: spacing.lg,
+    paddingTop: spacing.md,
+    paddingBottom: spacing.lg,
+  },
+  tonightKicker: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
     marginBottom: 6,
   },
-  commandTitle: {
+  kickerDot: {
+    width: 7,
+    height: 7,
+    borderRadius: 4,
+    backgroundColor: c.success,
+  },
+  kickerText: {
+    fontSize: 11,
+    fontWeight: '700',
+    color: c.textMuted,
+    letterSpacing: 0.8,
+  },
+  greetLine1: {
+    fontSize: 32,
+    fontWeight: '800',
+    color: c.textPrimary,
+    letterSpacing: -0.8,
+    lineHeight: 36,
+  },
+  greetLine2: {
+    fontSize: 32,
+    fontWeight: '800',
+    color: c.gold,
+    letterSpacing: -0.8,
+    lineHeight: 40,
+  },
+  subline: {
+    fontSize: 13,
+    color: c.textMuted,
+    fontWeight: '500',
+    marginTop: 6,
+  },
+
+  heroCard: {
+    marginHorizontal: spacing.lg,
+    marginBottom: spacing.lg,
+    borderRadius: borderRadius.xl,
+    backgroundColor: c.bgSurface,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: c.border,
+    padding: spacing.lg,
+  },
+  heroKicker: {
+    fontSize: 11,
+    fontWeight: '700',
+    color: c.gold,
+    letterSpacing: 0.8,
+    marginBottom: 6,
+  },
+  heroTitle: {
     fontSize: 24,
     fontWeight: '800',
     color: c.textPrimary,
     letterSpacing: -0.6,
     lineHeight: 30,
+    marginBottom: 6,
   },
-  commandSub: {
-    fontSize: 13,
+  heroSub: {
+    fontSize: 14,
     color: c.textMuted,
     fontWeight: '500',
-    marginTop: 4,
-    lineHeight: 18,
+    lineHeight: 20,
+    marginBottom: spacing.lg,
   },
-  commandIcon: {
-    width: 44,
-    height: 44,
-    borderRadius: 14,
-    backgroundColor: `${c.gold}16`,
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: `${c.gold}42`,
-    flexShrink: 0,
-  },
-  commandStats: {
+  heroStats: {
     flexDirection: 'row',
+    paddingTop: spacing.md,
     borderTopWidth: StyleSheet.hairlineWidth,
     borderTopColor: c.border,
-    paddingTop: spacing.md,
   },
-  commandStat: {
-    flex: 1,
-    minWidth: 0,
-  },
-  commandDivider: {
+  heroStat: { flex: 1, minWidth: 0 },
+  heroStatDivider: {
     width: StyleSheet.hairlineWidth,
     backgroundColor: c.border,
     marginHorizontal: spacing.md,
   },
   statValue: {
-    fontSize: 25,
+    fontSize: 26,
     fontWeight: '800',
     color: c.textPrimary,
     letterSpacing: -0.6,
     lineHeight: 30,
   },
-  statValueAccent: {
-    color: c.gold,
-  },
+  statValueGold: { color: c.gold },
   statLabel: {
     fontSize: 11,
     color: c.textMuted,
-    fontWeight: '700',
-    marginTop: 2,
+    fontWeight: '600',
+    marginTop: 4,
+    letterSpacing: 0.1,
   },
 
-  sectionHeader: {
+  sectionRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
     paddingHorizontal: spacing.lg,
-    marginBottom: spacing.md,
+    marginBottom: spacing.sm,
+    marginTop: spacing.xs,
   },
   sectionTitle: {
-    fontSize: 18,
+    fontSize: 20,
     fontWeight: '800',
     color: c.textPrimary,
-    letterSpacing: -0.3,
-    flex: 1,
+    letterSpacing: -0.4,
   },
-  seeAllBtn: {
+  seeAll: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 2,
   },
-  seeAllText: {
-    fontSize: 12,
-    fontWeight: '700',
-    color: c.gold,
-  },
+  seeAllText: { fontSize: 13, fontWeight: '700', color: c.gold },
 
   attentionCard: {
     marginHorizontal: spacing.lg,
-    marginBottom: spacing.xl,
+    marginBottom: spacing.lg,
     borderRadius: borderRadius.xl,
     backgroundColor: c.bgSurface,
     borderWidth: StyleSheet.hairlineWidth,
@@ -222,9 +294,9 @@ const useStyles = createStyles((c) => ({
     flexDirection: 'row',
     alignItems: 'center',
     paddingHorizontal: spacing.md,
-    paddingVertical: spacing.md,
+    paddingVertical: 14,
     gap: spacing.md,
-    minHeight: 62,
+    minHeight: 66,
   },
   rowDivider: {
     borderTopWidth: StyleSheet.hairlineWidth,
@@ -232,94 +304,25 @@ const useStyles = createStyles((c) => ({
   },
   rowPressed: { backgroundColor: c.bgElevated },
   attentionIcon: {
-    width: 36,
-    height: 36,
-    borderRadius: 11,
+    width: 38,
+    height: 38,
+    borderRadius: 12,
     alignItems: 'center',
     justifyContent: 'center',
     flexShrink: 0,
   },
   attentionTextCol: { flex: 1, minWidth: 0 },
   attentionTitle: {
-    fontSize: 14,
+    fontSize: 15,
     fontWeight: '700',
     color: c.textPrimary,
-    lineHeight: 19,
+    lineHeight: 20,
   },
   attentionSub: {
-    fontSize: 12,
+    fontSize: 13,
     color: c.textMuted,
     fontWeight: '500',
     marginTop: 2,
-  },
-  allClearIcon: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    backgroundColor: `${c.success}18`,
-    alignItems: 'center',
-    justifyContent: 'center',
-    flexShrink: 0,
-  },
-
-  timelineCard: {
-    marginHorizontal: spacing.lg,
-    marginBottom: spacing.xl,
-    borderRadius: borderRadius.xl,
-    backgroundColor: c.bgSurface,
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: c.border,
-    overflow: 'hidden',
-  },
-  timelineRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.md,
-    gap: spacing.md,
-    minHeight: 68,
-  },
-  timeBlock: {
-    width: 62,
-  },
-  timeText: {
-    fontSize: 15,
-    fontWeight: '800',
-    color: c.textPrimary,
-    letterSpacing: -0.2,
-  },
-  partyText: {
-    fontSize: 11,
-    fontWeight: '700',
-    color: c.textMuted,
-    marginTop: 2,
-  },
-  guestCol: {
-    flex: 1,
-    minWidth: 0,
-  },
-  guestName: {
-    fontSize: 15,
-    fontWeight: '700',
-    color: c.textPrimary,
-    letterSpacing: -0.1,
-  },
-  guestMeta: {
-    fontSize: 12,
-    color: c.textMuted,
-    fontWeight: '500',
-    marginTop: 3,
-  },
-  statusPill: {
-    paddingHorizontal: 9,
-    paddingVertical: 5,
-    borderRadius: borderRadius.full,
-    borderWidth: StyleSheet.hairlineWidth,
-  },
-  statusText: {
-    fontSize: 11,
-    fontWeight: '700',
-    letterSpacing: 0.1,
   },
 
   actionGrid: {
@@ -327,310 +330,363 @@ const useStyles = createStyles((c) => ({
     flexWrap: 'wrap',
     gap: spacing.sm,
     paddingHorizontal: spacing.lg,
-    marginBottom: spacing.xl,
+    marginBottom: spacing.lg,
   },
   actionTile: {
     width: '47.5%',
     flexGrow: 1,
     minWidth: '45%',
-    minHeight: 86,
-    borderRadius: borderRadius.md,
+    borderRadius: borderRadius.xl,
     backgroundColor: c.bgSurface,
     borderWidth: StyleSheet.hairlineWidth,
     borderColor: c.border,
     padding: spacing.md,
+    paddingBottom: 18,
+    minHeight: 120,
     justifyContent: 'space-between',
   },
-  actionTilePressed: {
-    backgroundColor: c.bgElevated,
-    borderColor: c.border,
-  },
+  actionTilePressed: { backgroundColor: c.bgElevated },
   actionIconWrap: {
-    width: 36,
-    height: 36,
-    borderRadius: 11,
+    width: 40,
+    height: 40,
+    borderRadius: 13,
     backgroundColor: c.bgElevated,
     alignItems: 'center',
     justifyContent: 'center',
     marginBottom: spacing.md,
   },
-  actionIconPrimary: {
-    backgroundColor: `${c.gold}16`,
-  },
+  actionIconWrapPrimary: { backgroundColor: `${c.gold}18` },
   actionLabel: {
-    fontSize: 14,
+    fontSize: 16,
     fontWeight: '800',
     color: c.textPrimary,
-    letterSpacing: -0.1,
+    letterSpacing: -0.2,
   },
   actionSub: {
-    fontSize: 11,
+    fontSize: 12,
     color: c.textMuted,
+    fontWeight: '500',
+    marginTop: 3,
+  },
+
+  momentumCard: {
+    marginHorizontal: spacing.lg,
+    marginBottom: spacing.lg,
+    borderRadius: borderRadius.xl,
+    backgroundColor: c.bgSurface,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: c.border,
+    padding: spacing.lg,
+    paddingBottom: spacing.md,
+  },
+  momentumTop: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    justifyContent: 'space-between',
+    marginBottom: spacing.sm,
+  },
+  momentumKicker: {
+    fontSize: 11,
+    fontWeight: '700',
+    color: c.textMuted,
+    letterSpacing: 0.9,
+    marginBottom: 4,
+  },
+  momentumHeadline: {
+    fontSize: 32,
+    fontWeight: '800',
+    color: c.textPrimary,
+    letterSpacing: -0.8,
+    lineHeight: 36,
+  },
+  vsChip: {
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: borderRadius.full,
+    backgroundColor: `${c.success}22`,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: `${c.success}55`,
+    marginTop: 6,
+  },
+  vsChipNeg: {
+    backgroundColor: `${c.danger}22`,
+    borderColor: `${c.danger}55`,
+  },
+  vsChipText: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: c.success,
+    letterSpacing: 0.1,
+  },
+  vsChipTextNeg: { color: c.danger },
+  chartRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-end',
+    gap: 5,
+    marginTop: spacing.md,
+    marginBottom: 6,
+  },
+  barCol: { flex: 1, alignItems: 'center' },
+  barLabel: {
+    fontSize: 10,
     fontWeight: '600',
-    marginTop: 2,
+    color: c.textMuted,
+    marginTop: 5,
+    textAlign: 'center',
   },
 }));
 
-function alertTone(severity: string, c: ReturnType<typeof useColors>) {
-  if (severity === 'critical') return { bg: `${c.danger}18`, fg: c.danger };
-  if (severity === 'warning') return { bg: `${c.warning}20`, fg: c.warning };
-  return { bg: c.bgElevated, fg: c.textSecondary };
+function attentionIconTone(severity: string, c: ReturnType<typeof useColors>) {
+  if (severity === 'critical') return { bg: `${c.danger}20`, fg: c.danger };
+  if (severity === 'warning') return { bg: `${c.gold}1A`, fg: c.gold };
+  return { bg: `${c.success}18`, fg: c.success };
 }
 
-function statusTone(status: OwnerReservationSlot['status'], c: ReturnType<typeof useColors>) {
-  if (status === 'risk') return { bg: `${c.danger}16`, border: `${c.danger}44`, fg: c.danger, label: 'Risk' };
-  if (status === 'pending') return { bg: `${c.warning}18`, border: `${c.warning}44`, fg: c.warning, label: 'Pending' };
-  if (status === 'seated') return { bg: `${c.success}16`, border: `${c.success}44`, fg: c.success, label: 'Seated' };
-  return { bg: c.bgElevated, border: c.border, fg: c.textSecondary, label: 'Booked' };
+function hourTierStroke(tier: string, gold: string) {
+  if (tier === 'peak') return gold;
+  if (tier === 'busy') return `${gold}CC`;
+  return '#5C5C5C';
 }
 
-function greetingFor(hour: number) {
-  if (hour < 5) return 'Late night,';
-  if (hour < 12) return 'Good morning,';
-  if (hour < 17) return 'Good afternoon,';
-  if (hour < 22) return 'Good evening,';
-  return 'Good night,';
+const LINE_CHART_H = 112;
+const LINE_PAD = { l: 10, r: 10, t: 14, b: 6 };
+
+function BookingsByHourCard() {
+  const c = useColors();
+  const styles = useStyles();
+  const { width } = useWindowDimensions();
+  const maxCount = Math.max(...BOOKINGS_BY_HOUR.map((b) => b.count), 1);
+
+  const chartW = Math.max(220, width - spacing.lg * 4);
+  const innerW = chartW - LINE_PAD.l - LINE_PAD.r;
+  const innerH = LINE_CHART_H - LINE_PAD.t - LINE_PAD.b;
+  const n = BOOKINGS_BY_HOUR.length;
+
+  const pts = BOOKINGS_BY_HOUR.map((bar, i) => {
+    const x = LINE_PAD.l + (n <= 1 ? innerW / 2 : (i / (n - 1)) * innerW);
+    const y = LINE_PAD.t + innerH - (bar.count / maxCount) * innerH;
+    return { x, y, ...bar };
+  });
+
+  const linePoints = pts.map((p) => `${p.x},${p.y}`).join(' ');
+  const baseY = LINE_PAD.t + innerH;
+  const areaD =
+    pts.length > 0
+      ? `M ${pts[0].x} ${baseY} ${pts.map((p) => `L ${p.x} ${p.y}`).join(' ')} L ${pts[pts.length - 1].x} ${baseY} Z`
+      : '';
+
+  return (
+    <View style={styles.hourChartCard}>
+      <View style={styles.hourChartTop}>
+        <View>
+          <Text style={styles.hourKicker}>BOOKINGS BY HOUR</Text>
+          <Text style={styles.hourTitle}>Peak at {BOOKINGS_BY_HOUR_PEAK}</Text>
+        </View>
+        <View>
+          <Text style={styles.hourTotalValue}>{BOOKINGS_BY_HOUR_TOTAL}</Text>
+          <Text style={styles.hourTotalLabel}>bookings</Text>
+        </View>
+      </View>
+
+      <View style={styles.hourLineChartBlock}>
+        <Svg width={chartW} height={LINE_CHART_H}>
+          <Defs>
+            <LinearGradient id="hourLineArea" x1="0" y1="0" x2="0" y2="1">
+              <Stop offset="0" stopColor={c.gold} stopOpacity="0.22" />
+              <Stop offset="1" stopColor={c.gold} stopOpacity="0" />
+            </LinearGradient>
+          </Defs>
+          {areaD ? <Path d={areaD} fill="url(#hourLineArea)" /> : null}
+          <Polyline
+            points={linePoints}
+            fill="none"
+            stroke={c.gold}
+            strokeWidth={2.5}
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          />
+          {pts.map((p) => (
+            <Circle
+              key={p.label}
+              cx={p.x}
+              cy={p.y}
+              r={5}
+              fill={c.bgSurface}
+              stroke={hourTierStroke(p.tier, c.gold)}
+              strokeWidth={2}
+            />
+          ))}
+        </Svg>
+        <View style={styles.hourAxisRow}>
+          {BOOKINGS_BY_HOUR.map((bar) => (
+            <Text
+              key={bar.label}
+              style={[styles.hourAxisLabel, bar.tier === 'peak' && styles.hourAxisLabelPeak]}
+              numberOfLines={1}
+            >
+              {bar.label}
+            </Text>
+          ))}
+        </View>
+      </View>
+
+      <View style={styles.hourLegend}>
+        {[
+          { label: 'Peak', color: c.gold },
+          { label: 'Busy', color: `${c.gold}CC` },
+          { label: 'Slow — promo?', color: '#5C5C5C' },
+        ].map((l) => (
+          <View key={l.label} style={styles.hourLegendItem}>
+            <View style={[styles.hourLegendDot, { backgroundColor: l.color }]} />
+            <Text style={styles.hourLegendText}>{l.label}</Text>
+          </View>
+        ))}
+      </View>
+    </View>
+  );
+}
+
+function WeekMomentumChart({ counts, labels, trendPct }: { counts: number[]; labels: string[]; trendPct: number }) {
+  const c = useColors();
+  const styles = useStyles();
+  const { width } = useWindowDimensions();
+  const chartW = width - spacing.lg * 2 - spacing.lg * 2;
+  const BAR_H = 80;
+  const max = Math.max(...counts, 1);
+  const trendUp = trendPct >= 0;
+
+  return (
+    <View style={styles.momentumCard}>
+      <View style={styles.momentumTop}>
+        <View>
+          <Text style={styles.momentumKicker}>WEEK MOMENTUM</Text>
+          <Text style={styles.momentumHeadline}>
+            {trendUp ? '+' : ''}{trendPct}% bookings
+          </Text>
+        </View>
+        <View style={[styles.vsChip, !trendUp && styles.vsChipNeg]}>
+          <Text style={[styles.vsChipText, !trendUp && styles.vsChipTextNeg]}>vs last week</Text>
+        </View>
+      </View>
+      <View style={[styles.chartRow, { height: BAR_H + 22 }]}>
+        {counts.map((count, i) => {
+          const barH = Math.max(4, (count / max) * BAR_H);
+          const isPast = i < counts.length - 3;
+          return (
+            <View key={labels[i]} style={[styles.barCol, { justifyContent: 'flex-end', height: BAR_H + 22 }]}>
+              <Svg width="100%" height={barH} viewBox={`0 0 30 ${barH}`}>
+                <Rect
+                  x={0}
+                  y={0}
+                  width={30}
+                  height={barH}
+                  rx={6}
+                  fill={isPast ? `${c.gold}40` : c.gold}
+                />
+              </Svg>
+              <Text style={styles.barLabel}>{labels[i][0]}</Text>
+            </View>
+          );
+        })}
+      </View>
+    </View>
+  );
 }
 
 export default function OwnerHomeScreen() {
   const c = useColors();
   const styles = useStyles();
+  const { t } = useTranslation();
   const insets = useSafeAreaInsets();
   const scrollPad = useOwnerTabScrollPadding();
   const router = useRouter();
 
-  const waitAvg =
-    WALKIN_QUEUE.length > 0
-      ? Math.round(WALKIN_QUEUE.reduce((a, b) => a + b.waitMins, 0) / WALKIN_QUEUE.length)
-      : 0;
   const seatedTables = OWNER_FLOOR_TABLES.filter((t) => t.status === 'occupied').length;
   const tablesTotal = OWNER_FLOOR_TABLES.length;
   const hour = new Date().getHours();
   const greeting = greetingFor(hour);
-  const criticalCount = OWNER_ALERTS_STRIP.filter((a) => a.severity === 'critical').length;
+  const criticalCount = HOME_ATTENTION_ITEMS.filter((a) => a.severity === 'critical').length;
   const bookingsTonight = OWNER_RESERVATIONS.length;
-  const riskCount = OWNER_RESERVATIONS.filter((r) => r.status === 'risk').length;
   const pendingCount = OWNER_RESERVATIONS.filter((r) => r.status === 'pending').length;
-  const topAlerts = OWNER_ALERTS_STRIP.slice(0, 2);
-  const timeline = OWNER_RESERVATIONS.slice(0, 4);
+  const onShiftCount = 3;
+  const guestProfiles = OWNER_GUESTS.length;
 
-  const quickActions: {
-    icon: IoniconName;
-    label: string;
-    sub: string;
-    route: string;
-    primary?: boolean;
-  }[] = [
+  const quickActions: { icon: IoniconName; label: string; sub: string; route: string }[] = [
+    { icon: 'calendar-outline', label: 'Reservations', sub: `${bookingsTonight} tonight`, route: '/(staff)/reservations' },
+    { icon: 'pricetag-outline', label: 'Post promo', sub: 'Fill slow slots', route: '/(staff)/promotions/new' },
     {
-      icon: 'calendar-outline',
-      label: 'Reservations',
-      sub: `${bookingsTonight} tonight`,
-      route: '/(staff)/reservations',
-      primary: true,
+      icon: 'id-card-outline',
+      label: 'Guests',
+      sub: `${guestProfiles} profiles · VIPs & notes`,
+      route: '/(staff)/guests',
     },
-    {
-      icon: 'pricetag-outline',
-      label: 'Post promo',
-      sub: 'Fill slow slots',
-      route: '/(staff)/promotions/new',
-    },
-    {
-      icon: 'grid-outline',
-      label: 'Floor',
-      sub: `${seatedTables}/${tablesTotal} seated`,
-      route: '/(staff)/floor',
-    },
-    {
-      icon: 'people-outline',
-      label: 'Waitlist',
-      sub: WAITLIST_ENTRIES.length === 0 ? 'Clear' : `${WAITLIST_ENTRIES.length} waiting`,
-      route: '/(staff)/waitlist',
-    },
+    { icon: 'people-outline', label: 'Staff', sub: `${onShiftCount} on tonight`, route: '/(staff)/staff' },
   ];
 
   return (
     <View style={styles.root}>
       <ScrollView
         showsVerticalScrollIndicator={false}
-        contentContainerStyle={{
-          paddingTop: insets.top + spacing.sm,
-          paddingBottom: scrollPad,
-        }}
+        contentContainerStyle={{ paddingTop: insets.top + spacing.xs, paddingBottom: scrollPad }}
       >
-        <View style={styles.topBar}>
-          <View style={styles.topBarText}>
-            <Text style={styles.greetingLine1}>{greeting}</Text>
-            <Text style={styles.greetingLine2}>{OWNER_FIRST_NAME}</Text>
-            <View style={styles.sublineRow}>
-              <Text style={styles.subline}>{RESTAURANT_NAME}</Text>
-              <View style={styles.livePill}>
-                <View style={styles.liveDot} />
-                <Text style={styles.liveText}>Live</Text>
-              </View>
-            </View>
-          </View>
+        {/* ── Brand bar — same treatment as diner Discover ── */}
+        <View style={styles.brandBar}>
+          <Text style={styles.brandLogo}>{t('common.appName')}</Text>
           <Pressable
             onPress={() => router.push('/(staff)/notifications' as never)}
-            style={({ pressed }) => [styles.notifBtn, pressed && styles.notifPressed]}
+            hitSlop={8}
+            style={({ pressed }) => [styles.brandBellBtn, pressed && styles.brandBellPressed]}
             accessibilityRole="button"
             accessibilityLabel="Notifications"
           >
-            <Ionicons name="notifications-outline" size={18} color={c.textPrimary} />
-            {criticalCount > 0 && <View style={styles.badgeDot} />}
+            <Ionicons name="notifications-outline" size={22} color={c.textPrimary} />
+            {criticalCount > 0 ? <View style={styles.brandBellDot} /> : null}
           </Pressable>
         </View>
 
-        <Pressable
-          onPress={() => router.push('/(staff)/reservations' as never)}
-          style={({ pressed }) => [styles.commandCard, pressed && styles.rowPressed]}
-          accessibilityRole="button"
-          accessibilityLabel="Open reservations"
-        >
-          <View style={styles.commandTopRow}>
-            <View style={{ flex: 1 }}>
-              <Text style={styles.commandLabel}>Tonight</Text>
-              <Text style={styles.commandTitle}>{bookingsTonight} reservations on deck</Text>
-              <Text style={styles.commandSub}>
-                {LIVE_METRICS.tonightCovers} covers booked. {pendingCount} need confirmation.
-              </Text>
-            </View>
-            <View style={styles.commandIcon}>
-              <Ionicons name="calendar" size={22} color={c.gold} />
-            </View>
+        {/* ── Greeting block ── */}
+        <View style={styles.topBar}>
+          <View style={styles.tonightKicker}>
+            <View style={styles.kickerDot} />
+            <Text style={styles.kickerText}>TONIGHT · LIVE</Text>
           </View>
-          <View style={styles.commandStats}>
-            <View style={styles.commandStat}>
-              <Text style={[styles.statValue, styles.statValueAccent]}>{bookingsTonight}</Text>
+          <Text style={styles.greetLine1}>{greeting},</Text>
+          <Text style={styles.greetLine2}>{OWNER_FIRST_NAME}.</Text>
+          <Text style={styles.subline}>{RESTAURANT_NAME} · {RESTAURANT_ADDRESS}</Text>
+        </View>
+
+        {/* ── Bookings by hour ── */}
+        <BookingsByHourCard />
+
+        {/* ── Tonight hero ── */}
+        <View style={styles.heroCard}>
+          <Text style={styles.heroKicker}>TONIGHT</Text>
+          <Text style={styles.heroTitle}>{bookingsTonight} reservations on deck</Text>
+          <Text style={styles.heroSub}>
+            {LIVE_METRICS.tonightCovers} covers booked. {pendingCount} need confirmation.
+          </Text>
+          <View style={styles.heroStats}>
+            <View style={styles.heroStat}>
+              <Text style={[styles.statValue, styles.statValueGold]}>{bookingsTonight}</Text>
               <Text style={styles.statLabel}>Reservations</Text>
             </View>
-            <View style={styles.commandDivider} />
-            <View style={styles.commandStat}>
+            <View style={styles.heroStatDivider} />
+            <View style={styles.heroStat}>
               <Text style={styles.statValue}>{LIVE_METRICS.tonightCovers}</Text>
               <Text style={styles.statLabel}>Covers</Text>
             </View>
-            <View style={styles.commandDivider} />
-            <View style={styles.commandStat}>
-              <Text style={styles.statValue}>{WAITLIST_ENTRIES.length}</Text>
-              <Text style={styles.statLabel}>{waitAvg > 0 ? `${waitAvg}m wait` : 'Waitlist'}</Text>
+            <View style={styles.heroStatDivider} />
+            <View style={styles.heroStat}>
+              <Text style={styles.statValue}>{seatedTables}/{tablesTotal}</Text>
+              <Text style={styles.statLabel}>Seated</Text>
             </View>
           </View>
-        </Pressable>
-
-        <View style={styles.sectionHeader}>
-          <Text style={styles.sectionTitle}>Needs attention</Text>
-          {OWNER_ALERTS_STRIP.length > topAlerts.length ? (
-            <Pressable
-              onPress={() => router.push('/(staff)/notifications' as never)}
-              style={styles.seeAllBtn}
-              hitSlop={8}
-            >
-              <Text style={styles.seeAllText}>See all</Text>
-              <Ionicons name="chevron-forward" size={14} color={c.gold} />
-            </Pressable>
-          ) : null}
         </View>
 
-        <View style={styles.attentionCard}>
-          {topAlerts.length === 0 ? (
-            <View style={styles.attentionRow}>
-              <View style={styles.allClearIcon}>
-                <Ionicons name="checkmark" size={18} color={c.success} />
-              </View>
-              <View style={styles.attentionTextCol}>
-                <Text style={styles.attentionTitle}>Everything looks controlled</Text>
-                <Text style={styles.attentionSub}>No urgent reservation or floor issues</Text>
-              </View>
-            </View>
-          ) : (
-            topAlerts.map((alert, index) => {
-              const tone = alertTone(alert.severity, c);
-              return (
-                <Pressable
-                  key={alert.id}
-                  onPress={() => router.push('/(staff)/notifications' as never)}
-                  style={({ pressed }) => [
-                    styles.attentionRow,
-                    index > 0 && styles.rowDivider,
-                    pressed && styles.rowPressed,
-                  ]}
-                  accessibilityRole="button"
-                  accessibilityLabel={alert.message}
-                >
-                  <View style={[styles.attentionIcon, { backgroundColor: tone.bg }]}>
-                    <Ionicons
-                      name={alert.severity === 'critical' ? 'warning-outline' : 'time-outline'}
-                      size={18}
-                      color={tone.fg}
-                    />
-                  </View>
-                  <View style={styles.attentionTextCol}>
-                    <Text style={styles.attentionTitle} numberOfLines={2}>
-                      {alert.message}
-                    </Text>
-                    <Text style={styles.attentionSub}>
-                      {alert.severity === 'critical' ? 'Handle now' : 'Watch closely'}
-                    </Text>
-                  </View>
-                  <Ionicons name="chevron-forward" size={16} color={c.textMuted} />
-                </Pressable>
-              );
-            })
-          )}
-        </View>
-
-        <View style={styles.sectionHeader}>
-          <Text style={styles.sectionTitle}>Reservation flow</Text>
-          <Pressable
-            onPress={() => router.push('/(staff)/reservations' as never)}
-            style={styles.seeAllBtn}
-            hitSlop={8}
-          >
-            <Text style={styles.seeAllText}>Manage</Text>
-            <Ionicons name="chevron-forward" size={14} color={c.gold} />
-          </Pressable>
-        </View>
-
-        <View style={styles.timelineCard}>
-          {timeline.map((reservation, index) => {
-            const tone = statusTone(reservation.status, c);
-            return (
-              <Pressable
-                key={reservation.id}
-                onPress={() => router.push('/(staff)/reservations' as never)}
-                style={({ pressed }) => [
-                  styles.timelineRow,
-                  index > 0 && styles.rowDivider,
-                  pressed && styles.rowPressed,
-                ]}
-                accessibilityRole="button"
-                accessibilityLabel={`${reservation.guestName} at ${reservation.startTime}`}
-              >
-                <View style={styles.timeBlock}>
-                  <Text style={styles.timeText}>{reservation.startTime}</Text>
-                  <Text style={styles.partyText}>Party {reservation.partySize}</Text>
-                </View>
-                <View style={styles.guestCol}>
-                  <Text style={styles.guestName} numberOfLines={1}>
-                    {reservation.guestName}
-                  </Text>
-                  <Text style={styles.guestMeta} numberOfLines={1}>
-                    {reservation.table ? reservation.table : 'Table not assigned'}
-                    {reservation.vip ? ' · VIP' : ''}
-                    {reservation.notes ? ` · ${reservation.notes}` : ''}
-                  </Text>
-                </View>
-                <View style={[styles.statusPill, { backgroundColor: tone.bg, borderColor: tone.border }]}>
-                  <Text style={[styles.statusText, { color: tone.fg }]}>{tone.label}</Text>
-                </View>
-              </Pressable>
-            );
-          })}
-        </View>
-
-        <View style={styles.sectionHeader}>
+        {/* ── Quick actions ── */}
+        <View style={styles.sectionRow}>
           <Text style={styles.sectionTitle}>Quick actions</Text>
         </View>
-
         <View style={styles.actionGrid}>
           {quickActions.map((action) => (
             <Pressable
@@ -640,8 +696,8 @@ export default function OwnerHomeScreen() {
               accessibilityRole="button"
               accessibilityLabel={action.label}
             >
-              <View style={[styles.actionIconWrap, action.primary && styles.actionIconPrimary]}>
-                <Ionicons name={action.icon} size={19} color={action.primary ? c.gold : c.textSecondary} />
+              <View style={[styles.actionIconWrap, styles.actionIconWrapPrimary]}>
+                <Ionicons name={action.icon} size={20} color={c.gold} />
               </View>
               <View>
                 <Text style={styles.actionLabel}>{action.label}</Text>
@@ -651,14 +707,49 @@ export default function OwnerHomeScreen() {
           ))}
         </View>
 
-        <HomeBookingTrendCard
-          label="Reservation momentum"
-          headlineValue={`${riskCount} risk`}
-          headlineHint={`${BOOKING_TREND_WEEK.vsPrevWeekPct}% more bookings than last week`}
-          dayLabels={BOOKING_TREND_WEEK.dayLabels}
+        {/* ── Needs attention ── */}
+        <View style={styles.sectionRow}>
+          <Text style={styles.sectionTitle}>Needs attention</Text>
+          <Pressable
+            onPress={() => router.push('/(staff)/notifications' as never)}
+            style={styles.seeAll}
+            hitSlop={8}
+          >
+            <Text style={styles.seeAllText}>See all</Text>
+            <Ionicons name="chevron-forward" size={14} color={c.gold} />
+          </Pressable>
+        </View>
+        <View style={styles.attentionCard}>
+          {HOME_ATTENTION_ITEMS.map((item, index) => {
+            const tone = attentionIconTone(item.severity, c);
+            const iconName: IoniconName =
+              item.severity === 'critical' ? 'warning-outline' :
+              item.severity === 'warning' ? 'time-outline' : 'sparkles-outline';
+            return (
+              <Pressable
+                key={item.id}
+                onPress={() => router.push('/(staff)/notifications' as never)}
+                style={({ pressed }) => [styles.attentionRow, index > 0 && styles.rowDivider, pressed && styles.rowPressed]}
+                accessibilityRole="button"
+              >
+                <View style={[styles.attentionIcon, { backgroundColor: tone.bg }]}>
+                  <Ionicons name={iconName} size={18} color={tone.fg} />
+                </View>
+                <View style={styles.attentionTextCol}>
+                  <Text style={styles.attentionTitle}>{item.title}</Text>
+                  <Text style={styles.attentionSub}>{item.sub}</Text>
+                </View>
+                <Ionicons name="chevron-forward" size={16} color={c.textMuted} />
+              </Pressable>
+            );
+          })}
+        </View>
+
+        {/* ── Week momentum bar chart ── */}
+        <WeekMomentumChart
           counts={BOOKING_TREND_WEEK.counts}
-          vsPrevWeekPct={BOOKING_TREND_WEEK.vsPrevWeekPct}
-          onPress={() => router.push('/(staff)/reservations' as never)}
+          labels={BOOKING_TREND_WEEK.dayLabels}
+          trendPct={BOOKING_TREND_WEEK.vsPrevWeekPct}
         />
       </ScrollView>
     </View>
