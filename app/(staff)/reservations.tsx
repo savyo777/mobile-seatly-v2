@@ -7,15 +7,12 @@ import {
   StyleSheet,
   Modal,
   ScrollView,
-  Platform,
 } from 'react-native';
-import { LinearGradient } from 'expo-linear-gradient';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import { OwnerHeader } from '@/components/owner/OwnerHeader';
 import { useColors, createStyles, spacing, borderRadius } from '@/lib/theme';
-import { useTheme } from '@/lib/theme/ThemeProvider';
 import { useOwnerTabScrollPadding } from '@/hooks/useOwnerTabScrollPadding';
 import {
   OWNER_RESERVATIONS,
@@ -80,13 +77,6 @@ const useStyles = createStyles((c) => ({
   stickyHeaderInner: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 8,
-  },
-  stickyDot: {
-    width: 6,
-    height: 6,
-    borderRadius: 3,
-    backgroundColor: c.gold,
   },
   stickyHeaderText: {
     fontSize: 16,
@@ -116,17 +106,12 @@ const useStyles = createStyles((c) => ({
     alignItems: 'center',
     gap: spacing.md,
     paddingHorizontal: spacing.md,
-    paddingVertical: 16,
-    minHeight: 72,
+    paddingVertical: 14,
+    minHeight: 68,
   },
   rowDivider: {
     borderTopWidth: StyleSheet.hairlineWidth,
     borderTopColor: c.border,
-  },
-  rowLeftRail: {
-    width: 3,
-    alignSelf: 'stretch',
-    borderRadius: 2,
   },
   avatar: {
     width: 40,
@@ -188,10 +173,9 @@ const useStyles = createStyles((c) => ({
     borderRadius: borderRadius.full,
   },
   pillText: {
-    fontSize: 10,
-    fontWeight: '800',
-    letterSpacing: 0.3,
-    textTransform: 'uppercase',
+    fontSize: 11,
+    fontWeight: '700',
+    letterSpacing: 0.1,
   },
 
   empty: {
@@ -206,100 +190,82 @@ const useStyles = createStyles((c) => ({
     fontWeight: '500',
   },
 
-  nowWrap: {
+  summaryCard: {
     marginHorizontal: spacing.lg,
-    marginBottom: spacing.md,
+    marginBottom: spacing.lg,
     borderRadius: borderRadius.xl,
-    overflow: 'hidden',
+    backgroundColor: c.bgSurface,
     borderWidth: StyleSheet.hairlineWidth,
-    borderColor: `${c.gold}44`,
-    ...Platform.select({
-      ios: {
-        shadowColor: '#000',
-        shadowOpacity: 0.22,
-        shadowRadius: 18,
-        shadowOffset: { width: 0, height: 10 },
-      },
-      android: { elevation: 6 },
-    }),
-  },
-  nowGradient: {
+    borderColor: c.border,
     padding: spacing.lg,
     gap: spacing.md,
   },
-  nowHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-  },
-  nowLive: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-    backgroundColor: c.gold,
-  },
-  nowLabel: {
-    fontSize: 11,
-    fontWeight: '800',
-    color: c.gold,
-    letterSpacing: 1.2,
-    textTransform: 'uppercase',
-  },
-  nowStats: {
-    flexDirection: 'row',
-    gap: spacing.lg,
-  },
-  nowStat: {
-    flex: 1,
-    gap: 2,
-  },
-  nowStatValue: {
-    fontSize: 28,
+  summaryTitle: {
+    fontSize: 18,
     fontWeight: '800',
     color: c.textPrimary,
-    letterSpacing: -0.6,
+    letterSpacing: -0.3,
   },
-  nowStatValueGold: {
-    color: c.gold,
-  },
-  nowStatLabel: {
-    fontSize: 11,
+  summarySub: {
+    fontSize: 13,
     color: c.textMuted,
-    fontWeight: '700',
-    textTransform: 'uppercase',
-    letterSpacing: 0.5,
+    fontWeight: '500',
+    marginTop: 2,
   },
-  nowNext: {
-    borderTopWidth: StyleSheet.hairlineWidth,
-    borderTopColor: c.border,
-    paddingTop: spacing.md,
+  summaryStats: {
+    flexDirection: 'row',
+    gap: spacing.md,
+  },
+  summaryStat: {
+    flex: 1,
+    backgroundColor: c.bgElevated,
+    borderRadius: borderRadius.lg,
+    padding: spacing.md,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: c.border,
+  },
+  summaryStatValue: {
+    fontSize: 26,
+    fontWeight: '800',
+    color: c.textPrimary,
+    letterSpacing: -0.5,
+  },
+  summaryStatValueAccent: { color: c.gold },
+  summaryStatLabel: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: c.textMuted,
+    marginTop: 4,
+  },
+  nextRow: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: spacing.md,
+    paddingTop: spacing.sm,
+    borderTopWidth: StyleSheet.hairlineWidth,
+    borderTopColor: c.border,
   },
-  nowNextAvatar: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    backgroundColor: `${c.gold}22`,
+  nextAvatar: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: c.bgElevated,
     alignItems: 'center',
     justifyContent: 'center',
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: c.border,
   },
-  nowNextCol: {
-    flex: 1,
-    gap: 2,
-  },
-  nowNextLabel: {
-    fontSize: 10,
-    fontWeight: '800',
+  nextCol: { flex: 1, minWidth: 0 },
+  nextLabel: {
+    fontSize: 12,
+    fontWeight: '600',
     color: c.textMuted,
-    letterSpacing: 0.8,
-    textTransform: 'uppercase',
   },
-  nowNextText: {
-    fontSize: 14,
+  nextText: {
+    fontSize: 15,
     fontWeight: '700',
     color: c.textPrimary,
+    marginTop: 2,
   },
 
   modalOverlay: {
@@ -345,13 +311,11 @@ const useStyles = createStyles((c) => ({
     marginBottom: spacing.md,
   },
   modalSectionLabel: {
-    fontSize: 11,
-    fontWeight: '800',
-    color: c.textMuted,
-    letterSpacing: 1,
-    textTransform: 'uppercase',
-    marginTop: spacing.md,
-    marginBottom: 6,
+    fontSize: 15,
+    fontWeight: '700',
+    color: c.textPrimary,
+    marginTop: spacing.lg,
+    marginBottom: spacing.sm,
   },
   modalKvRow: {
     flexDirection: 'row',
@@ -432,11 +396,9 @@ const useStyles = createStyles((c) => ({
     marginBottom: spacing.sm,
   },
   modalRiskText: {
-    fontSize: 11,
-    fontWeight: '800',
+    fontSize: 13,
+    fontWeight: '700',
     color: c.danger,
-    letterSpacing: 0.5,
-    textTransform: 'uppercase',
   },
   modalClose: {
     marginTop: spacing.lg,
@@ -468,9 +430,9 @@ function statusPresentation(
     case 'seated':
       return { label: 'Seated', text: c.info, bg: `${c.info}1F`, rail: c.info };
     case 'risk':
-      return { label: 'Risk', text: c.danger, bg: `${c.danger}1F`, rail: c.danger };
+      return { label: 'At risk', text: c.danger, bg: `${c.danger}1F`, rail: c.danger };
     case 'pending':
-      return { label: 'Upcoming', text: c.textSecondary, bg: c.bgElevated, rail: c.border };
+      return { label: 'Expected', text: c.textSecondary, bg: c.bgElevated, rail: c.border };
     default:
       return { label: 'Confirmed', text: c.success, bg: `${c.success}1F`, rail: c.success };
   }
@@ -489,7 +451,6 @@ function parseMinutes(t: string): number {
 
 export default function OwnerReservationsScreen() {
   const c = useColors();
-  const { effective } = useTheme();
   const styles = useStyles();
   const insets = useSafeAreaInsets();
   const scrollPad = useOwnerTabScrollPadding();
@@ -529,11 +490,6 @@ export default function OwnerReservationsScreen() {
     }));
   }, [filtered]);
 
-  const nowGradient =
-    effective === 'dark'
-      ? ([`${c.goldDark}33`, c.bgSurface] as const)
-      : ([`${c.gold}18`, c.bgSurface] as const);
-
   const press = (fn: () => void) => () => {
     Haptics.selectionAsync().catch(() => {});
     fn();
@@ -550,51 +506,53 @@ export default function OwnerReservationsScreen() {
             <View style={{ paddingTop: insets.top + spacing.xs }} />
             <OwnerHeader
               title="Bookings"
-              subtitle={`Tonight · ${nowSummary.seated} seated · ${nowSummary.upcomingNext60} upcoming`}
+              subtitle="Tonight — who's seated and who's on the way"
             />
 
-            <View style={styles.nowWrap}>
-              <LinearGradient
-                colors={[...nowGradient]}
-                start={{ x: 0, y: 0 }}
-                end={{ x: 1, y: 1 }}
-                style={styles.nowGradient}
-              >
-                <View style={styles.nowHeader}>
-                  <View style={styles.nowLive} />
-                  <Text style={styles.nowLabel}>Live · Now</Text>
-                </View>
-                <View style={styles.nowStats}>
-                  <View style={styles.nowStat}>
-                    <Text style={[styles.nowStatValue, styles.nowStatValueGold]}>
-                      {nowSummary.seated}
-                      <Text style={{ fontSize: 18, color: c.textMuted }}>
-                        /{nowSummary.capacity}
-                      </Text>
+            <View style={styles.summaryCard}>
+              <View>
+                <Text style={styles.summaryTitle}>Right now</Text>
+                <Text style={styles.summarySub}>
+                  {nowSummary.seated} of {nowSummary.capacity} tables seated ·{' '}
+                  {nowSummary.upcomingNext60} reservation
+                  {nowSummary.upcomingNext60 === 1 ? '' : 's'} still to arrive
+                </Text>
+              </View>
+              <View style={styles.summaryStats}>
+                <View style={styles.summaryStat}>
+                  <Text style={[styles.summaryStatValue, styles.summaryStatValueAccent]}>
+                    {nowSummary.seated}
+                    <Text style={{ fontSize: 16, fontWeight: '700', color: c.textMuted }}>
+                      /{nowSummary.capacity}
                     </Text>
-                    <Text style={styles.nowStatLabel}>Seated</Text>
-                  </View>
-                  <View style={styles.nowStat}>
-                    <Text style={styles.nowStatValue}>{nowSummary.upcomingNext60}</Text>
-                    <Text style={styles.nowStatLabel}>Upcoming</Text>
-                  </View>
+                  </Text>
+                  <Text style={styles.summaryStatLabel}>Tables seated</Text>
                 </View>
-                {nowSummary.next ? (
-                  <View style={styles.nowNext}>
-                    <View style={styles.nowNextAvatar}>
-                      <Text style={styles.avatarText}>{initials(nowSummary.next.guestName)}</Text>
-                    </View>
-                    <View style={styles.nowNextCol}>
-                      <Text style={styles.nowNextLabel}>Next party</Text>
-                      <Text style={styles.nowNextText} numberOfLines={1}>
-                        {nowSummary.next.startTime} · {nowSummary.next.guestName} ·{' '}
-                        {nowSummary.next.partySize} guests
-                      </Text>
-                    </View>
-                    <Ionicons name="chevron-forward" size={16} color={c.textMuted} />
+                <View style={styles.summaryStat}>
+                  <Text style={styles.summaryStatValue}>{nowSummary.upcomingNext60}</Text>
+                  <Text style={styles.summaryStatLabel}>Still coming</Text>
+                </View>
+              </View>
+              {nowSummary.next ? (
+                <Pressable
+                  style={styles.nextRow}
+                  onPress={press(() => setSelected(nowSummary.next!))}
+                  accessibilityRole="button"
+                  accessibilityLabel={`Next reservation ${nowSummary.next.guestName}`}
+                >
+                  <View style={styles.nextAvatar}>
+                    <Text style={styles.avatarText}>{initials(nowSummary.next.guestName)}</Text>
                   </View>
-                ) : null}
-              </LinearGradient>
+                  <View style={styles.nextCol}>
+                    <Text style={styles.nextLabel}>Up next</Text>
+                    <Text style={styles.nextText} numberOfLines={1}>
+                      {nowSummary.next.startTime} · {nowSummary.next.guestName} · party of{' '}
+                      {nowSummary.next.partySize}
+                    </Text>
+                  </View>
+                  <Ionicons name="chevron-forward" size={18} color={c.textMuted} />
+                </Pressable>
+              ) : null}
             </View>
 
             <View style={styles.chipRow}>
@@ -625,7 +583,6 @@ export default function OwnerReservationsScreen() {
         renderSectionHeader={({ section: { title } }) => (
           <View style={styles.stickyHeader}>
             <View style={styles.stickyHeaderInner}>
-              <View style={styles.stickyDot} />
               <Text style={styles.stickyHeaderText}>{title}</Text>
             </View>
           </View>
@@ -648,7 +605,6 @@ export default function OwnerReservationsScreen() {
                     accessibilityRole="button"
                     accessibilityLabel={`${row.guestName}, ${row.startTime}, ${pres.label}`}
                   >
-                    <View style={[styles.rowLeftRail, { backgroundColor: pres.rail }]} />
                     <View style={styles.avatar}>
                       <Text style={styles.avatarText}>{initials(row.guestName)}</Text>
                     </View>
@@ -699,39 +655,20 @@ export default function OwnerReservationsScreen() {
 
                   {selected.status === 'risk' ? (
                     <View style={styles.modalRiskPill}>
-                      <Ionicons name="warning" size={12} color={c.danger} />
-                      <Text style={styles.modalRiskText}>High no-show risk</Text>
+                      <Ionicons name="warning" size={14} color={c.danger} />
+                      <Text style={styles.modalRiskText}>Might not show — consider a quick text</Text>
                     </View>
                   ) : null}
 
-                  <Text style={styles.modalSectionLabel}>Reservation</Text>
+                  <Text style={styles.modalSectionLabel}>Details</Text>
                   {[
                     { label: 'Status', value: statusPresentation(selected.status, c).label },
-                    { label: 'Party', value: `${selected.partySize} guests` },
-                    { label: 'Table', value: selected.table ?? 'Unassigned' },
-                    { label: 'Source', value: selected.walkIn ? 'Walk-in queue' : 'App booking' },
-                    { label: 'Reminder sent', value: selected.walkIn ? '—' : 'Yes · 2h prior' },
-                  ].map((r, i) => (
-                    <View
-                      key={r.label}
-                      style={[styles.modalKvRow, i === 0 && styles.modalKvRowFirst]}
-                    >
-                      <Text style={styles.modalKvLabel}>{r.label}</Text>
-                      <Text style={styles.modalKvValue}>{r.value}</Text>
-                    </View>
-                  ))}
-
-                  <Text style={styles.modalSectionLabel}>Deposit</Text>
-                  {[
-                    { label: 'Required', value: selected.partySize >= 6 ? 'Yes' : 'No' },
+                    { label: 'Party size', value: `${selected.partySize} people` },
+                    { label: 'Table', value: selected.table ?? 'Not assigned yet' },
                     {
-                      label: 'Amount',
-                      value:
-                        selected.partySize >= 6
-                          ? `$${(selected.partySize * 25).toFixed(0)}.00`
-                          : '—',
+                      label: 'How they booked',
+                      value: selected.walkIn ? 'Walk-in / waitlist' : 'Reservation',
                     },
-                    { label: 'Status', value: selected.partySize >= 6 ? 'Paid' : 'Not required' },
                   ].map((r, i) => (
                     <View
                       key={r.label}
@@ -742,13 +679,9 @@ export default function OwnerReservationsScreen() {
                     </View>
                   ))}
 
-                  <Text style={styles.modalSectionLabel}>Guest history</Text>
+                  <Text style={styles.modalSectionLabel}>Guest</Text>
                   {[
                     { label: 'Past visits', value: String(selected.pastVisits ?? 0) },
-                    {
-                      label: 'Avg spend',
-                      value: selected.avgSpend ? `$${selected.avgSpend}` : '—',
-                    },
                     { label: 'VIP', value: selected.vip ? 'Yes' : 'No' },
                   ].map((r, i) => (
                     <View

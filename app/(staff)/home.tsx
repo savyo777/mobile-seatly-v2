@@ -4,17 +4,17 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { useColors, createStyles, spacing, borderRadius } from '@/lib/theme';
-import { HomeHero } from '@/components/owner/HomeHero';
+import { HomeBookingTrendCard } from '@/components/owner/HomeBookingTrendCard';
 import {
-  REVENUE_DATA,
+  BOOKING_TREND_WEEK,
   LIVE_METRICS,
   OWNER_ALERTS_STRIP,
   WAITLIST_ENTRIES,
   WALKIN_QUEUE,
   OWNER_FLOOR_TABLES,
   OWNER_FIRST_NAME,
+  OWNER_RESERVATIONS,
 } from '@/lib/mock/ownerApp';
-import { formatCurrency } from '@/lib/utils/formatCurrency';
 import { useOwnerTabScrollPadding } from '@/hooks/useOwnerTabScrollPadding';
 
 type IoniconName = React.ComponentProps<typeof Ionicons>['name'];
@@ -304,16 +304,6 @@ export default function OwnerHomeScreen() {
   const scrollPad = useOwnerTabScrollPadding();
   const router = useRouter();
 
-  const day = REVENUE_DATA.day;
-  const trendUp = day.trendPct >= 0;
-  const healthSummary = useMemo(
-    () =>
-      trendUp
-        ? `+${day.trendPct}% vs last week — looking good.`
-        : `${day.trendPct}% vs last week — a promo could help.`,
-    [trendUp, day.trendPct],
-  );
-
   const waitAvg =
     WALKIN_QUEUE.length > 0
       ? Math.round(WALKIN_QUEUE.reduce((a, b) => a + b.waitMins, 0) / WALKIN_QUEUE.length)
@@ -325,6 +315,7 @@ export default function OwnerHomeScreen() {
   const greeting       = greetingFor(hour);
   const criticalCount  = OWNER_ALERTS_STRIP.filter((a) => a.severity === 'critical').length;
   const topAlerts      = OWNER_ALERTS_STRIP.slice(0, 3);
+  const bookingsTonight = OWNER_RESERVATIONS.length;
 
   // Grouped action list (Cal AI style)
   const actions: { icon: IoniconName; label: string; sub: string; route: string; primary?: boolean }[] = [
@@ -378,16 +369,15 @@ export default function OwnerHomeScreen() {
           </Pressable>
         </View>
 
-        {/* ── Revenue hero — tap to open full analytics ── */}
-        <HomeHero
-          label="Revenue today"
-          value={formatCurrency(day.total, 'cad')}
-          trendLabel={`${trendUp ? '+' : ''}${day.trendPct}%`}
-          trendPositive={trendUp}
-          healthSummary={healthSummary}
-          sparkline={day.series}
-          currentIndex={Math.min(day.series.length - 1, Math.max(0, hour - 11))}
-          onPress={() => router.push('/(staff)/analytics' as never)}
+        {/* ── Booking trend — line chart (tables / reservations, not revenue) ── */}
+        <HomeBookingTrendCard
+          label="Bookings this week"
+          headlineValue={String(bookingsTonight)}
+          headlineHint="reservations on the books for tonight"
+          dayLabels={BOOKING_TREND_WEEK.dayLabels}
+          counts={BOOKING_TREND_WEEK.counts}
+          vsPrevWeekPct={BOOKING_TREND_WEEK.vsPrevWeekPct}
+          onPress={() => router.push('/(staff)/reservations' as never)}
         />
 
         {/* ── Tonight snapshot — 3 Uber-style status cells ── */}

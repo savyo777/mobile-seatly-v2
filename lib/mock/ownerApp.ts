@@ -71,6 +71,18 @@ export const MARKETING_ACTIVE: MarketingPromo = {
 
 export const RECEIPTS_EXPORT_HINT = 'Weekly P&L ready · Tap to export PDF';
 
+/** Last 7 days — reservation counts (booking-focused home chart, not revenue). */
+export const BOOKING_TREND_WEEK: {
+  dayLabels: string[];
+  counts: number[];
+  /** Positive = more bookings than prior week. */
+  vsPrevWeekPct: number;
+} = {
+  dayLabels: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
+  counts: [18, 22, 19, 24, 31, 38, 26],
+  vsPrevWeekPct: 8,
+};
+
 export const REVENUE_DATA: Record<
   RevenuePeriod,
   { total: number; trendPct: number; series: number[] }
