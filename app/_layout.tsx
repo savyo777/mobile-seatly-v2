@@ -6,6 +6,7 @@ import { SafeAreaProvider } from 'react-native-safe-area-context';
 import '@/lib/i18n';
 import { AuthProvider } from '@/lib/auth/AuthContext';
 import { ThemeProvider, useColors } from '@/lib/theme';
+import { MenuProvider } from '@/lib/context/MenuContext';
 
 function ThemedRootShell() {
   const c = useColors();
@@ -36,7 +37,9 @@ export default function RootLayout() {
       <SafeAreaProvider>
         <ThemeProvider>
           <AuthProvider>
-            <ThemedRootShell />
+            <MenuProvider>
+              <ThemedRootShell />
+            </MenuProvider>
           </AuthProvider>
         </ThemeProvider>
       </SafeAreaProvider>

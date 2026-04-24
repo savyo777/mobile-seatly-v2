@@ -18,6 +18,8 @@ type SubpageHeaderProps = {
   rightAction?: React.ReactNode;
   /** Override the back button handler entirely. */
   onBack?: () => void;
+  /** Gold chevron, no circle background, title inline — matches iOS native style. */
+  accentBack?: boolean;
 };
 
 const FALLBACK_TAB_HREF: Record<RootFallbackTab, Href> = {
@@ -37,6 +39,7 @@ export function SubpageHeader({
   fallbackHref,
   rightAction,
   onBack,
+  accentBack = false,
 }: SubpageHeaderProps) {
   const c = useColors();
   const styles = useStyles();
@@ -55,6 +58,26 @@ export function SubpageHeader({
     }
     router.replace(safeFallbackHref);
   }, [onBack, navigation, router, safeFallbackHref]);
+
+  if (accentBack) {
+    return (
+      <View style={[styles.wrap, compact && styles.wrapCompact]}>
+        <View style={styles.accentRow}>
+          <Pressable
+            onPress={handleBack}
+            style={({ pressed }) => [{ opacity: pressed ? 0.6 : 1 }]}
+            accessibilityRole="button"
+            accessibilityLabel="Go back"
+          >
+            <Ionicons name="chevron-back" size={26} color={c.gold} />
+          </Pressable>
+          <Text style={styles.accentTitle} numberOfLines={1}>{title}</Text>
+          {rightAction ? <View style={styles.accentRight}>{rightAction}</View> : null}
+        </View>
+        {subtitle ? <Text style={styles.subtitle}>{subtitle}</Text> : null}
+      </View>
+    );
+  }
 
   return (
     <View style={[styles.wrap, compact && styles.wrapCompact]}>
@@ -149,6 +172,21 @@ const useStyles = createStyles((c) => ({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 10,
+  },
+  accentRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+  },
+  accentTitle: {
+    flex: 1,
+    fontSize: 28,
+    fontWeight: '800',
+    color: c.textPrimary,
+    letterSpacing: -0.5,
+  },
+  accentRight: {
+    marginLeft: 'auto' as any,
   },
   title: {
     fontSize: 28,

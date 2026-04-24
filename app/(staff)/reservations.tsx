@@ -20,7 +20,7 @@ import {
 } from '@/lib/mock/ownerApp';
 
 type DateFilter = 'today' | 'tomorrow' | 'week';
-type StatusFilter = 'all' | 'confirmed' | 'pending' | 'seated' | 'risk';
+type StatusFilter = 'all' | 'confirmed' | 'pending' | 'seated';
 
 const DATE_FILTERS: { key: DateFilter; label: string }[] = [
   { key: 'today', label: 'Today' },
@@ -33,8 +33,15 @@ const STATUS_FILTERS: { key: StatusFilter; label: string }[] = [
   { key: 'confirmed', label: 'Booked' },
   { key: 'pending', label: 'Pending' },
   { key: 'seated', label: 'Seated' },
-  { key: 'risk', label: 'Risk' },
 ];
+
+const STATUS_GROUP_ORDER = ['seated', 'confirmed', 'pending', 'risk'] as const;
+const STATUS_GROUP_LABELS: Record<string, string> = {
+  seated: 'SEATED',
+  confirmed: 'BOOKED',
+  pending: 'UPCOMING',
+  risk: 'AT RISK',
+};
 
 function initials(name: string): string {
   const parts = name.split(/\s+/).filter(Boolean);
@@ -48,7 +55,7 @@ const useStyles = createStyles((c) => ({
 
   segmentWrap: {
     paddingHorizontal: spacing.lg,
-    marginBottom: spacing.md,
+    marginBottom: spacing.lg,
   },
   segmentTrack: {
     flexDirection: 'row',
@@ -73,6 +80,28 @@ const useStyles = createStyles((c) => ({
     paddingHorizontal: spacing.lg,
     paddingBottom: spacing.md,
   },
+  pageHeaderRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    justifyContent: 'space-between',
+  },
+  pageHeaderLeft: { flex: 1 },
+  walkInBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    paddingHorizontal: 14,
+    paddingVertical: 9,
+    borderRadius: borderRadius.full,
+    borderWidth: 1.5,
+    borderColor: c.gold,
+    marginTop: 2,
+  },
+  walkInBtnText: {
+    fontSize: 13,
+    fontWeight: '700',
+    color: c.gold,
+  },
   kickerRow: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -92,11 +121,11 @@ const useStyles = createStyles((c) => ({
     letterSpacing: 0.8,
   },
   pageTitle: {
-    fontSize: 30,
+    fontSize: 34,
     fontWeight: '800',
     color: c.textPrimary,
-    letterSpacing: -0.8,
-    lineHeight: 34,
+    letterSpacing: -1,
+    lineHeight: 38,
   },
   pageSub: {
     fontSize: 14,
@@ -143,44 +172,45 @@ const useStyles = createStyles((c) => ({
     borderColor: c.border,
     padding: spacing.lg,
   },
-  rightNowTitle: {
-    fontSize: 18,
-    fontWeight: '800',
-    color: c.textPrimary,
-    letterSpacing: -0.3,
-    marginBottom: 4,
-  },
-  rightNowSub: {
-    fontSize: 13,
-    color: c.textMuted,
-    fontWeight: '500',
-    marginBottom: spacing.md,
-  },
-  rightNowStats: {
+  rightNowTop: {
     flexDirection: 'row',
-    gap: spacing.sm,
-    marginBottom: spacing.md,
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: spacing.sm,
   },
-  rightNowStat: {
-    flex: 1,
+  rightNowKicker: {
+    fontSize: 11,
+    fontWeight: '700',
+    color: c.gold,
+    letterSpacing: 0.8,
+  },
+  viewToggle: {
+    flexDirection: 'row',
+    gap: 4,
+  },
+  viewToggleBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: borderRadius.md,
     backgroundColor: c.bgElevated,
-    borderRadius: borderRadius.lg,
-    padding: spacing.md,
     borderWidth: StyleSheet.hairlineWidth,
     borderColor: c.border,
   },
-  rightNowStatValue: {
-    fontSize: 26,
+  viewToggleBtnActive: {
+    backgroundColor: `${c.gold}16`,
+    borderColor: `${c.gold}55`,
+  },
+  viewToggleBtnText: { fontSize: 12, fontWeight: '700', color: c.textMuted },
+  viewToggleBtnTextActive: { color: c.gold },
+  rightNowBig: {
+    fontSize: 24,
     fontWeight: '800',
     color: c.textPrimary,
-    letterSpacing: -0.6,
-  },
-  rightNowStatValueAccent: { color: c.gold },
-  rightNowStatLabel: {
-    fontSize: 12,
-    fontWeight: '600',
-    color: c.textMuted,
-    marginTop: 4,
+    letterSpacing: -0.5,
+    marginBottom: spacing.md,
   },
   upNextRow: {
     flexDirection: 'row',
@@ -190,19 +220,19 @@ const useStyles = createStyles((c) => ({
     borderTopWidth: StyleSheet.hairlineWidth,
     borderTopColor: c.border,
   },
-  upNextAvatar: {
-    width: 38,
-    height: 38,
-    borderRadius: 19,
-    backgroundColor: `${c.gold}22`,
-    alignItems: 'center',
-    justifyContent: 'center',
-    flexShrink: 0,
-  },
-  upNextAvatarText: {
-    fontSize: 12,
+  upNextTimeBlock: { width: 52 },
+  upNextClock: {
+    fontSize: 22,
     fontWeight: '800',
-    color: c.gold,
+    color: c.textPrimary,
+    letterSpacing: -0.5,
+    lineHeight: 26,
+  },
+  upNextMeridiem: {
+    fontSize: 11,
+    fontWeight: '600',
+    color: c.textMuted,
+    marginTop: 2,
   },
   upNextCol: { flex: 1, minWidth: 0 },
   upNextLabel: {
@@ -217,15 +247,27 @@ const useStyles = createStyles((c) => ({
     fontWeight: '600',
     color: c.textPrimary,
   },
+  seatBtn: {
+    paddingHorizontal: 16,
+    paddingVertical: 9,
+    borderRadius: borderRadius.full,
+    backgroundColor: c.gold,
+  },
+  seatBtnText: {
+    fontSize: 13,
+    fontWeight: '800',
+    color: '#000',
+  },
 
   listMeta: {
     paddingHorizontal: spacing.lg,
     marginBottom: spacing.sm,
   },
   listMetaText: {
-    fontSize: 13,
-    fontWeight: '600',
+    fontSize: 11,
+    fontWeight: '700',
     color: c.textMuted,
+    letterSpacing: 0.6,
   },
 
   stickyHeader: {
@@ -233,9 +275,18 @@ const useStyles = createStyles((c) => ({
     paddingHorizontal: spacing.lg,
     paddingTop: spacing.md,
     paddingBottom: spacing.xs,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
   },
   stickyHeaderText: {
-    fontSize: 13,
+    fontSize: 12,
+    fontWeight: '700',
+    color: c.textMuted,
+    letterSpacing: 0.5,
+  },
+  stickyHeaderCount: {
+    fontSize: 12,
     fontWeight: '700',
     color: c.textMuted,
   },
@@ -595,19 +646,14 @@ export default function OwnerReservationsScreen() {
   }, [dateFilter]);
 
   const sections = useMemo(() => {
-    const sorted = [...filtered].sort(
-      (a, b) => parseMinutes(a.startTime) - parseMinutes(b.startTime),
-    );
-    const map = new Map<string, OwnerReservationSlot[]>();
-    for (const r of sorted) {
-      const list = map.get(r.startTime) ?? [];
-      list.push(r);
-      map.set(r.startTime, list);
-    }
-    return Array.from(map.entries()).map(([title, rows]) => ({
-      title,
-      data: rows,
-    }));
+    return STATUS_GROUP_ORDER
+      .map((status) => {
+        const rows = filtered
+          .filter((r) => r.status === status)
+          .sort((a, b) => parseMinutes(a.startTime) - parseMinutes(b.startTime));
+        return rows.length > 0 ? { title: STATUS_GROUP_LABELS[status], data: rows } : null;
+      })
+      .filter((s): s is { title: string; data: OwnerReservationSlot[] } => s !== null);
   }, [filtered]);
 
   const press = (fn: () => void) => () => {
@@ -631,10 +677,27 @@ export default function OwnerReservationsScreen() {
       confirmed: dateFiltered.filter((r) => r.status === 'confirmed').length,
       pending: dateFiltered.filter((r) => r.status === 'pending').length,
       seated: dateFiltered.filter((r) => r.status === 'seated').length,
-      risk: dateFiltered.filter((r) => r.status === 'risk').length,
     }),
     [dateFiltered],
   );
+
+  const covers = useMemo(
+    () => dateFiltered.reduce((sum, r) => sum + r.partySize, 0),
+    [dateFiltered],
+  );
+
+  const dayLabel = useMemo(() => {
+    const d = new Date();
+    return d.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' }).toUpperCase();
+  }, []);
+
+  const minutesUntilNext = useMemo(() => {
+    if (!glance.next) return null;
+    const now = new Date();
+    const nowMins = now.getHours() * 60 + now.getMinutes();
+    const diff = parseMinutes(glance.next.startTime) - nowMins;
+    return diff > 0 ? diff : null;
+  }, [glance.next]);
 
   return (
     <View style={styles.root}>
@@ -645,6 +708,25 @@ export default function OwnerReservationsScreen() {
         ListHeaderComponent={
           <>
             <View style={{ paddingTop: insets.top + spacing.sm }} />
+
+            {/* Page header */}
+            <View style={styles.pageHeader}>
+              <View style={styles.pageHeaderRow}>
+                <View style={styles.pageHeaderLeft}>
+                  <View style={styles.kickerRow}>
+                    <View style={styles.kickerDot} />
+                    <Text style={styles.kickerText}>BOOKINGS · {dayLabel}</Text>
+                  </View>
+                  <Text style={styles.pageTitle}>Service board</Text>
+                  <Text style={styles.pageSub}>
+                    {dateFiltered.length} reservations · {covers} covers
+                  </Text>
+                </View>
+                <Pressable style={styles.walkInBtn} accessibilityRole="button">
+                  <Text style={styles.walkInBtnText}>+ Walk-in</Text>
+                </Pressable>
+              </View>
+            </View>
 
             {/* Date segment */}
             <View style={styles.segmentWrap}>
@@ -669,14 +751,44 @@ export default function OwnerReservationsScreen() {
               </View>
             </View>
 
-            {/* Page header */}
-            <View style={styles.pageHeader}>
-              <View style={styles.kickerRow}>
-                <View style={styles.kickerDot} />
-                <Text style={styles.kickerText}>BOOKINGS</Text>
+            {/* Right now card */}
+            <View style={styles.rightNowCard}>
+              <View style={styles.rightNowTop}>
+                <Text style={styles.rightNowKicker}>RIGHT NOW</Text>
+                <View style={styles.viewToggle}>
+                  <View style={[styles.viewToggleBtn, styles.viewToggleBtnActive]}>
+                    <Ionicons name="list" size={13} color={c.gold} />
+                    <Text style={[styles.viewToggleBtnText, styles.viewToggleBtnTextActive]}>List</Text>
+                  </View>
+                  <View style={styles.viewToggleBtn}>
+                    <Ionicons name="time-outline" size={13} color={c.textMuted} />
+                    <Text style={styles.viewToggleBtnText}>Time</Text>
+                  </View>
+                </View>
               </View>
-              <Text style={styles.pageTitle}>Tonight's service</Text>
-              <Text style={styles.pageSub}>Live reservation control</Text>
+              <Text style={styles.rightNowBig}>
+                {glance.seated}/{capacity} seated · {glance.upcoming} to come
+              </Text>
+              {glance.next ? (
+                <Pressable
+                  style={styles.upNextRow}
+                  onPress={press(() => setSelected(glance.next!))}
+                  accessibilityRole="button"
+                >
+                  <View style={styles.upNextTimeBlock}>
+                    <Text style={styles.upNextClock}>{splitTime(glance.next.startTime).clock}</Text>
+                    <Text style={styles.upNextMeridiem}>{splitTime(glance.next.startTime).ap}</Text>
+                  </View>
+                  <View style={styles.upNextCol}>
+                    <Text style={styles.upNextLabel}>
+                      UP NEXT{minutesUntilNext !== null ? ` · IN ${minutesUntilNext} MIN` : ''}
+                    </Text>
+                    <Text style={styles.upNextText} numberOfLines={1}>
+                      {glance.next.guestName} · party of {glance.next.partySize}
+                    </Text>
+                  </View>
+                </Pressable>
+              ) : null}
             </View>
 
             {/* Status chips */}
@@ -707,51 +819,10 @@ export default function OwnerReservationsScreen() {
               </View>
             </ScrollView>
 
-            {/* Right now card */}
-            <View style={styles.rightNowCard}>
-              <Text style={styles.rightNowTitle}>Right now</Text>
-              <Text style={styles.rightNowSub}>
-                {glance.seated} of {capacity} tables seated · {glance.upcoming} still expected
-              </Text>
-              <View style={styles.rightNowStats}>
-                <View style={styles.rightNowStat}>
-                  <Text style={[styles.rightNowStatValue, styles.rightNowStatValueAccent]}>
-                    {glance.seated}
-                    <Text style={{ fontSize: 15, fontWeight: '700', color: c.textMuted }}>
-                      /{capacity}
-                    </Text>
-                  </Text>
-                  <Text style={styles.rightNowStatLabel}>Seated</Text>
-                </View>
-                <View style={styles.rightNowStat}>
-                  <Text style={styles.rightNowStatValue}>{glance.upcoming}</Text>
-                  <Text style={styles.rightNowStatLabel}>Still coming</Text>
-                </View>
-              </View>
-              {glance.next ? (
-                <Pressable
-                  style={styles.upNextRow}
-                  onPress={press(() => setSelected(glance.next!))}
-                  accessibilityRole="button"
-                >
-                  <View style={styles.upNextAvatar}>
-                    <Text style={styles.upNextAvatarText}>{initials(glance.next.guestName)}</Text>
-                  </View>
-                  <View style={styles.upNextCol}>
-                    <Text style={styles.upNextLabel}>UP NEXT</Text>
-                    <Text style={styles.upNextText} numberOfLines={1}>
-                      {glance.next.startTime} · {glance.next.guestName} · ...
-                    </Text>
-                  </View>
-                  <Ionicons name="chevron-forward" size={18} color={c.textMuted} />
-                </Pressable>
-              ) : null}
-            </View>
-
             {filtered.length > 0 ? (
               <View style={styles.listMeta}>
                 <Text style={styles.listMetaText}>
-                  {glance.total} booking{glance.total === 1 ? '' : 's'} · tap a card for details
+                  {glance.total} BOOKING{glance.total === 1 ? '' : 'S'} · GROUPED BY TIME
                 </Text>
               </View>
             ) : null}
@@ -766,9 +837,10 @@ export default function OwnerReservationsScreen() {
             </Text>
           </View>
         }
-        renderSectionHeader={({ section: { title } }) => (
+        renderSectionHeader={({ section: { title, data } }) => (
           <View style={styles.stickyHeader}>
             <Text style={styles.stickyHeaderText}>{title}</Text>
+            <Text style={styles.stickyHeaderCount}>{data.length}</Text>
           </View>
         )}
         renderItem={({ item: row }) => {
@@ -800,24 +872,18 @@ export default function OwnerReservationsScreen() {
                   <Text style={styles.metaLine} numberOfLines={1}>
                     Party of {row.partySize}{tableBit}
                   </Text>
-                  {row.walkIn ? (
-                    <View style={[styles.walkInTag, { alignSelf: 'flex-start', marginTop: 4 }]}>
-                      <Text style={styles.walkInTagText}>Walk-in</Text>
-                    </View>
-                  ) : null}
+                  <View style={styles.bookingStatusRow}>
+                    <View style={[styles.statusDot, { backgroundColor: pres.text }]} />
+                    <Text style={[styles.statusWord, { color: pres.text }]}>{pres.label}</Text>
+                    {row.walkIn ? (
+                      <View style={styles.walkInTag}>
+                        <Text style={styles.walkInTagText}>Walk-in</Text>
+                      </View>
+                    ) : null}
+                  </View>
                 </View>
-                <View style={{
-                  paddingHorizontal: 9,
-                  paddingVertical: 5,
-                  borderRadius: borderRadius.full,
-                  backgroundColor: pres.bg,
-                  borderWidth: StyleSheet.hairlineWidth,
-                  borderColor: pres.text,
-                  alignItems: 'center',
-                }}>
-                  <Text style={{ fontSize: 10, fontWeight: '800', color: pres.text, letterSpacing: 0.3 }}>
-                    {pres.label.toUpperCase()}
-                  </Text>
+                <View style={styles.chevronWrap}>
+                  <Ionicons name="chevron-forward" size={16} color={c.textMuted} />
                 </View>
               </View>
             </Pressable>

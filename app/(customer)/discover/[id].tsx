@@ -3,19 +3,13 @@ import { View, Text, StyleSheet, ScrollView, Image, Pressable, Linking } from 'r
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { useFocusEffect } from '@react-navigation/native';
 import { Button, Card, Badge, ScreenWrapper } from '@/components/ui';
 import { mockRestaurants } from '@/lib/mock/restaurants';
 import { mockMenuItems } from '@/lib/mock/menuItems';
+import { useMenu } from '@/lib/context/MenuContext';
 import { formatCurrency } from '@/lib/utils/formatCurrency';
 import { useColors, createStyles, spacing, borderRadius, typography, shadows } from '@/lib/theme';
 import { Ionicons } from '@expo/vector-icons';
-import {
-  listSnapPostsByRestaurant,
-  getSnapUser,
-  type SnapPost,
-} from '@/lib/mock/snaps';
-import { SnapPreviewCard } from '@/components/discover/SnapPreviewCard';
 
 const WEEKDAY_KEYS = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'] as const;
 const WEEKDAY_SHORT = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
@@ -54,6 +48,25 @@ const useStyles = createStyles((c) => ({
     flex: 1,
     backgroundColor: c.bgBase,
   },
+  previewBanner: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    zIndex: 20,
+    backgroundColor: c.gold,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
+    paddingBottom: 10,
+    paddingHorizontal: spacing.lg,
+  },
+  previewBannerText: {
+    fontSize: 13,
+    fontWeight: '700',
+    color: '#000',
+  },
   scrollContent: {
     flexGrow: 1,
   },
@@ -72,18 +85,6 @@ const useStyles = createStyles((c) => ({
     height: 44,
     borderRadius: borderRadius.full,
     backgroundColor: 'rgba(0,0,0,0.45)',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  snapBtn: {
-    position: 'absolute',
-    right: spacing.lg,
-    width: 44,
-    height: 44,
-    borderRadius: borderRadius.full,
-    backgroundColor: 'rgba(201, 168, 76, 0.2)',
-    borderWidth: 1,
-    borderColor: 'rgba(201, 168, 76, 0.85)',
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -291,48 +292,28 @@ const useStyles = createStyles((c) => ({
     color: c.gold,
     fontWeight: '600',
   },
-  snapsHeader: {
-    marginTop: spacing.md,
-    marginBottom: spacing.sm,
+  photoSectionHeader: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    gap: spacing.md,
+    marginBottom: spacing.sm,
   },
-  snapsHeaderText: {
-    flex: 1,
-  },
-  snapsTitle: {
-    ...typography.h3,
-    color: c.textPrimary,
-  },
-  snapsSub: {
-    ...typography.bodySmall,
-    color: c.textSecondary,
-  },
-  seeMoreBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 2,
-    borderRadius: borderRadius.full,
-    borderWidth: 1,
-    borderColor: 'rgba(201, 168, 76, 0.45)',
-    backgroundColor: 'rgba(201, 168, 76, 0.12)',
-    paddingHorizontal: spacing.sm,
-    paddingVertical: 7,
-  },
-  seeMorePressed: {
-    opacity: 0.84,
-  },
-  seeMoreText: {
-    ...typography.bodySmall,
-    color: '#DDD5C4',
+  seeAll: {
+    fontSize: 14,
     fontWeight: '700',
+    color: c.gold,
   },
-  snapsRow: {
-    gap: spacing.md,
-    paddingBottom: spacing.lg,
-    paddingTop: spacing.xs,
+  photoStrip: {
+    flexDirection: 'row',
+    gap: spacing.sm,
+    marginBottom: spacing.sm,
+  },
+  photoThumb: {
+    flex: 1,
+    height: 90,
+    borderRadius: borderRadius.lg,
+    backgroundColor: c.bgElevated,
+    overflow: 'hidden',
   },
   footer: {
     position: 'absolute',
@@ -359,32 +340,28 @@ const useStyles = createStyles((c) => ({
 }));
 
 export default function RestaurantDetailScreen() {
-  const [restaurantSnaps, setRestaurantSnaps] = useState<SnapPost[]>([]);
   const [aboutExpanded, setAboutExpanded] = useState(false);
   const [hoursExpanded, setHoursExpanded] = useState(false);
-  const { id } = useLocalSearchParams<{ id: string }>();
+  const { id, preview } = useLocalSearchParams<{ id: string; preview?: string }>();
+  const isPreview = preview === '1';
   const { t } = useTranslation();
   const c = useColors();
   const styles = useStyles();
   const router = useRouter();
   const insets = useSafeAreaInsets();
+  const { items: ownerMenuItems, photos: ownerPhotos } = useMenu();
 
   const restaurant = useMemo(() => mockRestaurants.find((r) => r.id === id), [id]);
 
   const featuredItems = useMemo(
-    () => mockMenuItems.filter((m) => m.restaurantId === id && m.isFeatured),
-    [id],
+    () => isPreview
+      ? ownerMenuItems
+      : mockMenuItems.filter((m) => m.restaurantId === id && m.isFeatured),
+    [id, isPreview, ownerMenuItems],
   );
 
   const todayKey = WEEKDAY_KEYS[new Date().getDay()];
   const todayHours = restaurant?.hoursJson[todayKey];
-
-  useFocusEffect(
-    React.useCallback(() => {
-      if (!id) return;
-      setRestaurantSnaps(listSnapPostsByRestaurant(id));
-    }, [id]),
-  );
 
   if (!restaurant) {
     return (
@@ -401,9 +378,20 @@ export default function RestaurantDetailScreen() {
 
   return (
     <View style={styles.root}>
+      {isPreview && (
+        <Pressable
+          onPress={() => router.back()}
+          style={[styles.previewBanner, { paddingTop: insets.top + 10 }]}
+          accessibilityRole="button"
+          accessibilityLabel="Exit preview"
+        >
+          <Ionicons name="eye-outline" size={15} color="#000" />
+          <Text style={styles.previewBannerText}>Previewing as a guest · Tap to exit</Text>
+        </Pressable>
+      )}
       <ScrollView
         showsVerticalScrollIndicator={false}
-        contentContainerStyle={[styles.scrollContent, { paddingBottom: insets.bottom + 160 }]}
+        contentContainerStyle={[styles.scrollContent, { paddingBottom: insets.bottom + 160, paddingTop: isPreview ? 44 : 0 }]}
       >
         <View style={styles.heroWrap}>
           <Image source={{ uri: restaurant.coverPhotoUrl }} style={styles.hero} />
@@ -416,14 +404,6 @@ export default function RestaurantDetailScreen() {
             <Text style={styles.backChevron} accessible={false}>
               ←
             </Text>
-          </Pressable>
-          <Pressable
-            accessibilityRole="button"
-            onPress={() => router.push(`/(customer)/discover/post-review/camera?restaurantId=${restaurant.id}`)}
-            style={[styles.snapBtn, { top: insets.top + spacing.sm }]}
-            hitSlop={12}
-          >
-            <Ionicons name="add" size={20} color="#DDD5C4" />
           </Pressable>
         </View>
 
@@ -535,36 +515,24 @@ export default function RestaurantDetailScreen() {
             ))}
           </ScrollView>
 
-          <View style={styles.snapsHeader}>
-            <View style={styles.snapsHeaderText}>
-              <Text style={styles.snapsTitle}>Snaps from Guests</Text>
-              <Text style={styles.snapsSub}>See real moments shared by diners</Text>
+          {isPreview && ownerPhotos.length > 0 && (
+            <View style={{ marginTop: spacing.xl }}>
+              <View style={styles.photoSectionHeader}>
+                <Text style={styles.sectionHeading}>Photos</Text>
+                <Pressable hitSlop={8} onPress={() => {}}>
+                  <Text style={styles.seeAll}>See all</Text>
+                </Pressable>
+              </View>
+              <View style={styles.photoStrip}>
+                {ownerPhotos.slice(0, 3).map((uri, i) => (
+                  <View key={i} style={styles.photoThumb}>
+                    <Image source={{ uri }} style={{ width: '100%', height: '100%' }} resizeMode="cover" />
+                  </View>
+                ))}
+              </View>
             </View>
-            <Pressable
-              onPress={() => router.push(`/(customer)/discover/snaps/${restaurant.id}`)}
-              style={({ pressed }) => [styles.seeMoreBtn, pressed && styles.seeMorePressed]}
-            >
-              <Text style={styles.seeMoreText}>See More</Text>
-              <Ionicons name="chevron-forward" size={14} color="#DDD5C4" />
-            </Pressable>
-          </View>
-          {restaurantSnaps.length ? (
-            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.snapsRow}>
-              {restaurantSnaps.slice(0, 6).map((post) => {
-                const user = getSnapUser(post.user_id);
-                return (
-                  <SnapPreviewCard
-                    key={post.id}
-                    post={post}
-                    user={user}
-                    onPress={() => router.push(`/(customer)/discover/snaps/detail/${post.id}?restaurantId=${restaurant.id}`)}
-                  />
-                );
-              })}
-            </ScrollView>
-          ) : (
-            <Text style={styles.bodyText}>No snaps yet. Be the first guest to post.</Text>
           )}
+
         </View>
       </ScrollView>
 

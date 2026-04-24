@@ -21,7 +21,6 @@ import { Swipeable } from 'react-native-gesture-handler';
 import { BlurView } from 'expo-blur';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
-import { SubpageHeader } from '@/components/owner/SubpageHeader';
 import {
   CRM_AI_INSIGHTS,
   CRM_SPOTLIGHT,
@@ -455,12 +454,6 @@ export default function OwnerCrmScreen() {
 
   const listHeader = (
     <>
-      <SubpageHeader
-        title={t('owner.crmGuestsTitle')}
-        subtitle={t('owner.crmGuestsSubtitle')}
-        fallbackTab="more"
-        rightAction={headerRight}
-      />
 
       <View style={styles.searchWrap}>
         <Ionicons name="search-outline" size={18} color={ownerColors.textMuted} />
@@ -536,6 +529,23 @@ export default function OwnerCrmScreen() {
     <>
       <SafeAreaView style={styles.rootSafe} edges={['top', 'left', 'right']}>
         <View style={styles.mainShell}>
+          <View style={styles.fixedHeader}>
+            <View style={styles.fixedHeaderRow}>
+              <Pressable
+                onPress={() => router.replace('/(staff)/home' as never)}
+                style={({ pressed }) => [{ opacity: pressed ? 0.6 : 1, padding: 4 }]}
+                accessibilityRole="button"
+                accessibilityLabel="Go back"
+              >
+                <Ionicons name="chevron-back" size={28} color={ownerColors.gold} />
+              </Pressable>
+              <View style={{ flex: 1 }}>
+                <Text style={styles.fixedHeaderTitle}>{t('owner.crmGuestsTitle')}</Text>
+                <Text style={styles.fixedHeaderSub}>{t('owner.crmGuestsSubtitle')}</Text>
+              </View>
+              {headerRight}
+            </View>
+          </View>
           <FlatList
             data={filtered}
             keyExtractor={(g) => g.id}
@@ -778,6 +788,30 @@ const styles = StyleSheet.create({
     backgroundColor: '#000',
     position: 'relative',
   },
+  fixedHeader: {
+    paddingHorizontal: 16,
+    paddingTop: ownerSpace.xs,
+    paddingBottom: ownerSpace.sm,
+    backgroundColor: '#000',
+  },
+  fixedHeaderRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+  },
+  fixedHeaderTitle: {
+    fontSize: 28,
+    fontWeight: '800',
+    color: ownerColors.text,
+    letterSpacing: -0.5,
+    lineHeight: 32,
+  },
+  fixedHeaderSub: {
+    fontSize: 13,
+    fontWeight: '500',
+    color: ownerColors.textMuted,
+    marginTop: 1,
+  },
   list: {
     flex: 1,
     width: '100%',
@@ -785,7 +819,6 @@ const styles = StyleSheet.create({
   },
   listContent: {
     paddingHorizontal: 16,
-    paddingTop: ownerSpace.xs,
     flexGrow: 1,
   },
   headerActions: { flexDirection: 'row', alignItems: 'center', gap: 10 },

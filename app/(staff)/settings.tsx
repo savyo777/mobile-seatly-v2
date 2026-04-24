@@ -238,6 +238,7 @@ export default function OwnerSettingsScreen() {
       <SubpageHeader
         title="Settings"
         fallbackTab="more"
+        accentBack
         onBack={() => router.replace('/(staff)/profile' as never)}
       />
 

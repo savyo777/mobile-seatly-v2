@@ -10,7 +10,7 @@ import {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
-import { OwnerHeader } from '@/components/owner/OwnerHeader';
+import { SubpageHeader } from '@/components/owner/SubpageHeader';
 import { useColors, createStyles, spacing, borderRadius } from '@/lib/theme';
 import {
   OWNER_GUESTS,
@@ -51,7 +51,6 @@ const useStyles = createStyles((c) => ({
   root: { flex: 1, backgroundColor: c.bgBase },
 
   searchWrap: {
-    marginHorizontal: spacing.lg,
     marginBottom: spacing.md,
     flexDirection: 'row',
     alignItems: 'center',
@@ -102,7 +101,6 @@ const useStyles = createStyles((c) => ({
   },
 
   listCard: {
-    marginHorizontal: spacing.lg,
     backgroundColor: c.bgSurface,
     borderRadius: borderRadius.lg,
     borderWidth: StyleSheet.hairlineWidth,
@@ -222,9 +220,15 @@ export default function OwnerGuestsScreen() {
         contentContainerStyle={{
           paddingTop: insets.top + spacing.sm,
           paddingBottom: insets.bottom + 110,
+          paddingHorizontal: spacing.lg,
         }}
       >
-        <OwnerHeader title="Guests" subtitle={`${OWNER_GUESTS.length} total`} />
+        <SubpageHeader
+          title="Guests"
+          subtitle={`${OWNER_GUESTS.length} total`}
+          fallbackTab="home"
+          accentBack
+        />
 
         <View style={styles.searchWrap}>
           <Ionicons name="search-outline" size={18} color={c.textMuted} />

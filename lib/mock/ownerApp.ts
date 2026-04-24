@@ -896,6 +896,48 @@ export const RESTAURANT_SERVICE_HOURS: { label: string; open: string; close: str
   { label: 'Sun', open: '5:00 PM', close: '10:00 PM', peak: false },
 ];
 
+// ── Tonight briefing mock data ───────────────────────────────────────────────
+
+export const TONIGHT_BRIEFING = {
+  status: 'quiet' as 'quiet' | 'busy' | 'normal',
+  statusLabel: 'QUIET',
+  headline: 'Quiet night tonight.',
+  vsTypical: -38,
+  covers: 36,
+  bookings: 12,
+  busiestWindow: '7p–8p',
+  busiestCovers: 12,
+  bookedPct: 41,
+  doorsOpen: '5:00 PM',
+  firstResTime: '5:30p',
+  firstResParty: 2,
+  runwayMin: 30,
+  totalCapacity: 88,
+  bookedSeats: 36,
+  openSeats: 52,
+};
+
+export type TonightBadge = 'vip' | 'large-party' | 'first-visit' | 'allergy';
+
+export interface TonightGuest {
+  id: string;
+  name: string;
+  time: string;
+  partySize: number;
+  badge: TonightBadge;
+  note?: string;
+  avatarColor: string;
+}
+
+export const TONIGHT_GUESTS: TonightGuest[] = [
+  { id: 'tg1', name: 'Elena Marchetti', time: '5:30p', partySize: 2, badge: 'vip', note: 'Anniversary — candle setup requested', avatarColor: '#7A5F1E' },
+  { id: 'tg2', name: 'Sofia & Jules',   time: '7:00p', partySize: 2, badge: 'vip', note: 'Regulars — prefer corner table', avatarColor: '#7A5F1E' },
+  { id: 'tg3', name: 'Victoria Blake',  time: '9:00p', partySize: 2, badge: 'vip', avatarColor: '#7A5F1E' },
+  { id: 'tg4', name: 'Marcus Holloway', time: '6:45p', partySize: 6, badge: 'large-party', note: 'Celebrating prom night', avatarColor: '#2A4A8A' },
+  { id: 'tg5', name: 'The Harrisons',   time: '7:45p', partySize: 5, badge: 'large-party', avatarColor: '#2A4A8A' },
+  { id: 'tg6', name: 'Aisha Raghavan',  time: '7:15p', partySize: 3, badge: 'first-visit', note: 'First visit — no contact notes', avatarColor: '#2A4A8A' },
+];
+
 /** Structured attention items for the home screen. */
 export const HOME_ATTENTION_ITEMS: { id: string; icon: string; title: string; sub: string; severity: 'critical' | 'warning' | 'info' }[] = [
   { id: 'ha1', icon: 'warning', title: '1 reservation at risk — 2 past no-shows', sub: 'Send a confirmation text', severity: 'critical' },

@@ -6,6 +6,7 @@ import {
   Pressable,
   StyleSheet,
   Alert,
+  Image,
   useWindowDimensions,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -13,14 +14,17 @@ import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import Svg, { Defs, Pattern, Rect, Line } from 'react-native-svg';
 import * as Haptics from 'expo-haptics';
+import * as ImagePicker from 'expo-image-picker';
 import { useColors, createStyles, spacing, borderRadius } from '@/lib/theme';
 import { useOwnerTabScrollPadding } from '@/hooks/useOwnerTabScrollPadding';
+import { useMenu } from '@/lib/context/MenuContext';
 import {
   OWNER_BUSINESS_PROFILE,
   OWNER_BUSINESS_PRICE,
   OWNER_BUSINESS_INSTAGRAM,
   OWNER_RESERVATIONS,
 } from '@/lib/mock/ownerApp';
+import { mockRestaurants } from '@/lib/mock/restaurants';
 
 const useStyles = createStyles((c) => ({
   root: { flex: 1, backgroundColor: c.bgBase },
@@ -28,6 +32,13 @@ const useStyles = createStyles((c) => ({
   // ── Hero ──
   heroWrap: {
     overflow: 'hidden',
+  },
+  heroCover: {
+    ...StyleSheet.absoluteFillObject,
+  },
+  heroOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: 'rgba(0,0,0,0.52)',
   },
   heroContent: {
     paddingHorizontal: spacing.lg,
@@ -82,10 +93,10 @@ const useStyles = createStyles((c) => ({
   },
   heroMetaText: {
     fontSize: 13,
-    color: c.textMuted,
+    color: 'rgba(255,255,255,0.9)',
     fontWeight: '500',
   },
-  heroMetaDot: { color: c.textMuted, fontSize: 13 },
+  heroMetaDot: { color: 'rgba(255,255,255,0.5)', fontSize: 13 },
   addressRow: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -94,7 +105,7 @@ const useStyles = createStyles((c) => ({
   },
   addressText: {
     fontSize: 13,
-    color: c.textMuted,
+    color: 'rgba(255,255,255,0.75)',
     fontWeight: '500',
   },
 
@@ -264,6 +275,56 @@ const useStyles = createStyles((c) => ({
     marginRight: spacing.sm,
   },
 
+  // ── Menu ──
+  menuRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: spacing.md,
+    paddingVertical: 0,
+    minHeight: 52,
+    gap: spacing.sm,
+    backgroundColor: c.bgSurface,
+    borderRadius: borderRadius.xl,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: c.border,
+    marginHorizontal: spacing.lg,
+    marginBottom: 2,
+  },
+  menuRowPressed: { backgroundColor: c.bgElevated },
+  menuIconWrap: {
+    width: 28,
+    height: 28,
+    borderRadius: 8,
+    backgroundColor: `${c.gold}18`,
+    borderWidth: 1,
+    borderColor: `${c.gold}30`,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  menuTextCol: { flex: 1 },
+  menuRowTitle: {
+    fontSize: 15,
+    fontWeight: '700',
+    color: c.textPrimary,
+    letterSpacing: -0.1,
+  },
+  menuRowSub: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+    marginTop: 2,
+  },
+  menuStatusDot: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+  },
+  menuRowSubText: {
+    fontSize: 13,
+    fontWeight: '500',
+    color: c.textMuted,
+  },
+
   // ── Settings shortcut ──
   settingsBtn: {
     position: 'absolute',
@@ -293,27 +354,6 @@ const useStyles = createStyles((c) => ({
   },
 }));
 
-function DiagonalPattern({ width, height }: { width: number; height: number }) {
-  const c = useColors();
-  return (
-    <Svg width={width} height={height} style={{ position: 'absolute', top: 0, left: 0 }}>
-      <Defs>
-        <Pattern id="diag" x={0} y={0} width={28} height={28} patternUnits="userSpaceOnUse">
-          <Line
-            x1={-4}
-            y1={32}
-            x2={32}
-            y2={-4}
-            stroke={`${c.gold}28`}
-            strokeWidth={10}
-          />
-        </Pattern>
-      </Defs>
-      <Rect x={0} y={0} width={width} height={height} fill={`${c.bgSurface}`} />
-      <Rect x={0} y={0} width={width} height={height} fill="url(#diag)" />
-    </Svg>
-  );
-}
 
 function PhotoPlaceholder({ index }: { index: number }) {
   const c = useColors();
@@ -345,6 +385,40 @@ export default function OwnerBusinessScreen() {
   const { width } = useWindowDimensions();
   const heroH = 220 + insets.top;
 
+  const { items: menuItems, photos: photoUris, setPhotos } = useMenu();
+
+  const menuByCategory = menuItems.reduce<Record<string, typeof menuItems>>((acc, item) => {
+    if (!acc[item.category]) acc[item.category] = [];
+    acc[item.category].push(item);
+    return acc;
+  }, {});
+
+  const coverPhotoUrl = mockRestaurants.find((r) => r.id === 'r1')?.coverPhotoUrl;
+
+  const pickPhoto = async (index: number) => {
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ['images'],
+      allowsEditing: true,
+      aspect: [1, 1],
+      quality: 0.85,
+    });
+    if (!result.canceled) {
+      const next = [...photoUris];
+      next[index] = result.assets[0].uri;
+      setPhotos(next);
+    }
+  };
+
+  const addPhoto = async () => {
+    const emptyIndex = photoUris.findIndex((u) => !u);
+    const targetIndex = emptyIndex === -1 ? photoUris.length : emptyIndex;
+    if (targetIndex >= 3) {
+      setPhotos([]);
+      return;
+    }
+    await pickPhoto(targetIndex);
+  };
+
   const todayBookings = OWNER_RESERVATIONS.length;
   const thisWeekBookings = 198;
   const avgRating = OWNER_BUSINESS_PROFILE.rating;
@@ -352,7 +426,6 @@ export default function OwnerBusinessScreen() {
   const contactRows: { label: string; value: string }[] = [
     { label: 'Phone', value: OWNER_BUSINESS_PROFILE.phone },
     { label: 'Email', value: OWNER_BUSINESS_PROFILE.email },
-    { label: 'Instagram', value: OWNER_BUSINESS_INSTAGRAM },
     { label: 'Website', value: OWNER_BUSINESS_PROFILE.website },
   ];
 
@@ -372,7 +445,10 @@ export default function OwnerBusinessScreen() {
       >
         {/* ── Hero with diagonal stripe ── */}
         <View style={[styles.heroWrap, { height: heroH }]}>
-          <DiagonalPattern width={width} height={heroH} />
+          {coverPhotoUrl ? (
+            <Image source={{ uri: coverPhotoUrl }} style={styles.heroCover} resizeMode="cover" />
+          ) : null}
+          <View style={styles.heroOverlay} />
           <Pressable
             style={({ pressed }) => [
               styles.settingsBtn,
@@ -404,8 +480,6 @@ export default function OwnerBusinessScreen() {
               <Text style={styles.heroMetaText}>{OWNER_BUSINESS_PROFILE.reviewCount} reviews</Text>
               <Text style={styles.heroMetaDot}>·</Text>
               <Text style={styles.heroMetaText}>{OWNER_BUSINESS_PROFILE.cuisine}</Text>
-              <Text style={styles.heroMetaDot}>·</Text>
-              <Text style={styles.heroMetaText}>{OWNER_BUSINESS_PRICE}</Text>
             </View>
             <View style={styles.addressRow}>
               <Ionicons name="location-outline" size={13} color={c.textMuted} />
@@ -414,6 +488,7 @@ export default function OwnerBusinessScreen() {
             <View style={styles.heroButtons}>
               <Pressable
                 style={({ pressed }) => [styles.previewBtn, pressed && styles.btnPressed]}
+                onPress={() => router.push('/(customer)/discover/r1?preview=1' as never)}
                 accessibilityRole="button"
               >
                 <Text style={styles.previewBtnText}>Preview</Text>
@@ -448,14 +523,29 @@ export default function OwnerBusinessScreen() {
         {/* ── Photos ── */}
         <View style={styles.sectionRow}>
           <Text style={styles.sectionTitle}>Photos</Text>
-          <Pressable accessibilityRole="button">
-            <Text style={styles.sectionAction}>+ Add</Text>
-          </Pressable>
+          <View style={{ flexDirection: 'row', gap: spacing.md, alignItems: 'center' }}>
+            <Pressable onPress={() => {}} accessibilityRole="button">
+              <Text style={styles.sectionAction}>See all</Text>
+            </Pressable>
+            <Pressable onPress={addPhoto} accessibilityRole="button">
+              <Text style={styles.sectionAction}>+ Add</Text>
+            </Pressable>
+          </View>
         </View>
         <View style={styles.photosRow}>
           {[0, 1, 2].map((i) => (
-            <Pressable key={i} style={styles.photoThumb} accessibilityRole="button">
-              <PhotoPlaceholder index={i} />
+            <Pressable
+              key={i}
+              style={styles.photoThumb}
+              onPress={() => pickPhoto(i)}
+              accessibilityRole="button"
+              accessibilityLabel={photoUris[i] ? `Change photo ${i + 1}` : `Add photo ${i + 1}`}
+            >
+              {photoUris[i] ? (
+                <Image source={{ uri: photoUris[i] }} style={{ width: '100%', height: '100%' }} resizeMode="cover" />
+              ) : (
+                <PhotoPlaceholder index={i} />
+              )}
             </Pressable>
           ))}
         </View>
@@ -471,6 +561,33 @@ export default function OwnerBusinessScreen() {
           </Pressable>
         </View>
         <Text style={styles.bodyText}>{OWNER_BUSINESS_PROFILE.description}</Text>
+
+        {/* ── Menu ── */}
+        <View style={styles.sectionRow}>
+          <Text style={styles.sectionTitle}>Menu</Text>
+        </View>
+        <Pressable
+          style={({ pressed }) => [styles.menuRow, pressed && styles.menuRowPressed]}
+          onPress={() => router.push('/(staff)/menu-manage' as never)}
+          accessibilityRole="button"
+        >
+          <View style={styles.menuIconWrap}>
+            <Ionicons name="restaurant-outline" size={14} color={c.gold} />
+          </View>
+          <View style={styles.menuTextCol}>
+            <Text style={styles.menuRowTitle}>Menu</Text>
+            <View style={styles.menuRowSub}>
+              <View style={[
+                styles.menuStatusDot,
+                { backgroundColor: menuItems.length > 0 ? c.success : c.warning },
+              ]} />
+              <Text style={styles.menuRowSubText}>
+                {menuItems.length} items · {Object.keys(menuByCategory).length} categories
+              </Text>
+            </View>
+          </View>
+          <Ionicons name="chevron-forward" size={16} color={c.textMuted} />
+        </Pressable>
 
         {/* ── Contact ── */}
         <View style={styles.sectionRow}>

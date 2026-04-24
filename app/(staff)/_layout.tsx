@@ -226,7 +226,7 @@ export default function OwnerTabsLayout() {
         <Tabs.Screen
           name="schedule"
           options={{
-            title: 'Schedule',
+            title: 'Tonight',
             tabBarIcon: ({ color, size }) => (
               <Ionicons name="time-outline" size={size} color={color} />
             ),
@@ -245,7 +245,7 @@ export default function OwnerTabsLayout() {
         {/* Hidden routes — accessible via router.push only */}
         <Tabs.Screen name="promotions" options={{ href: null }} />
         <Tabs.Screen name="analytics"  options={{ href: null }} />
-        <Tabs.Screen name="guests"     options={{ href: null }} />
+        <Tabs.Screen name="guests"     options={{ href: null, tabBarStyle: { display: 'none' } }} />
         <Tabs.Screen name="staff"      options={{ href: null }} />
         <Tabs.Screen name="floor"      options={{ href: null }} />
         <Tabs.Screen name="menu"       options={{ href: null }} />
@@ -261,7 +261,8 @@ export default function OwnerTabsLayout() {
         <Tabs.Screen name="expenses"   options={{ href: null }} />
         <Tabs.Screen name="events"     options={{ href: null }} />
         <Tabs.Screen name="export"     options={{ href: null }} />
-        <Tabs.Screen name="settings"   options={{ href: null, tabBarStyle: { display: 'none' } }} />
+        <Tabs.Screen name="settings"    options={{ href: null, tabBarStyle: { display: 'none' } }} />
+        <Tabs.Screen name="menu-manage" options={{ href: null, tabBarStyle: { display: 'none' } }} />
       </Tabs>
 
       {/* Quick-add modal sheet */}

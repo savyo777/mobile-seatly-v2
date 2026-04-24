@@ -163,10 +163,11 @@ export function nextMockBookableDateKey(restaurantId: string, from?: Date): Date
 }
 
 function formatSlotLabel(d: Date) {
-  return d.toLocaleTimeString(undefined, {
-    hour: 'numeric',
-    minute: '2-digit',
-  });
+  const h = d.getHours();
+  const m = d.getMinutes();
+  const period = h >= 12 ? 'PM' : 'AM';
+  const hour = h % 12 || 12;
+  return m === 0 ? `${hour} ${period}` : `${hour}:${String(m).padStart(2, '0')} ${period}`;
 }
 
 export function getMockTimeSlots(

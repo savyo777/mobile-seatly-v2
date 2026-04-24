@@ -260,6 +260,72 @@ const useStyles = createStyles((c) => ({
     letterSpacing: 0.1,
   },
 
+  upNextCard: {
+    marginHorizontal: spacing.lg,
+    marginBottom: spacing.lg,
+    borderRadius: borderRadius.xl,
+    backgroundColor: c.bgSurface,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: c.border,
+    padding: spacing.md,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.md,
+  },
+  upNextLeft: { flex: 1, minWidth: 0 },
+  upNextKicker: {
+    fontSize: 10,
+    fontWeight: '700',
+    color: c.gold,
+    letterSpacing: 0.9,
+    marginBottom: 3,
+  },
+  upNextName: {
+    fontSize: 17,
+    fontWeight: '800',
+    color: c.textPrimary,
+    letterSpacing: -0.3,
+    marginBottom: 5,
+  },
+  upNextMeta: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    flexWrap: 'wrap',
+  },
+  upNextMetaText: {
+    fontSize: 12,
+    fontWeight: '500',
+    color: c.textMuted,
+  },
+  upNextMetaDot: {
+    fontSize: 12,
+    color: c.textMuted,
+  },
+  upNextBadge: {
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: borderRadius.full,
+    backgroundColor: `${c.success}20`,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: `${c.success}50`,
+  },
+  upNextBadgeRisk: {
+    backgroundColor: `${c.danger}20`,
+    borderColor: `${c.danger}50`,
+  },
+  upNextBadgePending: {
+    backgroundColor: `${c.gold}18`,
+    borderColor: `${c.gold}40`,
+  },
+  upNextBadgeText: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: c.success,
+  },
+  upNextBadgeTextRisk: { color: c.danger },
+  upNextBadgeTextPending: { color: c.gold },
+
   sectionRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -608,6 +674,7 @@ export default function OwnerHomeScreen() {
   const criticalCount = HOME_ATTENTION_ITEMS.filter((a) => a.severity === 'critical').length;
   const bookingsTonight = OWNER_RESERVATIONS.length;
   const pendingCount = OWNER_RESERVATIONS.filter((r) => r.status === 'pending').length;
+  const upNext = OWNER_RESERVATIONS.find((r) => r.status !== 'seated') ?? OWNER_RESERVATIONS[0];
   const onShiftCount = 3;
   const guestProfiles = OWNER_GUESTS.length;
 
@@ -655,16 +722,10 @@ export default function OwnerHomeScreen() {
           <Text style={styles.subline}>{RESTAURANT_NAME} · {RESTAURANT_ADDRESS}</Text>
         </View>
 
-        {/* ── Bookings by hour ── */}
-        <BookingsByHourCard />
-
         {/* ── Tonight hero ── */}
         <View style={styles.heroCard}>
           <Text style={styles.heroKicker}>TONIGHT</Text>
           <Text style={styles.heroTitle}>{bookingsTonight} reservations on deck</Text>
-          <Text style={styles.heroSub}>
-            {LIVE_METRICS.tonightCovers} covers booked. {pendingCount} need confirmation.
-          </Text>
           <View style={styles.heroStats}>
             <View style={styles.heroStat}>
               <Text style={[styles.statValue, styles.statValueGold]}>{bookingsTonight}</Text>
@@ -673,15 +734,60 @@ export default function OwnerHomeScreen() {
             <View style={styles.heroStatDivider} />
             <View style={styles.heroStat}>
               <Text style={styles.statValue}>{LIVE_METRICS.tonightCovers}</Text>
-              <Text style={styles.statLabel}>Covers</Text>
+              <Text style={styles.statLabel}>Guests</Text>
             </View>
             <View style={styles.heroStatDivider} />
             <View style={styles.heroStat}>
-              <Text style={styles.statValue}>{seatedTables}/{tablesTotal}</Text>
+              <Text style={styles.statValue}>{seatedTables}/{bookingsTonight}</Text>
               <Text style={styles.statLabel}>Seated</Text>
             </View>
           </View>
         </View>
+
+        {/* ── Up next ── */}
+        {upNext && (
+          <Pressable
+            style={({ pressed }) => [styles.upNextCard, pressed && styles.rowPressed]}
+            onPress={() => router.push('/(staff)/reservations' as never)}
+            accessibilityRole="button"
+          >
+            <View style={styles.upNextLeft}>
+              <Text style={styles.upNextKicker}>UP NEXT</Text>
+              <Text style={styles.upNextName} numberOfLines={1}>
+                {upNext.guestName}{upNext.vip ? ' ★' : ''}
+              </Text>
+              <View style={styles.upNextMeta}>
+                <Ionicons name="time-outline" size={13} color={c.textMuted} />
+                <Text style={styles.upNextMetaText}>{upNext.startTime}</Text>
+                <Text style={styles.upNextMetaDot}>·</Text>
+                <Ionicons name="people-outline" size={13} color={c.textMuted} />
+                <Text style={styles.upNextMetaText}>Party of {upNext.partySize}</Text>
+                {upNext.table ? (
+                  <>
+                    <Text style={styles.upNextMetaDot}>·</Text>
+                    <Text style={styles.upNextMetaText}>{upNext.table}</Text>
+                  </>
+                ) : null}
+              </View>
+            </View>
+            <View style={[
+              styles.upNextBadge,
+              upNext.status === 'risk' && styles.upNextBadgeRisk,
+              upNext.status === 'pending' && styles.upNextBadgePending,
+            ]}>
+              <Text style={[
+                styles.upNextBadgeText,
+                upNext.status === 'risk' && styles.upNextBadgeTextRisk,
+                upNext.status === 'pending' && styles.upNextBadgeTextPending,
+              ]}>
+                {upNext.status === 'risk' ? 'At risk' : upNext.status === 'pending' ? 'Pending' : 'Confirmed'}
+              </Text>
+            </View>
+          </Pressable>
+        )}
+
+        {/* ── Bookings by hour ── */}
+        <BookingsByHourCard />
 
         {/* ── Quick actions ── */}
         <View style={styles.sectionRow}>
@@ -705,44 +811,6 @@ export default function OwnerHomeScreen() {
               </View>
             </Pressable>
           ))}
-        </View>
-
-        {/* ── Needs attention ── */}
-        <View style={styles.sectionRow}>
-          <Text style={styles.sectionTitle}>Needs attention</Text>
-          <Pressable
-            onPress={() => router.push('/(staff)/notifications' as never)}
-            style={styles.seeAll}
-            hitSlop={8}
-          >
-            <Text style={styles.seeAllText}>See all</Text>
-            <Ionicons name="chevron-forward" size={14} color={c.gold} />
-          </Pressable>
-        </View>
-        <View style={styles.attentionCard}>
-          {HOME_ATTENTION_ITEMS.map((item, index) => {
-            const tone = attentionIconTone(item.severity, c);
-            const iconName: IoniconName =
-              item.severity === 'critical' ? 'warning-outline' :
-              item.severity === 'warning' ? 'time-outline' : 'sparkles-outline';
-            return (
-              <Pressable
-                key={item.id}
-                onPress={() => router.push('/(staff)/notifications' as never)}
-                style={({ pressed }) => [styles.attentionRow, index > 0 && styles.rowDivider, pressed && styles.rowPressed]}
-                accessibilityRole="button"
-              >
-                <View style={[styles.attentionIcon, { backgroundColor: tone.bg }]}>
-                  <Ionicons name={iconName} size={18} color={tone.fg} />
-                </View>
-                <View style={styles.attentionTextCol}>
-                  <Text style={styles.attentionTitle}>{item.title}</Text>
-                  <Text style={styles.attentionSub}>{item.sub}</Text>
-                </View>
-                <Ionicons name="chevron-forward" size={16} color={c.textMuted} />
-              </Pressable>
-            );
-          })}
         </View>
 
         {/* ── Week momentum bar chart ── */}
