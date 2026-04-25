@@ -20,7 +20,6 @@ import {
 } from '@/lib/mock/ownerApp';
 
 type DateFilter = 'today' | 'tomorrow' | 'week';
-type StatusFilter = 'all' | 'confirmed' | 'pending' | 'seated';
 
 const DATE_FILTERS: { key: DateFilter; label: string }[] = [
   { key: 'today', label: 'Today' },
@@ -28,19 +27,11 @@ const DATE_FILTERS: { key: DateFilter; label: string }[] = [
   { key: 'week', label: 'Week' },
 ];
 
-const STATUS_FILTERS: { key: StatusFilter; label: string }[] = [
-  { key: 'all', label: 'All' },
-  { key: 'confirmed', label: 'Booked' },
-  { key: 'pending', label: 'Pending' },
-  { key: 'seated', label: 'Seated' },
-];
-
-const STATUS_GROUP_ORDER = ['seated', 'confirmed', 'pending', 'risk'] as const;
-const STATUS_GROUP_LABELS: Record<string, string> = {
-  seated: 'SEATED',
-  confirmed: 'BOOKED',
-  pending: 'UPCOMING',
-  risk: 'AT RISK',
+const STATUS_SORT_WEIGHT: Record<OwnerReservationSlot['status'], number> = {
+  risk: 1,
+  pending: 1,
+  confirmed: 2,
+  seated: 3,
 };
 
 function initials(name: string): string {
@@ -80,28 +71,6 @@ const useStyles = createStyles((c) => ({
     paddingHorizontal: spacing.lg,
     paddingBottom: spacing.md,
   },
-  pageHeaderRow: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    justifyContent: 'space-between',
-  },
-  pageHeaderLeft: { flex: 1 },
-  walkInBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-    paddingHorizontal: 14,
-    paddingVertical: 9,
-    borderRadius: borderRadius.full,
-    borderWidth: 1.5,
-    borderColor: c.gold,
-    marginTop: 2,
-  },
-  walkInBtnText: {
-    fontSize: 13,
-    fontWeight: '700',
-    color: c.gold,
-  },
   kickerRow: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -134,35 +103,6 @@ const useStyles = createStyles((c) => ({
     marginTop: 4,
   },
 
-  statusWrap: {
-    paddingHorizontal: spacing.lg,
-    marginBottom: spacing.md,
-  },
-  statusRow: {
-    flexDirection: 'row',
-    gap: spacing.sm,
-  },
-  statusChip: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 5,
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    borderRadius: borderRadius.full,
-    backgroundColor: c.bgSurface,
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: c.border,
-  },
-  statusChipOn: {
-    borderColor: c.gold,
-    backgroundColor: 'transparent',
-    borderWidth: 1.5,
-  },
-  statusChipText: { fontSize: 13, fontWeight: '700', color: c.textMuted },
-  statusChipTextOn: { color: c.gold },
-  statusCount: { fontSize: 12, fontWeight: '800', color: c.textMuted },
-  statusCountOn: { color: c.gold },
-
   rightNowCard: {
     marginHorizontal: spacing.lg,
     marginBottom: spacing.lg,
@@ -184,27 +124,7 @@ const useStyles = createStyles((c) => ({
     color: c.gold,
     letterSpacing: 0.8,
   },
-  viewToggle: {
-    flexDirection: 'row',
-    gap: 4,
-  },
-  viewToggleBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-    paddingHorizontal: 10,
-    paddingVertical: 6,
-    borderRadius: borderRadius.md,
-    backgroundColor: c.bgElevated,
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: c.border,
-  },
-  viewToggleBtnActive: {
-    backgroundColor: `${c.gold}16`,
-    borderColor: `${c.gold}55`,
-  },
-  viewToggleBtnText: { fontSize: 12, fontWeight: '700', color: c.textMuted },
-  viewToggleBtnTextActive: { color: c.gold },
+
   rightNowBig: {
     fontSize: 24,
     fontWeight: '800',
@@ -285,11 +205,6 @@ const useStyles = createStyles((c) => ({
     color: c.textMuted,
     letterSpacing: 0.5,
   },
-  stickyHeaderCount: {
-    fontSize: 12,
-    fontWeight: '700',
-    color: c.textMuted,
-  },
 
   bookingCard: {
     marginHorizontal: spacing.lg,
@@ -329,7 +244,13 @@ const useStyles = createStyles((c) => ({
     marginTop: 2,
   },
   bookingMain: { flex: 1, minWidth: 0 },
-  nameRow: { flexDirection: 'row', alignItems: 'center', gap: 5, marginBottom: 3 },
+  bookingTopRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    justifyContent: 'space-between',
+    gap: spacing.sm,
+  },
+  bookingTopLeft: { flex: 1, minWidth: 0 },
   guestName: {
     fontSize: 17,
     fontWeight: '700',
@@ -337,19 +258,38 @@ const useStyles = createStyles((c) => ({
     letterSpacing: -0.2,
     flexShrink: 1,
   },
-  walkInTag: {
-    paddingHorizontal: 7,
-    paddingVertical: 2,
+  metaLine: { fontSize: 13, fontWeight: '500', color: c.textMuted, marginTop: 3 },
+  tagRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: spacing.xs,
+    marginTop: 8,
+  },
+  guestTag: {
+    paddingHorizontal: 8,
+    paddingVertical: 3,
     borderRadius: borderRadius.full,
     backgroundColor: c.bgElevated,
     borderWidth: StyleSheet.hairlineWidth,
     borderColor: c.border,
   },
-  walkInTagText: { fontSize: 10, fontWeight: '700', color: c.textSecondary },
-  metaLine: { fontSize: 13, fontWeight: '500', color: c.textMuted },
-  bookingStatusRow: { flexDirection: 'row', alignItems: 'center', gap: 5, marginTop: 4 },
-  statusDot: { width: 6, height: 6, borderRadius: 3 },
-  statusWord: { fontSize: 12, fontWeight: '700' },
+  guestTagVip: {
+    backgroundColor: `${c.gold}18`,
+    borderColor: `${c.gold}44`,
+  },
+  guestTagText: { fontSize: 10, fontWeight: '700', color: c.textSecondary },
+  guestTagVipText: { color: c.gold },
+  statusPill: {
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: borderRadius.full,
+    borderWidth: StyleSheet.hairlineWidth,
+  },
+  statusPillText: {
+    fontSize: 11,
+    fontWeight: '800',
+    letterSpacing: 0.2,
+  },
   chevronWrap: { paddingLeft: 2, justifyContent: 'center' },
   avatarText: { fontSize: 13, fontWeight: '800', color: c.gold },
 
@@ -379,6 +319,7 @@ const useStyles = createStyles((c) => ({
   },
   summaryStatValue: { fontSize: 26, fontWeight: '800', color: c.textPrimary, letterSpacing: -0.5 },
   summaryStatValueAccent: { color: c.gold },
+  summaryStatValueDanger: { color: c.danger },
   summaryStatLabel: { fontSize: 12, fontWeight: '600', color: c.textMuted, marginTop: 4 },
   quickRow: { flexDirection: 'row', gap: spacing.sm, paddingHorizontal: spacing.lg, marginBottom: spacing.md },
   quickBtn: {
@@ -564,11 +505,11 @@ function statusPresentation(
     case 'seated':
       return { label: 'Seated', text: c.info, bg: `${c.info}1F`, rail: c.info };
     case 'risk':
-      return { label: 'At risk', text: c.danger, bg: `${c.danger}1F`, rail: c.danger };
+      return { label: 'Booked', text: c.success, bg: `${c.success}1F`, rail: c.success };
     case 'pending':
-      return { label: 'Expected', text: c.textSecondary, bg: c.bgElevated, rail: c.border };
+      return { label: 'Booked', text: c.success, bg: `${c.success}1F`, rail: c.success };
     default:
-      return { label: 'Confirmed', text: c.success, bg: `${c.success}1F`, rail: c.success };
+      return { label: 'Booked', text: c.success, bg: `${c.success}1F`, rail: c.success };
   }
 }
 
@@ -581,6 +522,12 @@ function parseMinutes(t: string): number {
   if (ap === 'PM' && h !== 12) h += 12;
   if (ap === 'AM' && h === 12) h = 0;
   return h * 60 + mins;
+}
+
+function hourSectionTitle(human: string): string {
+  const m = human.match(/^(\d{1,2}):\d{2}\s*(AM|PM)/i);
+  if (!m) return human;
+  return `${m[1]} ${m[2].toUpperCase()}`;
 }
 
 /** Split "6:00 PM" → big clock + meridiem (Uber-style time column). */
@@ -596,7 +543,6 @@ export default function OwnerReservationsScreen() {
   const insets = useSafeAreaInsets();
   const scrollPad = useOwnerTabScrollPadding();
   const [dateFilter, setDateFilter] = useState<DateFilter>('today');
-  const [statusFilter, setStatusFilter] = useState<StatusFilter>('all');
   const [selected, setSelected] = useState<OwnerReservationSlot | null>(null);
 
   const dateFiltered = useMemo(() => {
@@ -604,22 +550,19 @@ export default function OwnerReservationsScreen() {
     return OWNER_RESERVATIONS.filter((_, i) => i % 2 === 1);
   }, [dateFilter]);
 
-  const filtered = useMemo(() => {
-    if (statusFilter === 'all') return dateFiltered;
-    return dateFiltered.filter((r) => r.status === statusFilter);
-  }, [dateFiltered, statusFilter]);
+  const filtered = dateFiltered;
 
   const glance = useMemo(() => {
-    const total = filtered.length;
-    const seated = filtered.filter((r) => r.status === 'seated').length;
-    const upcoming = filtered.filter(
-      (r) => r.status === 'confirmed' || r.status === 'pending',
+    const total = dateFiltered.length;
+    const seated = dateFiltered.filter((r) => r.status === 'seated').length;
+    const upcoming = dateFiltered.filter(
+      (r) => r.status === 'confirmed' || r.status === 'pending' || r.status === 'risk',
     ).length;
-    const next = [...filtered]
+    const next = [...dateFiltered]
       .filter((r) => r.status === 'confirmed' || r.status === 'pending' || r.status === 'risk')
       .sort((a, b) => parseMinutes(a.startTime) - parseMinutes(b.startTime))[0];
     return { total, seated, upcoming, next };
-  }, [filtered]);
+  }, [dateFiltered]);
 
   const capacity = OWNER_FLOOR_TABLES.length;
 
@@ -630,7 +573,7 @@ export default function OwnerReservationsScreen() {
       case 'tomorrow':
         return 'Tomorrow — plan before service starts';
       default:
-        return 'This week — bookings and risk points';
+        return 'This week — bookings and service flow';
     }
   }, [dateFilter]);
 
@@ -646,14 +589,25 @@ export default function OwnerReservationsScreen() {
   }, [dateFilter]);
 
   const sections = useMemo(() => {
-    return STATUS_GROUP_ORDER
-      .map((status) => {
-        const rows = filtered
-          .filter((r) => r.status === status)
-          .sort((a, b) => parseMinutes(a.startTime) - parseMinutes(b.startTime));
-        return rows.length > 0 ? { title: STATUS_GROUP_LABELS[status], data: rows } : null;
+    const grouped = new Map<string, { title: string; data: OwnerReservationSlot[] }>();
+
+    [...filtered]
+      .sort((a, b) => {
+        const timeDiff = parseMinutes(a.startTime) - parseMinutes(b.startTime);
+        if (timeDiff !== 0) return timeDiff;
+        return STATUS_SORT_WEIGHT[a.status] - STATUS_SORT_WEIGHT[b.status];
       })
-      .filter((s): s is { title: string; data: OwnerReservationSlot[] } => s !== null);
+      .forEach((row) => {
+        const title = hourSectionTitle(row.startTime);
+        const existing = grouped.get(title);
+        if (existing) {
+          existing.data.push(row);
+          return;
+        }
+        grouped.set(title, { title, data: [row] });
+      });
+
+    return Array.from(grouped.values());
   }, [filtered]);
 
   const press = (fn: () => void) => () => {
@@ -666,11 +620,6 @@ export default function OwnerReservationsScreen() {
     setDateFilter(key);
   };
 
-  const onSelectStatus = (key: StatusFilter) => {
-    Haptics.selectionAsync().catch(() => {});
-    setStatusFilter(key);
-  };
-
   const statusCounts = useMemo(
     () => ({
       all: dateFiltered.length,
@@ -681,23 +630,18 @@ export default function OwnerReservationsScreen() {
     [dateFiltered],
   );
 
-  const covers = useMemo(
-    () => dateFiltered.reduce((sum, r) => sum + r.partySize, 0),
-    [dateFiltered],
-  );
-
   const dayLabel = useMemo(() => {
     const d = new Date();
     return d.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' }).toUpperCase();
   }, []);
 
   const minutesUntilNext = useMemo(() => {
-    if (!glance.next) return null;
+    if (dateFilter !== 'today' || !glance.next) return null;
     const now = new Date();
     const nowMins = now.getHours() * 60 + now.getMinutes();
     const diff = parseMinutes(glance.next.startTime) - nowMins;
     return diff > 0 ? diff : null;
-  }, [glance.next]);
+  }, [dateFilter, glance.next]);
 
   return (
     <View style={styles.root}>
@@ -711,21 +655,14 @@ export default function OwnerReservationsScreen() {
 
             {/* Page header */}
             <View style={styles.pageHeader}>
-              <View style={styles.pageHeaderRow}>
-                <View style={styles.pageHeaderLeft}>
-                  <View style={styles.kickerRow}>
-                    <View style={styles.kickerDot} />
-                    <Text style={styles.kickerText}>BOOKINGS · {dayLabel}</Text>
-                  </View>
-                  <Text style={styles.pageTitle}>Service board</Text>
-                  <Text style={styles.pageSub}>
-                    {dateFiltered.length} reservations · {covers} covers
-                  </Text>
-                </View>
-                <Pressable style={styles.walkInBtn} accessibilityRole="button">
-                  <Text style={styles.walkInBtnText}>+ Walk-in</Text>
-                </Pressable>
+              <View style={styles.kickerRow}>
+                <View style={styles.kickerDot} />
+                <Text style={styles.kickerText}>BOOKINGS · {dayLabel}</Text>
               </View>
+              <Text style={styles.pageTitle}>Bookings</Text>
+              <Text style={styles.pageSub}>
+                {headerSubtitle}
+              </Text>
             </View>
 
             {/* Date segment */}
@@ -751,78 +688,73 @@ export default function OwnerReservationsScreen() {
               </View>
             </View>
 
-            {/* Right now card */}
-            <View style={styles.rightNowCard}>
-              <View style={styles.rightNowTop}>
-                <Text style={styles.rightNowKicker}>RIGHT NOW</Text>
-                <View style={styles.viewToggle}>
-                  <View style={[styles.viewToggleBtn, styles.viewToggleBtnActive]}>
-                    <Ionicons name="list" size={13} color={c.gold} />
-                    <Text style={[styles.viewToggleBtnText, styles.viewToggleBtnTextActive]}>List</Text>
-                  </View>
-                  <View style={styles.viewToggleBtn}>
-                    <Ionicons name="time-outline" size={13} color={c.textMuted} />
-                    <Text style={styles.viewToggleBtnText}>Time</Text>
-                  </View>
+            <View style={styles.summaryCard}>
+              <Text style={styles.rightNowKicker}>{summaryHeading.toUpperCase()}</Text>
+              <Text style={styles.summaryTitle}>
+                {dateFiltered.length} reservations
+              </Text>
+              <Text style={styles.summarySub}>
+                {dateFilter === 'today'
+                  ? `${glance.seated}/${capacity} currently seated across the floor`
+                  : 'Chronological booking board with guest details'}
+              </Text>
+
+              <View style={styles.summaryStats}>
+                <View style={styles.summaryStat}>
+                  <Text style={[styles.summaryStatValue, styles.summaryStatValueAccent]}>
+                    {dateFilter === 'today' ? `${glance.seated}/${capacity}` : dateFiltered.length}
+                  </Text>
+                  <Text style={styles.summaryStatLabel}>
+                    {dateFilter === 'today' ? 'Seated now' : 'Reservations'}
+                  </Text>
+                </View>
+                <View style={styles.summaryStat}>
+                  <Text style={styles.summaryStatValue}>
+                    {dateFilter === 'today' ? glance.upcoming : statusCounts.pending}
+                  </Text>
+                  <Text style={styles.summaryStatLabel}>
+                    Upcoming
+                  </Text>
+                </View>
+                <View style={styles.summaryStat}>
+                  <Text
+                    style={[
+                      styles.summaryStatValue,
+                      styles.summaryStatValueAccent,
+                    ]}
+                  >
+                    {statusCounts.confirmed}
+                  </Text>
+                  <Text style={styles.summaryStatLabel}>Booked</Text>
                 </View>
               </View>
-              <Text style={styles.rightNowBig}>
-                {glance.seated}/{capacity} seated · {glance.upcoming} to come
-              </Text>
+
               {glance.next ? (
                 <Pressable
-                  style={styles.upNextRow}
+                  style={styles.nextRow}
                   onPress={press(() => setSelected(glance.next!))}
                   accessibilityRole="button"
                 >
-                  <View style={styles.upNextTimeBlock}>
-                    <Text style={styles.upNextClock}>{splitTime(glance.next.startTime).clock}</Text>
-                    <Text style={styles.upNextMeridiem}>{splitTime(glance.next.startTime).ap}</Text>
+                  <View style={styles.nextAvatar}>
+                    <Text style={styles.avatarText}>{initials(glance.next.guestName)}</Text>
                   </View>
-                  <View style={styles.upNextCol}>
-                    <Text style={styles.upNextLabel}>
-                      UP NEXT{minutesUntilNext !== null ? ` · IN ${minutesUntilNext} MIN` : ''}
+                  <View style={styles.nextCol}>
+                    <Text style={styles.nextLabel}>
+                      NEXT BOOKING{minutesUntilNext !== null ? ` · IN ${minutesUntilNext} MIN` : ''}
                     </Text>
-                    <Text style={styles.upNextText} numberOfLines={1}>
-                      {glance.next.guestName} · party of {glance.next.partySize}
+                    <Text style={styles.nextText} numberOfLines={1}>
+                      {glance.next.guestName} · {glance.next.startTime} · Party of {glance.next.partySize}
                     </Text>
                   </View>
+                  <Ionicons name="chevron-forward" size={16} color={c.textMuted} />
                 </Pressable>
               ) : null}
             </View>
 
-            {/* Status chips */}
-            <ScrollView
-              horizontal
-              showsHorizontalScrollIndicator={false}
-              contentContainerStyle={styles.statusWrap}
-            >
-              <View style={styles.statusRow}>
-                {STATUS_FILTERS.map((f) => {
-                  const active = statusFilter === f.key;
-                  return (
-                    <Pressable
-                      key={f.key}
-                      onPress={() => onSelectStatus(f.key)}
-                      style={[styles.statusChip, active && styles.statusChipOn]}
-                      accessibilityRole="button"
-                    >
-                      <Text style={[styles.statusChipText, active && styles.statusChipTextOn]}>
-                        {f.label}
-                      </Text>
-                      <Text style={[styles.statusCount, active && styles.statusCountOn]}>
-                        {statusCounts[f.key]}
-                      </Text>
-                    </Pressable>
-                  );
-                })}
-              </View>
-            </ScrollView>
-
             {filtered.length > 0 ? (
               <View style={styles.listMeta}>
                 <Text style={styles.listMetaText}>
-                  {glance.total} BOOKING{glance.total === 1 ? '' : 'S'} · GROUPED BY TIME
+                  {filtered.length} BOOKING{filtered.length === 1 ? '' : 'S'} · ORDERED BY TIME
                 </Text>
               </View>
             ) : null}
@@ -837,10 +769,9 @@ export default function OwnerReservationsScreen() {
             </Text>
           </View>
         }
-        renderSectionHeader={({ section: { title, data } }) => (
+        renderSectionHeader={({ section }) => (
           <View style={styles.stickyHeader}>
-            <Text style={styles.stickyHeaderText}>{title}</Text>
-            <Text style={styles.stickyHeaderCount}>{data.length}</Text>
+            <Text style={styles.stickyHeaderText}>{section.title}</Text>
           </View>
         )}
         renderItem={({ item: row }) => {
@@ -861,23 +792,35 @@ export default function OwnerReservationsScreen() {
                   {ap ? <Text style={styles.timeMeridiem}>{ap}</Text> : null}
                 </View>
                 <View style={styles.bookingMain}>
-                  <View style={styles.nameRow}>
-                    <Text style={styles.guestName} numberOfLines={1}>
-                      {row.guestName}
-                    </Text>
-                    {row.vip ? (
-                      <Ionicons name="star" size={13} color={c.gold} accessibilityLabel="VIP" />
-                    ) : null}
+                  <View style={styles.bookingTopRow}>
+                    <View style={styles.bookingTopLeft}>
+                      <Text style={styles.guestName} numberOfLines={1}>
+                        {row.guestName}
+                      </Text>
+                      <Text style={styles.metaLine} numberOfLines={1}>
+                        Party of {row.partySize}{tableBit}
+                      </Text>
+                    </View>
+                    <View
+                      style={[
+                        styles.statusPill,
+                        { backgroundColor: pres.bg, borderColor: `${pres.text}44` },
+                      ]}
+                    >
+                      <Text style={[styles.statusPillText, { color: pres.text }]}>
+                        {pres.label}
+                      </Text>
+                    </View>
                   </View>
-                  <Text style={styles.metaLine} numberOfLines={1}>
-                    Party of {row.partySize}{tableBit}
-                  </Text>
-                  <View style={styles.bookingStatusRow}>
-                    <View style={[styles.statusDot, { backgroundColor: pres.text }]} />
-                    <Text style={[styles.statusWord, { color: pres.text }]}>{pres.label}</Text>
+                  <View style={styles.tagRow}>
+                    {row.vip ? (
+                      <View style={[styles.guestTag, styles.guestTagVip]}>
+                        <Text style={[styles.guestTagText, styles.guestTagVipText]}>VIP</Text>
+                      </View>
+                    ) : null}
                     {row.walkIn ? (
-                      <View style={styles.walkInTag}>
-                        <Text style={styles.walkInTagText}>Walk-in</Text>
+                      <View style={styles.guestTag}>
+                        <Text style={styles.guestTagText}>Walk-in</Text>
                       </View>
                     ) : null}
                   </View>
@@ -911,13 +854,6 @@ export default function OwnerReservationsScreen() {
                     {selected.startTime} · {selected.partySize} guests
                     {selected.table ? ` · Table ${selected.table}` : ''}
                   </Text>
-
-                  {selected.status === 'risk' ? (
-                    <View style={styles.modalRiskPill}>
-                      <Ionicons name="warning" size={14} color={c.danger} />
-                      <Text style={styles.modalRiskText}>Might not show — consider a quick text</Text>
-                    </View>
-                  ) : null}
 
                   <Text style={styles.modalSectionLabel}>Details</Text>
                   {[

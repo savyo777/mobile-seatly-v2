@@ -675,7 +675,6 @@ export default function OwnerHomeScreen() {
   const bookingsTonight = OWNER_RESERVATIONS.length;
   const pendingCount = OWNER_RESERVATIONS.filter((r) => r.status === 'pending').length;
   const upNext = OWNER_RESERVATIONS.find((r) => r.status !== 'seated') ?? OWNER_RESERVATIONS[0];
-  const onShiftCount = 3;
   const guestProfiles = OWNER_GUESTS.length;
 
   const quickActions: { icon: IoniconName; label: string; sub: string; route: string }[] = [
@@ -687,7 +686,7 @@ export default function OwnerHomeScreen() {
       sub: `${guestProfiles} profiles · VIPs & notes`,
       route: '/(staff)/guests',
     },
-    { icon: 'people-outline', label: 'Tonight', sub: `${onShiftCount} on shift`, route: '/(staff)/staff' },
+    { icon: 'restaurant-outline', label: 'Menu', sub: 'Dishes & prices', route: '/(staff)/menu' },
   ];
 
   return (
