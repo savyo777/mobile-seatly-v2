@@ -356,34 +356,6 @@ const useStyles = createStyles((c) => ({
     fontWeight: '500',
     color: c.textMuted,
   },
-  menu86Row: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.md,
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.md,
-    borderTopWidth: StyleSheet.hairlineWidth,
-    borderTopColor: c.border,
-    backgroundColor: 'rgba(239,68,68,0.06)',
-  },
-  menu86RowPressed: { opacity: 0.8 },
-  menu86Badge: {
-    backgroundColor: '#EF4444',
-    borderRadius: 6,
-    paddingHorizontal: 8,
-    paddingVertical: 3,
-  },
-  menu86BadgeText: {
-    fontSize: 12,
-    fontWeight: '800',
-    color: '#fff',
-  },
-  menu86Name: {
-    flex: 1,
-    fontSize: 15,
-    fontWeight: '600',
-    color: c.textPrimary,
-  },
 
   // ── Settings shortcut ──
   settingsBtn: {
@@ -654,21 +626,6 @@ export default function OwnerBusinessScreen() {
             </Pressable>
           </View>
 
-          {/* 86'd item highlight */}
-          {menuItems.filter((i) => !i.isAvailable).length > 0 && (
-            <Pressable
-              style={({ pressed }) => [styles.menu86Row, pressed && styles.menu86RowPressed]}
-              onPress={() => router.push('/(staff)/menu-manage' as never)}
-            >
-              <View style={styles.menu86Badge}>
-                <Text style={styles.menu86BadgeText}>86</Text>
-              </View>
-              <Text style={styles.menu86Name}>
-                {menuItems.find((i) => !i.isAvailable)?.name}
-              </Text>
-              <Ionicons name="chevron-forward" size={16} color={c.textMuted} />
-            </Pressable>
-          )}
         </View>
 
         {/* ── Contact ── */}
