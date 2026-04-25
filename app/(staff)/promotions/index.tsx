@@ -57,6 +57,19 @@ function formatCount(value?: number): string {
   return (value ?? 0).toLocaleString('en-CA');
 }
 
+function formatAudience(p: OwnerPromotion): string {
+  return p.audienceLabel ?? p.targetAudience.split(' · ')[0];
+}
+
+function formatWhere(p: OwnerPromotion): string {
+  const zones: string[] = [];
+  if (p.appliesTo.dineIn) zones.push('Dine-in');
+  if (p.appliesTo.takeout) zones.push('Takeout');
+  if (p.appliesTo.bar) zones.push('Bar');
+  if (p.appliesTo.patio) zones.push('Patio');
+  return zones.length > 0 ? zones.join(' + ') : p.whereApplies;
+}
+
 const useStyles = createStyles((c) => ({
   safe: { flex: 1, backgroundColor: c.bgBase },
   scroll: { flex: 1 },
@@ -173,77 +186,164 @@ const useStyles = createStyles((c) => ({
   metaRow: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: spacing.sm,
+    gap: spacing.xs,
   },
-  metaChip: {
+  metaPill: {
+    maxWidth: '100%',
     flexDirection: 'row',
     alignItems: 'center',
     gap: 6,
-    paddingHorizontal: 10,
+    paddingHorizontal: 12,
     paddingVertical: 8,
     borderRadius: borderRadius.full,
     backgroundColor: c.bgElevated,
     borderWidth: StyleSheet.hairlineWidth,
     borderColor: c.border,
-    maxWidth: '100%',
   },
-  metaChipText: {
+  metaPillText: {
     fontSize: 12,
     fontWeight: '600',
     color: c.textSecondary,
     flexShrink: 1,
   },
-  statsGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: spacing.sm,
-  },
-  statCard: {
-    width: '48.5%',
-    minHeight: 88,
+  performanceCard: {
     borderRadius: borderRadius.lg,
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.md,
     backgroundColor: c.bgElevated,
     borderWidth: StyleSheet.hairlineWidth,
     borderColor: c.border,
+    gap: spacing.md,
+  },
+  performanceHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
     justifyContent: 'space-between',
+    gap: spacing.md,
   },
-  statCardPrimary: {
-    backgroundColor: 'rgba(201,162,74,0.12)',
-    borderColor: 'rgba(201,162,74,0.32)',
-  },
-  statLabel: {
-    fontSize: 11,
+  performanceTitle: {
+    fontSize: 12,
     fontWeight: '700',
     color: c.textMuted,
     letterSpacing: 0.7,
     textTransform: 'uppercase',
   },
-  statValue: {
-    fontSize: 24,
+  performanceSummary: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: c.gold,
+  },
+  performanceValues: {
+    flexDirection: 'row',
+    gap: spacing.md,
+  },
+  performanceCol: {
+    flex: 1,
+    gap: 3,
+  },
+  performanceValue: {
+    fontSize: 21,
     fontWeight: '800',
     color: c.textPrimary,
-    letterSpacing: -0.4,
+    letterSpacing: -0.3,
   },
-  statValuePrimary: {
+  performanceValuePrimary: {
     color: c.gold,
+  },
+  performanceSub: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: c.textMuted,
+  },
+  performanceBar: {
+    height: 10,
+    flexDirection: 'row',
+    gap: 4,
+  },
+  performanceBarSegment: {
+    borderRadius: borderRadius.full,
+  },
+  performanceBarUsed: {
+    backgroundColor: c.gold,
+  },
+  performanceBarRemaining: {
+    backgroundColor: 'rgba(255,255,255,0.2)',
+  },
+  guestMixCard: {
+    borderRadius: borderRadius.lg,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.md,
+    backgroundColor: c.bgElevated,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: c.border,
+    gap: spacing.md,
+  },
+  guestMixHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: spacing.md,
+  },
+  guestMixTitle: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: c.textMuted,
+    letterSpacing: 0.7,
+    textTransform: 'uppercase',
+  },
+  guestMixSummary: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: c.gold,
+  },
+  guestMixValues: {
+    flexDirection: 'row',
+    gap: spacing.md,
+  },
+  guestMixCol: {
+    flex: 1,
+    gap: 3,
+  },
+  guestMixValue: {
+    fontSize: 21,
+    fontWeight: '800',
+    color: c.textPrimary,
+    letterSpacing: -0.3,
+  },
+  guestMixSub: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: c.textMuted,
+  },
+  guestMixBar: {
+    height: 10,
+    flexDirection: 'row',
+    gap: 4,
+  },
+  guestMixBarSegment: {
+    borderRadius: borderRadius.full,
+  },
+  guestMixBarNew: {
+    backgroundColor: c.gold,
+  },
+  guestMixBarReturning: {
+    backgroundColor: 'rgba(255,255,255,0.2)',
   },
   bestTimeCard: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: spacing.md,
+    gap: spacing.sm,
     borderRadius: borderRadius.lg,
     paddingHorizontal: spacing.md,
-    paddingVertical: spacing.md,
+    paddingVertical: 12,
     backgroundColor: 'rgba(201,162,74,0.08)',
     borderWidth: StyleSheet.hairlineWidth,
     borderColor: 'rgba(201,162,74,0.24)',
   },
   bestTimeIcon: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
+    width: 28,
+    height: 28,
+    borderRadius: 14,
     alignItems: 'center',
     justifyContent: 'center',
     backgroundColor: 'rgba(201,162,74,0.14)',
@@ -253,14 +353,14 @@ const useStyles = createStyles((c) => ({
     gap: 2,
   },
   bestTimeLabel: {
-    fontSize: 11,
+    fontSize: 10,
     fontWeight: '700',
     color: c.textMuted,
     letterSpacing: 0.7,
     textTransform: 'uppercase',
   },
   bestTimeValue: {
-    fontSize: 15,
+    fontSize: 14,
     fontWeight: '700',
     color: c.textPrimary,
   },
@@ -343,6 +443,13 @@ export default function PromosScreen() {
         ) : (
           list.map((promo) => {
             const clicks = promo.clicks ?? promo.views ?? promo.analytics.guestsReached;
+            const used = promo.analytics.redemptions;
+            const conversionRate = clicks > 0 ? Math.round((used / clicks) * 100) : 0;
+            const remainingClicks = Math.max(clicks - used, 0);
+            const newGuests = promo.newGuests ?? 0;
+            const returningGuests = promo.returningGuests ?? 0;
+            const totalGuestMix = newGuests + returningGuests;
+            const newGuestShare = totalGuestMix > 0 ? Math.round((newGuests / totalGuestMix) * 100) : 0;
             const statusTint =
               promo.status === 'live'
                 ? { bg: 'rgba(34,197,94,0.18)', border: 'rgba(34,197,94,0.32)', text: '#86EFAC' }
@@ -395,49 +502,104 @@ export default function PromosScreen() {
 
                 <View style={styles.cardBody}>
                   <View style={styles.metaRow}>
-                    <View style={styles.metaChip}>
-                      <Ionicons name="calendar-outline" size={14} color={c.gold} />
-                      <Text style={styles.metaChipText}>
+                    <View style={styles.metaPill}>
+                      <Ionicons name="calendar-outline" size={13} color={c.gold} />
+                      <Text style={styles.metaPillText}>
                         {promo.scheduleLabel ?? `${promo.startTime}-${promo.endTime}`}
                       </Text>
                     </View>
-                    <View style={styles.metaChip}>
-                      <Ionicons name="people-outline" size={14} color={c.gold} />
-                      <Text style={styles.metaChipText}>{promo.audienceLabel ?? promo.targetAudience}</Text>
+                    <View style={styles.metaPill}>
+                      <Ionicons name="people-outline" size={13} color={c.gold} />
+                      <Text style={styles.metaPillText}>
+                        {formatAudience(promo)}
+                      </Text>
                     </View>
-                    <View style={styles.metaChip}>
-                      <Ionicons name="restaurant-outline" size={14} color={c.gold} />
-                      <Text style={styles.metaChipText}>{promo.whereApplies}</Text>
+                    <View style={styles.metaPill}>
+                      <Ionicons name="restaurant-outline" size={13} color={c.gold} />
+                      <Text style={styles.metaPillText}>
+                        {formatWhere(promo)}
+                      </Text>
                     </View>
                   </View>
 
-                  <View style={styles.statsGrid}>
-                    <View style={[styles.statCard, styles.statCardPrimary]}>
-                      <Text style={styles.statLabel}>Used</Text>
-                      <Text style={[styles.statValue, styles.statValuePrimary]}>
-                        {formatCount(promo.analytics.redemptions)}
+                  <View style={styles.performanceCard}>
+                    <View style={styles.performanceHeader}>
+                      <Text style={styles.performanceTitle}>Performance</Text>
+                      <Text style={styles.performanceSummary}>
+                        {clicks > 0 ? `${conversionRate}% used rate` : 'No click data yet'}
                       </Text>
                     </View>
-                    <View style={styles.statCard}>
-                      <Text style={styles.statLabel}>Clicks</Text>
-                      <Text style={styles.statValue}>{formatCount(clicks)}</Text>
+                    <View style={styles.performanceValues}>
+                      <View style={styles.performanceCol}>
+                        <Text style={[styles.performanceValue, styles.performanceValuePrimary]}>
+                          {formatCount(used)}
+                        </Text>
+                        <Text style={styles.performanceSub}>Used</Text>
+                      </View>
+                      <View style={styles.performanceCol}>
+                        <Text style={styles.performanceValue}>{formatCount(clicks)}</Text>
+                        <Text style={styles.performanceSub}>Clicks</Text>
+                      </View>
                     </View>
-                    <View style={styles.statCard}>
-                      <Text style={styles.statLabel}>New guests</Text>
-                      <Text style={styles.statValue}>{formatCount(promo.newGuests)}</Text>
+                    <View style={styles.performanceBar}>
+                      <View
+                        style={[
+                          styles.performanceBarSegment,
+                          styles.performanceBarUsed,
+                          { flex: clicks > 0 ? used : 1 },
+                        ]}
+                      />
+                      <View
+                        style={[
+                          styles.performanceBarSegment,
+                          styles.performanceBarRemaining,
+                          { flex: clicks > 0 ? Math.max(remainingClicks, 1) : 1 },
+                        ]}
+                      />
                     </View>
-                    <View style={styles.statCard}>
-                      <Text style={styles.statLabel}>Returning guests</Text>
-                      <Text style={styles.statValue}>{formatCount(promo.returningGuests)}</Text>
+                  </View>
+
+                  <View style={styles.guestMixCard}>
+                    <View style={styles.guestMixHeader}>
+                      <Text style={styles.guestMixTitle}>Guest mix</Text>
+                      <Text style={styles.guestMixSummary}>
+                        {totalGuestMix > 0 ? `${newGuestShare}% new` : 'No guest data yet'}
+                      </Text>
+                    </View>
+                    <View style={styles.guestMixValues}>
+                      <View style={styles.guestMixCol}>
+                        <Text style={styles.guestMixValue}>{formatCount(newGuests)}</Text>
+                        <Text style={styles.guestMixSub}>New guests</Text>
+                      </View>
+                      <View style={styles.guestMixCol}>
+                        <Text style={styles.guestMixValue}>{formatCount(returningGuests)}</Text>
+                        <Text style={styles.guestMixSub}>Returning guests</Text>
+                      </View>
+                    </View>
+                    <View style={styles.guestMixBar}>
+                      <View
+                        style={[
+                          styles.guestMixBarSegment,
+                          styles.guestMixBarNew,
+                          { flex: totalGuestMix > 0 ? newGuests : 1 },
+                        ]}
+                      />
+                      <View
+                        style={[
+                          styles.guestMixBarSegment,
+                          styles.guestMixBarReturning,
+                          { flex: totalGuestMix > 0 ? returningGuests : 1 },
+                        ]}
+                      />
                     </View>
                   </View>
 
                   <View style={styles.bestTimeCard}>
                     <View style={styles.bestTimeIcon}>
-                      <Ionicons name="time-outline" size={18} color={c.gold} />
+                      <Ionicons name="time-outline" size={15} color={c.gold} />
                     </View>
                     <View style={styles.bestTimeText}>
-                      <Text style={styles.bestTimeLabel}>Best time</Text>
+                      <Text style={styles.bestTimeLabel}>Top time slot</Text>
                       <Text style={styles.bestTimeValue}>{promo.bestTimeLabel ?? 'No data yet'}</Text>
                     </View>
                   </View>
