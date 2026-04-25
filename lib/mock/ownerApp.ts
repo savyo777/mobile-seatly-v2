@@ -641,6 +641,10 @@ export interface OwnerPromotion {
   offerTag?: string;
   views?: number;
   claims?: number;
+  clicks?: number;
+  newGuests?: number;
+  returningGuests?: number;
+  bestTimeLabel?: string;
   scheduleLabel?: string;
   audienceLabel?: string;
   coverImage?: string;
@@ -672,6 +676,10 @@ export const OWNER_PROMOTIONS: OwnerPromotion[] = [
     whereApplies: 'Dine-in · patio · 5:00–5:45 PM',
     analytics: { redemptions: 428, guestsReached: 1204, revenueGenerated: 3820 },
     estimatedLiftPct: 12,
+    clicks: 1204,
+    newGuests: 134,
+    returningGuests: 294,
+    bestTimeLabel: 'Thu-Fri · 5:00-5:30 PM',
   },
   {
     id: 'p2',
@@ -699,6 +707,10 @@ export const OWNER_PROMOTIONS: OwnerPromotion[] = [
     estimatedLiftPct: 8,
     startsTonight: true,
     attentionReason: 'scheduled_zero_usage',
+    clicks: 0,
+    newGuests: 0,
+    returningGuests: 0,
+    bestTimeLabel: 'No data yet',
   },
   {
     id: 'p3',
@@ -726,6 +738,10 @@ export const OWNER_PROMOTIONS: OwnerPromotion[] = [
     estimatedLiftPct: 18,
     needsAttention: true,
     attentionReason: 'low_engagement',
+    clicks: 342,
+    newGuests: 9,
+    returningGuests: 19,
+    bestTimeLabel: 'Fri · 4:00-5:00 PM',
   },
   {
     id: 'p4',
@@ -752,6 +768,10 @@ export const OWNER_PROMOTIONS: OwnerPromotion[] = [
     analytics: { redemptions: 2104, guestsReached: 5600, revenueGenerated: 89400 },
     estimatedLiftPct: 0,
     attentionReason: 'expired_still_listed',
+    clicks: 5600,
+    newGuests: 482,
+    returningGuests: 1622,
+    bestTimeLabel: 'Sat · 7:00-9:00 PM',
   },
   {
     id: 'p5',
@@ -779,6 +799,10 @@ export const OWNER_PROMOTIONS: OwnerPromotion[] = [
     estimatedLiftPct: 15,
     needsAttention: true,
     attentionReason: 'overlapping_time',
+    clicks: 0,
+    newGuests: 0,
+    returningGuests: 0,
+    bestTimeLabel: 'No data yet',
   },
   {
     id: 'p6',
@@ -800,6 +824,10 @@ export const OWNER_PROMOTIONS: OwnerPromotion[] = [
     offerTag: '50% off pasta',
     views: 2840,
     claims: 124,
+    clicks: 2840,
+    newGuests: 24,
+    returningGuests: 64,
+    bestTimeLabel: 'Tue · 5:00-6:00 PM',
     scheduleLabel: 'Tue · 5–7 PM',
     audienceLabel: 'All guests',
     coverImage: 'https://images.unsplash.com/photo-1621996346565-e3dbc646d9a9?w=800',
@@ -824,6 +852,10 @@ export const OWNER_PROMOTIONS: OwnerPromotion[] = [
     offerTag: '$1 oysters',
     views: 1920,
     claims: 96,
+    clicks: 1920,
+    newGuests: 21,
+    returningGuests: 51,
+    bestTimeLabel: 'Thu · 4:00-5:00 PM',
     scheduleLabel: 'Wed–Fri · 4–6 PM',
     audienceLabel: 'Patio + Bar',
     coverImage: 'https://images.unsplash.com/photo-1559737558-2f5a35f4523b?w=800',
@@ -849,6 +881,10 @@ export const OWNER_PROMOTIONS: OwnerPromotion[] = [
     offerTag: '$48 prix-fixe',
     views: 3210,
     claims: 204,
+    clicks: 3210,
+    newGuests: 74,
+    returningGuests: 108,
+    bestTimeLabel: 'Sun · 11:00 AM-1:00 PM',
     scheduleLabel: 'Apr 9 · 11AM–3PM',
     audienceLabel: 'All guests',
     coverImage: 'https://images.unsplash.com/photo-1414235077428-338989a2e8c0?w=800',
@@ -873,6 +909,10 @@ export const OWNER_PROMOTIONS: OwnerPromotion[] = [
     offerTag: '$55 tasting',
     views: 5640,
     claims: 320,
+    clicks: 5640,
+    newGuests: 96,
+    returningGuests: 172,
+    bestTimeLabel: 'Fri · 6:00-8:00 PM',
     scheduleLabel: 'Mar 18–24 · Dinner',
     audienceLabel: 'All guests',
     coverImage: 'https://images.unsplash.com/photo-1504674900247-0877df9cc836?w=800',
@@ -897,6 +937,10 @@ export const OWNER_PROMOTIONS: OwnerPromotion[] = [
     offerTag: '$95 / couple',
     views: 4120,
     claims: 240,
+    clicks: 4120,
+    newGuests: 118,
+    returningGuests: 110,
+    bestTimeLabel: 'Sat · 7:00-9:00 PM',
     scheduleLabel: 'Feb 14 · 5–10 PM',
     audienceLabel: 'All guests',
     coverImage: 'https://images.unsplash.com/photo-1551218808-94e220e084d2?w=800',
