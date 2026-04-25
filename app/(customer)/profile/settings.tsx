@@ -293,7 +293,7 @@ export default function SettingsScreen() {
                   ]}
                   accessibilityRole="button"
                 >
-                  <Ionicons name={row.icon} size={20} color={c.textSecondary} style={styles.rowIcon} />
+                  <Ionicons name={row.icon} size={20} color={c.gold} style={styles.rowIcon} />
                   <Text style={styles.rowLabel}>{row.label}</Text>
                   <ChevronGlyph color={c.textMuted} size={16} />
                 </Pressable>

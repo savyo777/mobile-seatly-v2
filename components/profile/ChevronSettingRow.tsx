@@ -70,7 +70,7 @@ export function ChevronSettingRow({
 }: Props) {
   const c = useColors();
   const styles = useStyles();
-  const iconColor = destructive ? c.danger : iconMuted ? c.textSecondary : c.gold;
+  const iconColor = destructive ? c.danger : c.gold;
 
   return (
     <Pressable

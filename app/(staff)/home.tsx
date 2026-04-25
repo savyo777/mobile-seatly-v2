@@ -680,14 +680,14 @@ export default function OwnerHomeScreen() {
 
   const quickActions: { icon: IoniconName; label: string; sub: string; route: string }[] = [
     { icon: 'calendar-outline', label: 'Reservations', sub: `${bookingsTonight} tonight`, route: '/(staff)/reservations' },
-    { icon: 'pricetag-outline', label: 'Post promo', sub: 'Fill slow slots', route: '/(staff)/promotions/new' },
+    { icon: 'pricetag-outline', label: 'Promos', sub: 'Active & past offers', route: '/(staff)/promotions' },
     {
       icon: 'id-card-outline',
       label: 'Guests',
       sub: `${guestProfiles} profiles · VIPs & notes`,
       route: '/(staff)/guests',
     },
-    { icon: 'people-outline', label: 'Staff', sub: `${onShiftCount} on tonight`, route: '/(staff)/staff' },
+    { icon: 'people-outline', label: 'Tonight', sub: `${onShiftCount} on shift`, route: '/(staff)/staff' },
   ];
 
   return (

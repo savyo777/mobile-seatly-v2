@@ -7,7 +7,7 @@ import {
   Modal,
   TouchableWithoutFeedback,
 } from 'react-native';
-import { Tabs, useRouter } from 'expo-router';
+import { Tabs, useRouter, usePathname } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -33,7 +33,7 @@ const QUICK_ACTIONS: { id: string; icon: IoniconName; label: string; sub: string
   {
     id: 'promo',
     icon: 'pricetag-outline',
-    label: 'Create Promotion',
+    label: 'Post Promotion',
     sub: 'Launch a new deal or offer',
     route: '/(staff)/promotions/new',
   },
@@ -41,33 +41,24 @@ const QUICK_ACTIONS: { id: string; icon: IoniconName; label: string; sub: string
 
 const useStyles = createStyles((c) => ({
   root: { flex: 1, backgroundColor: c.bgBase },
-  // Center button — mirrors diner exactly
-  centerBtnWrapper: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: 0,
-  },
-  centerBtn: {
+
+  fab: {
+    position: 'absolute',
+    right: 20,
     width: 56,
     height: 56,
     borderRadius: 28,
     backgroundColor: c.gold,
     alignItems: 'center',
     justifyContent: 'center',
-    borderWidth: 1.5,
-    borderColor: c.gold,
     shadowColor: c.gold,
     shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.35,
-    shadowRadius: 8,
-    elevation: 6,
+    shadowOpacity: 0.4,
+    shadowRadius: 10,
+    elevation: 8,
   },
-  centerBtnPressed: {
-    shadowOpacity: 0.5,
-    transform: [{ scale: 0.96 }],
-  },
-  // Quick-add modal sheet
+  fabPressed: { opacity: 0.9, transform: [{ scale: 0.96 }] },
+
   overlay: { flex: 1, justifyContent: 'flex-end' },
   overlayDim: {
     ...StyleSheet.absoluteFillObject,
@@ -144,8 +135,15 @@ export default function OwnerTabsLayout() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const [sheetOpen, setSheetOpen] = useState(false);
+  const pathname = usePathname();
 
-  const handleCenter = () => {
+  const TAB_ROOTS = ['/home', '/reservations', '/promotions', '/profile'];
+  const showFab = TAB_ROOTS.includes(pathname);
+
+  const TAB_BAR_HEIGHT = 49;
+  const fabBottom = insets.bottom + TAB_BAR_HEIGHT + 16;
+
+  const handleFab = () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium).catch(() => {});
     setSheetOpen(true);
   };
@@ -169,7 +167,6 @@ export default function OwnerTabsLayout() {
             borderTopWidth: StyleSheet.hairlineWidth,
             paddingTop: 0,
           },
-          // mirrors the diner side nudge
           tabBarItemStyle: {
             transform: [{ translateY: 10 }],
           },
@@ -198,37 +195,12 @@ export default function OwnerTabsLayout() {
             ),
           }}
         />
-
-        {/* Center quick-add button — mirrors the diner "post" tab exactly */}
         <Tabs.Screen
-          name="promote"
+          name="promotions"
           options={{
-            title: '',
-            tabBarLabel: () => null,
-            tabBarButton: () => (
-              <Pressable
-                onPress={handleCenter}
-                style={styles.centerBtnWrapper}
-                accessibilityRole="button"
-                accessibilityLabel="Quick actions"
-                accessibilityHint="Add a booking, walk-in, or promotion"
-              >
-                {({ pressed }) => (
-                  <View style={[styles.centerBtn, pressed && styles.centerBtnPressed]}>
-                    <Ionicons name="add" size={30} color={c.bgBase} />
-                  </View>
-                )}
-              </Pressable>
-            ),
-          }}
-        />
-
-        <Tabs.Screen
-          name="schedule"
-          options={{
-            title: 'Tonight',
+            title: 'Promos',
             tabBarIcon: ({ color, size }) => (
-              <Ionicons name="time-outline" size={size} color={color} />
+              <Ionicons name="pricetag-outline" size={size} color={color} />
             ),
           }}
         />
@@ -242,30 +214,43 @@ export default function OwnerTabsLayout() {
           }}
         />
 
-        {/* Hidden routes — accessible via router.push only */}
-        <Tabs.Screen name="promotions" options={{ href: null }} />
-        <Tabs.Screen name="analytics"  options={{ href: null }} />
-        <Tabs.Screen name="guests"     options={{ href: null, tabBarStyle: { display: 'none' } }} />
-        <Tabs.Screen name="staff"      options={{ href: null }} />
-        <Tabs.Screen name="floor"      options={{ href: null }} />
-        <Tabs.Screen name="menu"       options={{ href: null }} />
-        <Tabs.Screen name="waitlist"   options={{ href: null }} />
-        <Tabs.Screen name="ordersKds"  options={{ href: null }} />
-        <Tabs.Screen name="insights"   options={{ href: null }} />
-        <Tabs.Screen name="business"   options={{ href: null }} />
-        <Tabs.Screen name="ai"         options={{ href: null }} />
-        <Tabs.Screen name="dashboard"  options={{ href: null }} />
+        {/* Hidden routes */}
+        <Tabs.Screen name="schedule"    options={{ href: null }} />
+        <Tabs.Screen name="promote"     options={{ href: null }} />
+        <Tabs.Screen name="analytics"   options={{ href: null }} />
+        <Tabs.Screen name="guests"      options={{ href: null, tabBarStyle: { display: 'none' } }} />
+        <Tabs.Screen name="staff"       options={{ href: null }} />
+        <Tabs.Screen name="floor"       options={{ href: null }} />
+        <Tabs.Screen name="menu"        options={{ href: null }} />
+        <Tabs.Screen name="waitlist"    options={{ href: null }} />
+        <Tabs.Screen name="ordersKds"   options={{ href: null }} />
+        <Tabs.Screen name="insights"    options={{ href: null }} />
+        <Tabs.Screen name="business"    options={{ href: null }} />
+        <Tabs.Screen name="ai"          options={{ href: null }} />
+        <Tabs.Screen name="dashboard"   options={{ href: null }} />
         <Tabs.Screen name="notifications" options={{ href: null }} />
-        <Tabs.Screen name="index"      options={{ href: null }} />
-        <Tabs.Screen name="crm"        options={{ href: null }} />
-        <Tabs.Screen name="expenses"   options={{ href: null }} />
-        <Tabs.Screen name="events"     options={{ href: null }} />
-        <Tabs.Screen name="export"     options={{ href: null }} />
+        <Tabs.Screen name="index"       options={{ href: null }} />
+        <Tabs.Screen name="crm"         options={{ href: null }} />
+        <Tabs.Screen name="expenses"    options={{ href: null }} />
+        <Tabs.Screen name="events"      options={{ href: null }} />
+        <Tabs.Screen name="export"      options={{ href: null }} />
         <Tabs.Screen name="settings"    options={{ href: null, tabBarStyle: { display: 'none' } }} />
         <Tabs.Screen name="menu-manage" options={{ href: null, tabBarStyle: { display: 'none' } }} />
       </Tabs>
 
-      {/* Quick-add modal sheet */}
+      {/* Persistent FAB — visible on main tabs only */}
+      {showFab && (
+        <Pressable
+          onPress={handleFab}
+          style={({ pressed }) => [styles.fab, { bottom: fabBottom }, pressed && styles.fabPressed]}
+          accessibilityRole="button"
+          accessibilityLabel="Quick actions"
+        >
+          <Ionicons name="add" size={28} color={c.bgBase} />
+        </Pressable>
+      )}
+
+      {/* Quick-action sheet */}
       <Modal
         visible={sheetOpen}
         transparent
@@ -277,9 +262,7 @@ export default function OwnerTabsLayout() {
           <View style={styles.overlay}>
             <View style={styles.overlayDim} />
             <TouchableWithoutFeedback>
-              <View
-                style={[styles.sheet, { paddingBottom: Math.max(insets.bottom, spacing.xl) }]}
-              >
+              <View style={[styles.sheet, { paddingBottom: Math.max(insets.bottom, spacing.xl) }]}>
                 <View style={styles.sheetGrab} />
                 <Text style={styles.sheetTitle}>Quick actions</Text>
 

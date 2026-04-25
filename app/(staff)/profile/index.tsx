@@ -276,53 +276,113 @@ const useStyles = createStyles((c) => ({
   },
 
   // ── Menu ──
-  menuRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: spacing.md,
-    paddingVertical: 0,
-    minHeight: 52,
-    gap: spacing.sm,
-    backgroundColor: c.bgSurface,
+  manageAllLink: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: c.gold,
+  },
+  menuCard: {
+    marginHorizontal: spacing.lg,
+    marginBottom: spacing.sm,
     borderRadius: borderRadius.xl,
+    backgroundColor: c.bgSurface,
     borderWidth: StyleSheet.hairlineWidth,
     borderColor: c.border,
-    marginHorizontal: spacing.lg,
-    marginBottom: 2,
+    overflow: 'hidden',
   },
-  menuRowPressed: { backgroundColor: c.bgElevated },
-  menuIconWrap: {
-    width: 28,
-    height: 28,
-    borderRadius: 8,
+  menuSummaryRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.md,
+    padding: spacing.md,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: c.border,
+  },
+  menuSummaryIcon: {
+    width: 44,
+    height: 44,
+    borderRadius: 12,
     backgroundColor: `${c.gold}18`,
-    borderWidth: 1,
+    borderWidth: StyleSheet.hairlineWidth,
     borderColor: `${c.gold}30`,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  menuTextCol: { flex: 1 },
-  menuRowTitle: {
-    fontSize: 15,
+  menuSummaryText: { flex: 1 },
+  menuSummaryTitle: {
+    fontSize: 16,
+    fontWeight: '700',
+    color: c.textPrimary,
+    letterSpacing: -0.2,
+  },
+  menuSummarySubtitle: {
+    fontSize: 13,
+    fontWeight: '500',
+    color: c.textMuted,
+    marginTop: 2,
+  },
+  menuGrid: {
+    flexDirection: 'row',
+    padding: spacing.sm,
+  },
+  menuGridDivider: {
+    width: StyleSheet.hairlineWidth,
+    backgroundColor: c.border,
+    marginVertical: spacing.sm,
+  },
+  menuGridTile: {
+    flex: 1,
+    padding: spacing.md,
+    gap: 4,
+    alignItems: 'center',
+  },
+  menuGridTilePressed: { opacity: 0.8 },
+  menuGridIcon: {
+    width: 36,
+    height: 36,
+    borderRadius: 10,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 4,
+  },
+  menuGridLabel: {
+    fontSize: 14,
     fontWeight: '700',
     color: c.textPrimary,
     letterSpacing: -0.1,
   },
-  menuRowSub: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 5,
-    marginTop: 2,
-  },
-  menuStatusDot: {
-    width: 6,
-    height: 6,
-    borderRadius: 3,
-  },
-  menuRowSubText: {
-    fontSize: 13,
+  menuGridSub: {
+    fontSize: 12,
     fontWeight: '500',
     color: c.textMuted,
+  },
+  menu86Row: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.md,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.md,
+    borderTopWidth: StyleSheet.hairlineWidth,
+    borderTopColor: c.border,
+    backgroundColor: 'rgba(239,68,68,0.06)',
+  },
+  menu86RowPressed: { opacity: 0.8 },
+  menu86Badge: {
+    backgroundColor: '#EF4444',
+    borderRadius: 6,
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+  },
+  menu86BadgeText: {
+    fontSize: 12,
+    fontWeight: '800',
+    color: '#fff',
+  },
+  menu86Name: {
+    flex: 1,
+    fontSize: 15,
+    fontWeight: '600',
+    color: c.textPrimary,
   },
 
   // ── Settings shortcut ──
@@ -566,28 +626,50 @@ export default function OwnerBusinessScreen() {
         <View style={styles.sectionRow}>
           <Text style={styles.sectionTitle}>Menu</Text>
         </View>
-        <Pressable
-          style={({ pressed }) => [styles.menuRow, pressed && styles.menuRowPressed]}
-          onPress={() => router.push('/(staff)/menu-manage' as never)}
-          accessibilityRole="button"
-        >
-          <View style={styles.menuIconWrap}>
-            <Ionicons name="restaurant-outline" size={14} color={c.gold} />
+
+        {/* Summary row */}
+        <View style={styles.menuCard}>
+          {/* Action grid */}
+          <View style={styles.menuGrid}>
+            <Pressable
+              style={({ pressed }) => [styles.menuGridTile, pressed && styles.menuGridTilePressed]}
+              onPress={() => router.push('/(staff)/menu-manage' as never)}
+            >
+              <View style={[styles.menuGridIcon, { backgroundColor: c.gold }]}>
+                <Ionicons name="add" size={18} color={c.bgBase} />
+              </View>
+              <Text style={styles.menuGridLabel}>Add item</Text>
+              <Text style={styles.menuGridSub}>New dish</Text>
+            </Pressable>
+            <View style={styles.menuGridDivider} />
+            <Pressable
+              style={({ pressed }) => [styles.menuGridTile, pressed && styles.menuGridTilePressed]}
+              onPress={() => router.push('/(staff)/menu-manage' as never)}
+            >
+              <View style={[styles.menuGridIcon, { backgroundColor: c.gold }]}>
+                <Ionicons name="pencil" size={18} color={c.bgBase} />
+              </View>
+              <Text style={styles.menuGridLabel}>Edit menu</Text>
+              <Text style={styles.menuGridSub}>{menuItems.length} items</Text>
+            </Pressable>
           </View>
-          <View style={styles.menuTextCol}>
-            <Text style={styles.menuRowTitle}>Menu</Text>
-            <View style={styles.menuRowSub}>
-              <View style={[
-                styles.menuStatusDot,
-                { backgroundColor: menuItems.length > 0 ? c.success : c.warning },
-              ]} />
-              <Text style={styles.menuRowSubText}>
-                {menuItems.length} items · {Object.keys(menuByCategory).length} categories
+
+          {/* 86'd item highlight */}
+          {menuItems.filter((i) => !i.isAvailable).length > 0 && (
+            <Pressable
+              style={({ pressed }) => [styles.menu86Row, pressed && styles.menu86RowPressed]}
+              onPress={() => router.push('/(staff)/menu-manage' as never)}
+            >
+              <View style={styles.menu86Badge}>
+                <Text style={styles.menu86BadgeText}>86</Text>
+              </View>
+              <Text style={styles.menu86Name}>
+                {menuItems.find((i) => !i.isAvailable)?.name}
               </Text>
-            </View>
-          </View>
-          <Ionicons name="chevron-forward" size={16} color={c.textMuted} />
-        </Pressable>
+              <Ionicons name="chevron-forward" size={16} color={c.textMuted} />
+            </Pressable>
+          )}
+        </View>
 
         {/* ── Contact ── */}
         <View style={styles.sectionRow}>
