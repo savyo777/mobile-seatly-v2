@@ -11,7 +11,8 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { formatCurrency } from '@/lib/utils/formatCurrency';
 import type { OwnerFloorTable } from '@/lib/mock/ownerApp';
 import { TABLE_AI_SUGGESTION } from '@/lib/mock/ownerApp';
-import { ownerColors, ownerRadii } from '@/lib/theme/ownerTheme';
+import { createStyles } from '@/lib/theme';
+import { ownerColorsFromPalette, ownerRadii } from '@/lib/theme/ownerTheme';
 
 type Props = {
   visible: boolean;
@@ -35,6 +36,7 @@ export function TableDetailSheet({
   onCloseBill,
 }: Props) {
   const insets = useSafeAreaInsets();
+  const styles = useStyles();
   if (!table) return null;
 
   const bill =
@@ -96,7 +98,9 @@ export function TableDetailSheet({
   );
 }
 
-const styles = StyleSheet.create({
+const useStyles = createStyles((c) => {
+  const ownerColors = ownerColorsFromPalette(c);
+  return {
   backdrop: {
     flex: 1,
     backgroundColor: 'rgba(0,0,0,0.65)',
@@ -225,4 +229,5 @@ const styles = StyleSheet.create({
   pressed: {
     opacity: 0.9,
   },
+  };
 });

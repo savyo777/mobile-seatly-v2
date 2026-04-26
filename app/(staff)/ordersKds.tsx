@@ -21,8 +21,8 @@ import {
   type KdsTicket,
   type LiveFeedKind,
 } from '@/lib/mock/ownerApp';
-import { ownerColors, ownerRadii } from '@/lib/theme/ownerTheme';
-import { ownerSpace } from '@/lib/theme/ownerTheme';
+import { createStyles, useTheme } from '@/lib/theme';
+import { ownerColorsFromPalette, ownerRadii, ownerSpace, useOwnerColors } from '@/lib/theme/ownerTheme';
 
 const DELAYED_MINS = 12;
 
@@ -33,7 +33,10 @@ function ticketIsDelayed(t: KdsTicket): boolean {
   return false;
 }
 
-function leftAccentColor(t: KdsTicket): string {
+type OwnerColors = ReturnType<typeof ownerColorsFromPalette>;
+type Styles = ReturnType<typeof useStyles>;
+
+function leftAccentColor(t: KdsTicket, ownerColors: OwnerColors): string {
   if (ticketIsDelayed(t)) return ownerColors.danger;
   if (t.status === 'ready') return ownerColors.success;
   if (t.status === 'in_progress') return ownerColors.gold;
@@ -52,14 +55,14 @@ function statusLabelKey(t: KdsTicket, tFn: (k: string) => string): string {
   return 'owner.kdsFired';
 }
 
-function statusPillStyle(t: KdsTicket) {
+function statusPillStyle(t: KdsTicket, styles: Styles) {
   if (ticketIsDelayed(t) && t.status !== 'ready') return styles.pillDelayed;
   if (t.status === 'ready') return styles.pillReady;
   if (t.status === 'in_progress') return styles.pillProgress;
   return styles.pillFired;
 }
 
-function feedDotColor(kind: LiveFeedKind): string {
+function feedDotColor(kind: LiveFeedKind, ownerColors: OwnerColors): string {
   switch (kind) {
     case 'seated':
       return ownerColors.success;
@@ -73,12 +76,14 @@ function feedDotColor(kind: LiveFeedKind): string {
 }
 
 function KdsBackdrop({ onPress }: { onPress: () => void }) {
+  const { effective } = useTheme();
+  const styles = useStyles();
   return (
     <View style={StyleSheet.absoluteFillObject} pointerEvents="box-none">
       {Platform.OS === 'web' ? (
         <View style={[StyleSheet.absoluteFillObject, styles.modalDim]} />
       ) : (
-        <BlurView intensity={40} tint="dark" style={StyleSheet.absoluteFillObject} />
+        <BlurView intensity={40} tint={effective === 'light' ? 'light' : 'dark'} style={StyleSheet.absoluteFillObject} />
       )}
       <Pressable style={StyleSheet.absoluteFillObject} onPress={onPress} accessibilityRole="button" />
     </View>
@@ -87,6 +92,8 @@ function KdsBackdrop({ onPress }: { onPress: () => void }) {
 
 export default function OwnerOrdersKdsScreen() {
   const { t } = useTranslation();
+  const ownerColors = useOwnerColors();
+  const styles = useStyles();
   const [tickets, setTickets] = useState<KdsTicket[]>(() => [...KDS_TICKETS]);
   const [detail, setDetail] = useState<KdsTicket | null>(null);
 
@@ -167,14 +174,16 @@ export default function OwnerOrdersKdsScreen() {
   );
 
   return (
-    <OwnerScreen>
-      <SubpageHeader
-        title={t('owner.ordersKdsTitle')}
-        subtitle={t('owner.ordersKdsSubtitle')}
-        fallbackTab="reservations"
-        rightAction={headerRight}
-      />
-
+    <OwnerScreen
+      header={
+        <SubpageHeader
+          title={t('owner.ordersKdsTitle')}
+          subtitle={t('owner.ordersKdsSubtitle')}
+          fallbackTab="reservations"
+          rightAction={headerRight}
+        />
+      }
+    >
       <View style={styles.summaryRow}>
         <Text style={styles.summaryText}>{t('owner.kdsSummaryActive', { count: metrics.activeCount })}</Text>
         <Text style={styles.summarySep}>·</Text>
@@ -197,7 +206,7 @@ export default function OwnerOrdersKdsScreen() {
             <Swipeable friction={2} overshootRight={false} renderRightActions={() => renderSwipeActions(ticket)}>
               <Pressable onPress={() => setDetail(ticket)} style={({ pressed }) => [pressed && styles.cardPressed]}>
                 <View style={styles.ticketCard}>
-                  <View style={[styles.ticketAccent, { backgroundColor: leftAccentColor(ticket) }]} />
+                  <View style={[styles.ticketAccent, { backgroundColor: leftAccentColor(ticket, ownerColors) }]} />
                   <View style={styles.ticketInner}>
                     <View style={styles.ticketTop}>
                       <Text style={styles.stationLabel}>{t(stationKey(ticket.station))}</Text>
@@ -205,8 +214,8 @@ export default function OwnerOrdersKdsScreen() {
                     </View>
                     <Text style={styles.itemsText}>{ticket.items}</Text>
                     <View style={styles.ticketBottom}>
-                      <View style={[styles.statusPill, statusPillStyle(ticket)]}>
-                        <Text style={[styles.statusPillText, statusPillTextStyle(ticket)]}>
+                      <View style={[styles.statusPill, statusPillStyle(ticket, styles)]}>
+                        <Text style={[styles.statusPillText, statusPillTextStyle(ticket, styles)]}>
                           {t(statusLabelKey(ticket, t))}
                         </Text>
                       </View>
@@ -236,7 +245,7 @@ export default function OwnerOrdersKdsScreen() {
             style={styles.feedRow}
           >
             <View style={styles.feedLineCol}>
-              <View style={[styles.feedDot, { backgroundColor: feedDotColor(item.kind) }]} />
+              <View style={[styles.feedDot, { backgroundColor: feedDotColor(item.kind, ownerColors) }]} />
               {i < LIVE_FEED.length - 1 ? <View style={styles.feedLine} /> : null}
             </View>
             <View style={[styles.feedContent, i === LIVE_FEED.length - 1 && styles.feedContentLast]}>
@@ -259,8 +268,8 @@ export default function OwnerOrdersKdsScreen() {
                 <Text style={styles.modalTable}>{detail.table}</Text>
               </View>
               <Text style={styles.modalItems}>{detail.items}</Text>
-              <View style={[styles.statusPill, statusPillStyle(detail), styles.modalPill]}>
-                <Text style={[styles.statusPillText, statusPillTextStyle(detail)]}>
+              <View style={[styles.statusPill, statusPillStyle(detail, styles), styles.modalPill]}>
+                <Text style={[styles.statusPillText, statusPillTextStyle(detail, styles)]}>
                   {t(statusLabelKey(detail, t))}
                 </Text>
               </View>
@@ -306,14 +315,16 @@ export default function OwnerOrdersKdsScreen() {
   );
 }
 
-function statusPillTextStyle(ticket: KdsTicket) {
+function statusPillTextStyle(ticket: KdsTicket, styles: Styles) {
   if (ticketIsDelayed(ticket) && ticket.status !== 'ready') return styles.pillTxtDelayed;
   if (ticket.status === 'ready') return styles.pillTxtReady;
   if (ticket.status === 'in_progress') return styles.pillTxtProgress;
   return styles.pillTxtFired;
 }
 
-const styles = StyleSheet.create({
+const useStyles = createStyles((c) => {
+  const ownerColors = ownerColorsFromPalette(c);
+  return {
   summaryRow: {
     flexDirection: 'row',
     flexWrap: 'wrap',
@@ -626,4 +637,5 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     color: ownerColors.textMuted,
   },
+  };
 });

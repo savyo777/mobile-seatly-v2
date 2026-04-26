@@ -36,8 +36,8 @@ import {
   sortGuests,
 } from '@/lib/crm/guestIntel';
 import { formatCurrency } from '@/lib/utils/formatCurrency';
-import { ownerColors, ownerRadii } from '@/lib/theme/ownerTheme';
-import { ownerSpace } from '@/lib/theme/ownerTheme';
+import { createStyles, useTheme } from '@/lib/theme';
+import { ownerColorsFromPalette, ownerRadii, ownerSpace, useOwnerColors } from '@/lib/theme/ownerTheme';
 
 if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental) {
   UIManager.setLayoutAnimationEnabledExperimental(true);
@@ -57,6 +57,8 @@ const FILTERS: CrmFilterId[] = [
 ];
 
 const SORTS: CrmSortId[] = ['highest_spend', 'most_visits', 'churn_risk', 'upcoming_res'];
+
+type OwnerColors = ReturnType<typeof ownerColorsFromPalette>;
 
 function filterKey(f: CrmFilterId): string {
   const m: Record<CrmFilterId, string> = {
@@ -94,6 +96,7 @@ function HighlightedText({
   query: string;
   style?: object;
 }) {
+  const styles = useStyles();
   const q = query.trim();
   if (!q) {
     return <Text style={style}>{text}</Text>;
@@ -115,12 +118,14 @@ function HighlightedText({
 }
 
 function CrmBackdrop({ onPress }: { onPress: () => void }) {
+  const { effective } = useTheme();
+  const styles = useStyles();
   return (
     <View style={StyleSheet.absoluteFillObject} pointerEvents="box-none">
       {Platform.OS === 'web' ? (
         <View style={[StyleSheet.absoluteFillObject, styles.modalDim]} />
       ) : (
-        <BlurView intensity={40} tint="dark" style={StyleSheet.absoluteFillObject} />
+        <BlurView intensity={40} tint={effective === 'light' ? 'light' : 'dark'} style={StyleSheet.absoluteFillObject} />
       )}
       <Pressable style={StyleSheet.absoluteFillObject} onPress={onPress} accessibilityRole="button" />
     </View>
@@ -149,6 +154,8 @@ export default function OwnerCrmScreen() {
   const { t } = useTranslation();
   const router = useRouter();
   const insets = useSafeAreaInsets();
+  const ownerColors = useOwnerColors();
+  const styles = useStyles();
   const [guestOverrides, setGuestOverrides] = useState<Record<string, Partial<CrmGuest>>>({});
   const [singleFilter, setSingleFilter] = useState<CrmFilterId>('all');
   const [multiMode, setMultiMode] = useState(false);
@@ -332,7 +339,7 @@ export default function OwnerCrmScreen() {
                   isNew && !g.isVIP && styles.cardNew,
                 ]}
               >
-                <View style={[styles.cardAccent, { backgroundColor: accentForGuest(g) }]} />
+                <View style={[styles.cardAccent, { backgroundColor: accentForGuest(g, ownerColors) }]} />
                 <View style={styles.cardBody}>
                   <View style={styles.rowTop}>
                     <HighlightedText text={g.name} query={query} style={styles.guestName} />
@@ -754,7 +761,7 @@ export default function OwnerCrmScreen() {
   );
 }
 
-function accentForGuest(g: CrmGuest): string {
+function accentForGuest(g: CrmGuest, ownerColors: OwnerColors): string {
   if (g.isVIP) return ownerColors.gold;
   if (g.churnRisk > 40) return ownerColors.danger;
   if (g.totalVisits <= 2) return ownerColors.textMuted;
@@ -776,7 +783,9 @@ function secondaryTagLabel(t: (k: string) => string, tag: NonNullable<ReturnType
   return t('owner.crmTagHighValue');
 }
 
-const styles = StyleSheet.create({
+const useStyles = createStyles((c) => {
+  const ownerColors = ownerColorsFromPalette(c);
+  return {
   rootSafe: {
     flex: 1,
     backgroundColor: '#000',
@@ -1134,4 +1143,5 @@ const styles = StyleSheet.create({
   aiPromptText: { flex: 1, fontSize: 15, fontWeight: '600', color: ownerColors.text, marginRight: ownerSpace.sm },
   aiClose: { marginTop: ownerSpace.sm, alignSelf: 'center' },
   aiCloseText: { fontSize: 15, fontWeight: '600', color: ownerColors.textMuted },
+  };
 });

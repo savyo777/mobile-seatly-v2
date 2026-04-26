@@ -684,31 +684,31 @@ export default function OwnerHomeScreen() {
       sub: `${guestProfiles} profiles · VIPs & notes`,
       route: '/(staff)/guests',
     },
-    { icon: 'restaurant-outline', label: 'Menu', sub: 'Dishes & prices', route: '/(staff)/menu' },
+    { icon: 'restaurant-outline', label: 'Menu', sub: 'Dishes & prices', route: '/(staff)/menu?returnTo=home' },
   ];
 
   return (
     <View style={styles.root}>
+      {/* ── Sticky brand bar — same treatment as diner Discover ── */}
+      <View style={[styles.brandBar, { paddingTop: insets.top + spacing.xs }]}>
+        <Text style={styles.brandLogo}>{t('common.appName')}</Text>
+        <Pressable
+          onPress={() => router.push('/(staff)/notifications' as never)}
+          hitSlop={8}
+          style={({ pressed }) => [styles.brandBellBtn, pressed && styles.brandBellPressed]}
+          accessibilityRole="button"
+          accessibilityLabel="Notifications"
+        >
+          <Ionicons name="notifications-outline" size={22} color={c.textPrimary} />
+          {criticalCount > 0 ? <View style={styles.brandBellDot} /> : null}
+        </Pressable>
+      </View>
+
       <ScrollView
         showsVerticalScrollIndicator={false}
         bounces={true}
-        contentContainerStyle={{ paddingTop: insets.top + spacing.xs, paddingBottom: spacing.lg }}
+        contentContainerStyle={{ paddingBottom: spacing.lg }}
       >
-        {/* ── Brand bar — same treatment as diner Discover ── */}
-        <View style={styles.brandBar}>
-          <Text style={styles.brandLogo}>{t('common.appName')}</Text>
-          <Pressable
-            onPress={() => router.push('/(staff)/notifications' as never)}
-            hitSlop={8}
-            style={({ pressed }) => [styles.brandBellBtn, pressed && styles.brandBellPressed]}
-            accessibilityRole="button"
-            accessibilityLabel="Notifications"
-          >
-            <Ionicons name="notifications-outline" size={22} color={c.textPrimary} />
-            {criticalCount > 0 ? <View style={styles.brandBellDot} /> : null}
-          </Pressable>
-        </View>
-
         {/* ── Greeting block ── */}
         <View style={styles.topBar}>
           <View style={styles.tonightKicker}>

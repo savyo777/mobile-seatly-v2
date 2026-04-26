@@ -50,6 +50,14 @@ function daysSince(iso: string): string {
 const useStyles = createStyles((c) => ({
   root: { flex: 1, backgroundColor: c.bgBase },
 
+  stickyHeader: {
+    paddingHorizontal: spacing.lg,
+    paddingBottom: spacing.xs,
+    backgroundColor: c.bgBase,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: c.border,
+  },
+
   searchWrap: {
     marginBottom: spacing.md,
     flexDirection: 'row',
@@ -215,21 +223,22 @@ export default function OwnerGuestsScreen() {
 
   return (
     <View style={styles.root}>
-      <ScrollView
-        showsVerticalScrollIndicator={false}
-        contentContainerStyle={{
-          paddingTop: insets.top + spacing.sm,
-          paddingBottom: spacing.lg,
-          paddingHorizontal: spacing.lg,
-        }}
-      >
+      <View style={[styles.stickyHeader, { paddingTop: insets.top + spacing.sm }]}>
         <SubpageHeader
           title="Guests"
           subtitle={`${OWNER_GUESTS.length} total`}
           fallbackTab="home"
           accentBack
         />
-
+      </View>
+      <ScrollView
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={{
+          paddingTop: spacing.sm,
+          paddingBottom: spacing.lg,
+          paddingHorizontal: spacing.lg,
+        }}
+      >
         <View style={styles.searchWrap}>
           <Ionicons name="search-outline" size={18} color={c.textMuted} />
           <TextInput

@@ -1,16 +1,13 @@
 import React from 'react';
 import { Stack } from 'expo-router';
 import { useColors } from '@/lib/theme';
+import { createStackTransitionOptions } from '@/lib/navigation/transitions';
 
 export default function DiscoverStackLayout() {
   const c = useColors();
   return (
     <Stack
-      screenOptions={{
-        headerShown: false,
-        contentStyle: { backgroundColor: c.bgBase },
-        animation: 'slide_from_right',
-      }}
+      screenOptions={createStackTransitionOptions(c.bgBase)}
     >
       <Stack.Screen name="index" />
       <Stack.Screen name="post-review/index" />

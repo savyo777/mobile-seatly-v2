@@ -1,5 +1,6 @@
 import type { Palette } from '@/lib/theme/palettes';
 import { darkColors, lightColors } from '@/lib/theme/palettes';
+import { useColors } from '@/lib/theme/useColors';
 
 /**
  * Owner mobile UI tokens — derived from the same `Palette` as the customer app so
@@ -43,6 +44,10 @@ export function ownerColorsFromPalette(p: Palette) {
     tableOccupied: p.tableOccupied,
     tableCleaning: p.tableCleaning,
   } as const;
+}
+
+export function useOwnerColors() {
+  return ownerColorsFromPalette(useColors());
 }
 
 /** Static alias for legacy imports (dark palette only). Prefer `ownerColorsFromPalette(useColors())` in new code. */

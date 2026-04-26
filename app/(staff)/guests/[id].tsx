@@ -39,6 +39,16 @@ const useStyles = createStyles((c) => ({
     paddingHorizontal: spacing.lg,
     paddingBottom: spacing.sm,
   },
+  stickyTopBar: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: spacing.lg,
+    paddingBottom: spacing.sm,
+    backgroundColor: c.bgBase,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: c.border,
+  },
   iconBtn: {
     width: 40,
     height: 40,
@@ -454,28 +464,27 @@ export default function GuestDetailScreen() {
 
   return (
     <View style={styles.root}>
+      <View style={[styles.stickyTopBar, { paddingTop: insets.top + spacing.sm }]}>
+        <Pressable style={styles.iconBtn} onPress={() => router.back()} accessibilityLabel="Back">
+          <Ionicons name="chevron-back" size={20} color={c.textPrimary} />
+        </Pressable>
+        <Pressable
+          style={styles.iconBtn}
+          onPress={() =>
+            Alert.alert('Edit', `Edit ${g.fullName}?`, [{ text: 'Later', style: 'cancel' }])
+          }
+          accessibilityLabel="Edit guest"
+        >
+          <Ionicons name="create-outline" size={18} color={c.textPrimary} />
+        </Pressable>
+      </View>
       <ScrollView
         showsVerticalScrollIndicator={false}
         contentContainerStyle={{
-          paddingTop: insets.top + spacing.sm,
+          paddingTop: spacing.sm,
           paddingBottom: spacing.lg,
         }}
       >
-        <View style={styles.topBar}>
-          <Pressable style={styles.iconBtn} onPress={() => router.back()} accessibilityLabel="Back">
-            <Ionicons name="chevron-back" size={20} color={c.textPrimary} />
-          </Pressable>
-          <Pressable
-            style={styles.iconBtn}
-            onPress={() =>
-              Alert.alert('Edit', `Edit ${g.fullName}?`, [{ text: 'Later', style: 'cancel' }])
-            }
-            accessibilityLabel="Edit guest"
-          >
-            <Ionicons name="create-outline" size={18} color={c.textPrimary} />
-          </Pressable>
-        </View>
-
         {g.isBlocked ? (
           <View style={styles.blockedBanner}>
             <Ionicons name="alert-circle-outline" size={18} color={c.danger} />

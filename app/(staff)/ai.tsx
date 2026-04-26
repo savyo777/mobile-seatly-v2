@@ -13,18 +13,19 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import Animated, { FadeIn } from 'react-native-reanimated';
 import { GlassCard } from '@/components/owner/GlassCard';
 import { SubpageHeader } from '@/components/owner/SubpageHeader';
 import { AI_ALERTS, AI_OPPORTUNITIES, AI_SUGGESTIONS } from '@/lib/mock/ownerApp';
-import { appPalette } from '@/lib/theme/appPalette';
-import { ownerColors, ownerRadii } from '@/lib/theme/ownerTheme';
+import { createStyles } from '@/lib/theme';
+import { ownerColorsFromPalette, ownerRadii, useOwnerColors } from '@/lib/theme/ownerTheme';
 
 export default function OwnerAiScreen() {
   const { t } = useTranslation();
   const insets = useSafeAreaInsets();
   const [input, setInput] = useState('');
   const [micActive, setMicActive] = useState(false);
+  const ownerColors = useOwnerColors();
+  const styles = useStyles();
 
   const handleMicPress = useCallback(() => {
     setMicActive((prev) => {
@@ -49,6 +50,11 @@ export default function OwnerAiScreen() {
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
       keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 20}
     >
+      {/* ── Sticky header ── */}
+      <View style={styles.stickyHeader}>
+        <SubpageHeader title={t('owner.aiTitle')} subtitle={t('owner.aiSub')} fallbackTab="more" />
+      </View>
+
       {/* ── Scrollable content ── */}
       <ScrollView
         style={styles.scroll}
@@ -56,9 +62,6 @@ export default function OwnerAiScreen() {
         showsVerticalScrollIndicator={false}
         keyboardShouldPersistTaps="handled"
       >
-        <Animated.View entering={FadeIn.duration(400)}>
-          <SubpageHeader title={t('owner.aiTitle')} subtitle={t('owner.aiSub')} fallbackTab="more" />
-        </Animated.View>
 
         <Text style={styles.sectionLabel}>{t('owner.aiOpportunities')}</Text>
         {AI_OPPORTUNITIES.map((line, i) => (
@@ -131,7 +134,9 @@ export default function OwnerAiScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const useStyles = createStyles((c) => {
+  const ownerColors = ownerColorsFromPalette(c);
+  return {
   root: {
     flex: 1,
     backgroundColor: ownerColors.bg,
@@ -143,6 +148,14 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     paddingTop: 12,
     paddingBottom: 16,
+  },
+  stickyHeader: {
+    paddingHorizontal: 20,
+    paddingTop: 8,
+    paddingBottom: 4,
+    backgroundColor: ownerColors.bg,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: ownerColors.border,
   },
 
   sectionLabel: {
@@ -240,6 +253,7 @@ const styles = StyleSheet.create({
   sendText: {
     fontSize: 15,
     fontWeight: '800',
-    color: appPalette.bgBase,
+    color: ownerColors.bg,
   },
+  };
 });

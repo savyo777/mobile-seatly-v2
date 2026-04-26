@@ -22,20 +22,22 @@ import {
   type WaitlistEntry,
   type WaitlistEntryStatus,
 } from '@/lib/mock/ownerApp';
-import { ownerColors, ownerRadii } from '@/lib/theme/ownerTheme';
-import { ownerSpace } from '@/lib/theme/ownerTheme';
+import { createStyles, useTheme } from '@/lib/theme';
+import { ownerColorsFromPalette, ownerRadii, ownerSpace, useOwnerColors } from '@/lib/theme/ownerTheme';
 
 type DetailTarget =
   | { kind: 'walkin'; item: WalkInQueueItem }
   | { kind: 'waitlist'; item: WaitlistEntry };
 
 function WaitlistBackdrop({ onPress }: { onPress: () => void }) {
+  const { effective } = useTheme();
+  const styles = useStyles();
   return (
     <View style={StyleSheet.absoluteFillObject} pointerEvents="box-none">
       {Platform.OS === 'web' ? (
         <View style={[StyleSheet.absoluteFillObject, styles.modalDim]} />
       ) : (
-        <BlurView intensity={42} tint="dark" style={StyleSheet.absoluteFillObject} />
+        <BlurView intensity={42} tint={effective === 'light' ? 'light' : 'dark'} style={StyleSheet.absoluteFillObject} />
       )}
       <Pressable style={StyleSheet.absoluteFillObject} onPress={onPress} accessibilityRole="button" />
     </View>
@@ -48,13 +50,13 @@ function statusLabelKey(s: WaitlistEntryStatus): string {
   return 'owner.waitlistStatusWaiting';
 }
 
-function statusBadgeStyle(s: WaitlistEntryStatus) {
+function statusBadgeStyle(s: WaitlistEntryStatus, styles: ReturnType<typeof useStyles>) {
   if (s === 'late') return styles.badgeLate;
   if (s === 'arriving') return styles.badgeArriving;
   return styles.badgeWaiting;
 }
 
-function statusTextStyle(s: WaitlistEntryStatus) {
+function statusTextStyle(s: WaitlistEntryStatus, styles: ReturnType<typeof useStyles>) {
   if (s === 'late') return styles.statusTxtLate;
   if (s === 'arriving') return styles.statusTxtArriving;
   return styles.statusTxtWaiting;
@@ -62,6 +64,8 @@ function statusTextStyle(s: WaitlistEntryStatus) {
 
 export default function OwnerWaitlistScreen() {
   const { t } = useTranslation();
+  const ownerColors = useOwnerColors();
+  const styles = useStyles();
   const [walkins, setWalkins] = useState<WalkInQueueItem[]>(() => [...WALKIN_QUEUE]);
   const [waitlist, setWaitlist] = useState<WaitlistEntry[]>(() => [...WAITLIST_ENTRIES]);
   const [detail, setDetail] = useState<DetailTarget | null>(null);
@@ -142,14 +146,16 @@ export default function OwnerWaitlistScreen() {
   );
 
   return (
-    <OwnerScreen>
-      <SubpageHeader
-        title={t('owner.waitlistScreenTitle')}
-        subtitle={t('owner.waitlistScreenSubtitle')}
-        fallbackTab="reservations"
-        rightAction={headerRight}
-      />
-
+    <OwnerScreen
+      header={
+        <SubpageHeader
+          title={t('owner.waitlistScreenTitle')}
+          subtitle={t('owner.waitlistScreenSubtitle')}
+          fallbackTab="reservations"
+          rightAction={headerRight}
+        />
+      }
+    >
       <View style={styles.summaryRow}>
         <Text style={styles.summaryText}>{t('owner.waitlistSummaryWaiting', { count: totalWaiting })}</Text>
         <Text style={styles.summarySep}>·</Text>
@@ -208,8 +214,8 @@ export default function OwnerWaitlistScreen() {
               <View style={styles.waitBody}>
                 <View style={styles.waitTop}>
                   <Text style={styles.waitName}>{w.name}</Text>
-                    <View style={[styles.statusPill, statusBadgeStyle(w.status)]}>
-                    <Text style={[styles.statusPillText, statusTextStyle(w.status)]}>
+                    <View style={[styles.statusPill, statusBadgeStyle(w.status, styles)]}>
+                    <Text style={[styles.statusPillText, statusTextStyle(w.status, styles)]}>
                       {t(statusLabelKey(w.status))}
                     </Text>
                   </View>
@@ -258,8 +264,8 @@ export default function OwnerWaitlistScreen() {
                 <Text style={styles.modalMeta}>
                   {t('owner.waitParty', { n: detail.item.party })} · {t('owner.waitQuoted', { time: detail.item.quoted })}
                 </Text>
-                <View style={[styles.modalBadge, statusBadgeStyle(detail.item.status)]}>
-                  <Text style={[styles.statusPillText, statusTextStyle(detail.item.status)]}>
+                <View style={[styles.modalBadge, statusBadgeStyle(detail.item.status, styles)]}>
+                  <Text style={[styles.statusPillText, statusTextStyle(detail.item.status, styles)]}>
                     {t(statusLabelKey(detail.item.status))}
                   </Text>
                 </View>
@@ -297,7 +303,9 @@ export default function OwnerWaitlistScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const useStyles = createStyles((c) => {
+  const ownerColors = ownerColorsFromPalette(c);
+  return {
   summaryRow: {
     flexDirection: 'row',
     flexWrap: 'wrap',
@@ -606,4 +614,5 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     color: ownerColors.textMuted,
   },
+  };
 });

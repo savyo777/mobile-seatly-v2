@@ -4,7 +4,7 @@ import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { OwnerScreen } from '@/components/owner/OwnerScreen';
 import { SubpageHeader } from '@/components/owner/SubpageHeader';
-import { useColors, createStyles, spacing, borderRadius } from '@/lib/theme';
+import { useColors, useTheme, createStyles, spacing, borderRadius, type ThemeMode } from '@/lib/theme';
 
 // ── Types ──────────────────────────────────────────────────────────────────
 
@@ -13,6 +13,18 @@ type RowItem =
   | { kind: 'toggle'; label: string; icon: string; value: boolean; onChange: (v: boolean) => void };
 
 type Section = { title: string; rows: RowItem[] };
+
+const THEME_OPTIONS: { mode: ThemeMode; label: string; icon: string }[] = [
+  { mode: 'light', label: 'Light', icon: 'sunny-outline' },
+  { mode: 'dark', label: 'Dark', icon: 'moon-outline' },
+  { mode: 'system', label: 'System', icon: 'phone-portrait-outline' },
+];
+
+function themeLabel(mode: ThemeMode): string {
+  if (mode === 'light') return 'Light';
+  if (mode === 'dark') return 'Dark';
+  return 'System';
+}
 
 // ── Styles ─────────────────────────────────────────────────────────────────
 
@@ -69,6 +81,35 @@ const useStyles = createStyles((c) => ({
     color: c.textMuted,
     marginRight: 4,
   },
+  appearancePanel: {
+    marginTop: spacing.sm,
+    borderRadius: borderRadius.xl,
+    backgroundColor: c.bgSurface,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: c.border,
+    overflow: 'hidden',
+  },
+  appearanceOption: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    minHeight: 52,
+    paddingHorizontal: spacing.md,
+    paddingVertical: 12,
+    gap: spacing.sm,
+  },
+  appearanceOptionActive: {
+    backgroundColor: c.bgElevated,
+  },
+  appearanceOptionDivider: {
+    borderTopWidth: StyleSheet.hairlineWidth,
+    borderTopColor: c.border,
+  },
+  appearanceOptionText: {
+    flex: 1,
+    fontSize: 15,
+    fontWeight: '700',
+    color: c.textPrimary,
+  },
 }));
 
 // ── Row components ─────────────────────────────────────────────────────────
@@ -120,9 +161,44 @@ function ToggleRow({ item, divider }: { item: Extract<RowItem, { kind: 'toggle' 
   );
 }
 
+function AppearancePicker() {
+  const c = useColors();
+  const styles = useStyles();
+  const { mode, setMode } = useTheme();
+
+  return (
+    <View style={styles.appearancePanel}>
+      {THEME_OPTIONS.map((option, index) => {
+        const active = mode === option.mode;
+        return (
+          <Pressable
+            key={option.mode}
+            onPress={() => setMode(option.mode)}
+            style={({ pressed }) => [
+              styles.appearanceOption,
+              index > 0 && styles.appearanceOptionDivider,
+              active && styles.appearanceOptionActive,
+              pressed && styles.rowPressed,
+            ]}
+            accessibilityRole="button"
+            accessibilityLabel={`Use ${option.label} appearance`}
+          >
+            <View style={styles.iconWrap}>
+              <Ionicons name={option.icon as any} size={16} color={active ? c.gold : c.textSecondary} />
+            </View>
+            <Text style={styles.appearanceOptionText}>{option.label}</Text>
+            {active ? <Ionicons name="checkmark-circle" size={20} color={c.gold} /> : null}
+          </Pressable>
+        );
+      })}
+    </View>
+  );
+}
+
 function SettingsSection({ section }: { section: Section }) {
   const styles = useStyles();
   const router = useRouter();
+  const [appearanceOpen, setAppearanceOpen] = React.useState(false);
 
   const handleNav = (item: Extract<RowItem, { kind: 'nav' }>) => {
     if (item.label === 'Log out') {
@@ -130,6 +206,8 @@ function SettingsSection({ section }: { section: Section }) {
         { text: 'Cancel', style: 'cancel' },
         { text: 'Log out', style: 'destructive', onPress: () => {} },
       ]);
+    } else if (item.label === 'Appearance') {
+      setAppearanceOpen((open) => !open);
     } else if (item.route) {
       router.push(item.route as never);
     } else {
@@ -145,7 +223,10 @@ function SettingsSection({ section }: { section: Section }) {
           item.kind === 'toggle' ? (
             <ToggleRow key={item.label} item={item} divider={i > 0} />
           ) : (
-            <NavRow key={item.label} item={item} divider={i > 0} onPress={() => handleNav(item)} />
+            <React.Fragment key={item.label}>
+              <NavRow item={item} divider={i > 0} onPress={() => handleNav(item)} />
+              {item.label === 'Appearance' && appearanceOpen ? <AppearancePicker /> : null}
+            </React.Fragment>
           ),
         )}
       </View>
@@ -158,6 +239,7 @@ function SettingsSection({ section }: { section: Section }) {
 export default function OwnerSettingsScreen() {
   const styles = useStyles();
   const router = useRouter();
+  const { mode } = useTheme();
 
   const [pushOn, setPushOn] = React.useState(true);
   const [soundOn, setSoundOn] = React.useState(true);
@@ -208,7 +290,7 @@ export default function OwnerSettingsScreen() {
     {
       title: 'App & Display',
       rows: [
-        { kind: 'nav', label: 'Appearance', value: 'Dark', icon: 'contrast-outline' },
+        { kind: 'nav', label: 'Appearance', value: themeLabel(mode), icon: 'contrast-outline' },
         { kind: 'nav', label: 'Language', value: 'English', icon: 'language-outline' },
       ],
     },
@@ -231,14 +313,16 @@ export default function OwnerSettingsScreen() {
   ];
 
   return (
-    <OwnerScreen>
-      <SubpageHeader
-        title="Settings"
-        fallbackTab="more"
-        accentBack
-        onBack={() => router.replace('/(staff)/profile' as never)}
-      />
-
+    <OwnerScreen
+      header={
+        <SubpageHeader
+          title="Settings"
+          fallbackTab="more"
+          accentBack
+          onBack={() => router.replace('/(staff)/profile' as never)}
+        />
+      }
+    >
       {sections.map((s) => (
         <SettingsSection key={s.title} section={s} />
       ))}

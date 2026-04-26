@@ -6,7 +6,8 @@ import { OwnerScreen } from '@/components/owner/OwnerScreen';
 import { GlassCard } from '@/components/owner/GlassCard';
 import { SubpageHeader } from '@/components/owner/SubpageHeader';
 import { OWNER_EVENTS } from '@/lib/mock/ownerApp';
-import { ownerColors, ownerRadii } from '@/lib/theme/ownerTheme';
+import { createStyles } from '@/lib/theme';
+import { ownerColorsFromPalette, ownerRadii } from '@/lib/theme/ownerTheme';
 
 function statusKey(s: (typeof OWNER_EVENTS)[0]['status']) {
   if (s === 'live') return 'owner.eventStatusLive';
@@ -16,15 +17,18 @@ function statusKey(s: (typeof OWNER_EVENTS)[0]['status']) {
 
 export default function OwnerEventsScreen() {
   const { t } = useTranslation();
+  const styles = useStyles();
 
   return (
-    <OwnerScreen>
-      <SubpageHeader
-        title={t('owner.eventsTitle')}
-        subtitle={t('owner.eventsSubtitle')}
-        fallbackTab="more"
-      />
-
+    <OwnerScreen
+      header={
+        <SubpageHeader
+          title={t('owner.eventsTitle')}
+          subtitle={t('owner.eventsSubtitle')}
+          fallbackTab="more"
+        />
+      }
+    >
       {OWNER_EVENTS.map((ev, i) => (
         <Animated.View key={ev.id} entering={FadeInDown.delay(i * 40)}>
           <GlassCard style={styles.card}>
@@ -44,7 +48,9 @@ export default function OwnerEventsScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const useStyles = createStyles((c) => {
+  const ownerColors = ownerColorsFromPalette(c);
+  return {
   card: {
     padding: 16,
     marginBottom: 10,
@@ -86,4 +92,5 @@ const styles = StyleSheet.create({
     color: ownerColors.textMuted,
     marginTop: 6,
   },
+  };
 });

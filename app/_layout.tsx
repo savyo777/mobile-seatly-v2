@@ -7,6 +7,7 @@ import '@/lib/i18n';
 import { AuthProvider } from '@/lib/auth/AuthContext';
 import { ThemeProvider, useColors } from '@/lib/theme';
 import { MenuProvider } from '@/lib/context/MenuContext';
+import { createStackTransitionOptions } from '@/lib/navigation/transitions';
 
 function ThemedRootShell() {
   const c = useColors();
@@ -14,11 +15,7 @@ function ThemedRootShell() {
     <>
       <StatusBar style="auto" backgroundColor={c.bgBase} />
       <Stack
-        screenOptions={{
-          headerShown: false,
-          contentStyle: { backgroundColor: c.bgBase },
-          animation: 'slide_from_right',
-        }}
+        screenOptions={createStackTransitionOptions(c.bgBase)}
       >
         <Stack.Screen name="index" />
         <Stack.Screen name="onboarding" options={{ animation: 'fade' }} />

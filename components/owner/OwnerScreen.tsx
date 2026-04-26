@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, ScrollView, ScrollViewProps } from 'react-native';
+import { View, ScrollView, ScrollViewProps, StyleSheet } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { createStyles, spacing } from '@/lib/theme';
 
@@ -10,15 +10,18 @@ type Props = {
   children: React.ReactNode;
   scrollable?: boolean;
   contentContainerStyle?: ScrollViewProps['contentContainerStyle'];
+  /** Sticky element rendered above the scroll content (e.g. SubpageHeader). */
+  header?: React.ReactNode;
 };
 
-export function OwnerScreen({ children, scrollable = true, contentContainerStyle }: Props) {
+export function OwnerScreen({ children, scrollable = true, contentContainerStyle, header }: Props) {
   const styles = useStyles();
   const contentBottomPadding = TAB_BAR_SCROLL_PADDING;
 
   if (scrollable) {
     return (
       <SafeAreaView style={styles.safe} edges={['top', 'left', 'right']}>
+        {header ? <View style={styles.stickyHeader}>{header}</View> : null}
         <ScrollView
           showsVerticalScrollIndicator={false}
           contentContainerStyle={[
@@ -35,6 +38,7 @@ export function OwnerScreen({ children, scrollable = true, contentContainerStyle
 
   return (
     <SafeAreaView style={styles.safe} edges={['top', 'left', 'right']}>
+      {header ? <View style={styles.stickyHeader}>{header}</View> : null}
       <View
         style={[
           styles.flexFill,
@@ -58,5 +62,13 @@ const useStyles = createStyles((c) => ({
   scrollContent: {
     paddingHorizontal: spacing.lg,
     paddingTop: spacing.sm,
+  },
+  stickyHeader: {
+    paddingHorizontal: spacing.lg,
+    paddingTop: spacing.sm,
+    paddingBottom: spacing.xs,
+    backgroundColor: c.bgBase,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: c.border,
   },
 }));

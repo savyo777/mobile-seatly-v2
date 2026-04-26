@@ -6,6 +6,7 @@ import { useTranslation } from 'react-i18next';
 import * as Haptics from 'expo-haptics';
 import { AiChatFab } from '@/components/ai/AiChatFab';
 import { useColors, createStyles } from '@/lib/theme';
+import { tabTransitionOptions } from '@/lib/navigation/transitions';
 
 const HIDE_FAB_ROUTES = ['/ai-chat', '/post-review', '/camera', '/booking'];
 
@@ -59,6 +60,7 @@ export default function CustomerTabsLayout() {
     <View style={styles.root}>
     <Tabs
       screenOptions={{
+        ...tabTransitionOptions,
         headerShown: false,
         sceneStyle: { backgroundColor: c.bgBase },
         tabBarActiveTintColor: c.gold,

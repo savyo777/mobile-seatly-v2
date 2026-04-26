@@ -16,19 +16,32 @@ import {
 } from 'react-native';
 import { BlurView } from 'expo-blur';
 import { useTranslation } from 'react-i18next';
+import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
-import Animated, { FadeIn, FadeInDown } from 'react-native-reanimated';
+import Animated, {
+  FadeIn,
+  FadeInDown,
+  FadeOut,
+  FadeOutDown,
+  LinearTransition,
+  SlideInDown,
+  SlideOutDown,
+  ZoomIn,
+  ZoomOut,
+} from 'react-native-reanimated';
 import * as ImagePicker from 'expo-image-picker';
 import { OwnerScreen } from '@/components/owner/OwnerScreen';
 import { mockMenuItems, menuCategories, type MenuItem } from '@/lib/mock/menuItems';
 import { formatCurrency } from '@/lib/utils/formatCurrency';
-import { ownerColors, ownerRadii } from '@/lib/theme/ownerTheme';
-import { ownerSpace } from '@/lib/theme/ownerTheme';
+import { createStyles, useTheme } from '@/lib/theme';
+import { ownerColorsFromPalette, ownerRadii, ownerSpace, useOwnerColors } from '@/lib/theme/ownerTheme';
 
 const OWNER_MENU_RESTAURANT_ID = 'r1';
 
 const PLACEHOLDER_PHOTO =
   'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=600&q=80';
+
+const MODAL_EXIT_MS = 190;
 
 function filterItems(
   items: MenuItem[],
@@ -55,12 +68,14 @@ function chunk<T>(arr: T[], size: number): T[][] {
 
 /** Dark scrim + optional native blur; tap-through to close parent modal */
 function MenuBackdrop({ onPress }: { onPress: () => void }) {
+  const { effective } = useTheme();
+  const styles = useStyles();
   return (
     <View style={StyleSheet.absoluteFillObject} pointerEvents="box-none">
       {Platform.OS === 'web' ? (
         <View style={[StyleSheet.absoluteFillObject, styles.backdropFallback]} />
       ) : (
-        <BlurView intensity={42} tint="dark" style={StyleSheet.absoluteFillObject} />
+        <BlurView intensity={42} tint={effective === 'light' ? 'light' : 'dark'} style={StyleSheet.absoluteFillObject} />
       )}
       <Pressable style={StyleSheet.absoluteFillObject} onPress={onPress} accessibilityRole="button" accessibilityLabel="Close" />
     </View>
@@ -69,6 +84,10 @@ function MenuBackdrop({ onPress }: { onPress: () => void }) {
 
 export default function OwnerMenuScreen() {
   const { t } = useTranslation();
+  const router = useRouter();
+  const { returnTo } = useLocalSearchParams<{ returnTo?: string }>();
+  const ownerColors = useOwnerColors();
+  const styles = useStyles();
   const { width } = useWindowDimensions();
   const gridGap = ownerSpace.xs;
   const cellW = (width - ownerSpace.md * 2 - gridGap) / 2;
@@ -78,11 +97,13 @@ export default function OwnerMenuScreen() {
   );
   const [query, setQuery] = useState('');
   const [category, setCategory] = useState<string | 'all'>('all');
-  const [expandedId, setExpandedId] = useState<string | null>(null);
-  const [viewMode, setViewMode] = useState<'list' | 'grid'>('list');
   const [addOpen, setAddOpen] = useState(false);
+  const [addClosing, setAddClosing] = useState(false);
   const [actionsMenuOpen, setActionsMenuOpen] = useState(false);
+  const [actionsMenuClosing, setActionsMenuClosing] = useState(false);
   const [gridDetail, setGridDetail] = useState<MenuItem | null>(null);
+  const [gridDetailClosing, setGridDetailClosing] = useState(false);
+  const [leaving, setLeaving] = useState(false);
 
   const [formName, setFormName] = useState('');
   const [formPrice, setFormPrice] = useState('');
@@ -109,6 +130,31 @@ export default function OwnerMenuScreen() {
     setFormCategory('Mains');
     setFormAvailable(true);
     setFormPhotoUri(null);
+  }, []);
+
+  const closeActionsMenu = useCallback(() => {
+    setActionsMenuClosing(true);
+    setTimeout(() => {
+      setActionsMenuOpen(false);
+      setActionsMenuClosing(false);
+    }, MODAL_EXIT_MS);
+  }, []);
+
+  const closeAddItem = useCallback((shouldReset = false) => {
+    setAddClosing(true);
+    setTimeout(() => {
+      setAddOpen(false);
+      setAddClosing(false);
+      if (shouldReset) resetForm();
+    }, MODAL_EXIT_MS);
+  }, [resetForm]);
+
+  const closeGridDetail = useCallback(() => {
+    setGridDetailClosing(true);
+    setTimeout(() => {
+      setGridDetail(null);
+      setGridDetailClosing(false);
+    }, MODAL_EXIT_MS);
   }, []);
 
   const pickPhoto = useCallback(async () => {
@@ -148,43 +194,74 @@ export default function OwnerMenuScreen() {
       preparationTimeMinutes: 15,
     };
     setItems((prev) => [...prev, next]);
-    setAddOpen(false);
-    resetForm();
-  }, [formName, formPrice, formDesc, formCategory, formAvailable, formPhotoUri, resetForm, t]);
-
-  const toggleExpand = (id: string) => {
-    setExpandedId((prev) => (prev === id ? null : id));
-  };
+    closeAddItem(true);
+  }, [formName, formPrice, formDesc, formCategory, formAvailable, formPhotoUri, closeAddItem, t]);
 
   const onEditPress = () => {
     Alert.alert(t('owner.menuEditItem'), t('owner.menuEditComingSoon'));
   };
 
   const openAddItemForm = useCallback(() => {
-    setActionsMenuOpen(false);
     resetForm();
-    setTimeout(() => setAddOpen(true), 220);
-  }, [resetForm]);
+    closeActionsMenu();
+    setTimeout(() => setAddOpen(true), MODAL_EXIT_MS + 30);
+  }, [closeActionsMenu, resetForm]);
+
+  const handleBack = useCallback(() => {
+    if (leaving) return;
+    setLeaving(true);
+    setTimeout(() => {
+      if (returnTo === 'profile') {
+        router.replace('/(staff)/profile' as never);
+        return;
+      }
+      if (returnTo === 'home') {
+        router.replace('/(staff)/home' as never);
+        return;
+      }
+      router.back();
+    }, MODAL_EXIT_MS);
+  }, [leaving, returnTo, router]);
 
   return (
     <View style={styles.screen}>
+      {!leaving ? (
+      <Animated.View
+        entering={FadeIn.duration(160)}
+        exiting={FadeOutDown.duration(MODAL_EXIT_MS)}
+        style={styles.screenFill}
+      >
       <OwnerScreen contentContainerStyle={[styles.scrollPad, { paddingBottom: ownerSpace.xl }]}>
-        <View style={styles.headRow}>
+        <Animated.View
+          entering={FadeInDown.duration(260).springify().damping(18).stiffness(180)}
+          style={styles.headRow}
+        >
+          <Pressable
+            onPress={handleBack}
+            hitSlop={10}
+            style={({ pressed }) => [styles.backBtn, { opacity: pressed ? 0.6 : 1 }]}
+            accessibilityRole="button"
+            accessibilityLabel="Go back"
+          >
+            <Ionicons name="chevron-back" size={28} color={ownerColors.gold} />
+          </Pressable>
           <View style={styles.headText}>
             <Text style={styles.title}>{t('owner.menuTitle')}</Text>
             <Text style={styles.sub}>{t('owner.menuSubtitle')}</Text>
           </View>
-          <Pressable
-            onPress={() => setActionsMenuOpen(true)}
-            style={({ pressed }) => [styles.topAddBtn, pressed && styles.topAddBtnPressed]}
-            accessibilityRole="button"
-            accessibilityLabel={t('owner.menuAddButton')}
-          >
-            <Text style={styles.topAddBtnText}>{t('owner.menuAddButton')}</Text>
-          </Pressable>
-        </View>
+          <Animated.View entering={ZoomIn.delay(130).duration(260).springify().damping(14).stiffness(180)}>
+            <Pressable
+              onPress={() => setActionsMenuOpen(true)}
+              style={({ pressed }) => [styles.topAddBtn, pressed && styles.topAddBtnPressed]}
+              accessibilityRole="button"
+              accessibilityLabel={t('owner.menuAddButton')}
+            >
+              <Text style={styles.topAddBtnText}>{t('owner.menuAddButton')}</Text>
+            </Pressable>
+          </Animated.View>
+        </Animated.View>
 
-        <View style={styles.toolbar}>
+        <Animated.View entering={FadeInDown.delay(70).duration(240)} style={styles.toolbar}>
           <View style={styles.searchWrap}>
             <Ionicons name="search-outline" size={18} color={ownerColors.textMuted} style={styles.searchIcon} />
             <TextInput
@@ -195,93 +272,43 @@ export default function OwnerMenuScreen() {
               style={styles.searchInput}
             />
           </View>
-          <View style={styles.viewToggle}>
-            <Pressable
-              onPress={() => setViewMode('list')}
-              style={[styles.toggleBtn, viewMode === 'list' && styles.toggleBtnOn]}
-              accessibilityLabel={t('owner.menuViewList')}
-            >
-              <Ionicons name="list-outline" size={20} color={viewMode === 'list' ? ownerColors.gold : ownerColors.textMuted} />
-            </Pressable>
-            <Pressable
-              onPress={() => {
-                setViewMode('grid');
-                setExpandedId(null);
-              }}
-              style={[styles.toggleBtn, viewMode === 'grid' && styles.toggleBtnOn]}
-              accessibilityLabel={t('owner.menuViewGrid')}
-            >
-              <Ionicons name="grid-outline" size={20} color={viewMode === 'grid' ? ownerColors.gold : ownerColors.textMuted} />
-            </Pressable>
-          </View>
-        </View>
+        </Animated.View>
 
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.filterRow}>
-          <Pressable
-            onPress={() => setCategory('all')}
-            style={[styles.filterChip, category === 'all' && styles.filterChipOn]}
-          >
-            <Text style={[styles.filterText, category === 'all' && styles.filterTextOn]}>
-              {t('owner.menuAllCategories')}
-            </Text>
-          </Pressable>
-          {categoryOptions.map((c) => (
+        <Animated.View entering={FadeInDown.delay(110).duration(240)}>
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.filterRow}>
             <Pressable
-              key={c}
-              onPress={() => setCategory(c)}
-              style={[styles.filterChip, category === c && styles.filterChipOn]}
+              onPress={() => setCategory('all')}
+              style={[styles.filterChip, category === 'all' && styles.filterChipOn]}
             >
-              <Text style={[styles.filterText, category === c && styles.filterTextOn]}>{c}</Text>
+              <Text style={[styles.filterText, category === 'all' && styles.filterTextOn]}>
+                {t('owner.menuAllCategories')}
+              </Text>
             </Pressable>
-          ))}
-        </ScrollView>
+            {categoryOptions.map((c) => (
+              <Pressable
+                key={c}
+                onPress={() => setCategory(c)}
+                style={[styles.filterChip, category === c && styles.filterChipOn]}
+              >
+                <Text style={[styles.filterText, category === c && styles.filterTextOn]}>{c}</Text>
+              </Pressable>
+            ))}
+          </ScrollView>
+        </Animated.View>
 
         {filtered.length === 0 ? (
-          <Text style={styles.empty}>{t('common.noResults')}</Text>
-        ) : viewMode === 'list' ? (
-          <View style={styles.listShell}>
-            {filtered.map((item, index) => (
-              <View key={item.id}>
-                <Pressable
-                  onPress={() => toggleExpand(item.id)}
-                  style={({ pressed }) => [
-                    styles.compactRow,
-                    index > 0 && styles.rowDivider,
-                    pressed && styles.rowPressed,
-                  ]}
-                >
-                  <View style={styles.rowLeft}>
-                    <Text style={styles.itemName} numberOfLines={2}>
-                      {item.name}
-                    </Text>
-                    <View style={styles.statusLine}>
-                      <Text style={[styles.statusTxt, !item.isAvailable && styles.statusOff]}>
-                        {item.isAvailable ? t('owner.menuAvailable') : t('owner.menuUnavailable')}
-                      </Text>
-                      {item.isFeatured ? (
-                        <Text style={styles.featuredTxt}> · {t('owner.menuFeatured')}</Text>
-                      ) : null}
-                    </View>
-                  </View>
-                  <Text style={styles.price}>{formatCurrency(item.price, 'cad')}</Text>
-                </Pressable>
-                {expandedId === item.id ? (
-                  <View style={styles.expanded}>
-                    <Image source={{ uri: item.photoUrl }} style={styles.expandedImg} />
-                    <Text style={styles.expandedDesc}>{item.description}</Text>
-                    <Pressable onPress={onEditPress} style={({ pressed }) => [styles.editBtn, pressed && styles.rowPressed]}>
-                      <Ionicons name="create-outline" size={18} color={ownerColors.gold} />
-                      <Text style={styles.editBtnText}>{t('owner.menuEditItem')}</Text>
-                    </Pressable>
-                  </View>
-                ) : null}
-              </View>
-            ))}
-          </View>
+          <Animated.Text entering={FadeIn.duration(220)} style={styles.empty}>
+            {t('common.noResults')}
+          </Animated.Text>
         ) : (
           <View style={styles.gridWrap}>
             {chunk(filtered, 2).map((pair, rowIdx) => (
-              <View key={rowIdx} style={[styles.gridRow, { gap: gridGap }]}>
+              <Animated.View
+                key={rowIdx}
+                entering={FadeInDown.delay(140 + rowIdx * 28).duration(260)}
+                layout={LinearTransition.duration(180)}
+                style={[styles.gridRow, { gap: gridGap }]}
+              >
                 {pair.map((item) => (
                   <Pressable
                     key={item.id}
@@ -303,68 +330,84 @@ export default function OwnerMenuScreen() {
                     </Text>
                   </Pressable>
                 ))}
-              </View>
+              </Animated.View>
             ))}
           </View>
         )}
 
         <View style={{ height: ownerSpace.md }} />
       </OwnerScreen>
+      </Animated.View>
+      ) : null}
 
       <Modal
         visible={actionsMenuOpen}
-        animationType="fade"
+        animationType="none"
         transparent
-        onRequestClose={() => setActionsMenuOpen(false)}
+        onRequestClose={closeActionsMenu}
       >
         <View style={styles.actionsModalRoot}>
-          <MenuBackdrop onPress={() => setActionsMenuOpen(false)} />
-          <Animated.View entering={FadeIn.duration(240)} style={styles.actionsCard}>
-            <Text style={styles.actionsTitle}>{t('owner.menuActionsSheetTitle')}</Text>
-            <Pressable
-              style={({ pressed }) => [styles.actionRow, pressed && styles.rowPressed]}
-              onPress={openAddItemForm}
-            >
-              <Ionicons name="add-circle-outline" size={22} color={ownerColors.gold} />
-              <Text style={styles.actionRowText}>{t('owner.menuAddItem')}</Text>
-              <Ionicons name="chevron-forward" size={18} color={ownerColors.textMuted} style={styles.actionChevron} />
-            </Pressable>
-            <View style={styles.actionDivider} />
-            <Pressable
-              style={({ pressed }) => [styles.actionRow, pressed && styles.rowPressed]}
-              onPress={() => {
-                setActionsMenuOpen(false);
-                setTimeout(() => Alert.alert(t('owner.menuActionAddCategory'), t('owner.menuCategoryComingSoon')), 200);
-              }}
-            >
-              <Ionicons name="folder-outline" size={22} color={ownerColors.gold} />
-              <Text style={styles.actionRowText}>{t('owner.menuActionAddCategory')}</Text>
-              <Ionicons name="chevron-forward" size={18} color={ownerColors.textMuted} style={styles.actionChevron} />
-            </Pressable>
-            <View style={styles.actionDivider} />
-            <Pressable
-              style={({ pressed }) => [styles.actionRow, pressed && styles.rowPressed]}
-              onPress={() => {
-                setActionsMenuOpen(false);
-                setTimeout(() => Alert.alert(t('owner.menuActionImportMenu'), t('owner.menuImportComingSoon')), 200);
-              }}
-            >
-              <Ionicons name="download-outline" size={22} color={ownerColors.gold} />
-              <Text style={styles.actionRowText}>{t('owner.menuActionImportMenu')}</Text>
-              <Ionicons name="chevron-forward" size={18} color={ownerColors.textMuted} style={styles.actionChevron} />
-            </Pressable>
+          <Animated.View entering={FadeIn.duration(160)} exiting={FadeOut.duration(MODAL_EXIT_MS)} style={StyleSheet.absoluteFillObject}>
+            <MenuBackdrop onPress={closeActionsMenu} />
           </Animated.View>
+          {!actionsMenuClosing ? (
+            <Animated.View
+              entering={ZoomIn.duration(220).springify().damping(16).stiffness(220)}
+              exiting={ZoomOut.duration(MODAL_EXIT_MS)}
+              style={styles.actionsCard}
+            >
+              <Text style={styles.actionsTitle}>{t('owner.menuActionsSheetTitle')}</Text>
+              <Pressable
+                style={({ pressed }) => [styles.actionRow, pressed && styles.rowPressed]}
+                onPress={openAddItemForm}
+              >
+                <Ionicons name="add-circle-outline" size={22} color={ownerColors.gold} />
+                <Text style={styles.actionRowText}>{t('owner.menuAddItem')}</Text>
+                <Ionicons name="chevron-forward" size={18} color={ownerColors.textMuted} style={styles.actionChevron} />
+              </Pressable>
+              <View style={styles.actionDivider} />
+              <Pressable
+                style={({ pressed }) => [styles.actionRow, pressed && styles.rowPressed]}
+                onPress={() => {
+                  closeActionsMenu();
+                  setTimeout(() => Alert.alert(t('owner.menuActionAddCategory'), t('owner.menuCategoryComingSoon')), MODAL_EXIT_MS + 40);
+                }}
+              >
+                <Ionicons name="folder-outline" size={22} color={ownerColors.gold} />
+                <Text style={styles.actionRowText}>{t('owner.menuActionAddCategory')}</Text>
+                <Ionicons name="chevron-forward" size={18} color={ownerColors.textMuted} style={styles.actionChevron} />
+              </Pressable>
+              <View style={styles.actionDivider} />
+              <Pressable
+                style={({ pressed }) => [styles.actionRow, pressed && styles.rowPressed]}
+                onPress={() => {
+                  closeActionsMenu();
+                  setTimeout(() => Alert.alert(t('owner.menuActionImportMenu'), t('owner.menuImportComingSoon')), MODAL_EXIT_MS + 40);
+                }}
+              >
+                <Ionicons name="download-outline" size={22} color={ownerColors.gold} />
+                <Text style={styles.actionRowText}>{t('owner.menuActionImportMenu')}</Text>
+                <Ionicons name="chevron-forward" size={18} color={ownerColors.textMuted} style={styles.actionChevron} />
+              </Pressable>
+            </Animated.View>
+          ) : null}
         </View>
       </Modal>
 
-      <Modal visible={addOpen} animationType="slide" transparent onRequestClose={() => setAddOpen(false)}>
+      <Modal visible={addOpen} animationType="none" transparent onRequestClose={() => closeAddItem()}>
         <View style={styles.modalRoot}>
-          <MenuBackdrop onPress={() => setAddOpen(false)} />
+          <Animated.View entering={FadeIn.duration(160)} exiting={FadeOut.duration(MODAL_EXIT_MS)} style={StyleSheet.absoluteFillObject}>
+            <MenuBackdrop onPress={() => closeAddItem()} />
+          </Animated.View>
           <KeyboardAvoidingView
             behavior={Platform.OS === 'ios' ? 'padding' : undefined}
             style={styles.modalKb}
           >
-            <Animated.View entering={FadeInDown.duration(300).springify()}>
+            {!addClosing ? (
+            <Animated.View
+              entering={SlideInDown.duration(260).springify().damping(18).stiffness(180)}
+              exiting={SlideOutDown.duration(MODAL_EXIT_MS)}
+            >
               <View style={styles.modalCard}>
                 <Text style={styles.modalTitle}>{t('owner.menuAddItemTitle')}</Text>
                 <ScrollView keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false}>
@@ -422,7 +465,7 @@ export default function OwnerMenuScreen() {
                   ) : null}
                 </ScrollView>
                 <View style={styles.modalActions}>
-                  <Pressable onPress={() => setAddOpen(false)} style={styles.modalSecondary}>
+                  <Pressable onPress={() => closeAddItem()} style={styles.modalSecondary}>
                     <Text style={styles.modalSecondaryText}>{t('owner.menuCancel')}</Text>
                   </Pressable>
                   <Pressable onPress={saveNewItem} style={styles.modalPrimary}>
@@ -431,14 +474,22 @@ export default function OwnerMenuScreen() {
                 </View>
               </View>
             </Animated.View>
+            ) : null}
           </KeyboardAvoidingView>
         </View>
       </Modal>
 
-      <Modal visible={gridDetail != null} animationType="fade" transparent onRequestClose={() => setGridDetail(null)}>
+      <Modal visible={gridDetail != null} animationType="none" transparent onRequestClose={closeGridDetail}>
         <View style={styles.detailWrap}>
-          <MenuBackdrop onPress={() => setGridDetail(null)} />
-          <View style={styles.detailCard}>
+          <Animated.View entering={FadeIn.duration(160)} exiting={FadeOut.duration(MODAL_EXIT_MS)} style={StyleSheet.absoluteFillObject}>
+            <MenuBackdrop onPress={closeGridDetail} />
+          </Animated.View>
+          {!gridDetailClosing ? (
+          <Animated.View
+            entering={FadeInDown.duration(240).springify().damping(18).stiffness(180)}
+            exiting={FadeOutDown.duration(MODAL_EXIT_MS)}
+            style={styles.detailCard}
+          >
             {gridDetail ? (
               <>
                 <Text style={styles.detailTitle}>{gridDetail.name}</Text>
@@ -449,20 +500,26 @@ export default function OwnerMenuScreen() {
                   <Ionicons name="create-outline" size={18} color={ownerColors.gold} />
                   <Text style={styles.editBtnText}>{t('owner.menuEditItem')}</Text>
                 </Pressable>
-                <Pressable onPress={() => setGridDetail(null)} style={styles.modalSecondary}>
+                <Pressable onPress={closeGridDetail} style={styles.modalSecondary}>
                   <Text style={styles.modalSecondaryText}>{t('owner.menuCancel')}</Text>
                 </Pressable>
               </>
             ) : null}
-          </View>
+          </Animated.View>
+          ) : null}
         </View>
       </Modal>
     </View>
   );
 }
 
-const styles = StyleSheet.create({
+const useStyles = createStyles((c) => {
+  const ownerColors = ownerColorsFromPalette(c);
+  return {
   screen: {
+    flex: 1,
+  },
+  screenFill: {
     flex: 1,
   },
   scrollPad: {
@@ -694,6 +751,13 @@ const styles = StyleSheet.create({
     gap: ownerSpace.sm,
     marginBottom: 2,
   },
+  backBtn: {
+    marginTop: 2,
+    marginLeft: -6,
+    paddingRight: 2,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
   headText: {
     flex: 1,
     minWidth: 0,
@@ -920,4 +984,5 @@ const styles = StyleSheet.create({
     color: ownerColors.text,
     marginTop: ownerSpace.sm,
   },
+  };
 });

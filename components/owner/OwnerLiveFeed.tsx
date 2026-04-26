@@ -2,8 +2,8 @@ import React from 'react';
 import { View, Text, StyleSheet, Pressable } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import type { LiveFeedItem } from '@/lib/mock/ownerApp';
-import { ownerColors, ownerRadii } from '@/lib/theme/ownerTheme';
-import { ownerSpace } from '@/lib/theme/ownerTheme';
+import { createStyles } from '@/lib/theme';
+import { ownerColorsFromPalette, ownerRadii, ownerSpace, useOwnerColors } from '@/lib/theme/ownerTheme';
 import { OwnerSectionLabel } from './OwnerSectionLabel';
 
 type Props = {
@@ -12,7 +12,9 @@ type Props = {
   viewAllLabel?: string;
 };
 
-function kindColor(kind: LiveFeedItem['kind']): string {
+type OwnerColors = ReturnType<typeof ownerColorsFromPalette>;
+
+function kindColor(kind: LiveFeedItem['kind'], ownerColors: OwnerColors): string {
   switch (kind) {
     case 'seated':
       return ownerColors.chartPositive;
@@ -29,6 +31,8 @@ function kindColor(kind: LiveFeedItem['kind']): string {
 
 export function OwnerLiveFeed({ items, onViewAll, viewAllLabel }: Props) {
   const { t } = useTranslation();
+  const ownerColors = useOwnerColors();
+  const styles = useStyles();
   const label = viewAllLabel ?? t('owner.overviewViewAll');
 
   if (items.length === 0) return null;
@@ -49,7 +53,7 @@ export function OwnerLiveFeed({ items, onViewAll, viewAllLabel }: Props) {
       <View style={styles.shell}>
         {items.map((item, i) => (
           <View key={item.id} style={[styles.row, i > 0 && styles.rowBorder]}>
-            <View style={[styles.pipe, { backgroundColor: kindColor(item.kind) }]} />
+            <View style={[styles.pipe, { backgroundColor: kindColor(item.kind, ownerColors) }]} />
             <View style={styles.body}>
               <Text style={styles.message}>{item.message}</Text>
               <Text style={styles.time}>{item.timeLabel}</Text>
@@ -61,7 +65,9 @@ export function OwnerLiveFeed({ items, onViewAll, viewAllLabel }: Props) {
   );
 }
 
-const styles = StyleSheet.create({
+const useStyles = createStyles((c) => {
+  const ownerColors = ownerColorsFromPalette(c);
+  return {
   wrap: {
     marginBottom: ownerSpace.md,
   },
@@ -134,4 +140,5 @@ const styles = StyleSheet.create({
     color: ownerColors.textMuted,
     marginTop: 4,
   },
+  };
 });

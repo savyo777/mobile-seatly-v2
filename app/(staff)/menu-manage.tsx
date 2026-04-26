@@ -12,6 +12,7 @@ import {
   ScrollView,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { useRouter } from 'expo-router';
 import { useColors, createStyles, spacing, borderRadius } from '@/lib/theme';
 import { OwnerScreen } from '@/components/owner/OwnerScreen';
 import { SubpageHeader } from '@/components/owner/SubpageHeader';
@@ -292,6 +293,7 @@ function EditItemSheet({
 export default function MenuManageScreen() {
   const styles = useStyles();
   const c = useColors();
+  const router = useRouter();
   const { items, updateItem, addItem, removeItem } = useMenu();
   const [editingItem, setEditingItem] = useState<MenuItem | null>(null);
 
@@ -330,9 +332,17 @@ export default function MenuManageScreen() {
   };
 
   return (
-    <OwnerScreen>
-      <SubpageHeader title="Menu" subtitle="Manage your dishes & prices" fallbackTab="more" accentBack />
-
+    <OwnerScreen
+      header={(
+        <SubpageHeader
+          title="Menu"
+          subtitle="Manage your dishes & prices"
+          fallbackTab="more"
+          accentBack
+          onBack={() => router.replace('/(staff)/profile' as never)}
+        />
+      )}
+    >
       {Object.entries(byCategory).map(([category, catItems]) => (
         <View key={category}>
           <Text style={styles.sectionLabel}>{category}</Text>

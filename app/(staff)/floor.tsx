@@ -20,12 +20,16 @@ export default function OwnerFloorScreen() {
   const close = () => setSheetOpen(false);
 
   return (
-    <OwnerScreen scrollable={false}>
-      <SubpageHeader
-        title={t('owner.floorLive')}
-        subtitle="Nova Ristorante · Live"
-        fallbackTab="home"
-      />
+    <OwnerScreen
+      scrollable={false}
+      header={
+        <SubpageHeader
+          title={t('owner.floorLive')}
+          subtitle="Nova Ristorante · Live"
+          fallbackTab="home"
+        />
+      }
+    >
       <View style={styles.flex}>
         <FloorCanvas tables={OWNER_FLOOR_TABLES} onTablePress={onTablePress} />
       </View>

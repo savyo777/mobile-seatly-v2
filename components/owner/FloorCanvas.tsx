@@ -4,8 +4,8 @@ import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import Animated, { useAnimatedStyle, useSharedValue, withSpring } from 'react-native-reanimated';
 import type { OwnerFloorTable } from '@/lib/mock/ownerApp';
 import type { Table } from '@/lib/mock/tables';
-import { ownerColors, ownerRadii } from '@/lib/theme/ownerTheme';
-import { ownerSpace } from '@/lib/theme/ownerTheme';
+import { createStyles } from '@/lib/theme';
+import { ownerColorsFromPalette, ownerRadii, ownerSpace, useOwnerColors } from '@/lib/theme/ownerTheme';
 
 const CANVAS_W = 360;
 const CANVAS_H = 320;
@@ -13,7 +13,9 @@ const CANVAS_H = 320;
 const POS_SCALE = 1.08;
 const ORIGIN_PAD = 10;
 
-function colorForStatus(status: Table['status']): string {
+type OwnerColors = ReturnType<typeof ownerColorsFromPalette>;
+
+function colorForStatus(status: Table['status'], ownerColors: OwnerColors): string {
   switch (status) {
     case 'empty':
       return ownerColors.tableAvailable;
@@ -36,6 +38,8 @@ type Props = {
 };
 
 export function FloorCanvas({ tables, onTablePress }: Props) {
+  const ownerColors = useOwnerColors();
+  const styles = useStyles();
   const scale = useSharedValue(1);
   const savedScale = useSharedValue(1);
   const tx = useSharedValue(0);
@@ -105,8 +109,8 @@ export function FloorCanvas({ tables, onTablePress }: Props) {
       <GestureDetector gesture={composed}>
         <Animated.View style={[styles.canvas, animStyle]}>
           {tables.map((t) => {
-            const bg = `${colorForStatus(t.status)}28`;
-            const border = colorForStatus(t.status);
+            const bg = `${colorForStatus(t.status, ownerColors)}28`;
+            const border = colorForStatus(t.status, ownerColors);
             const left = ORIGIN_PAD + t.x * POS_SCALE;
             const top = ORIGIN_PAD + t.y * POS_SCALE;
             return (
@@ -142,6 +146,7 @@ export function FloorCanvas({ tables, onTablePress }: Props) {
 }
 
 function Legend({ color, label }: { color: string; label: string }) {
+  const styles = useStyles();
   return (
     <View style={styles.legendItem}>
       <View style={[styles.legendDot, { backgroundColor: color }]} />
@@ -150,7 +155,9 @@ function Legend({ color, label }: { color: string; label: string }) {
   );
 }
 
-const styles = StyleSheet.create({
+const useStyles = createStyles((c) => {
+  const ownerColors = ownerColorsFromPalette(c);
+  return {
   wrap: {
     flex: 1,
   },
@@ -231,4 +238,5 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     color: ownerColors.textMuted,
   },
+  };
 });

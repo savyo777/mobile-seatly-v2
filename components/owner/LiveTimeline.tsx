@@ -1,15 +1,17 @@
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import type { LiveTimelineEntry } from '@/lib/mock/ownerApp';
-import { ownerColors, ownerRadii } from '@/lib/theme/ownerTheme';
-import { ownerSpace } from '@/lib/theme/ownerTheme';
+import { createStyles } from '@/lib/theme';
+import { ownerColorsFromPalette, ownerRadii, ownerSpace, useOwnerColors } from '@/lib/theme/ownerTheme';
 import { OwnerSectionLabel } from './OwnerSectionLabel';
 
 type Props = {
   entries: LiveTimelineEntry[];
 };
 
-function statusAccent(status: LiveTimelineEntry['status']): string {
+type OwnerColors = ReturnType<typeof ownerColorsFromPalette>;
+
+function statusAccent(status: LiveTimelineEntry['status'], ownerColors: OwnerColors): string {
   switch (status) {
     case 'seated':
       return ownerColors.chartPositive;
@@ -25,6 +27,8 @@ function statusAccent(status: LiveTimelineEntry['status']): string {
 }
 
 export function LiveTimeline({ entries }: Props) {
+  const ownerColors = useOwnerColors();
+  const styles = useStyles();
   return (
     <View style={styles.wrap}>
       <OwnerSectionLabel>Reservations pulse</OwnerSectionLabel>
@@ -32,7 +36,7 @@ export function LiveTimeline({ entries }: Props) {
         <View key={e.id} style={styles.row}>
           <Text style={styles.time}>{e.timeLabel}</Text>
           <View style={styles.card}>
-            <View style={[styles.accent, { backgroundColor: statusAccent(e.status) }]} />
+            <View style={[styles.accent, { backgroundColor: statusAccent(e.status, ownerColors) }]} />
             <View style={styles.cardInner}>
               <View style={styles.cardTop}>
                 <Text style={styles.name}>{e.guestName}</Text>
@@ -52,7 +56,9 @@ export function LiveTimeline({ entries }: Props) {
   );
 }
 
-const styles = StyleSheet.create({
+const useStyles = createStyles((c) => {
+  const ownerColors = ownerColorsFromPalette(c);
+  return {
   wrap: {
     marginBottom: ownerSpace.sm,
   },
@@ -117,4 +123,5 @@ const styles = StyleSheet.create({
     fontSize: 13,
     color: ownerColors.textMuted,
   },
+  };
 });

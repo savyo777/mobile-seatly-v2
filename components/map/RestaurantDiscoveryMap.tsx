@@ -7,7 +7,7 @@ import { RestaurantMapMarker } from '@/components/map/RestaurantMapMarker';
 import { googleDarkMapStyle } from '@/lib/map/darkMapStyle';
 import { DEFAULT_MAP_CENTER } from '@/lib/map/mapFilters';
 import type { RestaurantDiscoveryMapProps } from '@/components/map/restaurantMapTypes';
-import { useColors, createStyles, spacing, borderRadius, typography, shadows } from '@/lib/theme';
+import { useColors, useTheme, createStyles, spacing, borderRadius, typography, shadows } from '@/lib/theme';
 
 const useStyles = createStyles((c) => ({
   mapShell: {
@@ -18,7 +18,7 @@ const useStyles = createStyles((c) => ({
   },
   emptyOverlay: {
     ...StyleSheet.absoluteFillObject,
-    backgroundColor: 'rgba(10,10,10,0.55)',
+    backgroundColor: c.bgBase === '#F8F7F4' ? 'rgba(248,247,244,0.72)' : 'rgba(10,10,10,0.55)',
     alignItems: 'center',
     justifyContent: 'center',
     paddingHorizontal: spacing.xl,
@@ -48,7 +48,7 @@ const useStyles = createStyles((c) => ({
   },
   loadingOverlay: {
     ...StyleSheet.absoluteFillObject,
-    backgroundColor: 'rgba(10,10,10,0.25)',
+    backgroundColor: c.bgBase === '#F8F7F4' ? 'rgba(248,247,244,0.38)' : 'rgba(10,10,10,0.25)',
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -81,6 +81,7 @@ export function RestaurantDiscoveryMap({
   contentBottomInset = 0,
 }: RestaurantDiscoveryMapProps) {
   const c = useColors();
+  const { effective } = useTheme();
   const styles = useStyles();
   const { t } = useTranslation();
   const mapRef = useRef<MapView>(null);
@@ -122,9 +123,9 @@ export function RestaurantDiscoveryMap({
         style={StyleSheet.absoluteFill}
         provider={Platform.OS === 'android' ? PROVIDER_GOOGLE : undefined}
         initialRegion={initialRegion}
-        userInterfaceStyle="dark"
+        userInterfaceStyle={effective}
         mapType={Platform.OS === 'ios' ? 'mutedStandard' : 'standard'}
-        customMapStyle={Platform.OS === 'android' ? googleDarkMapStyle : undefined}
+        customMapStyle={Platform.OS === 'android' && effective === 'dark' ? googleDarkMapStyle : undefined}
         showsUserLocation={showUserLocation}
         showsMyLocationButton={false}
         showsCompass={false}

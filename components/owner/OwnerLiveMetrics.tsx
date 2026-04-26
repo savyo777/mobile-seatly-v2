@@ -2,11 +2,13 @@ import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { LIVE_METRICS } from '@/lib/mock/ownerApp';
-import { ownerColors, ownerSpace } from '@/lib/theme/ownerTheme';
+import { createStyles } from '@/lib/theme';
+import { ownerColorsFromPalette, ownerSpace } from '@/lib/theme/ownerTheme';
 import { OwnerSectionLabel } from './OwnerSectionLabel';
 
 export function OwnerLiveMetrics() {
   const { t } = useTranslation();
+  const styles = useStyles();
 
   const tiles = [
     { key: 'covers', label: t('owner.metricTonightCovers'), value: String(LIVE_METRICS.tonightCovers) },
@@ -44,7 +46,9 @@ export function OwnerLiveMetrics() {
 
 const hair = StyleSheet.hairlineWidth;
 
-const styles = StyleSheet.create({
+const useStyles = createStyles((c) => {
+  const ownerColors = ownerColorsFromPalette(c);
+  return {
   wrap: {
     marginBottom: ownerSpace.md,
   },
@@ -92,4 +96,5 @@ const styles = StyleSheet.create({
     textTransform: 'uppercase',
     letterSpacing: 0.6,
   },
+  };
 });

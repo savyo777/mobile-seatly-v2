@@ -1,8 +1,8 @@
 import React from 'react';
 import { View, Text, Pressable, StyleSheet } from 'react-native';
 import { useTranslation } from 'react-i18next';
-import { ownerColors, ownerRadii } from '@/lib/theme/ownerTheme';
-import { ownerSpace } from '@/lib/theme/ownerTheme';
+import { createStyles } from '@/lib/theme';
+import { ownerColorsFromPalette, ownerRadii, ownerSpace } from '@/lib/theme/ownerTheme';
 import { OwnerSectionLabel } from './OwnerSectionLabel';
 
 type Action = { key: string; label: string; onPress: () => void };
@@ -13,6 +13,7 @@ type Props = {
 
 export function QuickActions({ actions }: Props) {
   const { t } = useTranslation();
+  const styles = useStyles();
   return (
     <View style={styles.wrap}>
       <OwnerSectionLabel>{t('owner.quickActionsTitle')}</OwnerSectionLabel>
@@ -31,7 +32,9 @@ export function QuickActions({ actions }: Props) {
   );
 }
 
-const styles = StyleSheet.create({
+const useStyles = createStyles((c) => {
+  const ownerColors = ownerColorsFromPalette(c);
+  return {
   wrap: {
     marginBottom: ownerSpace.md,
   },
@@ -60,4 +63,5 @@ const styles = StyleSheet.create({
     color: ownerColors.text,
     textAlign: 'center',
   },
+  };
 });

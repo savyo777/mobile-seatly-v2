@@ -7,19 +7,23 @@ import { GlassCard } from '@/components/owner/GlassCard';
 import { SubpageHeader } from '@/components/owner/SubpageHeader';
 import { EXPENSE_LINES } from '@/lib/mock/ownerApp';
 import { formatCurrency } from '@/lib/utils/formatCurrency';
-import { ownerColors } from '@/lib/theme/ownerTheme';
+import { createStyles } from '@/lib/theme';
+import { ownerColorsFromPalette } from '@/lib/theme/ownerTheme';
 
 export default function OwnerExpensesScreen() {
   const { t } = useTranslation();
+  const styles = useStyles();
 
   return (
-    <OwnerScreen>
-      <SubpageHeader
-        title={t('owner.expensesTitle')}
-        subtitle={t('owner.expensesSubtitle')}
-        fallbackTab="more"
-      />
-
+    <OwnerScreen
+      header={
+        <SubpageHeader
+          title={t('owner.expensesTitle')}
+          subtitle={t('owner.expensesSubtitle')}
+          fallbackTab="more"
+        />
+      }
+    >
       {EXPENSE_LINES.map((line, i) => (
         <Animated.View key={line.id} entering={FadeInDown.delay(i * 40)}>
           <GlassCard style={styles.card}>
@@ -38,7 +42,9 @@ export default function OwnerExpensesScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const useStyles = createStyles((c) => {
+  const ownerColors = ownerColorsFromPalette(c);
+  return {
   card: {
     padding: 16,
     marginBottom: 10,
@@ -68,4 +74,5 @@ const styles = StyleSheet.create({
     fontWeight: '800',
     color: ownerColors.gold,
   },
+  };
 });

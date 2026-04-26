@@ -6,19 +6,23 @@ import { OwnerScreen } from '@/components/owner/OwnerScreen';
 import { GlassCard } from '@/components/owner/GlassCard';
 import { SubpageHeader } from '@/components/owner/SubpageHeader';
 import { EXPORT_OPTIONS } from '@/lib/mock/ownerApp';
-import { ownerColors } from '@/lib/theme/ownerTheme';
+import { createStyles } from '@/lib/theme';
+import { ownerColorsFromPalette } from '@/lib/theme/ownerTheme';
 
 export default function OwnerExportScreen() {
   const { t } = useTranslation();
+  const styles = useStyles();
 
   return (
-    <OwnerScreen>
-      <SubpageHeader
-        title={t('owner.exportTitle')}
-        subtitle={t('owner.exportSubtitle')}
-        fallbackTab="more"
-      />
-
+    <OwnerScreen
+      header={
+        <SubpageHeader
+          title={t('owner.exportTitle')}
+          subtitle={t('owner.exportSubtitle')}
+          fallbackTab="more"
+        />
+      }
+    >
       {EXPORT_OPTIONS.map((row, i) => (
         <Animated.View key={row.id} entering={FadeInDown.delay(i * 40)}>
           <Pressable
@@ -37,7 +41,9 @@ export default function OwnerExportScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const useStyles = createStyles((c) => {
+  const ownerColors = ownerColorsFromPalette(c);
+  return {
   card: {
     padding: 16,
     marginBottom: 10,
@@ -56,4 +62,5 @@ const styles = StyleSheet.create({
   pressed: {
     opacity: 0.88,
   },
+  };
 });

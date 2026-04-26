@@ -2,15 +2,17 @@ import React from 'react';
 import { View, Text, StyleSheet, ScrollView } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import type { OwnerAlert } from '@/lib/mock/ownerApp';
-import { ownerColors, ownerRadii } from '@/lib/theme/ownerTheme';
-import { ownerSpace } from '@/lib/theme/ownerTheme';
+import { createStyles } from '@/lib/theme';
+import { ownerColorsFromPalette, ownerRadii, ownerSpace, useOwnerColors } from '@/lib/theme/ownerTheme';
 import { OwnerSectionLabel } from './OwnerSectionLabel';
 
 type Props = {
   alerts: OwnerAlert[];
 };
 
-function severityStyle(s: OwnerAlert['severity']) {
+type OwnerColors = ReturnType<typeof ownerColorsFromPalette>;
+
+function severityStyle(s: OwnerAlert['severity'], ownerColors: OwnerColors) {
   switch (s) {
     case 'critical':
       return { bg: 'rgba(239, 68, 68, 0.1)' };
@@ -23,6 +25,8 @@ function severityStyle(s: OwnerAlert['severity']) {
 
 export function OwnerAlertsStrip({ alerts }: Props) {
   const { t } = useTranslation();
+  const ownerColors = useOwnerColors();
+  const styles = useStyles();
 
   if (alerts.length === 0) {
     return null;
@@ -33,7 +37,7 @@ export function OwnerAlertsStrip({ alerts }: Props) {
       <OwnerSectionLabel marginBottom={ownerSpace.xs}>{t('owner.alertsStripTitle')}</OwnerSectionLabel>
       <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.row}>
         {alerts.map((a) => {
-          const sev = severityStyle(a.severity);
+          const sev = severityStyle(a.severity, ownerColors);
           return (
             <View key={a.id} style={[styles.chip, { backgroundColor: sev.bg }]}>
               <Text style={styles.chipText} numberOfLines={2}>
@@ -47,7 +51,9 @@ export function OwnerAlertsStrip({ alerts }: Props) {
   );
 }
 
-const styles = StyleSheet.create({
+const useStyles = createStyles((c) => {
+  const ownerColors = ownerColorsFromPalette(c);
+  return {
   wrap: {
     marginBottom: ownerSpace.md,
   },
@@ -70,4 +76,5 @@ const styles = StyleSheet.create({
     color: ownerColors.textSecondary,
     lineHeight: 17,
   },
+  };
 });

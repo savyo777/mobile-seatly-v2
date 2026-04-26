@@ -75,7 +75,15 @@ const useStyles = createStyles((c) => ({
   scroll: { flex: 1 },
   scrollContent: { paddingBottom: 16 },
 
-  header: { paddingHorizontal: spacing.lg, paddingTop: spacing.lg, paddingBottom: spacing.md },
+  header: {
+    paddingHorizontal: spacing.lg,
+    paddingTop: spacing.lg,
+    paddingBottom: spacing.md,
+    backgroundColor: c.bgBase,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: c.border,
+  },
+  subtitleWrap: { paddingHorizontal: spacing.lg, paddingTop: spacing.md, paddingBottom: spacing.xs },
   kickerRow: { flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 6 },
   kickerDot: { width: 7, height: 7, borderRadius: 4, backgroundColor: c.gold },
   kicker: { fontSize: 11, fontWeight: '700', color: c.gold, letterSpacing: 1.2 },
@@ -401,17 +409,19 @@ export default function PromosScreen() {
 
   return (
     <SafeAreaView style={styles.safe} edges={['top', 'left', 'right']}>
+      <View style={styles.header}>
+        <View style={styles.kickerRow}>
+          <View style={styles.kickerDot} />
+          <Text style={styles.kicker}>PROMOTIONS</Text>
+        </View>
+        <Text style={styles.title}>Offers & promos</Text>
+      </View>
       <ScrollView
         style={styles.scroll}
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
       >
-        <View style={styles.header}>
-          <View style={styles.kickerRow}>
-            <View style={styles.kickerDot} />
-            <Text style={styles.kicker}>PROMOTIONS</Text>
-          </View>
-          <Text style={styles.title}>Offers & promos</Text>
+        <View style={styles.subtitleWrap}>
           <Text style={styles.subtitle}>
             Owner snapshot for every offer: used, clicks, guest mix, and the best-performing time slot.
           </Text>

@@ -113,8 +113,16 @@ const useStyles = createStyles((c) => ({
   segmentLabel: { fontSize: 14, fontWeight: '700', color: c.textMuted },
   segmentLabelActive: { color: c.bgBase },
 
+  pageStickyHeader: {
+    paddingHorizontal: spacing.lg,
+    paddingBottom: spacing.md,
+    backgroundColor: c.bgBase,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: c.border,
+  },
   pageHeader: {
     paddingHorizontal: spacing.lg,
+    paddingTop: spacing.md,
     paddingBottom: spacing.md,
   },
   kickerRow: {
@@ -824,24 +832,23 @@ export default function OwnerReservationsScreen() {
 
   return (
     <View style={styles.root}>
+      {/* Sticky page header */}
+      <View style={[styles.pageStickyHeader, { paddingTop: insets.top + spacing.sm }]}>
+        <View style={styles.kickerRow}>
+          <View style={styles.kickerDot} />
+          <Text style={styles.kickerText}>BOOKINGS · {dayLabel}</Text>
+        </View>
+        <Text style={styles.pageTitle}>Bookings</Text>
+      </View>
+
       <SectionList
         sections={sections}
         keyExtractor={(item) => item.id}
         stickySectionHeadersEnabled
         ListHeaderComponent={
           <>
-            <View style={{ paddingTop: insets.top + spacing.sm }} />
-
-            {/* Page header */}
             <View style={styles.pageHeader}>
-              <View style={styles.kickerRow}>
-                <View style={styles.kickerDot} />
-                <Text style={styles.kickerText}>BOOKINGS · {dayLabel}</Text>
-              </View>
-              <Text style={styles.pageTitle}>Bookings</Text>
-              <Text style={styles.pageSub}>
-                {headerSubtitle}
-              </Text>
+              <Text style={styles.pageSub}>{headerSubtitle}</Text>
             </View>
 
             {/* Date segment */}

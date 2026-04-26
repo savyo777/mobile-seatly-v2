@@ -4,7 +4,8 @@ import Animated, { useAnimatedStyle, useSharedValue, withSpring } from 'react-na
 import type { RevenuePeriod } from '@/lib/mock/ownerApp';
 import { REVENUE_DATA } from '@/lib/mock/ownerApp';
 import { formatCurrency } from '@/lib/utils/formatCurrency';
-import { ownerColors, ownerRadii, ownerSpace } from '@/lib/theme/ownerTheme';
+import { createStyles } from '@/lib/theme';
+import { ownerColorsFromPalette, ownerRadii, ownerSpace, useOwnerColors } from '@/lib/theme/ownerTheme';
 import { PeriodToggle } from './PeriodToggle';
 import { GlassCard } from './GlassCard';
 import { OwnerSectionLabel } from './OwnerSectionLabel';
@@ -33,18 +34,25 @@ function useAnimatedCount(target: number, duration = 650) {
   return display;
 }
 
-function barColor(series: number[], index: number): string {
+type OwnerColors = ReturnType<typeof ownerColorsFromPalette>;
+
+function barColor(series: number[], index: number, ownerColors: OwnerColors): string {
   if (index === 0) return ownerColors.chartPositive;
   return series[index] >= series[index - 1] ? ownerColors.chartPositive : ownerColors.chartNegative;
 }
 
 export function RevenueHero({ period, onPeriodChange }: Props) {
+  const ownerColors = useOwnerColors();
+  const styles = useStyles();
   const data = REVENUE_DATA[period];
   const animatedTotal = useAnimatedCount(data.total);
   const max = Math.max(...data.series, 1);
   const trendPositive = data.trendPct >= 0;
 
-  const colors = useMemo(() => data.series.map((_, i) => barColor(data.series, i)), [data.series]);
+  const colors = useMemo(
+    () => data.series.map((_, i) => barColor(data.series, i, ownerColors)),
+    [data.series, ownerColors],
+  );
 
   return (
     <View style={styles.wrap}>
@@ -82,6 +90,7 @@ export function RevenueHero({ period, onPeriodChange }: Props) {
 }
 
 function ChartBar({ value, max, fillColor }: { value: number; max: number; fillColor: string }) {
+  const styles = useStyles();
   const pct = useSharedValue(0);
   const target = max > 0 ? value / max : 0;
 
@@ -102,7 +111,9 @@ function ChartBar({ value, max, fillColor }: { value: number; max: number; fillC
   );
 }
 
-const styles = StyleSheet.create({
+const useStyles = createStyles((c) => {
+  const ownerColors = ownerColorsFromPalette(c);
+  return {
   wrap: {
     marginBottom: ownerSpace.md,
   },
@@ -162,4 +173,5 @@ const styles = StyleSheet.create({
     width: '100%',
     borderRadius: ownerRadii.xl,
   },
+  };
 });

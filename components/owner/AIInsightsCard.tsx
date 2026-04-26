@@ -1,7 +1,7 @@
 import React from 'react';
 import { View, Text, StyleSheet, Pressable } from 'react-native';
-import { ownerColors, ownerRadii } from '@/lib/theme/ownerTheme';
-import { ownerSpace } from '@/lib/theme/ownerTheme';
+import { createStyles } from '@/lib/theme';
+import { ownerColorsFromPalette, ownerRadii, ownerSpace } from '@/lib/theme/ownerTheme';
 import { OwnerSectionLabel } from './OwnerSectionLabel';
 
 type Props = {
@@ -13,6 +13,7 @@ type Props = {
 
 /** Dashboard teaser: one short line + optional link to full AI */
 export function AIInsightsCard({ title, insight, onSeeMore, seeMoreLabel = 'See more' }: Props) {
+  const styles = useStyles();
   if (!insight.trim()) return null;
 
   return (
@@ -31,7 +32,9 @@ export function AIInsightsCard({ title, insight, onSeeMore, seeMoreLabel = 'See 
   );
 }
 
-const styles = StyleSheet.create({
+const useStyles = createStyles((c) => {
+  const ownerColors = ownerColorsFromPalette(c);
+  return {
   wrap: {
     marginBottom: ownerSpace.md,
   },
@@ -79,4 +82,5 @@ const styles = StyleSheet.create({
   pressed: {
     opacity: 0.85,
   },
+  };
 });

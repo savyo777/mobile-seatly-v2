@@ -549,7 +549,7 @@ export default function OwnerBusinessScreen() {
           <View style={styles.menuGrid}>
             <Pressable
               style={({ pressed }) => [styles.menuGridTile, pressed && styles.menuGridTilePressed]}
-              onPress={() => router.push('/(staff)/menu-manage' as never)}
+              onPress={() => router.push('/(staff)/menu?returnTo=profile' as never)}
             >
               <View style={[styles.menuGridIcon, { backgroundColor: c.gold }]}>
                 <Ionicons name="add" size={18} color={c.bgBase} />
@@ -560,7 +560,7 @@ export default function OwnerBusinessScreen() {
             <View style={styles.menuGridDivider} />
             <Pressable
               style={({ pressed }) => [styles.menuGridTile, pressed && styles.menuGridTilePressed]}
-              onPress={() => router.push('/(staff)/menu-manage' as never)}
+              onPress={() => router.push('/(staff)/menu?returnTo=profile' as never)}
             >
               <View style={[styles.menuGridIcon, { backgroundColor: c.gold }]}>
                 <Ionicons name="pencil" size={18} color={c.bgBase} />

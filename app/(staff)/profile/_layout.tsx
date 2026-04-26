@@ -1,13 +1,11 @@
 import React from 'react';
 import { Stack } from 'expo-router';
+import { createTransparentStackTransitionOptions } from '@/lib/navigation/transitions';
 
 export default function ProfileStackLayout() {
   return (
     <Stack
-      screenOptions={{
-        headerShown: false,
-        contentStyle: { backgroundColor: 'transparent' },
-      }}
+      screenOptions={createTransparentStackTransitionOptions()}
     />
   );
 }

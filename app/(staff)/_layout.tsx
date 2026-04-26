@@ -12,6 +12,7 @@ import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useColors, createStyles, spacing, borderRadius } from '@/lib/theme';
+import { tabTransitionOptions } from '@/lib/navigation/transitions';
 
 type IoniconName = React.ComponentProps<typeof Ionicons>['name'];
 
@@ -157,6 +158,7 @@ export default function OwnerTabsLayout() {
     <View style={styles.root}>
       <Tabs
         screenOptions={{
+          ...tabTransitionOptions,
           headerShown: false,
           sceneStyle: { backgroundColor: c.bgBase },
           tabBarActiveTintColor: c.gold,
@@ -221,7 +223,7 @@ export default function OwnerTabsLayout() {
         <Tabs.Screen name="guests"      options={{ href: null, tabBarStyle: { display: 'none' } }} />
         <Tabs.Screen name="staff"       options={{ href: null }} />
         <Tabs.Screen name="floor"       options={{ href: null }} />
-        <Tabs.Screen name="menu"        options={{ href: null }} />
+        <Tabs.Screen name="menu"        options={{ href: null, tabBarStyle: { display: 'none' } }} />
         <Tabs.Screen name="waitlist"    options={{ href: null }} />
         <Tabs.Screen name="ordersKds"   options={{ href: null }} />
         <Tabs.Screen name="insights"    options={{ href: null }} />
