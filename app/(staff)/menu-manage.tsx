@@ -10,9 +10,12 @@ import {
   KeyboardAvoidingView,
   Platform,
   ScrollView,
+  Image,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
+import * as ImagePicker from 'expo-image-picker';
+import { useTranslation } from 'react-i18next';
 import { useColors, createStyles, spacing, borderRadius } from '@/lib/theme';
 import { OwnerScreen } from '@/components/owner/OwnerScreen';
 import { SubpageHeader } from '@/components/owner/SubpageHeader';
@@ -66,20 +69,33 @@ const useStyles = createStyles((c) => ({
     color: c.gold,
     marginRight: 4,
   },
-  addBtn: {
+  saveMenuBtn: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    gap: spacing.xs,
     marginTop: spacing.md,
     paddingVertical: 14,
     borderRadius: borderRadius.xl,
-    borderWidth: 1.5,
-    borderColor: c.gold,
-    borderStyle: 'dashed',
+    backgroundColor: c.gold,
   },
-  addBtnText: {
+  saveMenuBtnText: {
     fontSize: 15,
+    fontWeight: '800',
+    color: '#000',
+  },
+  headerAddBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: borderRadius.full,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: c.gold,
+    backgroundColor: c.bgElevated,
+  },
+  headerAddText: {
+    fontSize: 14,
     fontWeight: '700',
     color: c.gold,
   },
@@ -98,6 +114,7 @@ const useStyles = createStyles((c) => ({
     paddingTop: spacing.lg,
     borderTopWidth: StyleSheet.hairlineWidth,
     borderTopColor: c.border,
+    maxHeight: '88%',
   },
   sheetTitle: {
     fontSize: 18,
@@ -139,6 +156,31 @@ const useStyles = createStyles((c) => ({
     borderColor: c.border,
     minHeight: 72,
     textAlignVertical: 'top',
+  },
+  photoPreview: {
+    width: '100%',
+    height: 140,
+    borderRadius: borderRadius.lg,
+    backgroundColor: c.bgElevated,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: c.border,
+    marginBottom: spacing.sm,
+  },
+  photoBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: spacing.xs,
+    paddingVertical: 12,
+    borderRadius: borderRadius.lg,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: c.gold,
+    backgroundColor: c.bgElevated,
+  },
+  photoBtnText: {
+    fontSize: 15,
+    fontWeight: '700',
+    color: c.gold,
   },
   sheetActions: {
     flexDirection: 'row',
@@ -188,12 +230,14 @@ function EditItemSheet({
 }) {
   const c = useColors();
   const styles = useStyles();
+  const { t } = useTranslation();
   const isNew = !item?.id || item.id.startsWith('new_');
 
   const [name, setName] = useState(item?.name ?? '');
   const [price, setPrice] = useState(item ? String(item.price) : '');
   const [description, setDescription] = useState(item?.description ?? '');
   const [category, setCategory] = useState(item?.category ?? '');
+  const [photoUrl, setPhotoUrl] = useState(item?.photoUrl ?? '');
 
   React.useEffect(() => {
     if (item) {
@@ -201,14 +245,30 @@ function EditItemSheet({
       setPrice(String(item.price));
       setDescription(item.description);
       setCategory(item.category);
+      setPhotoUrl(item.photoUrl);
     }
   }, [item]);
+
+  const pickPhoto = async () => {
+    const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (!permission.granted) {
+      Alert.alert('Photo permission required', 'Allow photo access to choose a food photo.');
+      return;
+    }
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      quality: 0.85,
+    });
+    if (!result.canceled && result.assets[0]) {
+      setPhotoUrl(result.assets[0].uri);
+    }
+  };
 
   const handleSave = () => {
     const parsedPrice = parseFloat(price);
     if (!name.trim()) return Alert.alert('Name required');
     if (isNaN(parsedPrice) || parsedPrice < 0) return Alert.alert('Enter a valid price');
-    onSave({ name: name.trim(), price: parsedPrice, description, category });
+    onSave({ name: name.trim(), price: parsedPrice, description, category, photoUrl });
     onClose();
   };
 
@@ -221,6 +281,21 @@ function EditItemSheet({
         <Pressable style={styles.backdrop} onPress={onClose}>
           <Pressable onPress={() => {}} style={styles.sheet}>
             <Text style={styles.sheetTitle}>{isNew ? 'New item' : 'Edit item'}</Text>
+            <ScrollView keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false}>
+
+            <View style={styles.fieldRow}>
+              <Text style={styles.fieldLabel}>Food photo</Text>
+              {photoUrl ? (
+                <Image source={{ uri: photoUrl }} style={styles.photoPreview} resizeMode="cover" />
+              ) : null}
+              <Pressable
+                style={({ pressed }) => [styles.photoBtn, { opacity: pressed ? 0.75 : 1 }]}
+                onPress={pickPhoto}
+              >
+                <Ionicons name="image-outline" size={18} color={c.gold} />
+                <Text style={styles.photoBtnText}>{photoUrl ? 'Change photo' : 'Choose photo'}</Text>
+              </Pressable>
+            </View>
 
             <View style={styles.fieldRow}>
               <Text style={styles.fieldLabel}>Name</Text>
@@ -278,9 +353,10 @@ function EditItemSheet({
                 style={({ pressed }) => [styles.saveBtn, { opacity: pressed ? 0.85 : 1 }]}
                 onPress={handleSave}
               >
-                <Text style={styles.saveBtnText}>Save</Text>
+                <Text style={styles.saveBtnText}>{t('common.done')}</Text>
               </Pressable>
             </View>
+            </ScrollView>
           </Pressable>
         </Pressable>
       </KeyboardAvoidingView>
@@ -294,6 +370,7 @@ export default function MenuManageScreen() {
   const styles = useStyles();
   const c = useColors();
   const router = useRouter();
+  const { t } = useTranslation();
   const { items, updateItem, addItem, removeItem } = useMenu();
   const [editingItem, setEditingItem] = useState<MenuItem | null>(null);
 
@@ -340,6 +417,17 @@ export default function MenuManageScreen() {
           fallbackTab="more"
           accentBack
           onBack={() => router.replace('/(staff)/profile' as never)}
+          rightAction={(
+            <Pressable
+              onPress={handleAddNew}
+              style={({ pressed }) => [styles.headerAddBtn, { opacity: pressed ? 0.75 : 1 }]}
+              accessibilityRole="button"
+              accessibilityLabel="Add item"
+            >
+              <Ionicons name="add" size={17} color={c.gold} />
+              <Text style={styles.headerAddText}>Add</Text>
+            </Pressable>
+          )}
         />
       )}
     >
@@ -372,12 +460,12 @@ export default function MenuManageScreen() {
       ))}
 
       <Pressable
-        style={({ pressed }) => [styles.addBtn, { opacity: pressed ? 0.7 : 1 }]}
-        onPress={handleAddNew}
+        style={({ pressed }) => [styles.saveMenuBtn, { opacity: pressed ? 0.85 : 1 }]}
+        onPress={() => router.replace('/(staff)/profile' as never)}
         accessibilityRole="button"
+        accessibilityLabel={t('common.save')}
       >
-        <Ionicons name="add-circle-outline" size={20} color={c.gold} />
-        <Text style={styles.addBtnText}>Add item</Text>
+        <Text style={styles.saveMenuBtnText}>{t('common.save')}</Text>
       </Pressable>
 
       <EditItemSheet

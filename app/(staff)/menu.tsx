@@ -8,9 +8,7 @@ import {
   ScrollView,
   Modal,
   Image,
-  Switch,
   Alert,
-  KeyboardAvoidingView,
   Platform,
   useWindowDimensions,
 } from 'react-native';
@@ -24,14 +22,10 @@ import Animated, {
   FadeOut,
   FadeOutDown,
   LinearTransition,
-  SlideInDown,
-  SlideOutDown,
-  ZoomIn,
-  ZoomOut,
 } from 'react-native-reanimated';
-import * as ImagePicker from 'expo-image-picker';
 import { OwnerScreen } from '@/components/owner/OwnerScreen';
-import { mockMenuItems, menuCategories, type MenuItem } from '@/lib/mock/menuItems';
+import { useMenu } from '@/lib/context/MenuContext';
+import { type MenuItem } from '@/lib/mock/menuItems';
 import { formatCurrency } from '@/lib/utils/formatCurrency';
 import { createStyles, useTheme } from '@/lib/theme';
 import { ownerColorsFromPalette, ownerRadii, ownerSpace, useOwnerColors } from '@/lib/theme/ownerTheme';
@@ -89,48 +83,22 @@ export default function OwnerMenuScreen() {
   const ownerColors = useOwnerColors();
   const styles = useStyles();
   const { width } = useWindowDimensions();
+  const { items, categories } = useMenu();
   const gridGap = ownerSpace.xs;
   const cellW = (width - ownerSpace.md * 2 - gridGap) / 2;
 
-  const [items, setItems] = useState<MenuItem[]>(() =>
-    mockMenuItems.filter((m) => m.restaurantId === OWNER_MENU_RESTAURANT_ID),
-  );
   const [query, setQuery] = useState('');
   const [category, setCategory] = useState<string | 'all'>('all');
-  const [addOpen, setAddOpen] = useState(false);
-  const [addClosing, setAddClosing] = useState(false);
   const [actionsMenuOpen, setActionsMenuOpen] = useState(false);
   const [actionsMenuClosing, setActionsMenuClosing] = useState(false);
-  const [gridDetail, setGridDetail] = useState<MenuItem | null>(null);
-  const [gridDetailClosing, setGridDetailClosing] = useState(false);
   const [leaving, setLeaving] = useState(false);
 
-  const [formName, setFormName] = useState('');
-  const [formPrice, setFormPrice] = useState('');
-  const [formDesc, setFormDesc] = useState('');
-  const [formCategory, setFormCategory] = useState('Mains');
-  const [formAvailable, setFormAvailable] = useState(true);
-  const [formPhotoUri, setFormPhotoUri] = useState<string | null>(null);
-
-  const categoryOptions = useMemo(() => {
-    const s = new Set<string>(menuCategories);
-    items.forEach((i) => s.add(i.category));
-    return Array.from(s).sort((a, b) => a.localeCompare(b));
-  }, [items]);
+  const categoryOptions = categories;
 
   const filtered = useMemo(
     () => filterItems(items, query, category),
     [items, query, category],
   );
-
-  const resetForm = useCallback(() => {
-    setFormName('');
-    setFormPrice('');
-    setFormDesc('');
-    setFormCategory('Mains');
-    setFormAvailable(true);
-    setFormPhotoUri(null);
-  }, []);
 
   const closeActionsMenu = useCallback(() => {
     setActionsMenuClosing(true);
@@ -140,72 +108,19 @@ export default function OwnerMenuScreen() {
     }, MODAL_EXIT_MS);
   }, []);
 
-  const closeAddItem = useCallback((shouldReset = false) => {
-    setAddClosing(true);
-    setTimeout(() => {
-      setAddOpen(false);
-      setAddClosing(false);
-      if (shouldReset) resetForm();
-    }, MODAL_EXIT_MS);
-  }, [resetForm]);
-
-  const closeGridDetail = useCallback(() => {
-    setGridDetailClosing(true);
-    setTimeout(() => {
-      setGridDetail(null);
-      setGridDetailClosing(false);
-    }, MODAL_EXIT_MS);
-  }, []);
-
-  const pickPhoto = useCallback(async () => {
-    const p = await ImagePicker.requestMediaLibraryPermissionsAsync();
-    if (!p.granted) {
-      Alert.alert(t('common.error'), 'Photo library permission is required.');
-      return;
-    }
-    const result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ImagePicker.MediaTypeOptions.Images,
-      quality: 0.85,
-    });
-    if (!result.canceled && result.assets[0]) {
-      setFormPhotoUri(result.assets[0].uri);
-    }
-  }, [t]);
-
-  const saveNewItem = useCallback(() => {
-    const price = parseFloat(formPrice.replace(',', '.'));
-    if (!formName.trim() || Number.isNaN(price) || price < 0) {
-      Alert.alert(t('common.error'), 'Enter a valid name and price.');
-      return;
-    }
-    const next: MenuItem = {
-      id: `local-${Date.now()}`,
-      restaurantId: OWNER_MENU_RESTAURANT_ID,
-      name: formName.trim(),
-      description: formDesc.trim() || '—',
-      price,
-      category: formCategory.trim() || 'Mains',
-      photoUrl: formPhotoUri ?? PLACEHOLDER_PHOTO,
-      allergens: [],
-      dietaryFlags: [],
-      isAvailable: formAvailable,
-      isPreorderable: true,
-      isFeatured: false,
-      preparationTimeMinutes: 15,
-    };
-    setItems((prev) => [...prev, next]);
-    closeAddItem(true);
-  }, [formName, formPrice, formDesc, formCategory, formAvailable, formPhotoUri, closeAddItem, t]);
-
-  const onEditPress = () => {
-    Alert.alert(t('owner.menuEditItem'), t('owner.menuEditComingSoon'));
-  };
+  const openEditItemForm = useCallback((item: MenuItem) => {
+    router.push(`/(staff)/menu-item-edit?id=${encodeURIComponent(item.id)}` as never);
+  }, [router]);
 
   const openAddItemForm = useCallback(() => {
-    resetForm();
     closeActionsMenu();
-    setTimeout(() => setAddOpen(true), MODAL_EXIT_MS + 30);
-  }, [closeActionsMenu, resetForm]);
+    setTimeout(() => router.push('/(staff)/menu-item-edit' as never), MODAL_EXIT_MS + 30);
+  }, [closeActionsMenu, router]);
+
+  const openCategoryEditor = useCallback(() => {
+    closeActionsMenu();
+    setTimeout(() => router.push('/(staff)/menu-categories' as never), MODAL_EXIT_MS + 30);
+  }, [closeActionsMenu, router]);
 
   const handleBack = useCallback(() => {
     if (leaving) return;
@@ -249,14 +164,14 @@ export default function OwnerMenuScreen() {
             <Text style={styles.title}>{t('owner.menuTitle')}</Text>
             <Text style={styles.sub}>{t('owner.menuSubtitle')}</Text>
           </View>
-          <Animated.View entering={ZoomIn.delay(130).duration(260).springify().damping(14).stiffness(180)}>
+          <Animated.View entering={FadeIn.delay(120).duration(160)}>
             <Pressable
-              onPress={() => setActionsMenuOpen(true)}
+              onPress={handleBack}
               style={({ pressed }) => [styles.topAddBtn, pressed && styles.topAddBtnPressed]}
               accessibilityRole="button"
-              accessibilityLabel={t('owner.menuAddButton')}
+              accessibilityLabel={t('common.save')}
             >
-              <Text style={styles.topAddBtnText}>{t('owner.menuAddButton')}</Text>
+              <Text style={styles.topAddBtnText}>{t('common.save')}</Text>
             </Pressable>
           </Animated.View>
         </Animated.View>
@@ -312,7 +227,7 @@ export default function OwnerMenuScreen() {
                 {pair.map((item) => (
                   <Pressable
                     key={item.id}
-                    onPress={() => setGridDetail(item)}
+                    onPress={() => openEditItemForm(item)}
                     style={({ pressed }) => [
                       styles.gridCell,
                       { width: cellW },
@@ -337,6 +252,17 @@ export default function OwnerMenuScreen() {
 
         <View style={{ height: ownerSpace.md }} />
       </OwnerScreen>
+      <Animated.View entering={FadeIn.delay(160).duration(180)} style={styles.floatingAddWrap}>
+        <Pressable
+          onPress={() => setActionsMenuOpen(true)}
+          style={({ pressed }) => [styles.floatingAddBtn, pressed && styles.topAddBtnPressed]}
+          accessibilityRole="button"
+          accessibilityLabel={t('owner.menuAddButton')}
+        >
+          <Ionicons name="add" size={18} color={ownerColors.gold} />
+          <Text style={styles.floatingAddText}>Add</Text>
+        </Pressable>
+      </Animated.View>
       </Animated.View>
       ) : null}
 
@@ -352,8 +278,8 @@ export default function OwnerMenuScreen() {
           </Animated.View>
           {!actionsMenuClosing ? (
             <Animated.View
-              entering={ZoomIn.duration(220).springify().damping(16).stiffness(220)}
-              exiting={ZoomOut.duration(MODAL_EXIT_MS)}
+              entering={FadeIn.duration(160)}
+              exiting={FadeOut.duration(150)}
               style={styles.actionsCard}
             >
               <Text style={styles.actionsTitle}>{t('owner.menuActionsSheetTitle')}</Text>
@@ -368,13 +294,10 @@ export default function OwnerMenuScreen() {
               <View style={styles.actionDivider} />
               <Pressable
                 style={({ pressed }) => [styles.actionRow, pressed && styles.rowPressed]}
-                onPress={() => {
-                  closeActionsMenu();
-                  setTimeout(() => Alert.alert(t('owner.menuActionAddCategory'), t('owner.menuCategoryComingSoon')), MODAL_EXIT_MS + 40);
-                }}
+                onPress={openCategoryEditor}
               >
-                <Ionicons name="folder-outline" size={22} color={ownerColors.gold} />
-                <Text style={styles.actionRowText}>{t('owner.menuActionAddCategory')}</Text>
+                <Ionicons name="create-outline" size={22} color={ownerColors.gold} />
+                <Text style={styles.actionRowText}>{t('owner.menuActionEditCategories')}</Text>
                 <Ionicons name="chevron-forward" size={18} color={ownerColors.textMuted} style={styles.actionChevron} />
               </Pressable>
               <View style={styles.actionDivider} />
@@ -394,121 +317,6 @@ export default function OwnerMenuScreen() {
         </View>
       </Modal>
 
-      <Modal visible={addOpen} animationType="none" transparent onRequestClose={() => closeAddItem()}>
-        <View style={styles.modalRoot}>
-          <Animated.View entering={FadeIn.duration(160)} exiting={FadeOut.duration(MODAL_EXIT_MS)} style={StyleSheet.absoluteFillObject}>
-            <MenuBackdrop onPress={() => closeAddItem()} />
-          </Animated.View>
-          <KeyboardAvoidingView
-            behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-            style={styles.modalKb}
-          >
-            {!addClosing ? (
-            <Animated.View
-              entering={SlideInDown.duration(260).springify().damping(18).stiffness(180)}
-              exiting={SlideOutDown.duration(MODAL_EXIT_MS)}
-            >
-              <View style={styles.modalCard}>
-                <Text style={styles.modalTitle}>{t('owner.menuAddItemTitle')}</Text>
-                <ScrollView keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false}>
-                  <Text style={styles.fieldLabel}>{t('owner.menuItemName')}</Text>
-                  <TextInput
-                    value={formName}
-                    onChangeText={setFormName}
-                    style={styles.input}
-                    placeholderTextColor={ownerColors.textMuted}
-                  />
-                  <Text style={styles.fieldLabel}>{t('owner.menuItemPrice')}</Text>
-                  <TextInput
-                    value={formPrice}
-                    onChangeText={setFormPrice}
-                    keyboardType="decimal-pad"
-                    style={styles.input}
-                    placeholder="0.00"
-                    placeholderTextColor={ownerColors.textMuted}
-                  />
-                  <Text style={styles.fieldLabel}>{t('owner.menuItemCategory')}</Text>
-                  <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.catChips}>
-                    {categoryOptions.map((c) => (
-                      <Pressable
-                        key={c}
-                        onPress={() => setFormCategory(c)}
-                        style={[styles.catChip, formCategory === c && styles.catChipOn]}
-                      >
-                        <Text style={[styles.catChipText, formCategory === c && styles.catChipTextOn]}>{c}</Text>
-                      </Pressable>
-                    ))}
-                  </ScrollView>
-                  <Text style={styles.fieldLabel}>{t('owner.menuItemDescription')}</Text>
-                  <TextInput
-                    value={formDesc}
-                    onChangeText={setFormDesc}
-                    style={[styles.input, styles.inputMultiline]}
-                    multiline
-                    placeholderTextColor={ownerColors.textMuted}
-                  />
-                  <View style={styles.switchRow}>
-                    <Text style={styles.switchLabel}>{t('owner.menuAvailable')}</Text>
-                    <Switch
-                      value={formAvailable}
-                      onValueChange={setFormAvailable}
-                      trackColor={{ false: ownerColors.bgElevated, true: ownerColors.goldSubtle }}
-                      thumbColor={formAvailable ? ownerColors.gold : ownerColors.textMuted}
-                    />
-                  </View>
-                  <Pressable onPress={pickPhoto} style={({ pressed }) => [styles.photoBtn, pressed && styles.rowPressed]}>
-                    <Ionicons name="image-outline" size={20} color={ownerColors.gold} />
-                    <Text style={styles.photoBtnText}>{t('owner.menuItemAddPhoto')}</Text>
-                  </Pressable>
-                  {formPhotoUri ? (
-                    <Image source={{ uri: formPhotoUri }} style={styles.previewImg} />
-                  ) : null}
-                </ScrollView>
-                <View style={styles.modalActions}>
-                  <Pressable onPress={() => closeAddItem()} style={styles.modalSecondary}>
-                    <Text style={styles.modalSecondaryText}>{t('owner.menuCancel')}</Text>
-                  </Pressable>
-                  <Pressable onPress={saveNewItem} style={styles.modalPrimary}>
-                    <Text style={styles.modalPrimaryText}>{t('owner.menuSaveItem')}</Text>
-                  </Pressable>
-                </View>
-              </View>
-            </Animated.View>
-            ) : null}
-          </KeyboardAvoidingView>
-        </View>
-      </Modal>
-
-      <Modal visible={gridDetail != null} animationType="none" transparent onRequestClose={closeGridDetail}>
-        <View style={styles.detailWrap}>
-          <Animated.View entering={FadeIn.duration(160)} exiting={FadeOut.duration(MODAL_EXIT_MS)} style={StyleSheet.absoluteFillObject}>
-            <MenuBackdrop onPress={closeGridDetail} />
-          </Animated.View>
-          {!gridDetailClosing ? (
-          <Animated.View
-            entering={FadeInDown.duration(240).springify().damping(18).stiffness(180)}
-            exiting={FadeOutDown.duration(MODAL_EXIT_MS)}
-            style={styles.detailCard}
-          >
-            {gridDetail ? (
-              <>
-                <Text style={styles.detailTitle}>{gridDetail.name}</Text>
-                <Image source={{ uri: gridDetail.photoUrl }} style={styles.expandedImg} />
-                <Text style={styles.expandedDesc}>{gridDetail.description}</Text>
-                <Text style={styles.detailPrice}>{formatCurrency(gridDetail.price, 'cad')}</Text>
-                <Pressable onPress={onEditPress} style={({ pressed }) => [styles.editBtn, pressed && styles.rowPressed]}>
-                  <Ionicons name="create-outline" size={18} color={ownerColors.gold} />
-                  <Text style={styles.editBtnText}>{t('owner.menuEditItem')}</Text>
-                </Pressable>
-                <Pressable onPress={closeGridDetail} style={styles.modalSecondary}>
-                  <Text style={styles.modalSecondaryText}>{t('owner.menuCancel')}</Text>
-                </Pressable>
-              </>
-            ) : null}
-          </Animated.View>
-          ) : null}
-        </View>
-      </Modal>
     </View>
   );
 }
@@ -667,36 +475,6 @@ const useStyles = createStyles((c) => {
     borderTopColor: ownerColors.border,
     backgroundColor: ownerColors.bg,
   },
-  expandedImg: {
-    width: '100%',
-    height: 160,
-    borderRadius: ownerRadii.md,
-    marginTop: ownerSpace.sm,
-    backgroundColor: ownerColors.bgElevated,
-  },
-  expandedDesc: {
-    fontSize: 14,
-    color: ownerColors.textSecondary,
-    lineHeight: 20,
-    marginTop: ownerSpace.sm,
-  },
-  editBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-    marginTop: ownerSpace.md,
-    alignSelf: 'flex-start',
-    paddingVertical: 8,
-    paddingHorizontal: 10,
-    borderRadius: ownerRadii.sm,
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: ownerColors.border,
-  },
-  editBtnText: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: ownerColors.gold,
-  },
   gridWrap: {
     gap: ownerSpace.xs,
   },
@@ -779,6 +557,33 @@ const useStyles = createStyles((c) => {
     fontWeight: '700',
     color: ownerColors.gold,
     letterSpacing: 0.2,
+  },
+  floatingAddWrap: {
+    position: 'absolute',
+    right: ownerSpace.md,
+    bottom: ownerSpace.lg,
+    zIndex: 5,
+  },
+  floatingAddBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+    paddingVertical: 10,
+    paddingHorizontal: 14,
+    borderRadius: 999,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: ownerColors.goldMuted,
+    backgroundColor: ownerColors.bgSurface,
+    shadowColor: '#000',
+    shadowOpacity: 0.18,
+    shadowRadius: 12,
+    shadowOffset: { width: 0, height: 6 },
+    elevation: 6,
+  },
+  floatingAddText: {
+    fontSize: 14,
+    fontWeight: '700',
+    color: ownerColors.gold,
   },
   actionsModalRoot: {
     flex: 1,
@@ -955,34 +760,6 @@ const useStyles = createStyles((c) => {
     fontSize: 16,
     fontWeight: '700',
     color: ownerColors.gold,
-  },
-  detailWrap: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: ownerSpace.md,
-  },
-  detailCard: {
-    width: '100%',
-    maxWidth: 420,
-    zIndex: 2,
-    backgroundColor: ownerColors.bgSurface,
-    borderRadius: ownerRadii.xl,
-    padding: ownerSpace.md,
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: ownerColors.border,
-  },
-  detailTitle: {
-    fontSize: 20,
-    fontWeight: '700',
-    color: ownerColors.text,
-    marginBottom: ownerSpace.sm,
-  },
-  detailPrice: {
-    fontSize: 18,
-    fontWeight: '700',
-    color: ownerColors.text,
-    marginTop: ownerSpace.sm,
   },
   };
 });
