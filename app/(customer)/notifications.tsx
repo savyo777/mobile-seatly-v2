@@ -362,7 +362,7 @@ export default function NotificationsScreen() {
       </View>
 
       <ScrollView
-        contentContainerStyle={{ paddingBottom: insets.bottom + spacing['4xl'] }}
+        contentContainerStyle={{ paddingBottom: spacing.lg }}
         showsVerticalScrollIndicator={false}
       >
         {!hasAny ? (

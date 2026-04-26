@@ -1,10 +1,10 @@
 import React from 'react';
 import { View, ScrollView, ScrollViewProps } from 'react-native';
-import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { createStyles, spacing } from '@/lib/theme';
 
-/** Space below last scroll item so content clears the tab bar (bar + home indicator + scroll past). */
-const TAB_BAR_SCROLL_PADDING = 110;
+/** Minimal trailing space below last scroll item. */
+const TAB_BAR_SCROLL_PADDING = 16;
 
 type Props = {
   children: React.ReactNode;
@@ -13,9 +13,8 @@ type Props = {
 };
 
 export function OwnerScreen({ children, scrollable = true, contentContainerStyle }: Props) {
-  const insets = useSafeAreaInsets();
   const styles = useStyles();
-  const contentBottomPadding = TAB_BAR_SCROLL_PADDING + insets.bottom;
+  const contentBottomPadding = TAB_BAR_SCROLL_PADDING;
 
   if (scrollable) {
     return (

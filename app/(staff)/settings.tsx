@@ -69,15 +69,6 @@ const useStyles = createStyles((c) => ({
     color: c.textMuted,
     marginRight: 4,
   },
-  signOutWrap: {
-    alignItems: 'center',
-    paddingVertical: spacing.xl,
-  },
-  signOut: {
-    fontSize: 16,
-    fontWeight: '700',
-    color: c.danger,
-  },
 }));
 
 // ── Row components ─────────────────────────────────────────────────────────
@@ -134,7 +125,12 @@ function SettingsSection({ section }: { section: Section }) {
   const router = useRouter();
 
   const handleNav = (item: Extract<RowItem, { kind: 'nav' }>) => {
-    if (item.route) {
+    if (item.label === 'Log out') {
+      Alert.alert('Log out', 'Are you sure you want to log out?', [
+        { text: 'Cancel', style: 'cancel' },
+        { text: 'Log out', style: 'destructive', onPress: () => {} },
+      ]);
+    } else if (item.route) {
       router.push(item.route as never);
     } else {
       Alert.alert(item.label, 'Coming soon.');
@@ -228,6 +224,7 @@ export default function OwnerSettingsScreen() {
     {
       title: 'Danger Zone',
       rows: [
+        { kind: 'nav', label: 'Log out', icon: 'log-out-outline', danger: true },
         { kind: 'nav', label: 'Delete account', icon: 'trash-outline', danger: true },
       ],
     },
@@ -246,19 +243,6 @@ export default function OwnerSettingsScreen() {
         <SettingsSection key={s.title} section={s} />
       ))}
 
-      <Pressable
-        style={({ pressed }) => [styles.signOutWrap, { opacity: pressed ? 0.7 : 1 }]}
-        onPress={() =>
-          Alert.alert('Sign out', 'Are you sure you want to sign out?', [
-            { text: 'Cancel', style: 'cancel' },
-            { text: 'Sign out', style: 'destructive', onPress: () => {} },
-          ])
-        }
-        accessibilityRole="button"
-        accessibilityLabel="Sign out"
-      >
-        <Text style={styles.signOut}>Sign out</Text>
-      </Pressable>
     </OwnerScreen>
   );
 }

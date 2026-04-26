@@ -65,7 +65,7 @@ export const ownerSpace = {
 } as const;
 
 /** Extra bottom inset for scroll content above the custom tab bar (center + button). */
-export const OWNER_TAB_SCROLL_BOTTOM_PADDING = 118;
+export const OWNER_TAB_SCROLL_BOTTOM_PADDING = 16;
 
 /** Subtle lift — no colored glow */
 export const ownerShadow = {

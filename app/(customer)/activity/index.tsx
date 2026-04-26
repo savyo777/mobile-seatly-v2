@@ -402,7 +402,7 @@ export default function ActivityScreen() {
         keyExtractor={(it) => it.id}
         renderItem={renderItem}
         showsVerticalScrollIndicator={false}
-        contentContainerStyle={[styles.list, { paddingBottom: insets.bottom + 100 }]}
+        contentContainerStyle={[styles.list, { paddingBottom: spacing.lg }]}
         ListHeaderComponent={
           <View style={styles.header}>
             {/* Title */}

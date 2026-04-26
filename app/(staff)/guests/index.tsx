@@ -219,7 +219,7 @@ export default function OwnerGuestsScreen() {
         showsVerticalScrollIndicator={false}
         contentContainerStyle={{
           paddingTop: insets.top + spacing.sm,
-          paddingBottom: insets.bottom + 110,
+          paddingBottom: spacing.lg,
           paddingHorizontal: spacing.lg,
         }}
       >

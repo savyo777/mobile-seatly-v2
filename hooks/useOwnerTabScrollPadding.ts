@@ -1,8 +1,6 @@
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { OWNER_TAB_SCROLL_BOTTOM_PADDING } from '@/lib/theme/ownerTheme';
 
-/** Bottom padding for ScrollView/SectionList content on owner tab screens (tab bar + center +). */
+/** Bottom padding for ScrollView/SectionList content on owner tab screens — clears the floating + FAB. */
 export function useOwnerTabScrollPadding(): number {
-  const insets = useSafeAreaInsets();
-  return insets.bottom + OWNER_TAB_SCROLL_BOTTOM_PADDING;
+  return OWNER_TAB_SCROLL_BOTTOM_PADDING;
 }

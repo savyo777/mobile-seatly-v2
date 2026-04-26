@@ -315,7 +315,7 @@ export default function EventsScreen() {
         ListHeaderComponent={ListHeader}
         showsVerticalScrollIndicator={false}
         keyboardShouldPersistTaps="handled"
-        contentContainerStyle={[styles.list, { paddingBottom: insets.bottom + 100 }]}
+        contentContainerStyle={[styles.list, { paddingBottom: spacing.lg }]}
         ListEmptyComponent={
           <View style={styles.empty}>
             <View style={styles.emptyIcon}>

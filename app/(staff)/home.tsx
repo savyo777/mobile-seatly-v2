@@ -25,7 +25,6 @@ import {
   OWNER_RESERVATIONS,
 } from '@/lib/mock/ownerApp';
 import { OWNER_GUESTS } from '@/lib/mock/guests';
-import { useOwnerTabScrollPadding } from '@/hooks/useOwnerTabScrollPadding';
 
 const RESTAURANT_NAME = 'Nova Ristorante';
 const RESTAURANT_ADDRESS = '412 King St W';
@@ -664,7 +663,6 @@ export default function OwnerHomeScreen() {
   const styles = useStyles();
   const { t } = useTranslation();
   const insets = useSafeAreaInsets();
-  const scrollPad = useOwnerTabScrollPadding();
   const router = useRouter();
 
   const seatedTables = OWNER_FLOOR_TABLES.filter((t) => t.status === 'occupied').length;
@@ -693,7 +691,8 @@ export default function OwnerHomeScreen() {
     <View style={styles.root}>
       <ScrollView
         showsVerticalScrollIndicator={false}
-        contentContainerStyle={{ paddingTop: insets.top + spacing.xs, paddingBottom: scrollPad }}
+        bounces={true}
+        contentContainerStyle={{ paddingTop: insets.top + spacing.xs, paddingBottom: spacing.lg }}
       >
         {/* ── Brand bar — same treatment as diner Discover ── */}
         <View style={styles.brandBar}>

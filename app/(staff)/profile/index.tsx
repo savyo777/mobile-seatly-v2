@@ -379,18 +379,6 @@ const useStyles = createStyles((c) => ({
     justifyContent: 'center',
   },
 
-  // ── Sign out ──
-  signOutWrap: {
-    alignItems: 'center',
-    paddingVertical: spacing.xl,
-    marginBottom: spacing.lg,
-  },
-  signOut: {
-    fontSize: 16,
-    fontWeight: '700',
-    color: c.danger,
-    letterSpacing: -0.1,
-  },
 }));
 
 
@@ -426,7 +414,6 @@ export default function OwnerBusinessScreen() {
 
   const settingsRows: { label: string; value: string; route?: string }[] = [
     { label: 'Payout & billing', value: 'Stripe · ···· 4429', route: '/(staff)/settings' },
-    { label: 'Team access', value: '5 members', route: '/(staff)/settings' },
     { label: 'Notifications', value: 'Push + email', route: '/(staff)/notifications' },
     { label: 'Close restaurant', value: 'Not scheduled' },
     { label: 'Help & support', value: '' },
@@ -631,20 +618,6 @@ export default function OwnerBusinessScreen() {
           ))}
         </View>
 
-        {/* ── Sign out ── */}
-        <Pressable
-          style={({ pressed }) => [styles.signOutWrap, { opacity: pressed ? 0.7 : 1 }]}
-          onPress={() =>
-            Alert.alert('Sign out', 'Are you sure you want to sign out?', [
-              { text: 'Cancel', style: 'cancel' },
-              { text: 'Sign out', style: 'destructive', onPress: () => {} },
-            ])
-          }
-          accessibilityRole="button"
-          accessibilityLabel="Sign out"
-        >
-          <Text style={styles.signOut}>Sign out</Text>
-        </Pressable>
       </ScrollView>
     </View>
   );

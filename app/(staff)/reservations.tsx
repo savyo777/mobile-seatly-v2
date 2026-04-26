@@ -1022,10 +1022,7 @@ export default function OwnerReservationsScreen() {
             </Pressable>
           );
         }}
-        contentContainerStyle={{
-          paddingBottom: scrollPad,
-          flexGrow: 1,
-        }}
+        contentContainerStyle={{ paddingBottom: scrollPad }}
         SectionSeparatorComponent={() => null}
       />
 

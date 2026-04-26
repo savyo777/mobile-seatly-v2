@@ -458,7 +458,7 @@ export default function GuestDetailScreen() {
         showsVerticalScrollIndicator={false}
         contentContainerStyle={{
           paddingTop: insets.top + spacing.sm,
-          paddingBottom: insets.bottom + 110,
+          paddingBottom: spacing.lg,
         }}
       >
         <View style={styles.topBar}>

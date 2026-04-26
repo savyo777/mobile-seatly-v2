@@ -73,7 +73,7 @@ function formatWhere(p: OwnerPromotion): string {
 const useStyles = createStyles((c) => ({
   safe: { flex: 1, backgroundColor: c.bgBase },
   scroll: { flex: 1 },
-  scrollContent: { paddingBottom: 120 },
+  scrollContent: { paddingBottom: 16 },
 
   header: { paddingHorizontal: spacing.lg, paddingTop: spacing.lg, paddingBottom: spacing.md },
   kickerRow: { flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 6 },
@@ -403,7 +403,7 @@ export default function PromosScreen() {
     <SafeAreaView style={styles.safe} edges={['top', 'left', 'right']}>
       <ScrollView
         style={styles.scroll}
-        contentContainerStyle={[styles.scrollContent, { paddingBottom: insets.bottom + 100 }]}
+        contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
       >
         <View style={styles.header}>

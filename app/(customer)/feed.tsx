@@ -284,7 +284,7 @@ export default function FeedScreen() {
       {mode === 'explore' ? (
         <SnapGrid
           posts={rawPosts}
-          contentContainerStyle={{ paddingBottom: insets.bottom + 104 }}
+          contentContainerStyle={{ paddingBottom: spacing.lg }}
           emptyLabel="No posts yet."
         />
       ) : (
@@ -294,7 +294,7 @@ export default function FeedScreen() {
           renderItem={renderItem}
           showsVerticalScrollIndicator={false}
           ListHeaderComponent={ListHeader}
-          contentContainerStyle={{ paddingBottom: insets.bottom + 104 }}
+          contentContainerStyle={{ paddingBottom: spacing.lg }}
           ItemSeparatorComponent={() => <View style={styles.separator} />}
           onScroll={Animated.event(
             [{ nativeEvent: { contentOffset: { y: scrollY } } }],
