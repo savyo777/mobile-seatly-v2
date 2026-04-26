@@ -19,13 +19,59 @@ import {
   type OwnerReservationSlot,
 } from '@/lib/mock/ownerApp';
 
-type DateFilter = 'today' | 'tomorrow' | 'week';
+type DateFilter = 'today' | 'tomorrow' | 'week' | 'custom';
 
 const DATE_FILTERS: { key: DateFilter; label: string }[] = [
   { key: 'today', label: 'Today' },
   { key: 'tomorrow', label: 'Tomorrow' },
   { key: 'week', label: 'Week' },
+  { key: 'custom', label: 'Custom' },
 ];
+
+function toDateKey(d: Date): string {
+  return d.toISOString().slice(0, 10);
+}
+
+function dateRangeLabel(filter: DateFilter, customDates: string[]): string {
+  const today = new Date();
+  if (filter === 'today') {
+    return today.toLocaleDateString('en-US', { month: 'long', day: 'numeric' });
+  }
+  if (filter === 'tomorrow') {
+    const t = new Date(today);
+    t.setDate(t.getDate() + 1);
+    return t.toLocaleDateString('en-US', { month: 'long', day: 'numeric' });
+  }
+  if (filter === 'week') {
+    const end = new Date(today);
+    end.setDate(end.getDate() + 6);
+    const s = today.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+    const e = end.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+    return `${s} – ${e}`;
+  }
+  if (customDates.length === 0) return 'Tap dates to select';
+  return [...customDates]
+    .sort()
+    .map((d) =>
+      new Date(d + 'T12:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
+    )
+    .join(', ');
+}
+
+function buildCalendarGrid(year: number, month: number): (number | null)[][] {
+  const firstDay = new Date(year, month, 1).getDay();
+  const daysInMonth = new Date(year, month + 1, 0).getDate();
+  const cells: (number | null)[] = [
+    ...Array(firstDay).fill(null),
+    ...Array.from({ length: daysInMonth }, (_, i) => i + 1),
+  ];
+  const rows: (number | null)[][] = [];
+  for (let i = 0; i < cells.length; i += 7) rows.push(cells.slice(i, i + 7));
+  if (rows[rows.length - 1].length < 7) {
+    while (rows[rows.length - 1].length < 7) rows[rows.length - 1].push(null);
+  }
+  return rows;
+}
 
 const STATUS_SORT_WEIGHT: Record<OwnerReservationSlot['status'], number> = {
   risk: 1,
@@ -490,6 +536,119 @@ const useStyles = createStyles((c) => ({
     fontWeight: '800',
     color: c.textPrimary,
   },
+
+  // Date range label
+  dateLabel: {
+    paddingHorizontal: spacing.lg,
+    marginTop: -spacing.sm,
+    marginBottom: spacing.md,
+  },
+  dateLabelText: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: c.textMuted,
+  },
+  dateLabelCustom: { color: c.gold },
+
+  // Calendar modal
+  calendarSheet: {
+    backgroundColor: c.bgSurface,
+    borderTopLeftRadius: borderRadius.xl,
+    borderTopRightRadius: borderRadius.xl,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: c.border,
+    padding: spacing.lg,
+    paddingBottom: spacing['3xl'],
+  },
+  calMonthRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: spacing.md,
+  },
+  calMonthLabel: {
+    fontSize: 17,
+    fontWeight: '800',
+    color: c.textPrimary,
+    letterSpacing: -0.3,
+  },
+  calNavBtn: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: c.bgElevated,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: c.border,
+  },
+  calDowRow: {
+    flexDirection: 'row',
+    marginBottom: spacing.xs,
+  },
+  calDowCell: {
+    flex: 1,
+    alignItems: 'center',
+    paddingVertical: 4,
+  },
+  calDowText: {
+    fontSize: 11,
+    fontWeight: '700',
+    color: c.textMuted,
+    letterSpacing: 0.4,
+  },
+  calRow: {
+    flexDirection: 'row',
+    marginBottom: 6,
+  },
+  calCell: {
+    flex: 1,
+    aspectRatio: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderRadius: borderRadius.md,
+  },
+  calCellSelected: {
+    backgroundColor: c.gold,
+  },
+  calCellToday: {
+    borderWidth: 1.5,
+    borderColor: c.gold,
+  },
+  calCellText: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: c.textPrimary,
+  },
+  calCellTextSelected: {
+    color: c.bgBase,
+    fontWeight: '800',
+  },
+  calCellTextMuted: {
+    color: 'transparent',
+  },
+  calDoneBtn: {
+    marginTop: spacing.md,
+    paddingVertical: 13,
+    borderRadius: borderRadius.lg,
+    backgroundColor: c.gold,
+    alignItems: 'center',
+  },
+  calDoneBtnText: {
+    fontSize: 15,
+    fontWeight: '800',
+    color: '#000',
+  },
+  calClearBtn: {
+    marginTop: spacing.sm,
+    paddingVertical: 10,
+    alignItems: 'center',
+  },
+  calClearText: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: c.textMuted,
+  },
 }));
 
 function statusPresentation(
@@ -543,12 +702,24 @@ export default function OwnerReservationsScreen() {
   const insets = useSafeAreaInsets();
   const scrollPad = useOwnerTabScrollPadding();
   const [dateFilter, setDateFilter] = useState<DateFilter>('today');
+  const [customDates, setCustomDates] = useState<string[]>([]);
+  const [calendarOpen, setCalendarOpen] = useState(false);
+  const [calMonth, setCalMonth] = useState(() => {
+    const d = new Date();
+    return new Date(d.getFullYear(), d.getMonth(), 1);
+  });
   const [selected, setSelected] = useState<OwnerReservationSlot | null>(null);
+
+  const todayKey = toDateKey(new Date());
 
   const dateFiltered = useMemo(() => {
     if (dateFilter === 'today' || dateFilter === 'week') return OWNER_RESERVATIONS;
+    if (dateFilter === 'custom') {
+      if (customDates.length === 0) return [];
+      return OWNER_RESERVATIONS;
+    }
     return OWNER_RESERVATIONS.filter((_, i) => i % 2 === 1);
-  }, [dateFilter]);
+  }, [dateFilter, customDates]);
 
   const filtered = dateFiltered;
 
@@ -618,6 +789,14 @@ export default function OwnerReservationsScreen() {
   const onSelectFilter = (key: DateFilter) => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
     setDateFilter(key);
+    if (key === 'custom') setCalendarOpen(true);
+    else setCustomDates([]);
+  };
+
+  const toggleCustomDate = (key: string) => {
+    setCustomDates((prev) =>
+      prev.includes(key) ? prev.filter((d) => d !== key) : [...prev, key],
+    );
   };
 
   const statusCounts = useMemo(
@@ -687,6 +866,17 @@ export default function OwnerReservationsScreen() {
                 })}
               </View>
             </View>
+
+            {/* Date range label */}
+            <Pressable
+              style={styles.dateLabel}
+              onPress={dateFilter === 'custom' ? () => setCalendarOpen(true) : undefined}
+            >
+              <Text style={[styles.dateLabelText, dateFilter === 'custom' && styles.dateLabelCustom]}>
+                {dateRangeLabel(dateFilter, customDates)}
+                {dateFilter === 'custom' && '  ›'}
+              </Text>
+            </Pressable>
 
             <View style={styles.summaryCard}>
               <Text style={styles.rightNowKicker}>{summaryHeading.toUpperCase()}</Text>
@@ -765,7 +955,7 @@ export default function OwnerReservationsScreen() {
             <Ionicons name="calendar-outline" size={28} color={c.textMuted} />
             <Text style={styles.emptyText}>No reservations for this view.</Text>
             <Text style={[styles.emptyText, { marginTop: 4, fontSize: 13 }]}>
-              Try Today, Tomorrow, or Week above.
+              {dateFilter === 'custom' ? 'Select dates above to see bookings.' : 'Try Today, Tomorrow, or Week above.'}
             </Text>
           </View>
         }
@@ -838,6 +1028,73 @@ export default function OwnerReservationsScreen() {
         }}
         SectionSeparatorComponent={() => null}
       />
+
+      {/* Calendar picker modal */}
+      <Modal visible={calendarOpen} transparent animationType="slide">
+        <Pressable style={styles.modalOverlay} onPress={() => setCalendarOpen(false)}>
+          <Pressable style={styles.calendarSheet} onPress={(e) => e.stopPropagation()}>
+            <View style={styles.grabber} />
+            {/* Month nav */}
+            <View style={styles.calMonthRow}>
+              <Pressable
+                style={styles.calNavBtn}
+                onPress={() => setCalMonth((m) => new Date(m.getFullYear(), m.getMonth() - 1, 1))}
+              >
+                <Ionicons name="chevron-back" size={18} color={c.textPrimary} />
+              </Pressable>
+              <Text style={styles.calMonthLabel}>
+                {calMonth.toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}
+              </Text>
+              <Pressable
+                style={styles.calNavBtn}
+                onPress={() => setCalMonth((m) => new Date(m.getFullYear(), m.getMonth() + 1, 1))}
+              >
+                <Ionicons name="chevron-forward" size={18} color={c.textPrimary} />
+              </Pressable>
+            </View>
+            {/* Day-of-week headers */}
+            <View style={styles.calDowRow}>
+              {['S', 'M', 'T', 'W', 'T', 'F', 'S'].map((d, i) => (
+                <View key={i} style={styles.calDowCell}>
+                  <Text style={styles.calDowText}>{d}</Text>
+                </View>
+              ))}
+            </View>
+            {/* Date grid */}
+            {buildCalendarGrid(calMonth.getFullYear(), calMonth.getMonth()).map((row, ri) => (
+              <View key={ri} style={styles.calRow}>
+                {row.map((day, ci) => {
+                  if (day === null) return <View key={ci} style={styles.calCell} />;
+                  const key = `${calMonth.getFullYear()}-${String(calMonth.getMonth() + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+                  const isSelected = customDates.includes(key);
+                  const isToday = key === todayKey;
+                  return (
+                    <Pressable
+                      key={ci}
+                      style={[styles.calCell, isSelected && styles.calCellSelected, !isSelected && isToday && styles.calCellToday]}
+                      onPress={() => toggleCustomDate(key)}
+                    >
+                      <Text style={[styles.calCellText, isSelected && styles.calCellTextSelected]}>
+                        {day}
+                      </Text>
+                    </Pressable>
+                  );
+                })}
+              </View>
+            ))}
+            <Pressable style={styles.calDoneBtn} onPress={() => setCalendarOpen(false)}>
+              <Text style={styles.calDoneBtnText}>
+                {customDates.length === 0 ? 'Done' : `View ${customDates.length} day${customDates.length === 1 ? '' : 's'}`}
+              </Text>
+            </Pressable>
+            {customDates.length > 0 && (
+              <Pressable style={styles.calClearBtn} onPress={() => setCustomDates([])}>
+                <Text style={styles.calClearText}>Clear selection</Text>
+              </Pressable>
+            )}
+          </Pressable>
+        </Pressable>
+      </Modal>
 
       <Modal visible={selected !== null} transparent animationType="slide">
         <Pressable style={styles.modalOverlay} onPress={() => setSelected(null)}>

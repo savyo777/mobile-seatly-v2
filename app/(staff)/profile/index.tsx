@@ -12,9 +12,7 @@ import {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
-import Svg, { Defs, Pattern, Rect, Line } from 'react-native-svg';
 import * as Haptics from 'expo-haptics';
-import * as ImagePicker from 'expo-image-picker';
 import { useColors, createStyles, spacing, borderRadius } from '@/lib/theme';
 import { useOwnerTabScrollPadding } from '@/hooks/useOwnerTabScrollPadding';
 import { useMenu } from '@/lib/context/MenuContext';
@@ -25,6 +23,7 @@ import {
   OWNER_RESERVATIONS,
 } from '@/lib/mock/ownerApp';
 import { mockRestaurants } from '@/lib/mock/restaurants';
+import { listSnapPostsByRestaurant } from '@/lib/mock/snaps';
 
 const useStyles = createStyles((c) => ({
   root: { flex: 1, backgroundColor: c.bgBase },
@@ -199,6 +198,14 @@ const useStyles = createStyles((c) => ({
   },
 
   // ── Photos ──
+  photoSubtitle: {
+    fontSize: 13,
+    color: c.textMuted,
+    fontWeight: '400',
+    paddingHorizontal: spacing.lg,
+    marginBottom: spacing.sm,
+    marginTop: -4,
+  },
   photosRow: {
     flexDirection: 'row',
     gap: spacing.sm,
@@ -387,26 +394,6 @@ const useStyles = createStyles((c) => ({
 }));
 
 
-function PhotoPlaceholder({ index }: { index: number }) {
-  const c = useColors();
-  const patterns = [
-    { bg1: '#2A2000', bg2: '#3A3000', rotation: '45' },
-    { bg1: '#001020', bg2: '#001835', rotation: '-30' },
-    { bg1: '#200010', bg2: '#300018', rotation: '60' },
-  ];
-  const p = patterns[index % patterns.length];
-  return (
-    <Svg width="100%" height="90" viewBox="0 0 120 90">
-      <Defs>
-        <Pattern id={`ph${index}`} x={0} y={0} width={20} height={20} patternUnits="userSpaceOnUse">
-          <Rect x={0} y={0} width={20} height={20} fill={p.bg1} />
-          <Line x1={-2} y1={22} x2={22} y2={-2} stroke={p.bg2} strokeWidth={8} />
-        </Pattern>
-      </Defs>
-      <Rect x={0} y={0} width={120} height={90} fill={`url(#ph${index})`} />
-    </Svg>
-  );
-}
 
 export default function OwnerBusinessScreen() {
   const c = useColors();
@@ -417,7 +404,7 @@ export default function OwnerBusinessScreen() {
   const { width } = useWindowDimensions();
   const heroH = 220 + insets.top;
 
-  const { items: menuItems, photos: photoUris, setPhotos } = useMenu();
+  const { items: menuItems } = useMenu();
 
   const menuByCategory = menuItems.reduce<Record<string, typeof menuItems>>((acc, item) => {
     if (!acc[item.category]) acc[item.category] = [];
@@ -426,30 +413,6 @@ export default function OwnerBusinessScreen() {
   }, {});
 
   const coverPhotoUrl = mockRestaurants.find((r) => r.id === 'r1')?.coverPhotoUrl;
-
-  const pickPhoto = async (index: number) => {
-    const result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ['images'],
-      allowsEditing: true,
-      aspect: [1, 1],
-      quality: 0.85,
-    });
-    if (!result.canceled) {
-      const next = [...photoUris];
-      next[index] = result.assets[0].uri;
-      setPhotos(next);
-    }
-  };
-
-  const addPhoto = async () => {
-    const emptyIndex = photoUris.findIndex((u) => !u);
-    const targetIndex = emptyIndex === -1 ? photoUris.length : emptyIndex;
-    if (targetIndex >= 3) {
-      setPhotos([]);
-      return;
-    }
-    await pickPhoto(targetIndex);
-  };
 
   const todayBookings = OWNER_RESERVATIONS.length;
   const thisWeekBookings = 198;
@@ -553,34 +516,28 @@ export default function OwnerBusinessScreen() {
         </View>
 
         {/* ── Photos ── */}
-        <View style={styles.sectionRow}>
-          <Text style={styles.sectionTitle}>Photos</Text>
-          <View style={{ flexDirection: 'row', gap: spacing.md, alignItems: 'center' }}>
-            <Pressable onPress={() => {}} accessibilityRole="button">
-              <Text style={styles.sectionAction}>See all</Text>
-            </Pressable>
-            <Pressable onPress={addPhoto} accessibilityRole="button">
-              <Text style={styles.sectionAction}>+ Add</Text>
-            </Pressable>
-          </View>
-        </View>
-        <View style={styles.photosRow}>
-          {[0, 1, 2].map((i) => (
-            <Pressable
-              key={i}
-              style={styles.photoThumb}
-              onPress={() => pickPhoto(i)}
-              accessibilityRole="button"
-              accessibilityLabel={photoUris[i] ? `Change photo ${i + 1}` : `Add photo ${i + 1}`}
-            >
-              {photoUris[i] ? (
-                <Image source={{ uri: photoUris[i] }} style={{ width: '100%', height: '100%' }} resizeMode="cover" />
-              ) : (
-                <PhotoPlaceholder index={i} />
-              )}
-            </Pressable>
-          ))}
-        </View>
+        {(() => {
+          const snapPhotos = listSnapPostsByRestaurant('r1').slice(0, 3);
+          if (snapPhotos.length === 0) return null;
+          return (
+            <>
+              <View style={styles.sectionRow}>
+                <Text style={styles.sectionTitle}>Photos</Text>
+                <Pressable onPress={() => {}} accessibilityRole="button">
+                  <Text style={styles.sectionAction}>See all</Text>
+                </Pressable>
+              </View>
+              <Text style={styles.photoSubtitle}>Real moments from your guests</Text>
+              <View style={styles.photosRow}>
+                {snapPhotos.map((snap) => (
+                  <View key={snap.id} style={styles.photoThumb}>
+                    <Image source={{ uri: snap.image }} style={{ width: '100%', height: '100%' }} resizeMode="cover" />
+                  </View>
+                ))}
+              </View>
+            </>
+          );
+        })()}
 
         {/* ── About ── */}
         <View style={styles.sectionRow}>

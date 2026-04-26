@@ -7,6 +7,7 @@ import { Button, Card, Badge, ScreenWrapper } from '@/components/ui';
 import { mockRestaurants } from '@/lib/mock/restaurants';
 import { mockMenuItems } from '@/lib/mock/menuItems';
 import { useMenu } from '@/lib/context/MenuContext';
+import { listSnapPostsByRestaurant } from '@/lib/mock/snaps';
 import { formatCurrency } from '@/lib/utils/formatCurrency';
 import { useColors, createStyles, spacing, borderRadius, typography, shadows } from '@/lib/theme';
 import { Ionicons } from '@expo/vector-icons';
@@ -303,6 +304,11 @@ const useStyles = createStyles((c) => ({
     fontWeight: '700',
     color: c.gold,
   },
+  photoSubtitle: {
+    ...typography.bodySmall,
+    color: c.textMuted,
+    marginBottom: spacing.sm,
+  },
   photoStrip: {
     flexDirection: 'row',
     gap: spacing.sm,
@@ -515,23 +521,32 @@ export default function RestaurantDetailScreen() {
             ))}
           </ScrollView>
 
-          {isPreview && ownerPhotos.length > 0 && (
-            <View style={{ marginTop: spacing.xl }}>
-              <View style={styles.photoSectionHeader}>
-                <Text style={styles.sectionHeading}>Photos</Text>
-                <Pressable hitSlop={8} onPress={() => {}}>
-                  <Text style={styles.seeAll}>See all</Text>
-                </Pressable>
+          {(() => {
+            const snapPhotos = listSnapPostsByRestaurant(restaurant.id).slice(0, 3);
+            if (snapPhotos.length === 0) return null;
+            return (
+              <View style={{ marginTop: spacing.xl }}>
+                <View style={styles.photoSectionHeader}>
+                  <Text style={styles.sectionHeading}>Photos</Text>
+                  <Pressable hitSlop={8} onPress={() => router.push(`/(customer)/discover/snaps/${restaurant.id}`)}>
+                    <Text style={styles.seeAll}>See all</Text>
+                  </Pressable>
+                </View>
+                <Text style={styles.photoSubtitle}>See what people are eating here</Text>
+                <View style={styles.photoStrip}>
+                  {snapPhotos.map((snap) => (
+                    <Pressable
+                      key={snap.id}
+                      style={styles.photoThumb}
+                      onPress={() => router.push(`/(customer)/discover/snaps/detail/${snap.id}`)}
+                    >
+                      <Image source={{ uri: snap.image }} style={{ width: '100%', height: '100%' }} resizeMode="cover" />
+                    </Pressable>
+                  ))}
+                </View>
               </View>
-              <View style={styles.photoStrip}>
-                {ownerPhotos.slice(0, 3).map((uri, i) => (
-                  <View key={i} style={styles.photoThumb}>
-                    <Image source={{ uri }} style={{ width: '100%', height: '100%' }} resizeMode="cover" />
-                  </View>
-                ))}
-              </View>
-            </View>
-          )}
+            );
+          })()}
 
         </View>
       </ScrollView>

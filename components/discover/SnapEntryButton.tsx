@@ -42,13 +42,13 @@ export function SnapEntryButton({ onPress }: SnapEntryButtonProps) {
   return (
     <Pressable
       accessibilityRole="button"
-      accessibilityLabel="Post a restaurant review"
+      accessibilityLabel="Post a food photo and earn points"
       hitSlop={12}
       onPress={onPress}
       style={({ pressed }) => [styles.button, pressed && styles.pressed]}
     >
       <View style={styles.spark} />
-      <Text style={styles.text}>Snap</Text>
+      <Text style={styles.text}>Snap · earn points</Text>
     </Pressable>
   );
 }

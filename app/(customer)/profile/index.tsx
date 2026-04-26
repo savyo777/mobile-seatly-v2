@@ -14,6 +14,7 @@ import { mockCustomer } from '@/lib/mock/users';
 import { getSavedRestaurants } from '@/lib/mock/profileScreens';
 import { mockReservations } from '@/lib/mock/reservations';
 import { mockRestaurants } from '@/lib/mock/restaurants';
+import { listSnapPostsByUser } from '@/lib/mock/snaps';
 import { useColors, useTheme, createStyles, spacing, borderRadius } from '@/lib/theme';
 
 const MOCK_DINNERS = 12;
@@ -442,6 +443,21 @@ const useStyles = createStyles((c) => ({
     color: c.textMuted,
   },
 
+  myPhotosRow: {
+    flexDirection: 'row',
+    gap: spacing.sm,
+    paddingHorizontal: spacing.lg,
+    marginBottom: spacing.lg,
+  },
+  myPhotoThumb: {
+    flex: 1,
+    height: 90,
+    borderRadius: borderRadius.lg,
+    overflow: 'hidden',
+    backgroundColor: c.bgElevated,
+  },
+  myPhotoImg: { width: '100%' as any, height: '100%' as any },
+
   signOutBtn: {
     marginHorizontal: spacing.lg,
     paddingVertical: 15,
@@ -682,6 +698,33 @@ export default function ProfileScreen() {
             );
           })}
         </View>
+
+        {/* My Photos */}
+        {(() => {
+          const mySnaps = listSnapPostsByUser(mockCustomer.id).slice(0, 3);
+          if (mySnaps.length === 0) return null;
+          return (
+            <>
+              <View style={styles.sectionRow}>
+                <Text style={styles.sectionTitle}>My Photos</Text>
+                <Pressable hitSlop={8} onPress={() => router.push('/(customer)/feed' as Href)}>
+                  <Text style={styles.sectionLink}>See all</Text>
+                </Pressable>
+              </View>
+              <View style={styles.myPhotosRow}>
+                {mySnaps.map((snap) => (
+                  <Pressable
+                    key={snap.id}
+                    style={({ pressed }) => [styles.myPhotoThumb, pressed && { opacity: 0.8 }]}
+                    onPress={() => router.push(`/(customer)/discover/snaps/detail/${snap.id}` as Href)}
+                  >
+                    <Image source={{ uri: snap.image }} style={styles.myPhotoImg} resizeMode="cover" />
+                  </Pressable>
+                ))}
+              </View>
+            </>
+          );
+        })()}
 
         {/* Account */}
         <View style={styles.sectionRow}>
