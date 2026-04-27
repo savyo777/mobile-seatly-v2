@@ -5,6 +5,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { OwnerScreen } from '@/components/owner/OwnerScreen';
 import { SubpageHeader } from '@/components/owner/SubpageHeader';
 import { useColors, useTheme, createStyles, spacing, borderRadius, type ThemeMode } from '@/lib/theme';
+import { useAuthSession } from '@/lib/auth/AuthContext';
 
 // ── Types ──────────────────────────────────────────────────────────────────
 
@@ -199,12 +200,24 @@ function SettingsSection({ section }: { section: Section }) {
   const styles = useStyles();
   const router = useRouter();
   const [appearanceOpen, setAppearanceOpen] = React.useState(false);
+  const { signOut } = useAuthSession();
 
   const handleNav = (item: Extract<RowItem, { kind: 'nav' }>) => {
     if (item.label === 'Log out') {
       Alert.alert('Log out', 'Are you sure you want to log out?', [
         { text: 'Cancel', style: 'cancel' },
-        { text: 'Log out', style: 'destructive', onPress: () => {} },
+        {
+          text: 'Log out',
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              await signOut();
+              router.replace('/onboarding' as never);
+            } catch (e: any) {
+              Alert.alert('Logout failed', e?.message ?? 'Failed to log out. Please try again.');
+            }
+          },
+        },
       ]);
     } else if (item.label === 'Appearance') {
       setAppearanceOpen((open) => !open);

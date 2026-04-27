@@ -1,10 +1,11 @@
 import React, { useMemo, useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Linking } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, Linking, Alert } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { borderRadius, createStyles, spacing, typography, useColors } from '@/lib/theme';
+import { getSupabase } from '@/lib/supabase/client';
 import {
   ScreenWrapper,
   Input,
@@ -162,8 +163,11 @@ export default function RegisterScreen() {
   const styles = useStyles();
 
   const [role, setRole] = useState<Role>('diner');
+  const [fullName, setFullName] = useState('');
+  const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [agree, setAgree] = useState(true);
+  const [submitting, setSubmitting] = useState(false);
 
   const score = useMemo(() => passwordScore(password), [password]);
   const strengthLabel =
@@ -177,8 +181,62 @@ export default function RegisterScreen() {
     }
   };
 
-  const onSuccess = () => {
-    router.replace('/(customer)');
+  const onSuccess = async () => {
+    if (submitting) return;
+    const trimmedEmail = email.trim().toLowerCase();
+    const trimmedName = fullName.trim();
+    if (!trimmedName || !trimmedEmail || !password) {
+      Alert.alert('Missing info', 'Please fill out your name, email, and password.');
+      return;
+    }
+
+    const supabase = getSupabase();
+    if (!supabase) {
+      Alert.alert('Supabase not configured', 'Missing Supabase environment variables.');
+      return;
+    }
+
+    setSubmitting(true);
+    try {
+      const { data, error } = await supabase.auth.signUp({
+        email: trimmedEmail,
+        password,
+        options: {
+          data: {
+            full_name: trimmedName,
+            role: 'customer',
+          },
+        },
+      });
+      if (error) {
+        Alert.alert('Sign up failed', error.message);
+        return;
+      }
+
+      // If auto-confirm is enabled and a session exists, create/update the profile immediately.
+      if (data.session?.user?.id) {
+        const { error: profileError } = await supabase.from('user_profiles').upsert(
+          {
+            auth_user_id: data.session.user.id,
+            email: trimmedEmail,
+            full_name: trimmedName,
+            role: 'customer',
+          },
+          { onConflict: 'auth_user_id' },
+        );
+        if (profileError) {
+          Alert.alert('Profile setup warning', profileError.message);
+        }
+      }
+
+      Alert.alert(
+        'Account created',
+        'If email confirmation is enabled, please verify your email before signing in.',
+      );
+      router.replace(data.session ? '/(customer)' : '/(auth)/login');
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   return (
@@ -224,13 +282,21 @@ export default function RegisterScreen() {
           </TouchableOpacity>
         </View>
 
-        <Input icon="person-outline" placeholder={t('auth.fullName')} autoCapitalize="words" />
+        <Input
+          icon="person-outline"
+          placeholder={t('auth.fullName')}
+          autoCapitalize="words"
+          value={fullName}
+          onChangeText={setFullName}
+        />
         <Input
           icon="mail-outline"
           placeholder={t('auth.email')}
           keyboardType="email-address"
           autoCapitalize="none"
           autoCorrect={false}
+          value={email}
+          onChangeText={setEmail}
         />
         <Input
           icon="lock-closed-outline"
@@ -273,7 +339,7 @@ export default function RegisterScreen() {
           title={t('auth.createAccount')}
           onPress={onSuccess}
           size="lg"
-          disabled={!agree}
+          disabled={!agree || submitting}
         />
 
         <View style={styles.dividerRow}>

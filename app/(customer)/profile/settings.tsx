@@ -11,6 +11,7 @@ import {
   Pressable,
   ScrollView,
   Image,
+  Alert,
 } from 'react-native';
 import { useRouter, Href } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -18,6 +19,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { ChevronGlyph } from '@/components/ui/ChevronGlyph';
 import { useColors, createStyles, spacing, borderRadius, typography } from '@/lib/theme';
 import { mockCustomer } from '@/lib/mock/users';
+import { useAuthSession } from '@/lib/auth/AuthContext';
 
 const TIERS = [
   { name: 'Bronze',   min: 0,    color: '#CD7F32' },
@@ -186,6 +188,7 @@ export default function SettingsScreen() {
   const styles = useStyles();
   const router = useRouter();
   const insets = useSafeAreaInsets();
+  const { signOut } = useAuthSession();
   const pts = mockCustomer.loyaltyPointsBalance ?? 0;
   const tier = getTier(pts);
 
@@ -226,6 +229,15 @@ export default function SettingsScreen() {
       ],
     },
   ], []);
+
+  const handleLogout = async () => {
+    try {
+      await signOut();
+      router.replace('/onboarding');
+    } catch (e: any) {
+      Alert.alert('Logout failed', e?.message ?? 'Failed to log out. Please try again.');
+    }
+  };
 
   return (
     <View style={[styles.root, { paddingTop: insets.top }]}>
@@ -304,7 +316,7 @@ export default function SettingsScreen() {
 
         {/* Logout */}
         <Pressable
-          onPress={() => router.replace('/(auth)/login' as Href)}
+          onPress={handleLogout}
           style={({ pressed }) => [styles.logoutBtn, pressed && { opacity: 0.75 }]}
         >
           <Ionicons name="log-out-outline" size={18} color={c.danger} />

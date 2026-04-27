@@ -1,10 +1,11 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, Alert } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { borderRadius, createStyles, spacing, typography, useColors } from '@/lib/theme';
+import { getSupabase } from '@/lib/supabase/client';
 import {
   ScreenWrapper,
   Input,
@@ -124,6 +125,39 @@ export default function LoginScreen() {
   const c = useColors();
   const styles = useStyles();
   const [keepSignedIn, setKeepSignedIn] = useState(true);
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [submitting, setSubmitting] = useState(false);
+
+  const handleLogin = async () => {
+    if (submitting) return;
+    const trimmedEmail = email.trim().toLowerCase();
+    if (!trimmedEmail || !password) {
+      Alert.alert('Missing info', 'Please enter both email and password.');
+      return;
+    }
+
+    const supabase = getSupabase();
+    if (!supabase) {
+      Alert.alert('Supabase not configured', 'Missing Supabase environment variables.');
+      return;
+    }
+
+    setSubmitting(true);
+    try {
+      const { error } = await supabase.auth.signInWithPassword({
+        email: trimmedEmail,
+        password,
+      });
+      if (error) {
+        Alert.alert('Sign in failed', error.message);
+        return;
+      }
+      router.replace('/(customer)');
+    } finally {
+      setSubmitting(false);
+    }
+  };
 
   return (
     <ScreenWrapper withKeyboardAvoiding padded>
@@ -158,8 +192,16 @@ export default function LoginScreen() {
           keyboardType="email-address"
           autoCapitalize="none"
           autoCorrect={false}
+          value={email}
+          onChangeText={setEmail}
         />
-        <Input icon="lock-closed-outline" placeholder={t('auth.password')} isPassword />
+        <Input
+          icon="lock-closed-outline"
+          placeholder={t('auth.password')}
+          isPassword
+          value={password}
+          onChangeText={setPassword}
+        />
 
         <View style={styles.rowBetween}>
           <Checkbox checked={keepSignedIn} onChange={setKeepSignedIn} label={t('auth.keepSignedIn')} />
@@ -168,7 +210,7 @@ export default function LoginScreen() {
           </TouchableOpacity>
         </View>
 
-        <Button title={t('auth.login')} onPress={() => router.replace('/(customer)')} size="lg" />
+        <Button title={t('auth.login')} onPress={handleLogin} size="lg" disabled={submitting} />
 
         <View style={styles.dividerRow}>
           <View style={styles.dividerLine} />

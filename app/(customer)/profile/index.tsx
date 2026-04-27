@@ -6,6 +6,7 @@ import {
   Pressable,
   StyleSheet,
   ScrollView,
+  Alert,
 } from 'react-native';
 import { useRouter, Href } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -16,6 +17,7 @@ import { mockReservations } from '@/lib/mock/reservations';
 import { mockRestaurants } from '@/lib/mock/restaurants';
 import { listSnapPostsByUser } from '@/lib/mock/snaps';
 import { useColors, useTheme, createStyles, spacing, borderRadius } from '@/lib/theme';
+import { useAuthSession } from '@/lib/auth/AuthContext';
 
 const MOCK_DINNERS = 12;
 const MOCK_CITIES = 3;
@@ -482,6 +484,16 @@ export default function ProfileScreen() {
   const c = useColors();
   const styles = useStyles();
   const { effective, setMode, mode } = useTheme();
+  const { signOut } = useAuthSession();
+
+  async function handleLogout() {
+    try {
+      await signOut();
+      router.replace('/onboarding');
+    } catch (e: any) {
+      Alert.alert('Logout failed', e?.message ?? 'Failed to log out. Please try again.');
+    }
+  }
 
   const currentTier = getDinerTier(MOCK_DINNERS);
   const nextTier = getNextTier(MOCK_DINNERS);
@@ -754,7 +766,7 @@ export default function ProfileScreen() {
         {/* Sign out */}
         <Pressable
           style={({ pressed }) => [styles.signOutBtn, pressed && { opacity: 0.7 }]}
-          onPress={() => router.replace('/(auth)/login' as Href)}
+          onPress={handleLogout}
         >
           <Text style={styles.signOutText}>Sign out</Text>
         </Pressable>
