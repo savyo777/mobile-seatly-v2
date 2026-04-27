@@ -1,11 +1,13 @@
 import React, { useState } from 'react';
-import { View, Text, TouchableOpacity } from 'react-native';
+import { View, Text, TouchableOpacity, Alert } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
+import * as Linking from 'expo-linking';
 import { useColors, createStyles, spacing, typography } from '@/lib/theme';
 import { ScreenWrapper, Input, Button } from '@/components/ui';
+import { getSupabase } from '@/lib/supabase/client';
 
 const useStyles = createStyles((c) => ({
   inner: {
@@ -67,9 +69,30 @@ export default function ForgotPasswordScreen() {
   const insets = useSafeAreaInsets();
   const c = useColors();
   const styles = useStyles();
+  const [email, setEmail] = useState('');
   const [submitted, setSubmitted] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
 
-  const onSend = () => {
+  const onSend = async () => {
+    if (submitting) return;
+    const trimmedEmail = email.trim().toLowerCase();
+    if (!trimmedEmail) {
+      Alert.alert('Missing email', 'Please enter your email address.');
+      return;
+    }
+    const supabase = getSupabase();
+    if (!supabase) {
+      Alert.alert('Supabase not configured', 'Missing Supabase environment variables.');
+      return;
+    }
+    setSubmitting(true);
+    const redirectTo = Linking.createURL('/(auth)/reset-password');
+    const { error } = await supabase.auth.resetPasswordForEmail(trimmedEmail, { redirectTo });
+    setSubmitting(false);
+    if (error) {
+      Alert.alert('Reset failed', error.message);
+      return;
+    }
     setSubmitted(true);
   };
 
@@ -91,9 +114,16 @@ export default function ForgotPasswordScreen() {
             <Text style={styles.heading}>{t('auth.resetPassword')}</Text>
             <Text style={styles.description}>{t('auth.resetPasswordDescription')}</Text>
 
-            <Input icon="mail-outline" placeholder={t('auth.email')} keyboardType="email-address" autoCapitalize="none" />
+            <Input
+              icon="mail-outline"
+              placeholder={t('auth.email')}
+              keyboardType="email-address"
+              autoCapitalize="none"
+              value={email}
+              onChangeText={setEmail}
+            />
 
-            <Button title={t('auth.sendResetLink')} onPress={onSend} size="lg" />
+            <Button title={t('auth.sendResetLink')} onPress={onSend} size="lg" disabled={submitting} />
           </>
         ) : (
           <View style={styles.confirm}>
