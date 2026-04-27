@@ -200,6 +200,13 @@ export default function SettingsScreen() {
       ],
     },
     {
+      title: 'Account Security',
+      rows: [
+        { icon: 'lock-closed-outline', label: 'Change Password', href: '/(customer)/profile/security/change-password' },
+        { icon: 'mail-outline', label: 'Change Email', href: '/(customer)/profile/security/change-email' },
+      ],
+    },
+    {
       title: 'Payments & Rewards',
       rows: [
         { icon: 'card-outline',     label: 'Payment Methods', href: '/(customer)/profile/payment' },

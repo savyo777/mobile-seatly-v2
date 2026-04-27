@@ -268,6 +268,13 @@ export default function OwnerSettingsScreen() {
       ],
     },
     {
+      title: 'Account Security',
+      rows: [
+        { kind: 'nav', label: 'Change Password', icon: 'lock-closed-outline', route: '/(customer)/profile/security/change-password' },
+        { kind: 'nav', label: 'Change Email', icon: 'mail-outline', route: '/(customer)/profile/security/change-email' },
+      ],
+    },
+    {
       title: 'Business',
       rows: [
         { kind: 'nav', label: 'Business hours', value: 'Mon–Sun', icon: 'time-outline' },
