@@ -2,6 +2,7 @@ import React, { useEffect } from 'react';
 import { View, Text, ActivityIndicator } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useColors, createStyles } from '@/lib/theme';
+import { useAuthSession } from '@/lib/auth/AuthContext';
 
 const useStyles = createStyles((c) => ({
   container: {
@@ -31,13 +32,21 @@ export default function SplashScreen() {
   const router = useRouter();
   const c = useColors();
   const styles = useStyles();
+  const { loading, isAuthenticated, isStaffLike } = useAuthSession();
 
   useEffect(() => {
+    if (loading) return;
     const timer = setTimeout(() => {
+      if (isAuthenticated) {
+        router.replace(isStaffLike ? '/(staff)' : '/(customer)');
+        return;
+      }
       router.replace('/onboarding');
-    }, 1500);
-    return () => clearTimeout(timer);
-  }, [router]);
+    }, 300);
+    return () => {
+      clearTimeout(timer);
+    };
+  }, [router, loading, isAuthenticated, isStaffLike]);
 
   return (
     <View style={styles.container}>

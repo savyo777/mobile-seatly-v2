@@ -1,12 +1,13 @@
 import React from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
-import { Tabs, useRouter, usePathname, Href } from 'expo-router';
+import { Redirect, Tabs, useRouter, usePathname, Href } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
 import * as Haptics from 'expo-haptics';
 import { AiChatFab } from '@/components/ai/AiChatFab';
 import { useColors, createStyles } from '@/lib/theme';
 import { tabTransitionOptions } from '@/lib/navigation/transitions';
+import { useAuthSession } from '@/lib/auth/AuthContext';
 
 const HIDE_FAB_ROUTES = ['/ai-chat', '/post-review', '/camera', '/booking'];
 
@@ -53,6 +54,12 @@ export default function CustomerTabsLayout() {
   const pathname = usePathname();
   const c = useColors();
   const styles = useStyles();
+  const { loading, isAuthenticated } = useAuthSession();
+
+  if (loading) return null;
+  if (!isAuthenticated) {
+    return <Redirect href="/(auth)/welcome" />;
+  }
 
   const hideFab = HIDE_FAB_ROUTES.some((route) => pathname?.includes(route));
 

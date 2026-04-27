@@ -7,12 +7,13 @@ import {
   Modal,
   TouchableWithoutFeedback,
 } from 'react-native';
-import { Tabs, useRouter, usePathname } from 'expo-router';
+import { Redirect, Tabs, useRouter, usePathname } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useColors, createStyles, spacing, borderRadius } from '@/lib/theme';
 import { tabTransitionOptions } from '@/lib/navigation/transitions';
+import { useAuthSession } from '@/lib/auth/AuthContext';
 
 type IoniconName = React.ComponentProps<typeof Ionicons>['name'];
 
@@ -137,6 +138,15 @@ export default function OwnerTabsLayout() {
   const insets = useSafeAreaInsets();
   const [sheetOpen, setSheetOpen] = useState(false);
   const pathname = usePathname();
+  const { loading, isAuthenticated, isStaffLike } = useAuthSession();
+
+  if (loading) return null;
+  if (!isAuthenticated) {
+    return <Redirect href="/(auth)/welcome" />;
+  }
+  if (!isStaffLike) {
+    return <Redirect href="/(customer)" />;
+  }
 
   const TAB_ROOTS = ['/home', '/reservations', '/promotions', '/profile'];
   const showFab = TAB_ROOTS.includes(pathname);
