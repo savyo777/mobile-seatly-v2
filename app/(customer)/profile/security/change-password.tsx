@@ -7,6 +7,24 @@ import { ProfileStackScreen } from '@/components/profile/ProfileStackScreen';
 import { useColors, createStyles, spacing, borderRadius, typography } from '@/lib/theme';
 import { changePassword } from '@/lib/services/accountSecurity';
 
+type PasswordChecks = {
+  minLength: boolean;
+  uppercase: boolean;
+  lowercase: boolean;
+  number: boolean;
+  special: boolean;
+};
+
+function getPasswordChecks(pw: string): PasswordChecks {
+  return {
+    minLength: pw.length >= 8,
+    uppercase: /[A-Z]/.test(pw),
+    lowercase: /[a-z]/.test(pw),
+    number: /\d/.test(pw),
+    special: /[!@#$%^&*_\-?.]/.test(pw),
+  };
+}
+
 const useStyles = createStyles((c) => ({
   field: {
     marginBottom: spacing.lg,
@@ -47,6 +65,11 @@ const useStyles = createStyles((c) => ({
     color: c.textMuted,
     lineHeight: 20,
     marginBottom: spacing.xl,
+  },
+  ruleItem: {
+    ...typography.bodySmall,
+    color: c.textMuted,
+    marginTop: 4,
   },
   submitBtn: {
     backgroundColor: c.gold,
@@ -116,12 +139,13 @@ export default function ChangePasswordScreen() {
   const [confirm, setConfirm] = useState('');
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState<{ current?: string; next?: string; confirm?: string }>({});
+  const checks = getPasswordChecks(next);
+  const isPasswordValid = Object.values(checks).every(Boolean);
 
   const validate = () => {
     const e: typeof errors = {};
     if (!current) e.current = 'Required';
-    if (next.length < 8) e.next = t('profile.passwordTooShort');
-    else if (!/[A-Z]/.test(next) || !/[a-z]/.test(next) || !/\d/.test(next))
+    if (!isPasswordValid)
       e.next = t('profile.passwordTooWeak');
     if (next !== confirm) e.confirm = t('profile.passwordMismatch');
     return e;
@@ -168,10 +192,15 @@ export default function ChangePasswordScreen() {
       <Text style={styles.rules}>
         Minimum 8 characters · Uppercase, lowercase, and a number
       </Text>
+      <Text style={styles.ruleItem}>{`${checks.minLength ? '✓' : '○'} At least 8 characters`}</Text>
+      <Text style={styles.ruleItem}>{`${checks.uppercase ? '✓' : '○'} At least 1 uppercase letter`}</Text>
+      <Text style={styles.ruleItem}>{`${checks.lowercase ? '✓' : '○'} At least 1 lowercase letter`}</Text>
+      <Text style={styles.ruleItem}>{`${checks.number ? '✓' : '○'} At least 1 number`}</Text>
+      <Text style={styles.ruleItem}>{`${checks.special ? '✓' : '○'} At least 1 special character (! @ # $ % ^ & * _ - ? .)`}</Text>
       <Pressable
         onPress={handleSubmit}
-        disabled={!ready || loading}
-        style={[styles.submitBtn, (!ready || loading) && styles.submitBtnDisabled]}
+        disabled={!ready || loading || !isPasswordValid}
+        style={[styles.submitBtn, (!ready || loading || !isPasswordValid) && styles.submitBtnDisabled]}
       >
         {loading
           ? <ActivityIndicator color="#1A1200" />

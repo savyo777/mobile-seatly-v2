@@ -19,12 +19,22 @@ const PRIVACY_URL = 'https://cenaiva.com/privacy';
 
 type Role = 'diner' | 'owner';
 
-function passwordScore(pw: string): 0 | 1 | 2 | 3 {
-  let score = 0;
-  if (pw.length >= 8) score++;
-  if (/\d/.test(pw)) score++;
-  if (/[^A-Za-z0-9]/.test(pw)) score++;
-  return score as 0 | 1 | 2 | 3;
+type PasswordChecks = {
+  minLength: boolean;
+  uppercase: boolean;
+  lowercase: boolean;
+  number: boolean;
+  special: boolean;
+};
+
+function getPasswordChecks(pw: string): PasswordChecks {
+  return {
+    minLength: pw.length >= 8,
+    uppercase: /[A-Z]/.test(pw),
+    lowercase: /[a-z]/.test(pw),
+    number: /\d/.test(pw),
+    special: /[!@#$%^&*_\-?.]/.test(pw),
+  };
 }
 
 const useStyles = createStyles((c) => ({
@@ -117,6 +127,7 @@ const useStyles = createStyles((c) => ({
   },
   pwHint: { ...typography.bodySmall, color: c.textMuted },
   pwLabel: { ...typography.bodySmall, color: c.gold, fontWeight: '700' },
+  pwRule: { ...typography.bodySmall, color: c.textMuted, marginTop: 4 },
   termsRow: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -169,7 +180,10 @@ export default function RegisterScreen() {
   const [agree, setAgree] = useState(true);
   const [submitting, setSubmitting] = useState(false);
 
-  const score = useMemo(() => passwordScore(password), [password]);
+  const checks = useMemo(() => getPasswordChecks(password), [password]);
+  const metCount = Object.values(checks).filter(Boolean).length;
+  const score = (metCount >= 5 ? 3 : metCount >= 3 ? 2 : metCount >= 1 ? 1 : 0) as 0 | 1 | 2 | 3;
+  const isPasswordValid = metCount === 5;
   const strengthLabel =
     score === 3 ? t('auth.pwStrengthStrong') : score === 2 ? t('auth.pwStrengthMedium') : t('auth.pwStrengthWeak');
 
@@ -187,6 +201,10 @@ export default function RegisterScreen() {
     const trimmedName = fullName.trim();
     if (!trimmedName || !trimmedEmail || !password) {
       Alert.alert('Missing info', 'Please fill out your name, email, and password.');
+      return;
+    }
+    if (!isPasswordValid) {
+      Alert.alert('Password requirements', 'Please meet all password requirements before continuing.');
       return;
     }
 
@@ -315,6 +333,11 @@ export default function RegisterScreen() {
           <Text style={styles.pwHint}>{t('auth.pwHintShort')}</Text>
           {password.length > 0 ? <Text style={styles.pwLabel}>{strengthLabel}</Text> : null}
         </View>
+        <Text style={styles.pwRule}>{`${checks.minLength ? '✓' : '○'} At least 8 characters`}</Text>
+        <Text style={styles.pwRule}>{`${checks.uppercase ? '✓' : '○'} At least 1 uppercase letter`}</Text>
+        <Text style={styles.pwRule}>{`${checks.lowercase ? '✓' : '○'} At least 1 lowercase letter`}</Text>
+        <Text style={styles.pwRule}>{`${checks.number ? '✓' : '○'} At least 1 number`}</Text>
+        <Text style={styles.pwRule}>{`${checks.special ? '✓' : '○'} At least 1 special character (! @ # $ % ^ & * _ - ? .)`}</Text>
 
         <View style={styles.termsRow}>
           <Checkbox
@@ -339,7 +362,7 @@ export default function RegisterScreen() {
           title={t('auth.createAccount')}
           onPress={onSuccess}
           size="lg"
-          disabled={!agree || submitting}
+          disabled={!agree || submitting || !isPasswordValid}
         />
 
         <View style={styles.dividerRow}>
