@@ -1,11 +1,13 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Alert } from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useRouter } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { borderRadius, createStyles, spacing, typography, useColors } from '@/lib/theme';
 import { getSupabase } from '@/lib/supabase/client';
+import { sendPasswordResetEmail } from '@/lib/services/accountSecurity';
 import {
   ScreenWrapper,
   Input,
@@ -118,6 +120,17 @@ const useStyles = createStyles((c) => ({
   footerLink: { ...typography.body, color: c.gold, fontWeight: '700' },
 }));
 
+const LOCKOUT_MS = 15 * 60 * 1000;
+const MAX_FAILED_ATTEMPTS = 5;
+
+function failuresKey(email: string) {
+  return `@seatly/login_failures:${email}`;
+}
+
+function lockoutKey(email: string) {
+  return `@seatly/login_lockout_until:${email}`;
+}
+
 export default function LoginScreen() {
   const { t } = useTranslation();
   const router = useRouter();
@@ -128,10 +141,50 @@ export default function LoginScreen() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [submitting, setSubmitting] = useState(false);
+  const [lockoutUntilMs, setLockoutUntilMs] = useState<number | null>(null);
+
+  const trimmedEmail = email.trim().toLowerCase();
+  const isLockedOut = lockoutUntilMs !== null && Date.now() < lockoutUntilMs;
+
+  useEffect(() => {
+    let cancelled = false;
+    const loadLockout = async () => {
+      if (!trimmedEmail) {
+        if (!cancelled) setLockoutUntilMs(null);
+        return;
+      }
+      const raw = await AsyncStorage.getItem(lockoutKey(trimmedEmail));
+      if (!raw) {
+        if (!cancelled) setLockoutUntilMs(null);
+        return;
+      }
+      const until = Date.parse(raw);
+      if (Number.isNaN(until) || Date.now() >= until) {
+        await AsyncStorage.removeItem(lockoutKey(trimmedEmail));
+        if (!cancelled) setLockoutUntilMs(null);
+        return;
+      }
+      if (!cancelled) setLockoutUntilMs(until);
+    };
+    void loadLockout();
+    return () => {
+      cancelled = true;
+    };
+  }, [trimmedEmail]);
+
+  useEffect(() => {
+    if (!isLockedOut || lockoutUntilMs === null) return;
+    const id = setInterval(() => {
+      if (Date.now() >= lockoutUntilMs) {
+        setLockoutUntilMs(null);
+        clearInterval(id);
+      }
+    }, 1000);
+    return () => clearInterval(id);
+  }, [isLockedOut, lockoutUntilMs]);
 
   const handleLogin = async () => {
-    if (submitting) return;
-    const trimmedEmail = email.trim().toLowerCase();
+    if (submitting || isLockedOut) return;
     if (!trimmedEmail || !password) {
       Alert.alert('Missing info', 'Please enter both email and password.');
       return;
@@ -150,9 +203,31 @@ export default function LoginScreen() {
         password,
       });
       if (error) {
+        const prevRaw = await AsyncStorage.getItem(failuresKey(trimmedEmail));
+        const prev = prevRaw ? Math.max(0, parseInt(prevRaw, 10) || 0) : 0;
+        const next = prev + 1;
+        if (next >= MAX_FAILED_ATTEMPTS) {
+          await AsyncStorage.removeItem(failuresKey(trimmedEmail));
+          const until = Date.now() + LOCKOUT_MS;
+          await AsyncStorage.setItem(lockoutKey(trimmedEmail), new Date(until).toISOString());
+          setLockoutUntilMs(until);
+          Alert.alert(
+            'Too many attempts',
+            'Too many failed attempts. Please wait 15 minutes or reset your password.',
+          );
+          try {
+            await sendPasswordResetEmail(trimmedEmail);
+          } catch {
+            // ignore: reset email is best-effort; lockout still applies
+          }
+          return;
+        }
+        await AsyncStorage.setItem(failuresKey(trimmedEmail), String(next));
         Alert.alert('Sign in failed', error.message);
         return;
       }
+      await AsyncStorage.multiRemove([failuresKey(trimmedEmail), lockoutKey(trimmedEmail)]);
+      setLockoutUntilMs(null);
       router.replace('/(customer)');
     } finally {
       setSubmitting(false);
@@ -210,7 +285,12 @@ export default function LoginScreen() {
           </TouchableOpacity>
         </View>
 
-        <Button title={t('auth.login')} onPress={handleLogin} size="lg" disabled={submitting} />
+        <Button
+          title={t('auth.login')}
+          onPress={handleLogin}
+          size="lg"
+          disabled={submitting || isLockedOut}
+        />
 
         <View style={styles.dividerRow}>
           <View style={styles.dividerLine} />

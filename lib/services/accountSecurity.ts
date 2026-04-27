@@ -1,3 +1,4 @@
+import * as Linking from 'expo-linking';
 import { getSupabase } from '@/lib/supabase/client';
 
 function requireSupabase() {
@@ -39,7 +40,10 @@ export async function resendVerificationEmail(email: string): Promise<void> {
 
 export async function sendPasswordResetEmail(email: string): Promise<void> {
   const supabase = requireSupabase();
-  const { error } = await supabase.auth.resetPasswordForEmail(email.trim().toLowerCase());
+  const redirectTo = Linking.createURL('/(auth)/reset-password');
+  const { error } = await supabase.auth.resetPasswordForEmail(email.trim().toLowerCase(), {
+    redirectTo,
+  });
   if (error) throw error;
 }
 
