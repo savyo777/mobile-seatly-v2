@@ -4,3 +4,6 @@ export { Input } from './Input';
 export { Card } from './Card';
 export { Badge } from './Badge';
 export { ChevronGlyph } from './ChevronGlyph';
+export { SocialAuthButtons } from './SocialAuthButtons';
+export { TermsFooter } from './TermsFooter';
+export { Checkbox } from './Checkbox';

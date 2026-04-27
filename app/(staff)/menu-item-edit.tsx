@@ -95,7 +95,7 @@ export default function MenuItemEditScreen() {
         preparationTimeMinutes: 15,
       });
     }
-    router.back();
+    router.replace('/(staff)/menu' as never);
   }, [addItem, editingItem, formAvailable, formCategory, formDesc, formName, formPhotoUri, formPrice, router, t, updateItem]);
 
   const handleDelete = useCallback(() => {
@@ -110,7 +110,7 @@ export default function MenuItemEditScreen() {
           style: 'destructive',
           onPress: () => {
             removeItem(editingItem.id);
-            router.back();
+            router.replace('/(staff)/menu' as never);
           },
         },
       ],
@@ -126,7 +126,7 @@ export default function MenuItemEditScreen() {
         <OwnerScreen contentContainerStyle={styles.scrollPad}>
           <Animated.View entering={FadeInDown.duration(260)} style={styles.headRow}>
             <Pressable
-              onPress={() => router.back()}
+              onPress={() => router.replace('/(staff)/menu' as never)}
               hitSlop={10}
               style={({ pressed }) => [styles.backBtn, { opacity: pressed ? 0.6 : 1 }]}
               accessibilityRole="button"

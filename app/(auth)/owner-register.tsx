@@ -5,7 +5,7 @@ import { useTranslation } from 'react-i18next';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useColors, createStyles, spacing, typography, borderRadius } from '@/lib/theme';
-import { Input, Button } from '@/components/ui';
+import { Input, Button, SocialAuthButtons, TermsFooter } from '@/components/ui';
 
 const useStyles = createStyles((c) => ({
   root: {
@@ -113,6 +113,7 @@ const useStyles = createStyles((c) => ({
     color: c.gold,
     fontWeight: '600',
   },
+  termsBottom: {},
 }));
 
 export default function OwnerRegisterScreen() {
@@ -200,20 +201,18 @@ export default function OwnerRegisterScreen() {
           autoCorrect={false}
         />
 
-        <View style={styles.termsRow}>
-          <Ionicons name="shield-checkmark-outline" size={14} color={c.textMuted} />
-          <Text style={styles.termsText}>
-            By creating an account you agree to our{' '}
-            <Text style={styles.termsLink}>Terms of Service</Text> and{' '}
-            <Text style={styles.termsLink}>Privacy Policy</Text>.
-          </Text>
-        </View>
-
         <Button
           title={t('auth.createAccount')}
           onPress={() => router.replace('/(staff)')}
           size="lg"
           style={styles.ctaBtn}
+        />
+
+        <View style={styles.divider} />
+
+        <SocialAuthButtons
+          onApple={() => router.replace('/(staff)')}
+          onGoogle={() => router.replace('/(staff)')}
         />
 
         <View style={styles.footerRow}>
@@ -224,6 +223,10 @@ export default function OwnerRegisterScreen() {
           >
             <Text style={styles.footerLink}>{t('auth.ownerSignIn')}</Text>
           </TouchableOpacity>
+        </View>
+
+        <View style={styles.termsBottom}>
+          <TermsFooter />
         </View>
       </ScrollView>
     </View>

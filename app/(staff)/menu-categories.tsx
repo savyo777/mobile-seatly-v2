@@ -1,7 +1,8 @@
-import React, { useCallback, useState } from 'react';
+import React, { useCallback, useMemo, useState } from 'react';
 import {
   Alert,
   KeyboardAvoidingView,
+  Modal,
   Platform,
   Pressable,
   StyleSheet,
@@ -17,7 +18,7 @@ import DraggableFlatList, {
   type RenderItemParams,
   ScaleDecorator,
 } from 'react-native-draggable-flatlist';
-import { OwnerScreen } from '@/components/owner/OwnerScreen';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useMenu } from '@/lib/context/MenuContext';
 import { createStyles } from '@/lib/theme';
 import { ownerColorsFromPalette, ownerRadii, ownerSpace, useOwnerColors } from '@/lib/theme/ownerTheme';
@@ -29,10 +30,30 @@ export default function MenuCategoriesScreen() {
   const styles = useStyles();
   const { items, categories, reorderCategories, addCategory, renameCategory, removeCategory } = useMenu();
 
+  const [searchQuery, setSearchQuery] = useState('');
+  const [addSheetOpen, setAddSheetOpen] = useState(false);
   const [newCategoryName, setNewCategoryName] = useState('');
   const [categoryError, setCategoryError] = useState('');
   const [renamingCategory, setRenamingCategory] = useState<string | null>(null);
   const [renamingValue, setRenamingValue] = useState('');
+
+  const filteredCategories = useMemo(() => {
+    const query = searchQuery.trim().toLowerCase();
+    if (!query) return categories;
+    return categories.filter((cat) => cat.toLowerCase().includes(query));
+  }, [categories, searchQuery]);
+
+  const openAddSheet = useCallback(() => {
+    setNewCategoryName('');
+    setCategoryError('');
+    setAddSheetOpen(true);
+  }, []);
+
+  const closeAddSheet = useCallback(() => {
+    setAddSheetOpen(false);
+    setNewCategoryName('');
+    setCategoryError('');
+  }, []);
 
   const handleAdd = useCallback(() => {
     const trimmed = newCategoryName.trim();
@@ -47,6 +68,7 @@ export default function MenuCategoriesScreen() {
     }
     setNewCategoryName('');
     setCategoryError('');
+    setAddSheetOpen(false);
   }, [addCategory, newCategoryName, t]);
 
   const startRename = useCallback((name: string) => {
@@ -159,15 +181,15 @@ export default function MenuCategoriesScreen() {
   }, [handleDelete, items, ownerColors, renamingCategory, renamingValue, saveRename, startRename, styles, t]);
 
   return (
-    <View style={styles.screen}>
+    <SafeAreaView style={styles.screen} edges={['top', 'left', 'right']}>
       <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
         style={styles.flex}
       >
-        <OwnerScreen contentContainerStyle={styles.scrollPad}>
+        <View style={styles.headerWrap}>
           <Animated.View entering={FadeInDown.duration(260)} style={styles.headRow}>
             <Pressable
-              onPress={() => router.back()}
+              onPress={() => router.replace('/(staff)/menu' as never)}
               hitSlop={10}
               style={({ pressed }) => [styles.backBtn, { opacity: pressed ? 0.6 : 1 }]}
               accessibilityRole="button"
@@ -182,55 +204,93 @@ export default function MenuCategoriesScreen() {
           </Animated.View>
 
           <Animated.View entering={FadeIn.delay(80).duration(220)}>
-            <Text style={styles.fieldLabel}>{t('owner.menuCategoryAddSectionLabel')}</Text>
             <View style={styles.categoryAddRow}>
-              <TextInput
-                value={newCategoryName}
-                onChangeText={(value) => {
-                  setNewCategoryName(value);
-                  if (categoryError) setCategoryError('');
-                }}
-                style={[styles.input, styles.categoryInput]}
-                placeholder={t('owner.menuCategoryNamePlaceholder')}
-                placeholderTextColor={ownerColors.textMuted}
-                returnKeyType="done"
-                onSubmitEditing={handleAdd}
-              />
+              <View style={styles.searchWrap}>
+                <Ionicons name="search-outline" size={18} color={ownerColors.textMuted} style={styles.searchIcon} />
+                <TextInput
+                  value={searchQuery}
+                  onChangeText={setSearchQuery}
+                  style={styles.searchInput}
+                  placeholder={t('owner.menuCategorySearchPlaceholder')}
+                  placeholderTextColor={ownerColors.textMuted}
+                  returnKeyType="search"
+                />
+              </View>
               <Pressable
-                onPress={handleAdd}
-                style={({ pressed }) => [styles.categoryAddBtn, pressed && styles.rowPressed]}
+                onPress={openAddSheet}
+                style={({ pressed }) => [styles.categoryAddIconBtn, pressed && styles.rowPressed]}
                 accessibilityRole="button"
                 accessibilityLabel={t('owner.menuActionAddCategory')}
               >
-                <Ionicons name="add" size={18} color={ownerColors.gold} />
-                <Text style={styles.categoryAddBtnText}>{t('owner.menuAddCategoryShort')}</Text>
+                <Ionicons name="add" size={22} color={ownerColors.gold} />
               </Pressable>
             </View>
-            {categoryError ? <Text style={styles.categoryError}>{categoryError}</Text> : null}
           </Animated.View>
-        </OwnerScreen>
+        </View>
 
         <View style={styles.listWrap}>
           <DraggableFlatList
-            data={categories}
+            data={filteredCategories}
             keyExtractor={(cat) => cat}
-            onDragEnd={({ data }) => reorderCategories(data)}
+            onDragEnd={({ data }) => {
+              if (!searchQuery.trim()) reorderCategories(data);
+            }}
             activationDistance={8}
             renderItem={renderItem}
             contentContainerStyle={styles.listContent}
           />
         </View>
+
+        <Modal visible={addSheetOpen} animationType="fade" transparent onRequestClose={closeAddSheet}>
+          <Pressable style={styles.sheetBackdrop} onPress={closeAddSheet}>
+            <KeyboardAvoidingView
+              behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+              style={styles.sheetKeyboard}
+            >
+              <Pressable style={styles.addSheet} onPress={() => undefined}>
+                <Text style={styles.sheetTitle}>{t('owner.menuActionAddCategory')}</Text>
+                <Text style={styles.sheetSub}>{t('owner.menuCategoryAddHint')}</Text>
+                <TextInput
+                  value={newCategoryName}
+                  onChangeText={(value) => {
+                    setNewCategoryName(value);
+                    if (categoryError) setCategoryError('');
+                  }}
+                  style={styles.input}
+                  placeholder={t('owner.menuCategoryNamePlaceholder')}
+                  placeholderTextColor={ownerColors.textMuted}
+                  autoFocus
+                  returnKeyType="done"
+                  onSubmitEditing={handleAdd}
+                />
+                {categoryError ? <Text style={styles.categoryError}>{categoryError}</Text> : null}
+                <View style={styles.sheetActions}>
+                  <Pressable onPress={closeAddSheet} style={({ pressed }) => [styles.sheetSecondary, pressed && styles.rowPressed]}>
+                    <Text style={styles.sheetSecondaryText}>{t('owner.menuCancel')}</Text>
+                  </Pressable>
+                  <Pressable onPress={handleAdd} style={({ pressed }) => [styles.sheetPrimary, pressed && styles.rowPressed]}>
+                    <Text style={styles.sheetPrimaryText}>{t('owner.menuAddCategoryShort')}</Text>
+                  </Pressable>
+                </View>
+              </Pressable>
+            </KeyboardAvoidingView>
+          </Pressable>
+        </Modal>
       </KeyboardAvoidingView>
-    </View>
+    </SafeAreaView>
   );
 }
 
 const useStyles = createStyles((c) => {
   const ownerColors = ownerColorsFromPalette(c);
   return {
-    screen: { flex: 1 },
+    screen: { flex: 1, backgroundColor: c.bgBase },
     flex: { flex: 1 },
-    scrollPad: { paddingTop: 2, paddingBottom: ownerSpace.md },
+    headerWrap: {
+      paddingHorizontal: ownerSpace.md,
+      paddingTop: ownerSpace.sm,
+      paddingBottom: ownerSpace.sm,
+    },
     headRow: {
       flexDirection: 'row',
       alignItems: 'flex-start',
@@ -281,22 +341,32 @@ const useStyles = createStyles((c) => {
       marginBottom: ownerSpace.sm,
     },
     categoryInput: { flex: 1 },
-    categoryAddBtn: {
+    searchWrap: {
+      flex: 1,
       flexDirection: 'row',
       alignItems: 'center',
-      justifyContent: 'center',
-      gap: 4,
-      height: 44,
+      backgroundColor: ownerColors.bgSurface,
+      borderRadius: ownerRadii.md,
+      borderWidth: StyleSheet.hairlineWidth,
+      borderColor: ownerColors.border,
       paddingHorizontal: ownerSpace.sm,
-      borderRadius: ownerRadii.sm,
+    },
+    searchIcon: { marginRight: 6 },
+    searchInput: {
+      flex: 1,
+      minHeight: 40,
+      color: ownerColors.text,
+      fontSize: 15,
+    },
+    categoryAddIconBtn: {
+      width: 44,
+      height: 44,
+      alignItems: 'center',
+      justifyContent: 'center',
+      borderRadius: ownerRadii.md,
       backgroundColor: ownerColors.goldSubtle,
       borderWidth: StyleSheet.hairlineWidth,
       borderColor: ownerColors.goldMuted,
-    },
-    categoryAddBtnText: {
-      fontSize: 14,
-      fontWeight: '700',
-      color: ownerColors.gold,
     },
     categoryError: {
       marginTop: -4,
@@ -367,6 +437,65 @@ const useStyles = createStyles((c) => {
     categoryDoneText: {
       fontSize: 13,
       fontWeight: '700',
+      color: ownerColors.gold,
+    },
+    sheetBackdrop: {
+      flex: 1,
+      justifyContent: 'flex-end',
+      backgroundColor: 'rgba(0,0,0,0.55)',
+    },
+    sheetKeyboard: {
+      width: '100%',
+    },
+    addSheet: {
+      backgroundColor: ownerColors.bgSurface,
+      borderTopLeftRadius: ownerRadii.xl,
+      borderTopRightRadius: ownerRadii.xl,
+      padding: ownerSpace.md,
+      paddingBottom: ownerSpace.lg,
+      borderWidth: StyleSheet.hairlineWidth,
+      borderColor: ownerColors.border,
+    },
+    sheetTitle: {
+      fontSize: 18,
+      fontWeight: '800',
+      color: ownerColors.text,
+      letterSpacing: -0.25,
+      marginBottom: 4,
+    },
+    sheetSub: {
+      fontSize: 13,
+      fontWeight: '500',
+      color: ownerColors.textMuted,
+      marginBottom: ownerSpace.md,
+    },
+    sheetActions: {
+      flexDirection: 'row',
+      justifyContent: 'flex-end',
+      gap: ownerSpace.sm,
+      marginTop: ownerSpace.md,
+    },
+    sheetSecondary: {
+      paddingVertical: 11,
+      paddingHorizontal: ownerSpace.md,
+      borderRadius: ownerRadii.md,
+    },
+    sheetSecondaryText: {
+      fontSize: 15,
+      fontWeight: '700',
+      color: ownerColors.textMuted,
+    },
+    sheetPrimary: {
+      paddingVertical: 11,
+      paddingHorizontal: ownerSpace.lg,
+      borderRadius: ownerRadii.md,
+      backgroundColor: ownerColors.goldSubtle,
+      borderWidth: StyleSheet.hairlineWidth,
+      borderColor: ownerColors.goldMuted,
+    },
+    sheetPrimaryText: {
+      fontSize: 15,
+      fontWeight: '800',
       color: ownerColors.gold,
     },
     rowPressed: {

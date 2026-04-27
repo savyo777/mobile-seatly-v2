@@ -65,36 +65,26 @@ export function MenuProvider({ children }: { children: React.ReactNode }) {
   const addCategory = useCallback<MenuContextValue['addCategory']>((name) => {
     const trimmed = name.trim();
     if (!trimmed) return { ok: false, reason: 'empty' };
-    let result: CategoryWriteResult = { ok: true };
-    setCategories((prev) => {
-      if (prev.some((c) => c.toLowerCase() === trimmed.toLowerCase())) {
-        result = { ok: false, reason: 'duplicate' };
-        return prev;
-      }
-      return [...prev, trimmed];
-    });
-    return result;
-  }, []);
+    if (categories.some((c) => c.toLowerCase() === trimmed.toLowerCase())) {
+      return { ok: false, reason: 'duplicate' };
+    }
+    setCategories((prev) => [...prev, trimmed]);
+    return { ok: true };
+  }, [categories]);
 
   const renameCategory = useCallback<MenuContextValue['renameCategory']>((from, to) => {
     const trimmed = to.trim();
     if (!trimmed) return { ok: false, reason: 'empty' };
-    let result: CategoryWriteResult = { ok: true };
-    setCategories((prev) => {
-      if (
-        trimmed.toLowerCase() !== from.toLowerCase() &&
-        prev.some((c) => c.toLowerCase() === trimmed.toLowerCase())
-      ) {
-        result = { ok: false, reason: 'duplicate' };
-        return prev;
-      }
-      return prev.map((c) => (c === from ? trimmed : c));
-    });
-    if (result.ok) {
-      setItems((prev) => prev.map((m) => (m.category === from ? { ...m, category: trimmed } : m)));
+    if (
+      trimmed.toLowerCase() !== from.toLowerCase() &&
+      categories.some((c) => c.toLowerCase() === trimmed.toLowerCase())
+    ) {
+      return { ok: false, reason: 'duplicate' };
     }
-    return result;
-  }, []);
+    setCategories((prev) => prev.map((c) => (c === from ? trimmed : c)));
+    setItems((prev) => prev.map((m) => (m.category === from ? { ...m, category: trimmed } : m)));
+    return { ok: true };
+  }, [categories]);
 
   const removeCategory = useCallback((name: string) => {
     setCategories((prev) => prev.filter((c) => c !== name));

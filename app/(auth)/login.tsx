@@ -1,43 +1,96 @@
-import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Platform } from 'react-native';
+import React, { useState } from 'react';
+import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { useColors, createStyles, spacing, typography } from '@/lib/theme';
-import { ScreenWrapper, Input, Button } from '@/components/ui';
+import { Ionicons } from '@expo/vector-icons';
+import { borderRadius, createStyles, spacing, typography, useColors } from '@/lib/theme';
+import {
+  ScreenWrapper,
+  Input,
+  Button,
+  SocialAuthButtons,
+  TermsFooter,
+  Checkbox,
+} from '@/components/ui';
 
 const useStyles = createStyles((c) => ({
   inner: {
     flex: 1,
-    paddingTop: spacing.md,
+    paddingTop: spacing.lg,
   },
-  logo: {
-    fontSize: 36,
+  topBar: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: spacing.xl,
+  },
+  backBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.xs,
+  },
+  backText: {
+    ...typography.body,
+    color: c.textSecondary,
+  },
+  brandText: {
+    fontFamily: 'Georgia',
+    fontSize: 18,
     fontWeight: '700',
     color: c.gold,
-    letterSpacing: 8,
-    textAlign: 'center',
-    marginBottom: spacing['3xl'],
+    letterSpacing: 5,
+  },
+  topRight: { width: 60 },
+  pillWrap: {
+    alignSelf: 'center',
+    marginBottom: spacing.lg,
+  },
+  pill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.xs,
+    paddingHorizontal: spacing.md,
+    paddingVertical: 6,
+    borderRadius: borderRadius.full,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: c.border,
+    backgroundColor: c.bgSurface,
+  },
+  pillText: {
+    ...typography.bodySmall,
+    fontWeight: '700',
+    color: c.textPrimary,
   },
   heading: {
-    ...typography.h2,
+    ...typography.serifDisplay,
     color: c.textPrimary,
-    marginBottom: spacing['2xl'],
+    textAlign: 'center',
+    marginBottom: spacing.xs,
   },
-  forgotWrap: {
-    alignSelf: 'flex-end',
+  subcopy: {
+    ...typography.body,
+    color: c.textMuted,
+    textAlign: 'center',
+    marginBottom: spacing.xl,
+    paddingHorizontal: spacing.lg,
+  },
+  rowBetween: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginTop: spacing.xs,
     marginBottom: spacing.lg,
-    marginTop: -spacing.sm,
   },
   forgotText: {
     ...typography.body,
     color: c.gold,
-    fontWeight: '600',
+    fontWeight: '700',
   },
   dividerRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginVertical: spacing['2xl'],
+    marginVertical: spacing.lg,
     gap: spacing.md,
   },
   dividerLine: {
@@ -50,53 +103,54 @@ const useStyles = createStyles((c) => ({
     color: c.textMuted,
     textTransform: 'lowercase',
   },
-  appleBtn: {
-    marginTop: spacing.md,
+  spacer: { flex: 1, minHeight: spacing.lg },
+  bottomBlock: {
+    alignItems: 'center',
+    gap: spacing.sm,
   },
   footerRow: {
     flexDirection: 'row',
     flexWrap: 'wrap',
     justifyContent: 'center',
-    marginTop: spacing['3xl'],
   },
-  footerMuted: {
-    ...typography.body,
-    color: c.textSecondary,
-  },
-  footerLink: {
-    ...typography.body,
-    color: c.gold,
-    fontWeight: '600',
-  },
-  ownerLinkWrap: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    justifyContent: 'center',
-    marginTop: spacing.lg,
-  },
-  ownerLinkText: {
-    ...typography.bodySmall,
-    color: c.textMuted,
-  },
-  ownerLinkCta: {
-    ...typography.bodySmall,
-    color: c.gold,
-    fontWeight: '600',
-  },
+  footerMuted: { ...typography.body, color: c.textSecondary },
+  footerLink: { ...typography.body, color: c.gold, fontWeight: '700' },
 }));
 
 export default function LoginScreen() {
   const { t } = useTranslation();
   const router = useRouter();
   const insets = useSafeAreaInsets();
+  const c = useColors();
   const styles = useStyles();
+  const [keepSignedIn, setKeepSignedIn] = useState(true);
 
   return (
     <ScreenWrapper withKeyboardAvoiding padded>
       <View style={[styles.inner, { paddingBottom: Math.max(insets.bottom, spacing.lg) }]}>
-        <Text style={styles.logo}>{t('common.appName')}</Text>
+        <View style={styles.topBar}>
+          <TouchableOpacity
+            onPress={() => router.push('/(auth)/welcome')}
+            style={styles.backBtn}
+            activeOpacity={0.7}
+            hitSlop={12}
+          >
+            <Ionicons name="chevron-back" size={20} color={c.textSecondary} />
+            <Text style={styles.backText}>{t('auth.backToWelcome')}</Text>
+          </TouchableOpacity>
+          <Text style={styles.brandText}>{t('common.appName')}</Text>
+          <View style={styles.topRight} />
+        </View>
+
+        <View style={styles.pillWrap}>
+          <View style={styles.pill}>
+            <Ionicons name="person-outline" size={14} color={c.textPrimary} />
+            <Text style={styles.pillText}>{t('auth.diner')}</Text>
+          </View>
+        </View>
 
         <Text style={styles.heading}>{t('auth.welcomeBack')}</Text>
+        <Text style={styles.subcopy}>{t('auth.loginSubcopyShort')}</Text>
 
         <Input
           icon="mail-outline"
@@ -107,13 +161,12 @@ export default function LoginScreen() {
         />
         <Input icon="lock-closed-outline" placeholder={t('auth.password')} isPassword />
 
-        <TouchableOpacity
-          onPress={() => router.push('/(auth)/forgot-password')}
-          style={styles.forgotWrap}
-          activeOpacity={0.7}
-        >
-          <Text style={styles.forgotText}>{t('auth.forgotPassword')}</Text>
-        </TouchableOpacity>
+        <View style={styles.rowBetween}>
+          <Checkbox checked={keepSignedIn} onChange={setKeepSignedIn} label={t('auth.keepSignedIn')} />
+          <TouchableOpacity onPress={() => router.push('/(auth)/forgot-password')} hitSlop={8}>
+            <Text style={styles.forgotText}>{t('auth.forgotPassword')}</Text>
+          </TouchableOpacity>
+        </View>
 
         <Button title={t('auth.login')} onPress={() => router.replace('/(customer)')} size="lg" />
 
@@ -123,38 +176,22 @@ export default function LoginScreen() {
           <View style={styles.dividerLine} />
         </View>
 
-        <Button
-          title={t('auth.continueWithGoogle')}
-          variant="outlined"
-          onPress={() => router.replace('/(customer)')}
-          size="lg"
+        <SocialAuthButtons
+          onApple={() => router.replace('/(customer)')}
+          onGoogle={() => router.replace('/(customer)')}
         />
 
-        {Platform.OS === 'ios' && (
-          <Button
-            title={t('auth.continueWithApple')}
-            variant="outlined"
-            onPress={() => router.replace('/(customer)')}
-            size="lg"
-            style={styles.appleBtn}
-          />
-        )}
+        <View style={styles.spacer} />
 
-        <View style={styles.footerRow}>
-          <Text style={styles.footerMuted}>{t('auth.noAccount')} </Text>
-          <TouchableOpacity onPress={() => router.push('/(auth)/register')} activeOpacity={0.7}>
-            <Text style={styles.footerLink}>{t('auth.register')}</Text>
-          </TouchableOpacity>
+        <View style={styles.bottomBlock}>
+          <View style={styles.footerRow}>
+            <Text style={styles.footerMuted}>{t('auth.noAccount')} </Text>
+            <TouchableOpacity onPress={() => router.push('/(auth)/register')} activeOpacity={0.7}>
+              <Text style={styles.footerLink}>{t('auth.welcomeSignUpCta')}</Text>
+            </TouchableOpacity>
+          </View>
+          <TermsFooter />
         </View>
-
-        <TouchableOpacity
-          onPress={() => router.push('/(auth)/owner-login')}
-          style={styles.ownerLinkWrap}
-          activeOpacity={0.7}
-        >
-          <Text style={styles.ownerLinkText}>{t('auth.areYouOwner')} </Text>
-          <Text style={styles.ownerLinkCta}>{t('auth.signInAsOwner')}</Text>
-        </TouchableOpacity>
       </View>
     </ScreenWrapper>
   );

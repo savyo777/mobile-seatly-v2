@@ -328,40 +328,66 @@ const useStyles = createStyles((c) => ({
     color: c.textMuted,
     marginTop: 2,
   },
-  menuGrid: {
+  menuActionCard: {
     flexDirection: 'row',
-    padding: spacing.sm,
-  },
-  menuGridDivider: {
-    width: StyleSheet.hairlineWidth,
-    backgroundColor: c.border,
-    marginVertical: spacing.sm,
-  },
-  menuGridTile: {
-    flex: 1,
-    padding: spacing.md,
-    gap: 4,
     alignItems: 'center',
+    gap: spacing.md,
+    padding: spacing.md,
+    backgroundColor: c.bgSurface,
   },
-  menuGridTilePressed: { opacity: 0.8 },
-  menuGridIcon: {
-    width: 36,
-    height: 36,
-    borderRadius: 10,
+  menuActionPressed: { opacity: 0.86 },
+  menuActionIcon: {
+    width: 48,
+    height: 48,
+    borderRadius: 16,
     alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: 4,
+    backgroundColor: c.gold,
+    shadowColor: '#000',
+    shadowOpacity: 0.14,
+    shadowRadius: 10,
+    shadowOffset: { width: 0, height: 5 },
+    elevation: 4,
   },
-  menuGridLabel: {
-    fontSize: 14,
-    fontWeight: '700',
+  menuActionBody: {
+    flex: 1,
+    minWidth: 0,
+  },
+  menuActionEyebrow: {
+    fontSize: 11,
+    fontWeight: '800',
+    color: c.gold,
+    letterSpacing: 0.7,
+    textTransform: 'uppercase',
+    marginBottom: 3,
+  },
+  menuActionTitle: {
+    fontSize: 17,
+    fontWeight: '800',
     color: c.textPrimary,
-    letterSpacing: -0.1,
+    letterSpacing: -0.25,
   },
-  menuGridSub: {
-    fontSize: 12,
+  menuActionSub: {
+    fontSize: 13,
     fontWeight: '500',
     color: c.textMuted,
+    marginTop: 3,
+  },
+  menuActionPill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    paddingVertical: 8,
+    paddingHorizontal: 10,
+    borderRadius: borderRadius.full,
+    backgroundColor: c.bgElevated,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: `${c.gold}55`,
+  },
+  menuActionPillText: {
+    fontSize: 13,
+    fontWeight: '800',
+    color: c.gold,
   },
 
   // ── Settings shortcut ──
@@ -545,31 +571,27 @@ export default function OwnerBusinessScreen() {
 
         {/* Summary row */}
         <View style={styles.menuCard}>
-          {/* Action grid */}
-          <View style={styles.menuGrid}>
-            <Pressable
-              style={({ pressed }) => [styles.menuGridTile, pressed && styles.menuGridTilePressed]}
-              onPress={() => router.push('/(staff)/menu?returnTo=profile' as never)}
-            >
-              <View style={[styles.menuGridIcon, { backgroundColor: c.gold }]}>
-                <Ionicons name="add" size={18} color={c.bgBase} />
-              </View>
-              <Text style={styles.menuGridLabel}>Add item</Text>
-              <Text style={styles.menuGridSub}>New dish</Text>
-            </Pressable>
-            <View style={styles.menuGridDivider} />
-            <Pressable
-              style={({ pressed }) => [styles.menuGridTile, pressed && styles.menuGridTilePressed]}
-              onPress={() => router.push('/(staff)/menu?returnTo=profile' as never)}
-            >
-              <View style={[styles.menuGridIcon, { backgroundColor: c.gold }]}>
-                <Ionicons name="pencil" size={18} color={c.bgBase} />
-              </View>
-              <Text style={styles.menuGridLabel}>Edit menu</Text>
-              <Text style={styles.menuGridSub}>{menuItems.length} items</Text>
-            </Pressable>
-          </View>
-
+          <Pressable
+            style={({ pressed }) => [styles.menuActionCard, pressed && styles.menuActionPressed]}
+            onPress={() => router.push('/(staff)/menu-manage' as never)}
+            accessibilityRole="button"
+            accessibilityLabel="Edit menu"
+          >
+            <View style={styles.menuActionIcon}>
+              <Ionicons name="restaurant-outline" size={23} color={c.bgBase} />
+            </View>
+            <View style={styles.menuActionBody}>
+              <Text style={styles.menuActionEyebrow}>Menu manager</Text>
+              <Text style={styles.menuActionTitle}>Edit menu</Text>
+              <Text style={styles.menuActionSub}>
+                {menuItems.length} items · Prices, photos, categories
+              </Text>
+            </View>
+            <View style={styles.menuActionPill}>
+              <Text style={styles.menuActionPillText}>Open</Text>
+              <Ionicons name="chevron-forward" size={15} color={c.gold} />
+            </View>
+          </Pressable>
         </View>
 
         {/* ── Contact ── */}
