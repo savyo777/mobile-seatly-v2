@@ -5,8 +5,8 @@ import { useTranslation } from 'react-i18next';
 import { Ionicons } from '@expo/vector-icons';
 import { ProfileStackScreen } from '@/components/profile/ProfileStackScreen';
 import { useColors, createStyles, spacing, borderRadius, typography } from '@/lib/theme';
-import { changeEmail } from '@/lib/services/accountSecurity';
-import { mockCustomer } from '@/lib/mock/users';
+import { changeEmail, resendVerificationEmail } from '@/lib/services/accountSecurity';
+import { useAuthSession } from '@/lib/auth/AuthContext';
 
 const useStyles = createStyles((c) => ({
   currentLabel: {
@@ -86,6 +86,7 @@ export default function ChangeEmailScreen() {
   const router = useRouter();
   const c = useColors();
   const styles = useStyles();
+  const { user } = useAuthSession();
 
   const [newEmail, setNewEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -93,6 +94,7 @@ export default function ChangeEmailScreen() {
   const [focusedField, setFocusedField] = useState<'email' | 'pwd' | null>(null);
   const [loading, setLoading] = useState(false);
   const [emailError, setEmailError] = useState('');
+  const currentEmail = user?.email ?? '';
 
   const isValidEmail = (v: string) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v);
 
@@ -103,6 +105,17 @@ export default function ChangeEmailScreen() {
     try {
       await changeEmail(newEmail, password);
       Alert.alert('Check your inbox', t('profile.emailVerificationSent', { email: newEmail }), [
+        {
+          text: 'Resend',
+          onPress: async () => {
+            try {
+              await resendVerificationEmail(newEmail);
+              Alert.alert('Sent', `Verification email resent to ${newEmail}.`);
+            } catch (resendErr: any) {
+              Alert.alert('Error', resendErr?.message ?? 'Failed to resend verification email.');
+            }
+          },
+        },
         { text: 'OK', onPress: () => router.back() },
       ]);
     } catch (err: any) {
@@ -117,7 +130,7 @@ export default function ChangeEmailScreen() {
   return (
     <ProfileStackScreen title={t('profile.changeEmail')}>
       <Text style={styles.currentLabel}>CURRENT EMAIL</Text>
-      <Text style={styles.currentValue}>{mockCustomer.email}</Text>
+      <Text style={styles.currentValue}>{currentEmail || 'Not available'}</Text>
 
       <View style={styles.field}>
         <Text style={styles.label}>{t('profile.newEmail').toUpperCase()}</Text>
