@@ -7,9 +7,9 @@ import { ProfileSectionTitle } from '@/components/profile/ProfileSectionTitle';
 import { ChevronSettingRow } from '@/components/profile/ChevronSettingRow';
 import { ToggleRow } from '@/components/profile/ToggleRow';
 import { useColors, createStyles, spacing, borderRadius, shadows } from '@/lib/theme';
-import { mockCustomer } from '@/lib/mock/users';
 import { sendPasswordResetEmail, toggleTwoFactor, toggleBiometric } from '@/lib/services/accountSecurity';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useAuthSession } from '@/lib/auth/AuthContext';
 
 const BIOMETRIC_KEY = '@seatly/biometric';
 const TWO_FA_KEY = '@seatly/twofactor';
@@ -31,9 +31,11 @@ export default function SecurityScreen() {
   const router = useRouter();
   const c = useColors();
   const styles = useStyles();
+  const { user } = useAuthSession();
+  const currentEmail = user?.email ?? '';
 
-  const [biometric, setBiometric] = useState(mockCustomer.biometricEnabled ?? false);
-  const [twoFa, setTwoFa] = useState(mockCustomer.twoFactorEnabled ?? false);
+  const [biometric, setBiometric] = useState(false);
+  const [twoFa, setTwoFa] = useState(false);
 
   const handleResetPassword = () => {
     Alert.alert(
@@ -45,10 +47,14 @@ export default function SecurityScreen() {
           text: 'Send link',
           onPress: async () => {
             try {
-              await sendPasswordResetEmail(mockCustomer.email);
+              if (!currentEmail) {
+                Alert.alert('Error', 'No account email is available for password reset.');
+                return;
+              }
+              await sendPasswordResetEmail(currentEmail);
               Alert.alert(
                 'Email sent',
-                t('profile.resetPasswordSent', { email: mockCustomer.email }),
+                t('profile.resetPasswordSent', { email: currentEmail }),
               );
             } catch (e: any) {
               Alert.alert('Error', e.message);
@@ -77,10 +83,6 @@ export default function SecurityScreen() {
     await toggleTwoFactor(v);
   };
 
-  const lastChangedLabel = mockCustomer.passwordLastChangedAt
-    ? `Last changed ${new Date(mockCustomer.passwordLastChangedAt).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })}`
-    : undefined;
-
   return (
     <ProfileStackScreen
       title={t('profile.security')}
@@ -91,13 +93,12 @@ export default function SecurityScreen() {
         <ChevronSettingRow
           icon="key-outline"
           title={t('profile.changePassword')}
-          subtitle={lastChangedLabel}
           onPress={() => router.push('/(customer)/profile/security/change-password')}
         />
         <ChevronSettingRow
           icon="mail-outline"
           title={t('profile.changeEmail')}
-          subtitle={mockCustomer.email}
+          subtitle={currentEmail || undefined}
           onPress={() => router.push('/(customer)/profile/security/change-email')}
         />
         <ChevronSettingRow

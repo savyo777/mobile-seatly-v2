@@ -1,11 +1,20 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, Pressable, Alert, ActivityIndicator } from 'react-native';
+import { View, Text, StyleSheet, Pressable, Alert, ActivityIndicator, Platform } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { Ionicons } from '@expo/vector-icons';
 import { ProfileStackScreen } from '@/components/profile/ProfileStackScreen';
 import { useColors, createStyles, spacing, borderRadius, typography, shadows } from '@/lib/theme';
-import { mockSessions, type Session } from '@/lib/mock/sessions';
 import { revokeSession, revokeAllOtherSessions } from '@/lib/services/accountSecurity';
+import { useAuthSession } from '@/lib/auth/AuthContext';
+
+type Session = {
+  id: string;
+  device: string;
+  platform: 'ios' | 'android' | 'web';
+  location: string;
+  lastActiveAt: string;
+  isCurrent: boolean;
+};
 
 const useStyles = createStyles((c) => ({
   sessionCard: {
@@ -113,7 +122,20 @@ export default function SessionsScreen() {
   const { t } = useTranslation();
   const c = useColors();
   const styles = useStyles();
-  const [sessions, setSessions] = useState(mockSessions);
+  const { session } = useAuthSession();
+  const initialSessions: Session[] = session
+    ? [
+        {
+          id: session.access_token.slice(0, 16),
+          device: 'This device',
+          platform: Platform.OS === 'android' ? 'android' : Platform.OS === 'web' ? 'web' : 'ios',
+          location: 'Current session',
+          lastActiveAt: session.user.last_sign_in_at ?? new Date().toISOString(),
+          isCurrent: true,
+        },
+      ]
+    : [];
+  const [sessions, setSessions] = useState(initialSessions);
   const [revoking, setRevoking] = useState<string | null>(null);
   const [revokingAll, setRevokingAll] = useState(false);
 

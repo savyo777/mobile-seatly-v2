@@ -8,6 +8,7 @@ type AuthCtx = {
   loading: boolean;
   isAuthenticated: boolean;
   isStaffLike: boolean;
+  role: string | null;
   signOut: () => Promise<void>;
 };
 
@@ -17,21 +18,27 @@ const Ctx = createContext<AuthCtx>({
   loading: true,
   isAuthenticated: false,
   isStaffLike: false,
+  role: null,
   signOut: async () => {},
 });
 
-function resolveIsStaffLike(user: User | null): boolean {
-  if (!user) return false;
+function resolveRoleFromMetadata(user: User | null): string | null {
+  if (!user) return null;
   const roleFromMetadata =
     (user.app_metadata?.role as string | undefined) ??
     (user.user_metadata?.role as string | undefined);
-  if (!roleFromMetadata) return false;
-  const role = roleFromMetadata.toLowerCase();
+  if (!roleFromMetadata) return null;
+  return roleFromMetadata.toLowerCase();
+}
+
+function resolveIsStaffLike(role: string | null): boolean {
+  if (!role) return false;
   return role === 'owner' || role === 'manager' || role === 'staff' || role === 'host' || role === 'server' || role === 'kitchen' || role === 'bar';
 }
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [session, setSession] = useState<Session | null>(null);
+  const [role, setRole] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -40,34 +47,88 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setLoading(false);
       return;
     }
+    let cancelled = false;
 
-    supabase.auth.getSession().then(({ data }) => {
-      setSession(data.session ?? null);
-      setLoading(false);
-    });
+    const hydrateSession = async () => {
+      try {
+        const { data } = await supabase.auth.getSession();
+        if (!cancelled) setSession(data.session ?? null);
+      } catch {
+        if (!cancelled) setSession(null);
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    };
+    void hydrateSession();
 
     const { data: sub } = supabase.auth.onAuthStateChange((_event, next) => {
-      setSession(next);
-      setLoading(false);
+      if (!cancelled) {
+        setSession(next);
+        setLoading(false);
+      }
     });
 
     return () => {
+      cancelled = true;
       sub.subscription.unsubscribe();
     };
   }, []);
+
+  useEffect(() => {
+    const supabase = getSupabase();
+    if (!supabase) {
+      setRole(null);
+      return;
+    }
+    let cancelled = false;
+
+    const currentUser = session?.user ?? null;
+    if (!currentUser) {
+      setRole(null);
+      return;
+    }
+
+    const roleFromMetadata = resolveRoleFromMetadata(currentUser);
+    if (roleFromMetadata) {
+      setRole(roleFromMetadata);
+      return;
+    }
+
+    // Fallback to profile role to reduce role mismatch issues on cold starts.
+    const loadRoleFromProfile = async () => {
+      try {
+        const { data } = await supabase
+          .from('user_profiles')
+          .select('role')
+          .eq('auth_user_id', currentUser.id)
+          .maybeSingle();
+        if (!cancelled) {
+          const profileRole = typeof data?.role === 'string' ? data.role.toLowerCase() : null;
+          setRole(profileRole);
+        }
+      } catch {
+        if (!cancelled) setRole(null);
+      }
+    };
+    void loadRoleFromProfile();
+    return () => {
+      cancelled = true;
+    };
+  }, [session?.user?.id]);
 
   const signOut = async () => {
     const supabase = getSupabase();
     if (!supabase) return;
     await supabase.auth.signOut();
+    setRole(null);
   };
 
   const user = session?.user ?? null;
   const isAuthenticated = Boolean(session);
-  const isStaffLike = resolveIsStaffLike(user);
+  const isStaffLike = resolveIsStaffLike(role);
   const value = useMemo(
-    () => ({ session, user, loading, isAuthenticated, isStaffLike, signOut }),
-    [session, user, loading, isAuthenticated, isStaffLike],
+    () => ({ session, user, loading, isAuthenticated, isStaffLike, role, signOut }),
+    [session, user, loading, isAuthenticated, isStaffLike, role],
   );
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;
 }
