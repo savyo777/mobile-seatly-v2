@@ -4,10 +4,11 @@ import { useRouter } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
-import * as Linking from 'expo-linking';
 import { useColors, createStyles, spacing, typography } from '@/lib/theme';
 import { ScreenWrapper, Input, Button } from '@/components/ui';
 import { getSupabase } from '@/lib/supabase/client';
+
+const RESET_PASSWORD_REDIRECT = 'cenaiva://reset-password';
 
 const useStyles = createStyles((c) => ({
   inner: {
@@ -86,7 +87,7 @@ export default function ForgotPasswordScreen() {
       return;
     }
     setSubmitting(true);
-    const redirectTo = Linking.createURL('/(auth)/reset-password');
+    const redirectTo = RESET_PASSWORD_REDIRECT;
     const { error } = await supabase.auth.resetPasswordForEmail(trimmedEmail, { redirectTo });
     setSubmitting(false);
     if (error) {
