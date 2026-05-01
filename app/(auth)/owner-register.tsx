@@ -332,7 +332,12 @@ export default function OwnerRegisterScreen() {
     }
     setSubmitting(true);
     try {
-      const { error } = await sendPhoneOtp(e164);
+      const { error } = await sendPhoneOtp(e164, {
+        metadata: {
+          role: 'owner',
+          full_name: fullName.trim(),
+        },
+      });
       if (error) {
         Alert.alert('SMS failed', error);
         return;

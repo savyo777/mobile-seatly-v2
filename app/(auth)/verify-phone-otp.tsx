@@ -9,6 +9,7 @@ import { ScreenWrapper, Input, Button } from '@/components/ui';
 import { ensureCustomerProfile, ensureOwnerProfile } from '@/lib/services/oauth';
 import { sendPhoneOtp, verifyPhoneOtp } from '@/lib/services/phoneAuth';
 import { getSupabase } from '@/lib/supabase/client';
+import { roleIncludes } from '@/lib/auth/roles';
 
 const useStyles = createStyles((c) => ({
   inner: {
@@ -62,14 +63,6 @@ const useStyles = createStyles((c) => ({
     textAlign: 'center',
   },
 }));
-
-function roleIncludes(roleValue: string | null | undefined, expected: 'customer' | 'owner'): boolean {
-  if (!roleValue) return false;
-  const normalized = roleValue.toLowerCase().trim();
-  if (!normalized) return false;
-  if (normalized === expected || normalized === 'both') return true;
-  return normalized.split(/[,\s|/]+/).includes(expected);
-}
 
 export default function VerifyPhoneOtpScreen() {
   const { t } = useTranslation();

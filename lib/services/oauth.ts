@@ -2,31 +2,12 @@ import * as WebBrowser from 'expo-web-browser';
 import { makeRedirectUri } from 'expo-auth-session';
 import type { Session } from '@supabase/supabase-js';
 import { getSupabase } from '@/lib/supabase/client';
+import { mergeRole } from '@/lib/auth/roles';
 
 export type GoogleSignInResult =
   | { status: 'success'; session: Session }
   | { status: 'cancelled' }
   | { status: 'error'; message: string };
-
-function roleIncludes(roleValue: string | null | undefined, expected: 'customer' | 'owner'): boolean {
-  if (!roleValue) return false;
-  const normalized = roleValue.toLowerCase().trim();
-  if (!normalized) return false;
-  if (normalized === expected) return true;
-  if (normalized === 'both') return true;
-  return normalized.split(/[,\s|/]+/).includes(expected);
-}
-
-function mergeRole(roleValue: string | null | undefined, nextRole: 'customer' | 'owner'): string {
-  if (!roleValue) return nextRole;
-  const normalized = roleValue.toLowerCase().trim();
-  if (!normalized) return nextRole;
-  if (normalized === 'both') return 'both';
-  const hasCustomer = roleIncludes(normalized, 'customer') || nextRole === 'customer';
-  const hasOwner = roleIncludes(normalized, 'owner') || nextRole === 'owner';
-  if (hasCustomer && hasOwner) return 'both';
-  return hasOwner ? 'owner' : 'customer';
-}
 
 WebBrowser.maybeCompleteAuthSession();
 
@@ -173,4 +154,14 @@ async function ensureProfileWithRole(
     },
     { onConflict: 'auth_user_id' },
   );
+
+  // Keep auth metadata aligned with role-based routing/fallback logic.
+  const metadataRole =
+    nextRole === 'customer' ? 'diner' : nextRole === 'diner_and_owner' ? 'diner_and_owner' : 'owner';
+  await supabase.auth.updateUser({
+    data: {
+      ...(user.user_metadata ?? {}),
+      role: metadataRole,
+    },
+  });
 }

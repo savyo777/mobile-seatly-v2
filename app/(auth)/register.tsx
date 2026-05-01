@@ -4,7 +4,7 @@ import { useRouter } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
-import { borderRadius, createStyles, spacing, typography, useColors } from '@/lib/theme';
+import { createStyles, spacing, typography, useColors } from '@/lib/theme';
 import { getSupabase } from '@/lib/supabase/client';
 import { ensureCustomerProfile, signInWithGoogle } from '@/lib/services/oauth';
 import { normalizePhoneToE164, sendPhoneOtp } from '@/lib/services/phoneAuth';
@@ -18,8 +18,6 @@ import {
 
 const TERMS_URL = 'https://cenaiva.com/terms';
 const PRIVACY_URL = 'https://cenaiva.com/privacy';
-
-type Role = 'diner' | 'owner';
 
 type PasswordChecks = {
   minLength: boolean;
@@ -80,34 +78,6 @@ const useStyles = createStyles((c) => ({
     textAlign: 'center',
     marginBottom: spacing.lg,
   },
-  toggleRow: {
-    flexDirection: 'row',
-    backgroundColor: c.bgSurface,
-    borderRadius: borderRadius.lg,
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: c.border,
-    padding: 4,
-    gap: 4,
-    marginBottom: spacing.lg,
-  },
-  toggleBtn: {
-    flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: spacing.xs,
-    paddingVertical: 10,
-    borderRadius: borderRadius.md,
-  },
-  toggleBtnOn: {
-    backgroundColor: c.gold,
-  },
-  toggleText: {
-    ...typography.body,
-    fontWeight: '700',
-    color: c.textMuted,
-  },
-  toggleTextOn: { color: '#0F0E0C' },
   pwMeter: {
     flexDirection: 'row',
     gap: 4,
@@ -202,7 +172,6 @@ export default function RegisterScreen() {
   const c = useColors();
   const styles = useStyles();
 
-  const [role, setRole] = useState<Role>('diner');
   const [fullName, setFullName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -216,14 +185,6 @@ export default function RegisterScreen() {
   const isPasswordValid = metCount === 5;
   const strengthLabel =
     score === 3 ? t('auth.pwStrengthStrong') : score === 2 ? t('auth.pwStrengthMedium') : t('auth.pwStrengthWeak');
-
-  const onSelectRole = (next: Role) => {
-    if (next === role) return;
-    setRole(next);
-    if (next === 'owner') {
-      router.replace('/(auth)/owner-register');
-    }
-  };
 
   const onSuccess = async () => {
     if (submitting) return;
@@ -252,7 +213,7 @@ export default function RegisterScreen() {
         options: {
           data: {
             full_name: trimmedName,
-            role: 'customer',
+            role: 'diner',
           },
         },
       });
@@ -325,7 +286,12 @@ export default function RegisterScreen() {
     }
     setSubmitting(true);
     try {
-      const { error } = await sendPhoneOtp(e164);
+      const { error } = await sendPhoneOtp(e164, {
+        metadata: {
+          role: 'diner',
+          full_name: fullName.trim(),
+        },
+      });
       if (error) {
         Alert.alert('SMS failed', error);
         return;
@@ -390,29 +356,6 @@ export default function RegisterScreen() {
 
         <Text style={styles.heading}>{t('auth.registerHeading')}</Text>
         <Text style={styles.subcopy}>{t('auth.registerTakesAbout')}</Text>
-
-        <View style={styles.toggleRow}>
-          <TouchableOpacity
-            onPress={() => onSelectRole('diner')}
-            style={[styles.toggleBtn, role === 'diner' && styles.toggleBtnOn]}
-            activeOpacity={0.85}
-          >
-            <Ionicons name="person-outline" size={16} color={role === 'diner' ? '#0F0E0C' : c.textMuted} />
-            <Text style={[styles.toggleText, role === 'diner' && styles.toggleTextOn]}>
-              {t('auth.diner')}
-            </Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            onPress={() => onSelectRole('owner')}
-            style={[styles.toggleBtn, role === 'owner' && styles.toggleBtnOn]}
-            activeOpacity={0.85}
-          >
-            <Ionicons name="storefront-outline" size={16} color={role === 'owner' ? '#0F0E0C' : c.textMuted} />
-            <Text style={[styles.toggleText, role === 'owner' && styles.toggleTextOn]}>
-              {t('auth.owner')}
-            </Text>
-          </TouchableOpacity>
-        </View>
 
         <Input
           icon="person-outline"

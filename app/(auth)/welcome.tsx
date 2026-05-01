@@ -122,7 +122,7 @@ export default function WelcomeScreen() {
       <View style={styles.content}>
         <Text style={styles.logo}>{t('common.appName')}</Text>
         <Text style={styles.title}>{t('auth.welcomeTitle')}</Text>
-        <Text style={styles.subtitle}>{t('auth.welcomeSubtitle')}</Text>
+        <Text style={styles.subtitle}>{t('auth.welcomeTagline')}</Text>
 
         <View style={styles.cards}>
           <Pressable
@@ -134,25 +134,8 @@ export default function WelcomeScreen() {
               <Ionicons name="person-outline" size={23} color={c.gold} />
             </View>
             <View style={styles.cardText}>
-              <Text style={styles.cardTitle}>{t('auth.iAmADiner')}</Text>
-              <Text style={styles.cardSub}>{t('auth.iAmADinerSub')}</Text>
-            </View>
-            <View style={styles.arrowWrap}>
-              <Ionicons name="chevron-forward" size={17} color={c.textMuted} />
-            </View>
-          </Pressable>
-
-          <Pressable
-            style={({ pressed }) => [styles.card, pressed && styles.cardPressed]}
-            onPress={() => router.push('/(auth)/owner-login')}
-            accessibilityRole="button"
-          >
-            <View style={[styles.iconWrap, styles.iconWrapOwner]}>
-              <Ionicons name="storefront-outline" size={23} color={c.gold} />
-            </View>
-            <View style={styles.cardText}>
-              <Text style={styles.cardTitle}>{t('auth.iManageARestaurant')}</Text>
-              <Text style={styles.cardSub}>{t('auth.iManageARestaurantSub')}</Text>
+              <Text style={styles.cardTitle}>Continue as a diner</Text>
+              <Text style={styles.cardSub}>Book tables, discover spots, and earn rewards</Text>
             </View>
             <View style={styles.arrowWrap}>
               <Ionicons name="chevron-forward" size={17} color={c.textMuted} />

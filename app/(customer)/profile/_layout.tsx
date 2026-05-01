@@ -31,6 +31,10 @@ export default function ProfileStackLayout() {
       <Stack.Screen name="invite" />
       <Stack.Screen name="help" />
       <Stack.Screen name="about" />
+      <Stack.Screen name="register-restaurant" />
+      <Stack.Screen name="register-restaurant-form" />
+      <Stack.Screen name="register-restaurant-payment" />
+      <Stack.Screen name="register-restaurant-success" />
     </Stack>
   );
 }

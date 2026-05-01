@@ -4,6 +4,7 @@ import { StatusBar } from 'expo-status-bar';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import * as Linking from 'expo-linking';
+import Constants from 'expo-constants';
 import '@/lib/i18n';
 import { AuthProvider } from '@/lib/auth/AuthContext';
 import { ThemeProvider, useColors } from '@/lib/theme';
@@ -12,6 +13,7 @@ import { createStackTransitionOptions } from '@/lib/navigation/transitions';
 import { CenaivaAssistantProvider } from '@/lib/cenaiva/CenaivaAssistantProvider';
 import { getSupabase } from '@/lib/supabase/client';
 import { CookieConsentBanner } from '@/components/cookie-consent/CookieConsentBanner';
+import { getStripeEnv } from '@/lib/stripe/env';
 
 type RecoveryTokens = {
   accessToken: string;
@@ -138,19 +140,32 @@ function ThemedRootShell() {
 }
 
 export default function RootLayout() {
+  const { publishableKey } = getStripeEnv();
+  void publishableKey;
+  const isExpoGo = Constants.appOwnership === 'expo';
+  const providers = (
+    <ThemeProvider>
+      <AuthProvider>
+        <MenuProvider>
+          <CenaivaAssistantProvider>
+            <ThemedRootShell />
+          </CenaivaAssistantProvider>
+        </MenuProvider>
+      </AuthProvider>
+    </ThemeProvider>
+  );
+
+  if (isExpoGo) {
+    return (
+      <GestureHandlerRootView style={{ flex: 1 }}>
+        <SafeAreaProvider>{providers}</SafeAreaProvider>
+      </GestureHandlerRootView>
+    );
+  }
+
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
-      <SafeAreaProvider>
-        <ThemeProvider>
-          <AuthProvider>
-            <MenuProvider>
-              <CenaivaAssistantProvider>
-                <ThemedRootShell />
-              </CenaivaAssistantProvider>
-            </MenuProvider>
-          </AuthProvider>
-        </ThemeProvider>
-      </SafeAreaProvider>
+      <SafeAreaProvider>{providers}</SafeAreaProvider>
     </GestureHandlerRootView>
   );
 }

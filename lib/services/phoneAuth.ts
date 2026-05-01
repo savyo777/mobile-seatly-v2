@@ -22,14 +22,17 @@ export function normalizePhoneToE164(input: string): string | null {
   return null;
 }
 
-export async function sendPhoneOtp(phoneE164: string): Promise<{ error: string | null }> {
+export async function sendPhoneOtp(
+  phoneE164: string,
+  options?: { metadata?: Record<string, string> },
+): Promise<{ error: string | null }> {
   const supabase = getSupabase();
   if (!supabase) {
     return { error: 'Supabase is not configured.' };
   }
   const { error } = await supabase.auth.signInWithOtp({
     phone: phoneE164,
-    options: { channel: 'sms' },
+    options: { channel: 'sms', data: options?.metadata },
   });
   if (error) return { error: error.message };
   return { error: null };

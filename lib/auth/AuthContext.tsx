@@ -2,6 +2,7 @@ import React, { createContext, useContext, useEffect, useMemo, useState } from '
 import type { Session, User } from '@supabase/supabase-js';
 import { getSupabase } from '@/lib/supabase/client';
 import { clearAppShellPreference } from '@/lib/navigation/appShellPreference';
+import { resolveIsStaffLike } from '@/lib/auth/roles';
 
 type AuthCtx = {
   session: Session | null;
@@ -29,12 +30,10 @@ function resolveRoleFromMetadata(user: User | null): string | null {
     (user.app_metadata?.role as string | undefined) ??
     (user.user_metadata?.role as string | undefined);
   if (!roleFromMetadata) return null;
-  return roleFromMetadata.toLowerCase();
-}
-
-function resolveIsStaffLike(role: string | null): boolean {
-  if (!role) return false;
-  return role === 'owner' || role === 'manager' || role === 'staff' || role === 'host' || role === 'server' || role === 'kitchen' || role === 'bar';
+  const normalized = roleFromMetadata.toLowerCase();
+  if (normalized === 'diner') return 'customer';
+  if (normalized === 'diner_and_owner') return 'diner_and_owner';
+  return normalized;
 }
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {

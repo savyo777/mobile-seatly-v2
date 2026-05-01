@@ -48,6 +48,11 @@ type Row =
       label: string;
     }
   | {
+      kind: 'registerRestaurant';
+      icon: React.ComponentProps<typeof Ionicons>['name'];
+      label: string;
+    }
+  | {
       kind: 'switchToRestaurant';
       icon: React.ComponentProps<typeof Ionicons>['name'];
       label: string;
@@ -180,6 +185,21 @@ const useStyles = createStyles((c) => ({
     fontWeight: '500',
     color: c.textPrimary,
   },
+  ownerBanner: {
+    marginTop: spacing.sm,
+    marginBottom: spacing.md,
+    borderWidth: 1,
+    borderColor: 'rgba(201,162,74,0.35)',
+    backgroundColor: 'rgba(201,162,74,0.10)',
+    borderRadius: borderRadius.md,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
+  },
+  ownerBannerText: {
+    ...typography.bodySmall,
+    color: c.textPrimary,
+    lineHeight: 18,
+  },
 
   // Logout
   logoutBtn: {
@@ -220,18 +240,20 @@ export default function SettingsScreen() {
   const tier = getTier(pts);
 
   const sections: Section[] = useMemo(() => {
-    const restaurantSection: Section | null = isStaffLike
-      ? {
-          title: 'Restaurant',
-          rows: [
-            {
-              kind: 'switchToRestaurant' as const,
-              icon: 'storefront-outline',
-              label: 'Switch to restaurant side',
-            },
-          ],
-        }
-      : null;
+    const restaurantRows: Row[] = [
+      { kind: 'registerRestaurant', icon: 'storefront-outline', label: 'Register your restaurant' },
+    ];
+    if (isStaffLike) {
+      restaurantRows.unshift({
+        kind: 'switchToRestaurant',
+        icon: 'swap-horizontal-outline',
+        label: 'Switch to Restaurant View',
+      });
+    }
+    const restaurantSection: Section = {
+      title: 'For Restaurant Owners',
+      rows: restaurantRows,
+    };
 
     const core: Section[] = [
     {
@@ -302,7 +324,7 @@ export default function SettingsScreen() {
       ],
     },
     ];
-    return restaurantSection ? [restaurantSection, ...core] : core;
+    return [restaurantSection, ...core];
   }, [isStaffLike]);
 
   const handleLogout = async () => {
@@ -419,15 +441,25 @@ export default function SettingsScreen() {
 
             {/* Card */}
             <View style={styles.card}>
+              {section.title === 'For Restaurant Owners' ? (
+                <View style={styles.ownerBanner}>
+                  <Text style={styles.ownerBannerText}>
+                    Get 3 months free when you register your restaurant. After 3 months, billing begins
+                    automatically.
+                  </Text>
+                </View>
+              ) : null}
               {section.rows.map((row, i) => (
                 <Pressable
                   key={row.label}
                   onPress={() => {
                     if (row.kind === 'logoutAllDevices') {
                       handleLogoutAllDevices();
+                    } else if (row.kind === 'registerRestaurant') {
+                      router.push('/(customer)/profile/register-restaurant' as Href);
                     } else if (row.kind === 'switchToRestaurant') {
                       void (async () => {
-                        await setAppShellPreference('auto');
+                        await setAppShellPreference('staff');
                         router.replace('/(staff)' as Href);
                       })();
                     } else {

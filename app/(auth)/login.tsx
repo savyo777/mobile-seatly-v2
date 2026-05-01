@@ -10,6 +10,7 @@ import { getSupabase } from '@/lib/supabase/client';
 import { sendPasswordResetEmail } from '@/lib/services/accountSecurity';
 import { ensureCustomerProfile, signInWithGoogle } from '@/lib/services/oauth';
 import { normalizePhoneToE164, sendPhoneOtp } from '@/lib/services/phoneAuth';
+import { roleIncludes } from '@/lib/auth/roles';
 import {
   ScreenWrapper,
   Input,
@@ -124,13 +125,6 @@ const useStyles = createStyles((c) => ({
 
 const LOCKOUT_MS = 15 * 60 * 1000;
 
-function roleIncludes(roleValue: string | null | undefined, expected: 'customer' | 'owner'): boolean {
-  if (!roleValue) return false;
-  const normalized = roleValue.toLowerCase().trim();
-  if (!normalized) return false;
-  if (normalized === expected || normalized === 'both') return true;
-  return normalized.split(/[,\s|/]+/).includes(expected);
-}
 const MAX_FAILED_ATTEMPTS = 5;
 
 function failuresKey(email: string) {
