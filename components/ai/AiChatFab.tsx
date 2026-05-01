@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React from 'react';
 import {
   Modal,
   Pressable,
@@ -7,7 +7,9 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { AiChatPanel } from '@/components/ai/AiChatPanel';
+import { CenaivaVoiceShell } from '@/components/cenaiva/CenaivaVoiceShell';
+import { useCenaivaAssistant } from '@/lib/cenaiva/CenaivaAssistantProvider';
+import { useAssistantStore } from '@/lib/cenaiva/state/assistantStore';
 import { useColors, createStyles, borderRadius, spacing } from '@/lib/theme';
 
 const FAB_SIZE = 58;
@@ -66,12 +68,14 @@ export function AiChatFab({ bottomOffset = 100, style }: Props) {
   const insets = useSafeAreaInsets();
   const c = useColors();
   const styles = useStyles();
-  const [open, setOpen] = useState(false);
+  const assistant = useCenaivaAssistant();
+  const { state } = useAssistantStore();
+  const open = state.isOpen;
 
   return (
     <>
       <Pressable
-        onPress={() => setOpen(true)}
+        onPress={() => assistant.open()}
         accessibilityRole="button"
         accessibilityLabel="Open AI assistant"
         style={({ pressed }) => [
@@ -89,20 +93,15 @@ export function AiChatFab({ bottomOffset = 100, style }: Props) {
         visible={open}
         animationType="slide"
         transparent
-        onRequestClose={() => setOpen(false)}
+        onRequestClose={assistant.close}
         statusBarTranslucent
       >
         <View style={[styles.modalBackdrop, { paddingTop: insets.top + spacing.xl }]}>
-          <Pressable style={styles.modalBackdrop} onPress={() => setOpen(false)} />
+          <Pressable style={styles.modalBackdrop} onPress={assistant.close} />
           <View style={[styles.sheet, { paddingBottom: Math.max(insets.bottom, spacing.md) }]}>
             <View style={styles.grabber} />
             <View style={styles.sheetBody}>
-              <AiChatPanel
-                onClose={() => setOpen(false)}
-                visible={open}
-                withKeyboardAvoiding
-                hideTitle
-              />
+              <CenaivaVoiceShell onClose={assistant.close} />
             </View>
           </View>
         </View>

@@ -17,6 +17,15 @@ function readSettingsLatLng(settings: Record<string, unknown> | null | undefined
   };
 }
 
+function clampPriceRange(value: unknown, fallback: 1 | 2 | 3 | 4 = 2): 1 | 2 | 3 | 4 {
+  const parsed = num(value as string | number | null | undefined, fallback);
+  if (parsed >= 4) return 4;
+  if (parsed >= 3) return 3;
+  if (parsed >= 2) return 2;
+  if (parsed >= 1) return 1;
+  return fallback;
+}
+
 function hoursFromJson(raw: Record<string, unknown> | null): Restaurant['hoursJson'] {
   if (!raw || typeof raw !== 'object') {
     return {};
@@ -39,7 +48,9 @@ function hoursFromJson(raw: Record<string, unknown> | null): Restaurant['hoursJs
  */
 export function mapRestaurantRowToRestaurant(row: RestaurantRow): Restaurant {
   const settings = row.settings_json as Record<string, unknown> | undefined;
-  const { lat, lng } = readSettingsLatLng(settings);
+  const fallbackLatLng = readSettingsLatLng(settings);
+  const lat = num(row.lat, fallbackLatLng.lat);
+  const lng = num(row.lng, fallbackLatLng.lng);
 
   const area =
     (typeof settings?.neighbourhood === 'string' && settings.neighbourhood) ||
@@ -53,9 +64,7 @@ export function mapRestaurantRowToRestaurant(row: RestaurantRow): Restaurant {
     ? ((settings!.featured_in as string[]).filter(Boolean) as DiscoverSectionKey[])
     : ['recommended'];
 
-  const priceRange = typeof settings?.price_range === 'number' && settings.price_range >= 1 && settings.price_range <= 4
-    ? (settings.price_range as 1 | 2 | 3 | 4)
-    : 2;
+  const priceRange = clampPriceRange(row.price_range ?? settings?.price_range);
 
   const availability = (settings?.availability as Restaurant['availability']) ?? 'Popular';
 
@@ -72,9 +81,9 @@ export function mapRestaurantRowToRestaurant(row: RestaurantRow): Restaurant {
     lat,
     lng,
     phone: row.phone ?? '',
-    coverPhotoUrl: row.cover_photo_url ?? '',
+    coverPhotoUrl: row.hero_image_url ?? row.cover_photo_url ?? '',
     logoUrl: row.logo_url ?? '',
-    avgRating: num(settings?.avg_rating as number | undefined, 4.5),
+    avgRating: num(row.avg_rating ?? (settings?.avg_rating as number | undefined), 4.5),
     totalReviews: typeof settings?.total_reviews === 'number' ? settings!.total_reviews : 0,
     priceRange,
     distanceKm: typeof settings?.distance_km === 'number' ? settings!.distance_km : 1,

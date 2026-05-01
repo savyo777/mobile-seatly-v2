@@ -16,6 +16,9 @@
       "supportsTablet": true,
       "bundleIdentifier": "com.cenaiva.app",
       "infoPlist": {
+        "NSMicrophoneUsageDescription": "Cenaiva uses your microphone so you can speak restaurant and booking requests.",
+        "NSLocationWhenInUseUsageDescription": "Cenaiva uses your location to find nearby restaurants.",
+        "NSSpeechRecognitionUsageDescription": "Cenaiva may use speech recognition to process spoken restaurant and booking requests.",
         "CFBundleURLTypes": [
           {
             "CFBundleURLSchemes": [
@@ -33,6 +36,11 @@
         "monochromeImage": "./assets/android-icon-monochrome.png"
       },
       "package": "com.cenaiva.app",
+      "permissions": [
+        "RECORD_AUDIO",
+        "ACCESS_FINE_LOCATION",
+        "ACCESS_COARSE_LOCATION"
+      ],
       "intentFilters": [
         {
           "action": "VIEW",
@@ -69,17 +77,28 @@
       [
         "expo-location",
         {
-          "locationAlwaysAndWhenInUsePermission": "Allow Cenaiva to use your location to show nearby restaurants on the map."
+          "locationWhenInUsePermission": "Cenaiva uses your location to find nearby restaurants.",
+          "locationAlwaysAndWhenInUsePermission": "Cenaiva uses your location to find nearby restaurants."
         }
       ],
       "expo-sharing",
       [
         "expo-speech-recognition",
         {
-          "microphonePermission": "Allow Cenaiva to use the microphone for voice commands in the AI assistant.",
-          "speechRecognitionPermission": "Allow Cenaiva to transcribe your speech for the AI assistant."
+          "microphonePermission": "Cenaiva uses your microphone so you can speak restaurant and booking requests.",
+          "speechRecognitionPermission": "Cenaiva may use speech recognition to process spoken restaurant and booking requests."
         }
       ],
+      [
+        "expo-audio",
+        {
+          "microphonePermission": "Cenaiva uses your microphone so you can speak restaurant and booking requests.",
+          "recordAudioAndroid": true,
+          "enableBackgroundRecording": false,
+          "enableBackgroundPlayback": false
+        }
+      ],
+      "expo-asset",
       "expo-web-browser"
     ]
   }

@@ -9,7 +9,7 @@ import { useColors, createStyles } from '@/lib/theme';
 import { tabTransitionOptions } from '@/lib/navigation/transitions';
 import { useAuthSession } from '@/lib/auth/AuthContext';
 
-const HIDE_FAB_ROUTES = ['/ai-chat', '/post-review', '/camera', '/booking'];
+const HIDE_FAB_ROUTES = ['/ai-chat', '/post-review', '/camera', '/booking', '/checkout'];
 
 const useStyles = createStyles((c) => ({
   root: {
@@ -158,6 +158,12 @@ export default function CustomerTabsLayout() {
       <Tabs.Screen name="index" options={{ href: null }} />
       <Tabs.Screen name="bookings" options={{ href: null }} />
       <Tabs.Screen name="orders" options={{ href: null }} />
+      <Tabs.Screen
+        name="checkout"
+        options={{
+          tabBarButton: () => null,
+        }}
+      />
       <Tabs.Screen name="loyalty" options={{ href: null }} />
       <Tabs.Screen name="ai-chat" options={{ href: null }} />
       <Tabs.Screen name="notifications" options={{ href: null }} />

@@ -7,6 +7,9 @@
       "@/*": [
         "./*"
       ],
+      "@cenaiva/assistant": [
+        "./packages/assistant/src/index.ts"
+      ],
       "@cenaiva/types": [
         "./packages/types/index.ts"
       ]

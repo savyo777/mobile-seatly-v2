@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useEffect, useMemo, useState } from 'react';
 import type { Session, User } from '@supabase/supabase-js';
 import { getSupabase } from '@/lib/supabase/client';
+import { clearAppShellPreference } from '@/lib/navigation/appShellPreference';
 
 type AuthCtx = {
   session: Session | null;
@@ -61,8 +62,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     };
     void hydrateSession();
 
-    const { data: sub } = supabase.auth.onAuthStateChange((_event, next) => {
+    const { data: sub } = supabase.auth.onAuthStateChange((event, next) => {
       if (!cancelled) {
+        if (event === 'SIGNED_OUT') {
+          void clearAppShellPreference();
+        }
         setSession(next);
         setLoading(false);
       }

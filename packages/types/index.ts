@@ -33,6 +33,11 @@ export interface RestaurantRow {
   city: string | null;
   province: string | null;
   country: string | null;
+  lat?: string | number | null;
+  lng?: string | number | null;
+  price_range?: string | number | null;
+  avg_rating?: string | number | null;
+  hero_image_url?: string | null;
   phone: string | null;
   email: string | null;
   hours_json: Record<string, unknown> | null;

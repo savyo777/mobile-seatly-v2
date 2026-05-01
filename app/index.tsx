@@ -3,6 +3,7 @@ import { View, Text, ActivityIndicator } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useColors, createStyles } from '@/lib/theme';
 import { useAuthSession } from '@/lib/auth/AuthContext';
+import { getAppShellPreference } from '@/lib/navigation/appShellPreference';
 
 const useStyles = createStyles((c) => ({
   container: {
@@ -36,14 +37,29 @@ export default function SplashScreen() {
 
   useEffect(() => {
     if (loading) return;
+    let cancelled = false;
     const timer = setTimeout(() => {
-      if (isAuthenticated) {
+      void (async () => {
+        if (cancelled) return;
+        if (!isAuthenticated) {
+          router.replace('/onboarding');
+          return;
+        }
+        const pref = await getAppShellPreference();
+        if (cancelled) return;
+        if (pref === 'customer') {
+          router.replace('/(customer)');
+          return;
+        }
+        if (pref === 'staff' && isStaffLike) {
+          router.replace('/(staff)');
+          return;
+        }
         router.replace(isStaffLike ? '/(staff)' : '/(customer)');
-        return;
-      }
-      router.replace('/onboarding');
+      })();
     }, 300);
     return () => {
+      cancelled = true;
       clearTimeout(timer);
     };
   }, [router, loading, isAuthenticated, isStaffLike]);

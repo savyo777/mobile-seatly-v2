@@ -7,11 +7,20 @@ import { SubpageHeader } from '@/components/owner/SubpageHeader';
 import { useColors, useTheme, createStyles, spacing, borderRadius, type ThemeMode } from '@/lib/theme';
 import { useAuthSession } from '@/lib/auth/AuthContext';
 import { deleteAccount, signOutAllDevices } from '@/lib/services/accountSecurity';
+import { setAppShellPreference } from '@/lib/navigation/appShellPreference';
 
 // ── Types ──────────────────────────────────────────────────────────────────
 
 type RowItem =
-  | { kind: 'nav'; label: string; value?: string; icon: string; route?: string; danger?: boolean }
+  | {
+      kind: 'nav';
+      label: string;
+      value?: string;
+      icon: string;
+      route?: string;
+      danger?: boolean;
+      action?: 'switch_to_customer';
+    }
   | { kind: 'toggle'; label: string; icon: string; value: boolean; onChange: (v: boolean) => void };
 
 type Section = { title: string; rows: RowItem[] };
@@ -268,6 +277,11 @@ function SettingsSection({ section }: { section: Section }) {
       );
     } else if (item.label === 'Appearance') {
       setAppearanceOpen((open) => !open);
+    } else if (item.action === 'switch_to_customer') {
+      void (async () => {
+        await setAppShellPreference('customer');
+        router.replace('/(customer)' as never);
+      })();
     } else if (item.route) {
       router.push(item.route as never);
     } else {
@@ -306,6 +320,17 @@ export default function OwnerSettingsScreen() {
   const [emailDigest, setEmailDigest] = React.useState(true);
 
   const sections: Section[] = [
+    {
+      title: 'App',
+      rows: [
+        {
+          kind: 'nav',
+          label: 'Switch to user side',
+          icon: 'person-circle-outline',
+          action: 'switch_to_customer',
+        },
+      ],
+    },
     {
       title: 'Account',
       rows: [

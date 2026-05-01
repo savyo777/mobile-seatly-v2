@@ -21,6 +21,7 @@ import { useColors, createStyles, spacing, borderRadius, typography } from '@/li
 import { mockCustomer } from '@/lib/mock/users';
 import { useAuthSession } from '@/lib/auth/AuthContext';
 import { deleteAccount, signOutAllDevices } from '@/lib/services/accountSecurity';
+import { setAppShellPreference } from '@/lib/navigation/appShellPreference';
 
 const TIERS = [
   { name: 'Bronze',   min: 0,    color: '#CD7F32' },
@@ -43,6 +44,11 @@ type Row =
     }
   | {
       kind: 'logoutAllDevices';
+      icon: React.ComponentProps<typeof Ionicons>['name'];
+      label: string;
+    }
+  | {
+      kind: 'switchToRestaurant';
       icon: React.ComponentProps<typeof Ionicons>['name'];
       label: string;
     };
@@ -209,11 +215,25 @@ export default function SettingsScreen() {
   const styles = useStyles();
   const router = useRouter();
   const insets = useSafeAreaInsets();
-  const { signOut } = useAuthSession();
+  const { signOut, isStaffLike } = useAuthSession();
   const pts = mockCustomer.loyaltyPointsBalance ?? 0;
   const tier = getTier(pts);
 
-  const sections: Section[] = useMemo(() => [
+  const sections: Section[] = useMemo(() => {
+    const restaurantSection: Section | null = isStaffLike
+      ? {
+          title: 'Restaurant',
+          rows: [
+            {
+              kind: 'switchToRestaurant' as const,
+              icon: 'storefront-outline',
+              label: 'Switch to restaurant side',
+            },
+          ],
+        }
+      : null;
+
+    const core: Section[] = [
     {
       title: 'Account',
       rows: [
@@ -281,7 +301,9 @@ export default function SettingsScreen() {
         },
       ],
     },
-  ], []);
+    ];
+    return restaurantSection ? [restaurantSection, ...core] : core;
+  }, [isStaffLike]);
 
   const handleLogout = async () => {
     try {
@@ -403,6 +425,11 @@ export default function SettingsScreen() {
                   onPress={() => {
                     if (row.kind === 'logoutAllDevices') {
                       handleLogoutAllDevices();
+                    } else if (row.kind === 'switchToRestaurant') {
+                      void (async () => {
+                        await setAppShellPreference('auto');
+                        router.replace('/(staff)' as Href);
+                      })();
                     } else {
                       router.push(row.href);
                     }

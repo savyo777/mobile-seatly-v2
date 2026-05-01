@@ -9,6 +9,7 @@ import { AuthProvider } from '@/lib/auth/AuthContext';
 import { ThemeProvider, useColors } from '@/lib/theme';
 import { MenuProvider } from '@/lib/context/MenuContext';
 import { createStackTransitionOptions } from '@/lib/navigation/transitions';
+import { CenaivaAssistantProvider } from '@/lib/cenaiva/CenaivaAssistantProvider';
 import { getSupabase } from '@/lib/supabase/client';
 import { CookieConsentBanner } from '@/components/cookie-consent/CookieConsentBanner';
 
@@ -143,7 +144,9 @@ export default function RootLayout() {
         <ThemeProvider>
           <AuthProvider>
             <MenuProvider>
-              <ThemedRootShell />
+              <CenaivaAssistantProvider>
+                <ThemedRootShell />
+              </CenaivaAssistantProvider>
             </MenuProvider>
           </AuthProvider>
         </ThemeProvider>
