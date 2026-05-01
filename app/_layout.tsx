@@ -10,6 +10,7 @@ import { ThemeProvider, useColors } from '@/lib/theme';
 import { MenuProvider } from '@/lib/context/MenuContext';
 import { createStackTransitionOptions } from '@/lib/navigation/transitions';
 import { getSupabase } from '@/lib/supabase/client';
+import { CookieConsentBanner } from '@/components/cookie-consent/CookieConsentBanner';
 
 type RecoveryTokens = {
   accessToken: string;
@@ -29,23 +30,63 @@ function getRecoveryTokensFromUrl(url: string): RecoveryTokens | null {
   return { type, accessToken, refreshToken };
 }
 
+function getAuthCodeFromUrl(url: string): string | null {
+  const queryPart = url.includes('?') ? url.split('?')[1]?.split('#')[0] ?? '' : '';
+  const params = new URLSearchParams(queryPart);
+  return params.get('code');
+}
+
+function getTokenHashFromUrl(url: string): { tokenHash: string; type: string } | null {
+  const queryPart = url.includes('?') ? url.split('?')[1]?.split('#')[0] ?? '' : '';
+  const params = new URLSearchParams(queryPart);
+  const tokenHash = params.get('token_hash');
+  const type = params.get('type');
+  if (tokenHash && type) return { tokenHash, type };
+  return null;
+}
+
 function RecoveryLinkHandler() {
   const router = useRouter();
 
   useEffect(() => {
     let isMounted = true;
+    const supabase = getSupabase();
+    if (!supabase) return;
 
     const handleUrl = async (url: string) => {
+      // Direct token_hash deep link (email template uses cenaiva://reset-password?token_hash=...&type=recovery)
+      const tokenHashData = getTokenHashFromUrl(url);
+      if (tokenHashData?.type === 'recovery') {
+        const { error } = await supabase.auth.verifyOtp({
+          token_hash: tokenHashData.tokenHash,
+          type: 'recovery',
+        });
+        if (!error && isMounted) {
+          router.replace('/(auth)/reset-password?recovery=1');
+        }
+        return;
+      }
+
+      // Implicit flow: access_token + refresh_token in hash fragment
       const tokens = getRecoveryTokensFromUrl(url);
-      if (!tokens) return;
-      const supabase = getSupabase();
-      if (!supabase) return;
-      const { error } = await supabase.auth.setSession({
-        access_token: tokens.accessToken,
-        refresh_token: tokens.refreshToken,
-      });
-      if (!error && isMounted) {
-        router.replace('/(auth)/reset-password');
+      if (tokens) {
+        const { error } = await supabase.auth.setSession({
+          access_token: tokens.accessToken,
+          refresh_token: tokens.refreshToken,
+        });
+        if (!error && isMounted) {
+          router.replace('/(auth)/reset-password?recovery=1');
+        }
+        return;
+      }
+
+      // PKCE flow: authorization code in query string
+      const code = getAuthCodeFromUrl(url);
+      if (code) {
+        const { error } = await supabase.auth.exchangeCodeForSession(code);
+        if (!error && isMounted) {
+          router.replace('/(auth)/reset-password?recovery=1');
+        }
       }
     };
 
@@ -57,9 +98,16 @@ function RecoveryLinkHandler() {
       void handleUrl(url);
     });
 
+    const { data: authSub } = supabase.auth.onAuthStateChange((event) => {
+      if (event === 'PASSWORD_RECOVERY' && isMounted) {
+        router.replace('/(auth)/reset-password?recovery=1');
+      }
+    });
+
     return () => {
       isMounted = false;
       sub.remove();
+      authSub.subscription.unsubscribe();
     };
   }, [router]);
 
@@ -81,7 +129,9 @@ function ThemedRootShell() {
         <Stack.Screen name="(customer)" />
         <Stack.Screen name="(staff)" />
         <Stack.Screen name="booking" />
+        <Stack.Screen name="auth-callback" options={{ animation: 'none' }} />
       </Stack>
+      <CookieConsentBanner />
     </>
   );
 }

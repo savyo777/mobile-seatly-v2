@@ -14,7 +14,16 @@
     },
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.cenaiva.app"
+      "bundleIdentifier": "com.cenaiva.app",
+      "infoPlist": {
+        "CFBundleURLTypes": [
+          {
+            "CFBundleURLSchemes": [
+              "cenaiva"
+            ]
+          }
+        ]
+      }
     },
     "android": {
       "adaptiveIcon": {
@@ -23,7 +32,21 @@
         "backgroundImage": "./assets/android-icon-background.png",
         "monochromeImage": "./assets/android-icon-monochrome.png"
       },
-      "package": "com.cenaiva.app"
+      "package": "com.cenaiva.app",
+      "intentFilters": [
+        {
+          "action": "VIEW",
+          "category": [
+            "BROWSABLE",
+            "DEFAULT"
+          ],
+          "data": [
+            {
+              "scheme": "cenaiva"
+            }
+          ]
+        }
+      ]
     },
     "web": {
       "favicon": "./assets/favicon.png"
@@ -56,7 +79,8 @@
           "microphonePermission": "Allow Cenaiva to use the microphone for voice commands in the AI assistant.",
           "speechRecognitionPermission": "Allow Cenaiva to transcribe your speech for the AI assistant."
         }
-      ]
+      ],
+      "expo-web-browser"
     ]
   }
 }

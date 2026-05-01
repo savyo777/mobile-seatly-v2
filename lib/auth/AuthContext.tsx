@@ -88,14 +88,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       return;
     }
 
-    const roleFromMetadata = resolveRoleFromMetadata(currentUser);
-    if (roleFromMetadata) {
-      setRole(roleFromMetadata);
-      return;
-    }
-
-    // Fallback to profile role to reduce role mismatch issues on cold starts.
-    const loadRoleFromProfile = async () => {
+    // Resolve from user_profiles first to avoid stale metadata causing wrong redirects.
+    // Keep role null while loading so guarded layouts can avoid flash/misroute.
+    setRole(null);
+    const loadRole = async () => {
       try {
         const { data } = await supabase
           .from('user_profiles')
@@ -104,13 +100,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           .maybeSingle();
         if (!cancelled) {
           const profileRole = typeof data?.role === 'string' ? data.role.toLowerCase() : null;
-          setRole(profileRole);
+          if (profileRole) {
+            setRole(profileRole);
+            return;
+          }
+          // Fallback to metadata only when profile role is unavailable.
+          setRole(resolveRoleFromMetadata(currentUser));
         }
       } catch {
-        if (!cancelled) setRole(null);
+        if (!cancelled) setRole(resolveRoleFromMetadata(currentUser));
       }
     };
-    void loadRoleFromProfile();
+    void loadRole();
     return () => {
       cancelled = true;
     };

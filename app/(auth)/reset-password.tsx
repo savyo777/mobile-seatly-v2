@@ -1,6 +1,6 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { View, Text, TextInput, Pressable, StyleSheet, Alert, ActivityIndicator } from 'react-native';
-import { useRouter } from 'expo-router';
+import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import { ScreenWrapper } from '@/components/ui';
 import { createStyles, useColors, spacing, borderRadius, typography } from '@/lib/theme';
@@ -66,11 +66,26 @@ export default function ResetPasswordScreen() {
   const router = useRouter();
   const c = useColors();
   const styles = useStyles();
+  const params = useLocalSearchParams<{ recovery?: string }>();
 
   const [nextPassword, setNextPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
+  const [canReset, setCanReset] = useState(params.recovery === '1');
+
+  useEffect(() => {
+    const supabase = getSupabase();
+    if (!supabase) return;
+    const { data: sub } = supabase.auth.onAuthStateChange((event) => {
+      if (event === 'PASSWORD_RECOVERY') {
+        setCanReset(true);
+      }
+    });
+    return () => {
+      sub.subscription.unsubscribe();
+    };
+  }, []);
 
   const validate = () => {
     if (nextPassword.length < 8) return t('profile.passwordTooShort');
@@ -120,6 +135,11 @@ export default function ResetPasswordScreen() {
   return (
     <ScreenWrapper withKeyboardAvoiding padded>
       <View style={styles.inner}>
+        {!canReset ? (
+          <ActivityIndicator color={c.gold} />
+        ) : null}
+        {canReset ? (
+          <>
         <Text style={styles.heading}>{t('auth.resetPassword')}</Text>
         <Text style={styles.sub}>{t('auth.resetPasswordDescription')}</Text>
 
@@ -163,6 +183,8 @@ export default function ResetPasswordScreen() {
             <Text style={styles.submitText}>{t('profile.changePassword')}</Text>
           )}
         </Pressable>
+          </>
+        ) : null}
       </View>
     </ScreenWrapper>
   );

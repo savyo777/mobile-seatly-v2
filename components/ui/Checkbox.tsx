@@ -42,7 +42,7 @@ const useStyles = createStyles((c) => ({
     height: 20,
     borderRadius: 6,
     borderWidth: StyleSheet.hairlineWidth,
-    borderColor: c.border,
+    borderColor: c.gold,
     backgroundColor: 'transparent',
     alignItems: 'center',
     justifyContent: 'center',

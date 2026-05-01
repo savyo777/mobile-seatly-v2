@@ -6,6 +6,7 @@ import { OwnerScreen } from '@/components/owner/OwnerScreen';
 import { SubpageHeader } from '@/components/owner/SubpageHeader';
 import { useColors, useTheme, createStyles, spacing, borderRadius, type ThemeMode } from '@/lib/theme';
 import { useAuthSession } from '@/lib/auth/AuthContext';
+import { deleteAccount, signOutAllDevices } from '@/lib/services/accountSecurity';
 
 // ── Types ──────────────────────────────────────────────────────────────────
 
@@ -219,6 +220,52 @@ function SettingsSection({ section }: { section: Section }) {
           },
         },
       ]);
+    } else if (item.label === 'Log out of all devices') {
+      Alert.alert(
+        'Log out of all devices',
+        'All active sessions will be signed out, including this device.',
+        [
+          { text: 'Cancel', style: 'cancel' },
+          {
+            text: 'Log out of all devices',
+            style: 'destructive',
+            onPress: async () => {
+              try {
+                await signOutAllDevices();
+                router.replace('/onboarding' as never);
+              } catch (e: any) {
+                Alert.alert(
+                  'Sign out failed',
+                  e?.message ?? 'Could not sign out all devices. Please try again.',
+                );
+              }
+            },
+          },
+        ],
+      );
+    } else if (item.label === 'Delete account') {
+      Alert.alert(
+        'Delete account',
+        'This action is permanent and cannot be undone. Your account and data will be deleted.',
+        [
+          { text: 'Cancel', style: 'cancel' },
+          {
+            text: 'Delete account',
+            style: 'destructive',
+            onPress: async () => {
+              try {
+                await deleteAccount();
+                router.replace('/onboarding' as never);
+              } catch (e: any) {
+                Alert.alert(
+                  'Delete failed',
+                  e?.message ?? 'Could not delete your account. Please try again.',
+                );
+              }
+            },
+          },
+        ],
+      );
     } else if (item.label === 'Appearance') {
       setAppearanceOpen((open) => !open);
     } else if (item.route) {
@@ -263,6 +310,7 @@ export default function OwnerSettingsScreen() {
       title: 'Account',
       rows: [
         { kind: 'nav', label: 'Personal details', value: 'Mark H.', icon: 'person-outline' },
+        { kind: 'nav', label: 'Log out of all devices', icon: 'globe-outline' },
         { kind: 'nav', label: 'Password & security', icon: 'lock-closed-outline' },
         { kind: 'nav', label: 'Face ID / Touch ID', value: 'Enabled', icon: 'finger-print-outline' },
       ],
@@ -270,8 +318,8 @@ export default function OwnerSettingsScreen() {
     {
       title: 'Account Security',
       rows: [
-        { kind: 'nav', label: 'Change Password', icon: 'lock-closed-outline', route: '/(customer)/profile/security/change-password' },
-        { kind: 'nav', label: 'Change Email', icon: 'mail-outline', route: '/(customer)/profile/security/change-email' },
+        { kind: 'nav', label: 'Change Password', icon: 'lock-closed-outline', route: '/(staff)/security/change-password' },
+        { kind: 'nav', label: 'Change Email', icon: 'mail-outline', route: '/(staff)/security/change-email' },
       ],
     },
     {

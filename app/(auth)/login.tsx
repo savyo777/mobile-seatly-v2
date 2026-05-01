@@ -8,6 +8,8 @@ import { Ionicons } from '@expo/vector-icons';
 import { borderRadius, createStyles, spacing, typography, useColors } from '@/lib/theme';
 import { getSupabase } from '@/lib/supabase/client';
 import { sendPasswordResetEmail } from '@/lib/services/accountSecurity';
+import { ensureCustomerProfile, signInWithGoogle } from '@/lib/services/oauth';
+import { normalizePhoneToE164, sendPhoneOtp } from '@/lib/services/phoneAuth';
 import {
   ScreenWrapper,
   Input,
@@ -121,6 +123,14 @@ const useStyles = createStyles((c) => ({
 }));
 
 const LOCKOUT_MS = 15 * 60 * 1000;
+
+function roleIncludes(roleValue: string | null | undefined, expected: 'customer' | 'owner'): boolean {
+  if (!roleValue) return false;
+  const normalized = roleValue.toLowerCase().trim();
+  if (!normalized) return false;
+  if (normalized === expected || normalized === 'both') return true;
+  return normalized.split(/[,\s|/]+/).includes(expected);
+}
 const MAX_FAILED_ATTEMPTS = 5;
 
 function failuresKey(email: string) {
@@ -140,6 +150,7 @@ export default function LoginScreen() {
   const [keepSignedIn, setKeepSignedIn] = useState(true);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [phone, setPhone] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [lockoutUntilMs, setLockoutUntilMs] = useState<number | null>(null);
 
@@ -183,6 +194,24 @@ export default function LoginScreen() {
     return () => clearInterval(id);
   }, [isLockedOut, lockoutUntilMs]);
 
+  const enforceCustomerRole = async (userId: string): Promise<boolean> => {
+    const supabase = getSupabase();
+    if (!supabase) return false;
+    const { data } = await supabase
+      .from('user_profiles')
+      .select('role')
+      .eq('auth_user_id', userId)
+      .maybeSingle();
+    const role = typeof data?.role === 'string' ? data.role.toLowerCase() : '';
+    if (roleIncludes(role, 'customer')) return true;
+    await supabase.auth.signOut();
+    Alert.alert(
+      'Access denied',
+      'This account is not registered as a customer. Please create a customer account.',
+    );
+    return false;
+  };
+
   const handleLogin = async () => {
     if (submitting || isLockedOut) return;
     if (!trimmedEmail || !password) {
@@ -198,7 +227,7 @@ export default function LoginScreen() {
 
     setSubmitting(true);
     try {
-      const { error } = await supabase.auth.signInWithPassword({
+      const { data, error } = await supabase.auth.signInWithPassword({
         email: trimmedEmail,
         password,
       });
@@ -228,6 +257,62 @@ export default function LoginScreen() {
       }
       await AsyncStorage.multiRemove([failuresKey(trimmedEmail), lockoutKey(trimmedEmail)]);
       setLockoutUntilMs(null);
+      const signedInUserId = data.user?.id;
+      if (!signedInUserId) {
+        Alert.alert('Session error', 'Could not load your account. Please try again.');
+        return;
+      }
+      const allowed = await enforceCustomerRole(signedInUserId);
+      if (!allowed) return;
+      router.replace('/(customer)');
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const handleSendPhoneOtp = async () => {
+    if (submitting || isLockedOut) return;
+    const e164 = normalizePhoneToE164(phone);
+    if (!e164) {
+      Alert.alert(
+        'Invalid phone',
+        'Please enter a valid phone number (include country code, or 10-digit US number).',
+      );
+      return;
+    }
+    setSubmitting(true);
+    try {
+      const { error } = await sendPhoneOtp(e164);
+      if (error) {
+        Alert.alert('SMS failed', error);
+        return;
+      }
+      router.push({
+        pathname: '/(auth)/verify-phone-otp',
+        params: { phone: encodeURIComponent(e164), source: 'login' },
+      });
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const handleGoogle = async () => {
+    if (submitting) return;
+    setSubmitting(true);
+    try {
+      const result = await signInWithGoogle();
+      if (result.status === 'cancelled') return;
+      if (result.status === 'error') {
+        Alert.alert('Google sign in failed', result.message);
+        return;
+      }
+      try {
+        await ensureCustomerProfile(result.session);
+      } catch {
+        // ignore: profile creation is best-effort and can be retried later
+      }
+      const allowed = await enforceCustomerRole(result.session.user.id);
+      if (!allowed) return;
       router.replace('/(customer)');
     } finally {
       setSubmitting(false);
@@ -294,13 +379,35 @@ export default function LoginScreen() {
 
         <View style={styles.dividerRow}>
           <View style={styles.dividerLine} />
+          <Text style={styles.dividerText}>{t('auth.orPhoneSms')}</Text>
+          <View style={styles.dividerLine} />
+        </View>
+
+        <Input
+          icon="call-outline"
+          placeholder={t('auth.phone')}
+          keyboardType="phone-pad"
+          autoCapitalize="none"
+          autoCorrect={false}
+          value={phone}
+          onChangeText={setPhone}
+        />
+        <Button
+          title={t('auth.sendSmsCode')}
+          onPress={handleSendPhoneOtp}
+          size="lg"
+          disabled={submitting || isLockedOut}
+        />
+
+        <View style={styles.dividerRow}>
+          <View style={styles.dividerLine} />
           <Text style={styles.dividerText}>{t('auth.orContinueWith')}</Text>
           <View style={styles.dividerLine} />
         </View>
 
         <SocialAuthButtons
           onApple={() => router.replace('/(customer)')}
-          onGoogle={() => router.replace('/(customer)')}
+          onGoogle={handleGoogle}
         />
 
         <View style={styles.spacer} />

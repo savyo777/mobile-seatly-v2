@@ -1,5 +1,5 @@
 import React from 'react';
-import { Pressable, StyleSheet, View } from 'react-native';
+import { ActivityIndicator, Pressable, StyleSheet, View } from 'react-native';
 import { Redirect, Tabs, useRouter, usePathname, Href } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
@@ -54,9 +54,15 @@ export default function CustomerTabsLayout() {
   const pathname = usePathname();
   const c = useColors();
   const styles = useStyles();
-  const { loading, isAuthenticated } = useAuthSession();
+  const { loading, isAuthenticated, role } = useAuthSession();
 
-  if (loading) return null;
+  if (loading || (isAuthenticated && role === null)) {
+    return (
+      <View style={[styles.root, { alignItems: 'center', justifyContent: 'center' }]}>
+        <ActivityIndicator color={c.gold} />
+      </View>
+    );
+  }
   if (!isAuthenticated) {
     return <Redirect href="/(auth)/welcome" />;
   }

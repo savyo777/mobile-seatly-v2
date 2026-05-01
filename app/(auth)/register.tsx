@@ -6,6 +6,8 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { borderRadius, createStyles, spacing, typography, useColors } from '@/lib/theme';
 import { getSupabase } from '@/lib/supabase/client';
+import { ensureCustomerProfile, signInWithGoogle } from '@/lib/services/oauth';
+import { normalizePhoneToE164, sendPhoneOtp } from '@/lib/services/phoneAuth';
 import {
   ScreenWrapper,
   Input,
@@ -128,15 +130,42 @@ const useStyles = createStyles((c) => ({
   pwHint: { ...typography.bodySmall, color: c.textMuted },
   pwLabel: { ...typography.bodySmall, color: c.gold, fontWeight: '700' },
   pwRule: { ...typography.bodySmall, color: c.textMuted, marginTop: 4 },
-  termsRow: {
+  pwRuleRow: {
     flexDirection: 'row',
     alignItems: 'center',
+    gap: spacing.xs,
+    marginTop: 6,
+  },
+  pwRuleLine: {
+    width: 18,
+    height: 3,
+    borderRadius: 999,
+    backgroundColor: '#6B1E1E',
+  },
+  pwRuleLinePass: {
+    backgroundColor: '#2E8B57',
+  },
+  pwRuleText: {
+    ...typography.bodySmall,
+    color: c.textMuted,
+    flex: 1,
+    lineHeight: 18,
+  },
+  pwRuleTextPass: {
+    color: '#2E8B57',
+    fontWeight: '600',
+  },
+  termsRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
     marginBottom: spacing.lg,
   },
   termsText: {
-    ...typography.body,
+    ...typography.bodySmall,
     color: c.textSecondary,
     flexShrink: 1,
+    lineHeight: 19,
+    fontWeight: '500',
   },
   termsLink: { color: c.gold, fontWeight: '700' },
   dividerRow: {
@@ -177,7 +206,8 @@ export default function RegisterScreen() {
   const [fullName, setFullName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [agree, setAgree] = useState(true);
+  const [agree, setAgree] = useState(false);
+  const [phone, setPhone] = useState('');
   const [submitting, setSubmitting] = useState(false);
 
   const checks = useMemo(() => getPasswordChecks(password), [password]);
@@ -227,23 +257,42 @@ export default function RegisterScreen() {
         },
       });
       if (error) {
+        const msg = error.message.toLowerCase();
+        if (msg.includes('already registered')) {
+          const { data: signInData, error: signInError } = await supabase.auth.signInWithPassword({
+            email: trimmedEmail,
+            password,
+          });
+          if (signInError || !signInData.session) {
+            Alert.alert(
+              'Account exists',
+              'This email is already registered. Sign in with your existing password to add customer access.',
+            );
+            return;
+          }
+          try {
+            await ensureCustomerProfile(signInData.session, {
+              fullNameOverride: trimmedName,
+            });
+          } catch {
+            // best-effort
+          }
+          Alert.alert('Account updated', 'Customer access has been added to your existing account.');
+          router.replace('/(customer)');
+          return;
+        }
         Alert.alert('Sign up failed', error.message);
         return;
       }
 
       // If auto-confirm is enabled and a session exists, create/update the profile immediately.
       if (data.session?.user?.id) {
-        const { error: profileError } = await supabase.from('user_profiles').upsert(
-          {
-            auth_user_id: data.session.user.id,
-            email: trimmedEmail,
-            full_name: trimmedName,
-            role: 'customer',
-          },
-          { onConflict: 'auth_user_id' },
-        );
-        if (profileError) {
-          Alert.alert('Profile setup warning', profileError.message);
+        try {
+          await ensureCustomerProfile(data.session, {
+            fullNameOverride: trimmedName,
+          });
+        } catch (profileError: any) {
+          Alert.alert('Profile setup warning', profileError?.message ?? 'Could not update profile role.');
         }
       }
 
@@ -252,6 +301,71 @@ export default function RegisterScreen() {
         'If email confirmation is enabled, please verify your email before signing in.',
       );
       router.replace(data.session ? '/(customer)' : '/(auth)/login');
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const handleSendPhoneOtp = async () => {
+    if (submitting) return;
+    if (!agree) {
+      Alert.alert(
+        'Agreement required',
+        'Please agree to the Terms of Service and Privacy Policy before continuing.',
+      );
+      return;
+    }
+    const e164 = normalizePhoneToE164(phone);
+    if (!e164) {
+      Alert.alert(
+        'Invalid phone',
+        'Please enter a valid phone number (include country code, or 10-digit US number).',
+      );
+      return;
+    }
+    setSubmitting(true);
+    try {
+      const { error } = await sendPhoneOtp(e164);
+      if (error) {
+        Alert.alert('SMS failed', error);
+        return;
+      }
+      router.push({
+        pathname: '/(auth)/verify-phone-otp',
+        params: {
+          phone: encodeURIComponent(e164),
+          source: 'register',
+          fullName: encodeURIComponent(fullName.trim()),
+        },
+      });
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const handleGoogle = async () => {
+    if (submitting) return;
+    if (!agree) {
+      Alert.alert(
+        'Agreement required',
+        'Please agree to the Terms of Service and Privacy Policy before continuing.',
+      );
+      return;
+    }
+    setSubmitting(true);
+    try {
+      const result = await signInWithGoogle();
+      if (result.status === 'cancelled') return;
+      if (result.status === 'error') {
+        Alert.alert('Google sign in failed', result.message);
+        return;
+      }
+      try {
+        await ensureCustomerProfile(result.session);
+      } catch {
+        // ignore: profile creation is best-effort and can be retried later
+      }
+      router.replace('/(customer)');
     } finally {
       setSubmitting(false);
     }
@@ -333,11 +447,32 @@ export default function RegisterScreen() {
           <Text style={styles.pwHint}>{t('auth.pwHintShort')}</Text>
           {password.length > 0 ? <Text style={styles.pwLabel}>{strengthLabel}</Text> : null}
         </View>
-        <Text style={styles.pwRule}>{`${checks.minLength ? '✓' : '○'} At least 8 characters`}</Text>
-        <Text style={styles.pwRule}>{`${checks.uppercase ? '✓' : '○'} At least 1 uppercase letter`}</Text>
-        <Text style={styles.pwRule}>{`${checks.lowercase ? '✓' : '○'} At least 1 lowercase letter`}</Text>
-        <Text style={styles.pwRule}>{`${checks.number ? '✓' : '○'} At least 1 number`}</Text>
-        <Text style={styles.pwRule}>{`${checks.special ? '✓' : '○'} At least 1 special character (! @ # $ % ^ & * _ - ? .)`}</Text>
+        <View style={styles.pwRuleRow}>
+          <View style={[styles.pwRuleLine, checks.minLength && styles.pwRuleLinePass]} />
+          <Text style={[styles.pwRuleText, checks.minLength && styles.pwRuleTextPass]}>At least 8 characters</Text>
+        </View>
+        <View style={styles.pwRuleRow}>
+          <View style={[styles.pwRuleLine, checks.uppercase && styles.pwRuleLinePass]} />
+          <Text style={[styles.pwRuleText, checks.uppercase && styles.pwRuleTextPass]}>
+            At least 1 uppercase letter
+          </Text>
+        </View>
+        <View style={styles.pwRuleRow}>
+          <View style={[styles.pwRuleLine, checks.lowercase && styles.pwRuleLinePass]} />
+          <Text style={[styles.pwRuleText, checks.lowercase && styles.pwRuleTextPass]}>
+            At least 1 lowercase letter
+          </Text>
+        </View>
+        <View style={styles.pwRuleRow}>
+          <View style={[styles.pwRuleLine, checks.number && styles.pwRuleLinePass]} />
+          <Text style={[styles.pwRuleText, checks.number && styles.pwRuleTextPass]}>At least 1 number</Text>
+        </View>
+        <View style={styles.pwRuleRow}>
+          <View style={[styles.pwRuleLine, checks.special && styles.pwRuleLinePass]} />
+          <Text style={[styles.pwRuleText, checks.special && styles.pwRuleTextPass]}>
+            At least 1 special character (! @ # $ % ^ & * _ - ? .)
+          </Text>
+        </View>
 
         <View style={styles.termsRow}>
           <Checkbox
@@ -367,11 +502,33 @@ export default function RegisterScreen() {
 
         <View style={styles.dividerRow}>
           <View style={styles.dividerLine} />
+          <Text style={styles.dividerText}>{t('auth.orPhoneSignUp')}</Text>
+          <View style={styles.dividerLine} />
+        </View>
+
+        <Input
+          icon="call-outline"
+          placeholder={t('auth.phone')}
+          keyboardType="phone-pad"
+          autoCapitalize="none"
+          autoCorrect={false}
+          value={phone}
+          onChangeText={setPhone}
+        />
+        <Button
+          title={t('auth.sendSmsCode')}
+          onPress={handleSendPhoneOtp}
+          size="lg"
+          disabled={!agree || submitting}
+        />
+
+        <View style={styles.dividerRow}>
+          <View style={styles.dividerLine} />
           <Text style={styles.dividerText}>{t('auth.orSignUpWith')}</Text>
           <View style={styles.dividerLine} />
         </View>
 
-        <SocialAuthButtons onApple={onSuccess} onGoogle={onSuccess} />
+        <SocialAuthButtons onApple={onSuccess} onGoogle={handleGoogle} />
 
         <View style={styles.spacer} />
 

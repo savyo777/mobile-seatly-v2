@@ -6,6 +6,7 @@ import {
   Text,
   Modal,
   TouchableWithoutFeedback,
+  ActivityIndicator,
 } from 'react-native';
 import { Redirect, Tabs, useRouter, usePathname } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
@@ -138,9 +139,15 @@ export default function OwnerTabsLayout() {
   const insets = useSafeAreaInsets();
   const [sheetOpen, setSheetOpen] = useState(false);
   const pathname = usePathname();
-  const { loading, isAuthenticated, isStaffLike } = useAuthSession();
+  const { loading, isAuthenticated, isStaffLike, role } = useAuthSession();
 
-  if (loading) return null;
+  if (loading || (isAuthenticated && role === null)) {
+    return (
+      <View style={[styles.root, { alignItems: 'center', justifyContent: 'center' }]}>
+        <ActivityIndicator color={c.gold} />
+      </View>
+    );
+  }
   if (!isAuthenticated) {
     return <Redirect href="/(auth)/welcome" />;
   }
@@ -247,6 +254,8 @@ export default function OwnerTabsLayout() {
         <Tabs.Screen name="events"      options={{ href: null }} />
         <Tabs.Screen name="export"      options={{ href: null }} />
         <Tabs.Screen name="settings"    options={{ href: null, tabBarStyle: { display: 'none' } }} />
+        <Tabs.Screen name="security/change-password" options={{ href: null, tabBarStyle: { display: 'none' } }} />
+        <Tabs.Screen name="security/change-email" options={{ href: null, tabBarStyle: { display: 'none' } }} />
         <Tabs.Screen name="menu-manage" options={{ href: null, tabBarStyle: { display: 'none' } }} />
         <Tabs.Screen name="menu-categories" options={{ href: null, tabBarStyle: { display: 'none' } }} />
         <Tabs.Screen name="menu-item-edit" options={{ href: null, tabBarStyle: { display: 'none' } }} />

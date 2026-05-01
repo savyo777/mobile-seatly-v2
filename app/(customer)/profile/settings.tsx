@@ -20,6 +20,7 @@ import { ChevronGlyph } from '@/components/ui/ChevronGlyph';
 import { useColors, createStyles, spacing, borderRadius, typography } from '@/lib/theme';
 import { mockCustomer } from '@/lib/mock/users';
 import { useAuthSession } from '@/lib/auth/AuthContext';
+import { deleteAccount, signOutAllDevices } from '@/lib/services/accountSecurity';
 
 const TIERS = [
   { name: 'Bronze',   min: 0,    color: '#CD7F32' },
@@ -33,11 +34,18 @@ function getTier(pts: number) {
   return TIERS[Math.max(0, idx)];
 }
 
-type Row = {
-  icon: React.ComponentProps<typeof Ionicons>['name'];
-  label: string;
-  href: Href;
-};
+type Row =
+  | {
+      kind: 'nav';
+      icon: React.ComponentProps<typeof Ionicons>['name'];
+      label: string;
+      href: Href;
+    }
+  | {
+      kind: 'logoutAllDevices';
+      icon: React.ComponentProps<typeof Ionicons>['name'];
+      label: string;
+    };
 
 type Section = {
   title: string;
@@ -181,6 +189,19 @@ const useStyles = createStyles((c) => ({
     backgroundColor: 'rgba(239,68,68,0.06)',
   },
   logoutText: { fontSize: 15, fontWeight: '700', color: c.danger },
+  deleteBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: spacing.sm,
+    marginTop: spacing.sm,
+    paddingVertical: 14,
+    borderRadius: borderRadius.lg,
+    borderWidth: 1,
+    borderColor: 'rgba(239,68,68,0.45)',
+    backgroundColor: 'rgba(239,68,68,0.12)',
+  },
+  deleteText: { fontSize: 15, fontWeight: '700', color: c.danger },
 }));
 
 export default function SettingsScreen() {
@@ -196,43 +217,68 @@ export default function SettingsScreen() {
     {
       title: 'Account',
       rows: [
-        { icon: 'pencil-outline', label: 'Edit Profile', href: '/(customer)/profile/edit' },
+        { kind: 'nav', icon: 'pencil-outline', label: 'Edit Profile', href: '/(customer)/profile/edit' },
+        {
+          kind: 'logoutAllDevices',
+          icon: 'globe-outline',
+          label: 'Log out of all devices',
+        },
       ],
     },
     {
       title: 'Account Security',
       rows: [
-        { icon: 'lock-closed-outline', label: 'Change Password', href: '/(customer)/profile/security/change-password' },
-        { icon: 'mail-outline', label: 'Change Email', href: '/(customer)/profile/security/change-email' },
+        {
+          kind: 'nav',
+          icon: 'lock-closed-outline',
+          label: 'Change Password',
+          href: '/(customer)/profile/security/change-password',
+        },
+        { kind: 'nav', icon: 'mail-outline', label: 'Change Email', href: '/(customer)/profile/security/change-email' },
       ],
     },
     {
       title: 'Payments & Rewards',
       rows: [
-        { icon: 'card-outline',     label: 'Payment Methods', href: '/(customer)/profile/payment' },
-        { icon: 'wallet-outline',   label: 'Wallet',          href: '/(customer)/profile/wallet' },
-        { icon: 'pricetag-outline', label: 'Promotions',      href: '/(customer)/profile/promotions' },
+        { kind: 'nav', icon: 'card-outline', label: 'Payment Methods', href: '/(customer)/profile/payment' },
+        { kind: 'nav', icon: 'wallet-outline', label: 'Wallet', href: '/(customer)/profile/wallet' },
+        { kind: 'nav', icon: 'pricetag-outline', label: 'Promotions', href: '/(customer)/profile/promotions' },
       ],
     },
     {
       title: 'Saved',
       rows: [
-        { icon: 'bookmark-outline', label: 'Saved Restaurants', href: '/(customer)/profile/favorites' },
+        { kind: 'nav', icon: 'bookmark-outline', label: 'Saved Restaurants', href: '/(customer)/profile/favorites' },
       ],
     },
     {
       title: 'Preferences',
       rows: [
-        { icon: 'notifications-outline',    label: 'Notifications',      href: '/(customer)/profile/notifications' },
-        { icon: 'shield-checkmark-outline', label: 'Privacy & Security', href: '/(customer)/profile/privacy' },
+        {
+          kind: 'nav',
+          icon: 'notifications-outline',
+          label: 'Notifications',
+          href: '/(customer)/profile/notifications',
+        },
+        {
+          kind: 'nav',
+          icon: 'shield-checkmark-outline',
+          label: 'Privacy & Security',
+          href: '/(customer)/profile/privacy',
+        },
       ],
     },
     {
       title: 'More',
       rows: [
-        { icon: 'gift-outline',               label: 'Refer & Earn',   href: '/(customer)/profile/invite' },
-        { icon: 'help-circle-outline',        label: 'Help & Support', href: '/(customer)/profile/help' },
-        { icon: 'information-circle-outline', label: 'About Seatly',   href: '/(customer)/profile/about' },
+        { kind: 'nav', icon: 'gift-outline', label: 'Refer & Earn', href: '/(customer)/profile/invite' },
+        { kind: 'nav', icon: 'help-circle-outline', label: 'Help & Support', href: '/(customer)/profile/help' },
+        {
+          kind: 'nav',
+          icon: 'information-circle-outline',
+          label: 'About Seatly',
+          href: '/(customer)/profile/about',
+        },
       ],
     },
   ], []);
@@ -244,6 +290,56 @@ export default function SettingsScreen() {
     } catch (e: any) {
       Alert.alert('Logout failed', e?.message ?? 'Failed to log out. Please try again.');
     }
+  };
+
+  const handleLogoutAllDevices = () => {
+    Alert.alert(
+      'Log out of all devices',
+      'All active sessions will be signed out, including this device.',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Log out of all devices',
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              await signOutAllDevices();
+              router.replace('/onboarding');
+            } catch (e: any) {
+              Alert.alert(
+                'Sign out failed',
+                e?.message ?? 'Could not sign out all devices. Please try again.',
+              );
+            }
+          },
+        },
+      ],
+    );
+  };
+
+  const handleDeleteAccount = () => {
+    Alert.alert(
+      'Delete account',
+      'This action is permanent and cannot be undone. Your account and data will be deleted.',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Delete account',
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              await deleteAccount();
+              router.replace('/onboarding');
+            } catch (e: any) {
+              Alert.alert(
+                'Delete failed',
+                e?.message ?? 'Could not delete your account. Please try again.',
+              );
+            }
+          },
+        },
+      ],
+    );
   };
 
   return (
@@ -304,7 +400,13 @@ export default function SettingsScreen() {
               {section.rows.map((row, i) => (
                 <Pressable
                   key={row.label}
-                  onPress={() => router.push(row.href)}
+                  onPress={() => {
+                    if (row.kind === 'logoutAllDevices') {
+                      handleLogoutAllDevices();
+                    } else {
+                      router.push(row.href);
+                    }
+                  }}
                   style={({ pressed }) => [
                     styles.row,
                     i < section.rows.length - 1 && styles.rowBorder,
@@ -328,6 +430,17 @@ export default function SettingsScreen() {
         >
           <Ionicons name="log-out-outline" size={18} color={c.danger} />
           <Text style={styles.logoutText}>Log out</Text>
+        </Pressable>
+
+        {/* Delete account */}
+        <Pressable
+          onPress={handleDeleteAccount}
+          style={({ pressed }) => [styles.deleteBtn, pressed && { opacity: 0.75 }]}
+          accessibilityRole="button"
+          accessibilityLabel="Delete account"
+        >
+          <Ionicons name="trash-outline" size={18} color={c.danger} />
+          <Text style={styles.deleteText}>Delete account</Text>
         </Pressable>
       </ScrollView>
     </View>
