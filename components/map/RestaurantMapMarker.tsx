@@ -7,9 +7,11 @@ type Props = {
   id: string;
   latitude: number;
   longitude: number;
+  name?: string;
   rating: number;
   priceTier: number;
   selected: boolean;
+  variant?: 'default' | 'cenaiva';
   onPress: (id: string) => void;
 };
 
@@ -50,6 +52,38 @@ const useStyles = createStyles((c) => ({
     backgroundColor: c.gold,
     borderColor: c.gold,
     transform: [{ scale: 1.08 }],
+  },
+  cenaivaPin: {
+    minWidth: 74,
+    maxWidth: 164,
+    height: 32,
+    borderRadius: borderRadius.full,
+    backgroundColor: '#1A1A1A',
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.20)',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 10,
+    shadowColor: '#000000',
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.28,
+    shadowRadius: 8,
+    elevation: 3,
+  },
+  cenaivaPinSelected: {
+    backgroundColor: '#C8A951',
+    borderColor: '#A68B3E',
+    transform: [{ scale: 1.1 }],
+  },
+  cenaivaName: {
+    color: '#FFFFFF',
+    fontSize: 12,
+    fontWeight: '700',
+    lineHeight: 15,
+    maxWidth: 140,
+  },
+  cenaivaNameSelected: {
+    color: '#000000',
   },
   contentRow: {
     flexDirection: 'row',
@@ -97,12 +131,15 @@ function RestaurantMapMarkerComponent({
   id,
   latitude,
   longitude,
+  name,
   rating,
   priceTier,
   selected,
+  variant = 'default',
   onPress,
 }: Props) {
   const styles = useStyles();
+  const isCenaiva = variant === 'cenaiva';
 
   return (
     <Marker
@@ -114,17 +151,28 @@ function RestaurantMapMarkerComponent({
     >
       <View style={styles.wrap} pointerEvents="box-none">
         <View style={[styles.glow, selected && styles.glowSelected]} />
-        <View style={[styles.pin, selected && styles.pinSelected]}>
-          <View style={styles.contentRow}>
-            <Text style={[styles.starGlyph, selected && styles.starGlyphSelected]} accessible={false}>
-              ★
+        {isCenaiva ? (
+          <View style={[styles.cenaivaPin, selected && styles.cenaivaPinSelected]}>
+            <Text
+              style={[styles.cenaivaName, selected && styles.cenaivaNameSelected]}
+              numberOfLines={1}
+            >
+              {name ?? 'Restaurant'}
             </Text>
-            <View style={styles.gap} />
-            <Text style={[styles.ratingText, selected && styles.ratingTextSelected]}>{rating.toFixed(1)}</Text>
-            <Text style={[styles.dot, selected && styles.dotSelected]}>•</Text>
-            <Text style={[styles.priceText, selected && styles.priceTextSelected]}>{'$'.repeat(Math.max(1, Math.min(4, priceTier)))}</Text>
           </View>
-        </View>
+        ) : (
+          <View style={[styles.pin, selected && styles.pinSelected]}>
+            <View style={styles.contentRow}>
+              <Text style={[styles.starGlyph, selected && styles.starGlyphSelected]} accessible={false}>
+                ★
+              </Text>
+              <View style={styles.gap} />
+              <Text style={[styles.ratingText, selected && styles.ratingTextSelected]}>{rating.toFixed(1)}</Text>
+              <Text style={[styles.dot, selected && styles.dotSelected]}>•</Text>
+              <Text style={[styles.priceText, selected && styles.priceTextSelected]}>{'$'.repeat(Math.max(1, Math.min(4, priceTier)))}</Text>
+            </View>
+          </View>
+        )}
       </View>
     </Marker>
   );

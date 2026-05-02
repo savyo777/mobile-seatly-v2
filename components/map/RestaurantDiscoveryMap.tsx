@@ -78,6 +78,7 @@ export function RestaurantDiscoveryMap({
   userLocation,
   showUserLocation,
   locationReady,
+  markerVariant = 'default',
   contentBottomInset = 0,
 }: RestaurantDiscoveryMapProps) {
   const c = useColors();
@@ -160,9 +161,11 @@ export function RestaurantDiscoveryMap({
             id={r.id}
             latitude={r.lat}
             longitude={r.lng}
+            name={r.name}
             rating={r.avgRating}
             priceTier={r.priceRange}
             selected={selectedId === r.id}
+            variant={markerVariant}
             onPress={onSelectRestaurant}
           />
         ))}

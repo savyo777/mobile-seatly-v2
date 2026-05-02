@@ -1,85 +1,43 @@
 import React, { useEffect, useRef } from 'react';
-import { Animated, Easing, Pressable, Text, View } from 'react-native';
+import { ActivityIndicator, Animated, Easing, Pressable, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
-import { createStyles, borderRadius, shadows, spacing, typography, useColors } from '@/lib/theme';
+import { createStyles, borderRadius } from '@/lib/theme';
 import type { AssistantState } from '@/lib/cenaiva/state/assistantStore';
 
-const useStyles = createStyles((c) => ({
+const useStyles = createStyles(() => ({
   wrap: {
     alignItems: 'center',
-    gap: spacing.xs,
-    width: 104,
-  },
-  stage: {
-    width: 98,
-    height: 86,
-    alignItems: 'center',
     justifyContent: 'center',
+    width: 72,
+    height: 72,
   },
   pulseRing: {
     position: 'absolute',
-    width: 86,
-    height: 86,
+    width: 64,
+    height: 64,
     borderRadius: borderRadius.full,
-    borderWidth: 1,
-    borderColor: 'rgba(201,162,74,0.44)',
-    backgroundColor: 'rgba(201,162,74,0.10)',
-  },
-  pulseRingOuter: {
-    width: 98,
-    height: 98,
-    borderColor: 'rgba(201,162,74,0.20)',
-    backgroundColor: 'rgba(201,162,74,0.04)',
+    borderWidth: 1.5,
+    borderColor: 'rgba(232,200,122,0.42)',
   },
   orb: {
-    width: 76,
-    height: 76,
+    width: 64,
+    height: 64,
     borderRadius: borderRadius.full,
     alignItems: 'center',
     justifyContent: 'center',
     overflow: 'hidden',
-    ...shadows.goldGlow,
-  },
-  orbMuted: {
-    borderWidth: 1,
-    borderColor: c.border,
-    shadowOpacity: 0,
+    shadowColor: '#C8A951',
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0.34,
+    shadowRadius: 18,
+    elevation: 8,
   },
   orbInner: {
     width: '100%',
     height: '100%',
     alignItems: 'center',
     justifyContent: 'center',
-  },
-  glassHighlight: {
-    position: 'absolute',
-    top: 9,
-    width: 34,
-    height: 10,
-    borderRadius: borderRadius.full,
-    backgroundColor: 'rgba(255,255,255,0.28)',
-  },
-  bars: {
-    position: 'absolute',
-    bottom: 14,
-    flexDirection: 'row',
-    alignItems: 'flex-end',
-    gap: 3,
-  },
-  bar: {
-    width: 3,
-    borderRadius: borderRadius.full,
-    backgroundColor: 'rgba(0,0,0,0.48)',
-  },
-  mutedBar: {
-    backgroundColor: c.gold,
-  },
-  status: {
-    ...typography.bodySmall,
-    color: c.textSecondary,
-    fontWeight: '700',
-    minHeight: 16,
   },
 }));
 
@@ -105,9 +63,8 @@ export function VoiceOrb({
   status: AssistantState['voiceStatus'];
   onPress: () => void;
 }) {
-  const c = useColors();
   const styles = useStyles();
-  const active = status === 'listening' || status === 'processing' || status === 'speaking';
+  const active = status === 'listening' || status === 'speaking';
   const pulse = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
@@ -121,7 +78,7 @@ export function VoiceOrb({
       Animated.sequence([
         Animated.timing(pulse, {
           toValue: 1,
-          duration: status === 'processing' ? 860 : 1_150,
+          duration: 1_200,
           easing: Easing.out(Easing.quad),
           useNativeDriver: true,
         }),
@@ -138,70 +95,65 @@ export function VoiceOrb({
 
   const ringOpacity = pulse.interpolate({
     inputRange: [0, 1],
-    outputRange: [0.42, 0],
+    outputRange: [0.46, 0],
   });
   const ringScale = pulse.interpolate({
     inputRange: [0, 1],
-    outputRange: [0.88, 1.22],
+    outputRange: [1, status === 'speaking' ? 1.6 : 1.16],
   });
   const iconName =
-    status === 'listening' ? 'mic' : status === 'processing' ? 'sparkles' : 'mic-outline';
-  const gradientColors = active
-    ? ([c.goldLight, c.gold, c.goldDark] as const)
-    : (['rgba(255,255,255,0.08)', 'rgba(255,255,255,0.03)', 'rgba(255,255,255,0.02)'] as const);
+    status === 'listening' ? 'mic-off-outline' : 'mic-outline';
+  const gradientColors =
+    status === 'speaking'
+      ? (['#C8A951', '#E8C87A'] as const)
+      : status === 'processing'
+        ? (['#A68B3E', '#C8A951'] as const)
+        : status === 'error'
+          ? (['#EF4444', '#B91C1C'] as const)
+          : status === 'listening'
+            ? (['#C8A951', '#E6C060'] as const)
+            : (['#C8A951', '#A68B3E'] as const);
 
   return (
     <View style={styles.wrap}>
-      <View style={styles.stage}>
-        {active ? (
-          <>
-            <Animated.View
-              pointerEvents="none"
-              style={[
-                styles.pulseRing,
-                styles.pulseRingOuter,
-                { opacity: ringOpacity, transform: [{ scale: ringScale }] },
-              ]}
-            />
+      {active ? (
+        <>
+          <Animated.View
+            pointerEvents="none"
+            style={[styles.pulseRing, { opacity: ringOpacity, transform: [{ scale: ringScale }] }]}
+          />
+          {status === 'speaking' ? (
             <Animated.View
               pointerEvents="none"
               style={[styles.pulseRing, { opacity: ringOpacity, transform: [{ scale: ringScale }] }]}
             />
-          </>
-        ) : null}
-        <Pressable
-          accessibilityRole="button"
-          accessibilityLabel={labelForStatus(status)}
-          onPress={onPress}
-          disabled={status === 'processing'}
-          style={({ pressed }) => [
-            styles.orb,
-            !active && styles.orbMuted,
-            pressed && { opacity: 0.82, transform: [{ scale: 0.96 }] },
-          ]}
+          ) : null}
+        </>
+      ) : null}
+      {status === 'listening' ? <View pointerEvents="none" style={styles.pulseRing} /> : null}
+      <Pressable
+        accessibilityRole="button"
+        accessibilityLabel={labelForStatus(status)}
+        onPress={onPress}
+        disabled={status === 'processing'}
+        style={({ pressed }) => [
+          styles.orb,
+          pressed && status !== 'processing' && { opacity: 0.82, transform: [{ scale: 0.95 }] },
+        ]}
+      >
+        <LinearGradient
+          colors={gradientColors}
+          start={{ x: 0.12, y: 0.08 }}
+          end={{ x: 0.88, y: 0.92 }}
+          style={styles.orbInner}
         >
-          <LinearGradient
-            colors={gradientColors}
-            start={{ x: 0.18, y: 0.02 }}
-            end={{ x: 0.82, y: 1 }}
-            style={styles.orbInner}
-          >
-            <View style={styles.glassHighlight} />
-            <Ionicons name={iconName} size={30} color={active ? c.bgBase : c.gold} />
-            {status === 'listening' || status === 'speaking' ? (
-              <View style={styles.bars} pointerEvents="none">
-                {[10, 16, 12].map((height) => (
-                  <View
-                    key={height}
-                    style={[styles.bar, !active && styles.mutedBar, { height }]}
-                  />
-                ))}
-              </View>
-            ) : null}
-          </LinearGradient>
-        </Pressable>
-      </View>
-      <Text style={styles.status}>{labelForStatus(status)}</Text>
+          {status === 'processing' ? (
+            <ActivityIndicator color="#000000" />
+          ) : (
+            <Ionicons name={iconName} size={27} color="#000000" />
+          )}
+        </LinearGradient>
+      </Pressable>
     </View>
   );
 }

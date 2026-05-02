@@ -2,71 +2,115 @@ import React from 'react';
 import { FlatList, Image, Pressable, Text, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import type { Restaurant } from '@/lib/mock/restaurants';
-import { createStyles, borderRadius, spacing, typography, useColors } from '@/lib/theme';
-import { formatDistanceMeters } from '@/lib/map/geo';
+import { createStyles, borderRadius, spacing, typography } from '@/lib/theme';
 
-const CARD_WIDTH = 230;
+const CARD_WIDTH = 208;
 
-const useStyles = createStyles((c) => ({
+const CUISINE_EMOJI: Record<string, string> = {
+  italian: '🍝',
+  japanese: '🍣',
+  mexican: '🌮',
+  french: '🥐',
+  indian: '🍛',
+  thai: '🍜',
+  seafood: '🦞',
+  bbq: '🔥',
+  chinese: '🥢',
+  american: '🍔',
+  greek: '🫒',
+};
+
+function cuisineEmoji(cuisine: string | null | undefined) {
+  const cleaned = cuisine?.toLowerCase() ?? '';
+  const match = Object.entries(CUISINE_EMOJI).find(([key]) => cleaned.includes(key));
+  return match?.[1] ?? '🍽️';
+}
+
+const useStyles = createStyles(() => ({
   rail: {
-    marginTop: spacing.md,
+    backgroundColor: '#0D0D0D',
   },
   content: {
     gap: spacing.sm,
-    paddingRight: spacing.md,
+    paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.sm,
   },
   card: {
     width: CARD_WIDTH,
-    minHeight: 92,
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.sm,
-    borderRadius: borderRadius.lg,
+    borderRadius: borderRadius.md,
     borderWidth: 1,
-    borderColor: c.border,
-    backgroundColor: c.bgElevated,
-    padding: spacing.sm,
+    borderColor: 'rgba(255,255,255,0.10)',
+    backgroundColor: '#141414',
+    overflow: 'hidden',
   },
   cardActive: {
-    borderColor: c.gold,
-    backgroundColor: 'rgba(201,168,76,0.12)',
+    borderColor: '#C8A951',
+    shadowColor: '#C8A951',
+    shadowOpacity: 0.28,
+    shadowRadius: 12,
+    shadowOffset: { width: 0, height: 0 },
+    elevation: 6,
   },
   image: {
-    width: 62,
-    height: 62,
-    borderRadius: borderRadius.md,
-    backgroundColor: c.bgSurface,
+    width: '100%',
+    height: 112,
+    backgroundColor: '#1E1E1E',
   },
   imagePlaceholder: {
     alignItems: 'center',
     justifyContent: 'center',
-    borderWidth: 1,
-    borderColor: c.border,
+  },
+  imageOverlay: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    bottom: 0,
+    height: 1,
+    backgroundColor: '#C8A951',
+  },
+  emoji: {
+    fontSize: 34,
+    lineHeight: 42,
   },
   body: {
-    flex: 1,
-    minWidth: 0,
-    gap: 3,
+    padding: spacing.sm,
   },
   name: {
     ...typography.body,
-    color: c.textPrimary,
-    fontWeight: '800',
-  },
-  meta: {
-    ...typography.bodySmall,
-    color: c.textSecondary,
+    color: '#FFFFFF',
     fontWeight: '600',
   },
-  stats: {
+  metaRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 4,
+    gap: spacing.sm,
+    marginTop: 2,
   },
-  stat: {
+  rating: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 2,
+  },
+  ratingText: {
     ...typography.bodySmall,
-    color: c.textMuted,
-    fontWeight: '700',
+    color: '#C8A951',
+    fontWeight: '600',
+  },
+  city: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 2,
+    flexShrink: 1,
+  },
+  cityText: {
+    ...typography.bodySmall,
+    color: 'rgba(255,255,255,0.50)',
+    flexShrink: 1,
+  },
+  cuisine: {
+    ...typography.bodySmall,
+    color: 'rgba(255,255,255,0.40)',
+    marginTop: 2,
   },
 }));
 
@@ -79,7 +123,6 @@ export function RestaurantRail({
   highlightedId: string | null;
   onPressRestaurant: (restaurant: Restaurant) => void;
 }) {
-  const c = useColors();
   const styles = useStyles();
   if (!restaurants.length) return null;
 
@@ -97,25 +140,39 @@ export function RestaurantRail({
         return (
           <Pressable
             onPress={() => onPressRestaurant(item)}
-            style={({ pressed }) => [styles.card, active && styles.cardActive, pressed && { opacity: 0.85 }]}
+            style={({ pressed }) => [
+              styles.card,
+              active && styles.cardActive,
+              pressed && { opacity: 0.86, transform: [{ scale: 0.98 }] },
+            ]}
           >
-            {imageUrl ? (
-              <Image source={{ uri: imageUrl }} style={styles.image} />
-            ) : (
-              <View style={[styles.image, styles.imagePlaceholder]}>
-                <Ionicons name="restaurant-outline" size={24} color={c.gold} />
-              </View>
-            )}
+            <View>
+              {imageUrl ? (
+                <Image source={{ uri: imageUrl }} style={styles.image} />
+              ) : (
+                <View style={[styles.image, styles.imagePlaceholder]}>
+                  <Text style={styles.emoji}>{cuisineEmoji(item.cuisineType)}</Text>
+                </View>
+              )}
+              {active ? <View style={styles.imageOverlay} /> : null}
+            </View>
             <View style={styles.body}>
               <Text style={styles.name} numberOfLines={1}>{item.name}</Text>
-              <Text style={styles.meta} numberOfLines={1}>{item.cuisineType || item.city}</Text>
-              <View style={styles.stats}>
-                <Ionicons name="star" size={12} color={c.gold} />
-                <Text style={styles.stat}>{item.avgRating.toFixed(1)}</Text>
-                {typeof item.distanceMeters === 'number' ? (
-                  <Text style={styles.stat}>- {formatDistanceMeters(item.distanceMeters)}</Text>
+              <View style={styles.metaRow}>
+                <View style={styles.rating}>
+                  <Ionicons name="star" size={12} color="#C8A951" />
+                  <Text style={styles.ratingText}>{item.avgRating.toFixed(1)}</Text>
+                </View>
+                {item.city ? (
+                  <View style={styles.city}>
+                    <Ionicons name="location-outline" size={12} color="rgba(255,255,255,0.50)" />
+                    <Text style={styles.cityText} numberOfLines={1}>{item.city}</Text>
+                  </View>
                 ) : null}
               </View>
+              {item.cuisineType ? (
+                <Text style={styles.cuisine} numberOfLines={1}>{item.cuisineType}</Text>
+              ) : null}
             </View>
           </Pressable>
         );

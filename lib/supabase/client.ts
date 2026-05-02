@@ -26,6 +26,54 @@ export async function clearPersistedSupabaseSession(): Promise<void> {
   ]);
 }
 
+function decodeJwtPayload(token: string): { exp?: number } | null {
+  const payload = token.split('.')[1];
+  if (!payload) return null;
+  try {
+    const normalized = payload.replace(/-/g, '+').replace(/_/g, '/');
+    const padded = normalized.padEnd(normalized.length + ((4 - (normalized.length % 4)) % 4), '=');
+    return JSON.parse(atob(padded)) as { exp?: number };
+  } catch {
+    return null;
+  }
+}
+
+export async function clearUnusablePersistedSupabaseSession(): Promise<boolean> {
+  const storageKey = getSupabaseAuthStorageKey();
+  if (!storageKey) return false;
+  const raw = await AsyncStorage.getItem(storageKey);
+  if (!raw) return false;
+
+  try {
+    const parsed = JSON.parse(raw) as {
+      access_token?: unknown;
+      refresh_token?: unknown;
+      expires_at?: unknown;
+      currentSession?: {
+        access_token?: unknown;
+        refresh_token?: unknown;
+        expires_at?: unknown;
+      } | null;
+    };
+    const session = parsed.currentSession ?? parsed;
+    const accessToken = typeof session.access_token === 'string' ? session.access_token.trim() : '';
+    const refreshToken = typeof session.refresh_token === 'string' ? session.refresh_token.trim() : '';
+    const expiresAt =
+      typeof parsed.expires_at === 'number'
+        ? parsed.expires_at
+        : typeof session.expires_at === 'number'
+          ? session.expires_at
+          : decodeJwtPayload(accessToken)?.exp ?? null;
+    const expired = typeof expiresAt === 'number' && expiresAt <= Math.floor(Date.now() / 1000);
+    if (accessToken && refreshToken && !expired) return false;
+  } catch {
+    // Corrupt persisted auth JSON should not be handed to supabase-js.
+  }
+
+  await clearPersistedSupabaseSession();
+  return true;
+}
+
 /**
  * Singleton Supabase browser/RN client. Returns null when env is not set (mock-only mode).
  */

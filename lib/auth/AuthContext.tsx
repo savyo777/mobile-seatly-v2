@@ -1,7 +1,11 @@
 import React, { createContext, useContext, useEffect, useMemo, useState } from 'react';
 import type { Session, User } from '@supabase/supabase-js';
 import { AppState } from 'react-native';
-import { clearPersistedSupabaseSession, getSupabase } from '@/lib/supabase/client';
+import {
+  clearPersistedSupabaseSession,
+  clearUnusablePersistedSupabaseSession,
+  getSupabase,
+} from '@/lib/supabase/client';
 import { clearAppShellPreference } from '@/lib/navigation/appShellPreference';
 import { resolveIsStaffLike } from '@/lib/auth/roles';
 
@@ -53,15 +57,20 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const supabase = getSupabase();
-    if (!supabase) {
-      setLoading(false);
-      return;
-    }
     let cancelled = false;
+    let activeSupabase: ReturnType<typeof getSupabase> = null;
+    let unsubscribe: (() => void) | null = null;
 
     const hydrateSession = async () => {
       try {
+        await clearUnusablePersistedSupabaseSession();
+        if (cancelled) return;
+        const supabase = getSupabase();
+        if (!supabase) {
+          if (!cancelled) setLoading(false);
+          return;
+        }
+        activeSupabase = supabase;
         const { data, error } = await supabase.auth.getSession();
         if (error && isInvalidRefreshTokenError(error)) {
           await clearPersistedSupabaseSession();
@@ -72,6 +81,21 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             void supabase.auth.startAutoRefresh();
           }
         }
+        if (cancelled) return;
+
+        const { data: sub } = supabase.auth.onAuthStateChange((event, next) => {
+          if (!cancelled) {
+            if (event === 'SIGNED_OUT') {
+              void clearAppShellPreference();
+              void supabase.auth.stopAutoRefresh();
+            } else if (next) {
+              void supabase.auth.startAutoRefresh();
+            }
+            setSession(next);
+            setLoading(false);
+          }
+        });
+        unsubscribe = () => sub.subscription.unsubscribe();
       } catch (error) {
         if (isInvalidRefreshTokenError(error)) {
           await clearPersistedSupabaseSession();
@@ -83,23 +107,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     };
     void hydrateSession();
 
-    const { data: sub } = supabase.auth.onAuthStateChange((event, next) => {
-      if (!cancelled) {
-        if (event === 'SIGNED_OUT') {
-          void clearAppShellPreference();
-          void supabase.auth.stopAutoRefresh();
-        } else if (next) {
-          void supabase.auth.startAutoRefresh();
-        }
-        setSession(next);
-        setLoading(false);
-      }
-    });
-
     return () => {
       cancelled = true;
-      void supabase.auth.stopAutoRefresh();
-      sub.subscription.unsubscribe();
+      if (activeSupabase) void activeSupabase.auth.stopAutoRefresh();
+      unsubscribe?.();
     };
   }, []);
 

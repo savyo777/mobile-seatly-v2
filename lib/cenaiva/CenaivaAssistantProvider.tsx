@@ -36,6 +36,7 @@ export type CenaivaAssistant = {
   ) => Promise<void>;
   startListening: () => Promise<void>;
   stopListening: () => void;
+  stopSpeaking: () => void;
   setSpeechHints: (hints: string[]) => void;
   setTextMode: (active: boolean) => void;
   voicePermissionStatus: CenaivaVoicePermissionStatus;
@@ -43,16 +44,6 @@ export type CenaivaAssistant = {
   isWakeWordSupported: boolean;
   requestVoicePermission: () => Promise<boolean>;
   openVoicePermissionSettings: () => Promise<void>;
-  testWakeListener: () => Promise<void>;
-  wakeWordTranscript: string;
-  wakeWordTranscriptLog: string[];
-  wakeWordLastError: string | null;
-  wakeWordNoSpeechCount: number;
-  wakeWordLastAudioEvent: string;
-  wakeWordAudioLevel: number | null;
-  wakeWordRecognitionState: string;
-  wakeWordRecognitionAvailable: string;
-  wakeWordPermissionDebug: string;
   voiceTranscript: string;
   voiceActivity: TranscriptionPhase;
   voiceLastError: string | null;
@@ -443,6 +434,13 @@ function AssistantInner({ children }: { children: ReactNode }) {
     }
   }, [commit, voice]);
 
+  const stopSpeaking = useCallback(() => {
+    voice.stopSpeaking();
+    if (!processingRef.current && !listeningRef.current) {
+      commit({ type: 'SET_VOICE_STATUS', status: 'idle' });
+    }
+  }, [commit, voice]);
+
   const startListeningRef = useRef(startListening);
   useEffect(() => {
     startListeningRef.current = startListening;
@@ -463,21 +461,12 @@ function AssistantInner({ children }: { children: ReactNode }) {
       if (opts?.autoListen) {
         const greetingText = opts.greetingText?.trim();
         setTimeout(() => {
-          void (async () => {
-            if (!isOpenRef.current || textModeRef.current) return;
-            try {
-              if (greetingText) {
-                commit({ type: 'SET_LAST_SPOKEN_TEXT', text: greetingText });
-                commit({ type: 'SET_VOICE_STATUS', status: 'speaking' });
-                await voice.speak(greetingText);
-              }
-            } catch {
-              // If the greeting audio fails, continue into listening mode.
-            } finally {
-              if (isOpenRef.current && !textModeRef.current) void startListeningRef.current();
-            }
-          })();
-        }, 150);
+          if (!isOpenRef.current || textModeRef.current) return;
+          if (greetingText) {
+            commit({ type: 'SET_LAST_SPOKEN_TEXT', text: greetingText });
+          }
+          if (isOpenRef.current && !textModeRef.current) void startListeningRef.current();
+        }, 0);
       }
     },
     [commit, requestLocation, voice],
@@ -496,24 +485,8 @@ function AssistantInner({ children }: { children: ReactNode }) {
     openPermissionSettings: openWakePermissionSettings,
     permissionStatus: wakePermissionStatus,
     canAskAgain: canAskWakePermissionAgain,
-    lastTranscript: wakeWordTranscript,
-    lastError: wakeWordLastError,
-    debugLines: wakeWordTranscriptLog,
-    noSpeechCount: wakeWordNoSpeechCount,
-    lastAudioEvent: wakeWordLastAudioEvent,
-    audioLevel: wakeWordAudioLevel,
-    recognizerState: wakeWordRecognitionState,
-    recognitionAvailable: wakeWordRecognitionAvailable,
-    permissionDebug: wakeWordPermissionDebug,
-    restartListening: restartWakeWord,
     setEnabled: setWakeWordEnabled,
   } = useCenaivaWakeWord(onWake);
-
-  const testWakeListener = useCallback(async () => {
-    const granted = await requestWakePermission();
-    if (!granted) return;
-    await restartWakeWord();
-  }, [requestWakePermission, restartWakeWord]);
 
   useEffect(() => {
     forceStopWakeWordRef.current = forceStopWakeWord;
@@ -581,6 +554,7 @@ function AssistantInner({ children }: { children: ReactNode }) {
       sendTranscript,
       startListening,
       stopListening,
+      stopSpeaking,
       setSpeechHints,
       setTextMode,
       voicePermissionStatus: wakePermissionStatus,
@@ -588,16 +562,6 @@ function AssistantInner({ children }: { children: ReactNode }) {
       isWakeWordSupported,
       requestVoicePermission: requestWakePermission,
       openVoicePermissionSettings: openWakePermissionSettings,
-      testWakeListener,
-      wakeWordTranscript,
-      wakeWordTranscriptLog,
-      wakeWordLastError,
-      wakeWordNoSpeechCount,
-      wakeWordLastAudioEvent,
-      wakeWordAudioLevel,
-      wakeWordRecognitionState,
-      wakeWordRecognitionAvailable,
-      wakeWordPermissionDebug,
       voiceTranscript: voice.liveTranscript,
       voiceActivity: voice.transcriptionPhase,
       voiceLastError: voice.transcriptionLastError,
@@ -614,19 +578,10 @@ function AssistantInner({ children }: { children: ReactNode }) {
       setTextMode,
       startListening,
       stopListening,
-      testWakeListener,
+      stopSpeaking,
       voice.liveTranscript,
       voice.transcriptionPhase,
       voice.transcriptionLastError,
-      wakeWordAudioLevel,
-      wakeWordLastAudioEvent,
-      wakeWordLastError,
-      wakeWordNoSpeechCount,
-      wakeWordPermissionDebug,
-      wakeWordRecognitionAvailable,
-      wakeWordRecognitionState,
-      wakeWordTranscript,
-      wakeWordTranscriptLog,
       wakePermissionStatus,
     ],
   );

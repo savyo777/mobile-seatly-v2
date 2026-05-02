@@ -20,6 +20,13 @@ const useStyles = createStyles((c) => ({
     padding: spacing.md,
     gap: spacing.md,
   },
+  shellFullScreen: {
+    flex: 1,
+    marginTop: 0,
+    borderRadius: 0,
+    borderWidth: 0,
+    backgroundColor: '#0D0D0D',
+  },
   title: {
     ...typography.h3,
     color: c.textPrimary,
@@ -55,6 +62,10 @@ const useStyles = createStyles((c) => ({
   },
   menuList: {
     maxHeight: 320,
+  },
+  menuListFullScreen: {
+    flex: 1,
+    maxHeight: '100%',
   },
   category: {
     ...typography.label,
@@ -183,13 +194,14 @@ function groupMenuItems(items: MenuItem[], categories: Array<{ id: string; name:
   }, {});
 }
 
-export function BookingSheet() {
+export function BookingSheet({ fullScreen = false }: { fullScreen?: boolean }) {
   const c = useColors();
   const styles = useStyles();
   const router = useRouter();
   const assistant = useCenaivaAssistant();
   const { state, dispatch } = useAssistantStore();
   const { booking } = state;
+  const shellStyle = [styles.shell, fullScreen && styles.shellFullScreen];
   const [menuStep, setMenuStep] = useState<'browsing' | 'review'>('browsing');
   const [prepayBusy, setPrepayBusy] = useState(false);
   const [prepayError, setPrepayError] = useState<string | null>(null);
@@ -241,7 +253,7 @@ export function BookingSheet() {
 
   if (booking.status === 'loading_availability') {
     return (
-      <View style={styles.shell}>
+      <View style={shellStyle}>
         <View style={styles.row}>
           <ActivityIndicator color={c.gold} />
           <Text style={styles.detail}>Checking availability</Text>
@@ -252,7 +264,7 @@ export function BookingSheet() {
 
   if (booking.status === 'awaiting_time_selection') {
     return (
-      <View style={styles.shell}>
+      <View style={shellStyle}>
         <Text style={styles.title}>Time selected</Text>
         <Text style={styles.detail}>{booking.restaurant_name ?? 'Restaurant'} - {formatDate(booking.date)} - {booking.time ?? booking.slot_iso}</Text>
       </View>
@@ -261,7 +273,7 @@ export function BookingSheet() {
 
   if (booking.status === 'confirming') {
     return (
-      <View style={styles.shell}>
+      <View style={shellStyle}>
         <Text style={styles.title}>Confirm booking</Text>
         <View style={styles.row}>
           <Ionicons name="restaurant-outline" size={18} color={c.gold} />
@@ -300,7 +312,7 @@ export function BookingSheet() {
 
   if (booking.status === 'offering_preorder') {
     return (
-      <View style={styles.shell}>
+      <View style={shellStyle}>
         <Text style={styles.title}>You're booked</Text>
         {booking.confirmation_code ? <Text style={styles.code}>{booking.confirmation_code}</Text> : null}
         <Text style={styles.detail}>{booking.restaurant_name ?? 'Restaurant'} - {formatDate(booking.date)} - {booking.time ?? booking.slot_iso}</Text>
@@ -327,7 +339,7 @@ export function BookingSheet() {
 
   if (booking.status === 'browsing_menu' && menuStep === 'browsing') {
     return (
-      <View style={styles.shell}>
+      <View style={shellStyle}>
         <Text style={styles.title}>Pre-order menu</Text>
         {loading ? (
           <View style={styles.row}>
@@ -335,7 +347,7 @@ export function BookingSheet() {
             <Text style={styles.detail}>Loading menu</Text>
           </View>
         ) : (
-          <ScrollView style={styles.menuList} nestedScrollEnabled>
+          <ScrollView style={[styles.menuList, fullScreen && styles.menuListFullScreen]} nestedScrollEnabled>
             {Object.entries(grouped).map(([category, items]) => (
               <View key={category}>
                 <Text style={styles.category}>{category}</Text>
@@ -396,7 +408,7 @@ export function BookingSheet() {
 
   if (booking.status === 'browsing_menu' && menuStep === 'review') {
     return (
-      <View style={styles.shell}>
+      <View style={shellStyle}>
         <Text style={styles.title}>Review your order</Text>
         {booking.cart.map((item) => (
           <View key={item.menu_item_id} style={styles.line}>
@@ -437,7 +449,7 @@ export function BookingSheet() {
 
   if (booking.status === 'paid') {
     return (
-      <View style={styles.shell}>
+      <View style={shellStyle}>
         <Text style={styles.title}>Payment complete</Text>
         <Text style={styles.detail}>Your reservation and preorder are set.</Text>
       </View>

@@ -73,8 +73,16 @@ export function useMobileTTS() {
     queueGenerationRef.current += 1;
     queueRef.current = [];
     queueRunningRef.current = false;
-    playerRef.current?.pause();
-    playerRef.current?.remove();
+    try {
+      playerRef.current?.pause();
+    } catch {
+      // Native player may have been released by Fast Refresh/unmount.
+    }
+    try {
+      playerRef.current?.remove();
+    } catch {
+      // Native player may have been released by Fast Refresh/unmount.
+    }
     playerRef.current = null;
     Speech.stop();
     for (const resolve of queueResolversRef.current) resolve();
@@ -146,7 +154,11 @@ export function useMobileTTS() {
           allowsRecording: false,
           shouldPlayInBackground: false,
         });
-        playerRef.current?.remove();
+        try {
+          playerRef.current?.remove();
+        } catch {
+          // ignore stale player
+        }
         const player = createAudioPlayer({ uri }, { downloadFirst: false });
         playerRef.current = player;
         setIsSpeaking(true);
@@ -175,7 +187,11 @@ export function useMobileTTS() {
       } catch {
         return false;
       } finally {
-        playerRef.current?.remove();
+        try {
+          playerRef.current?.remove();
+        } catch {
+          // ignore stale player
+        }
         playerRef.current = null;
         setIsSpeaking(false);
         await cleanupTempFiles();

@@ -308,7 +308,7 @@ export function useMobileTranscription() {
   const finish = useCallback(
     async (manualStop: boolean) => {
       clearTimers();
-      if (!isListeningRef.current && !recorder.isRecording) return;
+      if (!isListeningRef.current) return;
       stoppedRef.current = manualStop;
       setListening(false);
 
@@ -318,7 +318,12 @@ export function useMobileTranscription() {
         // Recorder may already be stopped.
       }
 
-      const uri = recorder.uri;
+      let uri: string | null = null;
+      try {
+        uri = recorder.uri;
+      } catch {
+        uri = null;
+      }
       if (manualStop || !uri) {
         setPhase('idle');
         resolveRef.current?.({ transcript: '', stopped: manualStop });
@@ -428,7 +433,13 @@ export function useMobileTranscription() {
         }, TURN_TIMEOUT_MS);
 
         monitorRef.current = setInterval(() => {
-          const status = recorder.getStatus();
+          let status: ReturnType<typeof recorder.getStatus>;
+          try {
+            status = recorder.getStatus();
+          } catch {
+            void finish(false);
+            return;
+          }
           const metering = status.metering;
           const speaking = typeof metering === 'number' ? metering > METERING_SPEECH_DB : false;
           const now = Date.now();

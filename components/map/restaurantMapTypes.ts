@@ -10,6 +10,8 @@ export type RestaurantDiscoveryMapProps = {
   showUserLocation: boolean;
   /** False while resolving permission / first fix; avoids infinite loading UI. */
   locationReady: boolean;
+  /** Assistant uses Seatly-7 style restaurant-name pills instead of rating/price pins. */
+  markerVariant?: 'default' | 'cenaiva';
   /**
    * Extra bottom inset for floating controls (e.g. recommendation rail above tab bar).
    * Tab screens already sit above the tab bar — do not add tab bar height again.
