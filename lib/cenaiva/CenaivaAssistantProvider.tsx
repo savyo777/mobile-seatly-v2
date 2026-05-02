@@ -11,11 +11,21 @@ import { AppState } from 'react-native';
 import * as Location from 'expo-location';
 import { usePathname, useRouter } from 'expo-router';
 import type { OrchestratorRequestType } from '@cenaiva/assistant';
-import { AssistantStoreProvider, useAssistantStore } from '@/lib/cenaiva/state/assistantStore';
+import { useAuthSession } from '@/lib/auth/AuthContext';
+import {
+  AssistantStoreProvider,
+  assistantReducer,
+  useAssistantStore,
+  type AssistantAction,
+} from '@/lib/cenaiva/state/assistantStore';
 import { useCenaivaOrchestrator } from '@/lib/cenaiva/api/useCenaivaOrchestrator';
 import { useCenaivaVoice } from '@/lib/cenaiva/voice/useCenaivaVoice';
+import type { TranscriptionPhase } from '@/lib/cenaiva/voice/useMobileTranscription';
+import { useCenaivaWakeWord } from '@/lib/cenaiva/voice/useCenaivaWakeWord';
+import { buildWakeGreeting } from '@/lib/cenaiva/voice/wakeGreeting';
+import type { CenaivaVoicePermissionStatus } from '@/lib/cenaiva/voice/voicePermission';
 
-type OpenOptions = { autoListen?: boolean };
+type OpenOptions = { autoListen?: boolean; greetingText?: string };
 
 export type CenaivaAssistant = {
   open: (restaurantId?: string, restaurantName?: string, opts?: OpenOptions) => void;
@@ -25,11 +35,34 @@ export type CenaivaAssistant = {
     opts?: { restaurantId?: string; silent?: boolean; force?: boolean },
   ) => Promise<void>;
   startListening: () => Promise<void>;
+  stopListening: () => void;
   setSpeechHints: (hints: string[]) => void;
   setTextMode: (active: boolean) => void;
+  voicePermissionStatus: CenaivaVoicePermissionStatus;
+  canAskVoicePermission: boolean;
+  isWakeWordSupported: boolean;
+  requestVoicePermission: () => Promise<boolean>;
+  openVoicePermissionSettings: () => Promise<void>;
+  testWakeListener: () => Promise<void>;
+  wakeWordTranscript: string;
+  wakeWordTranscriptLog: string[];
+  wakeWordLastError: string | null;
+  wakeWordNoSpeechCount: number;
+  wakeWordLastAudioEvent: string;
+  wakeWordAudioLevel: number | null;
+  wakeWordRecognitionState: string;
+  wakeWordRecognitionAvailable: string;
+  wakeWordPermissionDebug: string;
+  voiceTranscript: string;
+  voiceActivity: TranscriptionPhase;
+  voiceLastError: string | null;
 };
 
 const CenaivaAssistantContext = createContext<CenaivaAssistant | null>(null);
+const RELISTEN_AFTER_EMPTY_TURN_MS = 260;
+const RELISTEN_AFTER_ERROR_MS = 320;
+const RELISTEN_AFTER_RESPONSE_MS = 260;
+const MAX_EMPTY_RELISTENS = 2;
 
 const NO_AUTO_RELISTEN_STATUSES = new Set([
   'offering_preorder',
@@ -55,20 +88,59 @@ function friendlyError(cause: string | null) {
   return 'Something went wrong. Try again.';
 }
 
+function friendlyVoiceError(cause: string | null) {
+  const code = cause ?? '';
+  let base = 'Something went wrong. Try again.';
+
+  if (code.includes('not-allowed')) {
+    base = 'Microphone access is off. Enable it to use Hey Cenaiva.';
+  } else if (code.includes('voice-stt-unavailable')) {
+    base = 'Please sign in to use voice input.';
+  } else if (code.includes('recording-prepare-failed') || code.includes('recording-start-failed')) {
+    base = 'Microphone could not start. Close other recording apps and try again.';
+  } else if (
+    code.includes('service-not-allowed') ||
+    code.includes('language-not-supported') ||
+    code.includes('native-speech-unavailable')
+  ) {
+    base = 'Voice recognition is unavailable in this build. Type your request.';
+  } else if (code.includes('deepgram-token-unavailable') || code.includes('deepgram-http')) {
+    base = 'Voice input could not reach speech service. Try again or type your request.';
+  }
+
+  if (code && process.env.NODE_ENV !== 'production') return `${base} (${code})`;
+  return base;
+}
+
 function AssistantInner({ children }: { children: ReactNode }) {
   const { state, dispatch } = useAssistantStore();
   const orchestrator = useCenaivaOrchestrator();
   const voice = useCenaivaVoice();
   const router = useRouter();
   const pathname = usePathname();
+  const { isAuthenticated, user } = useAuthSession();
 
   const stateRef = useRef(state);
   stateRef.current = state;
   const processingRef = useRef(false);
   const textModeRef = useRef(false);
   const isOpenRef = useRef(false);
+  const listeningRef = useRef(false);
+  const listenTurnIdRef = useRef(0);
   const speechHintsRef = useRef<string[]>([]);
   const userLocationRef = useRef<{ lat: number; lng: number } | null>(null);
+  const forceStopWakeWordRef = useRef<() => void>(() => {});
+  const requestWakePermissionRef = useRef<() => Promise<boolean>>(async () => false);
+  const wakePermissionPromptedRef = useRef(false);
+  const emptyRelistenStreakRef = useRef(0);
+
+  const commit = useCallback(
+    (action: AssistantAction) => {
+      stateRef.current = assistantReducer(stateRef.current, action);
+      dispatch(action);
+    },
+    [dispatch],
+  );
 
   useEffect(() => {
     isOpenRef.current = state.isOpen;
@@ -95,20 +167,26 @@ function AssistantInner({ children }: { children: ReactNode }) {
     textModeRef.current = active;
     if (active) {
       processingRef.current = false;
+      listeningRef.current = false;
+      listenTurnIdRef.current += 1;
+      emptyRelistenStreakRef.current = 0;
       voice.stopListening();
-      dispatch({ type: 'SET_VOICE_STATUS', status: 'idle' });
+      commit({ type: 'SET_VOICE_STATUS', status: 'idle' });
     }
-  }, [dispatch, voice]);
+  }, [commit, voice]);
 
   const close = useCallback(() => {
     isOpenRef.current = false;
     textModeRef.current = false;
     processingRef.current = false;
+    listeningRef.current = false;
+    listenTurnIdRef.current += 1;
+    emptyRelistenStreakRef.current = 0;
     orchestrator.cancel();
     voice.stopListening();
     voice.stopSpeaking();
-    dispatch({ type: 'CLOSE' });
-  }, [dispatch, orchestrator, voice]);
+    commit({ type: 'CLOSE' });
+  }, [commit, orchestrator, voice]);
 
   const sendTranscript = useCallback(
     async (
@@ -124,9 +202,15 @@ function AssistantInner({ children }: { children: ReactNode }) {
         processingRef.current = false;
       }
 
+      if (listeningRef.current) {
+        listeningRef.current = false;
+        listenTurnIdRef.current += 1;
+        voice.stopListening();
+      }
+
       processingRef.current = true;
       voice.stopListening();
-      dispatch({ type: 'SET_VOICE_STATUS', status: 'processing' });
+      commit({ type: 'SET_VOICE_STATUS', status: 'processing' });
 
       const current = stateRef.current;
       const currentLocation = userLocationRef.current ?? (await requestLocation());
@@ -201,12 +285,12 @@ function AssistantInner({ children }: { children: ReactNode }) {
         if (!response) {
           if (streamingActive) voice.discardStreamingSpeech();
           const message = friendlyError(orchestrator.lastErrorRef.current);
-          dispatch({ type: 'SET_LAST_SPOKEN_TEXT', text: message });
+          commit({ type: 'SET_LAST_SPOKEN_TEXT', text: message });
           if (!opts?.silent && !textModeRef.current) {
-            dispatch({ type: 'SET_VOICE_STATUS', status: 'speaking' });
+            commit({ type: 'SET_VOICE_STATUS', status: 'speaking' });
             await voice.speak(message);
           }
-          dispatch({ type: 'SET_VOICE_STATUS', status: 'idle' });
+          commit({ type: 'SET_VOICE_STATUS', status: 'idle' });
           return;
         }
 
@@ -220,9 +304,12 @@ function AssistantInner({ children }: { children: ReactNode }) {
           spokenText = `${base ? `${base}. ` : ''}Would you like to pre-order from the menu?`;
         }
 
-        dispatch({
+        const appliedResponse = spokenText === response.spoken_text
+          ? response
+          : { ...response, spoken_text: spokenText };
+        commit({
           type: 'APPLY_RESPONSE',
-          response: spokenText === response.spoken_text ? response : { ...response, spoken_text: spokenText },
+          response: appliedResponse,
         });
 
         for (const action of response.ui_actions ?? []) {
@@ -232,7 +319,7 @@ function AssistantInner({ children }: { children: ReactNode }) {
           if (action.type === 'navigate_to_checkout') {
             voice.stopSpeaking();
             voice.stopListening();
-            dispatch({ type: 'CLOSE' });
+            commit({ type: 'CLOSE' });
             router.push(action.path as never);
           }
         }
@@ -240,7 +327,7 @@ function AssistantInner({ children }: { children: ReactNode }) {
         if (spokenText && !opts?.silent) {
           const normalize = (value: string) =>
             value.replace(/\s+/g, ' ').replace(/[.!?,\s]+$/, '').trim().toLowerCase();
-          dispatch({ type: 'SET_VOICE_STATUS', status: 'speaking' });
+          commit({ type: 'SET_VOICE_STATUS', status: 'speaking' });
           if (streamingActive && normalize(streamedText) && normalize(streamedText) === normalize(spokenText)) {
             await voice.drainStreamingSpeech();
           } else {
@@ -251,59 +338,110 @@ function AssistantInner({ children }: { children: ReactNode }) {
           voice.discardStreamingSpeech();
         }
 
-        const responseStatus = response.booking?.status;
+        const responseStatus = stateRef.current.booking.status;
         const skipRelisten =
           freshlyBooked ||
           uiTypes.includes('offer_preorder') ||
           uiTypes.includes('show_menu') ||
-          (responseStatus ? NO_AUTO_RELISTEN_STATUSES.has(responseStatus) : false);
+          NO_AUTO_RELISTEN_STATUSES.has(responseStatus);
 
         if (isOpenRef.current && !textModeRef.current && !skipRelisten) {
-          void startListeningRef.current();
+          setTimeout(() => {
+            if (isOpenRef.current && !textModeRef.current) void startListeningRef.current();
+          }, RELISTEN_AFTER_RESPONSE_MS);
         } else {
-          dispatch({ type: 'SET_VOICE_STATUS', status: 'idle' });
+          commit({ type: 'SET_VOICE_STATUS', status: 'idle' });
         }
       } catch {
         processingRef.current = false;
         if (streamingActive) voice.discardStreamingSpeech();
         const message = 'Something went wrong. Try again.';
-        dispatch({ type: 'SET_LAST_SPOKEN_TEXT', text: message });
+        commit({ type: 'SET_LAST_SPOKEN_TEXT', text: message });
         if (!opts?.silent && !textModeRef.current) {
-          dispatch({ type: 'SET_VOICE_STATUS', status: 'speaking' });
+          commit({ type: 'SET_VOICE_STATUS', status: 'speaking' });
           await voice.speak(message);
         }
-        dispatch({ type: 'SET_VOICE_STATUS', status: 'idle' });
+        commit({ type: 'SET_VOICE_STATUS', status: 'idle' });
       }
     },
-    [dispatch, orchestrator, pathname, requestLocation, router, voice],
+    [commit, orchestrator, pathname, requestLocation, router, voice],
   );
 
   const startListening = useCallback(async () => {
     if (!isOpenRef.current) return;
     if (processingRef.current) return;
+    if (listeningRef.current) return;
+    const turnId = listenTurnIdRef.current + 1;
+    listenTurnIdRef.current = turnId;
+    listeningRef.current = true;
     try {
-      dispatch({ type: 'SET_VOICE_STATUS', status: 'listening' });
+      commit({ type: 'SET_VOICE_STATUS', status: 'listening' });
       const { transcript, stopped } = await voice.startListening(speechHintsRef.current);
+      if (turnId !== listenTurnIdRef.current) return;
+      listeningRef.current = false;
       if (stopped) {
-        dispatch({ type: 'SET_VOICE_STATUS', status: 'idle' });
+        emptyRelistenStreakRef.current = 0;
+        commit({ type: 'SET_VOICE_STATUS', status: 'idle' });
         return;
       }
       if (transcript.trim()) {
+        emptyRelistenStreakRef.current = 0;
         await sendTranscript(transcript);
       } else {
-        dispatch({ type: 'SET_VOICE_STATUS', status: 'idle' });
+        emptyRelistenStreakRef.current += 1;
+        if (emptyRelistenStreakRef.current >= MAX_EMPTY_RELISTENS) {
+          emptyRelistenStreakRef.current = 0;
+          commit({ type: 'SET_VOICE_STATUS', status: 'idle' });
+          return;
+        }
+        commit({ type: 'SET_VOICE_STATUS', status: 'idle' });
+        setTimeout(() => {
+          if (isOpenRef.current && !textModeRef.current) void startListeningRef.current();
+        }, RELISTEN_AFTER_EMPTY_TURN_MS);
       }
     } catch (err) {
-      const message = (err as Error)?.message ?? '';
-      dispatch({
+      if (turnId !== listenTurnIdRef.current) return;
+      listeningRef.current = false;
+      const message = (err as Error)?.message || voice.transcriptionLastError || null;
+      const isPermDenied = message?.includes('not-allowed') === true;
+      const isVoiceUnavailable =
+        message?.includes('voice-stt-unavailable') === true ||
+        message?.includes('deepgram-stt-unavailable') === true ||
+        message?.includes('native-speech-unavailable') === true ||
+        message?.includes('service-not-allowed') === true ||
+        message?.includes('language-not-supported') === true;
+      const friendly = friendlyVoiceError(message);
+      commit({
         type: 'SET_LAST_SPOKEN_TEXT',
-        text: message.includes('not-allowed')
-          ? 'Voice input is not available. Type your request.'
-          : 'Something went wrong. Try again.',
+        text: friendly,
       });
-      dispatch({ type: 'SET_VOICE_STATUS', status: message.includes('not-allowed') ? 'error' : 'idle' });
+      if (isPermDenied || isVoiceUnavailable) {
+        emptyRelistenStreakRef.current = 0;
+        commit({ type: 'SET_VOICE_STATUS', status: isPermDenied ? 'error' : 'idle' });
+        return;
+      }
+      emptyRelistenStreakRef.current += 1;
+      if (emptyRelistenStreakRef.current >= MAX_EMPTY_RELISTENS) {
+        emptyRelistenStreakRef.current = 0;
+        commit({ type: 'SET_VOICE_STATUS', status: 'idle' });
+        return;
+      }
+      commit({ type: 'SET_VOICE_STATUS', status: 'idle' });
+      setTimeout(() => {
+        if (isOpenRef.current && !textModeRef.current) void startListeningRef.current();
+      }, RELISTEN_AFTER_ERROR_MS);
     }
-  }, [dispatch, sendTranscript, voice]);
+  }, [commit, sendTranscript, voice]);
+
+  const stopListening = useCallback(() => {
+    listeningRef.current = false;
+    listenTurnIdRef.current += 1;
+    emptyRelistenStreakRef.current = 0;
+    voice.stopListening();
+    if (!processingRef.current) {
+      commit({ type: 'SET_VOICE_STATUS', status: 'idle' });
+    }
+  }, [commit, voice]);
 
   const startListeningRef = useRef(startListening);
   useEffect(() => {
@@ -313,32 +451,128 @@ function AssistantInner({ children }: { children: ReactNode }) {
   const open = useCallback(
     (restaurantId?: string, restaurantName?: string, opts?: OpenOptions) => {
       isOpenRef.current = true;
+      forceStopWakeWordRef.current();
       voice.primeTTS();
+      void requestWakePermissionRef.current();
       void requestLocation();
       if (restaurantId && restaurantName) {
-        dispatch({ type: 'PRESELECT_RESTAURANT', restaurant_id: restaurantId, restaurant_name: restaurantName });
+        commit({ type: 'PRESELECT_RESTAURANT', restaurant_id: restaurantId, restaurant_name: restaurantName });
       } else {
-        dispatch({ type: 'OPEN' });
+        commit({ type: 'OPEN' });
       }
       if (opts?.autoListen) {
+        const greetingText = opts.greetingText?.trim();
         setTimeout(() => {
-          if (isOpenRef.current && !textModeRef.current) void startListeningRef.current();
+          void (async () => {
+            if (!isOpenRef.current || textModeRef.current) return;
+            try {
+              if (greetingText) {
+                commit({ type: 'SET_LAST_SPOKEN_TEXT', text: greetingText });
+                commit({ type: 'SET_VOICE_STATUS', status: 'speaking' });
+                await voice.speak(greetingText);
+              }
+            } catch {
+              // If the greeting audio fails, continue into listening mode.
+            } finally {
+              if (isOpenRef.current && !textModeRef.current) void startListeningRef.current();
+            }
+          })();
         }, 150);
       }
     },
-    [dispatch, requestLocation, voice],
+    [commit, requestLocation, voice],
   );
+
+  const onWake = useCallback(() => {
+    if (!isAuthenticated) return;
+    open(undefined, undefined, { autoListen: true, greetingText: buildWakeGreeting(user) });
+  }, [isAuthenticated, open, user]);
+
+  const {
+    isSupported: isWakeWordSupported,
+    forceStop: forceStopWakeWord,
+    requestPermission: requestWakePermission,
+    hasPermission: hasWakePermission,
+    openPermissionSettings: openWakePermissionSettings,
+    permissionStatus: wakePermissionStatus,
+    canAskAgain: canAskWakePermissionAgain,
+    lastTranscript: wakeWordTranscript,
+    lastError: wakeWordLastError,
+    debugLines: wakeWordTranscriptLog,
+    noSpeechCount: wakeWordNoSpeechCount,
+    lastAudioEvent: wakeWordLastAudioEvent,
+    audioLevel: wakeWordAudioLevel,
+    recognizerState: wakeWordRecognitionState,
+    recognitionAvailable: wakeWordRecognitionAvailable,
+    permissionDebug: wakeWordPermissionDebug,
+    restartListening: restartWakeWord,
+    setEnabled: setWakeWordEnabled,
+  } = useCenaivaWakeWord(onWake);
+
+  const testWakeListener = useCallback(async () => {
+    const granted = await requestWakePermission();
+    if (!granted) return;
+    await restartWakeWord();
+  }, [requestWakePermission, restartWakeWord]);
+
+  useEffect(() => {
+    forceStopWakeWordRef.current = forceStopWakeWord;
+    requestWakePermissionRef.current = requestWakePermission;
+  }, [forceStopWakeWord, requestWakePermission]);
+
+  const isCustomerRoute =
+    isAuthenticated &&
+    !pathname?.startsWith('/(auth)') &&
+    !pathname?.startsWith('/(staff)') &&
+    !pathname?.startsWith('/onboarding') &&
+    pathname !== '/';
+
+  useEffect(() => {
+    if (!isCustomerRoute || state.isOpen || !isWakeWordSupported) {
+      forceStopWakeWord();
+      return;
+    }
+
+    let cancelled = false;
+    const timer = setTimeout(() => {
+      void (async () => {
+        let granted = await hasWakePermission();
+        if (!granted && !wakePermissionPromptedRef.current) {
+          wakePermissionPromptedRef.current = true;
+          granted = await requestWakePermission();
+        }
+        if (!cancelled && granted) setWakeWordEnabled(true);
+      })();
+    }, 500);
+
+    return () => {
+      cancelled = true;
+      clearTimeout(timer);
+    };
+  }, [
+    forceStopWakeWord,
+    hasWakePermission,
+    isCustomerRoute,
+    isWakeWordSupported,
+    requestWakePermission,
+    setWakeWordEnabled,
+    state.isOpen,
+  ]);
 
   useEffect(() => {
     const sub = AppState.addEventListener('change', (nextState) => {
       if (nextState !== 'active') {
+        forceStopWakeWord();
+        listeningRef.current = false;
+        listenTurnIdRef.current += 1;
         voice.stopListening();
         voice.stopSpeaking();
-        dispatch({ type: 'SET_VOICE_STATUS', status: 'idle' });
+        emptyRelistenStreakRef.current = 0;
+        commit({ type: 'SET_VOICE_STATUS', status: 'idle' });
       }
     });
     return () => sub.remove();
-  }, [dispatch, voice]);
+  }, [commit, forceStopWakeWord, voice]);
 
   const value = useMemo<CenaivaAssistant>(
     () => ({
@@ -346,10 +580,55 @@ function AssistantInner({ children }: { children: ReactNode }) {
       close,
       sendTranscript,
       startListening,
+      stopListening,
       setSpeechHints,
       setTextMode,
+      voicePermissionStatus: wakePermissionStatus,
+      canAskVoicePermission: canAskWakePermissionAgain,
+      isWakeWordSupported,
+      requestVoicePermission: requestWakePermission,
+      openVoicePermissionSettings: openWakePermissionSettings,
+      testWakeListener,
+      wakeWordTranscript,
+      wakeWordTranscriptLog,
+      wakeWordLastError,
+      wakeWordNoSpeechCount,
+      wakeWordLastAudioEvent,
+      wakeWordAudioLevel,
+      wakeWordRecognitionState,
+      wakeWordRecognitionAvailable,
+      wakeWordPermissionDebug,
+      voiceTranscript: voice.liveTranscript,
+      voiceActivity: voice.transcriptionPhase,
+      voiceLastError: voice.transcriptionLastError,
     }),
-    [close, open, sendTranscript, setSpeechHints, setTextMode, startListening],
+    [
+      canAskWakePermissionAgain,
+      close,
+      isWakeWordSupported,
+      open,
+      openWakePermissionSettings,
+      requestWakePermission,
+      sendTranscript,
+      setSpeechHints,
+      setTextMode,
+      startListening,
+      stopListening,
+      testWakeListener,
+      voice.liveTranscript,
+      voice.transcriptionPhase,
+      voice.transcriptionLastError,
+      wakeWordAudioLevel,
+      wakeWordLastAudioEvent,
+      wakeWordLastError,
+      wakeWordNoSpeechCount,
+      wakeWordPermissionDebug,
+      wakeWordRecognitionAvailable,
+      wakeWordRecognitionState,
+      wakeWordTranscript,
+      wakeWordTranscriptLog,
+      wakePermissionStatus,
+    ],
   );
 
   return (

@@ -4,7 +4,7 @@ import { useRouter } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
-import { createStyles, spacing, typography, useColors } from '@/lib/theme';
+import { borderRadius, createStyles, spacing, typography, useColors } from '@/lib/theme';
 import { getSupabase } from '@/lib/supabase/client';
 import { ensureCustomerProfile, signInWithGoogle } from '@/lib/services/oauth';
 import { normalizePhoneToE164, sendPhoneOtp } from '@/lib/services/phoneAuth';
@@ -77,6 +77,39 @@ const useStyles = createStyles((c) => ({
     color: c.textMuted,
     textAlign: 'center',
     marginBottom: spacing.lg,
+  },
+  accountTypeRow: {
+    flexDirection: 'row',
+    gap: spacing.md,
+    marginBottom: spacing.lg,
+  },
+  accountTypeCard: {
+    flex: 1,
+    minHeight: 92,
+    padding: spacing.md,
+    borderRadius: borderRadius.sm,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: c.border,
+    backgroundColor: c.bgSurface,
+  },
+  accountTypeCardActive: {
+    borderColor: c.gold,
+    backgroundColor: `${c.gold}14`,
+  },
+  accountTypeIconRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.xs,
+    marginBottom: spacing.xs,
+  },
+  accountTypeLabel: {
+    ...typography.body,
+    color: c.textPrimary,
+    fontWeight: '800',
+  },
+  accountTypeSub: {
+    ...typography.bodySmall,
+    color: c.textMuted,
   },
   pwMeter: {
     flexDirection: 'row',
@@ -356,6 +389,27 @@ export default function RegisterScreen() {
 
         <Text style={styles.heading}>{t('auth.registerHeading')}</Text>
         <Text style={styles.subcopy}>{t('auth.registerTakesAbout')}</Text>
+
+        <View style={styles.accountTypeRow}>
+          <View style={[styles.accountTypeCard, styles.accountTypeCardActive]}>
+            <View style={styles.accountTypeIconRow}>
+              <Ionicons name="person-outline" size={16} color={c.gold} />
+              <Text style={styles.accountTypeLabel}>{t('auth.customer')}</Text>
+            </View>
+            <Text style={styles.accountTypeSub}>{t('auth.iAmADinerSub')}</Text>
+          </View>
+          <TouchableOpacity
+            onPress={() => router.push('/(auth)/owner-register')}
+            style={styles.accountTypeCard}
+            activeOpacity={0.78}
+          >
+            <View style={styles.accountTypeIconRow}>
+              <Ionicons name="storefront-outline" size={16} color={c.gold} />
+              <Text style={styles.accountTypeLabel}>{t('auth.restaurantOwner')}</Text>
+            </View>
+            <Text style={styles.accountTypeSub}>{t('auth.iManageARestaurantSub')}</Text>
+          </TouchableOpacity>
+        </View>
 
         <Input
           icon="person-outline"

@@ -5,11 +5,17 @@
   "scripts": {
     "typecheck": "tsc --noEmit",
     "start": "expo start",
-    "android": "expo start --android",
-    "ios": "expo start --ios",
+    "start:dev": "expo start --dev-client --clear",
+    "android": "expo run:android",
+    "ios": "expo run:ios",
+    "dev:android": "expo run:android",
+    "dev:ios": "expo run:ios",
     "run:android": "expo run:android",
     "run:ios": "expo run:ios",
     "web": "expo start --web",
+    "eas:android:dev": "eas build --profile development --platform android",
+    "eas:ios:dev": "eas build --profile development --platform ios",
+    "test:cenaiva": "jest __tests__/cenaiva --runInBand",
     "test": "jest",
     "test:watch": "jest --watch"
   },
@@ -19,7 +25,7 @@
     "@expo/vector-icons": "^15.0.2",
     "@hookform/resolvers": "^5.2.2",
     "@react-native-async-storage/async-storage": "2.2.0",
-    "@stripe/stripe-react-native": "^0.65.0",
+    "@stripe/stripe-react-native": "0.63.0",
     "@supabase/supabase-js": "^2.49.8",
     "babel-preset-expo": "^55.0.12",
     "date-fns": "^4.1.0",
@@ -31,6 +37,7 @@
     "expo-camera": "~55.0.16",
     "expo-constants": "~55.0.15",
     "expo-crypto": "~55.0.14",
+    "expo-dev-client": "~55.0.30",
     "expo-device": "~55.0.15",
     "expo-file-system": "~55.0.17",
     "expo-font": "~55.0.4",
@@ -72,6 +79,10 @@
     "jest": "~29.7.0",
     "ts-jest": "^29.4.5",
     "typescript": "~5.9.2"
+  },
+  "overrides": {
+    "postcss": "8.5.10",
+    "uuid": "^14.0.0"
   },
   "private": true
 }

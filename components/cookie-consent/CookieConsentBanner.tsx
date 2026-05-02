@@ -7,6 +7,7 @@ import {
   Switch,
   StyleSheet,
   Platform,
+  Modal,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { BlurView } from 'expo-blur';
@@ -254,102 +255,109 @@ export function CookieConsentBanner() {
     void persist({ analytics: false, marketing: false });
   };
 
-  if (!hydrated || !visible) return null;
-
   return (
-    <View style={styles.backdrop} pointerEvents="auto">
-      <View style={StyleSheet.absoluteFillObject} pointerEvents="none">
-        {Platform.OS === 'ios' ? (
-          <BlurView intensity={28} tint="dark" style={styles.blurFill} />
-        ) : null}
-        <View style={styles.backdropTint} />
-      </View>
+    <Modal
+      visible={hydrated && visible}
+      transparent
+      animationType="slide"
+      presentationStyle="overFullScreen"
+      statusBarTranslucent
+      onRequestClose={() => {}}
+    >
+      <View style={styles.backdrop} pointerEvents="auto">
+        <View style={StyleSheet.absoluteFillObject} pointerEvents="none">
+          {Platform.OS === 'ios' ? (
+            <BlurView intensity={28} tint="dark" style={styles.blurFill} />
+          ) : null}
+          <View style={styles.backdropTint} />
+        </View>
 
-      <View style={[styles.sheet, { paddingBottom: Math.max(insets.bottom, spacing.lg) }]}>
-        <View style={styles.handle} />
+        <View style={[styles.sheet, { paddingBottom: Math.max(insets.bottom, spacing.lg) }]}>
+          <View style={styles.handle} />
 
-        <Text style={styles.title}>{TITLE_TEXT}</Text>
+          <Text style={styles.title}>{TITLE_TEXT}</Text>
 
-        <ScrollView
-          style={styles.scrollInner}
-          contentContainerStyle={styles.scroll}
-          showsVerticalScrollIndicator={false}
-          bounces={false}
-        >
-          <View style={styles.rowCard}>
-            <View style={styles.rowTextBlock}>
-              <Text style={styles.rowTitle}>Essential cookies</Text>
-              <Text style={styles.rowDesc}>{ESSENTIAL_DESC}</Text>
-            </View>
-            <View style={styles.alwaysOnPill}>
-              <Text style={styles.alwaysOnPillText}>Always on</Text>
-            </View>
-          </View>
-
-          <View style={styles.rowCard}>
-            <View style={styles.rowTextBlock}>
-              <Text style={styles.rowTitle}>Analytics cookies</Text>
-              <Text style={styles.rowDesc}>{ANALYTICS_DESC}</Text>
-            </View>
-            <Switch
-              value={analytics}
-              onValueChange={setAnalytics}
-              trackColor={{ true: D.gold, false: SWITCH_TRACK_OFF }}
-              thumbColor="#FFFFFF"
-              ios_backgroundColor={SWITCH_TRACK_OFF}
-              accessibilityLabel="Analytics cookies"
-            />
-          </View>
-
-          <View style={styles.rowCard}>
-            <View style={styles.rowTextBlock}>
-              <Text style={styles.rowTitle}>Marketing cookies</Text>
-              <Text style={styles.rowDesc}>{MARKETING_DESC}</Text>
-            </View>
-            <Switch
-              value={marketing}
-              onValueChange={setMarketing}
-              trackColor={{ true: D.gold, false: SWITCH_TRACK_OFF }}
-              thumbColor="#FFFFFF"
-              ios_backgroundColor={SWITCH_TRACK_OFF}
-              accessibilityLabel="Marketing cookies"
-            />
-          </View>
-
-          <Text style={styles.footer}>{FOOTER_TEXT}</Text>
-        </ScrollView>
-
-        <View style={styles.actions}>
-          <Pressable
-            onPress={onRejectOptional}
-            style={({ pressed }) => [styles.rejectPress, pressed && styles.btnPressed]}
-            accessibilityRole="button"
-            accessibilityLabel="Reject optional cookies"
+          <ScrollView
+            style={styles.scrollInner}
+            contentContainerStyle={styles.scroll}
+            showsVerticalScrollIndicator={false}
+            bounces={false}
           >
-            <Text style={styles.rejectText}>Reject optional</Text>
-          </Pressable>
+            <View style={styles.rowCard}>
+              <View style={styles.rowTextBlock}>
+                <Text style={styles.rowTitle}>Essential cookies</Text>
+                <Text style={styles.rowDesc}>{ESSENTIAL_DESC}</Text>
+              </View>
+              <View style={styles.alwaysOnPill}>
+                <Text style={styles.alwaysOnPillText}>Always on</Text>
+              </View>
+            </View>
 
-          <View style={styles.btnRow}>
+            <View style={styles.rowCard}>
+              <View style={styles.rowTextBlock}>
+                <Text style={styles.rowTitle}>Analytics cookies</Text>
+                <Text style={styles.rowDesc}>{ANALYTICS_DESC}</Text>
+              </View>
+              <Switch
+                value={analytics}
+                onValueChange={setAnalytics}
+                trackColor={{ true: D.gold, false: SWITCH_TRACK_OFF }}
+                thumbColor="#FFFFFF"
+                ios_backgroundColor={SWITCH_TRACK_OFF}
+                accessibilityLabel="Analytics cookies"
+              />
+            </View>
+
+            <View style={styles.rowCard}>
+              <View style={styles.rowTextBlock}>
+                <Text style={styles.rowTitle}>Marketing cookies</Text>
+                <Text style={styles.rowDesc}>{MARKETING_DESC}</Text>
+              </View>
+              <Switch
+                value={marketing}
+                onValueChange={setMarketing}
+                trackColor={{ true: D.gold, false: SWITCH_TRACK_OFF }}
+                thumbColor="#FFFFFF"
+                ios_backgroundColor={SWITCH_TRACK_OFF}
+                accessibilityLabel="Marketing cookies"
+              />
+            </View>
+
+            <Text style={styles.footer}>{FOOTER_TEXT}</Text>
+          </ScrollView>
+
+          <View style={styles.actions}>
             <Pressable
-              onPress={onSavePreferences}
-              style={({ pressed }) => [styles.btnOutlined, pressed && styles.btnPressed]}
+              onPress={onRejectOptional}
+              style={({ pressed }) => [styles.rejectPress, pressed && styles.btnPressed]}
               accessibilityRole="button"
-              accessibilityLabel="Save cookie preferences"
+              accessibilityLabel="Reject optional cookies"
             >
-              <Text style={styles.btnOutlinedText}>Save preferences</Text>
+              <Text style={styles.rejectText}>Reject optional</Text>
             </Pressable>
-            <Pressable
-              onPress={onAcceptAll}
-              style={({ pressed }) => [styles.btnGold, pressed && styles.btnPressed]}
-              accessibilityRole="button"
-              accessibilityLabel="Accept all cookies"
-            >
-              <Text style={styles.btnGoldText}>Accept all</Text>
-            </Pressable>
+
+            <View style={styles.btnRow}>
+              <Pressable
+                onPress={onSavePreferences}
+                style={({ pressed }) => [styles.btnOutlined, pressed && styles.btnPressed]}
+                accessibilityRole="button"
+                accessibilityLabel="Save cookie preferences"
+              >
+                <Text style={styles.btnOutlinedText}>Save preferences</Text>
+              </Pressable>
+              <Pressable
+                onPress={onAcceptAll}
+                style={({ pressed }) => [styles.btnGold, pressed && styles.btnPressed]}
+                accessibilityRole="button"
+                accessibilityLabel="Accept all cookies"
+              >
+                <Text style={styles.btnGoldText}>Accept all</Text>
+              </Pressable>
+            </View>
           </View>
         </View>
       </View>
-    </View>
+    </Modal>
   );
 }
 

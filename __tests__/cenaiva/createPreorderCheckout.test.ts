@@ -3,6 +3,7 @@ import {
   buildPreorderOrderItemPayloads,
   buildPreorderOrderPayload,
   calculatePreorderTotals,
+  createPreorderCheckoutFromBooking,
 } from '@/lib/cenaiva/api/createPreorderCheckout';
 import type { BookingState } from '@cenaiva/assistant';
 
@@ -99,5 +100,99 @@ describe('createPreorderCheckout helpers', () => {
         status: 'pending',
       },
     ]);
+  });
+});
+
+function createSupabaseMock(options: { itemInsertError?: string } = {}) {
+  const inserted: Record<string, unknown[]> = {
+    orders: [],
+    order_items: [],
+  };
+  const deleted: Record<string, string[]> = {
+    orders: [],
+  };
+
+  const makeBuilder = (table: string) => {
+    const builder: Record<string, unknown> = { error: null };
+    builder.select = jest.fn(() => builder);
+    builder.eq = jest.fn((column: string, value: string) => {
+      if (table === 'orders' && column === 'id') deleted.orders.push(value);
+      return builder;
+    });
+    builder.order = jest.fn(() => builder);
+    builder.delete = jest.fn(() => builder);
+    builder.insert = jest.fn((payload: unknown) => {
+      if (table === 'orders') inserted.orders.push(payload);
+      if (table === 'order_items') {
+        inserted.order_items.push(payload);
+        if (options.itemInsertError) {
+          builder.error = { message: options.itemInsertError };
+        }
+      }
+      return builder;
+    });
+    builder.maybeSingle = jest.fn(async () => {
+      if (table === 'user_profiles') return { data: { id: 'profile1' }, error: null };
+      if (table === 'guests') return { data: { id: 'guest1' }, error: null };
+      return { data: null, error: null };
+    });
+    builder.single = jest.fn(async () => {
+      if (table === 'restaurants') {
+        return { data: { slug: 'la-piazza', tax_rate: 0.13, currency: 'CAD' }, error: null };
+      }
+      if (table === 'orders') return { data: { id: 'order1' }, error: null };
+      return { data: null, error: null };
+    });
+    return builder;
+  };
+
+  return {
+    inserted,
+    deleted,
+    supabase: {
+      auth: {
+        getUser: jest.fn(async () => ({ data: { user: { id: 'auth1' } }, error: null })),
+      },
+      from: jest.fn((table: string) => makeBuilder(table)),
+    },
+  };
+}
+
+describe('createPreorderCheckoutFromBooking', () => {
+  it('creates a pending preorder order and checkout result without charging the user', async () => {
+    const { supabase, inserted } = createSupabaseMock();
+
+    const result = await createPreorderCheckoutFromBooking(booking(), supabase as never);
+
+    expect(result).toEqual({
+      orderId: 'order1',
+      restaurantSlug: 'la-piazza',
+      subtotal: 34,
+      taxAmount: 4.42,
+      totalAmount: 38.42,
+    });
+    expect(inserted.orders[0]).toMatchObject({
+      restaurant_id: 'r1',
+      guest_id: 'guest1',
+      reservation_id: 'res1',
+      is_preorder: true,
+      status: 'pending',
+      subtotal: 34,
+      tax_amount: 4.42,
+      total_amount: 38.42,
+      source: 'cenaiva',
+    });
+    expect(inserted.orders[0]).not.toMatchObject({ status: 'paid' });
+    expect(inserted.order_items[0]).toEqual([
+      expect.objectContaining({ order_id: 'order1', menu_item_id: 'm1', quantity: 2 }),
+      expect.objectContaining({ order_id: 'order1', menu_item_id: 'm2', quantity: 1 }),
+    ]);
+  });
+
+  it('rolls back the pending preorder order when item insertion fails', async () => {
+    const { supabase, deleted } = createSupabaseMock({ itemInsertError: 'item insert failed' });
+
+    await expect(createPreorderCheckoutFromBooking(booking(), supabase as never)).rejects.toThrow('item insert failed');
+    expect(deleted.orders).toContain('order1');
   });
 });

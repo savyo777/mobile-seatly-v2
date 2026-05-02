@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useEffect, useMemo, useState } from 'react';
 import type { Session, User } from '@supabase/supabase-js';
-import { getSupabase } from '@/lib/supabase/client';
+import { AppState } from 'react-native';
+import { clearPersistedSupabaseSession, getSupabase } from '@/lib/supabase/client';
 import { clearAppShellPreference } from '@/lib/navigation/appShellPreference';
 import { resolveIsStaffLike } from '@/lib/auth/roles';
 
@@ -36,6 +37,16 @@ function resolveRoleFromMetadata(user: User | null): string | null {
   return normalized;
 }
 
+function isInvalidRefreshTokenError(error: unknown): boolean {
+  const message =
+    error instanceof Error
+      ? error.message
+      : typeof error === 'object' && error && 'message' in error
+        ? String((error as { message?: unknown }).message)
+        : String(error ?? '');
+  return /invalid refresh token|refresh token not found/i.test(message);
+}
+
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [session, setSession] = useState<Session | null>(null);
   const [role, setRole] = useState<string | null>(null);
@@ -51,9 +62,20 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     const hydrateSession = async () => {
       try {
-        const { data } = await supabase.auth.getSession();
-        if (!cancelled) setSession(data.session ?? null);
-      } catch {
+        const { data, error } = await supabase.auth.getSession();
+        if (error && isInvalidRefreshTokenError(error)) {
+          await clearPersistedSupabaseSession();
+        }
+        if (!cancelled) {
+          setSession(error ? null : data.session ?? null);
+          if (!error && data.session) {
+            void supabase.auth.startAutoRefresh();
+          }
+        }
+      } catch (error) {
+        if (isInvalidRefreshTokenError(error)) {
+          await clearPersistedSupabaseSession();
+        }
         if (!cancelled) setSession(null);
       } finally {
         if (!cancelled) setLoading(false);
@@ -65,6 +87,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       if (!cancelled) {
         if (event === 'SIGNED_OUT') {
           void clearAppShellPreference();
+          void supabase.auth.stopAutoRefresh();
+        } else if (next) {
+          void supabase.auth.startAutoRefresh();
         }
         setSession(next);
         setLoading(false);
@@ -73,9 +98,32 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     return () => {
       cancelled = true;
+      void supabase.auth.stopAutoRefresh();
       sub.subscription.unsubscribe();
     };
   }, []);
+
+  useEffect(() => {
+    const supabase = getSupabase();
+    if (!supabase || !session) return;
+
+    if (AppState.currentState === 'active') {
+      void supabase.auth.startAutoRefresh();
+    }
+
+    const sub = AppState.addEventListener('change', (state) => {
+      if (state === 'active') {
+        void supabase.auth.startAutoRefresh();
+      } else {
+        void supabase.auth.stopAutoRefresh();
+      }
+    });
+
+    return () => {
+      sub.remove();
+      void supabase.auth.stopAutoRefresh();
+    };
+  }, [session]);
 
   useEffect(() => {
     const supabase = getSupabase();
@@ -123,7 +171,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const signOut = async () => {
     const supabase = getSupabase();
     if (!supabase) return;
-    await supabase.auth.signOut();
+    await supabase.auth.stopAutoRefresh();
+    const { error } = await supabase.auth.signOut();
+    if (error && isInvalidRefreshTokenError(error)) {
+      await clearPersistedSupabaseSession();
+    }
     setRole(null);
   };
 

@@ -37,6 +37,12 @@ const useStyles = createStyles((c) => ({
     borderRadius: borderRadius.md,
     backgroundColor: c.bgSurface,
   },
+  imagePlaceholder: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1,
+    borderColor: c.border,
+  },
   body: {
     flex: 1,
     minWidth: 0,
@@ -87,12 +93,19 @@ export function RestaurantRail({
       contentContainerStyle={styles.content}
       renderItem={({ item }) => {
         const active = item.id === highlightedId;
+        const imageUrl = item.coverPhotoUrl?.trim();
         return (
           <Pressable
             onPress={() => onPressRestaurant(item)}
             style={({ pressed }) => [styles.card, active && styles.cardActive, pressed && { opacity: 0.85 }]}
           >
-            <Image source={{ uri: item.coverPhotoUrl }} style={styles.image} />
+            {imageUrl ? (
+              <Image source={{ uri: imageUrl }} style={styles.image} />
+            ) : (
+              <View style={[styles.image, styles.imagePlaceholder]}>
+                <Ionicons name="restaurant-outline" size={24} color={c.gold} />
+              </View>
+            )}
             <View style={styles.body}>
               <Text style={styles.name} numberOfLines={1}>{item.name}</Text>
               <Text style={styles.meta} numberOfLines={1}>{item.cuisineType || item.city}</Text>

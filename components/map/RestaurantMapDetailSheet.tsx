@@ -122,6 +122,12 @@ const useStyles = createStyles((c) => ({
     borderRadius: borderRadius.lg,
     backgroundColor: c.bgElevated,
   },
+  thumbPlaceholder: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1,
+    borderColor: c.border,
+  },
   heroText: {
     flex: 1,
     minWidth: 0,
@@ -267,6 +273,7 @@ export function RestaurantMapDetailSheet({
   }
 
   const distLabel = formatDistanceMeters(restaurant.distanceMeters);
+  const imageUrl = restaurant.coverPhotoUrl?.trim();
 
   return (
     <Animated.View
@@ -307,7 +314,13 @@ export function RestaurantMapDetailSheet({
 
         <View style={styles.content}>
           <View style={styles.heroRow}>
-            <Image source={{ uri: restaurant.coverPhotoUrl }} style={styles.thumb} />
+            {imageUrl ? (
+              <Image source={{ uri: imageUrl }} style={styles.thumb} />
+            ) : (
+              <View style={[styles.thumb, styles.thumbPlaceholder]}>
+                <Ionicons name="restaurant-outline" size={28} color={c.gold} />
+              </View>
+            )}
             <View style={styles.heroText}>
               <Text style={styles.name} numberOfLines={1}>
                 {restaurant.name}

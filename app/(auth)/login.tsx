@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Alert } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useRouter } from 'expo-router';
+import type { Session } from '@supabase/supabase-js';
 import { useTranslation } from 'react-i18next';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
@@ -10,7 +11,7 @@ import { getSupabase } from '@/lib/supabase/client';
 import { sendPasswordResetEmail } from '@/lib/services/accountSecurity';
 import { ensureCustomerProfile, signInWithGoogle } from '@/lib/services/oauth';
 import { normalizePhoneToE164, sendPhoneOtp } from '@/lib/services/phoneAuth';
-import { roleIncludes } from '@/lib/auth/roles';
+import { resolveHomeForSignedInUser } from '@/lib/auth/postSignInRouting';
 import {
   ScreenWrapper,
   Input,
@@ -188,22 +189,16 @@ export default function LoginScreen() {
     return () => clearInterval(id);
   }, [isLockedOut, lockoutUntilMs]);
 
-  const enforceCustomerRole = async (userId: string): Promise<boolean> => {
-    const supabase = getSupabase();
-    if (!supabase) return false;
-    const { data } = await supabase
-      .from('user_profiles')
-      .select('role')
-      .eq('auth_user_id', userId)
-      .maybeSingle();
-    const role = typeof data?.role === 'string' ? data.role.toLowerCase() : '';
-    if (roleIncludes(role, 'customer')) return true;
-    await supabase.auth.signOut();
-    Alert.alert(
-      'Access denied',
-      'This account is not registered as a customer. Please create a customer account.',
-    );
-    return false;
+  const routeSignedInSession = async (session: Session) => {
+    const { href, role } = await resolveHomeForSignedInUser(session.user.id, session.user);
+    if (!role) {
+      try {
+        await ensureCustomerProfile(session);
+      } catch {
+        // best-effort fallback for older accounts with no profile row
+      }
+    }
+    router.replace(href);
   };
 
   const handleLogin = async () => {
@@ -251,14 +246,11 @@ export default function LoginScreen() {
       }
       await AsyncStorage.multiRemove([failuresKey(trimmedEmail), lockoutKey(trimmedEmail)]);
       setLockoutUntilMs(null);
-      const signedInUserId = data.user?.id;
-      if (!signedInUserId) {
+      if (!data.session?.user?.id) {
         Alert.alert('Session error', 'Could not load your account. Please try again.');
         return;
       }
-      const allowed = await enforceCustomerRole(signedInUserId);
-      if (!allowed) return;
-      router.replace('/(customer)');
+      await routeSignedInSession(data.session);
     } finally {
       setSubmitting(false);
     }
@@ -300,14 +292,7 @@ export default function LoginScreen() {
         Alert.alert('Google sign in failed', result.message);
         return;
       }
-      try {
-        await ensureCustomerProfile(result.session);
-      } catch {
-        // ignore: profile creation is best-effort and can be retried later
-      }
-      const allowed = await enforceCustomerRole(result.session.user.id);
-      if (!allowed) return;
-      router.replace('/(customer)');
+      await routeSignedInSession(result.session);
     } finally {
       setSubmitting(false);
     }
@@ -332,8 +317,8 @@ export default function LoginScreen() {
 
         <View style={styles.pillWrap}>
           <View style={styles.pill}>
-            <Ionicons name="person-outline" size={14} color={c.textPrimary} />
-            <Text style={styles.pillText}>{t('auth.diner')}</Text>
+            <Ionicons name="people-outline" size={14} color={c.textPrimary} />
+            <Text style={styles.pillText}>{t('auth.customerOrOwner')}</Text>
           </View>
         </View>
 
@@ -400,7 +385,7 @@ export default function LoginScreen() {
         </View>
 
         <SocialAuthButtons
-          onApple={() => router.replace('/(customer)')}
+          onApple={() => Alert.alert('Apple sign in', 'Apple sign in is not configured yet. Use email, phone, or Google to sign in.')}
           onGoogle={handleGoogle}
         />
 

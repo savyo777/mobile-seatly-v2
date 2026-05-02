@@ -14,7 +14,12 @@ const useStyles = createStyles((c) => ({
   },
   content: {
     flex: 1,
-    justifyContent: 'center',
+    justifyContent: 'space-between',
+    paddingVertical: spacing['4xl'],
+  },
+  hero: {
+    alignItems: 'center',
+    paddingTop: spacing['4xl'],
   },
   logo: {
     fontSize: 28,
@@ -37,76 +42,46 @@ const useStyles = createStyles((c) => ({
     ...typography.body,
     color: c.textMuted,
     textAlign: 'center',
-    marginBottom: spacing['3xl'],
+    maxWidth: 330,
   },
-  cards: {
+  actions: {
     gap: spacing.md,
   },
-  card: {
+  actionButton: {
     flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'center',
     gap: spacing.md,
-    minHeight: 86,
-    padding: spacing.md,
-    borderRadius: borderRadius.xl,
-    backgroundColor: c.bgSurface,
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: c.border,
+    minHeight: 54,
+    paddingHorizontal: spacing.lg,
+    borderRadius: borderRadius.lg,
   },
-  cardPressed: {
+  primaryAction: {
+    backgroundColor: c.gold,
+  },
+  secondaryAction: {
+    backgroundColor: 'transparent',
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: c.gold,
+  },
+  actionPressed: {
     opacity: 0.86,
   },
-  iconWrap: {
-    width: 48,
-    height: 48,
-    borderRadius: 16,
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: c.bgElevated,
+  primaryActionText: {
+    ...typography.bodyLarge,
+    color: c.bgBase,
+    fontWeight: '700',
   },
-  iconWrapOwner: {
-    backgroundColor: `${c.gold}18`,
-  },
-  cardText: {
-    flex: 1,
-    minWidth: 0,
-  },
-  cardTitle: {
-    fontSize: 17,
-    fontWeight: '800',
-    color: c.textPrimary,
-    letterSpacing: -0.2,
-    marginBottom: 3,
-  },
-  cardSub: {
-    ...typography.bodySmall,
-    color: c.textMuted,
-  },
-  arrowWrap: {
-    width: 32,
-    height: 32,
-    borderRadius: borderRadius.full,
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: c.bgElevated,
-  },
-  footer: {
-    alignItems: 'center',
-    paddingTop: spacing.lg,
-  },
-  signUpRow: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    justifyContent: 'center',
-  },
-  signUpPrompt: {
-    ...typography.body,
-    color: c.textSecondary,
-  },
-  signUpCta: {
-    ...typography.body,
+  secondaryActionText: {
+    ...typography.bodyLarge,
     color: c.gold,
     fontWeight: '700',
+  },
+  audienceText: {
+    ...typography.bodySmall,
+    color: c.textMuted,
+    textAlign: 'center',
+    marginTop: spacing.sm,
   },
 }));
 
@@ -120,40 +95,40 @@ export default function WelcomeScreen() {
   return (
     <View style={[styles.root, { paddingTop: Math.max(insets.top, spacing.lg), paddingBottom: Math.max(insets.bottom, spacing.lg) }]}>
       <View style={styles.content}>
-        <Text style={styles.logo}>{t('common.appName')}</Text>
-        <Text style={styles.title}>{t('auth.welcomeTitle')}</Text>
-        <Text style={styles.subtitle}>{t('auth.welcomeTagline')}</Text>
+        <View style={styles.hero}>
+          <Text style={styles.logo}>{t('common.appName')}</Text>
+          <Text style={styles.title}>{t('auth.welcomeTitle')}</Text>
+          <Text style={styles.subtitle}>{t('auth.welcomeTagline')}</Text>
+        </View>
 
-        <View style={styles.cards}>
+        <View style={styles.actions}>
           <Pressable
-            style={({ pressed }) => [styles.card, pressed && styles.cardPressed]}
+            style={({ pressed }) => [
+              styles.actionButton,
+              styles.primaryAction,
+              pressed && styles.actionPressed,
+            ]}
             onPress={() => router.push('/(auth)/login')}
             accessibilityRole="button"
           >
-            <View style={styles.iconWrap}>
-              <Ionicons name="person-outline" size={23} color={c.gold} />
-            </View>
-            <View style={styles.cardText}>
-              <Text style={styles.cardTitle}>Continue as a diner</Text>
-              <Text style={styles.cardSub}>Book tables, discover spots, and earn rewards</Text>
-            </View>
-            <View style={styles.arrowWrap}>
-              <Ionicons name="chevron-forward" size={17} color={c.textMuted} />
-            </View>
+            <Ionicons name="log-in-outline" size={20} color={c.bgBase} />
+            <Text style={styles.primaryActionText}>{t('auth.alreadyHaveSignIn')}</Text>
           </Pressable>
-        </View>
-      </View>
 
-      <View style={styles.footer}>
-        <Pressable
-          onPress={() => router.push('/(auth)/register')}
-          style={styles.signUpRow}
-          accessibilityRole="button"
-          hitSlop={8}
-        >
-          <Text style={styles.signUpPrompt}>{t('auth.welcomeSignUpPrompt')} </Text>
-          <Text style={styles.signUpCta}>{t('auth.welcomeSignUpCta')}</Text>
-        </Pressable>
+          <Pressable
+            style={({ pressed }) => [
+              styles.actionButton,
+              styles.secondaryAction,
+              pressed && styles.actionPressed,
+            ]}
+            onPress={() => router.push('/(auth)/register')}
+            accessibilityRole="button"
+          >
+            <Ionicons name="person-add-outline" size={20} color={c.gold} />
+            <Text style={styles.secondaryActionText}>{t('auth.createAccount')}</Text>
+          </Pressable>
+          <Text style={styles.audienceText}>{t('auth.welcomeAudience')}</Text>
+        </View>
       </View>
     </View>
   );

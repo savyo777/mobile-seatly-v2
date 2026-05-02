@@ -307,7 +307,7 @@ export default function OwnerRegisterScreen() {
         'Account created',
         'If email confirmation is enabled, please verify your email before signing in.',
       );
-      router.replace(data.session ? '/(staff)' : '/(auth)/owner-login');
+      router.replace(data.session ? '/(staff)' : '/(auth)/login');
     } finally {
       setSubmitting(false);
     }
@@ -393,7 +393,7 @@ export default function OwnerRegisterScreen() {
         keyboardShouldPersistTaps="handled"
       >
         <TouchableOpacity
-          onPress={() => router.push('/(auth)/owner-login')}
+          onPress={() => router.push('/(auth)/register')}
           style={styles.backBtn}
           activeOpacity={0.7}
           hitSlop={12}
@@ -578,10 +578,10 @@ export default function OwnerRegisterScreen() {
         <View style={styles.footerRow}>
           <Text style={styles.footerMuted}>{t('auth.alreadyHaveAccount')} </Text>
           <TouchableOpacity
-            onPress={() => router.push('/(auth)/owner-login')}
+            onPress={() => router.push('/(auth)/login')}
             activeOpacity={0.7}
           >
-            <Text style={styles.footerLink}>{t('auth.ownerSignIn')}</Text>
+            <Text style={styles.footerLink}>{t('auth.alreadyHaveSignIn')}</Text>
           </TouchableOpacity>
         </View>
 

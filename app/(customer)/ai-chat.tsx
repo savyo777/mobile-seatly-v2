@@ -11,7 +11,7 @@ export default function AiChatScreen() {
   }, []);
 
   return (
-    <ScreenWrapper scrollable={false} withKeyboardAvoiding padded>
+    <ScreenWrapper scrollable={false} withKeyboardAvoiding padded={false}>
       <CenaivaVoiceShell />
     </ScreenWrapper>
   );

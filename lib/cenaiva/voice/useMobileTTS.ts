@@ -103,13 +103,17 @@ export function useMobileTTS() {
 
         const contentType = response.headers.get('content-type');
         const ext = extensionFromContentType(contentType);
+        const buffer = await response.arrayBuffer();
+        if (!buffer.byteLength) return null;
         const target = `${FileSystem.cacheDirectory}cenaiva-tts-${Date.now()}-${Math.random()
           .toString(36)
           .slice(2)}.${ext}`;
-        const base64 = arrayBufferToBase64(await response.arrayBuffer());
+        const base64 = arrayBufferToBase64(buffer);
         await FileSystem.writeAsStringAsync(target, base64, {
           encoding: FileSystem.EncodingType.Base64,
         });
+        const info = await FileSystem.getInfoAsync(target).catch(() => null);
+        if (!info?.exists || !info.size) return null;
         tempFilesRef.current.push(target);
         return target;
       } catch {
@@ -135,6 +139,7 @@ export function useMobileTTS() {
 
   const playFile = useCallback(
     async (uri: string): Promise<boolean> => {
+      if (!uri.trim()) return false;
       try {
         await setAudioModeAsync({
           playsInSilentMode: true,

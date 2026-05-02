@@ -10,6 +10,7 @@ import { ensureCustomerProfile, ensureOwnerProfile } from '@/lib/services/oauth'
 import { sendPhoneOtp, verifyPhoneOtp } from '@/lib/services/phoneAuth';
 import { getSupabase } from '@/lib/supabase/client';
 import { roleIncludes } from '@/lib/auth/roles';
+import { resolveHomeForSignedInUser, type AuthHomeHref } from '@/lib/auth/postSignInRouting';
 
 const useStyles = createStyles((c) => ({
   inner: {
@@ -165,26 +166,40 @@ export default function VerifyPhoneOtpScreen() {
         Alert.alert('Session error', 'Could not load your session. Please try again.');
         return;
       }
-      try {
-        if (source === 'owner-login') {
-          const allowed = await enforceRole(session.user.id, 'owner');
-          if (!allowed) return;
-        } else if (source === 'login') {
-          const allowed = await enforceRole(session.user.id, 'customer');
-          if (!allowed) return;
-        } else if (source === 'owner-register') {
+      let nextHref: AuthHomeHref = '/(customer)';
+      if (source === 'owner-login') {
+        const allowed = await enforceRole(session.user.id, 'owner');
+        if (!allowed) return;
+        nextHref = '/(staff)';
+      } else if (source === 'login') {
+        const { href, role } = await resolveHomeForSignedInUser(session.user.id, session.user);
+        if (!role) {
+          try {
+            await ensureCustomerProfile(session);
+          } catch {
+            // best-effort fallback for older accounts with no profile row
+          }
+        }
+        nextHref = href;
+      } else if (source === 'owner-register') {
+        try {
           await ensureOwnerProfile(session, {
             fullNameOverride: fullNameOverride || undefined,
           });
-        } else {
+        } catch {
+          // best-effort
+        }
+        nextHref = '/(staff)';
+      } else {
+        try {
           await ensureCustomerProfile(session, {
             fullNameOverride: fullNameOverride || undefined,
           });
+        } catch {
+          // best-effort
         }
-      } catch {
-        // best-effort
       }
-      router.replace(source === 'owner-register' || source === 'owner-login' ? '/(staff)' : '/(customer)');
+      router.replace(nextHref);
     } finally {
       setSubmitting(false);
     }

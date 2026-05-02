@@ -1,6 +1,8 @@
 import type { RestaurantRow } from '@cenaiva/types';
 import type { DiscoverSectionKey, Restaurant } from '@/lib/mock/restaurants';
 
+const DEFAULT_RESTAURANT_COVER = 'https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=1200';
+
 function num(v: string | number | null | undefined, fallback: number): number {
   if (v == null) return fallback;
   const n = typeof v === 'number' ? v : parseFloat(v);
@@ -81,8 +83,8 @@ export function mapRestaurantRowToRestaurant(row: RestaurantRow): Restaurant {
     lat,
     lng,
     phone: row.phone ?? '',
-    coverPhotoUrl: row.hero_image_url ?? row.cover_photo_url ?? '',
-    logoUrl: row.logo_url ?? '',
+    coverPhotoUrl: row.hero_image_url?.trim() || row.cover_photo_url?.trim() || DEFAULT_RESTAURANT_COVER,
+    logoUrl: row.logo_url?.trim() || '',
     avgRating: num(row.avg_rating ?? (settings?.avg_rating as number | undefined), 4.5),
     totalReviews: typeof settings?.total_reviews === 'number' ? settings!.total_reviews : 0,
     priceRange,
