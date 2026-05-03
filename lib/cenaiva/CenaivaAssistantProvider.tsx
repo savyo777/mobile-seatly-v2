@@ -20,6 +20,7 @@ import {
 } from '@/lib/cenaiva/state/assistantStore';
 import { useCenaivaOrchestrator } from '@/lib/cenaiva/api/useCenaivaOrchestrator';
 import { useCenaivaVoice } from '@/lib/cenaiva/voice/useCenaivaVoice';
+import { useCenaivaVoicePreference } from '@/lib/cenaiva/voice/CenaivaVoicePreferenceProvider';
 import type { TranscriptionPhase } from '@/lib/cenaiva/voice/useMobileTranscription';
 import { useCenaivaWakeWord } from '@/lib/cenaiva/voice/useCenaivaWakeWord';
 import { buildWakeGreeting } from '@/lib/cenaiva/voice/wakeGreeting';
@@ -107,6 +108,10 @@ function AssistantInner({ children }: { children: ReactNode }) {
   const { state, dispatch } = useAssistantStore();
   const orchestrator = useCenaivaOrchestrator();
   const voice = useCenaivaVoice();
+  const {
+    isLoading: isVoicePreferenceLoading,
+    needsSelection: voiceSelectionRequired,
+  } = useCenaivaVoicePreference();
   const router = useRouter();
   const pathname = usePathname();
   const { isAuthenticated, user } = useAuthSession();
@@ -124,6 +129,7 @@ function AssistantInner({ children }: { children: ReactNode }) {
   const requestWakePermissionRef = useRef<() => Promise<boolean>>(async () => false);
   const wakePermissionPromptedRef = useRef(false);
   const emptyRelistenStreakRef = useRef(0);
+  const pendingOpenRef = useRef<OpenOptions | null>(null);
 
   const commit = useCallback(
     (action: AssistantAction) => {
@@ -171,6 +177,7 @@ function AssistantInner({ children }: { children: ReactNode }) {
     textModeRef.current = false;
     processingRef.current = false;
     listeningRef.current = false;
+    pendingOpenRef.current = null;
     listenTurnIdRef.current += 1;
     emptyRelistenStreakRef.current = 0;
     orchestrator.cancel();
@@ -184,6 +191,7 @@ function AssistantInner({ children }: { children: ReactNode }) {
       transcript: string,
       opts?: { restaurantId?: string; silent?: boolean; force?: boolean },
     ) => {
+      if (isVoicePreferenceLoading || voiceSelectionRequired) return;
       const trimmed = transcript.trim();
       if (!trimmed) return;
 
@@ -355,13 +363,23 @@ function AssistantInner({ children }: { children: ReactNode }) {
         commit({ type: 'SET_VOICE_STATUS', status: 'idle' });
       }
     },
-    [commit, orchestrator, pathname, requestLocation, router, voice],
+    [
+      commit,
+      isVoicePreferenceLoading,
+      orchestrator,
+      pathname,
+      requestLocation,
+      router,
+      voice,
+      voiceSelectionRequired,
+    ],
   );
 
   const startListening = useCallback(async () => {
     if (!isOpenRef.current) return;
     if (processingRef.current) return;
     if (listeningRef.current) return;
+    if (isVoicePreferenceLoading || voiceSelectionRequired) return;
     const turnId = listenTurnIdRef.current + 1;
     listenTurnIdRef.current = turnId;
     listeningRef.current = true;
@@ -422,7 +440,13 @@ function AssistantInner({ children }: { children: ReactNode }) {
         if (isOpenRef.current && !textModeRef.current) void startListeningRef.current();
       }, RELISTEN_AFTER_ERROR_MS);
     }
-  }, [commit, sendTranscript, voice]);
+  }, [
+    commit,
+    isVoicePreferenceLoading,
+    sendTranscript,
+    voice,
+    voiceSelectionRequired,
+  ]);
 
   const stopListening = useCallback(() => {
     listeningRef.current = false;
@@ -446,6 +470,35 @@ function AssistantInner({ children }: { children: ReactNode }) {
     startListeningRef.current = startListening;
   }, [startListening]);
 
+  const speakGreetingThenListen = useCallback(
+    async (greetingText?: string) => {
+      if (!isOpenRef.current || textModeRef.current) return;
+      const trimmedGreeting = greetingText?.trim();
+
+      if (trimmedGreeting) {
+        commit({ type: 'SET_LAST_SPOKEN_TEXT', text: trimmedGreeting });
+        commit({ type: 'SET_VOICE_STATUS', status: 'speaking' });
+        await voice.speak(trimmedGreeting);
+      }
+
+      if (isOpenRef.current && !textModeRef.current) {
+        void startListeningRef.current();
+      }
+    },
+    [commit, voice],
+  );
+
+  useEffect(() => {
+    if (isVoicePreferenceLoading || voiceSelectionRequired) return;
+    const pending = pendingOpenRef.current;
+    if (!pending?.autoListen) return;
+    pendingOpenRef.current = null;
+
+    setTimeout(() => {
+      void speakGreetingThenListen(pending.greetingText);
+    }, 0);
+  }, [isVoicePreferenceLoading, speakGreetingThenListen, voiceSelectionRequired]);
+
   const open = useCallback(
     (restaurantId?: string, restaurantName?: string, opts?: OpenOptions) => {
       isOpenRef.current = true;
@@ -459,17 +512,24 @@ function AssistantInner({ children }: { children: ReactNode }) {
         commit({ type: 'OPEN' });
       }
       if (opts?.autoListen) {
-        const greetingText = opts.greetingText?.trim();
+        if (isVoicePreferenceLoading || voiceSelectionRequired) {
+          pendingOpenRef.current = opts;
+          return;
+        }
+
         setTimeout(() => {
-          if (!isOpenRef.current || textModeRef.current) return;
-          if (greetingText) {
-            commit({ type: 'SET_LAST_SPOKEN_TEXT', text: greetingText });
-          }
-          if (isOpenRef.current && !textModeRef.current) void startListeningRef.current();
+          void speakGreetingThenListen(opts.greetingText);
         }, 0);
       }
     },
-    [commit, requestLocation, voice],
+    [
+      commit,
+      isVoicePreferenceLoading,
+      requestLocation,
+      speakGreetingThenListen,
+      voice,
+      voiceSelectionRequired,
+    ],
   );
 
   const onWake = useCallback(() => {
@@ -537,6 +597,7 @@ function AssistantInner({ children }: { children: ReactNode }) {
       if (nextState !== 'active') {
         forceStopWakeWord();
         listeningRef.current = false;
+        pendingOpenRef.current = null;
         listenTurnIdRef.current += 1;
         voice.stopListening();
         voice.stopSpeaking();

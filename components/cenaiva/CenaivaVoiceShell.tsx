@@ -1,9 +1,11 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import {
+  ActivityIndicator,
   Keyboard,
   KeyboardAvoidingView,
   Platform,
   Pressable,
+  StyleSheet,
   Text,
   TextInput,
   View,
@@ -12,14 +14,18 @@ import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { BookingSheet } from '@/components/cenaiva/BookingSheet';
 import { RestaurantRail } from '@/components/cenaiva/RestaurantRail';
+import { CenaivaVoiceOptionList } from '@/components/cenaiva/CenaivaVoiceOptionList';
 import { VoiceOrb } from '@/components/cenaiva/VoiceOrb';
 import { RestaurantDiscoveryMap } from '@/components/map/RestaurantDiscoveryMap';
+import { Button } from '@/components/ui/Button';
 import { useCenaivaAssistant } from '@/lib/cenaiva/CenaivaAssistantProvider';
 import { useCenaivaRestaurants } from '@/lib/cenaiva/api/dataHooks';
 import { filterCenaivaRestaurants } from '@/lib/cenaiva/filterRestaurants';
 import { useAssistantStore } from '@/lib/cenaiva/state/assistantStore';
+import { useCenaivaVoicePreference } from '@/lib/cenaiva/voice/CenaivaVoicePreferenceProvider';
 import type { Restaurant } from '@/lib/mock/restaurants';
 import { DEFAULT_MAP_CENTER, withDistances } from '@/lib/map/mapFilters';
+import type { CenaivaTtsVoice } from '@/lib/cenaiva/voice/voicePreference';
 import { createStyles, borderRadius, spacing, typography } from '@/lib/theme';
 
 const MANUAL_MENU_STATUSES = new Set([
@@ -213,6 +219,57 @@ const useStyles = createStyles(() => ({
     backgroundColor: 'rgba(200,169,81,0.20)',
     borderColor: '#C8A951',
   },
+  voiceOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    zIndex: 80,
+    backgroundColor: 'rgba(0,0,0,0.68)',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: spacing.lg,
+  },
+  voiceCard: {
+    width: '100%',
+    maxWidth: 420,
+    borderRadius: borderRadius.xl,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.10)',
+    backgroundColor: '#0F0F10',
+    padding: spacing.lg,
+  },
+  voiceCardTitle: {
+    ...typography.h3,
+    color: '#FFFFFF',
+    fontWeight: '700',
+    textAlign: 'center',
+  },
+  voiceCardBody: {
+    ...typography.body,
+    color: 'rgba(255,255,255,0.70)',
+    textAlign: 'center',
+    lineHeight: 22,
+    marginTop: spacing.sm,
+    marginBottom: spacing.lg,
+  },
+  voiceCardHint: {
+    ...typography.bodySmall,
+    color: 'rgba(255,255,255,0.48)',
+    textAlign: 'center',
+    marginTop: spacing.md,
+    lineHeight: 18,
+  },
+  voiceConfirmButton: {
+    marginTop: spacing.lg,
+  },
+  voiceLoadingRow: {
+    alignItems: 'center',
+    gap: spacing.md,
+    paddingVertical: spacing.lg,
+  },
+  voiceLoadingText: {
+    ...typography.body,
+    color: '#FFFFFF',
+    fontWeight: '600',
+  },
 }));
 
 function statusCopy(status: string, inManualMenu: boolean, spokenText: string) {
@@ -236,10 +293,20 @@ export function CenaivaVoiceShell({ onClose }: { onClose?: () => void }) {
   const styles = useStyles();
   const assistant = useCenaivaAssistant();
   const { state, dispatch } = useAssistantStore();
+  const {
+    voicePreference,
+    isLoading: voicePreferenceLoading,
+    isSaving: voicePreferenceSaving,
+    needsSelection: voiceSelectionRequired,
+    setVoicePreference,
+  } = useCenaivaVoicePreference();
   const { restaurants } = useCenaivaRestaurants();
   const [input, setInput] = useState('');
   const [textMode, setTextMode] = useState(false);
   const [selectedId, setSelectedId] = useState<string | null>(state.map.highlighted_restaurant_id);
+  const [pendingVoice, setPendingVoice] = useState<CenaivaTtsVoice | null>(voicePreference);
+  const showVoiceSelectionOverlay =
+    voicePreferenceLoading || voicePreferenceSaving || voiceSelectionRequired;
 
   const inManualMenu = MANUAL_MENU_STATUSES.has(state.booking.status);
   const showConfirmationOrPostBooking = CONFIRMATION_OR_POST_BOOKING_STATUSES.has(state.booking.status);
@@ -268,6 +335,10 @@ export function CenaivaVoiceShell({ onClose }: { onClose?: () => void }) {
   useEffect(() => {
     setSelectedId(state.map.highlighted_restaurant_id);
   }, [state.map.highlighted_restaurant_id]);
+
+  useEffect(() => {
+    setPendingVoice(voicePreference);
+  }, [voicePreference]);
 
   useEffect(() => {
     if (inManualMenu && state.voiceStatus === 'listening') {
@@ -495,6 +566,43 @@ export function CenaivaVoiceShell({ onClose }: { onClose?: () => void }) {
           </Pressable>
         </View>
       </View>
+      {showVoiceSelectionOverlay ? (
+        <View style={styles.voiceOverlay}>
+          <View style={styles.voiceCard}>
+            {voicePreferenceLoading ? (
+              <View style={styles.voiceLoadingRow}>
+                <ActivityIndicator color="#C8A951" />
+                <Text style={styles.voiceLoadingText}>Loading Hey Cenaiva voice settings...</Text>
+              </View>
+            ) : (
+              <>
+                <Text style={styles.voiceCardTitle}>Choose Hey Cenaiva&apos;s voice</Text>
+                <Text style={styles.voiceCardBody}>
+                  Pick the voice Hey Cenaiva should use when speaking with you.
+                </Text>
+                <CenaivaVoiceOptionList
+                  selectedVoice={pendingVoice}
+                  disabled={voicePreferenceSaving}
+                  onSelect={setPendingVoice}
+                />
+                <Button
+                  title="Confirm voice"
+                  onPress={() => {
+                    if (!pendingVoice) return;
+                    void setVoicePreference(pendingVoice);
+                  }}
+                  loading={voicePreferenceSaving}
+                  disabled={!pendingVoice}
+                  style={styles.voiceConfirmButton}
+                />
+                <Text style={styles.voiceCardHint}>
+                  You can change this later in Profile Settings.
+                </Text>
+              </>
+            )}
+          </View>
+        </View>
+      ) : null}
     </KeyboardAvoidingView>
   );
 }

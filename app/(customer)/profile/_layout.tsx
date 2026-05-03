@@ -11,6 +11,7 @@ export default function ProfileStackLayout() {
     >
       <Stack.Screen name="index" />
       <Stack.Screen name="settings" />
+      <Stack.Screen name="cenaiva-voice" />
       <Stack.Screen name="edit" />
       <Stack.Screen name="privacy" />
       <Stack.Screen name="security" />

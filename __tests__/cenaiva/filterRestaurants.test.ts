@@ -51,6 +51,11 @@ describe('filterCenaivaRestaurants', () => {
     expect(next.map((item) => item.id)).toEqual(['thai-1']);
   });
 
+  it('preserves the assistant suggestion order when marker ids are present', () => {
+    const next = filterCenaivaRestaurants(restaurants, ['french-1', 'italian-1'], {});
+    expect(next.map((item) => item.id)).toEqual(['french-1', 'italian-1']);
+  });
+
   it('filters by query and city for assistant discovery refinements', () => {
     const next = filterCenaivaRestaurants(restaurants, [], { city: 'montreal', query: 'bistro' });
     expect(next.map((item) => item.id)).toEqual(['french-1']);

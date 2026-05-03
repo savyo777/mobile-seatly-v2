@@ -3,12 +3,15 @@ import { createAudioPlayer, setAudioModeAsync, type AudioPlayer } from 'expo-aud
 import * as FileSystem from 'expo-file-system/legacy';
 import * as Speech from 'expo-speech';
 import { useAuthSession } from '@/lib/auth/AuthContext';
+import { useCenaivaVoicePreference } from '@/lib/cenaiva/voice/CenaivaVoicePreferenceProvider';
 import { getSupabaseEnv, isSupabaseConfigured } from '@/lib/supabase/env';
 
 type QueueEntry = {
   text: string;
   promise: Promise<string | null>;
 };
+
+type PlayResult = 'played' | 'failed' | 'stopped';
 
 function arrayBufferToBase64(buffer: ArrayBuffer): string {
   const bytes = new Uint8Array(buffer);
@@ -51,6 +54,7 @@ function elevenLabsEnabled() {
 
 export function useMobileTTS() {
   const { session } = useAuthSession();
+  const { voiceId } = useCenaivaVoicePreference();
   const [isSpeaking, setIsSpeaking] = useState(false);
   const playerRef = useRef<AudioPlayer | null>(null);
   const tempFilesRef = useRef<string[]>([]);
@@ -58,6 +62,7 @@ export function useMobileTTS() {
   const queueGenerationRef = useRef(0);
   const queueRunningRef = useRef(false);
   const queueResolversRef = useRef<Array<() => void>>([]);
+  const currentPlaybackResolverRef = useRef<((result: PlayResult) => void) | null>(null);
 
   const cleanupTempFiles = useCallback(async () => {
     const files = tempFilesRef.current;
@@ -69,10 +74,17 @@ export function useMobileTTS() {
     );
   }, []);
 
+  const cleanupTempFile = useCallback(async (uri: string) => {
+    tempFilesRef.current = tempFilesRef.current.filter((file) => file !== uri);
+    await FileSystem.deleteAsync(uri, { idempotent: true }).catch(() => undefined);
+  }, []);
+
   const stopSpeaking = useCallback(() => {
     queueGenerationRef.current += 1;
     queueRef.current = [];
     queueRunningRef.current = false;
+    currentPlaybackResolverRef.current?.('stopped');
+    currentPlaybackResolverRef.current = null;
     try {
       playerRef.current?.pause();
     } catch {
@@ -105,7 +117,7 @@ export function useMobileTTS() {
             apikey: anonKey,
             'Content-Type': 'application/json',
           },
-          body: JSON.stringify({ text }),
+          body: JSON.stringify({ text, voice_id: voiceId ?? undefined }),
         });
         if (!response.ok) return null;
 
@@ -122,13 +134,13 @@ export function useMobileTTS() {
         });
         const info = await FileSystem.getInfoAsync(target).catch(() => null);
         if (!info?.exists || !info.size) return null;
-        tempFilesRef.current.push(target);
+        if (!tempFilesRef.current.includes(target)) tempFilesRef.current.push(target);
         return target;
       } catch {
         return null;
       }
     },
-    [session?.access_token],
+    [session?.access_token, voiceId],
   );
 
   const speakWithFallback = useCallback(
@@ -146,8 +158,8 @@ export function useMobileTTS() {
   );
 
   const playFile = useCallback(
-    async (uri: string): Promise<boolean> => {
-      if (!uri.trim()) return false;
+    async (uri: string): Promise<PlayResult> => {
+      if (!uri.trim()) return 'failed';
       try {
         await setAudioModeAsync({
           playsInSilentMode: true,
@@ -163,29 +175,38 @@ export function useMobileTTS() {
         playerRef.current = player;
         setIsSpeaking(true);
 
-        await new Promise<void>((resolve) => {
+        const result = await new Promise<PlayResult>((resolve) => {
           let resolved = false;
-          const finish = () => {
+          let timeout: ReturnType<typeof setTimeout> | null = null;
+          const finish = (next: PlayResult) => {
             if (resolved) return;
             resolved = true;
+            currentPlaybackResolverRef.current = null;
             sub?.remove?.();
-            resolve();
+            if (timeout) clearTimeout(timeout);
+            resolve(next);
           };
+          currentPlaybackResolverRef.current = finish;
           const sub = (player as unknown as {
             addListener?: (
               event: string,
               listener: (status: { didJustFinish?: boolean; playing?: boolean }) => void,
             ) => { remove: () => void };
           }).addListener?.('playbackStatusUpdate', (status) => {
-            if (status.didJustFinish) finish();
+            if (status.didJustFinish) finish('played');
           });
-          player.play();
-          setTimeout(finish, 30_000);
+          try {
+            player.play();
+          } catch {
+            finish('failed');
+            return;
+          }
+          timeout = setTimeout(() => finish('failed'), 30_000);
         });
 
-        return true;
+        return result;
       } catch {
-        return false;
+        return 'failed';
       } finally {
         try {
           playerRef.current?.remove();
@@ -194,10 +215,10 @@ export function useMobileTTS() {
         }
         playerRef.current = null;
         setIsSpeaking(false);
-        await cleanupTempFiles();
+        await cleanupTempFile(uri);
       }
     },
-    [cleanupTempFiles],
+    [cleanupTempFile],
   );
 
   const speak = useCallback(
@@ -207,8 +228,9 @@ export function useMobileTTS() {
       stopSpeaking();
       const file = await fetchTTSFile(trimmed);
       if (file) {
-        const played = await playFile(file);
-        if (played) return true;
+        const result = await playFile(file);
+        if (result === 'played') return true;
+        if (result === 'stopped') return false;
       }
       setIsSpeaking(true);
       await speakWithFallback(trimmed);
@@ -231,10 +253,15 @@ export function useMobileTTS() {
           const file = await entry.promise;
           if (queueGenerationRef.current !== generation) return;
           if (file) {
-            const played = await playFile(file);
-            if (!played) await speakWithFallback(entry.text);
+            const result = await playFile(file);
+            if (queueGenerationRef.current !== generation || result === 'stopped') return;
+            if (result === 'failed') {
+              await speakWithFallback(entry.text);
+              if (queueGenerationRef.current !== generation) return;
+            }
           } else {
             await speakWithFallback(entry.text);
+            if (queueGenerationRef.current !== generation) return;
           }
         }
       } finally {

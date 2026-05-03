@@ -11,6 +11,7 @@ import { ThemeProvider, useColors } from '@/lib/theme';
 import { MenuProvider } from '@/lib/context/MenuContext';
 import { createStackTransitionOptions } from '@/lib/navigation/transitions';
 import { CenaivaAssistantProvider } from '@/lib/cenaiva/CenaivaAssistantProvider';
+import { CenaivaVoicePreferenceProvider } from '@/lib/cenaiva/voice/CenaivaVoicePreferenceProvider';
 import { getSupabase } from '@/lib/supabase/client';
 import { CookieConsentBanner } from '@/components/cookie-consent/CookieConsentBanner';
 import { getStripeEnv } from '@/lib/stripe/env';
@@ -147,9 +148,11 @@ export default function RootLayout() {
     <ThemeProvider>
       <AuthProvider>
         <MenuProvider>
-          <CenaivaAssistantProvider>
-            <ThemedRootShell />
-          </CenaivaAssistantProvider>
+          <CenaivaVoicePreferenceProvider>
+            <CenaivaAssistantProvider>
+              <ThemedRootShell />
+            </CenaivaAssistantProvider>
+          </CenaivaVoicePreferenceProvider>
         </MenuProvider>
       </AuthProvider>
     </ThemeProvider>

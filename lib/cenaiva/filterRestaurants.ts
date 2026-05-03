@@ -37,9 +37,11 @@ export function filterCenaivaRestaurants(
   filters: FiltersDelta | null | undefined,
 ): Restaurant[] {
   const markerIds = Array.isArray(markerRestaurantIds) ? markerRestaurantIds : [];
-  const markerSet = new Set(markerIds);
+  const restaurantsById = new Map(restaurants.map((restaurant) => [restaurant.id, restaurant]));
   let next = markerIds.length
-    ? restaurants.filter((restaurant) => markerSet.has(restaurant.id))
+    ? markerIds
+        .map((restaurantId) => restaurantsById.get(restaurantId))
+        .filter((restaurant): restaurant is Restaurant => Boolean(restaurant))
     : restaurants;
 
   next = next.filter((restaurant) => matchesCuisine(restaurant, filters?.cuisine));

@@ -298,6 +298,12 @@ export default function SettingsScreen() {
       rows: [
         {
           kind: 'nav',
+          icon: 'volume-high-outline',
+          label: 'Hey Cenaiva voice',
+          href: '/(customer)/profile/cenaiva-voice',
+        },
+        {
+          kind: 'nav',
           icon: 'notifications-outline',
           label: 'Notifications',
           href: '/(customer)/profile/notifications',
