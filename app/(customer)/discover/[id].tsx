@@ -1,12 +1,18 @@
-import React, { useMemo, useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, Image, Pressable, Linking } from 'react-native';
+import React, { useEffect, useMemo, useState } from 'react';
+import { ActivityIndicator, View, Text, StyleSheet, ScrollView, Image, Pressable, Linking } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { Button, Card, Badge, ScreenWrapper } from '@/components/ui';
+import { Button, Badge, ScreenWrapper } from '@/components/ui';
 import { mockRestaurants } from '@/lib/mock/restaurants';
-import { mockMenuItems } from '@/lib/mock/menuItems';
+import { mockMenuItems, type MenuItem as MockMenuItem } from '@/lib/mock/menuItems';
 import { useMenu } from '@/lib/context/MenuContext';
+import { loadRestaurantsForDiscover } from '@/lib/data/restaurantCatalog';
+import {
+  usePublicMenuCategories,
+  usePublicMenuItems,
+  type MenuItem as PublicMenuItem,
+} from '@/lib/cenaiva/api/dataHooks';
 import { listSnapPostsByRestaurant } from '@/lib/mock/snaps';
 import { formatCurrency } from '@/lib/utils/formatCurrency';
 import { useColors, createStyles, spacing, borderRadius, typography, shadows } from '@/lib/theme';
@@ -14,27 +20,86 @@ import { Ionicons } from '@expo/vector-icons';
 
 const WEEKDAY_KEYS = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'] as const;
 const WEEKDAY_SHORT = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+const MENU_ALL_TAB = '__all__';
+
+type HoursRange = { open: string; close: string };
+type ParsedClockTime = {
+  hour: number;
+  minute: number;
+  minutes: number;
+  hasMeridiem: boolean;
+};
 
 function priceRangeLabel(range: number): string {
   return '$'.repeat(range) as string;
 }
 
-function isOpenNow(hoursJson: Record<string, { open: string; close: string }>): boolean {
-  const now = new Date();
-  const key = WEEKDAY_KEYS[now.getDay()];
-  const hours = hoursJson[key];
-  if (!hours) return false;
-  const [openH, openM] = hours.open.split(':').map(Number);
-  const [closeH, closeM] = hours.close.split(':').map(Number);
-  const current = now.getHours() * 60 + now.getMinutes();
-  return current >= openH * 60 + openM && current < closeH * 60 + closeM;
+function parseClockTime(value: string | null | undefined): ParsedClockTime | null {
+  const cleaned = String(value ?? '').trim().toLowerCase().replace(/\./g, '');
+  const match = cleaned.match(/^(\d{1,2})(?::(\d{1,2}))?(?::\d{1,2})?\s*(am|pm)?$/);
+  if (!match) return null;
+
+  const rawHour = Number(match[1]);
+  const minute = match[2] == null ? 0 : Number(match[2]);
+  const meridiem = match[3] as 'am' | 'pm' | undefined;
+  if (!Number.isFinite(rawHour) || !Number.isFinite(minute) || minute < 0 || minute > 59) {
+    return null;
+  }
+  if (!meridiem && (rawHour < 0 || rawHour > 23)) return null;
+  if (meridiem && (rawHour < 1 || rawHour > 12)) return null;
+
+  let hour = rawHour;
+  if (meridiem === 'pm' && hour < 12) hour += 12;
+  if (meridiem === 'am' && hour === 12) hour = 0;
+
+  return {
+    hour,
+    minute,
+    minutes: hour * 60 + minute,
+    hasMeridiem: Boolean(meridiem),
+  };
 }
 
-function formatHour(time: string): string {
-  const [h, m] = time.split(':').map(Number);
-  const period = h >= 12 ? 'PM' : 'AM';
-  const hour = h % 12 || 12;
-  return m === 0 ? `${hour} ${period}` : `${hour}:${String(m).padStart(2, '0')} ${period}`;
+function normalizeHoursRange(hours: HoursRange | null | undefined): { open: number; close: number } | null {
+  if (!hours) return null;
+  const open = parseClockTime(hours.open);
+  const close = parseClockTime(hours.close);
+  if (!open || !close) return null;
+
+  let closeMinutes = close.minutes;
+  if (!close.hasMeridiem && closeMinutes <= open.minutes) {
+    closeMinutes += open.minutes < 12 * 60 && close.hour <= 12 ? 12 * 60 : 24 * 60;
+    if (closeMinutes <= open.minutes) closeMinutes += 12 * 60;
+  } else if (closeMinutes <= open.minutes) {
+    closeMinutes += 24 * 60;
+  }
+
+  return { open: open.minutes, close: closeMinutes };
+}
+
+function formatClockMinutes(totalMinutes: number): string {
+  const minutesInDay = ((totalMinutes % 1440) + 1440) % 1440;
+  const hour24 = Math.floor(minutesInDay / 60);
+  const minute = minutesInDay % 60;
+  const period = hour24 >= 12 ? 'PM' : 'AM';
+  const hour12 = hour24 % 12 || 12;
+  return `${hour12}:${String(minute).padStart(2, '0')} ${period}`;
+}
+
+function formatHoursRange(hours: HoursRange | null | undefined): string {
+  const range = normalizeHoursRange(hours);
+  if (!range) return 'Closed';
+  return `${formatClockMinutes(range.open)} - ${formatClockMinutes(range.close)}`;
+}
+
+function isOpenNow(hoursJson: Record<string, HoursRange>): boolean {
+  const now = new Date();
+  const key = WEEKDAY_KEYS[now.getDay()];
+  const range = normalizeHoursRange(hoursJson[key]);
+  if (!range) return false;
+  const current = now.getHours() * 60 + now.getMinutes();
+  if (current >= range.open && current < range.close) return true;
+  return range.close > 1440 && current + 1440 < range.close;
 }
 
 function openMaps(address: string, city: string) {
@@ -42,6 +107,64 @@ function openMaps(address: string, city: string) {
   Linking.openURL(`https://maps.apple.com/?q=${query}`).catch(() =>
     Linking.openURL(`https://www.google.com/maps/search/?api=1&query=${query}`)
   );
+}
+
+function mergeCatalogWithMockFallback(restaurants: typeof mockRestaurants) {
+  const seen = new Set(restaurants.map((restaurant) => restaurant.id));
+  return [
+    ...restaurants,
+    ...mockRestaurants.filter((restaurant) => !seen.has(restaurant.id)),
+  ];
+}
+
+type DisplayMenuItem = {
+  id: string;
+  name: string;
+  description: string | null;
+  price: number;
+  category: string;
+  photoUrl: string | null;
+  isAvailable: boolean;
+  sortOrder: number;
+};
+
+function displayMenuItemFromPublic(
+  item: PublicMenuItem,
+  categoryNameById: Map<string, string>,
+): DisplayMenuItem {
+  return {
+    id: item.id,
+    name: item.name,
+    description: item.description,
+    price: item.price,
+    category: item.category_id
+      ? categoryNameById.get(item.category_id) ?? item.category ?? 'Menu'
+      : item.category ?? 'Menu',
+    photoUrl: item.photo_url,
+    isAvailable: item.is_available !== false,
+    sortOrder: item.sort_order ?? 0,
+  };
+}
+
+function displayMenuItemFromMock(item: MockMenuItem): DisplayMenuItem {
+  return {
+    id: item.id,
+    name: item.name,
+    description: item.description,
+    price: item.price,
+    category: item.category || 'Menu',
+    photoUrl: item.photoUrl?.trim() || null,
+    isAvailable: item.isAvailable,
+    sortOrder: item.preparationTimeMinutes,
+  };
+}
+
+function groupDisplayMenuItems(items: DisplayMenuItem[]) {
+  return items.reduce<Record<string, DisplayMenuItem[]>>((groups, item) => {
+    groups[item.category] = groups[item.category] ?? [];
+    groups[item.category].push(item);
+    return groups;
+  }, {});
 }
 
 const useStyles = createStyles((c) => ({
@@ -265,33 +388,98 @@ const useStyles = createStyles((c) => ({
     color: c.textPrimary,
     fontWeight: '600',
   },
-  featuredRow: {
-    gap: spacing.md,
-    paddingBottom: spacing.lg,
+  menuGroup: {
+    gap: spacing.sm,
+    marginBottom: spacing.lg,
   },
-  menuCard: {
-    width: 160,
-    overflow: 'hidden',
+  menuCategory: {
+    ...typography.label,
+    color: c.gold,
+    marginBottom: spacing.xs,
+  },
+  menuItem: {
+    flexDirection: 'row',
+    gap: spacing.md,
+    borderRadius: borderRadius.lg,
+    borderWidth: 1,
+    borderColor: c.border,
+    backgroundColor: c.bgSurface,
+    padding: spacing.sm,
     ...shadows.card,
   },
   menuPhoto: {
-    width: '100%',
-    height: 100,
+    width: 86,
+    height: 86,
+    borderRadius: borderRadius.md,
     backgroundColor: c.bgElevated,
   },
-  menuCardBody: {
-    padding: spacing.md,
+  menuPhotoPlaceholder: {
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  menuBody: {
+    flex: 1,
+    minWidth: 0,
   },
   menuName: {
     ...typography.body,
     color: c.textPrimary,
     fontWeight: '600',
-    marginBottom: spacing.xs,
+  },
+  menuDescription: {
+    ...typography.bodySmall,
+    color: c.textMuted,
+    marginTop: 3,
+    lineHeight: 17,
   },
   menuPrice: {
     ...typography.body,
     color: c.gold,
     fontWeight: '600',
+    marginTop: spacing.xs,
+  },
+  menuUnavailable: {
+    ...typography.bodySmall,
+    color: c.textMuted,
+    fontWeight: '600',
+    marginTop: 2,
+  },
+  menuLoading: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+    paddingVertical: spacing.md,
+  },
+  menuEmpty: {
+    ...typography.body,
+    color: c.textMuted,
+    marginBottom: spacing.lg,
+  },
+  menuTabs: {
+    gap: spacing.sm,
+    paddingBottom: spacing.md,
+  },
+  menuTab: {
+    minHeight: 36,
+    borderRadius: borderRadius.full,
+    borderWidth: 1,
+    borderColor: c.border,
+    backgroundColor: c.bgSurface,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: spacing.md,
+  },
+  menuTabActive: {
+    borderColor: c.gold,
+    backgroundColor: c.gold,
+  },
+  menuTabText: {
+    ...typography.bodySmall,
+    color: c.textSecondary,
+    fontWeight: '700',
+  },
+  menuTabTextActive: {
+    color: '#000000',
   },
   photoSectionHeader: {
     flexDirection: 'row',
@@ -348,26 +536,102 @@ const useStyles = createStyles((c) => ({
 export default function RestaurantDetailScreen() {
   const [aboutExpanded, setAboutExpanded] = useState(false);
   const [hoursExpanded, setHoursExpanded] = useState(false);
+  const [selectedMenuTab, setSelectedMenuTab] = useState(MENU_ALL_TAB);
   const { id, preview } = useLocalSearchParams<{ id: string; preview?: string }>();
+  const restaurantId = Array.isArray(id) ? id[0] : id;
   const isPreview = preview === '1';
   const { t } = useTranslation();
   const c = useColors();
   const styles = useStyles();
   const router = useRouter();
   const insets = useSafeAreaInsets();
-  const { items: ownerMenuItems, photos: ownerPhotos } = useMenu();
+  const { items: ownerMenuItems } = useMenu();
+  const [catalog, setCatalog] = useState(mockRestaurants);
+  const [catalogLoading, setCatalogLoading] = useState(true);
 
-  const restaurant = useMemo(() => mockRestaurants.find((r) => r.id === id), [id]);
+  useEffect(() => {
+    let cancelled = false;
+    setCatalogLoading(true);
+    loadRestaurantsForDiscover()
+      .then(({ list }) => {
+        if (!cancelled) setCatalog(mergeCatalogWithMockFallback(list));
+      })
+      .finally(() => {
+        if (!cancelled) setCatalogLoading(false);
+      });
 
-  const featuredItems = useMemo(
-    () => isPreview
-      ? ownerMenuItems
-      : mockMenuItems.filter((m) => m.restaurantId === id && m.isFeatured),
-    [id, isPreview, ownerMenuItems],
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  const restaurant = useMemo(
+    () => catalog.find((r) => r.id === restaurantId || r.slug === restaurantId),
+    [catalog, restaurantId],
   );
+  const { categories: menuCategories } = usePublicMenuCategories(isPreview ? null : restaurant?.id);
+  const { items: publicMenuItems, loading: menuLoading } = usePublicMenuItems(
+    isPreview ? null : restaurant?.id,
+  );
+  const categoryNameById = useMemo(
+    () => new Map(menuCategories.map((category) => [category.id, category.name])),
+    [menuCategories],
+  );
+
+  const menuItems = useMemo<DisplayMenuItem[]>(() => {
+    if (isPreview) {
+      return ownerMenuItems
+        .map(displayMenuItemFromMock)
+        .sort((a, b) => a.category.localeCompare(b.category) || a.sortOrder - b.sortOrder || a.name.localeCompare(b.name));
+    }
+
+    if (publicMenuItems.length) {
+      return publicMenuItems
+        .map((item) => displayMenuItemFromPublic(item, categoryNameById))
+        .sort((a, b) => a.category.localeCompare(b.category) || a.sortOrder - b.sortOrder || a.name.localeCompare(b.name));
+    }
+
+    if (!restaurant?.id?.startsWith('r')) return [];
+
+    return mockMenuItems
+      .filter((item) => item.restaurantId === restaurant.id)
+      .map(displayMenuItemFromMock)
+      .sort((a, b) => a.category.localeCompare(b.category) || a.sortOrder - b.sortOrder || a.name.localeCompare(b.name));
+  }, [categoryNameById, isPreview, ownerMenuItems, publicMenuItems, restaurant?.id]);
+
+  const menuCategoryTabs = useMemo(
+    () => Array.from(new Set(menuItems.map((item) => item.category))),
+    [menuItems],
+  );
+  const visibleMenuItems = useMemo(
+    () => selectedMenuTab === MENU_ALL_TAB
+      ? menuItems
+      : menuItems.filter((item) => item.category === selectedMenuTab),
+    [menuItems, selectedMenuTab],
+  );
+  const visibleGroupedMenuItems = useMemo(
+    () => groupDisplayMenuItems(visibleMenuItems),
+    [visibleMenuItems],
+  );
+
+  useEffect(() => {
+    if (selectedMenuTab !== MENU_ALL_TAB && !menuCategoryTabs.includes(selectedMenuTab)) {
+      setSelectedMenuTab(MENU_ALL_TAB);
+    }
+  }, [menuCategoryTabs, selectedMenuTab]);
 
   const todayKey = WEEKDAY_KEYS[new Date().getDay()];
   const todayHours = restaurant?.hoursJson[todayKey];
+
+  if (!restaurant && catalogLoading) {
+    return (
+      <ScreenWrapper>
+        <View style={styles.centered}>
+          <ActivityIndicator color={c.gold} />
+        </View>
+      </ScreenWrapper>
+    );
+  }
 
   if (!restaurant) {
     return (
@@ -480,7 +744,7 @@ export default function RestaurantDetailScreen() {
               </View>
             </View>
             <Text style={styles.todayHours}>
-              Today: {todayHours ? `${formatHour(todayHours.open)} – ${formatHour(todayHours.close)}` : 'Closed'}
+              Today: {formatHoursRange(todayHours)}
             </Text>
             {hoursExpanded && (
               <View style={styles.hoursGrid}>
@@ -493,7 +757,7 @@ export default function RestaurantDetailScreen() {
                         {WEEKDAY_SHORT[i]}
                       </Text>
                       <Text style={[styles.hoursTime, isToday && styles.hoursTimeToday]}>
-                        {h ? `${formatHour(h.open)} – ${formatHour(h.close)}` : 'Closed'}
+                        {formatHoursRange(h)}
                       </Text>
                     </View>
                   );
@@ -506,20 +770,79 @@ export default function RestaurantDetailScreen() {
             </Pressable>
           </View>
 
-          <Text style={styles.sectionHeading}>{t('restaurant.featuredMenu')}</Text>
-          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.featuredRow}>
-            {featuredItems.map((item) => (
-              <Card key={item.id} style={styles.menuCard} padded={false}>
-                <Image source={{ uri: item.photoUrl }} style={styles.menuPhoto} />
-                <View style={styles.menuCardBody}>
-                  <Text style={styles.menuName} numberOfLines={2}>
-                    {item.name}
-                  </Text>
-                  <Text style={styles.menuPrice}>{formatCurrency(item.price, currency)}</Text>
-                </View>
-              </Card>
-            ))}
-          </ScrollView>
+          <View style={styles.section}>
+            <Text style={styles.sectionHeading}>{t('restaurant.menu')}</Text>
+            {menuLoading ? (
+              <View style={styles.menuLoading}>
+                <ActivityIndicator color={c.gold} />
+                <Text style={styles.bodyText}>Loading menu</Text>
+              </View>
+            ) : menuItems.length ? (
+              <>
+                <ScrollView
+                  horizontal
+                  showsHorizontalScrollIndicator={false}
+                  contentContainerStyle={styles.menuTabs}
+                >
+                  {[
+                    { key: MENU_ALL_TAB, label: 'All' },
+                    ...menuCategoryTabs.map((category) => ({ key: category, label: category })),
+                  ].map((tab) => {
+                    const selected = selectedMenuTab === tab.key;
+                    return (
+                      <Pressable
+                        key={tab.key}
+                        accessibilityRole="button"
+                        accessibilityLabel={`Show ${tab.label} menu items`}
+                        onPress={() => setSelectedMenuTab(tab.key)}
+                        style={({ pressed }) => [
+                          styles.menuTab,
+                          selected && styles.menuTabActive,
+                          pressed && { opacity: 0.82 },
+                        ]}
+                      >
+                        <Text style={[styles.menuTabText, selected && styles.menuTabTextActive]}>
+                          {tab.label}
+                        </Text>
+                      </Pressable>
+                    );
+                  })}
+                </ScrollView>
+
+                {Object.entries(visibleGroupedMenuItems).map(([category, items]) => (
+                  <View key={category} style={styles.menuGroup}>
+                    <Text style={styles.menuCategory}>{category}</Text>
+                    {items.map((item) => {
+                      const imageUrl = item.photoUrl?.trim();
+                      return (
+                        <View key={item.id} style={styles.menuItem}>
+                          {imageUrl ? (
+                            <Image source={{ uri: imageUrl }} style={styles.menuPhoto} resizeMode="cover" />
+                          ) : (
+                            <View style={[styles.menuPhoto, styles.menuPhotoPlaceholder]}>
+                              <Ionicons name="restaurant-outline" size={24} color={c.textMuted} />
+                            </View>
+                          )}
+                          <View style={styles.menuBody}>
+                            <Text style={styles.menuName} numberOfLines={2}>{item.name}</Text>
+                            {item.description ? (
+                              <Text style={styles.menuDescription} numberOfLines={3}>{item.description}</Text>
+                            ) : null}
+                            <Text style={styles.menuPrice}>{formatCurrency(item.price, currency)}</Text>
+                            {!item.isAvailable ? (
+                              <Text style={styles.menuUnavailable}>Currently unavailable</Text>
+                            ) : null}
+                          </View>
+                        </View>
+                      );
+                    })}
+                  </View>
+                ))}
+              </>
+            ) : (
+              <Text style={styles.menuEmpty}>This restaurant has not published a menu yet.</Text>
+            )}
+          </View>
 
           {(() => {
             const snapPhotos = listSnapPostsByRestaurant(restaurant.id).slice(0, 3);

@@ -17,8 +17,10 @@ export type MenuItem = {
   price: number;
   category: string | null;
   category_id: string | null;
+  photo_url: string | null;
   is_available: boolean | null;
   is_preorderable: boolean | null;
+  sort_order: number | null;
 };
 
 function num(value: unknown, fallback = 0): number {
@@ -127,10 +129,11 @@ export function usePublicMenuItems(restaurantId: string | null | undefined) {
         }
         const { data, error } = await supabase
           .from('menu_items')
-          .select('id,restaurant_id,name,description,price,category,category_id,is_available,is_preorderable,is_active')
+          .select('id,restaurant_id,name,description,price,category,category_id,photo_url,is_available,is_preorderable,is_active,sort_order')
           .eq('restaurant_id', restaurantId)
           .eq('is_active', true)
           .order('category', { ascending: true })
+          .order('sort_order', { ascending: true })
           .order('name', { ascending: true });
         if (error) throw error;
         if (!cancelled) {
@@ -143,8 +146,10 @@ export function usePublicMenuItems(restaurantId: string | null | undefined) {
               price: num(row.price),
               category: typeof row.category === 'string' ? row.category : null,
               category_id: typeof row.category_id === 'string' ? row.category_id : null,
+              photo_url: typeof row.photo_url === 'string' && row.photo_url.trim() ? row.photo_url : null,
               is_available: typeof row.is_available === 'boolean' ? row.is_available : null,
               is_preorderable: typeof row.is_preorderable === 'boolean' ? row.is_preorderable : null,
+              sort_order: typeof row.sort_order === 'number' ? row.sort_order : null,
             })),
           );
         }

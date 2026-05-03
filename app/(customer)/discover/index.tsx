@@ -17,7 +17,6 @@ import { DiscoverHeroFeatured } from '@/components/discover/DiscoverHeroFeatured
 import { DiscoverHorizontalSection } from '@/components/discover/DiscoverHorizontalSection';
 import { DiscoverMapView } from '@/components/discover/DiscoverMapView';
 import { PostVisitPrompt } from '@/components/snaps/PostVisitPrompt';
-import { TrendingDishesRow } from '@/components/discover/TrendingDishesRow';
 import { DISCOVER_USER_FIRST_NAME } from '@/lib/constants/personalization';
 import type { DiscoverCategorySlug } from '@/lib/discover/discoverCategories';
 import { getTorontoGreetingPeriod } from '@/lib/discover/torontoTime';
@@ -30,7 +29,6 @@ import {
   follow,
   unfollow,
   listTrendingRestaurants,
-  listTrendingDishes,
 } from '@/lib/mock/social';
 import { getUnreadCount } from '@/lib/mock/notifications';
 import { mockCustomer } from '@/lib/mock/users';
@@ -396,8 +394,6 @@ export default function DiscoverScreen() {
       .slice(0, 10);
   }, [baseRestaurants]);
 
-  const trendingDishes = useMemo(() => listTrendingDishes(7).slice(0, 10), []);
-
   const onRefresh = () => {
     setRefreshing(true);
     loadRestaurantsForDiscover()
@@ -600,15 +596,6 @@ export default function DiscoverScreen() {
               title={t('discover.sectionMostSnapped')}
               data={mostSnappedData}
               onPressCard={openRestaurant}
-              onPressSeeAll={() => router.push('/(customer)/discover/explore' as Href)}
-            />
-
-            <TrendingDishesRow
-              title={t('discover.sectionTrendingDishes')}
-              data={trendingDishes}
-              onPressDish={(d) =>
-                router.push(`/(customer)/discover/snaps/detail/${d.samplePost.id}` as Href)
-              }
               onPressSeeAll={() => router.push('/(customer)/discover/explore' as Href)}
             />
 
