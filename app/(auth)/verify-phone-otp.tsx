@@ -170,7 +170,7 @@ export default function VerifyPhoneOtpScreen() {
       if (source === 'owner-login') {
         const allowed = await enforceRole(session.user.id, 'owner');
         if (!allowed) return;
-        nextHref = '/(staff)';
+        nextHref = '/(customer)';
       } else if (source === 'login') {
         const { href, role } = await resolveHomeForSignedInUser(session.user.id, session.user);
         if (!role) {
@@ -189,7 +189,7 @@ export default function VerifyPhoneOtpScreen() {
         } catch {
           // best-effort
         }
-        nextHref = '/(staff)';
+        nextHref = '/(customer)';
       } else {
         try {
           await ensureCustomerProfile(session, {

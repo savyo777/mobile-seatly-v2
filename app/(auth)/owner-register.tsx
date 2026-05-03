@@ -286,7 +286,7 @@ export default function OwnerRegisterScreen() {
             // best-effort
           }
           Alert.alert('Account updated', 'Restaurant access has been added to your existing account.');
-          router.replace('/(staff)');
+          router.replace('/(customer)');
           return;
         }
         Alert.alert('Sign up failed', error.message);
@@ -307,7 +307,7 @@ export default function OwnerRegisterScreen() {
         'Account created',
         'If email confirmation is enabled, please verify your email before signing in.',
       );
-      router.replace(data.session ? '/(staff)' : '/(auth)/login');
+      router.replace(data.session ? '/(customer)' : '/(auth)/login');
     } finally {
       setSubmitting(false);
     }
@@ -379,7 +379,7 @@ export default function OwnerRegisterScreen() {
       } catch {
         // ignore: profile creation is best-effort and can be retried later
       }
-      router.replace('/(staff)');
+      router.replace('/(customer)');
     } finally {
       setSubmitting(false);
     }
@@ -571,7 +571,7 @@ export default function OwnerRegisterScreen() {
         </View>
 
         <SocialAuthButtons
-          onApple={() => router.replace('/(staff)')}
+          onApple={() => router.replace('/(customer)')}
           onGoogle={handleGoogle}
         />
 

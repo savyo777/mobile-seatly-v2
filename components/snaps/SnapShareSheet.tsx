@@ -1,20 +1,35 @@
-import React, { useState } from 'react';
+import React from 'react';
 import {
   View,
   Text,
   Pressable,
-  ActivityIndicator,
-  Image,
+  StyleSheet,
 } from 'react-native';
+import { Image } from 'expo-image';
 import { Ionicons } from '@expo/vector-icons';
 import { borderRadius, createStyles, shadows, spacing, typography, useColors } from '@/lib/theme';
-import { shareSnapToSocial } from '@/lib/sharing/generateShareCard';
+import {
+  openUserSocialApp,
+  type UserSocialPlatform,
+} from '@/lib/config/cenaivaSocial';
 
 interface SnapShareSheetProps {
   imageUrl: string;
-  restaurantName: string;
-  rating?: number;
 }
+
+const SOCIAL_ICON: Record<UserSocialPlatform, keyof typeof Ionicons.glyphMap> = {
+  instagram: 'logo-instagram',
+  tiktok: 'logo-tiktok',
+  youtube: 'logo-youtube',
+  snapchat: 'chatbubble-ellipses-outline',
+};
+
+const SOCIAL_LABEL: Record<UserSocialPlatform, string> = {
+  instagram: 'Instagram',
+  tiktok: 'TikTok',
+  youtube: 'YouTube',
+  snapchat: 'Snapchat',
+};
 
 const useStyles = createStyles((c) => ({
   card: {
@@ -39,52 +54,66 @@ const useStyles = createStyles((c) => ({
   },
   preview: {
     width: '100%',
-    height: 160,
-    borderRadius: borderRadius.md,
+    height: 340,
+    borderRadius: borderRadius.lg,
     backgroundColor: c.bgBase,
+    overflow: 'hidden',
+  },
+  previewBackdrop: {
+    ...StyleSheet.absoluteFillObject,
+  },
+  previewBackdropShade: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: 'rgba(0,0,0,0.22)',
+  },
+  previewImage: {
+    ...StyleSheet.absoluteFillObject,
   },
   hint: {
     ...typography.bodySmall,
     color: c.textSecondary,
     lineHeight: 18,
   },
-  shareBtn: {
+  socialGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: spacing.sm,
+    justifyContent: 'space-between',
+  },
+  socialChip: {
+    width: '48%',
+    flexGrow: 1,
+    minWidth: '45%',
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: c.gold,
-    borderRadius: borderRadius.lg,
-    paddingVertical: spacing.md,
-    paddingHorizontal: spacing.lg,
-    gap: spacing.sm,
-    minHeight: 48,
+    gap: spacing.xs,
+    paddingVertical: spacing.sm,
+    paddingHorizontal: spacing.sm,
+    borderRadius: borderRadius.md,
+    backgroundColor: c.bgBase,
+    borderWidth: 1,
+    borderColor: c.border,
   },
-  shareBtnPressed: {
+  socialChipPressed: {
     opacity: 0.82,
   },
-  btnIcon: {
-    marginRight: 2,
-  },
-  shareBtnLabel: {
-    ...typography.body,
-    color: c.bgBase,
-    fontWeight: '700',
+  socialChipLabel: {
+    ...typography.bodySmall,
+    color: c.textPrimary,
+    fontWeight: '600',
   },
 }));
 
-export function SnapShareSheet({ imageUrl, restaurantName, rating }: SnapShareSheetProps) {
+const SOCIAL_ORDER: UserSocialPlatform[] = ['instagram', 'snapchat', 'youtube', 'tiktok'];
+
+/**
+ * Direct-link buttons: open the user's own app (if installed) so they can post fast while logged in.
+ * Image preview keeps the full snap visible while using a blurred backdrop instead of black side bars.
+ */
+export function SnapShareSheet({ imageUrl }: SnapShareSheetProps) {
   const c = useColors();
   const styles = useStyles();
-  const [sharing, setSharing] = useState(false);
-
-  const handleShare = async () => {
-    setSharing(true);
-    try {
-      await shareSnapToSocial(imageUrl, restaurantName, rating);
-    } finally {
-      setSharing(false);
-    }
-  };
 
   return (
     <View style={styles.card}>
@@ -94,29 +123,32 @@ export function SnapShareSheet({ imageUrl, restaurantName, rating }: SnapShareSh
       </View>
 
       {imageUrl ? (
-        <Image source={{ uri: imageUrl }} style={styles.preview} resizeMode="cover" />
+        <View style={styles.preview}>
+          <Image source={{ uri: imageUrl }} style={styles.previewBackdrop} contentFit="cover" blurRadius={24} />
+          <View style={styles.previewBackdropShade} />
+          <Image source={{ uri: imageUrl }} style={styles.previewImage} contentFit="contain" />
+        </View>
       ) : null}
 
       <Text style={styles.hint}>
-        Share to Instagram, TikTok, iMessage & more — with Cenaiva branding so your friends can discover the restaurant too.
+        Jump straight into your apps to post this moment — you’re already logged in there. If an app isn’t installed,
+        we’ll open the website instead.
       </Text>
 
-      <Pressable
-        onPress={handleShare}
-        disabled={sharing}
-        style={({ pressed }) => [styles.shareBtn, (pressed || sharing) && styles.shareBtnPressed]}
-        accessibilityRole="button"
-        accessibilityLabel="Share snap to social media"
-      >
-        {sharing ? (
-          <ActivityIndicator size="small" color={c.bgBase} />
-        ) : (
-          <>
-            <Ionicons name="logo-instagram" size={18} color={c.bgBase} style={styles.btnIcon} />
-            <Text style={styles.shareBtnLabel}>Share to Instagram, TikTok & more</Text>
-          </>
-        )}
-      </Pressable>
+      <View style={styles.socialGrid}>
+        {SOCIAL_ORDER.map((platform) => (
+          <Pressable
+            key={platform}
+            onPress={() => void openUserSocialApp(platform)}
+            style={({ pressed }) => [styles.socialChip, pressed && styles.socialChipPressed]}
+            accessibilityRole="button"
+            accessibilityLabel={`Open ${SOCIAL_LABEL[platform]} to post`}
+          >
+            <Ionicons name={SOCIAL_ICON[platform]} size={20} color={c.gold} />
+            <Text style={styles.socialChipLabel}>{SOCIAL_LABEL[platform]}</Text>
+          </Pressable>
+        ))}
+      </View>
     </View>
   );
 }

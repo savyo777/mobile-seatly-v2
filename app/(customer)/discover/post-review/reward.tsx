@@ -55,18 +55,16 @@ export default function ReviewRewardScreen() {
   const c = useColors();
   const styles = useStyles();
   const router = useRouter();
-  const { points, restaurantName, restaurantId, photoUri, rating } = useLocalSearchParams<{
+  const { points, restaurantName, restaurantId, photoUri } = useLocalSearchParams<{
     points: string;
     restaurantName: string;
     restaurantId?: string;
     photoUri?: string;
-    rating?: string;
   }>();
   const pulse = useRef(new Animated.Value(0.9)).current;
   const actionFade = useRef(new Animated.Value(0)).current;
 
   const numericPoints = Number(points ?? 25);
-  const numericRating = rating ? (Number(rating) as 1 | 2 | 3 | 4 | 5) : undefined;
   const decodedName = restaurantName ? decodeURIComponent(restaurantName) : 'Restaurant';
   const decodedPhoto = photoUri ? decodeURIComponent(photoUri) : '';
 
@@ -105,11 +103,7 @@ export default function ReviewRewardScreen() {
 
         <Animated.View style={[styles.actions, { opacity: actionFade }]}>
           {decodedPhoto ? (
-            <SnapShareSheet
-              imageUrl={decodedPhoto}
-              restaurantName={decodedName}
-              rating={numericRating}
-            />
+            <SnapShareSheet imageUrl={decodedPhoto} />
           ) : null}
 
           <Button

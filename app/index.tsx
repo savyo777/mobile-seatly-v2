@@ -55,7 +55,7 @@ export default function SplashScreen() {
           router.replace('/(staff)');
           return;
         }
-        router.replace(isStaffLike ? '/(staff)' : '/(customer)');
+        router.replace('/(customer)');
       })();
     }, 300);
     return () => {

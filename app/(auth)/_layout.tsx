@@ -31,7 +31,7 @@ export default function AuthLayout() {
         setAuthRedirectHref('/(staff)');
         return;
       }
-      setAuthRedirectHref(isStaffLike ? '/(staff)' : '/(customer)');
+      setAuthRedirectHref('/(customer)');
     });
     return () => {
       cancelled = true;

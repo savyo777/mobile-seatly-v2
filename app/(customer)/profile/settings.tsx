@@ -14,6 +14,7 @@ import {
   Alert,
 } from 'react-native';
 import { useRouter, Href } from 'expo-router';
+import * as Linking from 'expo-linking';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { ChevronGlyph } from '@/components/ui/ChevronGlyph';
@@ -22,6 +23,7 @@ import { mockCustomer } from '@/lib/mock/users';
 import { useAuthSession } from '@/lib/auth/AuthContext';
 import { deleteAccount, signOutAllDevices } from '@/lib/services/accountSecurity';
 import { setAppShellPreference } from '@/lib/navigation/appShellPreference';
+import { CENAIVA_FOLLOW_URLS } from '@/lib/config/cenaivaSocial';
 
 const TIERS = [
   { name: 'Bronze',   min: 0,    color: '#CD7F32' },
@@ -56,6 +58,12 @@ type Row =
       kind: 'switchToRestaurant';
       icon: React.ComponentProps<typeof Ionicons>['name'];
       label: string;
+    }
+  | {
+      kind: 'externalLink';
+      icon: React.ComponentProps<typeof Ionicons>['name'];
+      label: string;
+      url: string;
     };
 
 type Section = {
@@ -317,6 +325,35 @@ export default function SettingsScreen() {
       ],
     },
     {
+      title: 'Follow Cenaiva',
+      rows: [
+        {
+          kind: 'externalLink',
+          icon: 'logo-instagram',
+          label: 'Instagram @heycenaiva',
+          url: CENAIVA_FOLLOW_URLS.instagram,
+        },
+        {
+          kind: 'externalLink',
+          icon: 'chatbubble-ellipses-outline',
+          label: 'Snapchat',
+          url: CENAIVA_FOLLOW_URLS.snapchat,
+        },
+        {
+          kind: 'externalLink',
+          icon: 'logo-youtube',
+          label: 'YouTube',
+          url: CENAIVA_FOLLOW_URLS.youtube,
+        },
+        {
+          kind: 'externalLink',
+          icon: 'logo-tiktok',
+          label: 'TikTok @heycenaiva',
+          url: CENAIVA_FOLLOW_URLS.tiktok,
+        },
+      ],
+    },
+    {
       title: 'More',
       rows: [
         { kind: 'nav', icon: 'gift-outline', label: 'Refer & Earn', href: '/(customer)/profile/invite' },
@@ -468,6 +505,8 @@ export default function SettingsScreen() {
                         await setAppShellPreference('staff');
                         router.replace('/(staff)' as Href);
                       })();
+                    } else if (row.kind === 'externalLink') {
+                      void Linking.openURL(row.url);
                     } else {
                       router.push(row.href);
                     }

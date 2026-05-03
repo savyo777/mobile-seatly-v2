@@ -256,7 +256,7 @@ export default function OwnerLoginScreen() {
       }
       const allowed = await enforceOwnerRole(signedInUserId);
       if (!allowed) return;
-      router.replace('/(staff)');
+      router.replace('/(customer)');
     } finally {
       setSubmitting(false);
     }
@@ -300,7 +300,7 @@ export default function OwnerLoginScreen() {
       }
       const allowed = await enforceOwnerRole(result.session.user.id);
       if (!allowed) return;
-      router.replace('/(staff)');
+      router.replace('/(customer)');
     } finally {
       setSubmitting(false);
     }
@@ -393,7 +393,7 @@ export default function OwnerLoginScreen() {
         </View>
 
         <SocialAuthButtons
-          onApple={() => router.replace('/(staff)')}
+          onApple={() => router.replace('/(customer)')}
           onGoogle={handleGoogle}
         />
 

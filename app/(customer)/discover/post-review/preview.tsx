@@ -1,5 +1,6 @@
 import React, { useCallback, useMemo, useState } from 'react';
-import { Dimensions, Image, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Pressable, ScrollView, StyleSheet, Text, useWindowDimensions, View } from 'react-native';
+import { Image } from 'expo-image';
 import { useLocalSearchParams, useRouter, type Href } from 'expo-router';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
@@ -8,8 +9,6 @@ import { Button, ScreenWrapper } from '@/components/ui';
 import { snapFilters } from '@/lib/mock/reviewSnap';
 import { useColors, createStyles, borderRadius, spacing, typography } from '@/lib/theme';
 import { getSnapRestaurantName } from '@/lib/mock/snaps';
-
-const TAB_BAR_EXTRA = 72;
 
 const useStyles = createStyles((c) => ({
   screen: {
@@ -63,10 +62,16 @@ const useStyles = createStyles((c) => ({
     width: '100%',
     minHeight: 200,
   },
+  photoBackdrop: {
+    ...StyleSheet.absoluteFillObject,
+  },
+  photoBackdropShade: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: 'rgba(0,0,0,0.28)',
+  },
   photo: {
-    width: '100%',
-    height: '100%',
-    minHeight: 200,
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: 'transparent',
   },
   photoPlaceholder: {
     minHeight: 200,
@@ -122,8 +127,15 @@ export default function ReviewPreviewScreen() {
     filter?: string;
   }>();
 
+  const { width: windowW, height: windowH } = useWindowDimensions();
   const [navigating, setNavigating] = useState(false);
   const [navError, setNavError] = useState<string | null>(null);
+
+  const photoDisplayW = Math.max(1, windowW - spacing.lg * 2);
+  const photoDisplayH = Math.max(
+    240,
+    Math.min(photoDisplayW * (4 / 3), windowH - insets.top - insets.bottom - 270),
+  );
 
   const activeFilter = useMemo(
     () => snapFilters.find((filterOption) => filterOption.id === filter) ?? snapFilters[0],
@@ -145,13 +157,6 @@ export default function ReviewPreviewScreen() {
     () => (restaurantId ? getSnapRestaurantName(restaurantId) : 'Restaurant'),
     [restaurantId],
   );
-
-  const maxPreviewHeight = useMemo(() => {
-    const { width: w, height: h } = Dimensions.get('window');
-    const contentW = w - spacing.lg * 2;
-    const byAspect = contentW * (16 / 9);
-    return Math.min(byAspect, h * 0.48);
-  }, []);
 
   const goToPostDetails = useCallback(() => {
     if (!hasImage || !restaurantId) {
@@ -205,9 +210,13 @@ export default function ReviewPreviewScreen() {
         >
           <Text style={styles.subtitle}>Make sure this moment looks right, then continue to add your caption.</Text>
 
-          <View style={[styles.photoWrap, { maxHeight: maxPreviewHeight }]}>
+          <View style={[styles.photoWrap, { height: photoDisplayH }]}>
             {hasImage ? (
-              <Image source={{ uri: decodedUri }} style={styles.photo} resizeMode="cover" />
+              <>
+                <Image source={{ uri: decodedUri }} style={styles.photoBackdrop} contentFit="cover" blurRadius={28} />
+                <View style={styles.photoBackdropShade} />
+                <Image source={{ uri: decodedUri }} style={styles.photo} contentFit="contain" />
+              </>
             ) : (
               <View style={styles.photoPlaceholder}>
                 <Text style={styles.placeholderText}>No image loaded</Text>
@@ -236,7 +245,7 @@ export default function ReviewPreviewScreen() {
           style={[
             styles.footer,
             {
-              paddingBottom: Math.max(insets.bottom, spacing.md) + TAB_BAR_EXTRA,
+              paddingBottom: Math.max(insets.bottom, spacing.md),
               paddingHorizontal: spacing.lg,
             },
           ]}

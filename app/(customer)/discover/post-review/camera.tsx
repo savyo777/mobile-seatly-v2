@@ -1,15 +1,16 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   ActivityIndicator,
+  Alert,
   Animated,
-  Image,
+  Platform,
   Pressable,
   ScrollView,
   StyleSheet,
   Text,
-  Vibration,
   View,
 } from 'react-native';
+import { Image } from 'expo-image';
 import { CameraView, CameraType, FlashMode, useCameraPermissions } from 'expo-camera';
 import * as ImagePicker from 'expo-image-picker';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -21,16 +22,25 @@ import { StatusBar } from 'expo-status-bar';
 import { snapFilters } from '@/lib/mock/reviewSnap';
 import { useColors, createStyles, borderRadius, spacing, typography } from '@/lib/theme';
 import { getSnapRestaurantName } from '@/lib/mock/snaps';
+import { openAppPhotoSettings } from '@/lib/device/openAppPhotoSettings';
 
-/** Glass-like chrome without native blur (safe on Simulator & all platforms). */
-function GlassBar({ children, style }: { children: React.ReactNode; style?: object }) {
-  return <View style={[glassStyles.topBarGlass, style]}>{children}</View>;
-}
-
-function GlassCircle({ onPress, children }: { onPress: () => void; children: React.ReactNode }) {
+function GlassCircle({
+  onPress,
+  children,
+  hitSlop,
+}: {
+  onPress: () => void;
+  children: React.ReactNode;
+  hitSlop?: number;
+}) {
   return (
     <View style={glassStyles.sideBtnGlass}>
-      <Pressable onPress={onPress} style={({ pressed }) => [glassStyles.sideBtnInner, pressed && glassStyles.sideBtnPressed]}>
+      <Pressable
+        onPress={onPress}
+        hitSlop={hitSlop}
+        android_ripple={Platform.OS === 'android' ? { borderless: true, color: 'rgba(255,255,255,0.2)' } : undefined}
+        style={({ pressed }) => [glassStyles.sideBtnInner, pressed && glassStyles.sideBtnPressed]}
+      >
         {children}
       </Pressable>
     </View>
@@ -38,24 +48,16 @@ function GlassCircle({ onPress, children }: { onPress: () => void; children: Rea
 }
 
 const glassStyles = StyleSheet.create({
-  topBarGlass: {
-    backgroundColor: 'rgba(0,0,0,0.35)',
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.08)',
-    overflow: 'hidden',
-  },
   sideBtnGlass: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
+    width: 46,
+    height: 46,
+    borderRadius: 23,
     overflow: 'hidden',
-    backgroundColor: 'rgba(255,255,255,0.08)',
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.08)',
+    backgroundColor: 'rgba(60,60,60,0.55)',
   },
   sideBtnInner: {
-    width: 40,
-    height: 40,
+    width: 46,
+    height: 46,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -89,64 +91,101 @@ const useStyles = createStyles((c) => ({
   chrome: {
     ...StyleSheet.absoluteFillObject,
     justifyContent: 'space-between',
+    zIndex: 2,
+    elevation: 2,
   },
   topBar: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginHorizontal: 12,
-    marginTop: 4,
-    paddingVertical: 10,
-    paddingHorizontal: 10,
-    borderRadius: borderRadius.lg,
+    paddingHorizontal: 16,
+    paddingBottom: 10,
     gap: 8,
+    zIndex: 20,
+    elevation: 20,
   },
   topIconHit: {
-    width: 40,
-    height: 40,
+    width: 44,
+    height: 44,
     alignItems: 'center',
     justifyContent: 'center',
   },
   topTitle: {
     flex: 1,
     textAlign: 'center',
-    ...typography.body,
-    color: '#FFFFFF',
-    fontWeight: '600',
+    fontSize: 13,
+    fontWeight: '500',
+    color: 'rgba(255,255,255,0.92)',
+    letterSpacing: 0.15,
+    textShadowColor: 'rgba(0,0,0,0.75)',
+    textShadowOffset: { width: 0, height: 1 },
+    textShadowRadius: 4,
   },
   bottomUi: {
     paddingHorizontal: spacing.lg,
-    gap: 28,
+    gap: 20,
+    zIndex: 20,
+    elevation: 20,
   },
   filterScrollContent: {
     flexDirection: 'row',
     flexGrow: 1,
     justifyContent: 'center',
-    alignItems: 'center',
-    paddingVertical: 4,
-    gap: 22,
-    paddingHorizontal: 12,
+    alignItems: 'flex-end',
+    paddingTop: 8,
+    paddingBottom: 2,
+    gap: 20,
+    paddingHorizontal: 20,
     minWidth: '100%',
   },
+  filterItem: {
+    alignItems: 'center',
+    minWidth: 72,
+  },
   filterTextHit: {
-    paddingVertical: 6,
-    paddingHorizontal: 4,
+    paddingVertical: 8,
+    paddingHorizontal: 2,
   },
   filterText: {
-    fontSize: 15,
+    fontSize: 13,
     fontWeight: '500',
-    color: 'rgba(255,255,255,0.45)',
-    letterSpacing: 0.2,
+    color: 'rgba(255,255,255,0.38)',
+    letterSpacing: 0.35,
+    textTransform: 'uppercase' as const,
+    ...Platform.select({
+      ios: { fontFamily: 'System' },
+      default: {},
+    }),
   },
   filterTextSelected: {
-    fontSize: 17,
+    fontSize: 13,
     fontWeight: '700',
-    color: '#DDD5C4',
+    color: '#fff',
+    letterSpacing: 0.35,
+    textTransform: 'uppercase' as const,
+  },
+  filterIndicator: {
+    marginTop: 6,
+    width: 4,
+    height: 4,
+    borderRadius: 2,
+    backgroundColor: '#FFD60A',
+  },
+  galleryBtn: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: 'rgba(60,60,60,0.55)',
   },
   captureRow: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingHorizontal: 8,
+    paddingHorizontal: 4,
+    maxWidth: 400,
+    alignSelf: 'center',
+    width: '100%',
   },
   captureHit: {
     alignItems: 'center',
@@ -157,31 +196,26 @@ const useStyles = createStyles((c) => ({
     justifyContent: 'center',
   },
   captureOuterRing: {
-    width: 76,
-    height: 76,
-    borderRadius: 38,
-    borderWidth: 2,
-    borderColor: 'rgba(255,255,255,0.9)',
+    width: 78,
+    height: 78,
+    borderRadius: 39,
+    borderWidth: 5,
+    borderColor: '#fff',
     alignItems: 'center',
     justifyContent: 'center',
     backgroundColor: 'transparent',
   },
   captureInner: {
-    width: 62,
-    height: 62,
-    borderRadius: 31,
-    backgroundColor: '#111',
+    width: 66,
+    height: 66,
+    borderRadius: 33,
+    backgroundColor: '#fff',
     alignItems: 'center',
     justifyContent: 'center',
   },
   captureInnerActive: {
-    backgroundColor: c.gold,
-  },
-  captureGoldDot: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-    backgroundColor: c.gold,
+    transform: [{ scale: 0.92 }],
+    opacity: 0.92,
   },
   editRow: {
     flexDirection: 'row',
@@ -257,6 +291,7 @@ export default function ReviewCameraScreen() {
   const cameraRef = useRef<CameraView | null>(null);
   const shutterOpacity = useRef(new Animated.Value(0)).current;
   const pressScale = useRef(new Animated.Value(1)).current;
+  const galleryOpeningRef = useRef(false);
   const [captureFill, setCaptureFill] = useState(false);
 
   const isEditMode = !!selectedImageUri;
@@ -267,6 +302,10 @@ export default function ReviewCameraScreen() {
   const activeFilter = useMemo(
     () => snapFilters.find((f) => f.id === selectedFilter) ?? snapFilters[0],
     [selectedFilter],
+  );
+  const effectiveFlash = useMemo(
+    () => (cameraFacing === 'back' ? flash : 'off'),
+    [cameraFacing, flash],
   );
 
   const TAB_BAR_STYLE = {
@@ -284,6 +323,29 @@ export default function ReviewCameraScreen() {
         tab?.setOptions({ tabBarStyle: TAB_BAR_STYLE });
       };
     }, [navigation]),
+  );
+
+  useFocusEffect(
+    useCallback(() => {
+      let alive = true;
+      void (async () => {
+        try {
+          const pending = await ImagePicker.getPendingResultAsync();
+          if (!alive || !pending || 'code' in pending) return;
+          if (pending.canceled) return;
+          const uri = pending.assets?.[0]?.uri;
+          if (uri) {
+            setSelectedImageUri(uri);
+            setSelectedSource('gallery');
+          }
+        } catch {
+          // Android may surface edge cases; ignore
+        }
+      })();
+      return () => {
+        alive = false;
+      };
+    }, []),
   );
 
   useEffect(() => {
@@ -310,25 +372,82 @@ export default function ReviewCameraScreen() {
     Animated.spring(pressScale, { toValue: 1, friction: 6, useNativeDriver: true }).start();
   };
 
-  const openGallery = async () => {
-    Vibration.vibrate(8);
-    const p = await ImagePicker.requestMediaLibraryPermissionsAsync();
-    if (!p.granted) return;
-    const result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ImagePicker.MediaTypeOptions.Images,
-      quality: 0.9,
-      selectionLimit: 1,
-    });
-    if (result.canceled || !result.assets?.[0]?.uri) return;
-    setSelectedImageUri(result.assets[0].uri);
-    setSelectedSource('gallery');
-  };
+  const launchPhotoLibrary = useCallback(async () => {
+    try {
+      const result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ['images'],
+        quality: 0.9,
+        allowsMultipleSelection: false,
+      });
+      if (result.canceled || !result.assets?.[0]?.uri) return;
+      setSelectedImageUri(result.assets[0].uri);
+      setSelectedSource('gallery');
+    } catch {
+      Alert.alert(
+        'Could not open photos',
+        'Something went wrong opening your photo library. Please try again.',
+      );
+    }
+  }, []);
+
+  const openGallery = useCallback(async () => {
+    if (galleryOpeningRef.current) return;
+    galleryOpeningRef.current = true;
+    try {
+      let existing: Awaited<ReturnType<typeof ImagePicker.getMediaLibraryPermissionsAsync>>;
+      try {
+        existing = await ImagePicker.getMediaLibraryPermissionsAsync();
+      } catch {
+        Alert.alert('Photos', 'Could not check photo access. Please try again.');
+        return;
+      }
+
+      if (existing.granted) {
+        await launchPhotoLibrary();
+        return;
+      }
+
+      // No extra app alert — show the native allow / limited / deny sheet immediately.
+      let r: Awaited<ReturnType<typeof ImagePicker.requestMediaLibraryPermissionsAsync>>;
+      try {
+        r = await ImagePicker.requestMediaLibraryPermissionsAsync();
+      } catch {
+        Alert.alert('Photos', 'Could not request photo access. Please try again.');
+        return;
+      }
+
+      if (r.granted) {
+        await launchPhotoLibrary();
+        return;
+      }
+
+      if (r.canAskAgain === false) {
+        const settingsBody =
+          Platform.OS === 'ios'
+            ? 'Photos are disabled for Cenaiva. We will open Settings on Cenaiva’s page — tap Photos, then choose full access, selected photos, or turn access on.'
+            : 'Photos are disabled for Cenaiva. We will open this app’s system screen — tap Permissions, then Photos (or Files and media), and allow access.';
+
+        Alert.alert('Photos access is off', settingsBody, [
+          { text: 'Not now', style: 'cancel' },
+          { text: 'Open Settings', onPress: () => void openAppPhotoSettings() },
+        ]);
+        return;
+      }
+
+      Alert.alert(
+        'Photos',
+        'Without photo library access you can still take a new picture with the camera.',
+        [{ text: 'OK' }],
+      );
+    } finally {
+      galleryOpeningRef.current = false;
+    }
+  }, [launchPhotoLibrary]);
 
   const capturePhoto = async () => {
     if (!cameraRef.current || capturing) return;
     try {
       setCapturing(true);
-      Vibration.vibrate(10);
       pulseCapture();
       runShutter();
       const photo = await cameraRef.current.takePictureAsync({ quality: 0.9 });
@@ -342,7 +461,6 @@ export default function ReviewCameraScreen() {
 
   const goNext = () => {
     if (!selectedImageUri) return;
-    Vibration.vibrate(8);
     const encodedUri = encodeURIComponent(selectedImageUri);
     router.push(
       `/(customer)/discover/post-review/preview?photoUri=${encodedUri}&filter=${selectedFilter}&restaurantId=${restaurantId}`,
@@ -379,13 +497,17 @@ export default function ReviewCameraScreen() {
       <StatusBar style="light" />
 
       {isEditMode ? (
-        <Image source={{ uri: selectedImageUri! }} style={styles.cameraFill} resizeMode="cover" />
+        <Image source={{ uri: selectedImageUri! }} style={styles.cameraFill} contentFit="contain" />
       ) : !cameraUnavailable ? (
         <CameraView
           ref={cameraRef}
+          pointerEvents="none"
           style={styles.cameraFill}
           facing={cameraFacing}
-          flash={flash}
+          mirror={cameraFacing === 'front'}
+          responsiveOrientationWhenOrientationLocked={Platform.OS === 'ios'}
+          zoom={0}
+          flash={effectiveFlash}
           onCameraReady={() => setCameraReady(true)}
           onMountError={() => setCameraUnavailable(true)}
         />
@@ -405,60 +527,80 @@ export default function ReviewCameraScreen() {
       />
 
       <View style={styles.chrome} pointerEvents="box-none">
-        <GlassBar style={[styles.topBar, { paddingTop: insets.top + 6 }]}>
-          <Pressable onPress={goBack} hitSlop={12} style={styles.topIconHit}>
-            <Ionicons name="chevron-back" size={22} color="#fff" />
+        <View style={[styles.topBar, { paddingTop: insets.top + 4 }]}>
+          <Pressable onPress={goBack} hitSlop={12} style={styles.topIconHit} accessibilityRole="button" accessibilityLabel="Back">
+            <Ionicons name="chevron-back" size={28} color="#fff" />
           </Pressable>
           <Text style={styles.topTitle} numberOfLines={1}>
             Posting to {restaurantName}
           </Text>
-          <Pressable
-            onPress={() => {
-              Vibration.vibrate(6);
-              setFlash((f) => (f === 'off' ? 'on' : 'off'));
-            }}
-            hitSlop={12}
-            style={styles.topIconHit}
-            accessibilityLabel="Flash"
-          >
-            <Ionicons name="settings-outline" size={21} color="#fff" />
-          </Pressable>
-        </GlassBar>
+          {isEditMode ? <View style={styles.topIconHit} /> : (
+            <Pressable
+              onPress={() => {
+                if (cameraFacing !== 'back') return;
+                setFlash((f) => (f === 'off' ? 'on' : 'off'));
+              }}
+              hitSlop={12}
+              style={[styles.topIconHit, cameraFacing !== 'back' && { opacity: 0.35 }]}
+              accessibilityRole="button"
+              accessibilityLabel={flash === 'on' ? 'Flash on' : 'Flash off'}
+              accessibilityState={{ disabled: cameraFacing !== 'back' }}
+            >
+              <Ionicons
+                name={flash === 'on' ? 'flash' : 'flash-off'}
+                size={26}
+                color="#fff"
+              />
+            </Pressable>
+          )}
+        </View>
 
-        <View style={[styles.bottomUi, { paddingBottom: insets.bottom + 20 }]}>
+        <View
+          pointerEvents="auto"
+          style={[styles.bottomUi, { paddingBottom: insets.bottom + 20 }]}
+        >
           <ScrollView
             horizontal
             showsHorizontalScrollIndicator={false}
             contentContainerStyle={styles.filterScrollContent}
             decelerationRate="fast"
+            keyboardShouldPersistTaps="handled"
+            style={{ flexGrow: 0, flexShrink: 0 }}
           >
             {snapFilters.map((f) => {
               const selected = selectedFilter === f.id;
               return (
-                <Pressable
-                  key={f.id}
-                  onPress={() => {
-                    Vibration.vibrate(5);
-                    setSelectedFilter(f.id);
-                  }}
-                  style={({ pressed }) => [styles.filterTextHit, pressed && { opacity: 0.7 }]}
-                >
-                  <Text style={[styles.filterText, selected && styles.filterTextSelected]} numberOfLines={1}>
-                    {f.name}
-                  </Text>
-                </Pressable>
+                <View key={f.id} style={styles.filterItem}>
+                  <Pressable
+                    onPress={() => {
+                      setSelectedFilter(f.id);
+                    }}
+                    style={({ pressed }) => [styles.filterTextHit, pressed && { opacity: 0.7 }]}
+                  >
+                    <Text style={[styles.filterText, selected && styles.filterTextSelected]} numberOfLines={1}>
+                      {f.name}
+                    </Text>
+                  </Pressable>
+                  {selected ? <View style={styles.filterIndicator} /> : <View style={{ height: 10 }} />}
+                </View>
               );
             })}
           </ScrollView>
 
           {!isEditMode ? (
             <View style={styles.captureRow}>
-              <GlassCircle onPress={openGallery}>
-                <Ionicons name="images-outline" size={22} color="#fff" />
-              </GlassCircle>
+              <Pressable
+                onPress={() => void openGallery()}
+                hitSlop={{ top: 16, bottom: 16, left: 16, right: 16 }}
+                style={({ pressed }) => [styles.galleryBtn, pressed && { opacity: 0.86 }]}
+                accessibilityRole="button"
+                accessibilityLabel="Choose from photo library"
+              >
+                <Ionicons name="images-outline" size={24} color="#fff" />
+              </Pressable>
 
               <Pressable
-                onPress={cameraUnavailable ? openGallery : capturePhoto}
+                onPress={cameraUnavailable ? () => void openGallery() : capturePhoto}
                 onPressIn={onCapturePressIn}
                 onPressOut={onCapturePressOut}
                 disabled={!cameraUnavailable && (!cameraReady || capturing)}
@@ -467,11 +609,7 @@ export default function ReviewCameraScreen() {
                 <Animated.View style={[styles.captureRing, { transform: [{ scale: pressScale }] }]}>
                   <View style={styles.captureOuterRing}>
                     <View style={[styles.captureInner, captureFill && styles.captureInnerActive]}>
-                      {capturing ? (
-                        <ActivityIndicator color={captureFill ? c.bgBase : c.gold} size="small" />
-                      ) : captureFill ? null : (
-                        <View style={styles.captureGoldDot} />
-                      )}
+                      {capturing ? <ActivityIndicator color="rgba(0,0,0,0.45)" size="small" /> : null}
                     </View>
                   </View>
                 </Animated.View>
@@ -479,7 +617,6 @@ export default function ReviewCameraScreen() {
 
               <GlassCircle
                 onPress={() => {
-                  Vibration.vibrate(6);
                   setCameraFacing((prev) => (prev === 'back' ? 'front' : 'back'));
                 }}
               >

@@ -1,7 +1,5 @@
 import React, { useState } from 'react';
 import {
-  Dimensions,
-  Image,
   KeyboardAvoidingView,
   Platform,
   Pressable,
@@ -9,8 +7,10 @@ import {
   StyleSheet,
   Text,
   TextInput,
+  useWindowDimensions,
   View,
 } from 'react-native';
+import { Image } from 'expo-image';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -21,8 +21,6 @@ import { useColors, createStyles, borderRadius, spacing, typography } from '@/li
 import { createSnapPost, getSnapRestaurantName, TAG_POOL } from '@/lib/mock/snaps';
 import { mockCustomer } from '@/lib/mock/users';
 
-const { width: SCREEN_W } = Dimensions.get('window');
-const IMAGE_H = Math.min(SCREEN_W * 0.52, 320);
 const H_PAD = 18;
 
 const useStyles = createStyles((c) => ({
@@ -66,16 +64,21 @@ const useStyles = createStyles((c) => ({
     paddingBottom: spacing.lg,
   },
   imageBlock: {
-    width: SCREEN_W,
     alignSelf: 'center',
     overflow: 'hidden',
-    borderBottomLeftRadius: borderRadius.lg,
-    borderBottomRightRadius: borderRadius.lg,
+    borderRadius: borderRadius.lg,
+    backgroundColor: c.bgElevated,
   },
   previewImage: {
-    width: SCREEN_W,
-    height: IMAGE_H,
+    ...StyleSheet.absoluteFillObject,
     backgroundColor: c.bgElevated,
+  },
+  previewBackdrop: {
+    ...StyleSheet.absoluteFillObject,
+  },
+  previewBackdropShade: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: 'rgba(0,0,0,0.28)',
   },
   imageBottomFade: {
     position: 'absolute',
@@ -85,6 +88,8 @@ const useStyles = createStyles((c) => ({
     height: 88,
   },
   imagePlaceholder: {
+    width: '100%',
+    minHeight: 240,
     alignSelf: 'center',
   },
   metaSection: {
@@ -241,6 +246,7 @@ export default function SnapCaptionScreen() {
   const styles = useStyles();
   const router = useRouter();
   const insets = useSafeAreaInsets();
+  const { width: windowW } = useWindowDimensions();
   const { photoUri, restaurantId } = useLocalSearchParams<{ photoUri: string; restaurantId?: string }>();
   const [caption, setCaption] = useState('');
   const [rating, setRating] = useState<1 | 2 | 3 | 4 | 5>(5);
@@ -269,6 +275,9 @@ export default function SnapCaptionScreen() {
         }
       })()
     : '';
+  const photoW = Math.max(1, Math.min(windowW - H_PAD * 2, 300));
+  const photoH = photoW * (4 / 3);
+
   const restaurantName = restaurantId ? getSnapRestaurantName(restaurantId) : 'Restaurant';
 
   const postSnap = () => {
@@ -322,8 +331,10 @@ export default function SnapCaptionScreen() {
           keyboardShouldPersistTaps="handled"
         >
           {decodedUri ? (
-            <View style={styles.imageBlock}>
-              <Image source={{ uri: decodedUri }} style={styles.previewImage} resizeMode="cover" />
+            <View style={[styles.imageBlock, { width: photoW, height: photoH }]}>
+              <Image source={{ uri: decodedUri }} style={styles.previewBackdrop} contentFit="cover" blurRadius={24} />
+              <View style={styles.previewBackdropShade} />
+              <Image source={{ uri: decodedUri }} style={styles.previewImage} contentFit="contain" />
               <LinearGradient
                 colors={['transparent', 'rgba(0,0,0,0.5)']}
                 style={styles.imageBottomFade}
@@ -331,7 +342,7 @@ export default function SnapCaptionScreen() {
               />
             </View>
           ) : (
-            <View style={[styles.previewImage, styles.imagePlaceholder]} />
+            <View style={[styles.previewImage, styles.imagePlaceholder, { width: photoW, height: photoH }]} />
           )}
 
           <View style={styles.metaSection}>

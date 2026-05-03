@@ -31,7 +31,14 @@
             ]
           }
         ],
-        "ITSAppUsesNonExemptEncryption": false
+        "ITSAppUsesNonExemptEncryption": false,
+        "LSApplicationQueriesSchemes": [
+          "instagram",
+          "snapchat",
+          "tiktok",
+          "youtube",
+          "vnd.youtube"
+        ]
       }
     },
     "android": {
@@ -43,11 +50,13 @@
       },
       "package": "com.cenaiva.app",
       "permissions": [
+        "android.permission.CAMERA",
         "android.permission.RECORD_AUDIO",
         "android.permission.ACCESS_FINE_LOCATION",
         "android.permission.ACCESS_COARSE_LOCATION",
-        "android.permission.CAMERA",
-        "android.permission.MODIFY_AUDIO_SETTINGS"
+        "android.permission.MODIFY_AUDIO_SETTINGS",
+        "android.permission.READ_MEDIA_IMAGES",
+        "android.permission.READ_MEDIA_VISUAL_USER_SELECTED"
       ],
       "intentFilters": [
         {
@@ -79,7 +88,7 @@
       [
         "expo-image-picker",
         {
-          "photosPermission": "Allow Cenaiva to access your photos so you can choose a test image when camera preview is unavailable."
+          "photosPermission": "Cenaiva needs access to your photo library so you can choose an image for your restaurant post."
         }
       ],
       [
@@ -107,7 +116,8 @@
         }
       ],
       "expo-asset",
-      "expo-web-browser"
+      "expo-web-browser",
+      "expo-image"
     ],
     "extra": {
       "router": {},

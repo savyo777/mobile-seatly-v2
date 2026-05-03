@@ -42,12 +42,9 @@ export async function resolveHomeForSignedInUser(
   user?: User | null,
 ): Promise<{ href: AuthHomeHref; role: string | null }> {
   const role = await getRoleForSignedInUser(userId, user);
-  const canUseCustomer = roleIncludes(role, 'customer');
   const canUseStaff = roleIncludes(role, 'owner');
   const preference = await getAppShellPreference();
 
   if (preference === 'staff' && canUseStaff) return { href: '/(staff)', role };
-  if (preference === 'customer' && canUseCustomer) return { href: '/(customer)', role };
-  if (canUseStaff) return { href: '/(staff)', role };
   return { href: '/(customer)', role };
 }
