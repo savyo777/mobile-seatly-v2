@@ -103,6 +103,7 @@ export type CenaivaQaScenario = {
 
 export const CENAIVA_QA_FORBIDDEN_TEXT = [
   'Want me to look something else up?',
+  'What kind of restaurant are you looking for?',
 ] as const;
 
 const bookingForbidden: CenaivaQaForbiddenBehavior[] = [
@@ -266,6 +267,11 @@ export const CENAIVA_QA_SCENARIOS: CenaivaQaScenario[] = [
 
   ...[
     ['restaurant-search-good-around-me', "What's good around me?"],
+    ['restaurant-search-food-nearby', 'I want food nearby.'],
+    ['restaurant-search-hungry-nearby', "I'm hungry, show me food nearby."],
+    ['restaurant-search-anything-is-fine', "I'm not sure, anything is fine."],
+    ['restaurant-search-no-preference', "I don't know, you pick something good."],
+    ['restaurant-search-whatever-near-me', 'Whatever is good near me.'],
     ['restaurant-search-open-now', "What's open right now?"],
     ['restaurant-search-best-sushi', "What's the best sushi near me?"],
     ['restaurant-search-hidden-gems', 'Show me hidden gems.'],

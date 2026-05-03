@@ -13,10 +13,10 @@ import { getSupabaseEnv, isSupabaseConfigured } from '@/lib/supabase/env';
 const DEEPGRAM_URL = 'https://api.deepgram.com/v1/listen';
 const MAX_KEYTERMS = 12;
 const SILENCE_TIMEOUT_MS = 1_650;
-const NO_SPEECH_TIMEOUT_MS = 6_000;
+const NO_SPEECH_TIMEOUT_MS = 4_500;
 const TURN_TIMEOUT_MS = 30_000;
 const NATIVE_TURN_TIMEOUT_MS = 12_000;
-const METERING_SPEECH_DB = -50;
+const METERING_SPEECH_DB = -24;
 const MIN_RECORDING_MS = 2_400;
 
 export type TranscriptionPhase =
@@ -49,6 +49,13 @@ function initNativeSpeechModule(): NativeSpeech | null {
 }
 
 const NATIVE_SPEECH = initNativeSpeechModule();
+
+function debugVoice(message: string, details?: Record<string, unknown>) {
+  if (process.env.EXPO_PUBLIC_CENAIVA_VOICE_DEBUG === 'true') {
+    if (details) console.log(`[Cenaiva voice] ${message}`, details);
+    else console.log(`[Cenaiva voice] ${message}`);
+  }
+}
 
 function deepgramEnabled() {
   return process.env.EXPO_PUBLIC_DEEPGRAM_STT_ENABLED !== 'false';
@@ -94,7 +101,9 @@ function shouldFallbackToNative(error: unknown) {
   return (
     !message.includes('not-allowed') &&
     !message.includes('voice-stt-unavailable') &&
-    !message.includes('deepgram-')
+    !message.includes('native-speech-unavailable') &&
+    !message.includes('service-not-allowed') &&
+    !message.includes('language-not-supported')
   );
 }
 
@@ -122,6 +131,7 @@ export function useMobileTranscription() {
   const lastSpeechAtRef = useRef(0);
   const recordingStartedAtRef = useRef(0);
   const hintsRef = useRef<string[]>([]);
+  const deepgramTokenRef = useRef<string | null>(null);
   const nativeCancelRef = useRef<((manualStop: boolean) => void) | null>(null);
 
   const setListening = useCallback((value: boolean) => {
@@ -149,14 +159,18 @@ export function useMobileTranscription() {
         'Content-Type': 'application/json',
       },
     });
-    if (!response.ok) return null;
+    if (!response.ok) {
+      debugVoice('deepgram token failed', { status: response.status });
+      return null;
+    }
     const json = (await response.json()) as { access_token?: string };
-    return json.access_token ?? null;
+    const token = json.access_token ?? null;
+    debugVoice('deepgram token result', { ok: Boolean(token) });
+    return token;
   }, [session?.access_token]);
 
   const transcribe = useCallback(
-    async (uri: string): Promise<string> => {
-      const token = await fetchDeepgramToken();
+    async (uri: string, token: string | null): Promise<string> => {
       if (!token) throw new Error('deepgram-token-unavailable');
       const audio = await fetch(uri);
       const blob = await audio.blob();
@@ -168,13 +182,16 @@ export function useMobileTranscription() {
         },
         body: blob,
       });
+      debugVoice('deepgram transcription response', { status: response.status });
       if (!response.ok) throw new Error(`deepgram-http-${response.status}`);
       const json = (await response.json()) as {
         results?: { channels?: Array<{ alternatives?: Array<{ transcript?: string }> }> };
       };
-      return json.results?.channels?.[0]?.alternatives?.[0]?.transcript?.trim() ?? '';
+      const transcript = json.results?.channels?.[0]?.alternatives?.[0]?.transcript?.trim() ?? '';
+      debugVoice('deepgram transcript', { hasTranscript: Boolean(transcript), length: transcript.length });
+      return transcript;
     },
-    [fetchDeepgramToken],
+    [],
   );
 
   const cancelNativeListening = useCallback((manualStop: boolean) => {
@@ -234,23 +251,29 @@ export function useMobileTranscription() {
         nativeCancelRef.current = cancel;
         subscriptions.push(
           NATIVE_SPEECH.addListener('start', () => {
-          setListening(true);
-          setPhase('recording');
-          setUnavailable(false);
-          setPermissionDenied(false);
-          setLastError(null);
+            debugVoice('native speech start');
+            setListening(true);
+            setPhase('recording');
+            setUnavailable(false);
+            setPermissionDenied(false);
+            setLastError(null);
           }),
           NATIVE_SPEECH.addListener('result', (payload: unknown) => {
             const next = nativeTranscriptFromResult(payload);
             if (next.transcript) {
               transcript = next.transcript;
               setLiveTranscript(next.transcript);
+              debugVoice('native speech transcript', {
+                final: next.isFinal,
+                length: next.transcript.length,
+              });
             }
             if (next.isFinal) finish({ transcript });
           }),
           NATIVE_SPEECH.addListener('error', (payload: unknown) => {
             const event = payload as { error?: string; message?: string };
             const code = event.error ?? 'native-speech-error';
+            debugVoice('native speech error', { code });
             if (code === 'no-speech' || code === 'speech-timeout' || code === 'aborted') {
               finish({ transcript });
               return;
@@ -261,6 +284,7 @@ export function useMobileTranscription() {
             finish({ transcript: '' }, new Error(code));
           }),
           NATIVE_SPEECH.addListener('end', () => {
+            debugVoice('native speech end', { hasTranscript: Boolean(transcript), length: transcript.length });
             finish({ transcript });
           }),
         );
@@ -324,19 +348,29 @@ export function useMobileTranscription() {
       } catch {
         uri = null;
       }
-      if (manualStop || !uri) {
+      if (manualStop || !uri || !speechDetectedRef.current) {
+        debugVoice('recording finish without transcription', {
+          manualStop,
+          hasUri: Boolean(uri),
+          speechDetected: speechDetectedRef.current,
+        });
         setPhase('idle');
         resolveRef.current?.({ transcript: '', stopped: manualStop });
       } else {
         try {
+          debugVoice('recording finish; transcribing', {
+            speechDetected: speechDetectedRef.current,
+            durationMs: Date.now() - recordingStartedAtRef.current,
+          });
           setPhase('transcribing');
-          const transcript = await transcribe(uri);
+          const transcript = await transcribe(uri, deepgramTokenRef.current);
           setLiveTranscript(transcript);
           setLastError(null);
           setPhase('idle');
           resolveRef.current?.({ transcript });
         } catch (err) {
           const error = err instanceof Error ? err : new Error(String(err));
+          debugVoice('deepgram transcription failed', { message: error.message });
           setLastError(error.message);
           setPhase('idle');
           rejectRef.current?.(error);
@@ -345,6 +379,7 @@ export function useMobileTranscription() {
 
       resolveRef.current = null;
       rejectRef.current = null;
+      deepgramTokenRef.current = null;
     },
     [clearTimers, recorder, setListening, transcribe],
   );
@@ -380,13 +415,31 @@ export function useMobileTranscription() {
       speechDetectedRef.current = false;
       lastSpeechAtRef.current = 0;
       recordingStartedAtRef.current = 0;
+      deepgramTokenRef.current = null;
 
       const permission = await requestRecordingPermissionsAsync();
+      debugVoice('recording permission', {
+        granted: permission.granted,
+        status: permission.status,
+      });
       if (!permission.granted) {
         setPhase('idle');
         setPermissionDenied(true);
         setLastError('not-allowed');
         throw new Error('not-allowed');
+      }
+
+      try {
+        const token = await fetchDeepgramToken();
+        if (!token) throw new Error('deepgram-token-unavailable');
+        deepgramTokenRef.current = token;
+      } catch (err) {
+        const error = err instanceof Error ? err : new Error(String(err));
+        debugVoice('deepgram preflight failed', { message: error.message });
+        setLastError(error.message);
+        setPhase('idle');
+        if (shouldFallbackToNative(error)) return startNativeSpeechRecognition(hints);
+        throw error;
       }
 
       try {
@@ -423,6 +476,7 @@ export function useMobileTranscription() {
         setListening(true);
         setPhase('recording');
         recordingStartedAtRef.current = Date.now();
+        debugVoice('recording start');
 
         noSpeechRef.current = setTimeout(() => {
           void finish(false);
@@ -476,7 +530,15 @@ export function useMobileTranscription() {
         throw err;
       }
     },
-    [cancelNativeListening, clearTimers, finish, recorder, session?.access_token, startNativeSpeechRecognition],
+    [
+      cancelNativeListening,
+      clearTimers,
+      fetchDeepgramToken,
+      finish,
+      recorder,
+      session?.access_token,
+      startNativeSpeechRecognition,
+    ],
   );
 
   useEffect(() => {

@@ -16,6 +16,7 @@ import { VoiceOrb } from '@/components/cenaiva/VoiceOrb';
 import { RestaurantDiscoveryMap } from '@/components/map/RestaurantDiscoveryMap';
 import { useCenaivaAssistant } from '@/lib/cenaiva/CenaivaAssistantProvider';
 import { useCenaivaRestaurants } from '@/lib/cenaiva/api/dataHooks';
+import { filterCenaivaRestaurants } from '@/lib/cenaiva/filterRestaurants';
 import { useAssistantStore } from '@/lib/cenaiva/state/assistantStore';
 import type { Restaurant } from '@/lib/mock/restaurants';
 import { DEFAULT_MAP_CENTER, withDistances } from '@/lib/map/mapFilters';
@@ -214,12 +215,6 @@ const useStyles = createStyles(() => ({
   },
 }));
 
-function filterRestaurants(restaurants: Restaurant[], ids: string[]) {
-  if (!ids.length) return restaurants;
-  const idSet = new Set(ids);
-  return restaurants.filter((restaurant) => idSet.has(restaurant.id));
-}
-
 function statusCopy(status: string, inManualMenu: boolean, spokenText: string) {
   if (status === 'listening') return 'Listening...';
   if (status === 'processing') return 'Thinking...';
@@ -250,8 +245,8 @@ export function CenaivaVoiceShell({ onClose }: { onClose?: () => void }) {
   const showConfirmationOrPostBooking = CONFIRMATION_OR_POST_BOOKING_STATUSES.has(state.booking.status);
   const hasSelectedRestaurant = Boolean(state.booking.restaurant_id);
   const visibleRestaurants = useMemo(
-    () => filterRestaurants(restaurants, state.map.marker_restaurant_ids),
-    [restaurants, state.map.marker_restaurant_ids],
+    () => filterCenaivaRestaurants(restaurants, state.map.marker_restaurant_ids, state.filters),
+    [restaurants, state.filters, state.map.marker_restaurant_ids],
   );
   const mappedRestaurants = useMemo(
     () => withDistances(visibleRestaurants, DEFAULT_MAP_CENTER.latitude, DEFAULT_MAP_CENTER.longitude),

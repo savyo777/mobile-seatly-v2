@@ -84,6 +84,20 @@ describe('Cenaiva QA prompt matrix', () => {
     expect(findings).toEqual([]);
   });
 
+  it('rejects broad discovery responses that loop back to a cuisine question', () => {
+    const findings = validateScenarioResponse(
+      byId('restaurant-search-food-nearby'),
+      response({
+        intent: 'restaurant_search',
+        spoken_text: 'What kind of restaurant are you looking for?',
+        ui_actions: [],
+      }),
+    );
+
+    expect(findings.map((finding) => finding.code)).toContain('forbidden_text');
+    expect(findings.map((finding) => finding.code)).toContain('missing_ui_action');
+  });
+
   it('rejects reservation creation before final confirmation', () => {
     const findings = validateScenarioResponse(
       byId('reservation-create-table-for-two-tonight'),
@@ -120,4 +134,3 @@ describe('Cenaiva QA prompt matrix', () => {
     ).toContain('payment_without_confirmation');
   });
 });
-
