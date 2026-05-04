@@ -69,6 +69,21 @@ describe('postCenaivaOrchestrator', () => {
       {
         transcript: 'book dinner',
         booking_state: { party_size: 2, date: '2026-05-02', time: '19:00' },
+        assistant_memory: {
+          discovery: {
+            transcript: 'closest restaurant',
+            recommendation_mode: 'single',
+            cuisine: null,
+            cuisine_group: null,
+            city: null,
+            query: null,
+            sort_by: 'distance',
+            full_restaurant_ids: ['r1', 'r2'],
+            displayed_restaurant_ids: ['r1'],
+            exhausted_restaurant_ids: ['r1'],
+          },
+          booking_process: null,
+        },
       },
       {
         url: 'https://example.supabase.co',
@@ -95,6 +110,12 @@ describe('postCenaivaOrchestrator', () => {
     expect(JSON.parse(init.body as string)).toMatchObject({
       transcript: 'book dinner',
       booking_state: { party_size: 2, date: '2026-05-02', time: '19:00' },
+      assistant_memory: {
+        discovery: {
+          full_restaurant_ids: ['r1', 'r2'],
+          displayed_restaurant_ids: ['r1'],
+        },
+      },
     });
   });
 

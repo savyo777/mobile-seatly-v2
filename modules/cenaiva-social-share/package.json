@@ -1,0 +1,7 @@
+{
+  "name": "cenaiva-social-share",
+  "version": "1.0.0",
+  "description": "Cenaiva native platform social sharing module",
+  "main": "src/index.ts",
+  "private": true
+}

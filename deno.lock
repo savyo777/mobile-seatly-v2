@@ -1,0 +1,78 @@
+{
+  "version": "5",
+  "specifiers": {
+    "jsr:@supabase/functions-js@*": "2.105.1"
+  },
+  "jsr": {
+    "@supabase/functions-js@2.105.1": {
+      "integrity": "d8e3801bba3efe2a6e132d2279924794a61991c2f833851d7a8956d72efcdaf4"
+    }
+  },
+  "workspace": {
+    "packageJson": {
+      "dependencies": [
+        "npm:@expo/vector-icons@^15.0.2",
+        "npm:@hookform/resolvers@^5.2.2",
+        "npm:@react-native-async-storage/async-storage@2.2.0",
+        "npm:@stripe/stripe-react-native@0.63.0",
+        "npm:@supabase/supabase-js@^2.49.8",
+        "npm:@types/jest@^29.5.14",
+        "npm:@types/react@~19.2.2",
+        "npm:babel-preset-expo@^55.0.12",
+        "npm:date-fns@^4.1.0",
+        "npm:expo-asset@~55.0.16",
+        "npm:expo-audio@~55.0.14",
+        "npm:expo-auth-session@~55.0.15",
+        "npm:expo-blur@~55.0.14",
+        "npm:expo-camera@~55.0.16",
+        "npm:expo-constants@~55.0.15",
+        "npm:expo-crypto@~55.0.14",
+        "npm:expo-dev-client@~55.0.30",
+        "npm:expo-device@~55.0.15",
+        "npm:expo-file-system@~55.0.17",
+        "npm:expo-font@~55.0.4",
+        "npm:expo-haptics@~55.0.14",
+        "npm:expo-image-picker@~55.0.19",
+        "npm:expo-image@~55.0.9",
+        "npm:expo-intent-launcher@~55.0.12",
+        "npm:expo-linear-gradient@~55.0.13",
+        "npm:expo-linking@~55.0.14",
+        "npm:expo-location@~55.1.8",
+        "npm:expo-print@~55.0.13",
+        "npm:expo-router@~55.0.13",
+        "npm:expo-sharing@~55.0.18",
+        "npm:expo-speech-recognition@^3.1.2",
+        "npm:expo-speech@~55.0.13",
+        "npm:expo-splash-screen@~55.0.19",
+        "npm:expo-status-bar@~55.0.5",
+        "npm:expo-web-browser@~55.0.14",
+        "npm:expo@~55.0.18",
+        "npm:i18next@^25.10.9",
+        "npm:jest@29.7",
+        "npm:nativewind@^4.2.3",
+        "npm:react-dom@^19.2.0",
+        "npm:react-hook-form@^7.72.0",
+        "npm:react-i18next@^16.6.6",
+        "npm:react-native-draggable-flatlist@^4.0.3",
+        "npm:react-native-gesture-handler@2.30",
+        "npm:react-native-maps@1.27.2",
+        "npm:react-native-reanimated@4.2.1",
+        "npm:react-native-safe-area-context@~5.6.2",
+        "npm:react-native-screens@4.23",
+        "npm:react-native-sse@^1.2.1",
+        "npm:react-native-svg@15.15.3",
+        "npm:react-native-worklets@0.7.4",
+        "npm:react-native@0.83.6",
+        "npm:react@19.2.0",
+        "npm:tailwindcss@^3.3.2",
+        "npm:ts-jest@^29.4.5",
+        "npm:typescript@~5.9.2",
+        "npm:zod@^4.3.6"
+      ],
+      "overrides": {
+        "postcss": "8.5.10",
+        "uuid": "^14.0.0"
+      }
+    }
+  }
+}

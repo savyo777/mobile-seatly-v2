@@ -9,6 +9,71 @@ function includesNormalized(source: string, target: string): boolean {
   return Boolean(source && target && source.includes(target));
 }
 
+const CUISINE_GROUPS: Record<string, string[]> = {
+  european: [
+    'european',
+    'modern european',
+    'italian',
+    'french',
+    'spanish',
+    'mediterranean',
+    'greek',
+    'portuguese',
+    'bistro',
+    'tapas',
+  ],
+  asian: [
+    'asian',
+    'chinese',
+    'japanese',
+    'korean',
+    'thai',
+    'vietnamese',
+    'filipino',
+    'malaysian',
+    'indonesian',
+    'sushi',
+    'ramen',
+    'dim sum',
+  ],
+  latin: [
+    'latin',
+    'mexican',
+    'peruvian',
+    'brazilian',
+    'argentinian',
+    'colombian',
+    'cuban',
+    'venezuelan',
+  ],
+  'middle eastern': [
+    'middle eastern',
+    'mediterranean',
+    'lebanese',
+    'turkish',
+    'persian',
+    'egyptian',
+    'moroccan',
+    'halal',
+  ],
+};
+
+function expandCuisineTerms(cuisines: string[] | undefined): string[] {
+  const expanded = new Set<string>();
+  for (const cuisine of cuisines ?? []) {
+    const normalized = normalize(cuisine);
+    if (!normalized) continue;
+    expanded.add(normalized);
+    for (const [group, terms] of Object.entries(CUISINE_GROUPS)) {
+      if (normalized === group) {
+        expanded.add(group);
+        terms.map(normalize).filter(Boolean).forEach((term) => expanded.add(term));
+      }
+    }
+  }
+  return [...expanded];
+}
+
 function restaurantSearchText(restaurant: Restaurant): string {
   return normalize([
     restaurant.name,
@@ -21,7 +86,7 @@ function restaurantSearchText(restaurant: Restaurant): string {
 }
 
 function matchesCuisine(restaurant: Restaurant, cuisines: string[] | undefined): boolean {
-  const cleaned = (cuisines ?? []).map(normalize).filter(Boolean);
+  const cleaned = expandCuisineTerms(cuisines);
   if (!cleaned.length) return true;
   const cuisineText = normalize([
     restaurant.cuisineType,

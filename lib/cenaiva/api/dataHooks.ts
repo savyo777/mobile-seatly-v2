@@ -34,7 +34,8 @@ function num(value: unknown, fallback = 0): number {
 
 export function useCenaivaRestaurants() {
   const [restaurants, setRestaurants] = useState<Restaurant[]>([]);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [hasLoaded, setHasLoaded] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const reload = useCallback(async () => {
@@ -47,6 +48,7 @@ export function useCenaivaRestaurants() {
       setError(String(err));
       setRestaurants(mockRestaurants);
     } finally {
+      setHasLoaded(true);
       setLoading(false);
     }
   }, []);
@@ -55,7 +57,7 @@ export function useCenaivaRestaurants() {
     void reload();
   }, [reload]);
 
-  return { restaurants, loading, error, reload };
+  return { restaurants, loading, hasLoaded, error, reload };
 }
 
 export function usePublicMenuCategories(restaurantId: string | null | undefined) {

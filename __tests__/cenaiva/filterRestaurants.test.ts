@@ -39,6 +39,7 @@ describe('filterCenaivaRestaurants', () => {
     restaurant({ id: 'italian-1', name: 'La Piazza', cuisineType: 'Italian Fine Dining' }),
     restaurant({ id: 'thai-1', name: 'Pai', cuisineType: 'Thai', tags: ['spicy noodles'] }),
     restaurant({ id: 'french-1', name: 'La Maison', cuisineType: 'French Bistro', city: 'Montreal' }),
+    restaurant({ id: 'greek-1', name: 'Agora', cuisineType: 'Greek Mediterranean' }),
   ];
 
   it('filters the assistant rail by cuisine even when marker ids are omitted', () => {
@@ -59,5 +60,14 @@ describe('filterCenaivaRestaurants', () => {
   it('filters by query and city for assistant discovery refinements', () => {
     const next = filterCenaivaRestaurants(restaurants, [], { city: 'montreal', query: 'bistro' });
     expect(next.map((item) => item.id)).toEqual(['french-1']);
+  });
+
+  it('expands European cuisine to related cuisines while preserving assistant order', () => {
+    const next = filterCenaivaRestaurants(
+      restaurants,
+      ['thai-1', 'greek-1', 'french-1', 'italian-1'],
+      { cuisine: ['European'] },
+    );
+    expect(next.map((item) => item.id)).toEqual(['greek-1', 'french-1', 'italian-1']);
   });
 });

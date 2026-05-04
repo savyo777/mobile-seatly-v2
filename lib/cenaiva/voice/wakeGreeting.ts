@@ -32,7 +32,17 @@ export function resolveWakeGreetingName(user: WakeGreetingUser): string | null {
   );
 }
 
-export function buildWakeGreeting(user: WakeGreetingUser): string {
+export function resolveWakeGreetingPeriod(now: Date = new Date()): 'morning' | 'afternoon' | 'evening' {
+  const hour = now.getHours();
+  if (hour >= 5 && hour < 12) return 'morning';
+  if (hour >= 12 && hour < 17) return 'afternoon';
+  return 'evening';
+}
+
+export function buildWakeGreeting(user: WakeGreetingUser, now: Date = new Date()): string {
   const name = resolveWakeGreetingName(user);
-  return name ? `Hey ${name}, how can I help you?` : 'Hey, how can I help you?';
+  const period = resolveWakeGreetingPeriod(now);
+  return name
+    ? `Good ${period}, ${name}. How may I help with your reservation?`
+    : `Good ${period}. How may I help with your reservation?`;
 }

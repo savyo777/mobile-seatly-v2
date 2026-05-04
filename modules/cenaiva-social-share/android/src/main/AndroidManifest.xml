@@ -1,0 +1,29 @@
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+  <application>
+    <provider
+      android:name=".CenaivaSocialShareFileProvider"
+      android:authorities="${applicationId}.CenaivaSocialShareFileProvider"
+      android:exported="false"
+      android:grantUriPermissions="true">
+      <meta-data
+        android:name="android.support.FILE_PROVIDER_PATHS"
+        android:resource="@xml/cenaiva_social_share_provider_paths" />
+    </provider>
+  </application>
+
+  <queries>
+    <package android:name="com.instagram.android" />
+    <package android:name="com.zhiliaoapp.musically" />
+    <package android:name="com.ss.android.ugc.trill" />
+    <package android:name="com.snapchat.android" />
+    <package android:name="com.google.android.youtube" />
+    <intent>
+      <action android:name="android.intent.action.SEND" />
+      <data android:mimeType="*/*" />
+    </intent>
+    <intent>
+      <action android:name="com.instagram.share.ADD_TO_STORY" />
+      <data android:mimeType="*/*" />
+    </intent>
+  </queries>
+</manifest>

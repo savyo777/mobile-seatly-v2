@@ -1,10 +1,12 @@
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   ActivityIndicator,
+  Image,
   Keyboard,
   KeyboardAvoidingView,
   Platform,
   Pressable,
+  ScrollView,
   StyleSheet,
   Text,
   TextInput,
@@ -19,12 +21,14 @@ import { VoiceOrb } from '@/components/cenaiva/VoiceOrb';
 import { RestaurantDiscoveryMap } from '@/components/map/RestaurantDiscoveryMap';
 import { Button } from '@/components/ui/Button';
 import { useCenaivaAssistant } from '@/lib/cenaiva/CenaivaAssistantProvider';
-import { useCenaivaRestaurants } from '@/lib/cenaiva/api/dataHooks';
+import { useCenaivaRestaurants, usePublicMenuCategories, usePublicMenuItems } from '@/lib/cenaiva/api/dataHooks';
 import { filterCenaivaRestaurants } from '@/lib/cenaiva/filterRestaurants';
 import { useAssistantStore } from '@/lib/cenaiva/state/assistantStore';
 import { useCenaivaVoicePreference } from '@/lib/cenaiva/voice/CenaivaVoicePreferenceProvider';
 import type { Restaurant } from '@/lib/mock/restaurants';
-import { DEFAULT_MAP_CENTER, withDistances } from '@/lib/map/mapFilters';
+import { mockMapRestaurants } from '@/lib/mock/mapRestaurants';
+import { applyMapFilter, DEFAULT_MAP_CENTER, withDistances } from '@/lib/map/mapFilters';
+import { haversineMeters } from '@/lib/map/geo';
 import type { CenaivaTtsVoice } from '@/lib/cenaiva/voice/voicePreference';
 import { createStyles, borderRadius, spacing, typography } from '@/lib/theme';
 
@@ -53,6 +57,58 @@ const CONFIRMATION_OR_POST_BOOKING_STATUSES = new Set([
   'paid',
 ]);
 
+const CENAIVA_EAGLE_REGION_DELTA = {
+  latitudeDelta: 0.16,
+  longitudeDelta: 0.16,
+};
+const CENAIVA_LOCAL_COORDINATE_RADIUS_METERS = 75_000;
+const CATALOG_ALL_TAB = '__all__';
+const WEEKDAY_KEYS = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'] as const;
+
+type HoursRange = { open: string; close: string };
+type ParsedClockTime = {
+  hour: number;
+  minute: number;
+  minutes: number;
+  hasMeridiem: boolean;
+};
+
+function normalizeRestaurantKey(value: string) {
+  return value.toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim();
+}
+
+const discoverMapRestaurantById = new Map(mockMapRestaurants.map((restaurant) => [restaurant.id, restaurant]));
+const discoverMapRestaurantByName = new Map(
+  mockMapRestaurants.map((restaurant) => [normalizeRestaurantKey(restaurant.name), restaurant]),
+);
+
+function withDiscoverMapCoordinates(
+  restaurant: Restaurant,
+  anchor: { lat: number; lng: number },
+  index: number,
+): Restaurant {
+  if (
+    Number.isFinite(restaurant.lat) &&
+    Number.isFinite(restaurant.lng) &&
+    haversineMeters(anchor.lat, anchor.lng, restaurant.lat, restaurant.lng) <= CENAIVA_LOCAL_COORDINATE_RADIUS_METERS
+  ) {
+    return restaurant;
+  }
+
+  const discoverRestaurant =
+    discoverMapRestaurantById.get(restaurant.id) ??
+    discoverMapRestaurantByName.get(normalizeRestaurantKey(restaurant.name)) ??
+    mockMapRestaurants[index % mockMapRestaurants.length];
+  if (!discoverRestaurant) return restaurant;
+  const latOffset = discoverRestaurant.lat - DEFAULT_MAP_CENTER.latitude;
+  const lngOffset = discoverRestaurant.lng - DEFAULT_MAP_CENTER.longitude;
+  return {
+    ...restaurant,
+    lat: anchor.lat + latOffset,
+    lng: anchor.lng + lngOffset,
+  };
+}
+
 const useStyles = createStyles(() => ({
   root: {
     flex: 1,
@@ -76,6 +132,51 @@ const useStyles = createStyles(() => ({
     alignItems: 'center',
     justifyContent: 'center',
     backgroundColor: 'rgba(255,255,255,0.10)',
+  },
+  selectedDistanceCard: {
+    position: 'absolute',
+    left: spacing.lg,
+    right: spacing.lg,
+    zIndex: 45,
+    minHeight: 44,
+    borderRadius: borderRadius.full,
+    borderWidth: 1,
+    borderColor: 'rgba(200,169,81,0.38)',
+    backgroundColor: 'rgba(8,8,8,0.82)',
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+    paddingHorizontal: spacing.md,
+    paddingVertical: 8,
+    shadowColor: '#000000',
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.28,
+    shadowRadius: 12,
+    elevation: 8,
+  },
+  selectedDistanceIcon: {
+    width: 26,
+    height: 26,
+    borderRadius: borderRadius.full,
+    backgroundColor: '#C8A951',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  selectedDistanceBody: {
+    flex: 1,
+    minWidth: 0,
+  },
+  selectedDistanceLabel: {
+    ...typography.bodySmall,
+    color: 'rgba(255,255,255,0.54)',
+    fontWeight: '700',
+    lineHeight: 14,
+  },
+  selectedDistanceText: {
+    ...typography.body,
+    color: '#FFFFFF',
+    fontWeight: '800',
+    lineHeight: 18,
   },
   spokenWrap: {
     position: 'absolute',
@@ -101,6 +202,206 @@ const useStyles = createStyles(() => ({
     color: '#FFFFFF',
     textAlign: 'center',
     fontWeight: '500',
+  },
+  catalogPopup: {
+    position: 'absolute',
+    left: spacing.md,
+    right: spacing.md,
+    bottom: spacing.sm,
+    zIndex: 40,
+    maxHeight: '72%',
+    borderRadius: borderRadius.lg,
+    borderWidth: 1,
+    borderColor: 'rgba(200,169,81,0.34)',
+    backgroundColor: 'rgba(14,14,14,0.96)',
+    overflow: 'hidden',
+    shadowColor: '#000000',
+    shadowOffset: { width: 0, height: 10 },
+    shadowOpacity: 0.36,
+    shadowRadius: 18,
+    elevation: 10,
+  },
+  catalogHeader: {
+    flexDirection: 'row',
+    gap: spacing.md,
+    padding: spacing.md,
+    paddingBottom: spacing.sm,
+  },
+  catalogImage: {
+    width: 76,
+    height: 76,
+    borderRadius: borderRadius.md,
+    backgroundColor: '#1E1E1E',
+  },
+  catalogImageFallback: {
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  catalogBody: {
+    flex: 1,
+    minWidth: 0,
+  },
+  catalogTitleRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: spacing.sm,
+  },
+  catalogName: {
+    ...typography.body,
+    flex: 1,
+    color: '#FFFFFF',
+    fontWeight: '800',
+    lineHeight: 20,
+    minWidth: 0,
+  },
+  catalogClose: {
+    width: 28,
+    height: 28,
+    borderRadius: borderRadius.full,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: 'rgba(255,255,255,0.08)',
+  },
+  catalogMetaRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+    flexWrap: 'wrap',
+    marginTop: spacing.xs,
+  },
+  catalogMeta: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 3,
+  },
+  catalogMetaText: {
+    ...typography.bodySmall,
+    color: 'rgba(255,255,255,0.66)',
+    fontWeight: '600',
+  },
+  catalogCuisine: {
+    ...typography.bodySmall,
+    color: 'rgba(255,255,255,0.48)',
+    marginTop: 5,
+  },
+  catalogHours: {
+    ...typography.bodySmall,
+    color: 'rgba(255,255,255,0.72)',
+    marginTop: spacing.xs,
+    fontWeight: '600',
+  },
+  catalogScroll: {
+    maxHeight: 190,
+    borderTopWidth: 1,
+    borderTopColor: 'rgba(255,255,255,0.08)',
+  },
+  catalogScrollContent: {
+    paddingHorizontal: spacing.md,
+    paddingTop: spacing.sm,
+    paddingBottom: spacing.md,
+  },
+  catalogTabs: {
+    gap: spacing.xs,
+    paddingBottom: spacing.sm,
+  },
+  catalogTab: {
+    minHeight: 32,
+    borderRadius: borderRadius.full,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.10)',
+    backgroundColor: 'rgba(255,255,255,0.05)',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: spacing.md,
+  },
+  catalogTabActive: {
+    backgroundColor: '#C8A951',
+    borderColor: '#C8A951',
+  },
+  catalogTabText: {
+    ...typography.bodySmall,
+    color: 'rgba(255,255,255,0.72)',
+    fontWeight: '700',
+  },
+  catalogTabTextActive: {
+    color: '#000000',
+  },
+  catalogSectionTitle: {
+    ...typography.bodySmall,
+    color: '#C8A951',
+    fontWeight: '800',
+    textTransform: 'uppercase',
+    letterSpacing: 0,
+    marginBottom: spacing.xs,
+  },
+  catalogMenuItem: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: spacing.sm,
+    paddingVertical: spacing.sm,
+    borderTopWidth: 1,
+    borderTopColor: 'rgba(255,255,255,0.06)',
+  },
+  catalogMenuPhoto: {
+    width: 56,
+    height: 56,
+    borderRadius: borderRadius.sm,
+    backgroundColor: '#1E1E1E',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  catalogMenuBody: {
+    flex: 1,
+    minWidth: 0,
+  },
+  catalogMenuName: {
+    ...typography.bodySmall,
+    color: '#FFFFFF',
+    fontWeight: '800',
+    lineHeight: 17,
+  },
+  catalogMenuDescription: {
+    ...typography.bodySmall,
+    color: 'rgba(255,255,255,0.46)',
+    lineHeight: 16,
+    marginTop: 2,
+  },
+  catalogMenuPrice: {
+    ...typography.bodySmall,
+    color: '#C8A951',
+    fontWeight: '700',
+    marginTop: 3,
+  },
+  catalogEmptyText: {
+    ...typography.bodySmall,
+    color: 'rgba(255,255,255,0.58)',
+    lineHeight: 18,
+  },
+  catalogActions: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+    borderTopWidth: 1,
+    borderTopColor: 'rgba(255,255,255,0.08)',
+    backgroundColor: 'rgba(14,14,14,0.98)',
+    paddingTop: spacing.sm,
+    paddingHorizontal: spacing.md,
+    paddingBottom: spacing.md,
+  },
+  catalogBook: {
+    flex: 1,
+    minHeight: 42,
+    borderRadius: borderRadius.full,
+    backgroundColor: '#C8A951',
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: spacing.xs,
+  },
+  catalogBookText: {
+    ...typography.body,
+    color: '#000000',
+    fontWeight: '800',
   },
   bottomPanel: {
     marginTop: 'auto',
@@ -288,6 +589,84 @@ function permissionCopy(status: string) {
   return 'Microphone access is off. Enable it to use Hey Cenaiva.';
 }
 
+function priceText(priceRange: number | null | undefined) {
+  const clamped = Math.max(1, Math.min(4, Math.round(priceRange ?? 2)));
+  return '$'.repeat(clamped);
+}
+
+function distanceText(distanceMeters: number | null | undefined) {
+  if (typeof distanceMeters !== 'number' || !Number.isFinite(distanceMeters)) return null;
+  if (distanceMeters < 1000) return `${Math.round(distanceMeters)} m`;
+  return `${(distanceMeters / 1000).toFixed(1)} km`;
+}
+
+function moneyText(value: number) {
+  if (!Number.isFinite(value)) return '';
+  return Number.isInteger(value) ? `$${value}` : `$${value.toFixed(2)}`;
+}
+
+function parseClockTime(value: string | null | undefined): ParsedClockTime | null {
+  const cleaned = String(value ?? '').trim().toLowerCase().replace(/\./g, '');
+  const match = cleaned.match(/^(\d{1,2})(?::(\d{1,2}))?(?::\d{1,2})?\s*(am|pm)?$/);
+  if (!match) return null;
+
+  const rawHour = Number(match[1]);
+  const minute = match[2] == null ? 0 : Number(match[2]);
+  const meridiem = match[3] as 'am' | 'pm' | undefined;
+  if (!Number.isFinite(rawHour) || !Number.isFinite(minute) || minute < 0 || minute > 59) return null;
+  if (!meridiem && (rawHour < 0 || rawHour > 23)) return null;
+  if (meridiem && (rawHour < 1 || rawHour > 12)) return null;
+
+  let hour = rawHour;
+  if (meridiem === 'pm' && hour < 12) hour += 12;
+  if (meridiem === 'am' && hour === 12) hour = 0;
+
+  return {
+    hour,
+    minute,
+    minutes: hour * 60 + minute,
+    hasMeridiem: Boolean(meridiem),
+  };
+}
+
+function formatClockMinutes(totalMinutes: number): string {
+  const minutesInDay = ((totalMinutes % 1440) + 1440) % 1440;
+  const hour24 = Math.floor(minutesInDay / 60);
+  const minute = minutesInDay % 60;
+  const period = hour24 >= 12 ? 'PM' : 'AM';
+  const hour12 = hour24 % 12 || 12;
+  return `${hour12}:${String(minute).padStart(2, '0')} ${period}`;
+}
+
+function normalizeHoursRange(hours: HoursRange | null | undefined): { open: number; close: number } | null {
+  if (!hours) return null;
+  const open = parseClockTime(hours.open);
+  const close = parseClockTime(hours.close);
+  if (!open || !close) return null;
+
+  let closeMinutes = close.minutes;
+  if (!close.hasMeridiem && closeMinutes <= open.minutes) {
+    closeMinutes += open.minutes < 12 * 60 && close.hour <= 12 ? 12 * 60 : 24 * 60;
+    if (closeMinutes <= open.minutes) closeMinutes += 12 * 60;
+  } else if (closeMinutes <= open.minutes) {
+    closeMinutes += 24 * 60;
+  }
+
+  return { open: open.minutes, close: closeMinutes };
+}
+
+function formatHoursRange(hours: HoursRange | null | undefined): string {
+  const range = normalizeHoursRange(hours);
+  if (!range) return 'Closed today';
+  return `${formatClockMinutes(range.open)} - ${formatClockMinutes(range.close)}`;
+}
+
+function todayHoursText(hoursJson: Restaurant['hoursJson'] | null | undefined): string {
+  if (!hoursJson) return 'Hours unavailable';
+  const todayKey = WEEKDAY_KEYS[new Date().getDay()];
+  return formatHoursRange(hoursJson[todayKey]);
+}
+
 export function CenaivaVoiceShell({ onClose }: { onClose?: () => void }) {
   const insets = useSafeAreaInsets();
   const styles = useStyles();
@@ -300,11 +679,19 @@ export function CenaivaVoiceShell({ onClose }: { onClose?: () => void }) {
     needsSelection: voiceSelectionRequired,
     setVoicePreference,
   } = useCenaivaVoicePreference();
-  const { restaurants } = useCenaivaRestaurants();
+  const {
+    restaurants,
+    loading: restaurantsLoading,
+    hasLoaded: restaurantsHaveLoaded,
+  } = useCenaivaRestaurants();
   const [input, setInput] = useState('');
   const [textMode, setTextMode] = useState(false);
   const [selectedId, setSelectedId] = useState<string | null>(state.map.highlighted_restaurant_id);
   const [pendingVoice, setPendingVoice] = useState<CenaivaTtsVoice | null>(voicePreference);
+  const [selectedCatalogTab, setSelectedCatalogTab] = useState(CATALOG_ALL_TAB);
+  const [mapFocusResetKey, setMapFocusResetKey] = useState(0);
+  const coordinateCacheRef = useRef<Map<string, { lat: number; lng: number }>>(new Map());
+  const wasOpenRef = useRef(false);
   const showVoiceSelectionOverlay =
     voicePreferenceLoading || voicePreferenceSaving || voiceSelectionRequired;
 
@@ -315,13 +702,132 @@ export function CenaivaVoiceShell({ onClose }: { onClose?: () => void }) {
     () => filterCenaivaRestaurants(restaurants, state.map.marker_restaurant_ids, state.filters),
     [restaurants, state.filters, state.map.marker_restaurant_ids],
   );
-  const mappedRestaurants = useMemo(
-    () => withDistances(visibleRestaurants, DEFAULT_MAP_CENTER.latitude, DEFAULT_MAP_CENTER.longitude),
-    [visibleRestaurants],
+  const mapAnchor = useMemo(
+    () => ({
+      lat: state.map.center?.lat ?? DEFAULT_MAP_CENTER.latitude,
+      lng: state.map.center?.lng ?? DEFAULT_MAP_CENTER.longitude,
+    }),
+    [state.map.center?.lat, state.map.center?.lng],
   );
-  const highlightedId = state.map.highlighted_restaurant_id ?? state.booking.restaurant_id ?? selectedId;
+  const mapCoordinateRestaurants = useMemo(
+    () => {
+      const coordinateCache = coordinateCacheRef.current;
+      return visibleRestaurants.map((restaurant, index) => {
+        const cached = coordinateCache.get(restaurant.id);
+        if (cached) {
+          return {
+            ...restaurant,
+            lat: cached.lat,
+            lng: cached.lng,
+          };
+        }
+
+        const positioned = withDiscoverMapCoordinates(restaurant, mapAnchor, index);
+        coordinateCache.set(restaurant.id, { lat: positioned.lat, lng: positioned.lng });
+        return positioned;
+      });
+    },
+    [mapAnchor, visibleRestaurants],
+  );
+  const mappedRestaurants = useMemo(
+    () => {
+      const withDistance = withDistances(
+        mapCoordinateRestaurants,
+        mapAnchor.lat,
+        mapAnchor.lng,
+      );
+      return state.map.marker_restaurant_ids.length
+        ? withDistance
+        : applyMapFilter(withDistance, 'nearby');
+    },
+    [mapAnchor.lat, mapAnchor.lng, mapCoordinateRestaurants, state.map.marker_restaurant_ids.length],
+  );
+  const chosenRestaurant = useMemo(
+    () => {
+      if (!state.booking.restaurant_id) return null;
+      const mapped = mappedRestaurants.find((restaurant) => restaurant.id === state.booking.restaurant_id);
+      if (mapped) return mapped;
+
+      const source = restaurants.find((restaurant) => restaurant.id === state.booking.restaurant_id);
+      if (!source) return null;
+      const cached = coordinateCacheRef.current.get(source.id);
+      const positioned = cached
+        ? { ...source, lat: cached.lat, lng: cached.lng }
+        : withDiscoverMapCoordinates(source, mapAnchor, 0);
+      coordinateCacheRef.current.set(source.id, { lat: positioned.lat, lng: positioned.lng });
+      return withDistances([positioned], mapAnchor.lat, mapAnchor.lng)[0] ?? null;
+    },
+    [mapAnchor, mappedRestaurants, restaurants, state.booking.restaurant_id],
+  );
+  const mapDisplayRestaurants = useMemo(
+    () => (chosenRestaurant ? [chosenRestaurant] : mappedRestaurants),
+    [chosenRestaurant, mappedRestaurants],
+  );
+  const selectedRestaurant = useMemo(
+    () => (selectedId ? mappedRestaurants.find((restaurant) => restaurant.id === selectedId) ?? null : null),
+    [mappedRestaurants, selectedId],
+  );
+  const {
+    items: selectedMenuItems,
+    loading: selectedMenuLoading,
+  } = usePublicMenuItems(selectedRestaurant?.id);
+  const {
+    categories: selectedMenuCategories,
+    loading: selectedMenuCategoriesLoading,
+  } = usePublicMenuCategories(selectedRestaurant?.id);
+  const selectedCategoryNameById = useMemo(
+    () => new Map(selectedMenuCategories.map((category) => [category.id, category.name])),
+    [selectedMenuCategories],
+  );
+  const catalogMenuItems = useMemo(
+    () =>
+      selectedMenuItems
+        .filter((item) => item.is_available !== false)
+        .map((item) => ({
+          id: item.id,
+          name: item.name,
+          description: item.description,
+          price: item.price,
+          category: item.category_id
+            ? selectedCategoryNameById.get(item.category_id) ?? item.category ?? 'Menu'
+            : item.category ?? 'Menu',
+          photoUrl: item.photo_url,
+          sortOrder: item.sort_order ?? 0,
+        }))
+        .sort((a, b) => a.category.localeCompare(b.category) || a.sortOrder - b.sortOrder || a.name.localeCompare(b.name)),
+    [selectedCategoryNameById, selectedMenuItems],
+  );
+  const catalogMenuTabs = useMemo(
+    () => Array.from(new Set(catalogMenuItems.map((item) => item.category))),
+    [catalogMenuItems],
+  );
+  const visibleCatalogMenuItems = useMemo(
+    () =>
+      selectedCatalogTab === CATALOG_ALL_TAB
+        ? catalogMenuItems
+        : catalogMenuItems.filter((item) => item.category === selectedCatalogTab),
+    [catalogMenuItems, selectedCatalogTab],
+  );
+  const fallbackMenuSignals = useMemo(
+    () =>
+      [
+        selectedRestaurant?.cuisineType,
+        ...(selectedRestaurant?.tags ?? []),
+      ]
+        .filter((item): item is string => Boolean(item?.trim()))
+        .slice(0, 3),
+    [selectedRestaurant],
+  );
+  const userLocation = state.map.center
+    ? { latitude: state.map.center.lat, longitude: state.map.center.lng }
+    : null;
+  const highlightedId = state.booking.restaurant_id ?? selectedId ?? null;
   const showMap = !inManualMenu;
   const showRail = !showConfirmationOrPostBooking && !inManualMenu && !hasSelectedRestaurant;
+  const showPinCatalog = Boolean(selectedRestaurant && showMap && showRail);
+  const selectedDistance = chosenRestaurant ? distanceText(chosenRestaurant.distanceMeters) : null;
+  const showSelectedDistance = Boolean(showMap && state.booking.restaurant_id && chosenRestaurant && selectedDistance);
+  const canShowRailEmpty = restaurantsHaveLoaded && !restaurantsLoading;
   const showPermissionRecovery =
     !textMode &&
     (assistant.voicePermissionStatus === 'denied' ||
@@ -333,8 +839,28 @@ export function CenaivaVoiceShell({ onClose }: { onClose?: () => void }) {
   }, [assistant, visibleRestaurants]);
 
   useEffect(() => {
+    if (state.isOpen && !wasOpenRef.current) {
+      coordinateCacheRef.current.clear();
+      setSelectedId(state.map.highlighted_restaurant_id);
+      setSelectedCatalogTab(CATALOG_ALL_TAB);
+      setMapFocusResetKey((key) => key + 1);
+    }
+    wasOpenRef.current = state.isOpen;
+  }, [state.isOpen, state.map.highlighted_restaurant_id]);
+
+  useEffect(() => {
     setSelectedId(state.map.highlighted_restaurant_id);
   }, [state.map.highlighted_restaurant_id]);
+
+  useEffect(() => {
+    setSelectedCatalogTab(CATALOG_ALL_TAB);
+  }, [selectedRestaurant?.id]);
+
+  useEffect(() => {
+    if (selectedCatalogTab !== CATALOG_ALL_TAB && !catalogMenuTabs.includes(selectedCatalogTab)) {
+      setSelectedCatalogTab(CATALOG_ALL_TAB);
+    }
+  }, [catalogMenuTabs, selectedCatalogTab]);
 
   useEffect(() => {
     setPendingVoice(voicePreference);
@@ -375,12 +901,19 @@ export function CenaivaVoiceShell({ onClose }: { onClose?: () => void }) {
     [assistant, dispatch, state.voiceStatus],
   );
 
+  const dismissRestaurantCatalog = useCallback(() => {
+    if (!selectedId) return;
+    setSelectedId(null);
+    setSelectedCatalogTab(CATALOG_ALL_TAB);
+    Keyboard.dismiss();
+  }, [selectedId]);
+
   const onSelectRestaurant = useCallback(
     (id: string) => {
       setSelectedId(id);
-      dispatch({ type: 'highlight_restaurant', restaurant_id: id });
+      setSelectedCatalogTab(CATALOG_ALL_TAB);
     },
-    [dispatch],
+    [],
   );
 
   const close = useCallback(() => {
@@ -423,14 +956,20 @@ export function CenaivaVoiceShell({ onClose }: { onClose?: () => void }) {
     >
       <View style={[styles.mapArea, !showMap && styles.mapHidden]}>
         <RestaurantDiscoveryMap
-          filteredRestaurants={mappedRestaurants}
+          filteredRestaurants={mapDisplayRestaurants}
           selectedId={highlightedId}
           onSelectRestaurant={onSelectRestaurant}
-          onMapPress={() => undefined}
-          userLocation={null}
-          showUserLocation={false}
-          locationReady
+          onMapPress={dismissRestaurantCatalog}
+          userLocation={userLocation}
+          showUserLocation={Boolean(userLocation)}
+          locationReady={restaurantsHaveLoaded || mapDisplayRestaurants.length > 0}
           markerVariant="cenaiva"
+          autoFocusUserLocation
+          autoFocusRestaurants
+          autoFocusMaxRestaurants={8}
+          autoFocusRegionDelta={CENAIVA_EAGLE_REGION_DELTA}
+          autoFocusResetKey={mapFocusResetKey}
+          focusSelectedWithUser={Boolean(state.booking.restaurant_id)}
         />
 
         {!showConfirmationOrPostBooking ? (
@@ -448,6 +987,182 @@ export function CenaivaVoiceShell({ onClose }: { onClose?: () => void }) {
           </Pressable>
         ) : null}
 
+        {showSelectedDistance && chosenRestaurant && selectedDistance ? (
+          <View
+            pointerEvents="none"
+            style={[
+              styles.selectedDistanceCard,
+              { top: Math.max(insets.top, spacing.lg) + 44 },
+            ]}
+          >
+            <View style={styles.selectedDistanceIcon}>
+              <Ionicons name="navigate" size={14} color="#000000" />
+            </View>
+            <View style={styles.selectedDistanceBody}>
+              <Text style={styles.selectedDistanceLabel} numberOfLines={1}>
+                Distance from you
+              </Text>
+              <Text style={styles.selectedDistanceText} numberOfLines={1}>
+                {chosenRestaurant.name} is {selectedDistance} away
+              </Text>
+            </View>
+          </View>
+        ) : null}
+
+        {selectedRestaurant && showPinCatalog ? (
+          <View style={styles.catalogPopup}>
+            <View style={styles.catalogHeader}>
+              {selectedRestaurant.coverPhotoUrl?.trim() ? (
+                <Image
+                  source={{ uri: selectedRestaurant.coverPhotoUrl }}
+                  style={styles.catalogImage}
+                />
+              ) : (
+                <View style={[styles.catalogImage, styles.catalogImageFallback]}>
+                  <Ionicons name="restaurant-outline" size={28} color="rgba(255,255,255,0.42)" />
+                </View>
+              )}
+              <View style={styles.catalogBody}>
+                <View style={styles.catalogTitleRow}>
+                  <Text style={styles.catalogName} numberOfLines={2}>
+                    {selectedRestaurant.name}
+                  </Text>
+                  <Pressable
+                    accessibilityRole="button"
+                    accessibilityLabel="Close restaurant catalog"
+                    style={({ pressed }) => [
+                      styles.catalogClose,
+                      pressed && { opacity: 0.78 },
+                    ]}
+                    onPress={dismissRestaurantCatalog}
+                  >
+                    <Ionicons name="close" size={16} color="rgba(255,255,255,0.70)" />
+                  </Pressable>
+                </View>
+                <View style={styles.catalogMetaRow}>
+                  <View style={styles.catalogMeta}>
+                    <Ionicons name="star" size={13} color="#C8A951" />
+                    <Text style={styles.catalogMetaText}>{selectedRestaurant.avgRating.toFixed(1)}</Text>
+                  </View>
+                  <View style={styles.catalogMeta}>
+                    <Ionicons name="cash-outline" size={13} color="rgba(255,255,255,0.58)" />
+                    <Text style={styles.catalogMetaText}>{priceText(selectedRestaurant.priceRange)}</Text>
+                  </View>
+                  {distanceText(selectedRestaurant.distanceMeters) ? (
+                    <View style={styles.catalogMeta}>
+                      <Ionicons name="navigate-outline" size={13} color="rgba(255,255,255,0.58)" />
+                      <Text style={styles.catalogMetaText}>
+                        {distanceText(selectedRestaurant.distanceMeters)}
+                      </Text>
+                    </View>
+                  ) : null}
+                </View>
+                {selectedRestaurant.cuisineType || selectedRestaurant.area || selectedRestaurant.city ? (
+                  <Text style={styles.catalogCuisine} numberOfLines={2}>
+                    {[selectedRestaurant.cuisineType, selectedRestaurant.area || selectedRestaurant.city]
+                      .filter(Boolean)
+                      .join(' · ')}
+                  </Text>
+                ) : null}
+                <Text style={styles.catalogHours} numberOfLines={1}>
+                  Today: {todayHoursText(selectedRestaurant.hoursJson)}
+                </Text>
+              </View>
+            </View>
+
+            <ScrollView
+              style={styles.catalogScroll}
+              contentContainerStyle={styles.catalogScrollContent}
+              nestedScrollEnabled
+              showsVerticalScrollIndicator={false}
+            >
+              <Text style={styles.catalogSectionTitle}>Menu</Text>
+              {catalogMenuTabs.length ? (
+                <ScrollView
+                  horizontal
+                  showsHorizontalScrollIndicator={false}
+                  contentContainerStyle={styles.catalogTabs}
+                >
+                  {[
+                    { key: CATALOG_ALL_TAB, label: 'All' },
+                    ...catalogMenuTabs.map((category) => ({ key: category, label: category })),
+                  ].map((tab) => {
+                    const selected = selectedCatalogTab === tab.key;
+                    return (
+                      <Pressable
+                        key={tab.key}
+                        accessibilityRole="button"
+                        accessibilityLabel={`Show ${tab.label} menu items`}
+                        style={({ pressed }) => [
+                          styles.catalogTab,
+                          selected && styles.catalogTabActive,
+                          pressed && { opacity: 0.84 },
+                        ]}
+                        onPress={() => setSelectedCatalogTab(tab.key)}
+                      >
+                        <Text style={[styles.catalogTabText, selected && styles.catalogTabTextActive]}>
+                          {tab.label}
+                        </Text>
+                      </Pressable>
+                    );
+                  })}
+                </ScrollView>
+              ) : null}
+
+              {selectedMenuLoading || selectedMenuCategoriesLoading ? (
+                <View style={styles.catalogMenuItem}>
+                  <ActivityIndicator color="#C8A951" />
+                  <Text style={styles.catalogEmptyText}>Loading menu...</Text>
+                </View>
+              ) : visibleCatalogMenuItems.length ? (
+                visibleCatalogMenuItems.map((item) => (
+                  <View key={item.id} style={styles.catalogMenuItem}>
+                    {item.photoUrl?.trim() ? (
+                      <Image source={{ uri: item.photoUrl }} style={styles.catalogMenuPhoto} resizeMode="cover" />
+                    ) : (
+                      <View style={styles.catalogMenuPhoto}>
+                        <Ionicons name="restaurant-outline" size={20} color="rgba(255,255,255,0.36)" />
+                      </View>
+                    )}
+                    <View style={styles.catalogMenuBody}>
+                      <Text style={styles.catalogMenuName} numberOfLines={2}>{item.name}</Text>
+                      {item.description ? (
+                        <Text style={styles.catalogMenuDescription} numberOfLines={2}>
+                          {item.description}
+                        </Text>
+                      ) : null}
+                      <Text style={styles.catalogMenuPrice}>{moneyText(item.price)}</Text>
+                    </View>
+                  </View>
+                ))
+              ) : fallbackMenuSignals.length ? (
+                <Text style={styles.catalogEmptyText}>
+                  {fallbackMenuSignals.join(' · ')}
+                </Text>
+              ) : (
+                <Text style={styles.catalogEmptyText}>This restaurant has not published a menu yet.</Text>
+              )}
+            </ScrollView>
+
+            <View style={styles.catalogActions}>
+              <Pressable
+                accessibilityRole="button"
+                accessibilityLabel={`Book dine-in at ${selectedRestaurant.name}`}
+                disabled={state.voiceStatus === 'processing'}
+                style={({ pressed }) => [
+                  styles.catalogBook,
+                  state.voiceStatus === 'processing' && { opacity: 0.45 },
+                  pressed && state.voiceStatus !== 'processing' && { opacity: 0.86 },
+                ]}
+                onPress={() => onPressRestaurant(selectedRestaurant)}
+              >
+                <Ionicons name="calendar-outline" size={17} color="#000000" />
+                <Text style={styles.catalogBookText}>Book dine-in</Text>
+              </Pressable>
+            </View>
+          </View>
+        ) : null}
+
         {state.lastSpokenText ? (
           <View style={styles.spokenWrap} pointerEvents="none">
             <View style={styles.spokenBubble}>
@@ -462,6 +1177,7 @@ export function CenaivaVoiceShell({ onClose }: { onClose?: () => void }) {
           styles.bottomPanel,
           inManualMenu && styles.bottomPanelManual,
         ]}
+        onTouchStart={showPinCatalog ? dismissRestaurantCatalog : undefined}
       >
         {showRail ? (
           mappedRestaurants.length ? (
@@ -470,9 +1186,9 @@ export function CenaivaVoiceShell({ onClose }: { onClose?: () => void }) {
               highlightedId={state.booking.restaurant_id}
               onPressRestaurant={onPressRestaurant}
             />
-          ) : (
+          ) : canShowRailEmpty ? (
             <Text style={styles.railEmpty}>Speak to discover restaurants near you</Text>
-          )
+          ) : null
         ) : null}
 
         <View style={[styles.bookingWrap, inManualMenu && styles.bookingWrapManual]}>

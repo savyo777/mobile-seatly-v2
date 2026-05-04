@@ -181,6 +181,40 @@ export const FiltersDeltaSchema = z.object({
   query: z.string().optional(),
 });
 
+const DiscoverySortModeSchema = z.enum(["distance", "rating", "price_asc", "price_desc", "fit"]);
+
+export const DiscoveryMemorySchema = z.object({
+  transcript: z.string().nullable().default(null),
+  recommendation_mode: z.enum(["single", "list"]).nullable().default(null),
+  cuisine: z.array(z.string()).nullable().default(null),
+  cuisine_group: z.string().nullable().default(null),
+  city: z.string().nullable().default(null),
+  query: z.string().nullable().default(null),
+  sort_by: DiscoverySortModeSchema.nullable().default(null),
+  full_restaurant_ids: z.array(z.string()).default([]),
+  displayed_restaurant_ids: z.array(z.string()).default([]),
+  exhausted_restaurant_ids: z.array(z.string()).default([]),
+});
+
+export const BookingProcessMemorySchema = z.object({
+  phase: BOOKING_STATUS,
+  restaurant_id: z.string().nullable(),
+  restaurant_name: z.string().nullable(),
+  party_size: z.number().nullable(),
+  date: z.string().nullable(),
+  time: z.string().nullable(),
+  shift_id: z.string().nullable(),
+  slot_iso: z.string().nullable(),
+  reservation_id: z.string().nullable(),
+  confirmation_code: z.string().nullable(),
+  last_prompt: z.string().nullable(),
+});
+
+export const AssistantMemorySchema = z.object({
+  discovery: DiscoveryMemorySchema.nullable().default(null),
+  booking_process: BookingProcessMemorySchema.nullable().default(null),
+});
+
 // ── Main response schema ─────────────────────────────────────
 
 export const AssistantResponse = z.object({
@@ -192,6 +226,7 @@ export const AssistantResponse = z.object({
   booking: BookingDeltaSchema.nullable(),
   map: MapDeltaSchema.nullable(),
   filters: FiltersDeltaSchema.nullable(),
+  assistant_memory: AssistantMemorySchema.nullable().optional(),
   next_expected_input: z.enum(NEXT_INPUTS),
 });
 
@@ -207,6 +242,8 @@ export const OrchestratorRequest = z.object({
   filters: FiltersDeltaSchema.optional(),
   visible_restaurant_ids: z.array(z.string()).optional(),
   selected_restaurant_id: z.string().nullable().optional(),
+  recommendation_mode: z.enum(["single", "list"]).optional(),
+  assistant_memory: AssistantMemorySchema.nullable().optional(),
   user_location: latLng.nullable().optional(),
   timezone: z.string().optional(),
   conversation_id: z.string().optional(),

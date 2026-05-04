@@ -12,12 +12,12 @@ import { getSupabaseEnv, isSupabaseConfigured } from '@/lib/supabase/env';
 
 const DEEPGRAM_URL = 'https://api.deepgram.com/v1/listen';
 const MAX_KEYTERMS = 12;
-const SILENCE_TIMEOUT_MS = 1_650;
-const NO_SPEECH_TIMEOUT_MS = 4_500;
+const SILENCE_TIMEOUT_MS = 600;
+const NO_SPEECH_TIMEOUT_MS = 3_000;
 const TURN_TIMEOUT_MS = 30_000;
 const NATIVE_TURN_TIMEOUT_MS = 12_000;
 const METERING_SPEECH_DB = -24;
-const MIN_RECORDING_MS = 2_400;
+const MIN_RECORDING_MS = 800;
 
 export type TranscriptionPhase =
   | 'idle'
@@ -59,6 +59,10 @@ function debugVoice(message: string, details?: Record<string, unknown>) {
 
 function deepgramEnabled() {
   return process.env.EXPO_PUBLIC_DEEPGRAM_STT_ENABLED !== 'false';
+}
+
+function nativeSttFirstEnabled() {
+  return process.env.EXPO_PUBLIC_CENAIVA_NATIVE_STT_FIRST !== 'false';
 }
 
 function normalizeKeyterms(hints: string[] = []) {
@@ -391,6 +395,20 @@ export function useMobileTranscription() {
 
   const startListening = useCallback(
     async (hints: string[] = []): Promise<ListenResult> => {
+      let nativeAttempted = false;
+      if (nativeSttFirstEnabled() && NATIVE_SPEECH) {
+        nativeAttempted = true;
+        try {
+          return await startNativeSpeechRecognition(hints);
+        } catch (err) {
+          const message = err instanceof Error ? err.message : String(err);
+          debugVoice('native-first speech failed; trying deepgram fallback', { message });
+          if (!deepgramEnabled() || !session?.access_token || !isSupabaseConfigured()) {
+            throw err;
+          }
+        }
+      }
+
       if (!deepgramEnabled()) {
         if (NATIVE_SPEECH) return startNativeSpeechRecognition(hints);
         setUnavailable(true);
@@ -438,7 +456,7 @@ export function useMobileTranscription() {
         debugVoice('deepgram preflight failed', { message: error.message });
         setLastError(error.message);
         setPhase('idle');
-        if (shouldFallbackToNative(error)) return startNativeSpeechRecognition(hints);
+        if (!nativeAttempted && shouldFallbackToNative(error)) return startNativeSpeechRecognition(hints);
         throw error;
       }
 
@@ -454,7 +472,7 @@ export function useMobileTranscription() {
         const error = new Error(`recording-prepare-failed:${message}`);
         setLastError(error.message);
         setPhase('idle');
-        if (shouldFallbackToNative(error)) return startNativeSpeechRecognition(hints);
+        if (!nativeAttempted && shouldFallbackToNative(error)) return startNativeSpeechRecognition(hints);
         throw error;
       }
 
@@ -524,7 +542,7 @@ export function useMobileTranscription() {
         clearTimers();
         setListening(false);
         setPhase('idle');
-        if (shouldFallbackToNative(err)) {
+        if (!nativeAttempted && shouldFallbackToNative(err)) {
           return startNativeSpeechRecognition(hints);
         }
         throw err;

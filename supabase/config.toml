@@ -1,0 +1,10 @@
+project_id = "exbjodmnpdiayfzrdyux"
+
+[functions.cenaiva-orchestrate]
+verify_jwt = false
+
+[functions.elevenlabs-tts]
+verify_jwt = false
+
+[functions.register-restaurant-owner]
+verify_jwt = false

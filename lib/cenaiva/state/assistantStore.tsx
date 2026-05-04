@@ -7,6 +7,7 @@ import React, {
 } from 'react';
 import type {
   AssistantResponseType,
+  AssistantMemory,
   BookingState,
   CartItem,
   FiltersDelta,
@@ -23,6 +24,7 @@ export interface AssistantState {
   booking: BookingState;
   map: MapState;
   filters: FiltersDelta;
+  memory: AssistantMemory;
   availabilityOpen: boolean;
   showExitX: boolean;
   customerAccepted: boolean;
@@ -62,6 +64,11 @@ const initialMap: MapState = {
   highlighted_restaurant_id: null,
 };
 
+const initialMemory: AssistantMemory = {
+  discovery: null,
+  booking_process: null,
+};
+
 export const initialState: AssistantState = {
   isOpen: false,
   voiceStatus: 'idle',
@@ -70,6 +77,7 @@ export const initialState: AssistantState = {
   booking: initialBooking,
   map: initialMap,
   filters: {},
+  memory: initialMemory,
   availabilityOpen: false,
   showExitX: false,
   customerAccepted: false,
@@ -117,6 +125,36 @@ function beginBookingForRestaurant(
     restaurant_id: restaurantId,
     ...(restaurantName != null ? { restaurant_name: restaurantName } : {}),
     status: 'collecting_minimum_fields',
+  };
+}
+
+function mergeAssistantMemory(
+  current: AssistantMemory,
+  incoming: AssistantResponseType['assistant_memory'],
+): AssistantMemory {
+  if (!incoming) return current;
+  return {
+    discovery: incoming.discovery ?? current.discovery,
+    booking_process: incoming.booking_process ?? current.booking_process,
+  };
+}
+
+function bookingProcessMemoryFromState(
+  booking: BookingState,
+  lastPrompt: string | null,
+): NonNullable<AssistantMemory['booking_process']> {
+  return {
+    phase: booking.status,
+    restaurant_id: booking.restaurant_id,
+    restaurant_name: booking.restaurant_name,
+    party_size: booking.party_size,
+    date: booking.date,
+    time: booking.time,
+    shift_id: booking.shift_id,
+    slot_iso: booking.slot_iso,
+    reservation_id: booking.reservation_id,
+    confirmation_code: booking.confirmation_code,
+    last_prompt: lastPrompt,
   };
 }
 
@@ -399,6 +437,11 @@ export function assistantReducer(state: AssistantState, action: AssistantAction)
         next = { ...next, filters: { ...next.filters, ...response.filters } };
       }
 
+      next = {
+        ...next,
+        memory: mergeAssistantMemory(next.memory, response.assistant_memory),
+      };
+
       for (const uiAction of response.ui_actions ?? []) {
         if (!uiAction || typeof (uiAction as { type?: unknown }).type !== 'string') continue;
         try {
@@ -434,6 +477,14 @@ export function assistantReducer(state: AssistantState, action: AssistantAction)
         };
       }
 
+      next = {
+        ...next,
+        memory: {
+          ...next.memory,
+          booking_process: bookingProcessMemoryFromState(next.booking, next.lastSpokenText || null),
+        },
+      };
+
       return next;
     }
 
@@ -441,6 +492,10 @@ export function assistantReducer(state: AssistantState, action: AssistantAction)
       return {
         ...state,
         booking: initialBooking,
+        memory: {
+          ...state.memory,
+          booking_process: null,
+        },
         showExitX: false,
         customerAccepted: false,
         availabilityOpen: false,

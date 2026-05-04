@@ -34,6 +34,7 @@
         "ITSAppUsesNonExemptEncryption": false,
         "LSApplicationQueriesSchemes": [
           "instagram",
+          "instagram-stories",
           "snapchat",
           "tiktok",
           "youtube",
@@ -120,6 +121,11 @@
       "expo-image"
     ],
     "extra": {
+      "socialSharing": {
+        "instagramAppId": "",
+        "tiktokClientKey": "",
+        "snapchatClientId": ""
+      },
       "router": {},
       "eas": {
         "projectId": "1e9ba9c7-4c10-442e-a345-6ca128628363"

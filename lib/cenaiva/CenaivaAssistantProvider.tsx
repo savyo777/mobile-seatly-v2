@@ -25,6 +25,11 @@ import type { TranscriptionPhase } from '@/lib/cenaiva/voice/useMobileTranscript
 import { useCenaivaWakeWord } from '@/lib/cenaiva/voice/useCenaivaWakeWord';
 import { buildWakeGreeting } from '@/lib/cenaiva/voice/wakeGreeting';
 import type { CenaivaVoicePermissionStatus } from '@/lib/cenaiva/voice/voicePermission';
+import {
+  applyClientDiscoveryMemory,
+  getCenaivaRecommendationMode,
+  normalizeSingleRestaurantRecommendationResponse,
+} from '@/lib/cenaiva/recommendationIntent';
 
 type OpenOptions = { autoListen?: boolean; greetingText?: string };
 
@@ -55,6 +60,8 @@ const RELISTEN_AFTER_EMPTY_TURN_MS = 260;
 const RELISTEN_AFTER_ERROR_MS = 320;
 const RELISTEN_AFTER_RESPONSE_MS = 260;
 const MAX_EMPTY_RELISTENS = 2;
+const LOCATION_TURN_WAIT_MS = 250;
+const CENAIVA_OPEN_MAP_ZOOM = 11;
 
 const NO_AUTO_RELISTEN_STATUSES = new Set([
   'offering_preorder',
@@ -104,6 +111,12 @@ function friendlyVoiceError(cause: string | null) {
   return base;
 }
 
+function debugTiming(event: string, details?: Record<string, unknown>) {
+  if (process.env.EXPO_PUBLIC_CENAIVA_VOICE_DEBUG !== 'true') return;
+  if (details) console.log(`[Cenaiva timing] ${event}`, details);
+  else console.log(`[Cenaiva timing] ${event}`);
+}
+
 function AssistantInner({ children }: { children: ReactNode }) {
   const { state, dispatch } = useAssistantStore();
   const orchestrator = useCenaivaOrchestrator();
@@ -125,6 +138,7 @@ function AssistantInner({ children }: { children: ReactNode }) {
   const listenTurnIdRef = useRef(0);
   const speechHintsRef = useRef<string[]>([]);
   const userLocationRef = useRef<{ lat: number; lng: number } | null>(null);
+  const locationRequestRef = useRef<Promise<{ lat: number; lng: number } | null> | null>(null);
   const forceStopWakeWordRef = useRef<() => void>(() => {});
   const requestWakePermissionRef = useRef<() => Promise<boolean>>(async () => false);
   const wakePermissionPromptedRef = useRef(false);
@@ -145,16 +159,36 @@ function AssistantInner({ children }: { children: ReactNode }) {
 
   const requestLocation = useCallback(async () => {
     if (userLocationRef.current) return userLocationRef.current;
-    try {
-      const { status } = await Location.requestForegroundPermissionsAsync();
-      if (status !== 'granted') return null;
-      const pos = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Balanced });
-      userLocationRef.current = { lat: pos.coords.latitude, lng: pos.coords.longitude };
-      return userLocationRef.current;
-    } catch {
-      return null;
+    if (!locationRequestRef.current) {
+      locationRequestRef.current = (async () => {
+        try {
+          const { status } = await Location.requestForegroundPermissionsAsync();
+          if (status !== 'granted') return null;
+          const pos = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Balanced });
+          userLocationRef.current = { lat: pos.coords.latitude, lng: pos.coords.longitude };
+          return userLocationRef.current;
+        } catch {
+          return null;
+        } finally {
+          locationRequestRef.current = null;
+        }
+      })();
     }
+    return locationRequestRef.current;
   }, []);
+
+  const getLocationForTurn = useCallback(async () => {
+    if (userLocationRef.current) return userLocationRef.current;
+    const locationPromise = requestLocation();
+    const timeoutPromise = new Promise<null>((resolve) => {
+      setTimeout(() => resolve(null), LOCATION_TURN_WAIT_MS);
+    });
+    const result = await Promise.race([locationPromise, timeoutPromise]);
+    if (!result) {
+      debugTiming('location skipped for turn', { timeoutMs: LOCATION_TURN_WAIT_MS });
+    }
+    return result;
+  }, [requestLocation]);
 
   const setSpeechHints = useCallback((hints: string[]) => {
     speechHintsRef.current = hints.map((hint) => hint.trim()).filter(Boolean).slice(0, 12);
@@ -200,6 +234,12 @@ function AssistantInner({ children }: { children: ReactNode }) {
         orchestrator.cancel();
         processingRef.current = false;
       }
+      const turnStartedAt = Date.now();
+      const recommendationMode = getCenaivaRecommendationMode(trimmed);
+      debugTiming('transcript accepted', {
+        length: trimmed.length,
+        recommendationMode,
+      });
 
       if (listeningRef.current) {
         listeningRef.current = false;
@@ -212,7 +252,15 @@ function AssistantInner({ children }: { children: ReactNode }) {
       commit({ type: 'SET_VOICE_STATUS', status: 'processing' });
 
       const current = stateRef.current;
-      const currentLocation = userLocationRef.current ?? (await requestLocation());
+      const currentLocation = await getLocationForTurn();
+      if (currentLocation) {
+        commit({
+          type: 'update_map_center',
+          lat: currentLocation.lat,
+          lng: currentLocation.lng,
+          zoom: current.map.zoom,
+        });
+      }
       const timezone =
         typeof Intl !== 'undefined'
           ? Intl.DateTimeFormat().resolvedOptions().timeZone
@@ -254,6 +302,8 @@ function AssistantInner({ children }: { children: ReactNode }) {
         filters: current.filters,
         visible_restaurant_ids: current.map.marker_restaurant_ids,
         selected_restaurant_id: opts?.restaurantId ?? current.booking.restaurant_id,
+        recommendation_mode: recommendationMode ?? undefined,
+        assistant_memory: current.memory,
         user_location: currentLocation,
         timezone,
         conversation_id: current.conversationId ?? undefined,
@@ -267,6 +317,9 @@ function AssistantInner({ children }: { children: ReactNode }) {
       const callbacks = streamingActive
         ? {
             onSpeechChunk: (text: string) => {
+              if (!streamedText) {
+                debugTiming('first speech chunk', { elapsedMs: Date.now() - turnStartedAt });
+              }
               streamedText += (streamedText ? ' ' : '') + text;
               voice.speakStreamingChunk(text);
             },
@@ -278,7 +331,12 @@ function AssistantInner({ children }: { children: ReactNode }) {
         : undefined;
 
       try {
+        debugTiming('orchestrator request sent', {
+          elapsedMs: Date.now() - turnStartedAt,
+          hasLocation: Boolean(currentLocation),
+        });
         const response = await orchestrator.send(req, callbacks);
+        debugTiming('orchestrator final received', { elapsedMs: Date.now() - turnStartedAt });
         processingRef.current = false;
 
         if (!response) {
@@ -293,25 +351,34 @@ function AssistantInner({ children }: { children: ReactNode }) {
           return;
         }
 
-        const uiTypes = (response.ui_actions ?? []).map((action) => action.type);
-        let spokenText = response.spoken_text ?? '';
+        const recommendationResponse = applyClientDiscoveryMemory(
+          normalizeSingleRestaurantRecommendationResponse(response, trimmed),
+          trimmed,
+          {
+            rawResponse: response,
+            previousMemory: current.memory,
+            recommendationMode,
+          },
+        );
+        const uiTypes = (recommendationResponse.ui_actions ?? []).map((action) => action.type);
+        let spokenText = recommendationResponse.spoken_text ?? '';
         const freshlyBooked =
           uiTypes.includes('show_confirmation') ||
-          (!!response.booking?.reservation_id && !current.booking.reservation_id);
+          (!!recommendationResponse.booking?.reservation_id && !current.booking.reservation_id);
         if (freshlyBooked && !/pre-?order|menu/i.test(spokenText)) {
           const base = spokenText.trim().replace(/[.!?]*$/, '');
           spokenText = `${base ? `${base}. ` : ''}Would you like to pre-order from the menu?`;
         }
 
-        const appliedResponse = spokenText === response.spoken_text
-          ? response
-          : { ...response, spoken_text: spokenText };
+        const appliedResponse = spokenText === recommendationResponse.spoken_text
+          ? recommendationResponse
+          : { ...recommendationResponse, spoken_text: spokenText };
         commit({
           type: 'APPLY_RESPONSE',
           response: appliedResponse,
         });
 
-        for (const action of response.ui_actions ?? []) {
+        for (const action of appliedResponse.ui_actions ?? []) {
           if (action.type === 'navigate') {
             router.push(action.path as never);
           }
@@ -327,6 +394,7 @@ function AssistantInner({ children }: { children: ReactNode }) {
           const normalize = (value: string) =>
             value.replace(/\s+/g, ' ').replace(/[.!?,\s]+$/, '').trim().toLowerCase();
           commit({ type: 'SET_VOICE_STATUS', status: 'speaking' });
+          debugTiming('speech playback requested', { elapsedMs: Date.now() - turnStartedAt });
           if (streamingActive && normalize(streamedText) && normalize(streamedText) === normalize(spokenText)) {
             await voice.drainStreamingSpeech();
           } else {
@@ -365,10 +433,10 @@ function AssistantInner({ children }: { children: ReactNode }) {
     },
     [
       commit,
+      getLocationForTurn,
       isVoicePreferenceLoading,
       orchestrator,
       pathname,
-      requestLocation,
       router,
       voice,
       voiceSelectionRequired,
@@ -384,8 +452,15 @@ function AssistantInner({ children }: { children: ReactNode }) {
     listenTurnIdRef.current = turnId;
     listeningRef.current = true;
     try {
+      const listenStartedAt = Date.now();
+      debugTiming('listening started');
       commit({ type: 'SET_VOICE_STATUS', status: 'listening' });
       const { transcript, stopped } = await voice.startListening(speechHintsRef.current);
+      debugTiming('listening finished', {
+        elapsedMs: Date.now() - listenStartedAt,
+        hasTranscript: Boolean(transcript.trim()),
+        stopped: Boolean(stopped),
+      });
       if (turnId !== listenTurnIdRef.current) return;
       listeningRef.current = false;
       if (stopped) {
@@ -502,15 +577,27 @@ function AssistantInner({ children }: { children: ReactNode }) {
   const open = useCallback(
     (restaurantId?: string, restaurantName?: string, opts?: OpenOptions) => {
       isOpenRef.current = true;
-      forceStopWakeWordRef.current();
-      voice.primeTTS();
-      void requestWakePermissionRef.current();
-      void requestLocation();
+      debugTiming('assistant opened', {
+        autoListen: Boolean(opts?.autoListen),
+        hasRestaurant: Boolean(restaurantId),
+      });
       if (restaurantId && restaurantName) {
         commit({ type: 'PRESELECT_RESTAURANT', restaurant_id: restaurantId, restaurant_name: restaurantName });
       } else {
         commit({ type: 'OPEN' });
       }
+      forceStopWakeWordRef.current();
+      voice.primeTTS();
+      void requestWakePermissionRef.current();
+      void requestLocation().then((location) => {
+        if (!location || !isOpenRef.current) return;
+        commit({
+          type: 'update_map_center',
+          lat: location.lat,
+          lng: location.lng,
+          zoom: CENAIVA_OPEN_MAP_ZOOM,
+        });
+      });
       if (opts?.autoListen) {
         if (isVoicePreferenceLoading || voiceSelectionRequired) {
           pendingOpenRef.current = opts;

@@ -172,4 +172,44 @@ describe('assistantReducer', () => {
     expect(highlighted.map.marker_restaurant_ids).toEqual(['r1', 'r2']);
     expect(highlighted.map.highlighted_restaurant_id).toBe('r2');
   });
+
+  it('stores assistant discovery memory and derives booking-process memory', () => {
+    const next = assistantReducer(initialState, {
+      type: 'APPLY_RESPONSE',
+      response: response({
+        spoken_text: 'Pai is the closest strong match.',
+        assistant_memory: {
+          discovery: {
+            transcript: "what's the closest restaurant to me",
+            recommendation_mode: 'single',
+            cuisine: null,
+            cuisine_group: null,
+            city: null,
+            query: null,
+            sort_by: 'distance',
+            full_restaurant_ids: ['r1', 'r2', 'r3'],
+            displayed_restaurant_ids: ['r1'],
+            exhausted_restaurant_ids: ['r1'],
+          },
+          booking_process: null,
+        },
+        booking: {
+          restaurant_id: 'r1',
+          restaurant_name: 'Pai',
+          party_size: 2,
+          status: 'collecting_minimum_fields',
+        },
+      }),
+    });
+
+    expect(next.memory.discovery?.full_restaurant_ids).toEqual(['r1', 'r2', 'r3']);
+    expect(next.memory.discovery?.displayed_restaurant_ids).toEqual(['r1']);
+    expect(next.memory.booking_process).toMatchObject({
+      phase: 'collecting_minimum_fields',
+      restaurant_id: 'r1',
+      restaurant_name: 'Pai',
+      party_size: 2,
+      last_prompt: 'Pai is the closest strong match.',
+    });
+  });
 });

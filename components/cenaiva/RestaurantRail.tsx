@@ -1,10 +1,11 @@
-import React from 'react';
+import React, { useEffect, useMemo, useRef } from 'react';
 import { FlatList, Image, Pressable, Text, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import type { Restaurant } from '@/lib/mock/restaurants';
 import { createStyles, borderRadius, spacing, typography } from '@/lib/theme';
 
 const CARD_WIDTH = 208;
+type RailRestaurant = Restaurant & { distanceMeters?: number };
 
 const CUISINE_EMOJI: Record<string, string> = {
   italian: '🍝',
@@ -119,18 +120,34 @@ export function RestaurantRail({
   highlightedId,
   onPressRestaurant,
 }: {
-  restaurants: Array<Restaurant & { distanceMeters?: number }>;
+  restaurants: RailRestaurant[];
   highlightedId: string | null;
   onPressRestaurant: (restaurant: Restaurant) => void;
 }) {
   const styles = useStyles();
+  const listRef = useRef<FlatList<RailRestaurant>>(null);
+  const restaurantOrderKey = useMemo(
+    () => restaurants.map((restaurant) => restaurant.id).join('|'),
+    [restaurants],
+  );
+
+  useEffect(() => {
+    if (!restaurants.length) return;
+    const frame = requestAnimationFrame(() => {
+      listRef.current?.scrollToOffset({ offset: 0, animated: true });
+    });
+    return () => cancelAnimationFrame(frame);
+  }, [restaurantOrderKey, restaurants.length]);
+
   if (!restaurants.length) return null;
 
   return (
     <FlatList
+      ref={listRef}
       horizontal
       style={styles.rail}
       data={restaurants}
+      extraData={highlightedId}
       keyExtractor={(item) => item.id}
       showsHorizontalScrollIndicator={false}
       contentContainerStyle={styles.content}

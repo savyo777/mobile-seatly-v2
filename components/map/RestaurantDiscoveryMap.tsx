@@ -1,4 +1,4 @@
-import React, { useCallback, useRef } from 'react';
+import React, { useCallback, useEffect, useRef } from 'react';
 import { View, Text, StyleSheet, Platform, Pressable, ActivityIndicator } from 'react-native';
 import MapView, { Marker, PROVIDER_GOOGLE, type MapPressEvent } from 'react-native-maps';
 import { Ionicons } from '@expo/vector-icons';
@@ -8,6 +8,11 @@ import { googleDarkMapStyle } from '@/lib/map/darkMapStyle';
 import { DEFAULT_MAP_CENTER } from '@/lib/map/mapFilters';
 import type { RestaurantDiscoveryMapProps } from '@/components/map/restaurantMapTypes';
 import { useColors, useTheme, createStyles, spacing, borderRadius, typography, shadows } from '@/lib/theme';
+
+const DEFAULT_RECENTER_REGION_DELTA = {
+  latitudeDelta: 0.025,
+  longitudeDelta: 0.025,
+};
 
 const useStyles = createStyles((c) => ({
   mapShell: {
@@ -79,6 +84,13 @@ export function RestaurantDiscoveryMap({
   showUserLocation,
   locationReady,
   markerVariant = 'default',
+  autoFocusUserLocation = false,
+  autoFocusRestaurants = false,
+  autoFocusMaxRestaurants = 8,
+  autoFocusRegionDelta,
+  autoFocusResetKey,
+  focusSelectedWithUser = false,
+  recenterRegionDelta = DEFAULT_RECENTER_REGION_DELTA,
   contentBottomInset = 0,
 }: RestaurantDiscoveryMapProps) {
   const c = useColors();
@@ -86,7 +98,12 @@ export function RestaurantDiscoveryMap({
   const styles = useStyles();
   const { t } = useTranslation();
   const mapRef = useRef<MapView>(null);
+  const autoFocusDoneRef = useRef(false);
+  const autoFocusResetKeyRef = useRef(autoFocusResetKey);
   const detailOpen = !!selectedId;
+  const selectedRestaurant = selectedId
+    ? filteredRestaurants.find((restaurant) => restaurant.id === selectedId) ?? null
+    : null;
 
   const recenterOnUser = useCallback(() => {
     if (!userLocation) return;
@@ -94,18 +111,131 @@ export function RestaurantDiscoveryMap({
       {
         latitude: userLocation.latitude,
         longitude: userLocation.longitude,
-        latitudeDelta: 0.025,
-        longitudeDelta: 0.025,
+        latitudeDelta: recenterRegionDelta.latitudeDelta,
+        longitudeDelta: recenterRegionDelta.longitudeDelta,
       },
       420,
     );
-  }, [userLocation]);
+  }, [recenterRegionDelta.latitudeDelta, recenterRegionDelta.longitudeDelta, userLocation]);
+
+  useEffect(() => {
+    if (autoFocusResetKeyRef.current !== autoFocusResetKey) {
+      autoFocusResetKeyRef.current = autoFocusResetKey;
+      autoFocusDoneRef.current = false;
+    }
+  }, [autoFocusResetKey]);
+
+  useEffect(() => {
+    if (!autoFocusUserLocation || autoFocusDoneRef.current || !userLocation) return;
+    const focusRestaurants = autoFocusRestaurants
+      ? filteredRestaurants.slice(0, Math.max(0, autoFocusMaxRestaurants))
+      : [];
+    if (autoFocusRestaurants && !focusRestaurants.length) return;
+
+    autoFocusDoneRef.current = true;
+    const regionDelta = autoFocusRegionDelta ?? DEFAULT_RECENTER_REGION_DELTA;
+    const timer = setTimeout(() => {
+      if (focusRestaurants.length) {
+        mapRef.current?.fitToCoordinates(
+          [
+            { latitude: userLocation.latitude, longitude: userLocation.longitude },
+            ...focusRestaurants.map((restaurant) => ({
+              latitude: restaurant.lat,
+              longitude: restaurant.lng,
+            })),
+          ],
+          {
+            edgePadding: {
+              top: 72,
+              right: 48,
+              bottom: 72 + contentBottomInset,
+              left: 48,
+            },
+            animated: true,
+          },
+        );
+        return;
+      }
+
+      mapRef.current?.animateToRegion(
+        {
+          latitude: userLocation.latitude,
+          longitude: userLocation.longitude,
+          latitudeDelta: regionDelta.latitudeDelta,
+          longitudeDelta: regionDelta.longitudeDelta,
+        },
+        260,
+      );
+    }, 80);
+    return () => clearTimeout(timer);
+  }, [
+    autoFocusRegionDelta,
+    autoFocusRestaurants,
+    autoFocusMaxRestaurants,
+    autoFocusResetKey,
+    autoFocusUserLocation,
+    contentBottomInset,
+    filteredRestaurants,
+    userLocation,
+  ]);
+
+  useEffect(() => {
+    if (!focusSelectedWithUser || !userLocation || !selectedRestaurant) return;
+    const timer = setTimeout(() => {
+      const sameCoordinate =
+        Math.abs(userLocation.latitude - selectedRestaurant.lat) < 0.00005 &&
+        Math.abs(userLocation.longitude - selectedRestaurant.lng) < 0.00005;
+
+      if (sameCoordinate) {
+        mapRef.current?.animateToRegion(
+          {
+            latitude: selectedRestaurant.lat,
+            longitude: selectedRestaurant.lng,
+            latitudeDelta: 0.014,
+            longitudeDelta: 0.014,
+          },
+          360,
+        );
+        return;
+      }
+
+      mapRef.current?.fitToCoordinates(
+        [
+          { latitude: userLocation.latitude, longitude: userLocation.longitude },
+          { latitude: selectedRestaurant.lat, longitude: selectedRestaurant.lng },
+        ],
+        {
+          edgePadding: {
+            top: 84,
+            right: 56,
+            bottom: 240 + contentBottomInset,
+            left: 56,
+          },
+          animated: true,
+        },
+      );
+    }, 80);
+
+    return () => clearTimeout(timer);
+  }, [
+    contentBottomInset,
+    focusSelectedWithUser,
+    selectedRestaurant?.id,
+    selectedRestaurant?.lat,
+    selectedRestaurant?.lng,
+    userLocation?.latitude,
+    userLocation?.longitude,
+  ]);
 
   const initialRegion = {
-    latitude: DEFAULT_MAP_CENTER.latitude,
-    longitude: DEFAULT_MAP_CENTER.longitude,
-    latitudeDelta: DEFAULT_MAP_CENTER.latitudeDelta,
-    longitudeDelta: DEFAULT_MAP_CENTER.longitudeDelta,
+    latitude: autoFocusUserLocation && userLocation ? userLocation.latitude : DEFAULT_MAP_CENTER.latitude,
+    longitude: autoFocusUserLocation && userLocation ? userLocation.longitude : DEFAULT_MAP_CENTER.longitude,
+    latitudeDelta: autoFocusUserLocation && autoFocusRegionDelta
+      ? autoFocusRegionDelta.latitudeDelta
+      : DEFAULT_MAP_CENTER.latitudeDelta,
+    longitudeDelta: autoFocusUserLocation && autoFocusRegionDelta
+      ? autoFocusRegionDelta.longitudeDelta
+      : DEFAULT_MAP_CENTER.longitudeDelta,
   };
 
   const handleMapPress = useCallback(
@@ -171,7 +301,7 @@ export function RestaurantDiscoveryMap({
         ))}
       </MapView>
 
-      {filteredRestaurants.length === 0 && (
+      {locationReady && filteredRestaurants.length === 0 && (
         <View style={styles.emptyOverlay} pointerEvents="none">
           <Text style={styles.emptyTitle}>{t('mapScreen.noMatchesTitle')}</Text>
           <Text style={styles.emptySub}>{t('mapScreen.noMatchesHint')}</Text>

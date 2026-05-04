@@ -422,12 +422,12 @@ export function useCenaivaWakeWord(onWake: () => void, lang = 'en-US') {
       consecutiveErrorsRef.current = 0;
       restartDelayRef.current = RESTART_BASE_MS;
       resetRollingTranscript();
+      onWakeRef.current();
       try {
         NATIVE_SPEECH.abort();
       } catch {
         // Native recognizer may have already stopped after emitting the wake result.
       }
-      onWakeRef.current();
     });
 
     const errorSub = NATIVE_SPEECH.addListener('error', (payload: unknown) => {
