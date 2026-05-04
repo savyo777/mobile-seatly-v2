@@ -398,6 +398,8 @@ export default {
     changePasswordSub: 'Mettre à jour votre mot de passe Seatly',
     changeEmail: "Changer l'adresse courriel",
     changeEmailSub: 'Mettre à jour le courriel associé à votre compte',
+    changePhone: 'Changer le numéro de téléphone',
+    changePhoneSub: 'Mettre à jour le numéro de mobile de votre compte',
     resetPassword: 'Réinitialiser le mot de passe',
     resetPasswordSub: 'Envoyer un lien de réinitialisation par courriel',
     resetPasswordSent: 'Nous avons envoyé un lien à {{email}}',

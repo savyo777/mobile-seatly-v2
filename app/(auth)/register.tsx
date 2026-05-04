@@ -7,7 +7,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { borderRadius, createStyles, spacing, typography, useColors } from '@/lib/theme';
 import { getSupabase } from '@/lib/supabase/client';
 import { ensureCustomerProfile, signInWithGoogle } from '@/lib/services/oauth';
-import { normalizePhoneToE164, sendPhoneOtp } from '@/lib/services/phoneAuth';
+import { normalizePhoneToE164 } from '@/lib/services/phoneAuth';
 import {
   ScreenWrapper,
   Input,
@@ -227,6 +227,14 @@ export default function RegisterScreen() {
       Alert.alert('Missing info', 'Please fill out your name, email, and password.');
       return;
     }
+    const e164Phone = normalizePhoneToE164(phone);
+    if (!e164Phone) {
+      Alert.alert(
+        'Invalid phone',
+        'Please enter a valid phone number (include country code, or 10-digit US number).',
+      );
+      return;
+    }
     if (!isPasswordValid) {
       Alert.alert('Password requirements', 'Please meet all password requirements before continuing.');
       return;
@@ -246,6 +254,7 @@ export default function RegisterScreen() {
         options: {
           data: {
             full_name: trimmedName,
+            phone: e164Phone,
             role: 'diner',
           },
         },
@@ -267,6 +276,7 @@ export default function RegisterScreen() {
           try {
             await ensureCustomerProfile(signInData.session, {
               fullNameOverride: trimmedName,
+              phoneOverride: e164Phone,
             });
           } catch {
             // best-effort
@@ -284,6 +294,7 @@ export default function RegisterScreen() {
         try {
           await ensureCustomerProfile(data.session, {
             fullNameOverride: trimmedName,
+            phoneOverride: e164Phone,
           });
         } catch (profileError: any) {
           Alert.alert('Profile setup warning', profileError?.message ?? 'Could not update profile role.');
@@ -295,48 +306,6 @@ export default function RegisterScreen() {
         'If email confirmation is enabled, please verify your email before signing in.',
       );
       router.replace(data.session ? '/(customer)' : '/(auth)/login');
-    } finally {
-      setSubmitting(false);
-    }
-  };
-
-  const handleSendPhoneOtp = async () => {
-    if (submitting) return;
-    if (!agree) {
-      Alert.alert(
-        'Agreement required',
-        'Please agree to the Terms of Service and Privacy Policy before continuing.',
-      );
-      return;
-    }
-    const e164 = normalizePhoneToE164(phone);
-    if (!e164) {
-      Alert.alert(
-        'Invalid phone',
-        'Please enter a valid phone number (include country code, or 10-digit US number).',
-      );
-      return;
-    }
-    setSubmitting(true);
-    try {
-      const { error } = await sendPhoneOtp(e164, {
-        metadata: {
-          role: 'diner',
-          full_name: fullName.trim(),
-        },
-      });
-      if (error) {
-        Alert.alert('SMS failed', error);
-        return;
-      }
-      router.push({
-        pathname: '/(auth)/verify-phone-otp',
-        params: {
-          phone: encodeURIComponent(e164),
-          source: 'register',
-          fullName: encodeURIComponent(fullName.trim()),
-        },
-      });
     } finally {
       setSubmitting(false);
     }
@@ -390,27 +359,6 @@ export default function RegisterScreen() {
         <Text style={styles.heading}>{t('auth.registerHeading')}</Text>
         <Text style={styles.subcopy}>{t('auth.registerTakesAbout')}</Text>
 
-        <View style={styles.accountTypeRow}>
-          <View style={[styles.accountTypeCard, styles.accountTypeCardActive]}>
-            <View style={styles.accountTypeIconRow}>
-              <Ionicons name="person-outline" size={16} color={c.gold} />
-              <Text style={styles.accountTypeLabel}>{t('auth.customer')}</Text>
-            </View>
-            <Text style={styles.accountTypeSub}>{t('auth.iAmADinerSub')}</Text>
-          </View>
-          <TouchableOpacity
-            onPress={() => router.push('/(auth)/owner-register')}
-            style={styles.accountTypeCard}
-            activeOpacity={0.78}
-          >
-            <View style={styles.accountTypeIconRow}>
-              <Ionicons name="storefront-outline" size={16} color={c.gold} />
-              <Text style={styles.accountTypeLabel}>{t('auth.restaurantOwner')}</Text>
-            </View>
-            <Text style={styles.accountTypeSub}>{t('auth.iManageARestaurantSub')}</Text>
-          </TouchableOpacity>
-        </View>
-
         <Input
           icon="person-outline"
           placeholder={t('auth.fullName')}
@@ -426,6 +374,15 @@ export default function RegisterScreen() {
           autoCorrect={false}
           value={email}
           onChangeText={setEmail}
+        />
+        <Input
+          icon="call-outline"
+          placeholder={t('auth.phone')}
+          keyboardType="phone-pad"
+          autoCapitalize="none"
+          autoCorrect={false}
+          value={phone}
+          onChangeText={setPhone}
         />
         <Input
           icon="lock-closed-outline"
@@ -495,28 +452,6 @@ export default function RegisterScreen() {
           onPress={onSuccess}
           size="lg"
           disabled={!agree || submitting || !isPasswordValid}
-        />
-
-        <View style={styles.dividerRow}>
-          <View style={styles.dividerLine} />
-          <Text style={styles.dividerText}>{t('auth.orPhoneSignUp')}</Text>
-          <View style={styles.dividerLine} />
-        </View>
-
-        <Input
-          icon="call-outline"
-          placeholder={t('auth.phone')}
-          keyboardType="phone-pad"
-          autoCapitalize="none"
-          autoCorrect={false}
-          value={phone}
-          onChangeText={setPhone}
-        />
-        <Button
-          title={t('auth.sendSmsCode')}
-          onPress={handleSendPhoneOtp}
-          size="lg"
-          disabled={!agree || submitting}
         />
 
         <View style={styles.dividerRow}>

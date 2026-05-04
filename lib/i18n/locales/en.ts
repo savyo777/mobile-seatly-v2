@@ -398,6 +398,8 @@ export default {
     changePasswordSub: 'Update your Seatly password',
     changeEmail: 'Change email',
     changeEmailSub: 'Update the email linked to your account',
+    changePhone: 'Change phone number',
+    changePhoneSub: 'Update the mobile number on your account',
     resetPassword: 'Reset password',
     resetPasswordSub: 'Send a reset link to your email',
     resetPasswordSent: 'We sent a reset link to {{email}}',

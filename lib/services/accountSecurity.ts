@@ -1,4 +1,5 @@
 import { getSupabase } from '@/lib/supabase/client';
+import { normalizePhoneToE164 } from '@/lib/services/phoneAuth';
 
 const RESET_PASSWORD_REDIRECT = 'cenaiva://reset-password';
 
@@ -26,6 +27,49 @@ export async function changeEmail(newEmail: string, password: string): Promise<v
     await resendVerificationEmail(email);
   } catch {
     // no-op
+  }
+}
+
+/**
+ * Start the change-phone flow. Updates the auth user's phone, which triggers Supabase
+ * to send a 6-digit SMS code to the new number that must be confirmed via verifyOtp.
+ */
+export async function startChangePhone(rawNewPhone: string): Promise<{ phoneE164: string }> {
+  const supabase = requireSupabase();
+  const phoneE164 = normalizePhoneToE164(rawNewPhone);
+  if (!phoneE164) {
+    throw new Error(
+      'Please enter a valid phone number (include country code, or 10-digit US number).',
+    );
+  }
+  const { error } = await supabase.auth.updateUser({ phone: phoneE164 });
+  if (error) throw error;
+  return { phoneE164 };
+}
+
+/** Confirm the 6-digit SMS code that Supabase sent to the new phone number. */
+export async function confirmChangePhone(phoneE164: string, code: string): Promise<void> {
+  const supabase = requireSupabase();
+  const trimmed = code.replace(/\D/g, '');
+  if (trimmed.length !== 6) throw new Error('Please enter the 6-digit code.');
+  const { error } = await supabase.auth.verifyOtp({
+    phone: phoneE164,
+    token: trimmed,
+    type: 'phone_change',
+  });
+  if (error) throw error;
+
+  try {
+    const { data: userData } = await supabase.auth.getUser();
+    const authUserId = userData.user?.id;
+    if (authUserId) {
+      await supabase
+        .from('user_profiles')
+        .update({ phone: phoneE164 })
+        .eq('auth_user_id', authUserId);
+    }
+  } catch {
+    // best-effort: profile mirror is non-critical, auth phone is the source of truth
   }
 }
 

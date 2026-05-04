@@ -103,14 +103,14 @@ export async function signInWithGoogle(): Promise<GoogleSignInResult> {
  */
 export async function ensureCustomerProfile(
   session: Session,
-  options?: { fullNameOverride?: string },
+  options?: { fullNameOverride?: string; phoneOverride?: string },
 ): Promise<void> {
   return ensureProfileWithRole(session, 'customer', options);
 }
 
 export async function ensureOwnerProfile(
   session: Session,
-  options?: { fullNameOverride?: string },
+  options?: { fullNameOverride?: string; phoneOverride?: string },
 ): Promise<void> {
   return ensureProfileWithRole(session, 'owner', options);
 }
@@ -118,7 +118,7 @@ export async function ensureOwnerProfile(
 async function ensureProfileWithRole(
   session: Session,
   role: 'customer' | 'owner',
-  options?: { fullNameOverride?: string },
+  options?: { fullNameOverride?: string; phoneOverride?: string },
 ): Promise<void> {
   const supabase = getSupabase();
   if (!supabase) return;
@@ -145,12 +145,16 @@ async function ensureProfileWithRole(
     .maybeSingle();
 
   const nextRole = mergeRole(existing?.role, role);
+  const phoneOverride =
+    typeof options?.phoneOverride === 'string' ? options.phoneOverride.trim() : '';
+  const profilePhone = phoneOverride || phone || '';
   await supabase.from('user_profiles').upsert(
     {
       auth_user_id: user.id,
       email: email || '',
       full_name: fullName,
       role: nextRole,
+      ...(profilePhone ? { phone: profilePhone } : {}),
     },
     { onConflict: 'auth_user_id' },
   );

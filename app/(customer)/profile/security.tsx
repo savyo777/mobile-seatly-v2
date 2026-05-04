@@ -33,6 +33,7 @@ export default function SecurityScreen() {
   const styles = useStyles();
   const { user } = useAuthSession();
   const currentEmail = user?.email ?? '';
+  const currentPhone = user?.phone ? `+${user.phone}` : '';
 
   const [biometric, setBiometric] = useState(false);
   const [twoFa, setTwoFa] = useState(false);
@@ -100,6 +101,12 @@ export default function SecurityScreen() {
           title={t('profile.changeEmail')}
           subtitle={currentEmail || undefined}
           onPress={() => router.push('/(customer)/profile/security/change-email')}
+        />
+        <ChevronSettingRow
+          icon="call-outline"
+          title={t('profile.changePhone')}
+          subtitle={currentPhone || t('profile.changePhoneSub')}
+          onPress={() => router.push('/(customer)/profile/security/change-phone')}
         />
         <ChevronSettingRow
           icon="refresh-outline"
