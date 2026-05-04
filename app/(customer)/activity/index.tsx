@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useCallback, useMemo, useState } from 'react';
 import {
   View,
   Text,
@@ -6,6 +6,7 @@ import {
   FlatList,
   Pressable,
   ImageBackground,
+  Platform,
 } from 'react-native';
 import * as Haptics from 'expo-haptics';
 import { useRouter, Href } from 'expo-router';
@@ -112,19 +113,20 @@ const useStyles = createStyles((c) => ({
   cardPast: { borderColor: c.border },
   cardPressed: { transform: [{ scale: 0.985 }], opacity: 0.9 },
 
-  // Left accent stripe for upcoming
-  leftAccent: {
+  // Matching gold rails for upcoming (no directional shadow — keeps left and right identical)
+  edgeAccent: {
     position: 'absolute',
-    left: 0,
     top: 0,
     bottom: 0,
     width: 3,
     backgroundColor: c.gold,
     zIndex: 1,
-    shadowColor: c.gold,
-    shadowOffset: { width: 2, height: 0 },
-    shadowOpacity: 0.4,
-    shadowRadius: 6,
+  },
+  edgeAccentLeft: {
+    left: 0,
+  },
+  edgeAccentRight: {
+    right: 0,
   },
 
   // Photo
@@ -271,12 +273,12 @@ export default function ActivityScreen() {
   const styles = useStyles();
   const [segment, setSegment] = useState<SegmentKey>('upcoming');
 
-  function pastStatusChip(status: Reservation['status']): { label: string; color: string } | null {
+  const pastStatusChip = useCallback((status: Reservation['status']): { label: string; color: string } | null => {
     if (status === 'completed') return { label: 'Completed', color: c.success };
     if (status === 'cancelled') return { label: 'Cancelled', color: c.danger };
     if (status === 'no_show') return { label: 'No Show', color: c.textMuted };
     return null;
-  }
+  }, [c.success, c.danger, c.textMuted]);
 
   const items = useMemo<BookingItem[]>(() =>
     mockReservations
@@ -311,89 +313,97 @@ export default function ActivityScreen() {
     [items],
   );
 
-  const renderItem = ({ item }: { item: BookingItem }) => {
-    const isPast = segment === 'past';
-    const { primary, sub } = formatDateTime(item.whenIso);
-    const chip = isPast ? pastStatusChip(item.status) : null;
-    const icon = item.occasion ? OCCASION_ICONS[item.occasion] : null;
-    const guestLabel = `${item.partySize} ${item.partySize === 1 ? 'guest' : 'guests'}`;
-    const detailLine = [guestLabel, icon ? `${icon} ${item.occasion}` : null].filter(Boolean).join('  ·  ');
+  const renderItem = useCallback(
+    ({ item }: { item: BookingItem }) => {
+      const isPast = segment === 'past';
+      const { primary, sub } = formatDateTime(item.whenIso);
+      const chip = isPast ? pastStatusChip(item.status) : null;
+      const icon = item.occasion ? OCCASION_ICONS[item.occasion] : null;
+      const guestLabel = `${item.partySize} ${item.partySize === 1 ? 'guest' : 'guests'}`;
+      const detailLine = [guestLabel, icon ? `${icon} ${item.occasion}` : null].filter(Boolean).join('  ·  ');
 
-    return (
-      <Pressable
-        onPress={() => router.push(`/(customer)/activity/receipt/booking/${item.id}` as Href)}
-        style={({ pressed }) => [styles.card, isPast && styles.cardPast, pressed && styles.cardPressed]}
-      >
-        {/* Gold left accent for upcoming */}
-        {!isPast && <View style={styles.leftAccent} />}
-
-        {/* Photo */}
-        <ImageBackground
-          source={{ uri: item.coverPhotoUrl }}
-          style={styles.photo}
-          imageStyle={styles.photoImg}
+      return (
+        <Pressable
+          onPress={() => router.push(`/(customer)/activity/receipt/booking/${item.id}` as Href)}
+          style={({ pressed }) => [styles.card, isPast && styles.cardPast, pressed && styles.cardPressed]}
         >
-          <LinearGradient
-            colors={['rgba(0,0,0,0.1)', 'rgba(0,0,0,0.72)']}
-            style={StyleSheet.absoluteFill}
-          />
-          {/* Top row: confirmed badge (upcoming) or status chip (past) */}
-          <View style={styles.photoTopRow}>
-            {!isPast ? (
-              <View style={styles.confirmedBadge}>
-                <Ionicons name="checkmark-circle" size={13} color={c.bgBase} />
-                <Text style={styles.confirmedBadgeText}>Confirmed</Text>
-              </View>
-            ) : chip ? (
-              <View style={[styles.chip, { borderColor: chip.color + '66' }]}>
-                <View style={[styles.chipDot, { backgroundColor: chip.color }]} />
-                <Text style={[styles.chipText, { color: chip.color }]}>{chip.label}</Text>
-              </View>
-            ) : null}
-          </View>
-          <Text style={styles.restaurantName} numberOfLines={1}>{item.restaurantName}</Text>
-        </ImageBackground>
+          {/* Symmetric gold edge rails for upcoming */}
+          {!isPast ? (
+            <>
+              <View style={[styles.edgeAccent, styles.edgeAccentLeft]} />
+              <View style={[styles.edgeAccent, styles.edgeAccentRight]} />
+            </>
+          ) : null}
 
-        {/* Info */}
-        <View style={styles.info}>
-          <Text style={[styles.dateText, isPast && styles.dimPrimary]}>{primary}  ·  {sub}</Text>
-          <Text style={[styles.detailText, isPast && styles.dimSecondary]}>{detailLine}</Text>
-        </View>
-
-        {/* Action row */}
-        <View style={styles.actionRow}>
-          {isPast && item.status === 'completed' ? (
-            <Pressable
-              onPress={() => {
-                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-                router.push(`/booking/${item.restaurantId}/step2-time` as Href);
-              }}
-              style={({ pressed }) => [styles.bookAgainBtn, pressed && { opacity: 0.8 }]}
-            >
-              <Text style={styles.bookAgainText}>Book Again</Text>
-            </Pressable>
-          ) : !isPast ? (
-            <Pressable
-              onPress={() => router.push(`/(customer)/discover/${item.restaurantId}` as Href)}
-              style={({ pressed }) => [styles.outlineBtn, pressed && { opacity: 0.7 }]}
-            >
-              <Text style={styles.outlineBtnText}>View restaurant</Text>
-            </Pressable>
-          ) : (
-            <View />
-          )}
-          <Pressable
-            onPress={() => router.push(`/(customer)/activity/receipt/booking/${item.id}` as Href)}
-            hitSlop={10}
-            style={({ pressed }) => [styles.detailsLink, pressed && { opacity: 0.5 }]}
+          {/* Photo */}
+          <ImageBackground
+            source={{ uri: item.coverPhotoUrl }}
+            style={styles.photo}
+            imageStyle={styles.photoImg}
           >
-            <Text style={styles.detailsLinkText}>Details</Text>
-            <Ionicons name="chevron-forward" size={13} color={c.textMuted} />
-          </Pressable>
-        </View>
-      </Pressable>
-    );
-  };
+            <LinearGradient
+              colors={['rgba(0,0,0,0.1)', 'rgba(0,0,0,0.72)']}
+              style={StyleSheet.absoluteFill}
+            />
+            {/* Top row: confirmed badge (upcoming) or status chip (past) */}
+            <View style={styles.photoTopRow}>
+              {!isPast ? (
+                <View style={styles.confirmedBadge}>
+                  <Ionicons name="checkmark-circle" size={13} color={c.bgBase} />
+                  <Text style={styles.confirmedBadgeText}>Confirmed</Text>
+                </View>
+              ) : chip ? (
+                <View style={[styles.chip, { borderColor: chip.color + '66' }]}>
+                  <View style={[styles.chipDot, { backgroundColor: chip.color }]} />
+                  <Text style={[styles.chipText, { color: chip.color }]}>{chip.label}</Text>
+                </View>
+              ) : null}
+            </View>
+            <Text style={styles.restaurantName} numberOfLines={1}>{item.restaurantName}</Text>
+          </ImageBackground>
+
+          {/* Info */}
+          <View style={styles.info}>
+            <Text style={[styles.dateText, isPast && styles.dimPrimary]}>{primary}  ·  {sub}</Text>
+            <Text style={[styles.detailText, isPast && styles.dimSecondary]}>{detailLine}</Text>
+          </View>
+
+          {/* Action row */}
+          <View style={styles.actionRow}>
+            {isPast && item.status === 'completed' ? (
+              <Pressable
+                onPress={() => {
+                  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+                  router.push(`/booking/${item.restaurantId}/step2-time` as Href);
+                }}
+                style={({ pressed }) => [styles.bookAgainBtn, pressed && { opacity: 0.8 }]}
+              >
+                <Text style={styles.bookAgainText}>Book Again</Text>
+              </Pressable>
+            ) : !isPast ? (
+              <Pressable
+                onPress={() => router.push(`/(customer)/discover/${item.restaurantId}` as Href)}
+                style={({ pressed }) => [styles.outlineBtn, pressed && { opacity: 0.7 }]}
+              >
+                <Text style={styles.outlineBtnText}>View restaurant</Text>
+              </Pressable>
+            ) : (
+              <View />
+            )}
+            <Pressable
+              onPress={() => router.push(`/(customer)/activity/receipt/booking/${item.id}` as Href)}
+              hitSlop={10}
+              style={({ pressed }) => [styles.detailsLink, pressed && { opacity: 0.5 }]}
+            >
+              <Text style={styles.detailsLinkText}>Details</Text>
+              <Ionicons name="chevron-forward" size={13} color={c.textMuted} />
+            </Pressable>
+          </View>
+        </Pressable>
+      );
+    },
+    [c.bgBase, c.textMuted, pastStatusChip, router, segment, styles],
+  );
 
   return (
     <View style={[styles.root, { paddingTop: insets.top }]}>
@@ -402,6 +412,11 @@ export default function ActivityScreen() {
         keyExtractor={(it) => it.id}
         renderItem={renderItem}
         showsVerticalScrollIndicator={false}
+        initialNumToRender={6}
+        maxToRenderPerBatch={8}
+        windowSize={7}
+        updateCellsBatchingPeriod={40}
+        removeClippedSubviews={Platform.OS === 'android'}
         contentContainerStyle={[styles.list, { paddingBottom: spacing.lg }]}
         ListHeaderComponent={
           <View style={styles.header}>

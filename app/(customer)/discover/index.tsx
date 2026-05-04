@@ -399,7 +399,7 @@ export default function DiscoverScreen() {
     loadRestaurantsForDiscover()
       .then(({ list }) => setBaseRestaurants(list))
       .finally(() => {
-        setTimeout(() => setRefreshing(false), 400);
+        setRefreshing(false);
       });
   };
 

@@ -307,7 +307,7 @@ export default function OwnerLoginScreen() {
   };
 
   return (
-    <ScreenWrapper withKeyboardAvoiding padded>
+    <ScreenWrapper withKeyboardAvoiding padded scrollable>
       <View style={[styles.inner, { paddingBottom: Math.max(insets.bottom, spacing.lg) }]}>
         <View style={styles.topBar}>
           <TouchableOpacity

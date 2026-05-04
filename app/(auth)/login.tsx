@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Alert } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, Alert, Keyboard, InputAccessoryView, Platform } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useRouter } from 'expo-router';
 import type { Session } from '@supabase/supabase-js';
@@ -122,7 +122,26 @@ const useStyles = createStyles((c) => ({
   },
   footerMuted: { ...typography.body, color: c.textSecondary },
   footerLink: { ...typography.body, color: c.gold, fontWeight: '700' },
+  accessoryBar: {
+    flexDirection: 'row',
+    justifyContent: 'flex-end',
+    paddingHorizontal: spacing.md,
+    paddingTop: 6,
+    paddingBottom: 10,
+    backgroundColor: c.bgSurface,
+  },
+  doneBtn: {
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+  },
+  doneBtnText: {
+    fontSize: 14,
+    color: c.gold,
+    fontWeight: '600',
+  },
 }));
+
+const PHONE_ACCESSORY_ID = 'phone-keyboard-done';
 
 const LOCKOUT_MS = 15 * 60 * 1000;
 
@@ -299,7 +318,8 @@ export default function LoginScreen() {
   };
 
   return (
-    <ScreenWrapper withKeyboardAvoiding padded>
+    <>
+    <ScreenWrapper withKeyboardAvoiding padded scrollable>
       <View style={[styles.inner, { paddingBottom: Math.max(insets.bottom, spacing.lg) }]}>
         <View style={styles.topBar}>
           <TouchableOpacity
@@ -370,6 +390,7 @@ export default function LoginScreen() {
           autoCorrect={false}
           value={phone}
           onChangeText={setPhone}
+          inputAccessoryViewID={Platform.OS === 'ios' ? PHONE_ACCESSORY_ID : undefined}
         />
         <Button
           title={t('auth.sendSmsCode')}
@@ -402,5 +423,21 @@ export default function LoginScreen() {
         </View>
       </View>
     </ScreenWrapper>
+
+    {Platform.OS === 'ios' && (
+      <InputAccessoryView nativeID={PHONE_ACCESSORY_ID}>
+        <View style={styles.accessoryBar}>
+          <TouchableOpacity
+            onPress={() => Keyboard.dismiss()}
+            hitSlop={12}
+            activeOpacity={0.7}
+            style={styles.doneBtn}
+          >
+            <Text style={styles.doneBtnText}>{t('common.done')}</Text>
+          </TouchableOpacity>
+        </View>
+      </InputAccessoryView>
+    )}
+    </>
   );
 }

@@ -18,12 +18,11 @@ import { getMediaTypeFromMime, type SocialMediaType } from '@/lib/sharing/mime';
 import {
   shareToInstagramFeed,
   shareToInstagramStory,
-  shareToSnapchat,
-  shareToTikTok,
   shareToYouTube,
   isNativeSocialShareAvailable,
   type SocialShareDestination,
 } from '@/lib/sharing/nativeSocialShare';
+import { openPersonalSnapchatApp, openPersonalTikTokApp } from '@/lib/sharing/personalSocialApp';
 
 interface SnapShareSheetProps {
   imageUrl: string;
@@ -35,13 +34,15 @@ type ShareOption = {
   label: string;
   icon: keyof typeof Ionicons.glyphMap;
   videoOnly?: boolean;
+  /** Opens the user's Snapchat or TikTok app (logged-in session on device). */
+  personalSocial?: boolean;
 };
 
 const SHARE_OPTIONS: ShareOption[] = [
   { destination: 'instagram-story', label: 'Instagram Story', icon: 'logo-instagram' },
   { destination: 'instagram-feed', label: 'Instagram Feed', icon: 'logo-instagram' },
-  { destination: 'snapchat-story', label: 'Snapchat Story', icon: 'chatbubble-ellipses-outline' },
-  { destination: 'tiktok', label: 'TikTok', icon: 'logo-tiktok' },
+  { destination: 'snapchat-story', label: 'Snapchat', icon: 'chatbubble-ellipses-outline', personalSocial: true },
+  { destination: 'tiktok', label: 'TikTok', icon: 'logo-tiktok', personalSocial: true },
   { destination: 'youtube', label: 'YouTube', icon: 'logo-youtube', videoOnly: true },
 ];
 
@@ -49,7 +50,7 @@ const DESTINATION_LABEL: Record<SocialShareDestination, string> = {
   'instagram-story': 'Instagram Story',
   'instagram-feed': 'Instagram Feed',
   tiktok: 'TikTok',
-  'snapchat-story': 'Snapchat Story',
+  'snapchat-story': 'Snapchat',
   youtube: 'YouTube',
 };
 
@@ -185,18 +186,35 @@ export function SnapShareSheet({ imageUrl, mediaType }: SnapShareSheetProps) {
     };
   }, [imageUrl, resolvedMediaType]);
 
-  const handleShare = async (destination: SocialShareDestination) => {
+  const handleShare = async (destination: SocialShareDestination, personalSocial?: boolean) => {
     if (pendingDestination) return;
 
+    if (personalSocial) {
+      setPendingDestination(destination);
+      try {
+        if (destination === 'tiktok') {
+          await openPersonalTikTokApp();
+        } else {
+          await openPersonalSnapchatApp();
+        }
+      } catch (error) {
+        const message = error instanceof Error ? error.message : 'Something went wrong.';
+        Alert.alert(DESTINATION_LABEL[destination], message);
+      } finally {
+        setPendingDestination(null);
+      }
+      return;
+    }
+
     if (!localMediaUri) {
-      Alert.alert('Snap not ready', prepareError ?? 'Cenaiva is still preparing the filtered snap for posting.');
+      Alert.alert('Snap not ready', prepareError ?? 'Cenaiva is still preparing this image for sharing.');
       return;
     }
 
     if (!nativeShareAvailable) {
       Alert.alert(
         'Update Cenaiva',
-        'This app build does not include native social sharing yet. Reinstall the latest dev build, then reopen this snap.',
+        'This app build does not include native Instagram or YouTube sharing yet. Reinstall the latest dev build, then reopen this snap.',
       );
       return;
     }
@@ -210,14 +228,10 @@ export function SnapShareSheet({ imageUrl, mediaType }: SnapShareSheetProps) {
         case 'instagram-feed':
           await shareToInstagramFeed(localMediaUri, resolvedMediaType);
           break;
-        case 'snapchat-story':
-          await shareToSnapchat(localMediaUri, resolvedMediaType);
-          break;
-        case 'tiktok':
-          await shareToTikTok(localMediaUri, resolvedMediaType);
-          break;
         case 'youtube':
           await shareToYouTube(localMediaUri);
+          break;
+        default:
           break;
       }
     } catch (error) {
@@ -227,6 +241,11 @@ export function SnapShareSheet({ imageUrl, mediaType }: SnapShareSheetProps) {
       setPendingDestination(null);
     }
   };
+
+  const showPrepareStatus =
+    isPreparingMedia ||
+    prepareError ||
+    (!nativeShareAvailable && visibleOptions.some((o) => !o.personalSocial));
 
   return (
     <View style={styles.card}>
@@ -244,41 +263,44 @@ export function SnapShareSheet({ imageUrl, mediaType }: SnapShareSheetProps) {
       ) : null}
 
       <Text style={styles.hint}>
-        Tap a platform to open its post composer with this filtered snap attached.
+        Your moment is worth sharing. Pick where you would like to take it next — we are cheering you on.
       </Text>
-      {isPreparingMedia || prepareError || !nativeShareAvailable ? (
+      {showPrepareStatus ? (
         <Text style={styles.statusText}>
-          {!nativeShareAvailable
-            ? 'Update Cenaiva to the latest dev build to post directly to social apps.'
-            : prepareError ?? 'Preparing snap for posting...'}
+          {!nativeShareAvailable && !isPreparingMedia && !prepareError
+            ? 'Direct sharing to Instagram or YouTube from this screen requires a build that includes the native sharing module.'
+            : prepareError ?? (isPreparingMedia ? 'Preparing your snap for sharing…' : '')}
         </Text>
       ) : null}
 
       <View style={styles.socialGrid}>
         {visibleOptions.map((option) => {
           const isPending = pendingDestination === option.destination;
-          const disabled = !nativeShareAvailable || !localMediaUri || pendingDestination !== null;
+          const personal = Boolean(option.personalSocial);
+          const disabled = pendingDestination !== null || (!personal && (!nativeShareAvailable || !localMediaUri));
 
           return (
-          <Pressable
-            key={option.destination}
-            onPress={() => void handleShare(option.destination)}
-            disabled={disabled}
-            style={({ pressed }) => [
-              styles.socialChip,
-              pressed && styles.socialChipPressed,
-              disabled && styles.socialChipDisabled,
-            ]}
-            accessibilityRole="button"
-            accessibilityLabel={`Share snap to ${option.label}`}
-          >
-            {isPending ? (
-              <ActivityIndicator size="small" color={c.gold} />
-            ) : (
-              <Ionicons name={option.icon} size={20} color={c.gold} />
-            )}
-            <Text style={styles.socialChipLabel}>{option.label}</Text>
-          </Pressable>
+            <Pressable
+              key={option.destination}
+              onPress={() => void handleShare(option.destination, option.personalSocial)}
+              disabled={disabled}
+              style={({ pressed }) => [
+                styles.socialChip,
+                pressed && styles.socialChipPressed,
+                disabled && styles.socialChipDisabled,
+              ]}
+              accessibilityRole="button"
+              accessibilityLabel={
+                personal ? `Open your ${option.label} app` : `Share snap to ${option.label}`
+              }
+            >
+              {isPending ? (
+                <ActivityIndicator size="small" color={c.gold} />
+              ) : (
+                <Ionicons name={option.icon} size={20} color={c.gold} />
+              )}
+              <Text style={styles.socialChipLabel}>{option.label}</Text>
+            </Pressable>
           );
         })}
       </View>

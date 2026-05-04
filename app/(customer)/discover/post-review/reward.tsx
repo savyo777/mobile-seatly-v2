@@ -78,8 +78,8 @@ export default function ReviewRewardScreen() {
       }),
       Animated.timing(actionFade, {
         toValue: 1,
-        duration: 450,
-        delay: 120,
+        duration: 280,
+        delay: 0,
         useNativeDriver: true,
       }),
     ]).start();

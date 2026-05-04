@@ -7,6 +7,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Button, ScreenWrapper } from '@/components/ui';
 import { snapFilters } from '@/lib/mock/reviewSnap';
+import { SnapFilterOverlay } from '@/components/snaps/SnapFilterOverlay';
 import { useColors, createStyles, borderRadius, spacing, typography } from '@/lib/theme';
 import { getSnapRestaurantName } from '@/lib/mock/snaps';
 
@@ -180,7 +181,7 @@ export default function ReviewPreviewScreen() {
     } catch (e) {
       setNavError('Something went wrong, try again.');
     } finally {
-      setTimeout(() => setNavigating(false), 400);
+      setNavigating(false);
     }
   }, [decodedUri, filter, hasImage, restaurantId, router]);
 
@@ -223,13 +224,9 @@ export default function ReviewPreviewScreen() {
               </View>
             )}
             <LinearGradient colors={['transparent', 'rgba(0,0,0,0.45)']} style={styles.depthOverlay} />
-            <View
-              pointerEvents="none"
-              style={[
-                styles.filterOverlay,
-                { backgroundColor: activeFilter.overlayColor, opacity: activeFilter.overlayOpacity },
-              ]}
-            />
+            <View pointerEvents="none" style={styles.filterOverlay}>
+              <SnapFilterOverlay filter={activeFilter} />
+            </View>
           </View>
 
           <Text style={styles.postingTo}>Posting to {restaurantName}</Text>

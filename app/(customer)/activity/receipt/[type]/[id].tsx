@@ -330,6 +330,7 @@ export default function ReceiptScreen() {
   }
 
   const when = formatWhen(payload.dateTimeIso, i18n.language);
+  const hasPaid = payload.totalAmount > 0 && payload.items.length > 0;
 
   return (
     <ScreenWrapper scrollable={false} padded={false}>
@@ -413,13 +414,15 @@ export default function ReceiptScreen() {
           </Animated.View>
         </ScrollView>
 
-        <Animated.View entering={FadeInDown.duration(400).delay(120)} style={styles.actions}>
-          <Button title={t('receipt.downloadPdf')} onPress={handleDownload} variant="outlined" disabled={actionLoading} />
-          <View style={styles.actionGap} />
-          <Button title={t('receipt.share')} onPress={handleShare} variant="outlined" disabled={actionLoading} />
-          <View style={styles.actionGap} />
-          <Button title={t('receipt.print')} onPress={handlePrint} disabled={actionLoading} />
-        </Animated.View>
+        {hasPaid ? (
+          <Animated.View entering={FadeInDown.duration(400).delay(120)} style={styles.actions}>
+            <Button title={t('receipt.downloadPdf')} onPress={handleDownload} variant="outlined" disabled={actionLoading} />
+            <View style={styles.actionGap} />
+            <Button title={t('receipt.share')} onPress={handleShare} variant="outlined" disabled={actionLoading} />
+            <View style={styles.actionGap} />
+            <Button title={t('receipt.print')} onPress={handlePrint} disabled={actionLoading} />
+          </Animated.View>
+        ) : null}
       </View>
 
       {actionLoading ? (

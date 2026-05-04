@@ -74,6 +74,9 @@ export default function CustomerTabsLayout() {
     <Tabs
       screenOptions={{
         ...tabTransitionOptions,
+        /** Mount all main tabs up front so switching Discover ↔ Bookings ↔ Profile is instant. */
+        lazy: false,
+        freezeOnBlur: false,
         headerShown: false,
         sceneStyle: { backgroundColor: c.bgBase },
         tabBarActiveTintColor: c.gold,

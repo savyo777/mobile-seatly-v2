@@ -133,7 +133,7 @@ export default function ResetPasswordScreen() {
   const ready = nextPassword.length > 0 && confirmPassword.length > 0 && !submitting;
 
   return (
-    <ScreenWrapper withKeyboardAvoiding padded>
+    <ScreenWrapper withKeyboardAvoiding padded scrollable>
       <View style={styles.inner}>
         {!canReset ? (
           <ActivityIndicator color={c.gold} />

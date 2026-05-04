@@ -38,29 +38,26 @@ export default function SplashScreen() {
   useEffect(() => {
     if (loading) return;
     let cancelled = false;
-    const timer = setTimeout(() => {
-      void (async () => {
-        if (cancelled) return;
-        if (!isAuthenticated) {
-          router.replace('/onboarding');
-          return;
-        }
-        const pref = await getAppShellPreference();
-        if (cancelled) return;
-        if (pref === 'customer') {
-          router.replace('/(customer)');
-          return;
-        }
-        if (pref === 'staff' && isStaffLike) {
-          router.replace('/(staff)');
-          return;
-        }
+    void (async () => {
+      if (cancelled) return;
+      if (!isAuthenticated) {
+        router.replace('/onboarding');
+        return;
+      }
+      const pref = await getAppShellPreference();
+      if (cancelled) return;
+      if (pref === 'customer') {
         router.replace('/(customer)');
-      })();
-    }, 300);
+        return;
+      }
+      if (pref === 'staff' && isStaffLike) {
+        router.replace('/(staff)');
+        return;
+      }
+      router.replace('/(customer)');
+    })();
     return () => {
       cancelled = true;
-      clearTimeout(timer);
     };
   }, [router, loading, isAuthenticated, isStaffLike]);
 

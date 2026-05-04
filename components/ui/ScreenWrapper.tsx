@@ -19,7 +19,12 @@ export function ScreenWrapper({ children, scrollable = false, withKeyboardAvoidi
     <View style={{ flex: 1, backgroundColor: c.bgBase, paddingTop: insets.top, paddingBottom: insets.bottom, paddingHorizontal: padded ? 20 : 0 }}>
       <StatusBar barStyle={effective === 'light' ? 'dark-content' : 'light-content'} backgroundColor={c.bgBase} />
       {scrollable ? (
-        <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 24 }}>
+        <ScrollView
+          showsVerticalScrollIndicator={false}
+          keyboardShouldPersistTaps="handled"
+          keyboardDismissMode="interactive"
+          contentContainerStyle={{ paddingBottom: 24, flexGrow: 1 }}
+        >
           {children}
         </ScrollView>
       ) : (

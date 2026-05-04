@@ -222,7 +222,7 @@ export default function VerifyPhoneOtpScreen() {
   };
 
   return (
-    <ScreenWrapper withKeyboardAvoiding padded>
+    <ScreenWrapper withKeyboardAvoiding padded scrollable>
       <View style={[styles.inner, { paddingBottom: Math.max(insets.bottom, spacing.lg) }]}>
         <View style={styles.topBar}>
           <TouchableOpacity onPress={goBack} style={styles.backBtn} activeOpacity={0.7} hitSlop={12}>

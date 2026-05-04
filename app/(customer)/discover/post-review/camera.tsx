@@ -20,6 +20,7 @@ import { useLocalSearchParams, useNavigation, useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { StatusBar } from 'expo-status-bar';
 import { snapFilters } from '@/lib/mock/reviewSnap';
+import { SnapFilterOverlay } from '@/components/snaps/SnapFilterOverlay';
 import { useColors, createStyles, borderRadius, spacing, typography } from '@/lib/theme';
 import { getSnapRestaurantName } from '@/lib/mock/snaps';
 import { openAppPhotoSettings } from '@/lib/device/openAppPhotoSettings';
@@ -515,7 +516,9 @@ export default function ReviewCameraScreen() {
         <View style={[styles.cameraFill, { backgroundColor: '#1a1a1a' }]} />
       )}
 
-      <View pointerEvents="none" style={[styles.filterTint, { backgroundColor: activeFilter.overlayColor, opacity: activeFilter.overlayOpacity }]} />
+      <View pointerEvents="none" style={styles.filterTint}>
+        <SnapFilterOverlay filter={activeFilter} />
+      </View>
 
       <Animated.View pointerEvents="none" style={[styles.shutter, { opacity: shutterOpacity }]} />
 

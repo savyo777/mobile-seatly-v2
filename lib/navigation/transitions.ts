@@ -7,6 +7,7 @@ export function createStackTransitionOptions(backgroundColor: string): NativeSta
     contentStyle: { backgroundColor },
     animation: 'slide_from_right',
     gestureEnabled: true,
+    fullScreenGestureEnabled: true,
   };
 }
 
@@ -23,11 +24,5 @@ export const tabTransitionOptions: Pick<
   BottomTabNavigationOptions,
   'animation' | 'transitionSpec'
 > = {
-  animation: 'shift',
-  transitionSpec: {
-    animation: 'timing',
-    config: {
-      duration: 180,
-    },
-  },
+  animation: 'none',
 };

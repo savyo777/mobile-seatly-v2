@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import {
   View,
   Text,
@@ -68,6 +68,71 @@ function parsePreferenceInput(value: string): string[] {
     .map((item) => item.trim())
     .filter(Boolean);
 }
+
+function toggleCommaPreference(raw: string, item: string): string {
+  const trimmed = item.trim();
+  if (!trimmed) return raw;
+  const items = parsePreferenceInput(raw);
+  const lower = trimmed.toLowerCase();
+  const idx = items.findIndex((i) => i.toLowerCase() === lower);
+  if (idx >= 0) {
+    items.splice(idx, 1);
+    return items.join(', ');
+  }
+  return [...items, trimmed].join(', ');
+}
+
+const SUGGESTED_CUISINES = [
+  'Italian',
+  'Japanese',
+  'Mexican',
+  'Korean',
+  'Thai',
+  'French',
+  'Indian',
+  'Mediterranean',
+  'Vietnamese',
+  'Chinese',
+  'Ethiopian',
+  'BBQ',
+  'Seafood',
+  'Steakhouse',
+  'Brunch',
+] as const;
+
+const SUGGESTED_DIETARY = [
+  'Vegetarian',
+  'Vegan',
+  'Gluten-free',
+  'Halal',
+  'Kosher',
+  'Dairy-free',
+  'Nut-free',
+  'Shellfish-free',
+  'Low sodium',
+  'Low carb',
+  'Pescatarian',
+  'No alcohol',
+  'Kid-friendly menu',
+] as const;
+
+const SUGGESTED_VIBES = [
+  'Date night',
+  'Business dinner',
+  'Birthday',
+  'Group dinner',
+  'Counter / bar',
+  'Quiet table',
+  'Patio',
+  'Rooftop',
+  'Live music',
+  "Chef's tasting",
+  'Solo dining',
+  'Late night',
+  'Casual',
+  'Romantic',
+  'Celebration',
+] as const;
 
 const savedRestaurants = getSavedRestaurants();
 
@@ -355,6 +420,43 @@ const useStyles = createStyles((c) => ({
     lineHeight: 17,
     marginTop: 8,
   },
+  prefsPickLabel: {
+    fontSize: 11,
+    fontWeight: '600',
+    color: c.textMuted,
+    marginBottom: 8,
+    letterSpacing: 0.3,
+  },
+  prefsPickScroll: {
+    flexGrow: 0,
+    marginBottom: 4,
+  },
+  prefsPickScrollContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    paddingRight: 4,
+  },
+  prefsPickChip: {
+    paddingHorizontal: 12,
+    paddingVertical: 7,
+    borderRadius: borderRadius.full,
+    backgroundColor: c.bgBase,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: c.border,
+  },
+  prefsPickChipOn: {
+    borderColor: 'rgba(201,162,74,0.65)',
+    backgroundColor: 'rgba(201,162,74,0.12)',
+  },
+  prefsPickChipText: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: c.textSecondary,
+  },
+  prefsPickChipTextOn: {
+    color: c.gold,
+  },
   prefsDivider: {
     height: StyleSheet.hairlineWidth,
     backgroundColor: c.border,
@@ -473,6 +575,48 @@ const useStyles = createStyles((c) => ({
     color: c.textPrimary,
   },
 }));
+
+function DiningPrefPickRow({
+  options,
+  value,
+  onChange,
+}: {
+  options: readonly string[];
+  value: string;
+  onChange: (next: string) => void;
+}) {
+  const styles = useStyles();
+  const selected = useMemo(() => new Set(parsePreferenceInput(value).map((s) => s.toLowerCase())), [value]);
+
+  return (
+    <View>
+      <Text style={styles.prefsPickLabel}>Quick picks — tap to add or remove</Text>
+      <ScrollView
+        horizontal
+        showsHorizontalScrollIndicator={false}
+        style={styles.prefsPickScroll}
+        contentContainerStyle={styles.prefsPickScrollContent}
+      >
+        {options.map((opt) => {
+          const on = selected.has(opt.toLowerCase());
+          return (
+            <Pressable
+              key={opt}
+              onPress={() => onChange(toggleCommaPreference(value, opt))}
+              style={({ pressed }) => [
+                styles.prefsPickChip,
+                on && styles.prefsPickChipOn,
+                pressed && { opacity: 0.85 },
+              ]}
+            >
+              <Text style={[styles.prefsPickChipText, on && styles.prefsPickChipTextOn]}>{opt}</Text>
+            </Pressable>
+          );
+        })}
+      </ScrollView>
+    </View>
+  );
+}
 
 export default function ProfileScreen() {
   const router = useRouter();
@@ -623,10 +767,11 @@ export default function ProfileScreen() {
         <View style={styles.prefsCard}>
           <View>
             <Text style={styles.prefsSubTitle}>Cuisines</Text>
+            <DiningPrefPickRow options={SUGGESTED_CUISINES} value={cuisinePrefs} onChange={setCuisinePrefs} />
             <TextInput
               value={cuisinePrefs}
               onChangeText={setCuisinePrefs}
-              placeholder="Type anything, or leave blank"
+              placeholder="Or type your own — comma-separated"
               placeholderTextColor={c.textMuted}
               style={styles.prefsInput}
               autoCapitalize="words"
@@ -638,15 +783,16 @@ export default function ProfileScreen() {
                 </View>
               ))}
             </View>
-            <Text style={styles.prefsHint}>Separate multiple preferences with commas.</Text>
+            <Text style={styles.prefsHint}>Use quick picks, typing, or both. Separate multiple entries with commas.</Text>
           </View>
           <View style={styles.prefsDivider} />
           <View>
             <Text style={styles.prefsSubTitle}>Dietary</Text>
+            <DiningPrefPickRow options={SUGGESTED_DIETARY} value={dietaryPrefs} onChange={setDietaryPrefs} />
             <TextInput
               value={dietaryPrefs}
               onChangeText={setDietaryPrefs}
-              placeholder="No restrictions, allergies, or custom notes"
+              placeholder="Add allergies, notes, or anything custom"
               placeholderTextColor={c.textMuted}
               style={styles.prefsInput}
               autoCapitalize="sentences"
@@ -658,15 +804,16 @@ export default function ProfileScreen() {
                 </View>
               ))}
             </View>
-            <Text style={styles.prefsHint}>Leave blank if you do not want to save any dietary preference.</Text>
+            <Text style={styles.prefsHint}>Quick picks and free text work together. Leave blank for no dietary entry.</Text>
           </View>
           <View style={styles.prefsDivider} />
           <View>
             <Text style={styles.prefsSubTitle}>Vibes</Text>
+            <DiningPrefPickRow options={SUGGESTED_VIBES} value={vibePrefs} onChange={setVibePrefs} />
             <TextInput
               value={vibePrefs}
               onChangeText={setVibePrefs}
-              placeholder="Type whatever dining vibe you want"
+              placeholder="Or describe your own vibe — comma-separated"
               placeholderTextColor={c.textMuted}
               style={styles.prefsInput}
               autoCapitalize="sentences"
@@ -678,7 +825,7 @@ export default function ProfileScreen() {
                 </View>
               ))}
             </View>
-            <Text style={styles.prefsHint}>Examples: quiet booth, spicy food, rooftop, no preference.</Text>
+            <Text style={styles.prefsHint}>Combine chips and custom text (for example: quiet booth, spicy food, rooftop).</Text>
           </View>
         </View>
 
