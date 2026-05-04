@@ -1,5 +1,6 @@
 import type { BottomTabNavigationOptions } from '@react-navigation/bottom-tabs';
 import type { NativeStackNavigationOptions } from '@react-navigation/native-stack';
+import { Easing } from 'react-native';
 
 export function createStackTransitionOptions(backgroundColor: string): NativeStackNavigationOptions {
   return {
@@ -24,5 +25,12 @@ export const tabTransitionOptions: Pick<
   BottomTabNavigationOptions,
   'animation' | 'transitionSpec'
 > = {
-  animation: 'none',
+  animation: 'fade',
+  transitionSpec: {
+    animation: 'timing',
+    config: {
+      duration: 135,
+      easing: Easing.out(Easing.cubic),
+    },
+  },
 };

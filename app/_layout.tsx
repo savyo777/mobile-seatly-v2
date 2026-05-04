@@ -2,6 +2,7 @@ import React, { useEffect } from 'react';
 import { Stack, useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
+import { enableFreeze, enableScreens } from 'react-native-screens';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import * as Linking from 'expo-linking';
 import Constants from 'expo-constants';
@@ -15,6 +16,9 @@ import { CenaivaVoicePreferenceProvider } from '@/lib/cenaiva/voice/CenaivaVoice
 import { getSupabase } from '@/lib/supabase/client';
 import { CookieConsentBanner } from '@/components/cookie-consent/CookieConsentBanner';
 import { getStripeEnv } from '@/lib/stripe/env';
+
+enableScreens(true);
+enableFreeze(true);
 
 type RecoveryTokens = {
   accessToken: string;

@@ -6,6 +6,30 @@ export type DiscoverSectionKey =
   | 'outdoor-seating'
   | 'top-rated';
 
+export const RESTAURANT_WEEKDAY_KEYS = [
+  'sunday',
+  'monday',
+  'tuesday',
+  'wednesday',
+  'thursday',
+  'friday',
+  'saturday',
+] as const;
+
+export type RestaurantWeekdayKey = typeof RESTAURANT_WEEKDAY_KEYS[number];
+export type RestaurantHoursRange = { open: string; close: string };
+export type RestaurantSpecialHours = {
+  date: string;
+  closed?: boolean;
+  from?: string;
+  to?: string;
+  open?: string;
+  close?: string;
+};
+export type RestaurantHoursJson = Partial<Record<RestaurantWeekdayKey, RestaurantHoursRange | null>> & {
+  special?: RestaurantSpecialHours[];
+};
+
 export interface Restaurant {
   id: string;
   name: string;
@@ -30,12 +54,12 @@ export interface Restaurant {
   tags: string[];
   featuredIn: DiscoverSectionKey[];
   isActive: boolean;
-  hoursJson: Record<string, { open: string; close: string }>;
+  hoursJson: RestaurantHoursJson;
   taxRate: number;
   currency: string;
 }
 
-const defaultHours: Record<string, { open: string; close: string }> = {
+const defaultHours: RestaurantHoursJson = {
   monday: { open: '11:30', close: '22:00' },
   tuesday: { open: '11:30', close: '22:00' },
   wednesday: { open: '11:30', close: '22:00' },

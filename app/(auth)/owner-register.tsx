@@ -333,6 +333,7 @@ export default function OwnerRegisterScreen() {
     setSubmitting(true);
     try {
       const { error } = await sendPhoneOtp(e164, {
+        shouldCreateUser: true,
         metadata: {
           role: 'owner',
           full_name: fullName.trim(),

@@ -285,7 +285,18 @@ export default function SettingsScreen() {
           label: 'Change Password',
           href: '/(customer)/profile/security/change-password',
         },
-        { kind: 'nav', icon: 'mail-outline', label: 'Change Email', href: '/(customer)/profile/security/change-email' },
+        {
+          kind: 'nav',
+          icon: 'mail-outline',
+          label: 'Change Email',
+          href: '/(customer)/profile/security/change-email',
+        },
+        {
+          kind: 'nav',
+          icon: 'call-outline',
+          label: 'Change Phone Number',
+          href: '/(customer)/profile/security/change-phone',
+        },
       ],
     },
     {

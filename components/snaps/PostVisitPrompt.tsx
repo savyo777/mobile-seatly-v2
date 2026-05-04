@@ -3,16 +3,16 @@ import { View, Text, Pressable } from 'react-native';
 import { Href, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { mockReservations, type Reservation } from '@/lib/mock/reservations';
+import { mockCustomer } from '@/lib/mock/users';
 import { borderRadius, createStyles, shadows, spacing, typography, useColors } from '@/lib/theme';
 
-const GUEST_ID = 'g1';
 const WINDOW_MS = 8 * 60 * 60 * 1000; // 8 hours
 
 function getPostVisitReservation(): Reservation | null {
   const now = Date.now();
   return (
     mockReservations.find((r) => {
-      if (r.guestId !== GUEST_ID) return false;
+      if (r.guestId !== mockCustomer.id) return false;
       if (r.status === 'cancelled' || r.status === 'no_show') return false;
       // Currently seated → prompt to snap while they're there
       if (r.status === 'seated') return true;

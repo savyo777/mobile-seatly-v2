@@ -1,5 +1,6 @@
 import type { CalendarCell, DateKey, TimeSlotOption } from '@/lib/booking/availabilityTypes';
 import {
+  coerceBookableDateKey,
   getMockCalendarMonth,
   getMockShiftConfig,
   getMockTimeSlots,
@@ -35,6 +36,8 @@ export function isDateBookable(restaurantId: string, dateKey: DateKey) {
 export function firstBookableDateKey(restaurantId: string) {
   return nextMockBookableDateKey(restaurantId);
 }
+
+export { coerceBookableDateKey };
 
 export function nextBookableDateAfter(restaurantId: string, afterDateKey: DateKey): DateKey {
   const from = parseDateKeyLocal(afterDateKey);

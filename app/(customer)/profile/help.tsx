@@ -1,5 +1,5 @@
-import React, { useMemo, useState } from 'react';
-import { View, Text, StyleSheet, TextInput, Pressable, LayoutAnimation, Platform, UIManager } from 'react-native';
+import React, { useCallback, useState } from 'react';
+import { View, Text, StyleSheet, Pressable, LayoutAnimation, Platform, UIManager, Linking, Alert } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { Ionicons } from '@expo/vector-icons';
 import { ChevronGlyph } from '@/components/ui/ChevronGlyph';
@@ -14,26 +14,6 @@ if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental
 }
 
 const useStyles = createStyles((c) => ({
-  searchWrap: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: c.bgSurface,
-    borderRadius: borderRadius.lg,
-    borderWidth: 1,
-    borderColor: c.border,
-    paddingHorizontal: spacing.md,
-    marginBottom: spacing.lg,
-    ...shadows.card,
-  },
-  searchIcon: {
-    marginRight: spacing.sm,
-  },
-  searchInput: {
-    flex: 1,
-    ...typography.body,
-    color: c.textPrimary,
-    paddingVertical: spacing.md,
-  },
   topicGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
@@ -123,41 +103,60 @@ const useStyles = createStyles((c) => ({
   },
 }));
 
+const SUPPORT_EMAIL = 'help@cenaiva.app';
+
+function openSupportEmail(subject: string, body: string) {
+  const mailto = `mailto:${SUPPORT_EMAIL}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+  Linking.openURL(mailto).catch(() => {
+    Alert.alert('No email app', `Please email us at ${SUPPORT_EMAIL}`);
+  });
+}
+
+const TOPIC_SUBJECTS: Record<string, { subject: string; body: string }> = {
+  h1: {
+    subject: 'Booking Issue',
+    body: 'Hi Cenaiva Support,\n\nI need help with a booking issue.\n\nBooking reference (if applicable): \nDetails: \n',
+  },
+  h2: {
+    subject: 'Payment Issue',
+    body: 'Hi Cenaiva Support,\n\nI need help with a payment issue.\n\nBooking reference (if applicable): \nDetails: \n',
+  },
+  h3: {
+    subject: 'Refund Request',
+    body: 'Hi Cenaiva Support,\n\nI would like to request a refund.\n\nBooking reference: \nReason: \n',
+  },
+  h4: {
+    subject: 'Restaurant Issue Report',
+    body: 'Hi Cenaiva Support,\n\nI would like to report an issue with a restaurant.\n\nRestaurant name: \nDate of visit: \nDetails: \n',
+  },
+};
+
 export default function HelpScreen() {
   const { t } = useTranslation();
   const c = useColors();
   const styles = useStyles();
-  const [q, setQ] = useState('');
   const [openFaq, setOpenFaq] = useState<string | null>(mockFaqs[0]?.id ?? null);
-
-  const filteredFaqs = useMemo(() => {
-    const s = q.trim().toLowerCase();
-    if (!s) return mockFaqs;
-    return mockFaqs.filter((f) => f.q.toLowerCase().includes(s) || f.a.toLowerCase().includes(s));
-  }, [q]);
 
   const toggleFaq = (id: string) => {
     LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
     setOpenFaq((prev) => (prev === id ? null : id));
   };
 
+  const handleTopicPress = useCallback((topicId: string) => {
+    const info = TOPIC_SUBJECTS[topicId];
+    if (info) openSupportEmail(info.subject, info.body);
+  }, []);
+
+  const handleContactEmail = useCallback(() => {
+    openSupportEmail('Support Request', 'Hi Cenaiva Support,\n\n');
+  }, []);
+
   return (
     <ProfileStackScreen title={t('profile.help')}>
-      <View style={styles.searchWrap}>
-        <Ionicons name="search" size={20} color={c.textMuted} style={styles.searchIcon} />
-        <TextInput
-          value={q}
-          onChangeText={setQ}
-          placeholder="Search help topics"
-          placeholderTextColor={c.textMuted}
-          style={styles.searchInput}
-        />
-      </View>
-
       <ProfileSectionTitle>Popular topics</ProfileSectionTitle>
       <View style={styles.topicGrid}>
         {mockHelpTopics.map((topic) => (
-          <Pressable key={topic.id} style={({ pressed }) => [styles.topicCard, pressed && styles.topicPressed]}>
+          <Pressable key={topic.id} onPress={() => handleTopicPress(topic.id)} style={({ pressed }) => [styles.topicCard, pressed && styles.topicPressed]}>
             <View style={styles.topicIcon}>
               <Ionicons name={topic.icon} size={22} color={c.gold} />
             </View>
@@ -170,27 +169,18 @@ export default function HelpScreen() {
       </View>
 
       <Card style={styles.contactCard}>
-        <View style={styles.contactRow}>
-          <Ionicons name="chatbubble-ellipses-outline" size={22} color={c.gold} />
-          <View style={styles.flex}>
-            <Text style={styles.contactTitle}>Live chat</Text>
-            <Text style={styles.contactSub}>Avg. reply under 4 min · 9am–11pm ET</Text>
-          </View>
-          <ChevronGlyph color={c.textMuted} size={18} />
-        </View>
-        <View style={styles.divider} />
-        <View style={styles.contactRow}>
+        <Pressable onPress={handleContactEmail} style={styles.contactRow}>
           <Ionicons name="mail-outline" size={22} color={c.gold} />
           <View style={styles.flex}>
             <Text style={styles.contactTitle}>Contact support</Text>
             <Text style={styles.contactSub}>help@cenaiva.app</Text>
           </View>
           <ChevronGlyph color={c.textMuted} size={18} />
-        </View>
+        </Pressable>
       </Card>
 
       <ProfileSectionTitle>FAQ</ProfileSectionTitle>
-      {filteredFaqs.map((f) => {
+      {mockFaqs.map((f) => {
         const open = openFaq === f.id;
         return (
           <Pressable key={f.id} onPress={() => toggleFaq(f.id)} style={styles.faqCard}>

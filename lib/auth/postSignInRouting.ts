@@ -25,7 +25,7 @@ export async function getRoleForSignedInUser(
   user?: User | null,
 ): Promise<string | null> {
   const supabase = getSupabase();
-  if (!supabase) return getMetadataRole(user);
+  if (!supabase) return getMetadataRole(user) ?? 'customer';
 
   const { data, error } = await supabase
     .from('user_profiles')
@@ -34,7 +34,7 @@ export async function getRoleForSignedInUser(
     .maybeSingle();
 
   const profileRole = !error ? normalizeRole(data?.role) : null;
-  return profileRole ?? getMetadataRole(user);
+  return profileRole ?? getMetadataRole(user) ?? 'customer';
 }
 
 export async function resolveHomeForSignedInUser(

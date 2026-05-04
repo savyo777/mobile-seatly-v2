@@ -1,4 +1,4 @@
-import { getSupabase } from '@/lib/supabase/client';
+import { clearPersistedSupabaseSession, getSupabase } from '@/lib/supabase/client';
 import { normalizePhoneToE164 } from '@/lib/services/phoneAuth';
 
 const RESET_PASSWORD_REDIRECT = 'cenaiva://reset-password';
@@ -7,6 +7,39 @@ function requireSupabase() {
   const supabase = getSupabase();
   if (!supabase) throw new Error('Supabase is not configured.');
   return supabase;
+}
+
+async function readFunctionErrorBody(response: unknown): Promise<{ error?: string; code?: string } | null> {
+  if (!response || typeof response !== 'object' || !('json' in response)) return null;
+  try {
+    const data = await (response as Response).json();
+    return data && typeof data === 'object'
+      ? (data as { error?: string; code?: string })
+      : null;
+  } catch {
+    return null;
+  }
+}
+
+function friendlyDeleteAccountError(rawMessage?: string, code?: string): string {
+  if (code === 'unauthorized') {
+    return 'Please sign in again before deleting your account.';
+  }
+  if (code === 'missing_config') {
+    return 'Account deletion is not available yet. Please try again shortly.';
+  }
+
+  const message = rawMessage ?? '';
+  const normalized = message.toLowerCase();
+  if (
+    normalized.includes('non-2xx') ||
+    normalized.includes('function not found') ||
+    normalized.includes('failed to send a request')
+  ) {
+    return 'Account deletion is not available yet. Please try again shortly.';
+  }
+
+  return message || 'Failed to delete account.';
 }
 
 export async function changePassword(current: string, next: string): Promise<void> {
@@ -112,16 +145,29 @@ export async function revokeSession(sessionId: string): Promise<void> {
 // must not be called from the client.
 export async function deleteAccount(): Promise<void> {
   const supabase = requireSupabase();
-  const { error: invokeError } = await supabase.functions.invoke('delete-account', {
+  const { data, error: invokeError, response } = await supabase.functions.invoke<{
+    deleted?: boolean;
+    error?: string;
+    code?: string;
+  }>('delete-account', {
     method: 'POST',
   });
-  if (invokeError) {
-    throw new Error(invokeError.message ?? 'Failed to delete account.');
+  if (invokeError || data?.error || data?.deleted === false) {
+    const errorBody = data ?? await readFunctionErrorBody(response ?? invokeError?.context);
+    throw new Error(
+      friendlyDeleteAccountError(errorBody?.error ?? invokeError?.message, errorBody?.code),
+    );
   }
   try {
-    await supabase.auth.signOut();
+    await supabase.auth.signOut({ scope: 'local' });
   } catch {
     // best-effort: account is already deleted server-side
+  } finally {
+    try {
+      await clearPersistedSupabaseSession();
+    } catch {
+      // best-effort: signOut already attempted local cleanup
+    }
   }
 }
 

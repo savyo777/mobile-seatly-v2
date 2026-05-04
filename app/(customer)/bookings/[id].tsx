@@ -1,11 +1,11 @@
-import React, { useMemo } from 'react';
-import { View, Text, StyleSheet, ScrollView, Pressable, Platform } from 'react-native';
+import React, { useCallback, useMemo, useState } from 'react';
+import { View, Text, StyleSheet, ScrollView, Pressable, Platform, Alert } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Button, Card, Badge, ScreenWrapper } from '@/components/ui';
-import { mockReservations, type Reservation } from '@/lib/mock/reservations';
+import { mockReservations, cancelReservationByIdAsync, type Reservation } from '@/lib/mock/reservations';
 import { mockOrders } from '@/lib/mock/orders';
 import { formatCurrency } from '@/lib/utils/formatCurrency';
 import { useColors, createStyles, spacing, borderRadius, typography } from '@/lib/theme';
@@ -176,11 +176,39 @@ export default function BookingDetailScreen() {
   const c = useColors();
   const styles = useStyles();
 
-  const reservation = useMemo(() => mockReservations.find((r) => r.id === id), [id]);
+  const [cancelledLocally, setCancelledLocally] = useState(false);
+  const [cancelling, setCancelling] = useState(false);
+
+  const reservation = useMemo(() => mockReservations.find((r) => r.id === id), [id, cancelledLocally]);
   const preorder = useMemo(
     () => (reservation?.preorderOrderId ? mockOrders.find((o) => o.id === reservation.preorderOrderId) : undefined),
     [reservation],
   );
+
+  const handleCancel = useCallback(() => {
+    if (!reservation) return;
+    Alert.alert(
+      t('bookings.cancelBooking'),
+      t('bookings.cancelConfirmMessage'),
+      [
+        { text: t('common.no'), style: 'cancel' },
+        {
+          text: t('bookings.confirmCancel'),
+          style: 'destructive',
+          onPress: async () => {
+            setCancelling(true);
+            const result = await cancelReservationByIdAsync(reservation.id);
+            setCancelling(false);
+            if (result.ok) {
+              setCancelledLocally(true);
+            } else {
+              Alert.alert(t('common.error'), result.reason ?? t('common.error'));
+            }
+          },
+        },
+      ],
+    );
+  }, [reservation, t]);
 
   if (!reservation) {
     return (
@@ -287,7 +315,7 @@ export default function BookingDetailScreen() {
       {showActions ? (
         <View style={[styles.actions, { paddingBottom: Math.max(insets.bottom, spacing.md) }]}>
           <Button title={t('bookings.modifyBooking')} onPress={() => {}} variant="outlined" />
-          <Button title={t('bookings.cancelBooking')} onPress={() => {}} variant="danger" />
+          <Button title={t('bookings.cancelBooking')} onPress={handleCancel} variant="danger" disabled={cancelling} />
         </View>
       ) : null}
     </ScreenWrapper>

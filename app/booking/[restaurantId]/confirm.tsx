@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useMemo } from 'react';
+import React, { useState, useCallback, useMemo, useEffect } from 'react';
 import {
   View,
   Text,
@@ -9,6 +9,7 @@ import {
   TextInput,
   Image,
   Platform,
+  Alert,
 } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
@@ -16,8 +17,12 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as Haptics from 'expo-haptics';
 import { Button } from '@/components/ui';
 import { BookingCalendarModal } from '@/components/booking/BookingCalendarModal';
-import { mockRestaurants } from '@/lib/mock/restaurants';
-import { parseDateKeyLocal } from '@/lib/booking/dateUtils';
+import {
+  getCachedRestaurantById,
+  loadRestaurantForBooking,
+} from '@/lib/data/restaurantCatalog';
+import { parseBookingDateParam, parseDateKeyLocal } from '@/lib/booking/dateUtils';
+import { coerceBookableDateKey, isDateBookable } from '@/lib/booking/getAvailability';
 import { useColors, createStyles, spacing, borderRadius } from '@/lib/theme';
 import type { DateKey } from '@/lib/booking/availabilityTypes';
 
@@ -225,15 +230,43 @@ export default function ConfirmScreen() {
   const c = useColors();
   const styles = useStyles();
 
-  const [dateKey, setDateKey] = useState<DateKey>((date ?? '') as DateKey);
+  const rid = restaurantId ?? '';
+
+  const [dateKey, setDateKey] = useState<DateKey>(() =>
+    coerceBookableDateKey(rid, parseBookingDateParam(date)),
+  );
+
+  useEffect(() => {
+    if (!rid) return;
+    setDateKey((prev) => coerceBookableDateKey(rid, prev));
+  }, [rid]);
   const [guests, setGuests] = useState(parseInt(partySize ?? '2', 10));
   const [guestInput, setGuestInput] = useState(String(parseInt(partySize ?? '2', 10)));
   const [guestError, setGuestError] = useState('');
   const [occasion, setOccasion] = useState('');
   const [notes, setNotes] = useState('');
   const [calendarOpen, setCalendarOpen] = useState(false);
+  const [restaurantVersion, setRestaurantVersion] = useState(0);
+  const [restaurant, setRestaurant] = useState(() => getCachedRestaurantById(rid));
+  const [restaurantReady, setRestaurantReady] = useState(() => Boolean(getCachedRestaurantById(rid)) || !rid);
 
-  const restaurant = mockRestaurants.find((r) => r.id === restaurantId);
+  useEffect(() => {
+    if (!rid) return;
+    let cancelled = false;
+    const cached = getCachedRestaurantById(rid);
+    setRestaurant(cached);
+    setRestaurantReady(Boolean(cached));
+    loadRestaurantForBooking(rid).then((loaded) => {
+      if (cancelled) return;
+      setRestaurant(loaded ?? getCachedRestaurantById(rid));
+      setRestaurantReady(true);
+      setRestaurantVersion((version) => version + 1);
+      setDateKey((prev) => coerceBookableDateKey(rid, prev));
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [rid]);
 
   const dateLabel = useMemo(() => {
     try {
@@ -244,12 +277,19 @@ export default function ConfirmScreen() {
   }, [dateKey]);
 
   const handleConfirm = useCallback(() => {
-    if (guestError || !guestInput) return;
+    if (!restaurantReady || guestError || !guestInput) return;
+    if (!isDateBookable(rid, dateKey)) {
+      Alert.alert(
+        'Date unavailable',
+        'This restaurant is closed that day or is no longer accepting reservations for today.',
+      );
+      return;
+    }
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     router.replace(
       `/booking/${restaurantId}/step7-confirmation?date=${encodeURIComponent(dateKey)}&time=${encodeURIComponent(time ?? '')}&partySize=${guests}&occasion=${encodeURIComponent(occasion)}&notes=${encodeURIComponent(notes)}`,
     );
-  }, [guestError, guestInput, restaurantId, dateKey, time, guests, occasion, notes, router]);
+  }, [restaurantReady, guestError, guestInput, restaurantId, rid, dateKey, time, guests, occasion, notes, router]);
 
   const updateGuestsFromInput = useCallback((value: string) => {
     const digits = value.replace(/\D/g, '');
@@ -259,8 +299,8 @@ export default function ConfirmScreen() {
       return;
     }
     const parsed = parseInt(digits, 10);
-    if (parsed > 20) {
-      setGuestError('20 is the maximum');
+    if (parsed > 25) {
+      setGuestError('25 is the maximum');
       return;
     }
     const nextGuests = Math.max(1, parsed);
@@ -270,7 +310,7 @@ export default function ConfirmScreen() {
 
   const normalizeGuestInput = useCallback(() => {
     if (guestError) return;
-    const normalized = Math.max(1, Math.min(20, guests));
+    const normalized = Math.max(1, Math.min(25, guests));
     setGuests(normalized);
     setGuestInput(String(normalized));
   }, [guests, guestError]);
@@ -399,13 +439,14 @@ export default function ConfirmScreen() {
 
       {/* CTA */}
       <View style={[styles.footer, { paddingBottom: insets.bottom + 12 }]}>
-        <Button title="Confirm Reservation" onPress={handleConfirm} disabled={!!guestError || !guestInput} />
+        <Button title="Confirm Reservation" onPress={handleConfirm} disabled={!restaurantReady || !!guestError || !guestInput} />
       </View>
 
       <BookingCalendarModal
         visible={calendarOpen}
         restaurantId={restaurantId ?? ''}
         selectedDateKey={dateKey}
+        availabilityVersion={restaurantVersion}
         onClose={() => setCalendarOpen(false)}
         onSelect={(k) => { setDateKey(k); setCalendarOpen(false); }}
       />

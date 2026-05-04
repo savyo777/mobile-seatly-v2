@@ -1,3 +1,5 @@
+import { getSupabase } from '@/lib/supabase/client';
+
 export interface Reservation {
   id: string;
   restaurantId: string;
@@ -29,7 +31,7 @@ export const mockReservations: Reservation[] = [
     id: 'res-tonight',
     restaurantId: 'r1',
     restaurantName: 'Nova Ristorante',
-    guestId: 'g1',
+    guestId: 'u1',
     partySize: 2,
     reservedAt: daysFromNow(0, 19, 30),
     status: 'confirmed',
@@ -44,7 +46,7 @@ export const mockReservations: Reservation[] = [
     id: 'res2',
     restaurantId: 'r2',
     restaurantName: 'Sakura Omakase',
-    guestId: 'g1',
+    guestId: 'u1',
     partySize: 4,
     reservedAt: daysFromNow(4, 18, 30),
     status: 'confirmed',
@@ -58,7 +60,7 @@ export const mockReservations: Reservation[] = [
     id: 'res1',
     restaurantId: 'r1',
     restaurantName: 'Nova Ristorante',
-    guestId: 'g1',
+    guestId: 'u1',
     tableId: 't3',
     partySize: 2,
     reservedAt: daysFromNow(10, 19, 0),
@@ -73,7 +75,7 @@ export const mockReservations: Reservation[] = [
     id: 'res3',
     restaurantId: 'r3',
     restaurantName: 'Le Petit Bistro',
-    guestId: 'g1',
+    guestId: 'u1',
     tableId: 't7',
     partySize: 2,
     reservedAt: '2026-03-15T20:00:00-04:00',
@@ -86,7 +88,7 @@ export const mockReservations: Reservation[] = [
     id: 'res4',
     restaurantId: 'r1',
     restaurantName: 'Nova Ristorante',
-    guestId: 'g1',
+    guestId: 'u1',
     tableId: 't1',
     partySize: 6,
     reservedAt: '2026-03-08T19:30:00-04:00',
@@ -101,7 +103,7 @@ export const mockReservations: Reservation[] = [
     id: 'res5',
     restaurantId: 'r4',
     restaurantName: 'The Smoky Grill',
-    guestId: 'g1',
+    guestId: 'u1',
     partySize: 3,
     reservedAt: '2026-02-20T18:00:00-05:00',
     status: 'cancelled',
@@ -178,11 +180,47 @@ export const mockReservations: Reservation[] = [
   },
 ];
 
+let mockReservationsVersion = 0;
+
+export function getMockReservationsVersion(): number {
+  return mockReservationsVersion;
+}
+
 export function addMockReservation(reservation: Reservation): void {
   const existingIndex = mockReservations.findIndex((item) => item.id === reservation.id);
   if (existingIndex >= 0) {
     mockReservations[existingIndex] = reservation;
+    mockReservationsVersion += 1;
     return;
   }
   mockReservations.unshift(reservation);
+  mockReservationsVersion += 1;
+}
+
+/**
+ * Cancels a reservation for the in-app demo (mutates mock store), or updates
+ * Supabase when the id is a UUID and the client is configured.
+ */
+export async function cancelReservationByIdAsync(id: string): Promise<{ ok: boolean; reason?: string }> {
+  const idx = mockReservations.findIndex((r) => r.id === id);
+  if (idx >= 0) {
+    const r = mockReservations[idx];
+    if (['completed', 'cancelled', 'no_show'].includes(r.status)) {
+      return { ok: false, reason: 'This reservation cannot be cancelled.' };
+    }
+    mockReservations[idx] = { ...r, status: 'cancelled' };
+    mockReservationsVersion += 1;
+    return { ok: true };
+  }
+
+  const supabase = getSupabase();
+  const uuidLike =
+    /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(id);
+  if (supabase && uuidLike) {
+    const { error } = await supabase.from('reservations').update({ status: 'cancelled' }).eq('id', id);
+    if (error) return { ok: false, reason: error.message };
+    return { ok: true };
+  }
+
+  return { ok: false, reason: 'Reservation not found.' };
 }

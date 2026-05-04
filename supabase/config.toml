@@ -8,3 +8,9 @@ verify_jwt = false
 
 [functions.register-restaurant-owner]
 verify_jwt = false
+
+[functions.prepare-phone-login]
+verify_jwt = false
+
+[functions.delete-account]
+verify_jwt = true

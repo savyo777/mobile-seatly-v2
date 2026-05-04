@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from 'react';
-import { View, Text, TouchableOpacity, ScrollView, Image, FlatList } from 'react-native';
+import { View, Text, TouchableOpacity, ScrollView, Image, FlatList, Alert } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -50,7 +50,25 @@ const useStyles = createStyles((c) => ({
 }));
 
 export default function Step4Preorder() {
-  const { restaurantId, date, time, partySize, tableId, occasion, notes } = useLocalSearchParams<{ restaurantId: string; date: string; time: string; partySize: string; tableId?: string; occasion?: string; notes?: string }>();
+  const {
+    restaurantId,
+    date,
+    time,
+    partySize,
+    tableId,
+    occasion,
+    notes,
+    afterBooking,
+  } = useLocalSearchParams<{
+    restaurantId: string;
+    date: string;
+    time: string;
+    partySize: string;
+    tableId?: string;
+    occasion?: string;
+    notes?: string;
+    afterBooking?: string;
+  }>();
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const { t } = useTranslation();
@@ -97,7 +115,42 @@ export default function Step4Preorder() {
 
   const getQuantity = (menuItemId: string) => cart.find((c) => c.menuItemId === menuItemId)?.quantity || 0;
 
-  const nextUrl = `/booking/${restaurantId}/step5-review?date=${encodeURIComponent(date ?? '')}&time=${encodeURIComponent(time ?? '')}&partySize=${partySize}&tableId=${tableId ?? 'auto'}&cartTotal=${cartTotal}&cartCount=${cart.length}&occasion=${encodeURIComponent(occasion ?? '')}&notes=${encodeURIComponent(notes ?? '')}`;
+  const qpBase = [
+    `date=${encodeURIComponent(date ?? '')}`,
+    `time=${encodeURIComponent(time ?? '')}`,
+    `partySize=${partySize}`,
+    `tableId=${encodeURIComponent(tableId ?? 'auto')}`,
+    `occasion=${encodeURIComponent(occasion ?? '')}`,
+    `notes=${encodeURIComponent(notes ?? '')}`,
+  ].join('&');
+
+  const postBooking = afterBooking === '1' || afterBooking === 'true';
+  const prepayUrl = `/booking/${restaurantId}/step-prepay-offer?${qpBase}&cartTotal=${cartTotal}&cartCount=${cart.length}`;
+  const reviewUrl = `/booking/${restaurantId}/step5-review?${qpBase}&cartTotal=${cartTotal}&cartCount=${cart.length}`;
+
+  const handleSkip = () => {
+    if (postBooking) {
+      router.dismissAll();
+      router.navigate('/(customer)/activity');
+    } else {
+      router.push(reviewUrl);
+    }
+  };
+
+  const handleNext = () => {
+    if (postBooking) {
+      if (cart.length === 0) {
+        Alert.alert(
+          'No items selected',
+          'Please select something from the menu to pre-pay for your meal.',
+        );
+        return;
+      }
+      router.push(prepayUrl);
+    } else {
+      router.push(reviewUrl);
+    }
+  };
 
   return (
     <View style={[styles.container, { paddingTop: insets.top }]}>
@@ -179,8 +232,8 @@ export default function Step4Preorder() {
           </Text>
         )}
         <View style={styles.footerButtons}>
-          <Button title={t('booking.skipPreorder')} variant="ghost" onPress={() => router.push(nextUrl)} fullWidth={false} style={{ flex: 1 }} />
-          <Button title={t('common.next')} onPress={() => router.push(nextUrl)} fullWidth={false} style={{ flex: 1 }} />
+          <Button title={t('booking.skipPreorder')} variant="ghost" onPress={handleSkip} fullWidth={false} style={{ flex: 1 }} />
+          <Button title={cart.length > 0 && postBooking ? t('booking.continueToPrepay') : t('common.next')} onPress={handleNext} fullWidth={false} style={{ flex: 1 }} />
         </View>
       </View>
     </View>

@@ -209,7 +209,8 @@ export default function VerifyPhoneOtpScreen() {
     if (!phone || submitting || resendSeconds > 0) return;
     setSubmitting(true);
     try {
-      const { error } = await sendPhoneOtp(phone);
+      const isRegistration = source === 'register' || source === 'owner-register';
+      const { error } = await sendPhoneOtp(phone, { shouldCreateUser: isRegistration });
       if (error) {
         Alert.alert('Resend failed', error);
         return;

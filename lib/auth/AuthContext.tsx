@@ -41,6 +41,25 @@ function resolveRoleFromMetadata(user: User | null): string | null {
   return normalized;
 }
 
+function resolveDefaultProfile(user: User, role: string) {
+  const email = (user.email ?? '').toLowerCase();
+  const phone = (user.phone ?? '').trim();
+  const meta = (user.user_metadata ?? {}) as Record<string, unknown>;
+  const fullName =
+    (typeof meta.full_name === 'string' && meta.full_name.trim()) ||
+    (typeof meta.name === 'string' && meta.name.trim()) ||
+    (email ? email.split('@')[0] : '') ||
+    (phone ? phone : 'New user');
+
+  return {
+    auth_user_id: user.id,
+    email,
+    full_name: fullName,
+    role,
+    ...(phone ? { phone } : {}),
+  };
+}
+
 function isInvalidRefreshTokenError(error: unknown): boolean {
   const message =
     error instanceof Error
@@ -155,7 +174,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setRole(null);
     const loadRole = async () => {
       try {
-        const { data } = await supabase
+        const { data, error } = await supabase
           .from('user_profiles')
           .select('role')
           .eq('auth_user_id', currentUser.id)
@@ -166,11 +185,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             setRole(profileRole);
             return;
           }
-          // Fallback to metadata only when profile role is unavailable.
-          setRole(resolveRoleFromMetadata(currentUser));
+          const fallbackRole = resolveRoleFromMetadata(currentUser) ?? 'customer';
+          if (!error && !data) {
+            await supabase.from('user_profiles').upsert(
+              resolveDefaultProfile(currentUser, fallbackRole),
+              { onConflict: 'auth_user_id' },
+            );
+          }
+          if (!cancelled) setRole(fallbackRole);
         }
       } catch {
-        if (!cancelled) setRole(resolveRoleFromMetadata(currentUser));
+        if (!cancelled) setRole(resolveRoleFromMetadata(currentUser) ?? 'customer');
       }
     };
     void loadRole();

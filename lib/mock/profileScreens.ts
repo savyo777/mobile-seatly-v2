@@ -106,18 +106,53 @@ export type FaqItem = {
 export const mockFaqs: FaqItem[] = [
   {
     id: 'f1',
-    q: 'How do I change or cancel a reservation?',
-    a: 'Open Activity, select your booking, then tap Modify or Cancel. Policies vary by restaurant.',
+    q: 'How do I make a reservation?',
+    a: 'Tap a restaurant from the Discover tab, then follow the booking steps: choose your date, time, and party size. You can optionally pre-order from the menu, add special requests, and pay any required deposit before confirming.',
   },
   {
     id: 'f2',
-    q: 'When will my card be charged?',
-    a: 'Deposits are captured at booking when required. The rest is charged by the restaurant after your visit unless stated otherwise.',
+    q: 'How do I change or cancel a reservation?',
+    a: 'Go to Activity, select your booking, then tap Modify or Cancel. Cancellation policies vary by restaurant — some may withhold the deposit if you cancel too close to your reservation time.',
   },
   {
     id: 'f3',
-    q: 'How do loyalty points work?',
-    a: 'You earn points on eligible visits. Redeem rewards in the Rewards tab before they expire.',
+    q: 'When will my card be charged?',
+    a: 'A deposit is captured at the time of booking when required by the restaurant. If you pre-order food, that amount is added to the deposit. Any remaining charges are handled by the restaurant after your visit.',
+  },
+  {
+    id: 'f4',
+    q: 'How do refunds work?',
+    a: 'Refund eligibility depends on the restaurant\'s cancellation policy. If you cancel within the allowed window, your deposit is refunded to the original payment method within 5–10 business days. For disputes, contact us through the help topics above.',
+  },
+  {
+    id: 'f5',
+    q: 'How do loyalty points and tiers work?',
+    a: 'You earn points on every eligible dining visit. Points unlock tiers — Bronze, Silver, Gold, and Platinum — each with increasing perks. Redeem points for rewards like free appetizers, discounts, or event tickets in the Loyalty section of your profile.',
+  },
+  {
+    id: 'f6',
+    q: 'What is Cenaiva and how do I use it?',
+    a: 'Cenaiva is your AI dining assistant. Just say "Hey Cenaiva" from anywhere in the app to activate it by voice. You can ask for restaurant recommendations, help with bookings, browse menus, and more — all hands-free.',
+  },
+  {
+    id: 'f7',
+    q: 'Can I pre-order food before I arrive?',
+    a: 'Yes! During the booking process you can browse the restaurant\'s menu and add items to your cart. Pre-ordered items are charged at checkout along with your deposit, so your food can be ready when you arrive.',
+  },
+  {
+    id: 'f8',
+    q: 'How do I add dietary preferences or special requests?',
+    a: 'You can set dietary preferences in your profile under Preferences. When making a booking, there\'s also a special requests field where you can note allergies, seating preferences, or celebrations for that specific visit.',
+  },
+  {
+    id: 'f9',
+    q: 'What payment methods are accepted?',
+    a: 'Cenaiva accepts credit and debit cards (Visa, Mastercard, Amex), Apple Pay on iOS, and Google Pay on Android. You can manage your saved payment methods in Profile → Payment.',
+  },
+  {
+    id: 'f10',
+    q: 'How do I download a receipt for my booking?',
+    a: 'Go to Activity, select a completed booking with a payment, and tap the receipt option. From there you can download a PDF, share it, or print it directly from your phone.',
   },
 ];
 

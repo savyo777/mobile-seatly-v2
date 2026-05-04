@@ -23,6 +23,7 @@ const WEEKDAY_SHORT = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 const MENU_ALL_TAB = '__all__';
 
 type HoursRange = { open: string; close: string };
+type HoursByWeekday = Partial<Record<typeof WEEKDAY_KEYS[number], HoursRange | null | undefined>>;
 type ParsedClockTime = {
   hour: number;
   minute: number;
@@ -92,7 +93,7 @@ function formatHoursRange(hours: HoursRange | null | undefined): string {
   return `${formatClockMinutes(range.open)} - ${formatClockMinutes(range.close)}`;
 }
 
-function isOpenNow(hoursJson: Record<string, HoursRange>): boolean {
+function isOpenNow(hoursJson: HoursByWeekday): boolean {
   const now = new Date();
   const key = WEEKDAY_KEYS[now.getDay()];
   const range = normalizeHoursRange(hoursJson[key]);

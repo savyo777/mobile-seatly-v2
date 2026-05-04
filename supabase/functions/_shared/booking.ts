@@ -1,4 +1,9 @@
 import { supabaseAdmin } from "./supabase.ts";
+import {
+  isMinuteInsideWindow,
+  localBookingParts,
+  resolveRestaurantHoursForDate,
+} from "./hours.ts";
 
 export interface BookingItem {
   menu_item_id: string;
@@ -48,6 +53,27 @@ function n2(n: number) {
   return Math.round(n * 100) / 100;
 }
 
+function failureResult(
+  order_type: CompleteBookingParams["order_type"],
+  error: string,
+  guest_id: string | null = null,
+): CompleteBookingResult {
+  return {
+    success: false,
+    confirmation_code: "",
+    order_type,
+    reservation_id: null,
+    order_id: null,
+    guest_id,
+    subtotal: 0,
+    tax: 0,
+    total: 0,
+    currency: "CAD",
+    checkout_url: null,
+    error,
+  };
+}
+
 export async function completeBooking(
   params: CompleteBookingParams,
 ): Promise<CompleteBookingResult> {
@@ -70,20 +96,38 @@ export async function completeBooking(
 
   // Dine-in validation (dine_in is the only supported type)
   if (!date_time || !shift_id || !party_size) {
-    return {
-      success: false,
-      confirmation_code: "",
-      order_type,
-      reservation_id: null,
-      order_id: null,
-      guest_id: null,
-      subtotal: 0,
-      tax: 0,
-      total: 0,
-      currency: "CAD",
-      checkout_url: null,
-      error: "date_time, shift_id, and party_size are required.",
-    };
+    return failureResult(order_type, "date_time, shift_id, and party_size are required.");
+  }
+
+  const { data: restaurantForBooking, error: restaurantErr } = await supabaseAdmin
+    .from("restaurants")
+    .select("timezone, hours_json")
+    .eq("id", restaurant_id)
+    .single();
+  if (restaurantErr) {
+    return failureResult(order_type, `Restaurant lookup failed: ${restaurantErr.message}`);
+  }
+
+  const timezone = restaurantForBooking?.timezone || "UTC";
+  const localParts = localBookingParts(date_time, timezone);
+  if (!localParts) {
+    return failureResult(order_type, "Invalid reservation date_time.");
+  }
+
+  const hoursJson =
+    restaurantForBooking?.hours_json && typeof restaurantForBooking.hours_json === "object"
+      ? (restaurantForBooking.hours_json as Record<string, unknown>)
+      : null;
+  const configuredHours = resolveRestaurantHoursForDate(
+    hoursJson,
+    localParts.dateOnly,
+    localParts.dayOfWeek,
+  );
+  if (configuredHours.closed) {
+    return failureResult(order_type, "Restaurant is closed on that date.");
+  }
+  if (configuredHours.window && !isMinuteInsideWindow(localParts.timeMinutes, configuredHours.window)) {
+    return failureResult(order_type, "Requested reservation time is outside restaurant hours.");
   }
 
   // Load user profile for fallback guest fields

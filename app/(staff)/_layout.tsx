@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useCallback, useMemo, useState } from 'react';
 import {
   Pressable,
   StyleSheet,
@@ -41,6 +41,8 @@ const QUICK_ACTIONS: { id: string; icon: IoniconName; label: string; sub: string
     route: '/(staff)/promotions/new',
   },
 ];
+
+const TAB_ROOTS = ['/home', '/reservations', '/promotions', '/profile'];
 
 const useStyles = createStyles((c) => ({
   root: { flex: 1, backgroundColor: c.bgBase },
@@ -141,6 +143,53 @@ export default function OwnerTabsLayout() {
   const pathname = usePathname();
   const { loading, isAuthenticated, isStaffLike, role } = useAuthSession();
 
+  const showFab = TAB_ROOTS.includes(pathname);
+
+  const TAB_BAR_HEIGHT = 49;
+  const fabBottom = insets.bottom + TAB_BAR_HEIGHT + 16;
+  const tabBarStyle = useMemo(
+    () => ({
+      backgroundColor: c.bgBase,
+      borderTopColor: c.border,
+      borderTopWidth: StyleSheet.hairlineWidth,
+      paddingTop: 0,
+    }),
+    [c.bgBase, c.border],
+  );
+  const screenOptions = useMemo(
+    () => ({
+      ...tabTransitionOptions,
+      lazy: true,
+      freezeOnBlur: true,
+      popToTopOnBlur: false,
+      headerShown: false,
+      sceneStyle: { backgroundColor: c.bgBase },
+      tabBarActiveTintColor: c.gold,
+      tabBarInactiveTintColor: c.textMuted,
+      tabBarHideOnKeyboard: true,
+      tabBarStyle,
+      tabBarItemStyle: {
+        transform: [{ translateY: 10 }],
+      },
+      tabBarLabelStyle: {
+        fontSize: 11,
+        fontWeight: '600' as const,
+        marginBottom: 0,
+      },
+    }),
+    [c.bgBase, c.gold, c.textMuted, tabBarStyle],
+  );
+
+  const handleFab = useCallback(() => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium).catch(() => {});
+    setSheetOpen(true);
+  }, []);
+
+  const handleAction = useCallback((route: string) => {
+    setSheetOpen(false);
+    setTimeout(() => router.push(route as never), 180);
+  }, [router]);
+
   if (loading || (isAuthenticated && role === null)) {
     return (
       <View style={[styles.root, { alignItems: 'center', justifyContent: 'center' }]}>
@@ -155,46 +204,11 @@ export default function OwnerTabsLayout() {
     return <Redirect href="/(customer)" />;
   }
 
-  const TAB_ROOTS = ['/home', '/reservations', '/promotions', '/profile'];
-  const showFab = TAB_ROOTS.includes(pathname);
-
-  const TAB_BAR_HEIGHT = 49;
-  const fabBottom = insets.bottom + TAB_BAR_HEIGHT + 16;
-
-  const handleFab = () => {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium).catch(() => {});
-    setSheetOpen(true);
-  };
-
-  const handleAction = (route: string) => {
-    setSheetOpen(false);
-    setTimeout(() => router.push(route as never), 180);
-  };
-
   return (
     <View style={styles.root}>
       <Tabs
-        screenOptions={{
-          ...tabTransitionOptions,
-          headerShown: false,
-          sceneStyle: { backgroundColor: c.bgBase },
-          tabBarActiveTintColor: c.gold,
-          tabBarInactiveTintColor: c.textMuted,
-          tabBarStyle: {
-            backgroundColor: c.bgBase,
-            borderTopColor: c.border,
-            borderTopWidth: StyleSheet.hairlineWidth,
-            paddingTop: 0,
-          },
-          tabBarItemStyle: {
-            transform: [{ translateY: 10 }],
-          },
-          tabBarLabelStyle: {
-            fontSize: 11,
-            fontWeight: '600',
-            marginBottom: 0,
-          },
-        }}
+        detachInactiveScreens
+        screenOptions={screenOptions}
       >
         <Tabs.Screen
           name="home"

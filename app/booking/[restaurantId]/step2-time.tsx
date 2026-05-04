@@ -14,12 +14,17 @@ import * as Haptics from 'expo-haptics';
 import { Button } from '@/components/ui';
 import { BookingCalendarModal } from '@/components/booking/BookingCalendarModal';
 import { parseBookingDateParam, parseDateKeyLocal } from '@/lib/booking/dateUtils';
+import { isClosedBookingDate } from '@/lib/booking/hoursSchedule';
 import {
-  firstBookableDateKey,
+  coerceBookableDateKey,
   getTimeSlotsForDate,
+  getShiftConfig,
   nextBookableDateAfter,
 } from '@/lib/booking/getAvailability';
-import { mockRestaurants } from '@/lib/mock/restaurants';
+import {
+  getCachedRestaurantById,
+  loadRestaurantForBooking,
+} from '@/lib/data/restaurantCatalog';
 import { useColors, createStyles, spacing, borderRadius } from '@/lib/theme';
 import type { DateKey } from '@/lib/booking/availabilityTypes';
 
@@ -226,17 +231,23 @@ export default function Step2Time() {
   const styles = useStyles();
   const rid = restaurantId ?? '';
 
-  const firstDate = useMemo(() => firstBookableDateKey(rid), [rid]);
-
-  const [dateKey, setDateKey] = useState<DateKey>(
-    () => parseBookingDateParam(date) ?? firstDate,
+  const [dateKey, setDateKey] = useState<DateKey>(() =>
+    coerceBookableDateKey(rid, parseBookingDateParam(date)),
   );
+
+  useEffect(() => {
+    if (!rid) return;
+    setDateKey((prev) => coerceBookableDateKey(rid, prev));
+  }, [rid]);
   const [partySize, setPartySize] = useState(2);
   const [partySizeInput, setPartySizeInput] = useState('2');
   const [partySizeError, setPartySizeError] = useState('');
   const [selectedSlotId, setSelectedSlotId] = useState<string | null>(null);
   const [selectedLabel, setSelectedLabel] = useState<string | null>(null);
   const [calendarOpen, setCalendarOpen] = useState(false);
+  const [restaurantVersion, setRestaurantVersion] = useState(0);
+  const [restaurant, setRestaurant] = useState(() => getCachedRestaurantById(rid));
+  const [restaurantReady, setRestaurantReady] = useState(() => Boolean(getCachedRestaurantById(rid)) || !rid);
 
   const pillLabel = useMemo(() => {
     const d = parseDateKeyLocal(dateKey);
@@ -245,8 +256,35 @@ export default function Step2Time() {
 
   const slots = useMemo(
     () => getTimeSlotsForDate(rid, dateKey, partySize),
-    [rid, dateKey, partySize],
+    [rid, dateKey, partySize, restaurantVersion],
   );
+
+  const isClosedDay = useMemo(() => {
+    const d = parseDateKeyLocal(dateKey);
+    if (restaurant?.hoursJson && isClosedBookingDate(restaurant.hoursJson, dateKey, d.getDay())) {
+      return true;
+    }
+    const config = getShiftConfig(rid);
+    return config.closedWeekdays.includes(d.getDay());
+  }, [rid, dateKey, restaurant, restaurantVersion]);
+
+  useEffect(() => {
+    if (!rid) return;
+    let cancelled = false;
+    const cached = getCachedRestaurantById(rid);
+    setRestaurant(cached);
+    setRestaurantReady(Boolean(cached));
+    loadRestaurantForBooking(rid).then((loaded) => {
+      if (cancelled) return;
+      setRestaurant(loaded ?? getCachedRestaurantById(rid));
+      setRestaurantReady(true);
+      setRestaurantVersion((version) => version + 1);
+      setDateKey((prev) => coerceBookableDateKey(rid, prev));
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [rid]);
 
   useEffect(() => {
     const first = slots.find((s) => s.available);
@@ -259,8 +297,6 @@ export default function Step2Time() {
     }
   }, [slots]);
 
-  const restaurant = mockRestaurants.find((r) => r.id === restaurantId);
-
   const updatePartySize = useCallback((value: string) => {
     const digits = value.replace(/\D/g, '');
     setPartySizeInput(digits);
@@ -269,8 +305,8 @@ export default function Step2Time() {
       return;
     }
     const parsed = parseInt(digits, 10);
-    if (parsed > 20) {
-      setPartySizeError('20 is the maximum');
+    if (parsed > 25) {
+      setPartySizeError('25 is the maximum');
       return;
     }
     const nextSize = Math.max(1, parsed);
@@ -281,7 +317,7 @@ export default function Step2Time() {
 
   const normalizePartySize = useCallback(() => {
     if (partySizeError) return;
-    const normalized = Math.max(1, Math.min(20, partySize));
+    const normalized = Math.max(1, Math.min(25, partySize));
     setPartySize(normalized);
     setPartySizeInput(String(normalized));
   }, [partySize, partySizeError]);
@@ -384,7 +420,9 @@ export default function Step2Time() {
           </View>
         ) : (
           <View style={styles.noTimesBox}>
-            <Text style={styles.noTimesText}>No availability on this date</Text>
+            <Text style={styles.noTimesText}>
+              {isClosedDay ? 'Restaurant is closed on this day' : 'No availability on this date'}
+            </Text>
             <Pressable onPress={handleNextDate}>
               <Text style={styles.noTimesLink}>Next available date →</Text>
             </Pressable>
@@ -405,7 +443,7 @@ export default function Step2Time() {
         <Button
           title="Continue"
           onPress={handleNext}
-          disabled={!selectedLabel || !!partySizeError || !partySizeInput}
+          disabled={!restaurantReady || !selectedLabel || !!partySizeError || !partySizeInput}
         />
       </View>
 
@@ -413,6 +451,7 @@ export default function Step2Time() {
         visible={calendarOpen}
         restaurantId={rid}
         selectedDateKey={dateKey}
+        availabilityVersion={restaurantVersion}
         onClose={() => setCalendarOpen(false)}
         onSelect={(k) => { setDateKey(k); setCalendarOpen(false); }}
       />

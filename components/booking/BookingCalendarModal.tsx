@@ -14,6 +14,7 @@ type Props = {
   visible: boolean;
   restaurantId: string;
   selectedDateKey: DateKey;
+  availabilityVersion?: number;
   onClose: () => void;
   onSelect: (key: DateKey) => void;
 };
@@ -137,6 +138,14 @@ const useStyles = createStyles((c) => ({
     color: '#BABAC0',
     fontWeight: '400',
   },
+  cellClosed: {
+    backgroundColor: 'rgba(239,68,68,0.06)',
+  },
+  cellTextClosed: {
+    color: '#D4D4D8',
+    fontWeight: '400',
+    textDecorationLine: 'line-through',
+  },
   cellTextToday: {
     color: '#CA8A04',
     fontWeight: '700',
@@ -154,6 +163,7 @@ export function BookingCalendarModal({
   visible,
   restaurantId,
   selectedDateKey,
+  availabilityVersion = 0,
   onClose,
   onSelect,
 }: Props) {
@@ -187,7 +197,7 @@ export function BookingCalendarModal({
 
   const cells: CalendarCell[] = useMemo(
     () => getCalendarMonth(restaurantId, cursor.year, cursor.monthIndex),
-    [restaurantId, cursor.year, cursor.monthIndex],
+    [restaurantId, cursor.year, cursor.monthIndex, availabilityVersion],
   );
 
   const weeks = useMemo(() => chunkWeeks(cells), [cells]);
@@ -269,6 +279,7 @@ export function BookingCalendarModal({
                     const isSelected = c.dateKey === selectedDateKey;
                     const outOfMonth = !c.inMonth;
                     const disabled = !c.selectable;
+                    const closed = c.closedDay && c.inMonth;
                     return (
                       <Pressable
                         key={`${c.dateKey ?? 'x'}-${wi}-${di}`}
@@ -278,14 +289,15 @@ export function BookingCalendarModal({
                             onClose();
                           }
                         }}
-                        style={[styles.cell, isSelected && styles.cellSelected, c.isToday && !isSelected && styles.cellToday]}
+                        style={[styles.cell, isSelected && styles.cellSelected, closed && !isSelected && styles.cellClosed, c.isToday && !isSelected && styles.cellToday]}
                       >
                         {num != null ? (
                           <Text
                             style={[
                               styles.cellText,
                               outOfMonth && styles.cellTextOutOfMonth,
-                              disabled && styles.cellTextDisabled,
+                              closed && styles.cellTextClosed,
+                              disabled && !closed && styles.cellTextDisabled,
                               c.isToday && !isSelected && styles.cellTextToday,
                               isSelected && styles.cellTextSelected,
                             ]}
@@ -299,7 +311,9 @@ export function BookingCalendarModal({
                 </View>
               ))}
 
-              <Text style={styles.hint}>{t('booking.calendarHint')}</Text>
+              <Text style={styles.hint}>
+                {t('booking.calendarHint')} · <Text style={{ textDecorationLine: 'line-through' }}>Crossed out</Text> = closed
+              </Text>
             </View>
           </BlurView>
         </Pressable>

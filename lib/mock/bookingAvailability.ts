@@ -4,30 +4,45 @@ import type {
   DateKey,
   TimeSlotOption,
 } from '@/lib/booking/availabilityTypes';
+import {
+  deriveClosedJsWeekdaysFromHoursJson,
+  getBookingMinutesWindowForDate,
+  isClosedBookingDate,
+  isFinishedServingLocalDay,
+  minutesToHourMinute,
+  sameDayClosingMinute,
+} from '@/lib/booking/hoursSchedule';
 import { parseDateKeyLocal, toLocalDateKey } from '@/lib/booking/dateUtils';
+import { getCachedRestaurantById } from '@/lib/data/restaurantCatalog';
 
 const DEFAULT_SHIFT: BookingShiftMock = {
   slotDurationMinutes: 15,
   advanceBookingDays: 45,
-  closedWeekdays: [2], // Tuesday closed for demo
+  closedWeekdays: [2], // Fallback when restaurant has no hoursJson on file
   blackoutDateKeys: [],
   serviceStart: { hour: 11, minute: 30 },
   serviceEnd: { hour: 22, minute: 0 },
 };
 
-/** Per-restaurant overrides for mock demos */
+/** Per-restaurant overrides for mock demos (slot length, blackouts). Closed days come from hoursJson when present. */
 const MOCK_SHIFTS: Record<string, Partial<BookingShiftMock>> = {
-  r1: { closedWeekdays: [0], slotDurationMinutes: 15 },
-  r2: { closedWeekdays: [1], slotDurationMinutes: 30 },
+  r1: { slotDurationMinutes: 15 },
+  r2: { slotDurationMinutes: 30 },
   r3: { blackoutDateKeys: [] },
 };
 
 export function getMockShiftConfig(restaurantId: string): BookingShiftMock {
   const extra = MOCK_SHIFTS[restaurantId] ?? {};
+  const r = getCachedRestaurantById(restaurantId);
+  const closedWeekdays =
+    r?.hoursJson != null
+      ? deriveClosedJsWeekdaysFromHoursJson(r.hoursJson)
+      : extra.closedWeekdays ?? DEFAULT_SHIFT.closedWeekdays;
+
   const merged: BookingShiftMock = {
     ...DEFAULT_SHIFT,
     ...extra,
-    closedWeekdays: extra.closedWeekdays ?? DEFAULT_SHIFT.closedWeekdays,
+    closedWeekdays,
     blackoutDateKeys: [
       ...DEFAULT_SHIFT.blackoutDateKeys,
       ...(extra.blackoutDateKeys ?? []),
@@ -74,10 +89,9 @@ export function getMockCalendarMonth(
   monthIndex: number,
 ): CalendarCell[] {
   const config = getMockShiftConfig(restaurantId);
-  const blackouts = effectiveBlackouts(config, restaurantId);
+  const r = getCachedRestaurantById(restaurantId);
   const today = startOfDay(new Date());
   const todayKey = toLocalDateKey(today);
-  const maxDate = daysFromNow(config.advanceBookingDays);
 
   const first = new Date(year, monthIndex, 1);
   const lastDay = new Date(year, monthIndex + 1, 0).getDate();
@@ -85,6 +99,9 @@ export function getMockCalendarMonth(
 
   const cells: CalendarCell[] = [];
   const prevMonthLast = new Date(year, monthIndex, 0).getDate();
+  const isClosedForCell = (d: Date, dateKey: DateKey) =>
+    isClosedBookingDate(r?.hoursJson, dateKey, d.getDay()) ||
+    (!r?.hoursJson && config.closedWeekdays.includes(d.getDay()));
 
   for (let i = 0; i < startWeekday; i++) {
     const day = prevMonthLast - startWeekday + i + 1;
@@ -93,8 +110,9 @@ export function getMockCalendarMonth(
     cells.push({
       dateKey,
       inMonth: false,
-      selectable: isDateSelectable(config, blackouts, d, maxDate),
+      selectable: isMockDateBookable(restaurantId, dateKey),
       isToday: dateKey === todayKey,
+      closedDay: isClosedForCell(d, dateKey),
     });
   }
 
@@ -104,8 +122,9 @@ export function getMockCalendarMonth(
     cells.push({
       dateKey,
       inMonth: true,
-      selectable: isDateSelectable(config, blackouts, d, maxDate),
+      selectable: isMockDateBookable(restaurantId, dateKey),
       isToday: dateKey === todayKey,
+      closedDay: isClosedForCell(d, dateKey),
     });
   }
 
@@ -116,8 +135,9 @@ export function getMockCalendarMonth(
     cells.push({
       dateKey,
       inMonth: false,
-      selectable: isDateSelectable(config, blackouts, d, maxDate),
+      selectable: isMockDateBookable(restaurantId, dateKey),
       isToday: dateKey === todayKey,
+      closedDay: isClosedForCell(d, dateKey),
     });
     nextTrailing += 1;
   }
@@ -147,7 +167,11 @@ export function isMockDateBookable(restaurantId: string, dateKey: DateKey): bool
   const blackouts = effectiveBlackouts(config, restaurantId);
   const base = parseDateKeyLocal(dateKey);
   const maxDate = daysFromNow(config.advanceBookingDays);
-  return isDateSelectable(config, blackouts, base, maxDate);
+  if (!isDateSelectable(config, blackouts, base, maxDate)) return false;
+  const r = getCachedRestaurantById(restaurantId);
+  if (isClosedBookingDate(r?.hoursJson, dateKey, base.getDay())) return false;
+  if (isFinishedServingLocalDay(r?.hoursJson, dateKey)) return false;
+  return true;
 }
 
 export function nextMockBookableDateKey(restaurantId: string, from?: Date): DateKey {
@@ -160,6 +184,12 @@ export function nextMockBookableDateKey(restaurantId: string, from?: Date): Date
     if (isMockDateBookable(restaurantId, key)) return key;
   }
   return toLocalDateKey(start);
+}
+
+/** Prefer URL/chosen date only when bookable; otherwise next bookable day. */
+export function coerceBookableDateKey(restaurantId: string, preferred: DateKey | null | undefined): DateKey {
+  if (preferred && isMockDateBookable(restaurantId, preferred)) return preferred;
+  return nextMockBookableDateKey(restaurantId);
 }
 
 function formatSlotLabel(d: Date) {
@@ -183,7 +213,23 @@ export function getMockTimeSlots(
     return [];
   }
 
-  const { serviceStart, serviceEnd, slotDurationMinutes: step } = config;
+  const r = getCachedRestaurantById(restaurantId);
+  if (r?.hoursJson && isFinishedServingLocalDay(r.hoursJson, dateKey)) {
+    return [];
+  }
+
+  let serviceStart = config.serviceStart;
+  let serviceEnd = config.serviceEnd;
+  if (r?.hoursJson) {
+    const win = getBookingMinutesWindowForDate(r.hoursJson, dateKey, base.getDay());
+    if (!win) return [];
+    const openHm = minutesToHourMinute(win.open);
+    const closeHm = minutesToHourMinute(sameDayClosingMinute(win));
+    serviceStart = { hour: openHm.hour, minute: openHm.minute };
+    serviceEnd = { hour: closeHm.hour, minute: closeHm.minute };
+  }
+
+  const step = config.slotDurationMinutes;
   const out: TimeSlotOption[] = [];
 
   let cursor = new Date(base);
@@ -192,8 +238,19 @@ export function getMockTimeSlots(
   const end = new Date(base);
   end.setHours(serviceEnd.hour, serviceEnd.minute, 0, 0);
 
+  const todayKey = toLocalDateKey(new Date());
+  const nowMs = Date.now();
+
   let i = 0;
   while (cursor <= end) {
+    // Hide times that have already passed today (real-world booking cutoff).
+    if (dateKey === todayKey && cursor.getTime() < nowMs) {
+      cursor = new Date(cursor.getTime() + step * 60 * 1000);
+      i += 1;
+      if (i > 200) break;
+      continue;
+    }
+
     const slotId = `${dateKey}T${pad(cursor.getHours())}:${pad(cursor.getMinutes())}`;
     const label = formatSlotLabel(cursor);
     const h = hash33(`${restaurantId}|${slotId}|${partySize}`);

@@ -1,5 +1,12 @@
 import type { RestaurantRow } from '@cenaiva/types';
-import type { DiscoverSectionKey, Restaurant } from '@/lib/mock/restaurants';
+import {
+  RESTAURANT_WEEKDAY_KEYS,
+  type DiscoverSectionKey,
+  type Restaurant,
+  type RestaurantHoursJson,
+  type RestaurantSpecialHours,
+  type RestaurantWeekdayKey,
+} from '@/lib/mock/restaurants';
 
 const DEFAULT_RESTAURANT_COVER = 'https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=1200';
 
@@ -28,16 +35,46 @@ function clampPriceRange(value: unknown, fallback: 1 | 2 | 3 | 4 = 2): 1 | 2 | 3
   return fallback;
 }
 
-function hoursFromJson(raw: Record<string, unknown> | null): Restaurant['hoursJson'] {
+const WEEKDAY_SET = new Set<string>(RESTAURANT_WEEKDAY_KEYS);
+
+function readSpecialHours(raw: unknown): RestaurantSpecialHours[] {
+  if (!Array.isArray(raw)) return [];
+  return raw.flatMap((entry) => {
+    if (!entry || typeof entry !== 'object') return [];
+    const s = entry as Record<string, unknown>;
+    const date = typeof s.date === 'string' ? s.date : '';
+    if (!date) return [];
+    return [{
+      date,
+      closed: s.closed === true,
+      from: typeof s.from === 'string' ? s.from : undefined,
+      to: typeof s.to === 'string' ? s.to : undefined,
+      open: typeof s.open === 'string' ? s.open : undefined,
+      close: typeof s.close === 'string' ? s.close : undefined,
+    }];
+  });
+}
+
+function hoursFromJson(raw: Record<string, unknown> | null): RestaurantHoursJson {
   if (!raw || typeof raw !== 'object') {
     return {};
   }
-  const out: Restaurant['hoursJson'] = {};
+  const out: RestaurantHoursJson = {};
   for (const [k, v] of Object.entries(raw)) {
+    if (k === 'special') {
+      const special = readSpecialHours(v);
+      if (special.length) out.special = special;
+      continue;
+    }
+    if (!WEEKDAY_SET.has(k)) continue;
+    if (v == null) {
+      out[k as RestaurantWeekdayKey] = null;
+      continue;
+    }
     if (v && typeof v === 'object' && 'open' in v && 'close' in v) {
       const o = v as { open?: string; close?: string };
       if (typeof o.open === 'string' && typeof o.close === 'string') {
-        out[k] = { open: o.open, close: o.close };
+        out[k as RestaurantWeekdayKey] = { open: o.open, close: o.close };
       }
     }
   }

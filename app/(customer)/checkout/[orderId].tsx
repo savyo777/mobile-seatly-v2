@@ -149,7 +149,10 @@ function num(value: unknown, fallback = 0): number {
 }
 
 export default function CenaivaCheckoutScreen() {
-  const { orderId } = useLocalSearchParams<{ orderId: string }>();
+  const { orderId, preorderSubtotal } = useLocalSearchParams<{
+    orderId: string;
+    preorderSubtotal?: string;
+  }>();
   const router = useRouter();
   const c = useColors();
   const styles = useStyles();
@@ -171,6 +174,48 @@ export default function CenaivaCheckoutScreen() {
         if (orderId?.startsWith('booking-prepay-')) {
           const restaurantId = orderId.replace('booking-prepay-', '');
           const restaurant = mockRestaurants.find((r) => r.id === restaurantId);
+          const preorderFromBooking = num(preorderSubtotal, 0);
+          const deposit = 25;
+          const taxRate = 0.13;
+
+          if (preorderFromBooking > 0) {
+            const subtotal = preorderFromBooking + deposit;
+            const tax = Math.round(subtotal * taxRate * 100) / 100;
+            if (!cancelled) {
+              setOrder({
+                id: orderId,
+                restaurant_id: restaurantId,
+                reservation_id: null,
+                status: 'pending',
+                subtotal,
+                tax_amount: tax,
+                tip_amount: 0,
+                total_amount: Math.round((subtotal + tax) * 100) / 100,
+                confirmation_code: null,
+                paid_at: null,
+                currency: 'CAD',
+                restaurant_name: restaurant?.name ?? 'Restaurant',
+              });
+              setItems([
+                {
+                  id: 'preorder-estimate',
+                  name: 'Pre-order (estimated)',
+                  quantity: 1,
+                  unit_price: preorderFromBooking,
+                  line_total: preorderFromBooking,
+                },
+                {
+                  id: 'reservation-hold',
+                  name: 'Reservation hold',
+                  quantity: 1,
+                  unit_price: deposit,
+                  line_total: deposit,
+                },
+              ]);
+            }
+            return;
+          }
+
           const subtotal = 75;
           const tax = 9.75;
           if (!cancelled) {
@@ -259,7 +304,7 @@ export default function CenaivaCheckoutScreen() {
     return () => {
       cancelled = true;
     };
-  }, [orderId]);
+  }, [orderId, preorderSubtotal]);
 
   const currency = order?.currency ?? 'CAD';
   const paymentMethods = useMemo(

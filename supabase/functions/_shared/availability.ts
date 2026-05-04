@@ -1,5 +1,6 @@
 import { supabaseAdmin } from "./supabase.ts";
 import { localToUTC, localDayOfWeek } from "./time.ts";
+import { resolveRestaurantHoursForDate } from "./hours.ts";
 
 export interface AvailabilitySlot {
   shift_id: string;
@@ -37,39 +38,20 @@ export async function getAvailability(
   const timezone = restaurantRow?.timezone || "UTC";
 
   const dayOfWeek = localDayOfWeek(dateOnly, timezone);
-  // localDayOfWeek returns JS-style 0-6 (0=Sun ... 6=Sat) — the same
-  // convention used by `shifts.days_of_week` in Postgres, so this value can
-  // be passed straight to the `.contains` query below. hours_json keys are
-  // lowercase day names, so map the number to the corresponding key.
-  const DOW_NAMES = ["sunday", "monday", "tuesday", "wednesday", "thursday", "friday", "saturday"];
-  const dayOfWeekName = DOW_NAMES[dayOfWeek] ?? "monday";
-
-  // Resolve the spoken store-hours string for THIS date. Special-day entries
-  // take precedence over the recurring weekly schedule. When closed or the
-  // row is missing, hours_window falls back to the slot-derived window later.
-  let configuredHoursWindow: string | null = null;
   const hoursJson =
     restaurantRow?.hours_json && typeof restaurantRow.hours_json === "object"
       ? (restaurantRow.hours_json as Record<string, unknown>)
       : null;
-  if (hoursJson) {
-    const specialEntries = Array.isArray(hoursJson.special)
-      ? (hoursJson.special as Array<Record<string, unknown>>)
-      : [];
-    const special = specialEntries.find((s) => String(s.date ?? "") === dateOnly);
-    if (special) {
-      if (!special.closed && special.from && special.to) {
-        configuredHoursWindow = `${special.from} to ${special.to}`;
-      }
-    } else {
-      const weekly = hoursJson[dayOfWeekName] as
-        | { open?: string; close?: string }
-        | null
-        | undefined;
-      if (weekly && weekly.open && weekly.close) {
-        configuredHoursWindow = `${weekly.open} to ${weekly.close}`;
-      }
-    }
+
+  // Owner-configured hours are the source of truth. If a weekly day or
+  // date-specific special is marked closed, no shifts may create slots.
+  const configuredHours = resolveRestaurantHoursForDate(hoursJson, dateOnly, dayOfWeek);
+  if (configuredHours.closed) {
+    return {
+      slots: [],
+      hours_window: null,
+      message: "Restaurant is closed on that date.",
+    };
   }
 
   // Fetch matching shifts — also select blackout_dates and advance_booking_days
@@ -127,6 +109,14 @@ export async function getAvailability(
     const endMin = eH * 60 + eM;
 
     while (slotMin + slotMins <= endMin) {
+      if (
+        configuredHours.window &&
+        (slotMin < configuredHours.window.open || slotMin + slotMins > configuredHours.window.close)
+      ) {
+        slotMin += slotMins;
+        continue;
+      }
+
       const slotHour = Math.floor(slotMin / 60);
       const slotMinute = slotMin % 60;
       const timeStr = `${String(slotHour).padStart(2, "0")}:${String(slotMinute).padStart(2, "0")}`;
@@ -151,7 +141,8 @@ export async function getAvailability(
         }
       }
 
-      if (available) {
+      // Never surface slots that start in the past for same-day booking.
+      if (available && slotStart.getTime() >= Date.now()) {
         slots.push({
           shift_id: shift.id,
           shift_name: shift.name ?? "Shift",
@@ -175,7 +166,7 @@ export async function getAvailability(
   // the assistant would read a misleading narrow range like "12 PM to 8:30
   // PM" that just reflects the shift configuration, not real store hours).
   const hours_window =
-    configuredHoursWindow ??
+    configuredHours.window?.label ??
     (limited.length
       ? `${limited[0].display_time} to ${limited[limited.length - 1].display_time}`
       : null);

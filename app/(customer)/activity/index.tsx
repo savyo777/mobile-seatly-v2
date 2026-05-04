@@ -1,4 +1,4 @@
-import React, { useCallback, useMemo, useState } from 'react';
+import React, { useCallback, useMemo, useReducer, useRef, useState } from 'react';
 import {
   View,
   Text,
@@ -7,17 +7,23 @@ import {
   Pressable,
   ImageBackground,
   Platform,
+  Alert,
 } from 'react-native';
 import * as Haptics from 'expo-haptics';
-import { useRouter, Href } from 'expo-router';
+import { useRouter, Href, useFocusEffect } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
-import { mockReservations, type Reservation } from '@/lib/mock/reservations';
+import {
+  mockReservations,
+  type Reservation,
+  cancelReservationByIdAsync,
+  getMockReservationsVersion,
+} from '@/lib/mock/reservations';
+import { mockCustomer } from '@/lib/mock/users';
 import { mockRestaurants } from '@/lib/mock/restaurants';
 import { useColors, createStyles, spacing, borderRadius } from '@/lib/theme';
 
-const GUEST_ID = 'g1';
 type SegmentKey = 'upcoming' | 'past';
 
 interface BookingItem {
@@ -232,6 +238,14 @@ const useStyles = createStyles((c) => ({
     borderColor: 'rgba(201,162,74,0.4)',
   },
   outlineBtnText: { fontSize: 12, fontWeight: '600', color: c.goldLight },
+  cancelBookingBtn: {
+    paddingVertical: 6,
+    paddingHorizontal: 12,
+    borderRadius: borderRadius.full,
+    borderWidth: 1,
+    borderColor: 'rgba(239,68,68,0.45)',
+  },
+  cancelBookingText: { fontSize: 12, fontWeight: '700', color: c.danger },
   detailsLink: { flexDirection: 'row', alignItems: 'center', gap: 2 },
   detailsLinkText: { fontSize: 13, fontWeight: '500', color: c.textMuted },
 
@@ -272,6 +286,16 @@ export default function ActivityScreen() {
   const c = useColors();
   const styles = useStyles();
   const [segment, setSegment] = useState<SegmentKey>('upcoming');
+  const [refreshKey, refreshList] = useReducer((n: number) => n + 1, 0);
+  const seenReservationsVersionRef = useRef(getMockReservationsVersion());
+
+  useFocusEffect(useCallback(() => {
+    const version = getMockReservationsVersion();
+    if (version !== seenReservationsVersionRef.current) {
+      seenReservationsVersionRef.current = version;
+      refreshList();
+    }
+  }, []));
 
   const pastStatusChip = useCallback((status: Reservation['status']): { label: string; color: string } | null => {
     if (status === 'completed') return { label: 'Completed', color: c.success };
@@ -282,7 +306,7 @@ export default function ActivityScreen() {
 
   const items = useMemo<BookingItem[]>(() =>
     mockReservations
-      .filter((r) => r.guestId === GUEST_ID)
+      .filter((r) => r.guestId === mockCustomer.id)
       .map((r) => ({
         id: r.id,
         restaurantName: r.restaurantName,
@@ -294,7 +318,7 @@ export default function ActivityScreen() {
         occasion: r.occasion,
         confirmationCode: r.confirmationCode,
       })),
-  []);
+  [refreshKey]);
 
   const segmentItems = useMemo(() => {
     const filtered = items.filter((item) => {
@@ -313,6 +337,30 @@ export default function ActivityScreen() {
     [items],
   );
 
+  const promptCancelBooking = useCallback((item: BookingItem) => {
+    Alert.alert(
+      'Cancel reservation?',
+      `Cancel your booking at ${item.restaurantName}?`,
+      [
+        { text: 'Keep reservation', style: 'cancel' },
+        {
+          text: 'Cancel reservation',
+          style: 'destructive',
+          onPress: async () => {
+            const { ok, reason } = await cancelReservationByIdAsync(item.id);
+            if (!ok) {
+              Alert.alert('Could not cancel', reason ?? 'Please try again.');
+              return;
+            }
+            seenReservationsVersionRef.current = getMockReservationsVersion();
+            refreshList();
+            void Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+          },
+        },
+      ],
+    );
+  }, []);
+
   const renderItem = useCallback(
     ({ item }: { item: BookingItem }) => {
       const isPast = segment === 'past';
@@ -323,10 +371,7 @@ export default function ActivityScreen() {
       const detailLine = [guestLabel, icon ? `${icon} ${item.occasion}` : null].filter(Boolean).join('  ·  ');
 
       return (
-        <Pressable
-          onPress={() => router.push(`/(customer)/activity/receipt/booking/${item.id}` as Href)}
-          style={({ pressed }) => [styles.card, isPast && styles.cardPast, pressed && styles.cardPressed]}
-        >
+        <View style={[styles.card, isPast && styles.cardPast]}>
           {/* Symmetric gold edge rails for upcoming */}
           {!isPast ? (
             <>
@@ -335,32 +380,37 @@ export default function ActivityScreen() {
             </>
           ) : null}
 
-          {/* Photo */}
-          <ImageBackground
-            source={{ uri: item.coverPhotoUrl }}
-            style={styles.photo}
-            imageStyle={styles.photoImg}
+          <Pressable
+            onPress={() => router.push(`/(customer)/activity/receipt/booking/${item.id}` as Href)}
+            style={({ pressed }) => [pressed && styles.cardPressed]}
           >
-            <LinearGradient
-              colors={['rgba(0,0,0,0.1)', 'rgba(0,0,0,0.72)']}
-              style={StyleSheet.absoluteFill}
-            />
-            {/* Top row: confirmed badge (upcoming) or status chip (past) */}
-            <View style={styles.photoTopRow}>
-              {!isPast ? (
-                <View style={styles.confirmedBadge}>
-                  <Ionicons name="checkmark-circle" size={13} color={c.bgBase} />
-                  <Text style={styles.confirmedBadgeText}>Confirmed</Text>
-                </View>
-              ) : chip ? (
-                <View style={[styles.chip, { borderColor: chip.color + '66' }]}>
-                  <View style={[styles.chipDot, { backgroundColor: chip.color }]} />
-                  <Text style={[styles.chipText, { color: chip.color }]}>{chip.label}</Text>
-                </View>
-              ) : null}
-            </View>
-            <Text style={styles.restaurantName} numberOfLines={1}>{item.restaurantName}</Text>
-          </ImageBackground>
+            {/* Photo */}
+            <ImageBackground
+              source={{ uri: item.coverPhotoUrl }}
+              style={styles.photo}
+              imageStyle={styles.photoImg}
+            >
+              <LinearGradient
+                colors={['rgba(0,0,0,0.1)', 'rgba(0,0,0,0.72)']}
+                style={StyleSheet.absoluteFill}
+              />
+              {/* Top row: confirmed badge (upcoming) or status chip (past) */}
+              <View style={styles.photoTopRow}>
+                {!isPast ? (
+                  <View style={styles.confirmedBadge}>
+                    <Ionicons name="checkmark-circle" size={13} color={c.bgBase} />
+                    <Text style={styles.confirmedBadgeText}>Confirmed</Text>
+                  </View>
+                ) : chip ? (
+                  <View style={[styles.chip, { borderColor: chip.color + '66' }]}>
+                    <View style={[styles.chipDot, { backgroundColor: chip.color }]} />
+                    <Text style={[styles.chipText, { color: chip.color }]}>{chip.label}</Text>
+                  </View>
+                ) : null}
+              </View>
+              <Text style={styles.restaurantName} numberOfLines={1}>{item.restaurantName}</Text>
+            </ImageBackground>
+          </Pressable>
 
           {/* Info */}
           <View style={styles.info}>
@@ -381,12 +431,23 @@ export default function ActivityScreen() {
                 <Text style={styles.bookAgainText}>Book Again</Text>
               </Pressable>
             ) : !isPast ? (
-              <Pressable
-                onPress={() => router.push(`/(customer)/discover/${item.restaurantId}` as Href)}
-                style={({ pressed }) => [styles.outlineBtn, pressed && { opacity: 0.7 }]}
-              >
-                <Text style={styles.outlineBtnText}>View restaurant</Text>
-              </Pressable>
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, flex: 1 }}>
+                <Pressable
+                  onPress={() => {
+                    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                    promptCancelBooking(item);
+                  }}
+                  style={({ pressed }) => [styles.cancelBookingBtn, pressed && { opacity: 0.75 }]}
+                >
+                  <Text style={styles.cancelBookingText}>Cancel</Text>
+                </Pressable>
+                <Pressable
+                  onPress={() => router.push(`/(customer)/discover/${item.restaurantId}` as Href)}
+                  style={({ pressed }) => [styles.outlineBtn, pressed && { opacity: 0.7 }]}
+                >
+                  <Text style={styles.outlineBtnText}>View restaurant</Text>
+                </Pressable>
+              </View>
             ) : (
               <View />
             )}
@@ -399,10 +460,10 @@ export default function ActivityScreen() {
               <Ionicons name="chevron-forward" size={13} color={c.textMuted} />
             </Pressable>
           </View>
-        </Pressable>
+        </View>
       );
     },
-    [c.bgBase, c.textMuted, pastStatusChip, router, segment, styles],
+    [c.bgBase, c.textMuted, pastStatusChip, promptCancelBooking, router, segment, styles],
   );
 
   return (

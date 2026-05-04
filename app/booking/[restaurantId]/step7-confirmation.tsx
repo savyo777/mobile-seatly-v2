@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import {
   View,
   Text,
@@ -7,15 +7,20 @@ import {
   Pressable,
   Animated,
   Platform,
+  Alert,
 } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Button } from '@/components/ui';
-import { mockRestaurants } from '@/lib/mock/restaurants';
+import {
+  getCachedRestaurantById,
+  loadRestaurantForBooking,
+} from '@/lib/data/restaurantCatalog';
 import { addMockReservation } from '@/lib/mock/reservations';
 import { mockCustomer } from '@/lib/mock/users';
-import { parseDateKeyLocal } from '@/lib/booking/dateUtils';
+import { parseBookingDateParam, parseDateKeyLocal } from '@/lib/booking/dateUtils';
+import { isDateBookable } from '@/lib/booking/getAvailability';
 import { useColors, createStyles, spacing, borderRadius, shadows } from '@/lib/theme';
 import type { DateKey } from '@/lib/booking/availabilityTypes';
 
@@ -134,6 +139,12 @@ const useStyles = createStyles((c) => ({
     letterSpacing: 0.8,
     marginBottom: 10,
   },
+  upsellIntro: {
+    fontSize: 14,
+    color: c.textSecondary,
+    lineHeight: 20,
+    marginBottom: 12,
+  },
   upsellCard: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -141,18 +152,8 @@ const useStyles = createStyles((c) => ({
     backgroundColor: c.bgSurface,
     borderWidth: 1,
     borderColor: c.border,
-    borderBottomWidth: 0,
-    borderTopLeftRadius: borderRadius.xl,
-    borderTopRightRadius: borderRadius.xl,
+    borderRadius: borderRadius.xl,
     padding: 16,
-  },
-  upsellCardLast: {
-    borderBottomWidth: 1,
-    borderTopWidth: 0,
-    borderTopLeftRadius: 0,
-    borderTopRightRadius: 0,
-    borderBottomLeftRadius: borderRadius.xl,
-    borderBottomRightRadius: borderRadius.xl,
   },
   upsellIconWrap: {
     width: 48,
@@ -196,8 +197,9 @@ export default function Step7Confirmation() {
   const insets = useSafeAreaInsets();
   const c = useColors();
   const styles = useStyles();
+  const rid = restaurantId ?? '';
 
-  const restaurant = mockRestaurants.find((r) => r.id === restaurantId);
+  const [restaurant, setRestaurant] = useState(() => getCachedRestaurantById(rid));
   const guests = parseInt(partySize ?? '2', 10);
   const confirmationCode = useRef(generateCode()).current;
   const savedReservationRef = useRef(false);
@@ -215,12 +217,30 @@ export default function Step7Confirmation() {
   const slideAnim = useRef(new Animated.Value(30)).current;
 
   useEffect(() => {
-    if (!savedReservationRef.current && restaurant) {
+    let cancelled = false;
+
+    async function saveReservation() {
+      if (savedReservationRef.current || !rid) return;
+      const loaded = await loadRestaurantForBooking(rid);
+      if (cancelled) return;
+      const currentRestaurant = loaded ?? getCachedRestaurantById(rid);
+      setRestaurant(currentRestaurant);
+      const parsedDate = parseBookingDateParam(date);
+      if (!parsedDate || !isDateBookable(rid, parsedDate)) {
+        savedReservationRef.current = true;
+        Alert.alert(
+          'Date unavailable',
+          'This restaurant is closed that day or is no longer accepting reservations for today.',
+        );
+        router.replace(`/booking/${rid}/step2-time`);
+        return;
+      }
+      if (!currentRestaurant) return;
       savedReservationRef.current = true;
       addMockReservation({
         id: `res-${confirmationCode.toLowerCase()}`,
-        restaurantId: restaurant.id,
-        restaurantName: restaurant.name,
+        restaurantId: currentRestaurant.id,
+        restaurantName: currentRestaurant.name,
         guestId: mockCustomer.id,
         partySize: guests,
         reservedAt: reservationDateTimeIso(date, time),
@@ -234,6 +254,13 @@ export default function Step7Confirmation() {
       });
     }
 
+    saveReservation();
+    return () => {
+      cancelled = true;
+    };
+  }, [confirmationCode, date, guests, notes, occasion, rid, router, time]);
+
+  useEffect(() => {
     Animated.sequence([
       Animated.spring(scaleAnim, {
         toValue: 1,
@@ -246,16 +273,12 @@ export default function Step7Confirmation() {
         Animated.timing(slideAnim, { toValue: 0, duration: 350, useNativeDriver: true }),
       ]),
     ]).start();
-  }, [confirmationCode, date, guests, notes, occasion, restaurant, time]);
+  }, [fadeAnim, scaleAnim, slideAnim]);
 
   const navigateToPreorder = () => {
     router.push(
-      `/booking/${restaurantId}/step4-preorder?date=${encodeURIComponent(date ?? '')}&time=${encodeURIComponent(time ?? '')}&partySize=${partySize}&occasion=${encodeURIComponent(occasion ?? '')}&notes=${encodeURIComponent(notes ?? '')}`,
+      `/booking/${restaurantId}/step4-preorder?afterBooking=1&date=${encodeURIComponent(date ?? '')}&time=${encodeURIComponent(time ?? '')}&partySize=${partySize}&occasion=${encodeURIComponent(occasion ?? '')}&notes=${encodeURIComponent(notes ?? '')}&tableId=auto`,
     );
-  };
-
-  const navigateToPrepay = () => {
-    router.push(`/checkout/booking-prepay-${restaurantId}` as never);
   };
 
   return (
@@ -314,9 +337,11 @@ export default function Step7Confirmation() {
 
         {/* Upsell divider */}
         <Animated.View style={[{ opacity: fadeAnim }]}>
-          <Text style={styles.upsellHeading}>Make it even better</Text>
+          <Text style={styles.upsellHeading}>Optional next step</Text>
+          <Text style={styles.upsellIntro}>
+            Your reservation is confirmed. Want dishes waiting when you arrive?
+          </Text>
 
-          {/* Pre-order meals */}
           <Pressable
             style={({ pressed }) => [styles.upsellCard, pressed && { opacity: 0.88 }]}
             onPress={navigateToPreorder}
@@ -327,24 +352,7 @@ export default function Step7Confirmation() {
             <View style={styles.upsellBody}>
               <Text style={styles.upsellTitle}>Pre-order your meal</Text>
               <Text style={styles.upsellDesc}>
-                Browse the menu and choose your dishes — they'll be ready when you arrive.
-              </Text>
-            </View>
-            <Ionicons name="chevron-forward" size={18} color={c.textMuted} />
-          </Pressable>
-
-          {/* Pre-pay */}
-          <Pressable
-            style={({ pressed }) => [styles.upsellCard, styles.upsellCardLast, pressed && { opacity: 0.88 }]}
-            onPress={navigateToPrepay}
-          >
-            <View style={[styles.upsellIconWrap, { backgroundColor: 'rgba(34,197,94,0.12)' }]}>
-              <Ionicons name="card-outline" size={24} color={c.success} />
-            </View>
-            <View style={styles.upsellBody}>
-              <Text style={styles.upsellTitle}>Pre-pay your bill</Text>
-              <Text style={styles.upsellDesc}>
-                Skip the check at the end of the night — pay now and just enjoy.
+                Browse the menu and have dishes ready when you arrive. You can pre-pay after selecting items.
               </Text>
             </View>
             <Ionicons name="chevron-forward" size={18} color={c.textMuted} />
@@ -355,9 +363,9 @@ export default function Step7Confirmation() {
         <Animated.View style={[styles.doneWrap, { opacity: fadeAnim }]}>
           <Button
             title="View my bookings"
-            onPress={() => router.replace('/(customer)/activity')}
+            onPress={() => { router.dismissAll(); router.navigate('/(customer)/activity'); }}
           />
-          <Pressable onPress={() => router.replace('/(customer)/discover')} style={styles.skipBtn}>
+          <Pressable onPress={() => { router.dismissAll(); router.navigate('/(customer)/discover'); }} style={styles.skipBtn}>
             <Text style={styles.skipText}>Back to explore</Text>
           </Pressable>
         </Animated.View>

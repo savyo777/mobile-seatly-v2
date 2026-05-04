@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useCallback, useMemo } from 'react';
 import { ActivityIndicator, Pressable, StyleSheet, View } from 'react-native';
 import { Redirect, Tabs, useRouter, usePathname, Href } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
@@ -56,6 +56,66 @@ export default function CustomerTabsLayout() {
   const styles = useStyles();
   const { loading, isAuthenticated, role } = useAuthSession();
 
+  const hideTabChrome = HIDE_FAB_ROUTES.some((route) => pathname?.includes(route));
+  const tabBarStyle = useMemo(
+    () =>
+      hideTabChrome
+        ? ({ display: 'none' } as const)
+        : {
+            backgroundColor: c.bgBase,
+            borderTopColor: c.border,
+            borderTopWidth: StyleSheet.hairlineWidth,
+            paddingTop: 0,
+          },
+    [c.bgBase, c.border, hideTabChrome],
+  );
+  const screenOptions = useMemo(
+    () => ({
+      ...tabTransitionOptions,
+      lazy: true,
+      freezeOnBlur: true,
+      popToTopOnBlur: false,
+      headerShown: false,
+      sceneStyle: { backgroundColor: c.bgBase },
+      tabBarActiveTintColor: c.gold,
+      tabBarInactiveTintColor: c.textMuted,
+      tabBarHideOnKeyboard: true,
+      tabBarStyle,
+      tabBarItemStyle: {
+        transform: [{ translateY: 10 }],
+      },
+      tabBarLabelStyle: {
+        fontSize: 11,
+        fontWeight: '600' as const,
+        marginBottom: 0,
+      },
+    }),
+    [c.bgBase, c.gold, c.textMuted, tabBarStyle],
+  );
+  const renderPostButton = useCallback(
+    () => (
+      <Pressable
+        onPress={() => {
+          Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium).catch(() => {});
+          router.push('/(customer)/discover/post-review' as Href);
+        }}
+        style={styles.centerBtnWrapper}
+        accessibilityLabel="Post food"
+      >
+        {({ pressed }) => (
+          <View style={[styles.centerBtn, pressed && styles.centerBtnActive]}>
+            <Ionicons
+              name="add"
+              size={30}
+              color={c.bgBase}
+            />
+          </View>
+        )}
+      </Pressable>
+    ),
+    [c.bgBase, router, styles.centerBtn, styles.centerBtnActive, styles.centerBtnWrapper],
+  );
+
   if (loading || (isAuthenticated && role === null)) {
     return (
       <View style={[styles.root, { alignItems: 'center', justifyContent: 'center' }]}>
@@ -67,39 +127,11 @@ export default function CustomerTabsLayout() {
     return <Redirect href="/(auth)/welcome" />;
   }
 
-  const hideFab = HIDE_FAB_ROUTES.some((route) => pathname?.includes(route));
-
   return (
     <View style={styles.root}>
     <Tabs
-      screenOptions={{
-        ...tabTransitionOptions,
-        /** Mount all main tabs up front so switching Discover ↔ Bookings ↔ Profile is instant. */
-        lazy: false,
-        freezeOnBlur: false,
-        headerShown: false,
-        sceneStyle: { backgroundColor: c.bgBase },
-        tabBarActiveTintColor: c.gold,
-        tabBarInactiveTintColor: c.textMuted,
-        // Do not set height or paddingBottom here — they override React Navigation's
-        // default tab bar sizing and safe-area bottom inset (see BottomTabBar).
-        tabBarStyle: hideFab ? { display: 'none' } : {
-          backgroundColor: c.bgBase,
-          borderTopColor: c.border,
-          borderTopWidth: StyleSheet.hairlineWidth,
-          paddingTop: 0,
-        },
-        // Default tab layout is flex-start, which leaves a gap above the home indicator.
-        // Nudge items down so the row sits lower without overriding safe-area paddingBottom.
-        tabBarItemStyle: {
-          transform: [{ translateY: 10 }],
-        },
-        tabBarLabelStyle: {
-          fontSize: 11,
-          fontWeight: '600',
-          marginBottom: 0,
-        },
-      }}
+      detachInactiveScreens
+      screenOptions={screenOptions}
     >
       <Tabs.Screen
         name="discover"
@@ -120,26 +152,7 @@ export default function CustomerTabsLayout() {
         options={{
           title: '',
           tabBarLabel: () => null,
-          tabBarButton: () => (
-            <Pressable
-              onPress={() => {
-                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-                router.push('/(customer)/discover/post-review' as Href);
-              }}
-              style={styles.centerBtnWrapper}
-              accessibilityLabel="Post food"
-            >
-              {({ pressed }) => (
-                <View style={[styles.centerBtn, pressed && styles.centerBtnActive]}>
-                  <Ionicons
-                    name="add"
-                    size={30}
-                    color={c.bgBase}
-                  />
-                </View>
-              )}
-            </Pressable>
-          ),
+          tabBarButton: renderPostButton,
         }}
       />
       <Tabs.Screen
@@ -169,7 +182,7 @@ export default function CustomerTabsLayout() {
       <Tabs.Screen name="post/caption" options={{ href: null }} />
       <Tabs.Screen name="post/reward" options={{ href: null }} />
     </Tabs>
-      {!hideFab ? <AiChatFab bottomOffset={100} /> : null}
+      {!hideTabChrome ? <AiChatFab bottomOffset={100} /> : null}
     </View>
   );
 }

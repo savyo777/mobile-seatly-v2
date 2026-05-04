@@ -7,7 +7,6 @@ import {
   StyleSheet,
   ScrollView,
   Alert,
-  TextInput,
 } from 'react-native';
 import { useRouter, Href } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -137,7 +136,7 @@ const SUGGESTED_VIBES = [
 const savedRestaurants = getSavedRestaurants();
 
 const recentVisits = mockReservations
-  .filter((r) => r.status === 'completed' && r.guestId === 'g1')
+  .filter((r) => r.status === 'completed' && r.guestId === mockCustomer.id)
   .sort((a, b) => new Date(b.reservedAt).getTime() - new Date(a.reservedAt).getTime())
   .slice(0, 3);
 
@@ -590,7 +589,6 @@ function DiningPrefPickRow({
 
   return (
     <View>
-      <Text style={styles.prefsPickLabel}>Quick picks — tap to add or remove</Text>
       <ScrollView
         horizontal
         showsHorizontalScrollIndicator={false}
@@ -643,10 +641,6 @@ export default function ProfileScreen() {
   const [cuisinePrefs, setCuisinePrefs] = useState(MOCK_CUISINES.join(', '));
   const [dietaryPrefs, setDietaryPrefs] = useState(MOCK_DIETARY.join(', '));
   const [vibePrefs, setVibePrefs] = useState(MOCK_VIBES.join(', '));
-
-  const cuisineItems = parsePreferenceInput(cuisinePrefs);
-  const dietaryItems = parsePreferenceInput(dietaryPrefs);
-  const vibeItems = parsePreferenceInput(vibePrefs);
 
   function cycleTheme() {
     setMode(effective === 'dark' ? 'light' : 'dark');
@@ -768,64 +762,16 @@ export default function ProfileScreen() {
           <View>
             <Text style={styles.prefsSubTitle}>Cuisines</Text>
             <DiningPrefPickRow options={SUGGESTED_CUISINES} value={cuisinePrefs} onChange={setCuisinePrefs} />
-            <TextInput
-              value={cuisinePrefs}
-              onChangeText={setCuisinePrefs}
-              placeholder="Or type your own — comma-separated"
-              placeholderTextColor={c.textMuted}
-              style={styles.prefsInput}
-              autoCapitalize="words"
-            />
-            <View style={styles.prefsChipRow}>
-              {cuisineItems.map((name) => (
-                <View key={name} style={styles.prefsChip}>
-                  <Text style={styles.prefsChipText}>{name}</Text>
-                </View>
-              ))}
-            </View>
-            <Text style={styles.prefsHint}>Use quick picks, typing, or both. Separate multiple entries with commas.</Text>
           </View>
           <View style={styles.prefsDivider} />
           <View>
             <Text style={styles.prefsSubTitle}>Dietary</Text>
             <DiningPrefPickRow options={SUGGESTED_DIETARY} value={dietaryPrefs} onChange={setDietaryPrefs} />
-            <TextInput
-              value={dietaryPrefs}
-              onChangeText={setDietaryPrefs}
-              placeholder="Add allergies, notes, or anything custom"
-              placeholderTextColor={c.textMuted}
-              style={styles.prefsInput}
-              autoCapitalize="sentences"
-            />
-            <View style={styles.prefsChipRow}>
-              {dietaryItems.map((name) => (
-                <View key={name} style={styles.prefsChip}>
-                  <Text style={styles.prefsChipText}>{name}</Text>
-                </View>
-              ))}
-            </View>
-            <Text style={styles.prefsHint}>Quick picks and free text work together. Leave blank for no dietary entry.</Text>
           </View>
           <View style={styles.prefsDivider} />
           <View>
             <Text style={styles.prefsSubTitle}>Vibes</Text>
             <DiningPrefPickRow options={SUGGESTED_VIBES} value={vibePrefs} onChange={setVibePrefs} />
-            <TextInput
-              value={vibePrefs}
-              onChangeText={setVibePrefs}
-              placeholder="Or describe your own vibe — comma-separated"
-              placeholderTextColor={c.textMuted}
-              style={styles.prefsInput}
-              autoCapitalize="sentences"
-            />
-            <View style={styles.prefsChipRow}>
-              {vibeItems.map((name) => (
-                <View key={name} style={styles.prefsChip}>
-                  <Text style={styles.prefsChipText}>{name}</Text>
-                </View>
-              ))}
-            </View>
-            <Text style={styles.prefsHint}>Combine chips and custom text (for example: quiet booth, spicy food, rooftop).</Text>
           </View>
         </View>
 

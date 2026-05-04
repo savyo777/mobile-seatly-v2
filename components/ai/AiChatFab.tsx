@@ -40,7 +40,7 @@ type Props = {
   style?: ViewStyle;
 };
 
-export function AiChatFab({ bottomOffset = 100, style }: Props) {
+export const AiChatFab = React.memo(function AiChatFab({ bottomOffset = 100, style }: Props) {
   const c = useColors();
   const styles = useStyles();
   const assistant = useCenaivaAssistant();
@@ -78,4 +78,4 @@ export function AiChatFab({ bottomOffset = 100, style }: Props) {
       </Modal>
     </>
   );
-}
+});

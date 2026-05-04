@@ -5,7 +5,7 @@ import { useTranslation } from 'react-i18next';
 import { ProfileStackScreen } from '@/components/profile/ProfileStackScreen';
 import { useColors, createStyles, spacing, borderRadius, typography } from '@/lib/theme';
 import { startChangePhone, confirmChangePhone } from '@/lib/services/accountSecurity';
-import { normalizePhoneToE164 } from '@/lib/services/phoneAuth';
+import { normalizePhoneToE164, resolveDisplayPhone } from '@/lib/services/phoneAuth';
 import { useAuthSession } from '@/lib/auth/AuthContext';
 
 const useStyles = createStyles((c) => ({
@@ -94,7 +94,7 @@ export default function ChangePhoneScreen() {
   const styles = useStyles();
   const { user } = useAuthSession();
 
-  const currentPhone = user?.phone ? `+${user.phone}` : '';
+  const currentPhone = resolveDisplayPhone(user);
 
   const [step, setStep] = useState<'enter' | 'verify'>('enter');
   const [newPhone, setNewPhone] = useState('');

@@ -8,6 +8,7 @@ import { ChevronSettingRow } from '@/components/profile/ChevronSettingRow';
 import { ToggleRow } from '@/components/profile/ToggleRow';
 import { useColors, createStyles, spacing, borderRadius, shadows } from '@/lib/theme';
 import { sendPasswordResetEmail, toggleTwoFactor, toggleBiometric } from '@/lib/services/accountSecurity';
+import { resolveDisplayPhone } from '@/lib/services/phoneAuth';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useAuthSession } from '@/lib/auth/AuthContext';
 
@@ -33,7 +34,7 @@ export default function SecurityScreen() {
   const styles = useStyles();
   const { user } = useAuthSession();
   const currentEmail = user?.email ?? '';
-  const currentPhone = user?.phone ? `+${user.phone}` : '';
+  const currentPhone = resolveDisplayPhone(user);
 
   const [biometric, setBiometric] = useState(false);
   const [twoFa, setTwoFa] = useState(false);

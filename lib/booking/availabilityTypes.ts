@@ -23,6 +23,7 @@ export type CalendarCell = {
   inMonth: boolean;
   selectable: boolean;
   isToday: boolean;
+  closedDay?: boolean;
 };
 
 export type TimeSlotOption = {
