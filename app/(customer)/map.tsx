@@ -18,6 +18,7 @@ import { useTranslation } from 'react-i18next';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { RestaurantDiscoveryMap } from '@/components/map/RestaurantDiscoveryMap';
 import { RestaurantMapDetailSheet } from '@/components/map/RestaurantMapDetailSheet';
+import { useCenaivaAssistant } from '@/lib/cenaiva/CenaivaAssistantProvider';
 import { mockMapRestaurants } from '@/lib/mock/mapRestaurants';
 import {
   applyMapFilter,
@@ -221,6 +222,7 @@ export default function MapScreen() {
   const styles = useStyles();
   const { t } = useTranslation();
   const router = useRouter();
+  const assistant = useCenaivaAssistant();
   const insets = useSafeAreaInsets();
   const carouselRef = useRef<FlatList<RestaurantWithDistance>>(null);
 
@@ -488,7 +490,11 @@ export default function MapScreen() {
           if (!selectedRestaurant) return;
           router.push(`/discover/${selectedRestaurant.id}`);
         }}
-        onAskAi={() => router.push('/(customer)/ai-chat')}
+        onAskAi={() => {
+          if (!selectedRestaurant) return;
+          assistant.open(selectedRestaurant.id, selectedRestaurant.name);
+          setSheetRestaurantId(null);
+        }}
       />
     </View>
   );

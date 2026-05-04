@@ -1,6 +1,6 @@
 import React from 'react';
 import { View, Text, StyleSheet, Pressable, ScrollView } from 'react-native';
-import { useRouter } from 'expo-router';
+import { Href, useNavigation, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useColors, createStyles, spacing, typography } from '@/lib/theme';
@@ -56,9 +56,18 @@ const useStyles = createStyles((c) => ({
 
 export function ProfileStackScreen({ title, subtitle, children }: Props) {
   const router = useRouter();
+  const navigation = useNavigation();
   const insets = useSafeAreaInsets();
   const c = useColors();
   const styles = useStyles();
+
+  const handleBack = () => {
+    if (navigation.canGoBack()) {
+      navigation.goBack();
+      return;
+    }
+    router.replace('/(customer)/profile' as Href);
+  };
 
   return (
     <View style={[styles.root, { paddingTop: insets.top }]}>
@@ -67,7 +76,7 @@ export function ProfileStackScreen({ title, subtitle, children }: Props) {
           accessibilityRole="button"
           accessibilityLabel="Back"
           hitSlop={12}
-          onPress={() => router.back()}
+          onPress={handleBack}
           style={styles.backHit}
         >
           <Ionicons name="chevron-back" size={26} color={c.gold} />

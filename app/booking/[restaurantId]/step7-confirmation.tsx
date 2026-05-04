@@ -13,6 +13,8 @@ import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Button } from '@/components/ui';
 import { mockRestaurants } from '@/lib/mock/restaurants';
+import { addMockReservation } from '@/lib/mock/reservations';
+import { mockCustomer } from '@/lib/mock/users';
 import { parseDateKeyLocal } from '@/lib/booking/dateUtils';
 import { useColors, createStyles, spacing, borderRadius, shadows } from '@/lib/theme';
 import type { DateKey } from '@/lib/booking/availabilityTypes';
@@ -22,6 +24,19 @@ function generateCode(): string {
   let code = 'SEAT-';
   for (let i = 0; i < 6; i++) code += chars[Math.floor(Math.random() * chars.length)];
   return code;
+}
+
+function reservationDateTimeIso(dateKey?: string, timeLabel?: string): string {
+  const base = dateKey ? parseDateKeyLocal(dateKey as DateKey) : new Date();
+  const match = timeLabel?.match(/(\d{1,2})(?::(\d{2}))?\s*(AM|PM)?/i);
+  if (!match) return base.toISOString();
+  let hour = parseInt(match[1], 10);
+  const minute = parseInt(match[2] ?? '0', 10);
+  const meridiem = match[3]?.toUpperCase();
+  if (meridiem === 'PM' && hour < 12) hour += 12;
+  if (meridiem === 'AM' && hour === 12) hour = 0;
+  base.setHours(hour, minute, 0, 0);
+  return base.toISOString();
 }
 
 const useStyles = createStyles((c) => ({
@@ -169,12 +184,13 @@ const useStyles = createStyles((c) => ({
 }));
 
 export default function Step7Confirmation() {
-  const { restaurantId, date, time, partySize, occasion } = useLocalSearchParams<{
+  const { restaurantId, date, time, partySize, occasion, notes } = useLocalSearchParams<{
     restaurantId: string;
     date: string;
     time: string;
     partySize: string;
     occasion: string;
+    notes?: string;
   }>();
   const router = useRouter();
   const insets = useSafeAreaInsets();
@@ -184,6 +200,7 @@ export default function Step7Confirmation() {
   const restaurant = mockRestaurants.find((r) => r.id === restaurantId);
   const guests = parseInt(partySize ?? '2', 10);
   const confirmationCode = useRef(generateCode()).current;
+  const savedReservationRef = useRef(false);
 
   const dateLabel = (() => {
     try {
@@ -198,6 +215,25 @@ export default function Step7Confirmation() {
   const slideAnim = useRef(new Animated.Value(30)).current;
 
   useEffect(() => {
+    if (!savedReservationRef.current && restaurant) {
+      savedReservationRef.current = true;
+      addMockReservation({
+        id: `res-${confirmationCode.toLowerCase()}`,
+        restaurantId: restaurant.id,
+        restaurantName: restaurant.name,
+        guestId: mockCustomer.id,
+        partySize: guests,
+        reservedAt: reservationDateTimeIso(date, time),
+        status: 'confirmed',
+        source: 'app',
+        confirmationCode,
+        occasion: occasion || undefined,
+        specialRequest: notes || undefined,
+        guestName: mockCustomer.fullName,
+        depositAmount: 25,
+      });
+    }
+
     Animated.sequence([
       Animated.spring(scaleAnim, {
         toValue: 1,
@@ -210,12 +246,16 @@ export default function Step7Confirmation() {
         Animated.timing(slideAnim, { toValue: 0, duration: 350, useNativeDriver: true }),
       ]),
     ]).start();
-  }, []);
+  }, [confirmationCode, date, guests, notes, occasion, restaurant, time]);
 
   const navigateToPreorder = () => {
     router.push(
-      `/booking/${restaurantId}/step4-preorder?date=${encodeURIComponent(date ?? '')}&time=${encodeURIComponent(time ?? '')}&partySize=${partySize}`,
+      `/booking/${restaurantId}/step4-preorder?date=${encodeURIComponent(date ?? '')}&time=${encodeURIComponent(time ?? '')}&partySize=${partySize}&occasion=${encodeURIComponent(occasion ?? '')}&notes=${encodeURIComponent(notes ?? '')}`,
     );
+  };
+
+  const navigateToPrepay = () => {
+    router.push(`/checkout/booking-prepay-${restaurantId}` as never);
   };
 
   return (
@@ -296,7 +336,7 @@ export default function Step7Confirmation() {
           {/* Pre-pay */}
           <Pressable
             style={({ pressed }) => [styles.upsellCard, styles.upsellCardLast, pressed && { opacity: 0.88 }]}
-            onPress={() => {/* future: payment screen */}}
+            onPress={navigateToPrepay}
           >
             <View style={[styles.upsellIconWrap, { backgroundColor: 'rgba(34,197,94,0.12)' }]}>
               <Ionicons name="card-outline" size={24} color={c.success} />

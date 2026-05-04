@@ -128,29 +128,29 @@ const useStyles = createStyles((c) => ({
     color: c.textPrimary,
   },
 
-  // Inline guest stepper
-  stepper: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 10,
-  },
-  stepperBtn: {
-    width: 30,
-    height: 30,
-    borderRadius: 15,
+  // Guest count
+  guestInput: {
+    minWidth: 54,
+    height: 38,
+    borderRadius: 19,
     backgroundColor: c.bgElevated,
     borderWidth: 1,
     borderColor: c.border,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  stepperBtnDisabled: { opacity: 0.35 },
-  stepperCount: {
+    color: c.textPrimary,
     fontSize: 16,
     fontWeight: '700',
-    color: c.textPrimary,
-    minWidth: 20,
     textAlign: 'center',
+    paddingHorizontal: 10,
+  },
+  guestInputError: {
+    borderColor: c.danger,
+  },
+  guestErrorText: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: c.danger,
+    marginTop: -8,
+    paddingHorizontal: 20,
   },
 
   // Occasion
@@ -227,6 +227,8 @@ export default function ConfirmScreen() {
 
   const [dateKey, setDateKey] = useState<DateKey>((date ?? '') as DateKey);
   const [guests, setGuests] = useState(parseInt(partySize ?? '2', 10));
+  const [guestInput, setGuestInput] = useState(String(parseInt(partySize ?? '2', 10)));
+  const [guestError, setGuestError] = useState('');
   const [occasion, setOccasion] = useState('');
   const [notes, setNotes] = useState('');
   const [calendarOpen, setCalendarOpen] = useState(false);
@@ -242,16 +244,36 @@ export default function ConfirmScreen() {
   }, [dateKey]);
 
   const handleConfirm = useCallback(() => {
+    if (guestError || !guestInput) return;
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     router.replace(
       `/booking/${restaurantId}/step7-confirmation?date=${encodeURIComponent(dateKey)}&time=${encodeURIComponent(time ?? '')}&partySize=${guests}&occasion=${encodeURIComponent(occasion)}&notes=${encodeURIComponent(notes)}`,
     );
-  }, [restaurantId, dateKey, time, guests, occasion, notes, router]);
+  }, [guestError, guestInput, restaurantId, dateKey, time, guests, occasion, notes, router]);
 
-  const adjustGuests = useCallback((delta: number) => {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    setGuests((g) => Math.max(1, Math.min(20, g + delta)));
+  const updateGuestsFromInput = useCallback((value: string) => {
+    const digits = value.replace(/\D/g, '');
+    setGuestInput(digits);
+    if (!digits) {
+      setGuestError('');
+      return;
+    }
+    const parsed = parseInt(digits, 10);
+    if (parsed > 20) {
+      setGuestError('20 is the maximum');
+      return;
+    }
+    const nextGuests = Math.max(1, parsed);
+    setGuestError('');
+    setGuests(nextGuests);
   }, []);
+
+  const normalizeGuestInput = useCallback(() => {
+    if (guestError) return;
+    const normalized = Math.max(1, Math.min(20, guests));
+    setGuests(normalized);
+    setGuestInput(String(normalized));
+  }, [guests, guestError]);
 
   return (
     <View style={[styles.container, { paddingTop: insets.top }]}>
@@ -313,7 +335,7 @@ export default function ConfirmScreen() {
 
           <View style={styles.rowDivider} />
 
-          {/* Guests — inline stepper */}
+          {/* Guests */}
           <View style={styles.detailRow}>
             <View style={styles.detailIcon}>
               <Ionicons name="people-outline" size={18} color={c.gold} />
@@ -322,25 +344,20 @@ export default function ConfirmScreen() {
               <Text style={styles.detailLabel}>Guests</Text>
               <Text style={styles.detailValue}>{guests} {guests === 1 ? 'guest' : 'guests'}</Text>
             </View>
-            <View style={styles.stepper}>
-              <Pressable
-                onPress={() => adjustGuests(-1)}
-                disabled={guests <= 1}
-                style={[styles.stepperBtn, guests <= 1 && styles.stepperBtnDisabled]}
-              >
-                <Ionicons name="remove" size={16} color={guests <= 1 ? c.textMuted : c.textPrimary} />
-              </Pressable>
-              <Text style={styles.stepperCount}>{guests}</Text>
-              <Pressable
-                onPress={() => adjustGuests(1)}
-                disabled={guests >= 20}
-                style={[styles.stepperBtn, guests >= 20 && styles.stepperBtnDisabled]}
-              >
-                <Ionicons name="add" size={16} color={guests >= 20 ? c.textMuted : c.textPrimary} />
-              </Pressable>
-            </View>
+            <TextInput
+              value={guestInput}
+              onChangeText={updateGuestsFromInput}
+              onBlur={normalizeGuestInput}
+              keyboardType="number-pad"
+              inputMode="numeric"
+              maxLength={2}
+              selectTextOnFocus
+              style={[styles.guestInput, guestError ? styles.guestInputError : null]}
+              accessibilityLabel="Number of guests"
+            />
           </View>
         </View>
+        {guestError ? <Text style={styles.guestErrorText}>{guestError}</Text> : null}
 
         {/* Occasion */}
         <Text style={styles.sectionLabel}>
@@ -382,7 +399,7 @@ export default function ConfirmScreen() {
 
       {/* CTA */}
       <View style={[styles.footer, { paddingBottom: insets.bottom + 12 }]}>
-        <Button title="Confirm Reservation" onPress={handleConfirm} />
+        <Button title="Confirm Reservation" onPress={handleConfirm} disabled={!!guestError || !guestInput} />
       </View>
 
       <BookingCalendarModal

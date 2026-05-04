@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import {
   View,
   Text,
@@ -7,6 +7,7 @@ import {
   StyleSheet,
   ScrollView,
   Alert,
+  TextInput,
 } from 'react-native';
 import { useRouter, Href } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -15,7 +16,6 @@ import { mockCustomer } from '@/lib/mock/users';
 import { getSavedRestaurants } from '@/lib/mock/profileScreens';
 import { mockReservations } from '@/lib/mock/reservations';
 import { mockRestaurants } from '@/lib/mock/restaurants';
-import { listSnapPostsByUser } from '@/lib/mock/snaps';
 import { useColors, useTheme, createStyles, spacing, borderRadius } from '@/lib/theme';
 import { useAuthSession } from '@/lib/auth/AuthContext';
 
@@ -62,6 +62,13 @@ function priceLabel(n: number) {
   return '$'.repeat(n);
 }
 
+function parsePreferenceInput(value: string): string[] {
+  return value
+    .split(',')
+    .map((item) => item.trim())
+    .filter(Boolean);
+}
+
 const savedRestaurants = getSavedRestaurants();
 
 const recentVisits = mockReservations
@@ -72,7 +79,6 @@ const recentVisits = mockReservations
 const ACCOUNT_ROWS = [
   { icon: 'notifications-outline' as const, title: 'Notifications', value: 'On', route: '/(customer)/profile/notifications' },
   { icon: 'card-outline' as const, title: 'Payment methods', value: 'Visa · 4242', route: '/(customer)/profile/payment' },
-  { icon: 'location-outline' as const, title: 'Addresses', value: '2 saved', route: '/(customer)/profile/settings' },
   { icon: 'lock-closed-outline' as const, title: 'Privacy', value: null, route: '/(customer)/profile/privacy' },
   { icon: 'help-circle-outline' as const, title: 'Help & support', value: null, route: '/(customer)/profile/help' },
 ];
@@ -331,18 +337,23 @@ const useStyles = createStyles((c) => ({
     fontWeight: '600',
     color: c.textPrimary,
   },
-  prefsAddChip: {
-    paddingHorizontal: 14,
-    paddingVertical: 7,
-    borderRadius: borderRadius.full,
-    borderWidth: 1.5,
-    borderColor: c.textMuted,
-    borderStyle: 'dashed' as const,
+  prefsInput: {
+    minHeight: 42,
+    borderRadius: borderRadius.md,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: c.border,
+    backgroundColor: c.bgElevated,
+    paddingHorizontal: spacing.md,
+    paddingVertical: 10,
+    color: c.textPrimary,
+    fontSize: 14,
+    marginBottom: spacing.sm,
   },
-  prefsAddText: {
-    fontSize: 13,
-    fontWeight: '600',
+  prefsHint: {
+    fontSize: 12,
     color: c.textMuted,
+    lineHeight: 17,
+    marginTop: 8,
   },
   prefsDivider: {
     height: StyleSheet.hairlineWidth,
@@ -445,21 +456,6 @@ const useStyles = createStyles((c) => ({
     color: c.textMuted,
   },
 
-  myPhotosRow: {
-    flexDirection: 'row',
-    gap: spacing.sm,
-    paddingHorizontal: spacing.lg,
-    marginBottom: spacing.lg,
-  },
-  myPhotoThumb: {
-    flex: 1,
-    height: 90,
-    borderRadius: borderRadius.lg,
-    overflow: 'hidden',
-    backgroundColor: c.bgElevated,
-  },
-  myPhotoImg: { width: '100%' as any, height: '100%' as any },
-
   signOutBtn: {
     marginHorizontal: spacing.lg,
     paddingVertical: 15,
@@ -483,7 +479,7 @@ export default function ProfileScreen() {
   const insets = useSafeAreaInsets();
   const c = useColors();
   const styles = useStyles();
-  const { effective, setMode, mode } = useTheme();
+  const { effective, setMode } = useTheme();
   const { signOut } = useAuthSession();
 
   async function handleLogout() {
@@ -500,11 +496,16 @@ export default function ProfileScreen() {
   const dinnersUntilNext = nextTier ? nextTier.min - MOCK_DINNERS : 0;
   const progressRatio = nextTier ? MOCK_DINNERS / nextTier.min : 1;
   const initials = initialsFromName(mockCustomer.fullName);
+  const [cuisinePrefs, setCuisinePrefs] = useState(MOCK_CUISINES.join(', '));
+  const [dietaryPrefs, setDietaryPrefs] = useState(MOCK_DIETARY.join(', '));
+  const [vibePrefs, setVibePrefs] = useState(MOCK_VIBES.join(', '));
+
+  const cuisineItems = parsePreferenceInput(cuisinePrefs);
+  const dietaryItems = parsePreferenceInput(dietaryPrefs);
+  const vibeItems = parsePreferenceInput(vibePrefs);
 
   function cycleTheme() {
-    if (mode === 'dark') setMode('light');
-    else if (mode === 'light') setMode('system');
-    else setMode('dark');
+    setMode(effective === 'dark' ? 'light' : 'dark');
   }
 
   const themeIcon = effective === 'dark' ? 'moon-outline' : 'sunny-outline';
@@ -622,44 +623,62 @@ export default function ProfileScreen() {
         <View style={styles.prefsCard}>
           <View>
             <Text style={styles.prefsSubTitle}>Cuisines</Text>
+            <TextInput
+              value={cuisinePrefs}
+              onChangeText={setCuisinePrefs}
+              placeholder="Type anything, or leave blank"
+              placeholderTextColor={c.textMuted}
+              style={styles.prefsInput}
+              autoCapitalize="words"
+            />
             <View style={styles.prefsChipRow}>
-              {MOCK_CUISINES.map((name) => (
+              {cuisineItems.map((name) => (
                 <View key={name} style={styles.prefsChip}>
                   <Text style={styles.prefsChipText}>{name}</Text>
                 </View>
               ))}
-              <Pressable style={styles.prefsAddChip}>
-                <Text style={styles.prefsAddText}>+ Add</Text>
-              </Pressable>
             </View>
+            <Text style={styles.prefsHint}>Separate multiple preferences with commas.</Text>
           </View>
           <View style={styles.prefsDivider} />
           <View>
             <Text style={styles.prefsSubTitle}>Dietary</Text>
+            <TextInput
+              value={dietaryPrefs}
+              onChangeText={setDietaryPrefs}
+              placeholder="No restrictions, allergies, or custom notes"
+              placeholderTextColor={c.textMuted}
+              style={styles.prefsInput}
+              autoCapitalize="sentences"
+            />
             <View style={styles.prefsChipRow}>
-              {MOCK_DIETARY.map((name) => (
+              {dietaryItems.map((name) => (
                 <View key={name} style={styles.prefsChip}>
                   <Text style={styles.prefsChipText}>{name}</Text>
                 </View>
               ))}
-              <Pressable style={styles.prefsAddChip}>
-                <Text style={styles.prefsAddText}>+ Add</Text>
-              </Pressable>
             </View>
+            <Text style={styles.prefsHint}>Leave blank if you do not want to save any dietary preference.</Text>
           </View>
           <View style={styles.prefsDivider} />
           <View>
             <Text style={styles.prefsSubTitle}>Vibes</Text>
+            <TextInput
+              value={vibePrefs}
+              onChangeText={setVibePrefs}
+              placeholder="Type whatever dining vibe you want"
+              placeholderTextColor={c.textMuted}
+              style={styles.prefsInput}
+              autoCapitalize="sentences"
+            />
             <View style={styles.prefsChipRow}>
-              {MOCK_VIBES.map((name) => (
+              {vibeItems.map((name) => (
                 <View key={name} style={styles.prefsChip}>
                   <Text style={styles.prefsChipText}>{name}</Text>
                 </View>
               ))}
-              <Pressable style={styles.prefsAddChip}>
-                <Text style={styles.prefsAddText}>+ Add</Text>
-              </Pressable>
             </View>
+            <Text style={styles.prefsHint}>Examples: quiet booth, spicy food, rooftop, no preference.</Text>
           </View>
         </View>
 
@@ -710,33 +729,6 @@ export default function ProfileScreen() {
             );
           })}
         </View>
-
-        {/* My Photos */}
-        {(() => {
-          const mySnaps = listSnapPostsByUser(mockCustomer.id).slice(0, 3);
-          if (mySnaps.length === 0) return null;
-          return (
-            <>
-              <View style={styles.sectionRow}>
-                <Text style={styles.sectionTitle}>My Photos</Text>
-                <Pressable hitSlop={8} onPress={() => router.push('/(customer)/feed' as Href)}>
-                  <Text style={styles.sectionLink}>See all</Text>
-                </Pressable>
-              </View>
-              <View style={styles.myPhotosRow}>
-                {mySnaps.map((snap) => (
-                  <Pressable
-                    key={snap.id}
-                    style={({ pressed }) => [styles.myPhotoThumb, pressed && { opacity: 0.8 }]}
-                    onPress={() => router.push(`/(customer)/discover/snaps/detail/${snap.id}` as Href)}
-                  >
-                    <Image source={{ uri: snap.image }} style={styles.myPhotoImg} resizeMode="cover" />
-                  </Pressable>
-                ))}
-              </View>
-            </>
-          );
-        })()}
 
         {/* Account */}
         <View style={styles.sectionRow}>

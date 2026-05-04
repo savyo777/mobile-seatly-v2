@@ -50,7 +50,7 @@ const useStyles = createStyles((c) => ({
 }));
 
 export default function Step4Preorder() {
-  const { restaurantId, date, time, partySize, tableId } = useLocalSearchParams<{ restaurantId: string; date: string; time: string; partySize: string; tableId: string }>();
+  const { restaurantId, date, time, partySize, tableId, occasion, notes } = useLocalSearchParams<{ restaurantId: string; date: string; time: string; partySize: string; tableId?: string; occasion?: string; notes?: string }>();
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const { t } = useTranslation();
@@ -97,7 +97,7 @@ export default function Step4Preorder() {
 
   const getQuantity = (menuItemId: string) => cart.find((c) => c.menuItemId === menuItemId)?.quantity || 0;
 
-  const nextUrl = `/booking/${restaurantId}/step5-review?date=${date}&time=${time}&partySize=${partySize}&tableId=${tableId}&cartTotal=${cartTotal}&cartCount=${cart.length}`;
+  const nextUrl = `/booking/${restaurantId}/step5-review?date=${encodeURIComponent(date ?? '')}&time=${encodeURIComponent(time ?? '')}&partySize=${partySize}&tableId=${tableId ?? 'auto'}&cartTotal=${cartTotal}&cartCount=${cart.length}&occasion=${encodeURIComponent(occasion ?? '')}&notes=${encodeURIComponent(notes ?? '')}`;
 
   return (
     <View style={[styles.container, { paddingTop: insets.top }]}>

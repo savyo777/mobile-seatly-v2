@@ -53,6 +53,7 @@ const useStyles = createStyles((c) => ({
     right: spacing.lg,
     bottom: 0,
     zIndex: 20,
+    elevation: 20,
   },
   sheetGlow: {
     position: 'absolute',
@@ -103,7 +104,7 @@ const useStyles = createStyles((c) => ({
     borderWidth: 1,
     borderColor: c.border,
     zIndex: 40,
-    elevation: 40,
+    elevation: 80,
   },
   content: {
     paddingHorizontal: spacing.lg,
@@ -286,7 +287,7 @@ export function RestaurantMapDetailSheet({
           transform: [{ translateY }],
         },
       ]}
-      pointerEvents="box-none"
+      pointerEvents="auto"
     >
       <LinearGradient
         colors={['rgba(201, 168, 76, 0.35)', 'rgba(201, 168, 76, 0)', 'transparent']}
@@ -307,7 +308,7 @@ export function RestaurantMapDetailSheet({
           style={styles.closeBtn}
           accessibilityRole="button"
           accessibilityLabel="Close details"
-          hitSlop={8}
+          hitSlop={12}
         >
           <Ionicons name="close" size={19} color={c.textPrimary} />
         </Pressable>

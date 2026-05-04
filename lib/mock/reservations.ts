@@ -177,3 +177,12 @@ export const mockReservations: Reservation[] = [
     occasion: 'Birthday',
   },
 ];
+
+export function addMockReservation(reservation: Reservation): void {
+  const existingIndex = mockReservations.findIndex((item) => item.id === reservation.id);
+  if (existingIndex >= 0) {
+    mockReservations[existingIndex] = reservation;
+    return;
+  }
+  mockReservations.unshift(reservation);
+}

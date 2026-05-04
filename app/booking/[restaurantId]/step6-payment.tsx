@@ -43,7 +43,7 @@ const useStyles = createStyles((c) => ({
 }));
 
 export default function Step6Payment() {
-  const { restaurantId, date, time, partySize, tableId, cartTotal, occasion } = useLocalSearchParams<{ restaurantId: string; date: string; time: string; partySize: string; tableId: string; cartTotal: string; occasion: string }>();
+  const { restaurantId, date, time, partySize, tableId, cartTotal, occasion, notes } = useLocalSearchParams<{ restaurantId: string; date: string; time: string; partySize: string; tableId: string; cartTotal: string; occasion: string; notes?: string }>();
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const { t } = useTranslation();
@@ -150,7 +150,7 @@ export default function Step6Payment() {
       <View style={[styles.footer, { paddingBottom: insets.bottom + 16 }]}>
         <Button
           title={`${t('booking.confirmBooking')} · ${formatCurrency(hasPreorder ? totalDue + taxAmount : totalDue)}`}
-          onPress={() => router.push(`/booking/${restaurantId}/step7-confirmation?date=${date}&time=${time}&partySize=${partySize}`)}
+          onPress={() => router.push(`/booking/${restaurantId}/step7-confirmation?date=${encodeURIComponent(date ?? '')}&time=${encodeURIComponent(time ?? '')}&partySize=${partySize}&occasion=${encodeURIComponent(occasion ?? '')}&notes=${encodeURIComponent(notes ?? '')}`)}
         />
       </View>
     </View>

@@ -14,7 +14,7 @@
     },
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.cenaiva.app",
+      "bundleIdentifier": "com.savyo.cenaiva",
       "infoPlist": {
         "NSMicrophoneUsageDescription": "Cenaiva uses your microphone so you can speak restaurant and booking requests.",
         "NSLocationWhenInUseUsageDescription": "Cenaiva uses your location to find nearby restaurants.",

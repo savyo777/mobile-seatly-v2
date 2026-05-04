@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { View, Text, Pressable } from 'react-native';
-import { useRouter } from 'expo-router';
+import { Href, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { mockReservations, type Reservation } from '@/lib/mock/reservations';
 import { borderRadius, createStyles, shadows, spacing, typography, useColors } from '@/lib/theme';
@@ -103,7 +103,10 @@ export function PostVisitPrompt() {
 
   const handleSnap = () => {
     router.push(
-      `/(customer)/discover/post-review/camera?restaurantId=${reservation.restaurantId}` as any,
+      {
+        pathname: '/(customer)/discover/post-review/camera',
+        params: { restaurantId: reservation.restaurantId },
+      } as Href,
     );
   };
 
@@ -133,7 +136,7 @@ export function PostVisitPrompt() {
         accessibilityRole="button"
       >
         <Ionicons name="camera-outline" size={16} color={c.bgBase} />
-        <Text style={styles.btnLabel}>Share a Snap</Text>
+        <Text style={styles.btnLabel}>Post a Review</Text>
       </Pressable>
     </View>
   );

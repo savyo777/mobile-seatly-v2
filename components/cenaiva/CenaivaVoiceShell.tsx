@@ -125,7 +125,8 @@ const useStyles = createStyles(() => ({
   closeButton: {
     position: 'absolute',
     left: spacing.lg,
-    zIndex: 50,
+    zIndex: 1000,
+    elevation: 1000,
     width: 36,
     height: 36,
     borderRadius: borderRadius.full,
@@ -917,8 +918,12 @@ export function CenaivaVoiceShell({ onClose }: { onClose?: () => void }) {
   );
 
   const close = useCallback(() => {
+    if (onClose) {
+      assistant.close();
+      onClose();
+      return;
+    }
     assistant.close();
-    onClose?.();
   }, [assistant, onClose]);
 
   const toggleTextMode = useCallback(() => {
@@ -971,21 +976,6 @@ export function CenaivaVoiceShell({ onClose }: { onClose?: () => void }) {
           autoFocusResetKey={mapFocusResetKey}
           focusSelectedWithUser={Boolean(state.booking.restaurant_id)}
         />
-
-        {!showConfirmationOrPostBooking ? (
-          <Pressable
-            accessibilityRole="button"
-            accessibilityLabel="Close assistant"
-            style={({ pressed }) => [
-              styles.closeButton,
-              { top: Math.max(insets.top, spacing.lg) },
-              pressed && { backgroundColor: 'rgba(255,255,255,0.20)' },
-            ]}
-            onPress={close}
-          >
-            <Ionicons name="close" size={18} color="#FFFFFF" />
-          </Pressable>
-        ) : null}
 
         {showSelectedDistance && chosenRestaurant && selectedDistance ? (
           <View
@@ -1171,6 +1161,22 @@ export function CenaivaVoiceShell({ onClose }: { onClose?: () => void }) {
           </View>
         ) : null}
       </View>
+
+      {!showConfirmationOrPostBooking ? (
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel="Close assistant"
+          hitSlop={16}
+          style={({ pressed }) => [
+            styles.closeButton,
+            { top: Math.max(insets.top, spacing.lg) },
+            pressed && { backgroundColor: 'rgba(255,255,255,0.20)' },
+          ]}
+          onPress={close}
+        >
+          <Ionicons name="close" size={18} color="#FFFFFF" />
+        </Pressable>
+      ) : null}
 
       <View
         style={[

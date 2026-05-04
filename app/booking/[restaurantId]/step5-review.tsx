@@ -37,14 +37,14 @@ const useStyles = createStyles((c) => ({
 }));
 
 export default function Step5Review() {
-  const { restaurantId, date, time, partySize, tableId, cartTotal, cartCount } = useLocalSearchParams<{ restaurantId: string; date: string; time: string; partySize: string; tableId: string; cartTotal: string; cartCount: string }>();
+  const { restaurantId, date, time, partySize, tableId, cartTotal, cartCount, occasion: initialOccasion, notes } = useLocalSearchParams<{ restaurantId: string; date: string; time: string; partySize: string; tableId: string; cartTotal: string; cartCount: string; occasion?: string; notes?: string }>();
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const { t } = useTranslation();
   const c = useColors();
   const styles = useStyles();
-  const [specialRequest, setSpecialRequest] = useState('');
-  const [occasion, setOccasion] = useState('None');
+  const [specialRequest, setSpecialRequest] = useState(notes ?? '');
+  const [occasion, setOccasion] = useState(initialOccasion || 'None');
   const BOOKING_STEPS = 6;
   const STEP = 4;
   const progress = STEP / BOOKING_STEPS;
@@ -132,7 +132,7 @@ export default function Step5Review() {
       </ScrollView>
 
       <View style={[styles.footer, { paddingBottom: insets.bottom + 16 }]}>
-        <Button title={t('common.next')} onPress={() => router.push(`/booking/${restaurantId}/step6-payment?date=${date}&time=${time}&partySize=${partySize}&tableId=${tableId}&cartTotal=${cartTotal}&occasion=${occasion}`)} />
+        <Button title={t('common.next')} onPress={() => router.push(`/booking/${restaurantId}/step6-payment?date=${encodeURIComponent(date ?? '')}&time=${encodeURIComponent(time ?? '')}&partySize=${partySize}&tableId=${tableId}&cartTotal=${cartTotal}&occasion=${encodeURIComponent(occasion)}&notes=${encodeURIComponent(specialRequest)}`)} />
       </View>
     </View>
   );

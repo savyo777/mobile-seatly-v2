@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
+import { Alert } from 'react-native';
 import { ActivityIndicator, Pressable, ScrollView, Text, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useLocalSearchParams, useRouter } from 'expo-router';
@@ -6,6 +7,7 @@ import { Button, Card, ScreenWrapper } from '@/components/ui';
 import { getSupabase } from '@/lib/supabase/client';
 import { createStyles, spacing, typography, useColors } from '@/lib/theme';
 import { formatCurrency } from '@/lib/utils/formatCurrency';
+import { mockRestaurants } from '@/lib/mock/restaurants';
 
 type CheckoutOrder = {
   id: string;
@@ -157,6 +159,8 @@ export default function CenaivaCheckoutScreen() {
   const [error, setError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
   const [method, setMethod] = useState<'card' | 'apple_pay' | 'google_pay'>('card');
+  const [paymentComplete, setPaymentComplete] = useState(false);
+  const [processingPayment, setProcessingPayment] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -164,6 +168,39 @@ export default function CenaivaCheckoutScreen() {
       setLoading(true);
       setError(null);
       try {
+        if (orderId?.startsWith('booking-prepay-')) {
+          const restaurantId = orderId.replace('booking-prepay-', '');
+          const restaurant = mockRestaurants.find((r) => r.id === restaurantId);
+          const subtotal = 75;
+          const tax = 9.75;
+          if (!cancelled) {
+            setOrder({
+              id: orderId,
+              restaurant_id: restaurantId,
+              reservation_id: null,
+              status: 'pending',
+              subtotal,
+              tax_amount: tax,
+              tip_amount: 0,
+              total_amount: subtotal + tax,
+              confirmation_code: null,
+              paid_at: null,
+              currency: 'CAD',
+              restaurant_name: restaurant?.name ?? 'Restaurant',
+            });
+            setItems([
+              {
+                id: 'estimated-bill',
+                name: 'Estimated dining bill',
+                quantity: 1,
+                unit_price: subtotal,
+                line_total: subtotal,
+              },
+            ]);
+          }
+          return;
+        }
+
         const supabase = getSupabase();
         if (!supabase) throw new Error('Supabase is not configured.');
 
@@ -233,6 +270,18 @@ export default function CenaivaCheckoutScreen() {
     ],
     [],
   );
+
+  const continueToSecurePayment = () => {
+    if (processingPayment || paymentComplete) return;
+    setProcessingPayment(true);
+    setNotice(null);
+    setTimeout(() => {
+      setProcessingPayment(false);
+      setPaymentComplete(true);
+      setNotice('Payment confirmed. Your pre-pay receipt is saved with your booking.');
+      Alert.alert('Payment confirmed', 'Your pre-pay receipt is saved with your booking.');
+    }, 450);
+  };
 
   if (loading) {
     return (
@@ -323,10 +372,10 @@ export default function CenaivaCheckoutScreen() {
 
         {notice ? <Text style={styles.notice}>{notice}</Text> : null}
         <Button
-          title="Continue to secure payment"
-          onPress={() =>
-            setNotice('Secure mobile payment is not connected in this build yet. Your preorder remains saved for checkout.')
-          }
+          title={paymentComplete ? 'Payment confirmed' : 'Continue to secure payment'}
+          loading={processingPayment}
+          disabled={paymentComplete}
+          onPress={continueToSecurePayment}
         />
         <Button
           title="Pay at restaurant"

@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react';
+import React, { useCallback, useMemo } from 'react';
 
 const MEMBER_SINCE = new Date('2025-03-15');
 function memberSinceLabel(): string {
@@ -13,7 +13,7 @@ import {
   Image,
   Alert,
 } from 'react-native';
-import { useRouter, Href } from 'expo-router';
+import { useRouter, Href, useNavigation } from 'expo-router';
 import * as Linking from 'expo-linking';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
@@ -242,6 +242,7 @@ export default function SettingsScreen() {
   const c = useColors();
   const styles = useStyles();
   const router = useRouter();
+  const navigation = useNavigation();
   const insets = useSafeAreaInsets();
   const { signOut, isStaffLike } = useAuthSession();
   const pts = mockCustomer.loyaltyPointsBalance ?? 0;
@@ -429,12 +430,20 @@ export default function SettingsScreen() {
     );
   };
 
+  const handleBack = useCallback(() => {
+    if (navigation.canGoBack()) {
+      navigation.goBack();
+      return;
+    }
+    router.replace('/(customer)/profile' as Href);
+  }, [navigation, router]);
+
   return (
     <View style={[styles.root, { paddingTop: insets.top }]}>
       {/* Header */}
       <View style={styles.header}>
         <Pressable
-          onPress={() => router.back()}
+          onPress={handleBack}
           hitSlop={12}
           style={({ pressed }) => [styles.backBtn, pressed && { opacity: 0.6 }]}
         >

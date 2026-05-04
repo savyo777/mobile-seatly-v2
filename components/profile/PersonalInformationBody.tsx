@@ -11,9 +11,11 @@ import {
   Platform,
   Alert,
 } from 'react-native';
+import * as ImagePicker from 'expo-image-picker';
 import { Ionicons } from '@expo/vector-icons';
 import { mockCustomer } from '@/lib/mock/users';
 import { useColors, createStyles, spacing, borderRadius, typography } from '@/lib/theme';
+import { openAppPhotoSettings } from '@/lib/device/openAppPhotoSettings';
 
 const BIO_LIMIT = 150;
 
@@ -46,6 +48,13 @@ const useStyles = createStyles((c) => ({
     alignItems: 'center',
     paddingVertical: spacing.xl,
     gap: spacing.sm,
+  },
+  avatarButton: {
+    alignItems: 'center',
+    gap: spacing.sm,
+  },
+  avatarButtonPressed: {
+    opacity: 0.78,
   },
   avatarRing: {
     borderWidth: 2,
@@ -176,6 +185,8 @@ const useStyles = createStyles((c) => ({
 export function PersonalInformationBody() {
   const c = useColors();
   const styles = useStyles();
+  const initialAvatarUri = mockCustomer.avatarUrl ?? '';
+  const [avatarUri, setAvatarUri] = useState(initialAvatarUri);
   const { values, set, isDirty } = useForm({
     displayName: mockCustomer.fullName,
     username: 'alexj',
@@ -187,6 +198,39 @@ export function PersonalInformationBody() {
   const handleSave = useCallback(() => {
     Alert.alert('Saved', 'Your profile has been updated.');
   }, []);
+
+  const pickPhoto = useCallback(async () => {
+    try {
+      const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
+      if (!permission.granted) {
+        Alert.alert(
+          'Photo permission required',
+          'Allow photo access to change your profile photo.',
+          permission.canAskAgain === false
+            ? [
+                { text: 'Not now', style: 'cancel' },
+                { text: 'Open Settings', onPress: () => void openAppPhotoSettings() },
+              ]
+            : [{ text: 'OK' }],
+        );
+        return;
+      }
+
+      const result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+        allowsEditing: true,
+        aspect: [1, 1],
+        quality: 0.85,
+      });
+      if (!result.canceled && result.assets[0]?.uri) {
+        setAvatarUri(result.assets[0].uri);
+      }
+    } catch {
+      Alert.alert('Could not change photo', 'Something went wrong opening your photo library. Please try again.');
+    }
+  }, []);
+
+  const canSave = isDirty || avatarUri !== initialAvatarUri;
 
   return (
     <KeyboardAvoidingView
@@ -200,19 +244,26 @@ export function PersonalInformationBody() {
       >
         {/* Avatar */}
         <View style={styles.avatarSection}>
-          <View style={styles.avatarRing}>
-            {mockCustomer.avatarUrl ? (
-              <Image source={{ uri: mockCustomer.avatarUrl }} style={styles.avatar} />
-            ) : (
-              <View style={[styles.avatar, styles.avatarFallback]}>
-                <Ionicons name="person" size={36} color={c.textMuted} />
+          <Pressable
+            onPress={pickPhoto}
+            style={({ pressed }) => [styles.avatarButton, pressed && styles.avatarButtonPressed]}
+            accessibilityRole="button"
+            accessibilityLabel="Change profile photo"
+          >
+            <View style={styles.avatarRing}>
+              {avatarUri ? (
+                <Image source={{ uri: avatarUri }} style={styles.avatar} />
+              ) : (
+                <View style={[styles.avatar, styles.avatarFallback]}>
+                  <Ionicons name="person" size={36} color={c.textMuted} />
+                </View>
+              )}
+              <View style={styles.cameraOverlay}>
+                <Ionicons name="camera" size={14} color="#fff" />
               </View>
-            )}
-            <View style={styles.cameraOverlay}>
-              <Ionicons name="camera" size={14} color="#fff" />
             </View>
-          </View>
-          <Text style={styles.changePhotoLabel}>Change photo</Text>
+            <Text style={styles.changePhotoLabel}>Change photo</Text>
+          </Pressable>
         </View>
 
         {/* Identity fields */}
@@ -277,14 +328,14 @@ export function PersonalInformationBody() {
         {/* Save */}
         <Pressable
           onPress={handleSave}
-          disabled={!isDirty}
+          disabled={!canSave}
           style={({ pressed }) => [
             styles.saveBtn,
-            !isDirty && styles.saveBtnDisabled,
-            pressed && isDirty && { opacity: 0.8 },
+            !canSave && styles.saveBtnDisabled,
+            pressed && canSave && { opacity: 0.8 },
           ]}
         >
-          <Text style={[styles.saveBtnText, !isDirty && styles.saveBtnTextDisabled]}>
+          <Text style={[styles.saveBtnText, !canSave && styles.saveBtnTextDisabled]}>
             Save changes
           </Text>
         </Pressable>

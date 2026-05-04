@@ -1,11 +1,11 @@
-import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   View,
   Text,
   TouchableOpacity,
   Pressable,
   ScrollView,
-  FlatList,
+  TextInput,
 } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
@@ -22,8 +22,6 @@ import {
 import { mockRestaurants } from '@/lib/mock/restaurants';
 import { useColors, createStyles, spacing, borderRadius } from '@/lib/theme';
 import type { DateKey } from '@/lib/booking/availabilityTypes';
-
-const PARTY_OPTIONS = [1, 2, 3, 4, 5, 6, 7, 8];
 
 const SLOT_COLS = 3;
 const SLOT_GAP = 10;
@@ -66,30 +64,51 @@ const useStyles = createStyles((c) => ({
     marginBottom: -4,
   },
 
-  // Party size chips
-  partyRow: { gap: 8, paddingBottom: 2 },
-  partyChip: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
+  // Party size input
+  partyInputRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    backgroundColor: c.bgSurface,
+    borderRadius: borderRadius.lg,
     borderWidth: 1,
     borderColor: c.border,
-    backgroundColor: c.bgSurface,
-    alignItems: 'center',
-    justifyContent: 'center',
+    gap: 12,
   },
-  partyChipSelected: {
-    backgroundColor: c.gold,
-    borderColor: c.gold,
-  },
-  partyChipText: {
-    fontSize: 15,
-    fontWeight: '600',
-    color: c.textSecondary,
-  },
-  partyChipTextSelected: {
-    color: c.bgBase,
+  partyInputLabel: {
+    flex: 1,
+    fontSize: 16,
     fontWeight: '700',
+    color: c.textPrimary,
+  },
+  partyInputHelper: {
+    fontSize: 12,
+    fontWeight: '500',
+    color: c.textSecondary,
+    marginTop: 2,
+  },
+  partyInput: {
+    minWidth: 62,
+    height: 42,
+    borderRadius: 21,
+    backgroundColor: c.bgElevated,
+    borderWidth: 1,
+    borderColor: c.border,
+    color: c.textPrimary,
+    fontSize: 17,
+    fontWeight: '700',
+    textAlign: 'center',
+    paddingHorizontal: 10,
+  },
+  partyInputError: {
+    borderColor: c.danger,
+  },
+  guestErrorText: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: c.danger,
+    marginTop: -6,
   },
 
   // Date row
@@ -213,6 +232,8 @@ export default function Step2Time() {
     () => parseBookingDateParam(date) ?? firstDate,
   );
   const [partySize, setPartySize] = useState(2);
+  const [partySizeInput, setPartySizeInput] = useState('2');
+  const [partySizeError, setPartySizeError] = useState('');
   const [selectedSlotId, setSelectedSlotId] = useState<string | null>(null);
   const [selectedLabel, setSelectedLabel] = useState<string | null>(null);
   const [calendarOpen, setCalendarOpen] = useState(false);
@@ -240,10 +261,30 @@ export default function Step2Time() {
 
   const restaurant = mockRestaurants.find((r) => r.id === restaurantId);
 
-  const handleSelectParty = useCallback((size: number) => {
+  const updatePartySize = useCallback((value: string) => {
+    const digits = value.replace(/\D/g, '');
+    setPartySizeInput(digits);
+    if (!digits) {
+      setPartySizeError('');
+      return;
+    }
+    const parsed = parseInt(digits, 10);
+    if (parsed > 20) {
+      setPartySizeError('20 is the maximum');
+      return;
+    }
+    const nextSize = Math.max(1, parsed);
+    setPartySizeError('');
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    setPartySize(size);
+    setPartySize(nextSize);
   }, []);
+
+  const normalizePartySize = useCallback(() => {
+    if (partySizeError) return;
+    const normalized = Math.max(1, Math.min(20, partySize));
+    setPartySize(normalized);
+    setPartySizeInput(String(normalized));
+  }, [partySize, partySizeError]);
 
   const handleSelectSlot = useCallback((slotId: string, label: string) => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
@@ -252,11 +293,11 @@ export default function Step2Time() {
   }, []);
 
   const handleNext = useCallback(() => {
-    if (!selectedLabel) return;
+    if (!selectedLabel || partySizeError || !partySizeInput) return;
     router.push(
       `/booking/${restaurantId}/confirm?date=${encodeURIComponent(dateKey)}&time=${encodeURIComponent(selectedLabel)}&partySize=${partySize}`,
     );
-  }, [selectedLabel, dateKey, partySize, restaurantId, router]);
+  }, [selectedLabel, partySizeError, partySizeInput, restaurantId, dateKey, partySize, router]);
 
   const handleNextDate = useCallback(() => {
     setDateKey(nextBookableDateAfter(rid, dateKey));
@@ -284,31 +325,27 @@ export default function Step2Time() {
       >
         {/* Party size */}
         <Text style={styles.sectionLabel}>Guests</Text>
-        <ScrollView
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          contentContainerStyle={styles.partyRow}
-        >
-          {PARTY_OPTIONS.map((n) => (
-            <Pressable
-              key={n}
-              onPress={() => handleSelectParty(n)}
-              style={[styles.partyChip, partySize === n && styles.partyChipSelected]}
-            >
-              <Text style={[styles.partyChipText, partySize === n && styles.partyChipTextSelected]}>
-                {n}
-              </Text>
-            </Pressable>
-          ))}
-          <Pressable
-            onPress={() => handleSelectParty(partySize > 8 ? partySize : 9)}
-            style={[styles.partyChip, partySize > 8 && styles.partyChipSelected]}
-          >
-            <Text style={[styles.partyChipText, partySize > 8 && styles.partyChipTextSelected]}>
-              9+
+        <View style={styles.partyInputRow}>
+          <Ionicons name="people-outline" size={20} color={c.gold} />
+          <View style={{ flex: 1 }}>
+            <Text style={styles.partyInputLabel}>
+              {partySize} {partySize === 1 ? 'guest' : 'guests'}
             </Text>
-          </Pressable>
-        </ScrollView>
+            <Text style={styles.partyInputHelper}>Type how many guests are coming</Text>
+          </View>
+          <TextInput
+            value={partySizeInput}
+            onChangeText={updatePartySize}
+            onBlur={normalizePartySize}
+            keyboardType="number-pad"
+            inputMode="numeric"
+            maxLength={2}
+            selectTextOnFocus
+            style={[styles.partyInput, partySizeError ? styles.partyInputError : null]}
+            accessibilityLabel="Number of guests"
+          />
+        </View>
+        {partySizeError ? <Text style={styles.guestErrorText}>{partySizeError}</Text> : null}
 
         {/* Date */}
         <Text style={styles.sectionLabel}>Date</Text>
@@ -368,7 +405,7 @@ export default function Step2Time() {
         <Button
           title="Continue"
           onPress={handleNext}
-          disabled={!selectedLabel}
+          disabled={!selectedLabel || !!partySizeError || !partySizeInput}
         />
       </View>
 

@@ -34,9 +34,9 @@ export const mockNotificationPrefs: NotificationPref[] = [
   { id: 'n1', title: 'Booking confirmations', subtitle: 'When a reservation is confirmed or updated', defaultOn: true },
   { id: 'n2', title: 'Special promotions', subtitle: 'Exclusive offers from Cenaiva and partners', defaultOn: true },
   { id: 'n3', title: 'Rewards updates', subtitle: 'Points earned, tier changes, expiring rewards', defaultOn: true },
-  { id: 'n4', title: 'New restaurant alerts', subtitle: 'When spots you follow add tables or menus', defaultOn: false },
+  { id: 'n4', title: 'New restaurant alerts', subtitle: 'When spots you follow add tables or menus', defaultOn: true },
   { id: 'n5', title: 'Nearby dining suggestions', subtitle: 'Curated picks near your location', defaultOn: true },
-  { id: 'n6', title: 'SMS notifications', subtitle: 'Important booking updates by text', defaultOn: false },
+  { id: 'n6', title: 'SMS notifications', subtitle: 'Important booking updates by text', defaultOn: true },
   { id: 'n7', title: 'Email notifications', subtitle: 'Receipts, summaries, and marketing', defaultOn: true },
   { id: 'n8', title: 'Push notifications', subtitle: 'In-app alerts on this device', defaultOn: true },
 ];
