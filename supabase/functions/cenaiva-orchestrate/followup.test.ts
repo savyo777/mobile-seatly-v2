@@ -222,6 +222,38 @@ Deno.test("date-spot recommendation names the best bottom-row suggestions", () =
   );
 });
 
+Deno.test("European cuisine refinement expands to related visible cuisines", () => {
+  const result = buildDeterministicFollowUp(makeContext({
+    transcript: "Only europeean food",
+    visibleRestaurants: [
+      { id: "a", name: "Kumo", cuisine_type: "Japanese" },
+      { id: "b", name: "Roma", cuisine_type: "Italian" },
+      { id: "c", name: "La Maison", cuisine_type: "French" },
+    ],
+  }));
+
+  assertEquals(
+    pick(result),
+    {
+      spoken_text: "Roma or La Maison look good. Which one sounds best?",
+      intent: "refine_search",
+      step: "choose_restaurant",
+      next_expected_input: "restaurant",
+      ui_actions: [
+        { type: "set_filters" },
+        { type: "update_map_markers", restaurant_ids: ["b", "c"] },
+        { type: "show_restaurant_cards", restaurant_ids: ["b", "c"] },
+        { type: "highlight_restaurant", restaurant_id: "b" },
+      ],
+      booking: null,
+      map: { visible: true, marker_restaurant_ids: ["b", "c"], highlighted_restaurant_id: "b" },
+      filters: { cuisine: ["European"] },
+      promoted_selected_restaurant_id: null,
+    },
+    "European visible refinement follow-up",
+  );
+});
+
 Deno.test("cuisine refinement collapsing to one visible candidate asks for confirmation first", () => {
   const result = buildDeterministicFollowUp(makeContext({
     transcript: "Only Japanese",
@@ -500,13 +532,13 @@ Deno.test("confirming booking waits for explicit user confirmation", () => {
   );
 });
 
-Deno.test("true dead-end case falls back to the generic prompt with schema-valid enums", () => {
+Deno.test("true dead-end case falls back to a useful prompt with schema-valid enums", () => {
   const result = buildDeterministicFollowUp(makeContext());
 
   assertEquals(
     pick(result),
     {
-      spoken_text: "What kind of restaurant are you looking for?",
+      spoken_text: "Tell me a cuisine, vibe, or area and I'll narrow it down.",
       intent: "discover_restaurants",
       step: "choose_cuisine",
       next_expected_input: "cuisine",
@@ -516,6 +548,6 @@ Deno.test("true dead-end case falls back to the generic prompt with schema-valid
       filters: null,
       promoted_selected_restaurant_id: null,
     },
-    "generic fallback",
+    "useful fallback",
   );
 });

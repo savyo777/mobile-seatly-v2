@@ -14,17 +14,15 @@ import {
   type VisibleRestaurant,
 } from "./followup.ts";
 import {
-  knownGeneralOffTopicIntent,
   mealPeriodForTimeZone,
-  playfulPersonalOffTopicIntent,
-  scopedOffTopicFallback,
-  scopedWarmBoundaryFallback,
 } from "./offtopic.ts";
 
 const openai = new OpenAI({ apiKey: Deno.env.get("OPENAI_API_KEY")! });
 const stripeSecretKey = Deno.env.get("STRIPE_SECRET_KEY") ?? "";
 const LATENCY_DEBUG = Deno.env.get("CENAIVA_LATENCY_DEBUG") === "1";
 const OPENAI_PREWARM = Deno.env.get("CENAIVA_OPENAI_PREWARM") === "1";
+const ORCHESTRATOR_MODEL = Deno.env.get("CENAIVA_ORCHESTRATOR_MODEL") ?? "gpt-4o-mini";
+const SMALL_PROMPT_MODEL = Deno.env.get("CENAIVA_SMALL_PROMPT_MODEL") ?? "gpt-4.1-nano";
 
 // Optional pre-warm. Disabled by default because module-init network work can
 // compete with the first live request in cold starts.
@@ -127,13 +125,26 @@ function streamSse(handler: (send: SseSend) => Promise<void>): Response {
 // by whitespace, OR the buffer crosses a soft length threshold (so very long
 // sentences still flush in pieces). Returns an empty string when there's
 // nothing to flush yet.
-function takeSentenceChunk(buffer: string): { chunk: string; remainder: string } {
+function takeSentenceChunk(
+  buffer: string,
+  isFirstChunk = false,
+): { chunk: string; remainder: string } {
   if (!buffer) return { chunk: "", remainder: "" };
   // Match through the LAST terminal punctuation that has whitespace after it,
   // so we always flush full sentences when possible.
   const m = buffer.match(/^([\s\S]*?[.!?])(\s+)/);
   if (m) {
     return { chunk: m[1].trim(), remainder: buffer.slice(m[0].length) };
+  }
+  // WS-1.6: Aggressive first-chunk flush so the user hears audio sooner.
+  // For the very first chunk only, flush at ≥20 chars on any clause boundary
+  // (comma, em-dash, semicolon, colon). Subsequent chunks keep the original
+  // 60-char comma rule so we don't fragment continuous speech.
+  if (isFirstChunk && buffer.length >= 20) {
+    const f = buffer.match(/^([\s\S]*?[,;:\u2014])(\s+)/);
+    if (f && f[1].length >= 12) {
+      return { chunk: f[1].trim(), remainder: buffer.slice(f[0].length) };
+    }
   }
   // Comma-bounded clause flush at >=60 chars — keeps very long replies moving
   // without waiting for the full sentence.
@@ -151,6 +162,128 @@ function takeSentenceChunk(buffer: string): { chunk: string; remainder: string }
     }
   }
   return { chunk: "", remainder: buffer };
+}
+
+// WS-1.5: Fast conversational path. When the user asks a basic non-search
+// question, we force tool_choice="none" and skip the heavy tool catalogue so
+// the model can stream a reply at minimum TTFT. This regex is conservative —
+// any uncertainty falls back to the normal tool-using path.
+const CONVERSATIONAL_PROMPT_RE =
+  /^\s*(hi|hey|hello|yo|hola|bonjour|thanks?|thank you|thx|ty|repeat|repeat that|say that again|what'?s? your name|who are you|what are you|what time is it|what'?s the time|cancel|never mind|nevermind|stop|pause|nothing|that'?s all|bye|goodbye)\b[\s.,!?]*$/i;
+
+function isConversationalPrompt(transcript: string | null | undefined): boolean {
+  if (!transcript) return false;
+  const t = transcript.trim();
+  if (!t) return false;
+  if (t.length > 60) return false; // long requests are never conversational
+  return CONVERSATIONAL_PROMPT_RE.test(t);
+}
+
+function hasRestaurantSelectionIntent(transcript: string, priorWhichAsks: number): boolean {
+  if (priorWhichAsks >= 1) return true;
+  const normalized = transcript
+    .toLowerCase()
+    .replace(/[^a-z0-9\s']/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+  if (!normalized) return false;
+  return /\b(book|reserve|select|choose|pick|want|take|try|go with|let's do|lets do|that one|this one|the first|the second|the third|sounds good|looks good|look good|works for me)\b/i
+    .test(normalized);
+}
+
+// WS-2.1: Tool-aware filler speech emitted the moment we detect the model is
+// about to invoke a tool. Played while the tool runs so the user hears
+// continuous speech and never feels stuck. Keep these short (≤6 words) so
+// they finish playing before the real answer arrives.
+const TOOL_FILLERS: Record<string, string> = {
+  search_restaurants: "Hold on while I find spots near you.",
+  check_availability: "Hold on while I check the times.",
+  complete_booking: "Hold on while I lock in that reservation.",
+  patch_post_booking: "Hold on while I update that reservation.",
+  get_menu: "Hold on while I pull up the menu.",
+  create_preorder_order: "Hold on while I add that to your order.",
+  charge_saved_card: "Hold on while I charge your card.",
+};
+
+function fillerForTool(toolName: string | null | undefined): string {
+  if (!toolName) return "One moment.";
+  return TOOL_FILLERS[toolName] ?? "One moment.";
+}
+
+function buildSmallPromptSystemPrompt(opts: {
+  restaurantName: string | null;
+  restaurantId: string | null;
+  partySize: number | null;
+  date: string | null;
+  time: string | null;
+}) {
+  const nextMissing =
+    !opts.restaurantId && !opts.restaurantName
+      ? "restaurant_or_area"
+      : !opts.partySize
+        ? "party_size"
+        : !opts.date || !opts.time
+          ? "date_time"
+          : "confirmation";
+  const requiredQuestion =
+    nextMissing === "restaurant_or_area"
+      ? "What restaurant or area should I book?"
+      : nextMissing === "party_size"
+        ? "How many guests?"
+        : nextMissing === "date_time"
+          ? "What date and time should I book?"
+          : "Should I book it?";
+
+  return `You are Cenaiva, a fast restaurant booking assistant.
+This is a small/off-topic turn. Do not use tools, restaurants, cuisine, examples, or canned replies.
+Reply dynamically in exactly 2 short sentences, under 150 chars total.
+Sentence 1: answer the user's exact question or react specifically. If factual/general, answer briefly. If personal identity/self-judgment, say you can't determine that for them.
+If the user is angry, profane, or frustrated, acknowledge the frustration briefly and calmly before redirecting.
+Sentence 2: exactly "${requiredQuestion}"
+Do not say only that the question is fun, interesting, fair, or odd.
+Never say "Did you mean", "specific restaurant", "place to eat", or "vibe".
+State: restaurant=${opts.restaurantName ?? opts.restaurantId ?? "missing"}; guests=${opts.partySize ?? "missing"}; date=${opts.date ?? "missing"}; time=${opts.time ?? "missing"}; next=${nextMissing}.
+Never say a booking is confirmed unless the booking system confirms it.`;
+}
+
+function nextSmallPromptExpectedInput(bookingState: Record<string, unknown>): string {
+  const restaurant =
+    typeof bookingState.restaurant_name === "string" && bookingState.restaurant_name.trim() ||
+    typeof bookingState.restaurant_id === "string" && bookingState.restaurant_id.trim();
+  if (!restaurant) return "restaurant";
+  if (typeof bookingState.party_size !== "number") return "party_size";
+  if (typeof bookingState.date !== "string" || typeof bookingState.time !== "string") {
+    return "date_time";
+  }
+  return "confirmation";
+}
+
+function nextSmallPromptBookingQuestion(bookingState: Record<string, unknown>): string {
+  const restaurant =
+    typeof bookingState.restaurant_name === "string" && bookingState.restaurant_name.trim() ||
+    typeof bookingState.restaurant_id === "string" && bookingState.restaurant_id.trim();
+  if (!restaurant) return "What restaurant or area should I book?";
+  if (typeof bookingState.party_size !== "number") return "How many guests?";
+  if (typeof bookingState.date !== "string" || typeof bookingState.time !== "string") {
+    return "What date and time should I book?";
+  }
+  return "Should I book it?";
+}
+
+function enforceSmallPromptBookingQuestion(
+  text: string,
+  bookingState: Record<string, unknown>,
+): string {
+  const trimmed = text.replace(/\s+/g, " ").trim();
+  const hasBookingQuestion =
+    /\?/.test(trimmed) &&
+    /\b(restaurant|area|guests?|people|date|time|book|booking|reservation|table)\b/i.test(trimmed);
+  const sentences = trimmed.split(/(?<=[.!?])\s+/).map((part) => part.trim()).filter(Boolean);
+  if (hasBookingQuestion && sentences.length <= 2) return trimmed;
+
+  const firstSentence = sentences[0]?.replace(/[.!?]*$/, "").trim();
+  const question = nextSmallPromptBookingQuestion(bookingState);
+  return firstSentence ? `${firstSentence}. ${question}` : question;
 }
 
 // ── UI action types list (kept in sync with @cenaiva/assistant schema) ────────
@@ -680,7 +813,41 @@ function scrubGenericLookupPrompt(text: string): string {
     /\b(?:want|would|should|shall|can)\b[\s\S]{0,50}\b(?:search|look)\b[\s\S]{0,40}\b(?:something|anything|else|up)\b/i.test(trimmed) ||
     /\b(?:search|look)\b[\s\S]{0,20}\b(?:something|anything)\b[\s\S]{0,10}\bup\b/i.test(trimmed);
   if (!asksToLookupSomething) return trimmed;
-  return "What kind of restaurant are you looking for?";
+  return "I can help with restaurant bookings. What restaurant or area should I book?";
+}
+
+function namesFromVisibleRestaurants(rows: VisibleRestaurant[]): string[] {
+  return rows.map((row) => row.name).filter((name): name is string => typeof name === "string" && name.trim().length > 0);
+}
+
+function fallbackSpokenTextForContext(opts: {
+  transcript: string;
+  selectedRestaurantId: string | null;
+  bookingState: Record<string, unknown>;
+  visibleRestaurants: VisibleRestaurant[];
+  lastSearchRestaurants: VisibleRestaurant[];
+}): string {
+  const visibleNames = namesFromVisibleRestaurants(opts.visibleRestaurants);
+  const searchNames = namesFromVisibleRestaurants(opts.lastSearchRestaurants);
+  const names = visibleNames.length ? visibleNames : searchNames;
+  if (names.length === 1) return `I found ${names[0]}. Want that one?`;
+  if (names.length === 2) return `${names[0]} or ${names[1]} look good. Which one sounds best?`;
+  if (names.length >= 3) return `${names[0]}, ${names[1]}, or ${names[2]} look good. Which one sounds best?`;
+
+  const hasRestaurant =
+    !!opts.selectedRestaurantId ||
+    typeof opts.bookingState.restaurant_id === "string";
+  if (hasRestaurant) {
+    if (opts.bookingState.party_size == null) return "How many guests?";
+    if (!opts.bookingState.date || !opts.bookingState.time) return "What date and time?";
+    return "Checking availability.";
+  }
+
+  if (directBookingIntent(opts.transcript)) {
+    return "Which restaurant should I book?";
+  }
+
+  return "I can't really answer that here. I'm here to help with restaurant bookings, so what restaurant or area should I book?";
 }
 
 function safeStreamingSpeechChunk(text: string): string | null {
@@ -789,13 +956,20 @@ Cenaiva handles DINE-IN RESERVATIONS AND PRE-ORDER PAYMENT ONLY.
 Natural phrases like "I want food from X", "I feel like X", "I'm craving Italian", "let's grab dinner at X" are DINE-IN intents — treat them as restaurant discovery/booking and proceed normally.
 
 INTENT CLASSIFICATION — classify every user turn mentally before acting:
+- SMALL PROMPT FIRST: Any user question/comment that is NOT about restaurant discovery, menus, restaurant policies, directions/contact, payment/preorder, modifying/canceling, or creating a reservation is a small prompt. For small prompts, do NOT call tools, do NOT emit restaurant/map actions, do NOT suggest restaurants, and do NOT ask about cuisine/vibe/food type unless the user already asked for food. Give a short relevant reaction or answer first, then state Cenaiva's restaurant-booking job and ask the next missing booking detail.
+- Small-prompt rules override the recommendation and booking flow below. If a prompt is off-topic, personal, or identity-related, do not treat it as a cuisine/preference signal just because the conversation is starting.
+- Personal or identity questions are small prompts. If the user asks you to judge, label, or determine something personal about them, do not pretend certainty. Give a direct, respectful one-sentence answer such as saying you cannot determine that for them, then redirect to restaurant booking.
+- Small-prompt wording must be generated naturally from the user's actual message. Do NOT use memorized example replies, canned prompt-bank language, or generic filler. The shape is: brief answer/reaction → booking redirect → one next missing detail. Keep it to one or two short sentences.
+- Do not deeply explain off-topic topics. Acknowledge or answer in one short clause, then move on.
+- If no restaurant or area is already set after a small prompt, ask for the restaurant or area. Do not ask for cuisine, restaurant type, vibe, dining preferences, or "a place to eat or hang out" after an unrelated/personal question.
 - reservation_create: user wants to book, reserve, get a table, or "get a spot".
 - reservation_modify / reservation_cancel: user wants to change, move, add guests, add a note, or cancel an existing booking. Do not claim the change is done until the restaurant system confirms it.
 - restaurant_search / dinner_plan: user asks what is good, open, nearby, romantic, cheap, family-friendly, quiet, business-appropriate, after a movie/game, or suitable for an occasion. Show options first unless they clearly ask to book.
 - menu_question: user asks about dishes, ingredients, alcohol, kids meals, preorderability, spice, allergens, or substitutions. Use confirmed data only; if missing, say you do not have it confirmed.
 - preorder_food / payment_question / rewards_question: keep reservation confirmation separate from preorder/payment/rewards actions.
 - directions / restaurant_contact: provide directions/contact help without modifying bookings.
-- general_question / fallback_unknown: EVERY unrelated or out-of-topic STT prompt must be acknowledged briefly and redirected to Cenaiva's dining mission. This applies even if the prompt is casual, emotional, funny, vague, or not listed in examples. Do NOT call search_restaurants, check_availability, complete_booking, or emit restaurant/map actions for off-topic prompts. For personal compliments/playful remarks, say exactly: "I'm flattered, but my mission is to provide you a perfect dining experience. What can I do for you?" For all other off-topic prompts, say exactly: "I hear you, but my mission is to make sure you find the perfect ${opts.missionMeal} for you. What can I help with?"
+- general_question / fallback_unknown: EVERY unrelated or out-of-topic STT prompt must be handled lightly and redirected to the booking flow. This applies even if the prompt is casual, emotional, funny, impatient, vague, profane, personal, identity-related, or not listed in examples. Do NOT call search_restaurants, check_availability, complete_booking, or emit restaurant/map actions for truly off-topic prompts.
+- Boundary style: stay natural, not scripted. Give a quick reaction or answer first, then return to the job. Do not repeatedly say "my mission" or over-explain the scope.
 
 MESSY SPEECH — users will be rushed, emotional, vague, broken-English, or mis-transcribed. Extract intent generously, ask the minimum missing question, and never overload them with every possible preference. "Book dinner" usually needs party size first. "Something nice" usually needs location or time only if not inferable.
 
@@ -850,8 +1024,9 @@ FLOW — follow exactly in this order:
 
 RULES:
 - spoken_text ≤ 20 words, except final booking confirmation summaries may be up to 28 words. No filler ("Sure!", "Of course!", "Great choice!"). Direct.
+- Avoid long reasoning. For most turns, use 1-3 short sentences and ask only the next missing booking detail.
 - One question per turn.
-- NEVER ask a generic search/look-up question about something, anything, or something else. If there is no context yet, ask "What kind of restaurant are you looking for?"
+- NEVER ask a generic search/look-up question about something, anything, or something else. If results are visible, name the options. If the user made an in-scope dining request but gave no cuisine/area/vibe, ask for a cuisine, vibe, or area. If the user asked anything unrelated to booking, treat it as a small prompt instead.
 - NEVER end a turn silently after a tool runs. After search_restaurants returns results, your spoken_text MUST mention at least one (and preferably 2-3) restaurant names from the results, then ask which one — even if the user's last reply was short ("yeah", "show me deals"). Generic "what next?" fallback questions are BANNED whenever results are visible — describe what's on the map instead. In Recommendation mode "single", this changes to exactly one named result with one card/marker.
 - When search_restaurants returns ZERO results, say so plainly and offer to relax one filter ("Nothing matches in your price range — want to widen the budget?"). Don't go silent and don't ask generic "what next?" questions.
 - NEVER re-ask for a booking field that is already SET in the BOOKING STATE checklist — read the checklist first every turn. This includes party_size, date, AND time. If party_size + date + time are all SET, do NOT ask "what date and time?" again — proceed to check_availability.
@@ -1137,6 +1312,10 @@ async function sendEarlyFinal(
   userContent: string,
   payload: AssistantPayload,
 ): Promise<void> {
+  const safeSpokenText = safeStreamingSpeechChunk(payload.spoken_text);
+  if (safeSpokenText) {
+    send({ type: "speech_chunk", text: safeSpokenText });
+  }
   send({ type: "final", payload });
   deferTask("deterministic_persist", (async () => {
     await supabaseAdmin.from("chat_messages").insert({
@@ -1524,6 +1703,49 @@ function directBookingIntent(transcript: string): boolean {
   return /\b(book|reserve|get me a table|get me a spot|make a reservation)\b/i.test(transcript);
 }
 
+function normalizedIntentText(transcript: string): string {
+  return transcript
+    .toLowerCase()
+    .replace(/[^a-z0-9\s']/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+function clearlySmallPromptIntent(transcript: string): boolean {
+  const normalized = normalizedIntentText(transcript);
+  if (!normalized) return false;
+
+  if (
+    /\b(hurry up|why is this taking so long|stop asking questions|can you be faster|be faster|do it now|you'?re moving slow|moving slow|don'?t want a whole conversation|why do you need all that info|less talking more booking|less talking, more booking)\b/i
+      .test(normalized)
+  ) {
+    return true;
+  }
+
+  if (
+    /\b(bring (?:a )?(?:dog|pet)|allow kids|kids allowed|parking|vegan|wheelchair|accessible|accessibility|outdoor seating|sit at the bar|birthday cake|split bills?|dress code|halal|gluten free|gluten-free|booth|allerg(?:y|ies)|high chairs?|loud inside|bring balloons?|no shows?|no-shows?|deposit|change the booking later|request outdoor|request a booth)\b/i
+      .test(normalized)
+  ) {
+    return false;
+  }
+
+  if (
+    /\b(show|find|search|recommend|suggest|pick|choose|book|reserve|get|give me|look for|looking for|pull up|want|need|craving|feel like|closest|nearest|available|availability|menu|directions)\b[\s\S]{0,80}\b(restaurant|restaurants|place|places|spot|spots|table|reservation|food|cuisine|dinner|lunch|breakfast|brunch|menu|dish|dishes|near me|nearby|italian|french|european|europeean|europian|japanese|sushi|thai|spanish|greek|mediterranean|steakhouse|egyptian|asian|halal|vegan)\b/i
+      .test(normalized)
+  ) {
+    if (!/\b(hack|bypass|fake|lie|threaten|cancel someone else|change someone else|free food|celebrity|famous|homework|rap|call my ex|order me a car|fish|raccoon|ghosts?|dinosaur|cereal soup|aliens?|meaning of life)\b/i
+      .test(normalized)) {
+      return false;
+    }
+  }
+
+  return /\b(am i gay|am i straight|am i bi|am i bisexual|do you think i'?m|what am i|are you single|do you love me|i love you|you'?re cute|you are cute|you'?re hot|you are hot|your voice is cute|fish|get thirsty|raccoon|imaginary friend|dinosaur|pasta could talk|ghosts?|cereal soup|meaning of life|aliens?|horse sized|duck sized|chairs? have feelings|villain entrance|fog machine|spy mission|homework|write me a rap|order me a car|call my ex|hack|bypass|fake phone|fake number|lie and say|threaten|cancel someone else|change someone else|pretend i'?m the owner|make them give me free food|fully booked|under someone else'?s name|without giving my details|guarantee the best table|book 10 restaurants|book ten restaurants)\b/i
+    .test(normalized) ||
+    (/^(what|who|why|how|can you|could you|would you|tell me|write|make|create|explain|help me)\b/i.test(normalized) &&
+      !/\b(restaurant|restaurants|reservation|reserve|book|booking|table|seat|seating|dine|dining|menu|cuisine|preorder|order|takeout|directions|rewards|bar|cafe|coffee|near me|nearby|closest|open|patio|booth|outdoor|indoor|dinner|lunch|breakfast|brunch|food|eat|hungry)\b/i
+        .test(normalized));
+}
+
 function discoveryIntent(transcript: string): boolean {
   return /\b(find|show|where|what'?s good|best|recommend|plan|somewhere|restaurant|restaurants|dinner|lunch|breakfast|brunch|meal|food|eat|hungry|cheap|deals|romantic|business|family|date|anniversary|open|near me|nearby|around me|close by)\b/i.test(transcript);
 }
@@ -1532,8 +1754,52 @@ function noPreferenceDiscoveryIntent(transcript: string): boolean {
   return /\b(not sure|don'?t know|anything|whatever|surprise me|no preference|open to anything|you pick|your pick)\b/i.test(transcript);
 }
 
-function offTopicIntent(transcript: string): boolean {
-  return knownGeneralOffTopicIntent(transcript);
+function bookingProcessIntent(transcript: string): boolean {
+  if (clearlySmallPromptIntent(transcript)) return false;
+  return directBookingIntent(transcript) ||
+    discoveryIntent(transcript) ||
+    noPreferenceDiscoveryIntent(transcript) ||
+    menuQuestionIntent(transcript) ||
+    allergyIntent(transcript) ||
+    accessibilityIntent(transcript) ||
+    /\b(reservation|booking|booked|confirm|confirmed|confirmation|details|cancel|change|edit|move|table|guests?|people|party size|date|time|slot|availability|available|openings?|menu|pre[- ]?order|prepay|order|checkout|pay|payment|card|deposit|refund|fee|tax|tip|directions?|address|phone|contact|hours?|parking|dress code|outdoor|indoor|booth|bar seating|birthday cake|high chair|no show|no-show|show up|are we good|show them this|need id|arrive early|hold the table|confirmation number|booking summary|where is it|remind me)\b/i.test(transcript);
+}
+
+function bookingFieldReplyIntent(
+  transcript: string,
+  bookingState: Record<string, unknown>,
+  selectedRestaurantId: string | null | undefined,
+  timezone: string,
+): boolean {
+  const hasRestaurant =
+    Boolean(selectedRestaurantId) ||
+    (typeof bookingState.restaurant_id === "string" && bookingState.restaurant_id.trim().length > 0);
+  if (!hasRestaurant) return false;
+
+  const status = typeof bookingState.status === "string" ? bookingState.status : "idle";
+  if ((status === "confirming" || status === "awaiting_time_selection") &&
+    (isSafeBookingConfirmationText(transcript) || isNegativeText(transcript))) {
+    return true;
+  }
+
+  if (typeof bookingState.party_size !== "number" && parsePartySize(transcript) != null) {
+    return true;
+  }
+
+  const needsDate = !(typeof bookingState.date === "string" && bookingState.date.trim().length > 0);
+  const needsTime = !(typeof bookingState.time === "string" && bookingState.time.trim().length > 0);
+  if ((needsDate || needsTime) && (parseDateInTimeZone(transcript, timezone) || parseTime(transcript))) {
+    return true;
+  }
+
+  if (
+    (status === "loading_availability" || status === "awaiting_time_selection") &&
+    (parseDateInTimeZone(transcript, timezone) || parseTime(transcript))
+  ) {
+    return true;
+  }
+
+  return false;
 }
 
 function menuQuestionIntent(transcript: string): boolean {
@@ -1557,6 +1823,14 @@ function privateOrLargePartyIntent(transcript: string, partySize: number | null)
 
 function requestedHotelLocation(transcript: string): boolean {
   return /\bhotel\b/i.test(transcript) && /\bnear|walking distance|around\b/i.test(transcript);
+}
+
+function restaurantMatchesCuisineTerms(row: SearchRestaurantRow, cuisineTerms: string[]): boolean {
+  return cuisineTerms.some((term) =>
+    normalizeSearchText(row.cuisine_type ?? "").includes(term) ||
+    normalizeSearchText(row.description ?? "").includes(term) ||
+    normalizeSearchText(row.name ?? "").includes(term)
+  );
 }
 
 const CUISINE_GROUPS: Record<string, string[]> = {
@@ -1634,6 +1908,31 @@ function cuisineGroupForHint(cuisine: string | null): string | null {
 
 function extractCuisineHint(transcript: string): string | null {
   const normalized = normalizeSearchText(transcript);
+  const aliases: Array<{ canonical: string; terms: string[] }> = [
+    {
+      canonical: "european",
+      terms: [
+        "european",
+        "european food",
+        "european foods",
+        "european cuisine",
+        "europeean",
+        "europeean food",
+        "europeean foods",
+        "europian",
+        "euro food",
+        "euro cuisine",
+      ],
+    },
+    { canonical: "mediterranean", terms: ["mediterranean", "mediteranean"] },
+    { canonical: "japanese", terms: ["japanese", "japan food", "japan"] },
+    { canonical: "steakhouse", terms: ["steakhouse", "steak house", "steak"] },
+  ];
+  for (const alias of aliases) {
+    if (alias.terms.some((term) => normalized.includes(normalizeSearchText(term)))) {
+      return alias.canonical;
+    }
+  }
   const cuisines = [
     "european", "modern european", "italian", "japanese", "sushi", "thai", "french",
     "egyptian", "mediterranean", "steakhouse", "spanish", "greek", "portuguese",
@@ -1726,6 +2025,7 @@ function topRecommendationRows(
 ): SearchRestaurantRow[] {
   const cuisine = extractCuisineHint(transcript);
   const cuisineTerms = cuisineTermsForHint(cuisine);
+  const hasCuisineConstraint = cuisineTerms.length > 0 && !cuisineTerms.includes("halal");
   const normalizedCity = normalizeCityName(userCity);
   const priceSensitive = /\b(cheap|affordable|not too expensive|under|budget|deals?|student)\b/i.test(transcript);
   const sortMode = inferDiscoverySortMode(transcript);
@@ -1733,23 +2033,26 @@ function topRecommendationRows(
     ? rows.filter((row) => !row.city || normalizeCityName(row.city) === normalizedCity)
     : rows;
   let filtered = cityFiltered;
-  if (cuisineTerms.length && !cuisineTerms.includes("halal")) {
-    filtered = filtered.filter((row) =>
-      cuisineTerms.some((term) =>
-        normalizeSearchText(row.cuisine_type ?? "").includes(term) ||
-        normalizeSearchText(row.description ?? "").includes(term) ||
-        normalizeSearchText(row.name ?? "").includes(term)
-      )
-    );
+  if (hasCuisineConstraint) {
+    filtered = filtered.filter((row) => restaurantMatchesCuisineTerms(row, cuisineTerms));
   }
   if (priceSensitive) {
     filtered = filtered.filter((row) => (row.price_range ?? 2) <= 3);
   }
   if (!filtered.length) {
-    filtered = priceSensitive ? cityFiltered.filter((row) => (row.price_range ?? 2) <= 3) : cityFiltered;
+    if (hasCuisineConstraint) {
+      const broaderCuisineMatches = rows.filter((row) => restaurantMatchesCuisineTerms(row, cuisineTerms));
+      if (broaderCuisineMatches.length) {
+        filtered = broaderCuisineMatches;
+      } else {
+        return [];
+      }
+    } else {
+      filtered = priceSensitive ? cityFiltered.filter((row) => (row.price_range ?? 2) <= 3) : cityFiltered;
+    }
   }
   if (!filtered.length) filtered = rows;
-  if (filtered.length < 3) {
+  if (!hasCuisineConstraint && filtered.length < 3) {
     const seen = new Set(filtered.map((row) => row.id));
     const supplements = cityFiltered.filter((row) => !seen.has(row.id));
     filtered = [...filtered, ...supplements];
@@ -1934,40 +2237,7 @@ async function buildPreflightResponse(opts: {
     bookingState,
   });
   if (pendingResponse) return pendingResponse;
-
-  if (playfulPersonalOffTopicIntent(transcript)) {
-    return makeAssistantPayload({
-      conversationId,
-      spokenText: scopedWarmBoundaryFallback(),
-      intent: "general_question",
-      step: "done",
-      nextExpectedInput: "none",
-    });
-  }
-
-  if (offTopicIntent(transcript)) {
-    return makeAssistantPayload({
-      conversationId,
-      spokenText: scopedOffTopicFallback(opts.timezone),
-      intent: "general_question",
-      step: "done",
-      nextExpectedInput: "none",
-    });
-  }
-
-  const abusiveBookingIntent =
-    /\b(fake name|fake booking|10 tables|ten tables|spam|prank)\b/i.test(transcript) ||
-    /\b(?:two|multiple)\s+(?:reservations?|bookings?|tables?)\b/i.test(transcript) ||
-    /\bdifferent\s+(?:places|restaurants)\b[\s\S]{0,80}\b(?:choose|pick|decide)\s+later\b/i.test(transcript);
-  if (abusiveBookingIntent) {
-    return makeAssistantPayload({
-      conversationId,
-      spokenText: "I can't make duplicate or fake reservations. I can help with one real booking.",
-      intent: "fallback_unknown",
-      step: "done",
-      nextExpectedInput: "none",
-    });
-  }
+  if (clearlySmallPromptIntent(transcript)) return null;
 
   if (/\b(send|share|text|email)\b/i.test(transcript) && /\b(friend|girlfriend|boyfriend|someone|confirmation)\b/i.test(transcript)) {
     return makeAssistantPayload({
@@ -2394,6 +2664,135 @@ async function buildPreflightResponse(opts: {
     });
   }
 
+  if (
+    currentRestaurantId &&
+    !reservationId &&
+    currentStatus !== "confirming" &&
+    (selectedRestaurantId || currentStatus === "collecting_minimum_fields" || currentStatus === "loading_availability" || currentStatus === "awaiting_time_selection")
+  ) {
+    const restaurantName = selectedRestaurant?.name?.trim() || currentRestaurantName;
+    const nextPartySize = explicitPartySize ?? partySize;
+    const nextDate = explicitDate ?? date;
+    const nextTime = explicitTime ?? time;
+    const bookingPatch: Record<string, unknown> = {
+      restaurant_id: currentRestaurantId,
+      restaurant_name: restaurantName,
+      status: "collecting_minimum_fields",
+      ...(nextPartySize != null ? { party_size: nextPartySize } : {}),
+      ...(nextDate ? { date: nextDate } : {}),
+      ...(nextTime ? { time: nextTime } : {}),
+    };
+    const baseActions: FollowUpAction[] = [
+      { type: "highlight_restaurant", restaurant_id: currentRestaurantId },
+      { type: "start_booking", restaurant_id: currentRestaurantId },
+      ...(nextPartySize != null ? [{ type: "set_booking_field", field: "party_size", value: nextPartySize }] : []),
+      ...(nextDate ? [{ type: "set_booking_field", field: "date", value: nextDate }] : []),
+      ...(nextTime ? [{ type: "set_booking_field", field: "time", value: nextTime }] : []),
+    ];
+
+    if (nextPartySize == null) {
+      return makeAssistantPayload({
+        conversationId,
+        spokenText: "How many guests?",
+        intent: "reservation_create",
+        step: "choose_party",
+        nextExpectedInput: "party_size",
+        uiActions: baseActions,
+        booking: bookingPatch,
+      });
+    }
+    if (!nextDate) {
+      return makeAssistantPayload({
+        conversationId,
+        spokenText: "What date and time?",
+        intent: "reservation_create",
+        step: "choose_date",
+        nextExpectedInput: "date",
+        uiActions: baseActions,
+        booking: bookingPatch,
+      });
+    }
+    if (!nextTime) {
+      return makeAssistantPayload({
+        conversationId,
+        spokenText: "What time?",
+        intent: "reservation_create",
+        step: "choose_time",
+        nextExpectedInput: "time",
+        uiActions: baseActions,
+        booking: bookingPatch,
+      });
+    }
+
+    const availability = await getAvailability(currentRestaurantId, nextDate, nextPartySize);
+    const nearest = findNearestSlot(availability.slots ?? [], nextTime);
+    if (!nearest) {
+      const offered = (availability.slots ?? []).slice(0, 2).map((slot) => slot.display_time);
+      return makeAssistantPayload({
+        conversationId,
+        spokenText: offered.length
+          ? `${restaurantName} has no tables at ${formatTimeForSpeech(nextTime)} for ${nextPartySize}. They have ${offered.join(" or ")}.`
+          : `${restaurantName} has no tables at ${formatTimeForSpeech(nextTime)} for ${nextPartySize}. What date and time would you like instead?`,
+        intent: "reservation_create",
+        step: "choose_time",
+        nextExpectedInput: "time",
+        uiActions: [...baseActions, { type: "load_availability" }],
+        booking: {
+          ...bookingPatch,
+          status: "loading_availability",
+        },
+      });
+    }
+
+    const duplicate = await duplicateReservationForSlot(opts.userProfileId, currentRestaurantId, nearest.date_time);
+    if (duplicate) {
+      return makeAssistantPayload({
+        conversationId,
+        spokenText: `You already have ${restaurantName} booked at ${nearest.display_time}. Keep that one or choose another time?`,
+        intent: "confirm_booking",
+        step: "confirm",
+        nextExpectedInput: "confirmation",
+        uiActions: baseActions,
+        booking: {
+          ...bookingPatch,
+          time: nearest.display_time,
+          shift_id: nearest.shift_id,
+          slot_iso: nearest.date_time,
+          reservation_id: duplicate.id,
+          confirmation_code: duplicate.confirmation_code ?? null,
+          status: "confirming",
+        },
+      });
+    }
+
+    return makeAssistantPayload({
+      conversationId,
+      spokenText: buildBookingConfirmationPrompt({
+        restaurantName,
+        partySize: nextPartySize,
+        date: nextDate,
+        time: nearest.display_time,
+      }),
+      intent: "confirm_booking",
+      step: "confirm",
+      nextExpectedInput: "confirmation",
+      uiActions: [
+        ...baseActions,
+        { type: "load_availability" },
+        { type: "select_time_slot", slot_iso: nearest.date_time, shift_id: nearest.shift_id },
+        { type: "set_booking_field", field: "time", value: nearest.display_time },
+        { type: "confirm_booking" },
+      ],
+      booking: {
+        ...bookingPatch,
+        time: nearest.display_time,
+        shift_id: nearest.shift_id,
+        slot_iso: nearest.date_time,
+        status: "confirming",
+      },
+    });
+  }
+
   if (hasUncertainPartySize(transcript)) {
     const range = parsePartySizeRange(transcript);
     return makeAssistantPayload({
@@ -2803,8 +3202,22 @@ async function buildPreflightResponse(opts: {
   ) {
     const fullRows = topRecommendationRows(restaurants, transcript, await opts.getUserCity(), opts.userLocation);
     const rows = limitRecommendationRows(fullRows, opts.recommendationMode);
-    if (!rows.length) return null;
-    const prefix = extractCuisineHint(transcript) === "sushi" && !rows.some((row) => /sushi/i.test(`${row.name} ${row.cuisine_type}`))
+    const cuisineHint = extractCuisineHint(transcript);
+    if (!rows.length) {
+      if (cuisineHint) {
+        return makeAssistantPayload({
+          conversationId,
+          spokenText: `I don't see ${cuisineHint} matches near you yet. Try a different area or I can relax the cuisine.`,
+          intent: "restaurant_search",
+          step: "choose_location",
+          nextExpectedInput: "location",
+          filters: { cuisine: [cuisineHint] },
+          assistantMemory: opts.assistantMemory,
+        });
+      }
+      return null;
+    }
+    const prefix = cuisineHint === "sushi" && !rows.some((row) => /sushi/i.test(`${row.name} ${row.cuisine_type}`))
       ? "I don't see sushi near you yet. "
       : "";
     return recommendationPayload({
@@ -2827,7 +3240,7 @@ async function buildPreflightResponse(opts: {
         marker_restaurant_ids: rows.map((row) => row.id),
         highlighted_restaurant_id: rows[0].id,
       },
-      filters: extractCuisineHint(transcript) ? { cuisine: [extractCuisineHint(transcript)!] } : null,
+      filters: cuisineHint ? { cuisine: [cuisineHint] } : null,
       assistantMemory: opts.assistantMemory,
     });
   }
@@ -2947,6 +3360,12 @@ Deno.serve(async (req) => {
     // set_booking_field action across turns and re-asking the same questions.
     const preFilled: { party_size?: number; date?: string; time?: string } = {};
     if (transcript) {
+      const hasRestaurantContext =
+        Boolean(selected_restaurant_id) ||
+        (typeof booking_state.restaurant_id === "string" && booking_state.restaurant_id.trim().length > 0);
+      const canReplaceUnavailableSlot =
+        hasRestaurantContext &&
+        (currentStatus === "loading_availability" || currentStatus === "awaiting_time_selection");
       if (booking_state.party_size == null) {
         const n = parsePartySize(transcript);
         if (n != null) {
@@ -2954,23 +3373,19 @@ Deno.serve(async (req) => {
           preFilled.party_size = n;
         }
       }
-      if (booking_state.date == null) {
-        const d = parseDateInTimeZone(transcript, effectiveTimeZone);
-        if (d) {
-          booking_state.date = d;
-          preFilled.date = d;
-        }
+      const d = parseDateInTimeZone(transcript, effectiveTimeZone);
+      if (d && (booking_state.date == null || canReplaceUnavailableSlot)) {
+        booking_state.date = d;
+        preFilled.date = d;
       }
       // Pre-fill time the same way: when the user answers a date+time prompt
       // ("tomorrow at 7pm"), the LLM was occasionally emitting set_booking_field
       // for date but dropping the time, so the next turn saw time=MISSING and
       // re-asked. Mirror the parsePartySize/parseDate pattern so time survives.
-      if (booking_state.time == null) {
-        const t = parseTime(transcript);
-        if (t) {
-          booking_state.time = t;
-          preFilled.time = t;
-        }
+      const t = parseTime(transcript);
+      if (t && (booking_state.time == null || canReplaceUnavailableSlot)) {
+        booking_state.time = t;
+        preFilled.time = t;
       }
     }
 
@@ -3029,7 +3444,21 @@ Deno.serve(async (req) => {
       (currentStatus === "idle" || currentStatus === "collecting_minimum_fields");
     let triedPreflightBeforeHistory = false;
 
-    if (!needsHistoryBeforePreflight) {
+    const hasPrefilledBookingField =
+      preFilled.party_size != null ||
+      preFilled.date != null ||
+      preFilled.time != null;
+    const hasExplicitRestaurantSelection =
+      Boolean(transcript && selected_restaurant_id && hasRestaurantSelectionIntent(transcript, 0));
+    const isSmallPromptTurn = Boolean(
+      transcript &&
+      !hasPrefilledBookingField &&
+      !hasExplicitRestaurantSelection &&
+      !bookingProcessIntent(transcript) &&
+      !bookingFieldReplyIntent(transcript, booking_state, selected_restaurant_id, effectiveTimeZone)
+    );
+
+    if (!needsHistoryBeforePreflight && !isSmallPromptTurn) {
       triedPreflightBeforeHistory = true;
       const preflightResponse = await latency.time("preflight", () => buildPreflightResponse({
         conversationId: activeConversationId,
@@ -3053,6 +3482,81 @@ Deno.serve(async (req) => {
         latency.done({ path: "preflight" });
         return;
       }
+    }
+
+    if (isSmallPromptTurn) {
+      const smallPromptSystem = buildSmallPromptSystemPrompt({
+        restaurantName: typeof booking_state.restaurant_name === "string" ? booking_state.restaurant_name : null,
+        restaurantId: typeof booking_state.restaurant_id === "string" ? booking_state.restaurant_id : null,
+        partySize: typeof booking_state.party_size === "number" ? booking_state.party_size : null,
+        date: typeof booking_state.date === "string" ? booking_state.date : null,
+        time: typeof booking_state.time === "string" ? booking_state.time : null,
+      });
+      const smallPromptMessages: OpenAI.Chat.ChatCompletionMessageParam[] = [
+        { role: "system", content: smallPromptSystem },
+        { role: "user", content: userContentForPersistence },
+      ];
+      const smallPromptStream = await latency.time("small_prompt_openai_stream_open", () =>
+        openai.chat.completions.create({
+          model: SMALL_PROMPT_MODEL,
+          temperature: 0.1,
+          max_tokens: 35,
+          messages: smallPromptMessages,
+          stream: true,
+        })
+      );
+
+      let rawSmallPromptText = "";
+      for await (const chunk of smallPromptStream) {
+        const delta = chunk.choices?.[0]?.delta;
+        if (typeof delta?.content !== "string" || !delta.content.length) continue;
+        rawSmallPromptText += delta.content;
+      }
+      latency.mark("small_prompt_openai_stream_read");
+
+      const spokenSmallPromptText = enforceSmallPromptBookingQuestion(
+        rawSmallPromptText,
+        booking_state,
+      );
+
+      const safeSpokenText = safeStreamingSpeechChunk(spokenSmallPromptText);
+      if (safeSpokenText) {
+        send({ type: "speech_chunk", text: safeSpokenText });
+      }
+
+      const payload = makeAssistantPayload({
+        conversationId: activeConversationId,
+        spokenText: spokenSmallPromptText,
+        intent: "small_prompt",
+        step: "collect_booking_details",
+        nextExpectedInput: nextSmallPromptExpectedInput(booking_state),
+        uiActions: [],
+        booking: null,
+        map: null,
+        filters: null,
+      });
+
+      send({ type: "final", payload });
+      deferTask("small_prompt_persist", (async () => {
+        await supabaseAdmin.from("chat_messages").insert({
+          conversation_id: activeConversationId,
+          role: "user",
+          content: userContentForPersistence,
+          metadata: { kind: "orchestrator", fast_small_prompt: true },
+        });
+        await supabaseAdmin.from("chat_messages").insert({
+          conversation_id: activeConversationId,
+          role: "assistant",
+          content: payload.spoken_text,
+          metadata: {
+            kind: "orchestrator",
+            fast_small_prompt: true,
+            full_response: payload,
+          },
+        });
+      })());
+      latency.done({ path: "small_prompt_fast" });
+      return;
     }
 
     history = await loadHistory();
@@ -3271,6 +3775,7 @@ Deno.serve(async (req) => {
         if (
           !selected_restaurant_id &&
           transcript &&
+          hasRestaurantSelectionIntent(transcript, priorWhichAsks) &&
           (currentStatus === "idle" || currentStatus === "collecting_minimum_fields")
         ) {
           const scored = rows
@@ -3408,14 +3913,36 @@ Deno.serve(async (req) => {
       iterations++;
 
       // Only force search_restaurants on the very first message of a fresh conversation
-      // that has no prior search. Once any turn has searched, the model decides on its own.
+      // when the transcript is actually part of the dining/booking process. Generic
+      // personal/off-topic questions must stay small prompts and use no tools.
       const isFirstTurnNoRestaurant =
         iterations === 1 &&
         !selected_restaurant_id &&
         !booking_state.restaurant_id &&
         (!booking_state.status || booking_state.status === "idle") &&
         (history?.length ?? 0) === 0 &&
-        !alreadySearched;
+        !alreadySearched &&
+        bookingProcessIntent(transcript);
+
+      // WS-1.5: Detect conversational prompts on the very first turn and
+      // skip the tool catalogue. This shaves ~800-1500 ms off greetings,
+      // "what time is it", "thanks", "repeat that", etc. by avoiding both
+      // the forced tool round-trip and the longer tool-aware system prompt.
+      const smallPromptNoTool = iterations === 1 && !bookingProcessIntent(transcript);
+      const fastConversational = iterations === 1 && isConversationalPrompt(transcript);
+      const effectiveToolChoice: "required" | "auto" | "none" = fastConversational
+        ? "none"
+        : (smallPromptNoTool ? "none" : (isFirstTurnNoRestaurant ? "required" : "auto"));
+      const effectiveSystemPrompt =
+        smallPromptNoTool || fastConversational
+          ? buildSmallPromptSystemPrompt({
+            restaurantName: typeof booking_state.restaurant_name === "string" ? booking_state.restaurant_name : null,
+            restaurantId: typeof booking_state.restaurant_id === "string" ? booking_state.restaurant_id : null,
+            partySize: typeof booking_state.party_size === "number" ? booking_state.party_size : null,
+            date: typeof booking_state.date === "string" ? booking_state.date : null,
+            time: typeof booking_state.time === "string" ? booking_state.time : null,
+          })
+          : systemPrompt;
 
       // Streaming tool-loop call. Text deltas are flushed as `speech_chunk`
       // SSE frames at sentence boundaries so the client can begin TTS
@@ -3423,15 +3950,19 @@ Deno.serve(async (req) => {
       // perceived-latency win on conversational turns. Tool-call deltas
       // are accumulated and reconstructed back into a non-streaming
       // `choice` shape for the existing tool-execution branches below.
+      const chatParams: OpenAI.Chat.ChatCompletionCreateParamsStreaming = {
+        model: smallPromptNoTool || fastConversational ? SMALL_PROMPT_MODEL : ORCHESTRATOR_MODEL,
+        temperature: smallPromptNoTool || fastConversational ? 0.2 : undefined,
+        max_tokens: smallPromptNoTool || fastConversational ? 35 : 600,
+        messages: [{ role: "system", content: effectiveSystemPrompt }, ...messages],
+        stream: true,
+      };
+      if (effectiveToolChoice !== "none") {
+        chatParams.tools = TOOLS;
+        chatParams.tool_choice = effectiveToolChoice;
+      }
       const llmStream = await latency.time("openai_stream_open", () =>
-        openai.chat.completions.create({
-          model: "gpt-4o-mini",
-          max_tokens: 600,
-          messages: [{ role: "system", content: systemPrompt }, ...messages],
-          tools: TOOLS,
-          tool_choice: isFirstTurnNoRestaurant ? "required" : "auto",
-          stream: true,
-        })
+        openai.chat.completions.create(chatParams)
       );
 
       let accContent = "";
@@ -3452,7 +3983,7 @@ Deno.serve(async (req) => {
         const delta = ch.delta ?? {};
 
         if (delta.tool_calls?.length) {
-          if (!iterationHasToolCalls) {
+          if (!iterationHasToolCalls && !smallPromptNoTool && !fastConversational) {
             iterationHasToolCalls = true;
             // Model started streaming text and then pivoted to a tool call.
             // Discard the in-flight audio so we don't speak text that's
@@ -3483,8 +4014,14 @@ Deno.serve(async (req) => {
           if (!iterationHasToolCalls) {
             speechBuffer += delta.content;
             // Flush every complete sentence chunk available in the buffer.
+            // WS-1.6: First chunk uses an aggressive ≥20-char clause flush so
+            // the user hears audio sooner; later chunks revert to the normal
+            // 60/120-char rules to keep continuous speech intact.
             while (true) {
-              const flushed = takeSentenceChunk(speechBuffer);
+              const flushed = takeSentenceChunk(
+                speechBuffer,
+                chunksEmittedThisIter === 0,
+              );
               if (!flushed.chunk) break;
               speechBuffer = flushed.remainder;
               const safeChunk = safeStreamingSpeechChunk(flushed.chunk);
@@ -3536,6 +4073,30 @@ Deno.serve(async (req) => {
 
       if (choice.finish_reason === "tool_calls" && choice.message.tool_calls?.length) {
         messages.push(choice.message as OpenAI.Chat.ChatCompletionMessageParam);
+
+        // WS-2.1: Speak a contextual filler the moment we know which tool
+        // is about to run. Pick the filler from the FIRST tool call (most
+        // turns only have one); if multiple tools are called we still speak
+        // a single filler to avoid stepping on ourselves. The filler goes
+        // through the same speech_chunk pathway, and crucially is sent
+        // AFTER any earlier discard_pending_speech so it survives the
+        // queue reset on the client.
+        const primaryToolName = choice.message.tool_calls[0]?.function?.name;
+        const fillerText = fillerForTool(primaryToolName);
+        const safeFiller = safeStreamingSpeechChunk(fillerText);
+        if (safeFiller) {
+          send({ type: "speech_chunk", text: safeFiller });
+        }
+
+        // WS-2.3: If the tool round itself drags on (DB cold start, OSM
+        // lookup, Stripe), emit a follow-up filler at 2.5s so the user
+        // doesn't hear silence. Cleared once the tool loop iterates again.
+        const toolWatchdog = setTimeout(() => {
+          const safeWait = safeStreamingSpeechChunk("Still working on that.");
+          if (safeWait) {
+            try { send({ type: "speech_chunk", text: safeWait }); } catch { /* stream may be closed */ }
+          }
+        }, 2500);
 
         let didSearch = false;
 
@@ -4337,6 +4898,10 @@ Deno.serve(async (req) => {
 
           messages.push({ role: "tool", tool_call_id: tc.id, content: toolResult });
         }
+        // WS-2.3: Tool round finished — cancel the "still working" watchdog
+        // so the next iteration's real reply isn't preceded by a useless
+        // filler.
+        clearTimeout(toolWatchdog);
         // After search_restaurants, go straight to the final JSON turn.
         // Prevents the model from eagerly calling check_availability without date/party_size.
         if (didSearch) break;
@@ -4490,6 +5055,10 @@ Deno.serve(async (req) => {
           }
         }
       }
+    }
+
+    if (clearlySmallPromptIntent(transcript)) {
+      lastTextReply = enforceSmallPromptBookingQuestion(lastTextReply, booking_state);
     }
 
     // ── Deterministic JSON shaper ────────────────────────────────────────────
@@ -4766,6 +5335,29 @@ Deno.serve(async (req) => {
     );
 
     const spokenText = typeof parsed.spoken_text === "string" ? parsed.spoken_text : "";
+    const endsAvailabilityTurn =
+      /\b(no tables|not available|unavailable|try another|instead)\b/i.test(spokenText) &&
+      !/checking availability|checking for availability|checking available times|looking for available times/i.test(spokenText);
+    if (endsAvailabilityTurn) {
+      parsed.ui_actions = (parsed.ui_actions as Array<Record<string, unknown>>).filter(
+        (action) => action.type !== "load_availability",
+      );
+      for (let i = derivedActions.length - 1; i >= 0; i -= 1) {
+        if (derivedActions[i]?.type === "load_availability") {
+          derivedActions.splice(i, 1);
+        }
+      }
+      if (
+        parsed.booking &&
+        typeof parsed.booking === "object" &&
+        (parsed.booking as Record<string, unknown>).status === "loading_availability"
+      ) {
+        (parsed.booking as Record<string, unknown>).status = "collecting_minimum_fields";
+      }
+      if (bookingDelta.status === "loading_availability") {
+        delete bookingDelta.status;
+      }
+    }
     const impliesAvailabilityLookup = /checking availability|checking for availability|checking available times|looking for available times/i.test(spokenText);
     if (impliesAvailabilityLookup) {
       const hasAvailabilityAction = derivedActions.some((action) => action.type === "load_availability");
@@ -4936,7 +5528,7 @@ Deno.serve(async (req) => {
       responseActions.push({ type: "set_booking_field", field: "date", value: preFilled.date });
       parsed.booking = { ...((parsed.booking as Record<string, unknown>) ?? {}), date: preFilled.date };
     }
-    if (preFilled.time && currentTime == null && !alreadySetsField("time")) {
+    if (preFilled.time && !alreadySetsField("time")) {
       responseActions.push({ type: "set_booking_field", field: "time", value: preFilled.time });
       parsed.booking = { ...((parsed.booking as Record<string, unknown>) ?? {}), time: preFilled.time };
     }
@@ -5006,9 +5598,41 @@ Deno.serve(async (req) => {
     // supply a schema-valid prompt, but keep one last guard so the user never
     // gets dead silence if a later rewrite clears spoken_text unexpectedly.
     if (!parsed.spoken_text || !(parsed.spoken_text as string).trim()) {
-      parsed.spoken_text = "What kind of restaurant are you looking for?";
+      parsed.spoken_text = fallbackSpokenTextForContext({
+        transcript,
+        selectedRestaurantId: selected_restaurant_id,
+        bookingState: booking_state,
+        visibleRestaurants: visibleRestaurantRows,
+        lastSearchRestaurants: lastSearchRows,
+      });
     } else if (typeof parsed.spoken_text === "string") {
-      parsed.spoken_text = scrubGenericLookupPrompt(parsed.spoken_text);
+      const scrubbed = scrubGenericLookupPrompt(parsed.spoken_text);
+      parsed.spoken_text = scrubbed === parsed.spoken_text
+        ? scrubbed
+        : fallbackSpokenTextForContext({
+          transcript,
+          selectedRestaurantId: selected_restaurant_id,
+          bookingState: booking_state,
+          visibleRestaurants: visibleRestaurantRows,
+          lastSearchRestaurants: lastSearchRows,
+        });
+    }
+
+    if (
+      typeof parsed.spoken_text === "string" &&
+      /\b(no tables|not available|unavailable|try another|instead)\b/i.test(parsed.spoken_text) &&
+      !/checking availability|checking for availability|checking available times|looking for available times/i.test(parsed.spoken_text)
+    ) {
+      parsed.ui_actions = Array.isArray(parsed.ui_actions)
+        ? (parsed.ui_actions as Array<Record<string, unknown>>).filter((action) => action?.type !== "load_availability")
+        : [];
+      if (
+        parsed.booking &&
+        typeof parsed.booking === "object" &&
+        (parsed.booking as Record<string, unknown>).status === "loading_availability"
+      ) {
+        (parsed.booking as Record<string, unknown>).status = "collecting_minimum_fields";
+      }
     }
 
     const mergedBookingForMemory = {

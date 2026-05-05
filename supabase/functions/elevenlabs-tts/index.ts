@@ -40,7 +40,11 @@ Deno.serve(async (req) => {
       .single();
     if (profileErr) return jsonRes({ error: "Unauthorized" }, 401);
 
-    const body = await req.json() as { text?: string; voice_id?: string };
+    const url = new URL(req.url);
+    const queryText = url.searchParams.get("text");
+    const body = queryText != null
+      ? { text: queryText, voice_id: url.searchParams.get("voice_id") ?? undefined }
+      : await req.json() as { text?: string; voice_id?: string };
     const rawText = (body.text ?? "").trim();
     if (!rawText) return jsonRes({ error: "text is required" }, 400);
 
@@ -62,7 +66,7 @@ Deno.serve(async (req) => {
         },
         body: JSON.stringify({
           text,
-          model_id: "eleven_turbo_v2_5",
+          model_id: "eleven_flash_v2_5",
           voice_settings: { stability: 0.5, similarity_boost: 0.8, speed: 1.1 },
         }),
       });

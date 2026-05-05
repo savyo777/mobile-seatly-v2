@@ -59,12 +59,15 @@ function labelForStatus(status: AssistantState['voiceStatus']) {
 export function VoiceOrb({
   status,
   onPress,
+  disabled = false,
 }: {
   status: AssistantState['voiceStatus'];
   onPress: () => void;
+  disabled?: boolean;
 }) {
   const styles = useStyles();
   const active = status === 'listening' || status === 'speaking';
+  const isDisabled = disabled || status === 'processing';
   const pulse = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
@@ -102,9 +105,11 @@ export function VoiceOrb({
     outputRange: [1, status === 'speaking' ? 1.6 : 1.16],
   });
   const iconName =
-    status === 'listening' ? 'mic-off-outline' : 'mic-outline';
+    disabled || status === 'listening' ? 'mic-off-outline' : 'mic-outline';
   const gradientColors =
-    status === 'speaking'
+    disabled
+      ? (['#3A3322', '#2A2518'] as const)
+      : status === 'speaking'
       ? (['#C8A951', '#E8C87A'] as const)
       : status === 'processing'
         ? (['#A68B3E', '#C8A951'] as const)
@@ -133,12 +138,13 @@ export function VoiceOrb({
       {status === 'listening' ? <View pointerEvents="none" style={styles.pulseRing} /> : null}
       <Pressable
         accessibilityRole="button"
-        accessibilityLabel={labelForStatus(status)}
+        accessibilityLabel={disabled ? 'Voice unavailable' : labelForStatus(status)}
         onPress={onPress}
-        disabled={status === 'processing'}
+        disabled={isDisabled}
         style={({ pressed }) => [
           styles.orb,
-          pressed && status !== 'processing' && { opacity: 0.82, transform: [{ scale: 0.95 }] },
+          disabled && { opacity: 0.72 },
+          pressed && !isDisabled && { opacity: 0.82, transform: [{ scale: 0.95 }] },
         ]}
       >
         <LinearGradient
@@ -150,7 +156,7 @@ export function VoiceOrb({
           {status === 'processing' ? (
             <ActivityIndicator color="#000000" />
           ) : (
-            <Ionicons name={iconName} size={27} color="#000000" />
+            <Ionicons name={iconName} size={27} color={disabled ? '#C8A951' : '#000000'} />
           )}
         </LinearGradient>
       </Pressable>

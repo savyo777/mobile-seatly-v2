@@ -18,7 +18,10 @@ import {
   useAssistantStore,
   type AssistantAction,
 } from '@/lib/cenaiva/state/assistantStore';
-import { useCenaivaOrchestrator } from '@/lib/cenaiva/api/useCenaivaOrchestrator';
+import {
+  useCenaivaOrchestrator,
+  type OrchestratorTransport,
+} from '@/lib/cenaiva/api/useCenaivaOrchestrator';
 import { useCenaivaVoice } from '@/lib/cenaiva/voice/useCenaivaVoice';
 import { useCenaivaVoicePreference } from '@/lib/cenaiva/voice/CenaivaVoicePreferenceProvider';
 import type { TranscriptionPhase } from '@/lib/cenaiva/voice/useMobileTranscription';
@@ -30,6 +33,10 @@ import {
   getCenaivaRecommendationMode,
   normalizeSingleRestaurantRecommendationResponse,
 } from '@/lib/cenaiva/recommendationIntent';
+import {
+  getCenaivaImmediateFiller,
+  shouldResetCenaivaBookingContext,
+} from '@/lib/cenaiva/simplePromptIntent';
 
 type OpenOptions = { autoListen?: boolean; greetingText?: string };
 
@@ -59,6 +66,7 @@ const CenaivaAssistantContext = createContext<CenaivaAssistant | null>(null);
 const RELISTEN_AFTER_EMPTY_TURN_MS = 260;
 const RELISTEN_AFTER_ERROR_MS = 320;
 const RELISTEN_AFTER_RESPONSE_MS = 260;
+const FILLER_TO_RESPONSE_PAUSE_MS = 420;
 const MAX_EMPTY_RELISTENS = 2;
 const LOCATION_TURN_WAIT_MS = 250;
 const CENAIVA_OPEN_MAP_ZOOM = 11;
@@ -117,10 +125,54 @@ function debugTiming(event: string, details?: Record<string, unknown>) {
   else console.log(`[Cenaiva timing] ${event}`);
 }
 
+// WS-3.1: Per-turn latency summary. Aggregates the individual debugTiming
+// checkpoints into a single line at end of turn so we can spot regressions
+// against the 1500ms simple-prompt budget without scrolling through events.
+type LatencyCheckpoints = {
+  transcriptAt?: number;
+  firstSpeechChunkAt?: number;
+  requestSentAt?: number;
+  finalReceivedAt?: number;
+  playbackRequestedAt?: number;
+  firstAudioDecodedAt?: number;
+  streamingTransport?: OrchestratorTransport;
+};
+function logLatencySummary(turnStartedAt: number, c: LatencyCheckpoints, outcome: string) {
+  if (process.env.EXPO_PUBLIC_CENAIVA_VOICE_DEBUG !== 'true') return;
+  const ms = (t?: number) => (t == null ? null : t - turnStartedAt);
+  console.log('[Cenaiva timing] summary', {
+    outcome,
+    transcript_ms: ms(c.transcriptAt),
+    request_sent_ms: ms(c.requestSentAt),
+    first_speech_chunk_ms: ms(c.firstSpeechChunkAt),
+    final_received_ms: ms(c.finalReceivedAt),
+    playback_requested_ms: ms(c.playbackRequestedAt),
+    first_audio_decoded_ms: ms(c.firstAudioDecodedAt),
+    streaming_transport: c.streamingTransport ?? null,
+    total_ms: Date.now() - turnStartedAt,
+  });
+}
+
+function looksLikeFillerSpeech(text: string) {
+  return /^(hold on while i\b|one moment\b|still working\b)/i.test(text.trim());
+}
+
 function AssistantInner({ children }: { children: ReactNode }) {
   const { state, dispatch } = useAssistantStore();
   const orchestrator = useCenaivaOrchestrator();
-  const voice = useCenaivaVoice();
+  const activeLatencyRef = useRef<{
+    turnStartedAt: number;
+    checkpoints: LatencyCheckpoints;
+  } | null>(null);
+  const handleFirstAudioStart = useCallback(() => {
+    const active = activeLatencyRef.current;
+    if (!active || active.checkpoints.firstAudioDecodedAt) return;
+    active.checkpoints.firstAudioDecodedAt = Date.now();
+    debugTiming('first audio decoded', {
+      elapsedMs: active.checkpoints.firstAudioDecodedAt - active.turnStartedAt,
+    });
+  }, []);
+  const voice = useCenaivaVoice({ onFirstAudioStart: handleFirstAudioStart });
   const {
     isLoading: isVoicePreferenceLoading,
     needsSelection: voiceSelectionRequired,
@@ -235,6 +287,8 @@ function AssistantInner({ children }: { children: ReactNode }) {
         processingRef.current = false;
       }
       const turnStartedAt = Date.now();
+      const checkpoints: LatencyCheckpoints = { transcriptAt: turnStartedAt };
+      activeLatencyRef.current = { turnStartedAt, checkpoints };
       const recommendationMode = getCenaivaRecommendationMode(trimmed);
       debugTiming('transcript accepted', {
         length: trimmed.length,
@@ -250,6 +304,12 @@ function AssistantInner({ children }: { children: ReactNode }) {
       processingRef.current = true;
       voice.stopListening();
       commit({ type: 'SET_VOICE_STATUS', status: 'processing' });
+
+      const shouldResetContext = shouldResetCenaivaBookingContext(trimmed);
+      if (shouldResetContext && stateRef.current.booking.restaurant_id) {
+        commit({ type: 'RESET_ASSISTANT_CONTEXT' });
+        debugTiming('booking context reset for new search', { transcript: trimmed });
+      }
 
       const current = stateRef.current;
       const currentLocation = await getLocationForTurn();
@@ -312,30 +372,75 @@ function AssistantInner({ children }: { children: ReactNode }) {
         reservation_id: current.booking.reservation_id,
       };
 
-      let streamedText = '';
+      let serverStreamedText = '';
+      let serverChunkSeen = false;
+      let fillerQueued = false;
       const streamingActive = voice.isStreamingTTSAvailable && !opts?.silent;
+      const immediateFiller = streamingActive ? getCenaivaImmediateFiller(trimmed) : null;
+      if (immediateFiller) {
+        fillerQueued = true;
+        checkpoints.firstSpeechChunkAt = Date.now();
+        debugTiming('client filler queued', {
+          elapsedMs: Date.now() - turnStartedAt,
+          text: immediateFiller,
+        });
+        commit({ type: 'SET_LAST_SPOKEN_TEXT', text: immediateFiller });
+        voice.speakStreamingChunk(immediateFiller, {
+          pacingAfterMs: FILLER_TO_RESPONSE_PAUSE_MS,
+        });
+      }
       const callbacks = streamingActive
         ? {
+            onTransport: (transport: OrchestratorTransport) => {
+              checkpoints.streamingTransport = transport;
+            },
             onSpeechChunk: (text: string) => {
-              if (!streamedText) {
+              const normalize = (value: string) =>
+                value.replace(/\s+/g, ' ').replace(/[.!?,\s]+$/, '').trim().toLowerCase();
+              if (
+                immediateFiller &&
+                !serverChunkSeen &&
+                (normalize(text) === normalize(immediateFiller) || looksLikeFillerSpeech(text))
+              ) {
+                return;
+              }
+              if (!serverChunkSeen && !immediateFiller && !checkpoints.firstSpeechChunkAt) {
+                checkpoints.firstSpeechChunkAt = Date.now();
                 debugTiming('first speech chunk', { elapsedMs: Date.now() - turnStartedAt });
               }
-              streamedText += (streamedText ? ' ' : '') + text;
+              serverChunkSeen = true;
+              if (looksLikeFillerSpeech(text)) {
+                fillerQueued = true;
+                commit({ type: 'SET_LAST_SPOKEN_TEXT', text });
+                voice.speakStreamingChunk(text, {
+                  pacingAfterMs: FILLER_TO_RESPONSE_PAUSE_MS,
+                });
+                return;
+              }
+              serverStreamedText += (serverStreamedText ? ' ' : '') + text;
+              commit({ type: 'SET_LAST_SPOKEN_TEXT', text: serverStreamedText });
               voice.speakStreamingChunk(text);
             },
             onDiscardPendingSpeech: () => {
-              streamedText = '';
+              if (!serverChunkSeen) return;
+              serverChunkSeen = false;
+              serverStreamedText = '';
+              if (immediateFiller) {
+                commit({ type: 'SET_LAST_SPOKEN_TEXT', text: immediateFiller });
+              }
               voice.discardStreamingSpeech();
             },
           }
         : undefined;
 
       try {
+        checkpoints.requestSentAt = Date.now();
         debugTiming('orchestrator request sent', {
           elapsedMs: Date.now() - turnStartedAt,
           hasLocation: Boolean(currentLocation),
         });
         const response = await orchestrator.send(req, callbacks);
+        checkpoints.finalReceivedAt = Date.now();
         debugTiming('orchestrator final received', { elapsedMs: Date.now() - turnStartedAt });
         processingRef.current = false;
 
@@ -348,6 +453,8 @@ function AssistantInner({ children }: { children: ReactNode }) {
             await voice.speak(message);
           }
           commit({ type: 'SET_VOICE_STATUS', status: 'idle' });
+          logLatencySummary(turnStartedAt, checkpoints, 'no_response');
+          activeLatencyRef.current = null;
           return;
         }
 
@@ -394,9 +501,13 @@ function AssistantInner({ children }: { children: ReactNode }) {
           const normalize = (value: string) =>
             value.replace(/\s+/g, ' ').replace(/[.!?,\s]+$/, '').trim().toLowerCase();
           commit({ type: 'SET_VOICE_STATUS', status: 'speaking' });
+          checkpoints.playbackRequestedAt = Date.now();
           debugTiming('speech playback requested', { elapsedMs: Date.now() - turnStartedAt });
-          if (streamingActive && normalize(streamedText) && normalize(streamedText) === normalize(spokenText)) {
+          if (streamingActive && normalize(serverStreamedText) && normalize(serverStreamedText) === normalize(spokenText)) {
             await voice.drainStreamingSpeech();
+          } else if (streamingActive && fillerQueued && !normalize(serverStreamedText)) {
+            await voice.drainStreamingSpeech();
+            await voice.speak(spokenText);
           } else {
             if (streamingActive) voice.discardStreamingSpeech();
             await voice.speak(spokenText);
@@ -419,6 +530,8 @@ function AssistantInner({ children }: { children: ReactNode }) {
         } else {
           commit({ type: 'SET_VOICE_STATUS', status: 'idle' });
         }
+        logLatencySummary(turnStartedAt, checkpoints, 'ok');
+        activeLatencyRef.current = null;
       } catch {
         processingRef.current = false;
         if (streamingActive) voice.discardStreamingSpeech();
@@ -429,6 +542,8 @@ function AssistantInner({ children }: { children: ReactNode }) {
           await voice.speak(message);
         }
         commit({ type: 'SET_VOICE_STATUS', status: 'idle' });
+        logLatencySummary(turnStartedAt, checkpoints, 'error');
+        activeLatencyRef.current = null;
       }
     },
     [
@@ -588,6 +703,7 @@ function AssistantInner({ children }: { children: ReactNode }) {
       }
       forceStopWakeWordRef.current();
       voice.primeTTS();
+      orchestrator.prewarm?.();
       void requestWakePermissionRef.current();
       void requestLocation().then((location) => {
         if (!location || !isOpenRef.current) return;
@@ -696,24 +812,35 @@ function AssistantInner({ children }: { children: ReactNode }) {
   }, [commit, forceStopWakeWord, voice]);
 
   const value = useMemo<CenaivaAssistant>(
-    () => ({
-      open,
-      close,
-      sendTranscript,
-      startListening,
-      stopListening,
-      stopSpeaking,
-      setSpeechHints,
-      setTextMode,
-      voicePermissionStatus: wakePermissionStatus,
-      canAskVoicePermission: canAskWakePermissionAgain,
-      isWakeWordSupported,
-      requestVoicePermission: requestWakePermission,
-      openVoicePermissionSettings: openWakePermissionSettings,
-      voiceTranscript: voice.liveTranscript,
-      voiceActivity: voice.transcriptionPhase,
-      voiceLastError: voice.transcriptionLastError,
-    }),
+    () => {
+      const voicePermissionStatus: CenaivaVoicePermissionStatus =
+        voice.permissionDenied
+          ? 'denied'
+          : voice.transcriptionUnavailable
+            ? 'unavailable'
+            : wakePermissionStatus === 'blocked' || wakePermissionStatus === 'denied'
+              ? wakePermissionStatus
+              : 'unknown';
+
+      return {
+        open,
+        close,
+        sendTranscript,
+        startListening,
+        stopListening,
+        stopSpeaking,
+        setSpeechHints,
+        setTextMode,
+        voicePermissionStatus,
+        canAskVoicePermission: canAskWakePermissionAgain,
+        isWakeWordSupported,
+        requestVoicePermission: requestWakePermission,
+        openVoicePermissionSettings: openWakePermissionSettings,
+        voiceTranscript: voice.liveTranscript,
+        voiceActivity: voice.transcriptionPhase,
+        voiceLastError: voice.transcriptionLastError,
+      };
+    },
     [
       canAskWakePermissionAgain,
       close,
@@ -727,8 +854,10 @@ function AssistantInner({ children }: { children: ReactNode }) {
       startListening,
       stopListening,
       stopSpeaking,
+      voice.permissionDenied,
       voice.liveTranscript,
       voice.transcriptionPhase,
+      voice.transcriptionUnavailable,
       voice.transcriptionLastError,
       wakePermissionStatus,
     ],

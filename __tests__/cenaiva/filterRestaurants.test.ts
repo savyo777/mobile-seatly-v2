@@ -47,9 +47,9 @@ describe('filterCenaivaRestaurants', () => {
     expect(next.map((item) => item.id)).toEqual(['italian-1']);
   });
 
-  it('applies cuisine filters inside the current marker set', () => {
+  it('trusts assistant marker order instead of re-filtering named suggestions', () => {
     const next = filterCenaivaRestaurants(restaurants, ['italian-1', 'thai-1'], { cuisine: ['Thai'] });
-    expect(next.map((item) => item.id)).toEqual(['thai-1']);
+    expect(next.map((item) => item.id)).toEqual(['italian-1', 'thai-1']);
   });
 
   it('preserves the assistant suggestion order when marker ids are present', () => {
@@ -62,12 +62,12 @@ describe('filterCenaivaRestaurants', () => {
     expect(next.map((item) => item.id)).toEqual(['french-1']);
   });
 
-  it('expands European cuisine to related cuisines while preserving assistant order', () => {
+  it('expands European cuisine when there is no assistant marker set', () => {
     const next = filterCenaivaRestaurants(
       restaurants,
-      ['thai-1', 'greek-1', 'french-1', 'italian-1'],
+      [],
       { cuisine: ['European'] },
     );
-    expect(next.map((item) => item.id)).toEqual(['greek-1', 'french-1', 'italian-1']);
+    expect(next.map((item) => item.id)).toEqual(['italian-1', 'french-1', 'greek-1']);
   });
 });

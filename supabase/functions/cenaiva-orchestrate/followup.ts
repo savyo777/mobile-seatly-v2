@@ -272,6 +272,34 @@ function matchesCuisinePhrase(transcript: string, cuisine: string): boolean {
   return refinement.test(normalizedTranscript);
 }
 
+function cuisineGroupFromTranscript(transcript: string): { label: string; terms: string[] } | null {
+  const normalized = normalizePhrase(transcript);
+  if (/\b(european|europeean|europian|euro)\b/i.test(normalized)) {
+    return {
+      label: "European",
+      terms: [
+        "european",
+        "modern european",
+        "italian",
+        "french",
+        "spanish",
+        "mediterranean",
+        "greek",
+        "portuguese",
+        "bistro",
+        "tapas",
+      ],
+    };
+  }
+  if (/\b(asian)\b/i.test(normalized)) {
+    return {
+      label: "Asian",
+      terms: ["asian", "chinese", "japanese", "korean", "thai", "vietnamese", "sushi", "ramen"],
+    };
+  }
+  return null;
+}
+
 function inferOccasionTone(transcript: string): "date" | "business" | "family" | "group" | "birthday" | null {
   const normalized = normalizePhrase(transcript);
   if (!normalized) return null;
@@ -405,7 +433,23 @@ function detectCuisineRefinement(
     .filter((bucket) => matchesCuisinePhrase(transcript, bucket.label))
     .sort((a, b) => b.label.length - a.label.length);
 
-  if (!matches.length) return null;
+  if (!matches.length) {
+    const group = cuisineGroupFromTranscript(transcript);
+    if (!group) return null;
+    const restaurantIds = visibleRestaurants
+      .filter((restaurant) => {
+        const cuisine = normalizePhrase(restaurant.cuisine_type ?? "");
+        return group.terms.some((term) => cuisine.includes(normalizePhrase(term)));
+      })
+      .map((restaurant) => restaurant.id);
+    if (restaurantIds.length === 0 || restaurantIds.length === visibleRestaurants.length) {
+      return null;
+    }
+    return {
+      cuisine: group.label,
+      restaurant_ids: restaurantIds,
+    };
+  }
   const best = matches[0];
   if (best.restaurant_ids.length === 0 || best.restaurant_ids.length === visibleRestaurants.length) {
     return null;
@@ -451,6 +495,10 @@ function defaultPhase(
     default:
       return { intent: "discover_restaurants", step: "choose_cuisine", next_expected_input: "cuisine" };
   }
+}
+
+function directBookingIntent(transcript: string): boolean {
+  return /\b(book|reserve|get me a table|get me a spot|make a reservation)\b/i.test(transcript);
 }
 
 export function buildDeterministicFollowUp(context: FollowUpContext): DeterministicFollowUp {
@@ -808,7 +856,15 @@ export function buildDeterministicFollowUp(context: FollowUpContext): Determinis
       if (names.length === 2) return `${names[0]} and ${names[1]} look good — which one?`;
       return `${names[0]}, ${names[1]}, and ${names[2]} are options — which one?`;
     }
-    return "What kind of restaurant are you looking for?";
+    const searched = context.lastSearchRestaurants ?? [];
+    if (searched.length > 0) {
+      const names = searched.slice(0, 3).map((r) => r.name);
+      if (names.length === 1) return `I found ${names[0]}. Want that one?`;
+      if (names.length === 2) return `${names[0]} or ${names[1]} look good. Which one sounds best?`;
+      return `${names[0]}, ${names[1]}, or ${names[2]} look good. Which one sounds best?`;
+    }
+    if (directBookingIntent(context.transcript)) return "Which restaurant should I book?";
+    return "Tell me a cuisine, vibe, or area and I'll narrow it down.";
   })();
 
   return {

@@ -1,6 +1,7 @@
 import { requireOptionalNativeModule } from 'expo';
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { AppState } from 'react-native';
+import { AppState, Platform } from 'react-native';
+import * as Device from 'expo-device';
 import {
   RecordingPresets,
   requestRecordingPermissionsAsync,
@@ -12,12 +13,25 @@ import { getSupabaseEnv, isSupabaseConfigured } from '@/lib/supabase/env';
 
 const DEEPGRAM_URL = 'https://api.deepgram.com/v1/listen';
 const MAX_KEYTERMS = 12;
-const SILENCE_TIMEOUT_MS = 600;
+const SILENCE_TIMEOUT_MS = 400;
 const NO_SPEECH_TIMEOUT_MS = 3_000;
 const TURN_TIMEOUT_MS = 30_000;
 const NATIVE_TURN_TIMEOUT_MS = 12_000;
 const METERING_SPEECH_DB = -24;
 const MIN_RECORDING_MS = 800;
+const IS_IOS_SIMULATOR = Platform.OS === 'ios' && Device.isDevice === false;
+const CENAIVA_STT_RECORDING_OPTIONS = {
+  ...RecordingPresets.HIGH_QUALITY,
+  ...(IS_IOS_SIMULATOR
+    ? {}
+    : {
+        sampleRate: 16_000,
+        numberOfChannels: 1,
+        bitRate: 64_000,
+      }),
+  isMeteringEnabled: true,
+};
+const DISABLE_NATIVE_SPEECH_RECOGNITION = IS_IOS_SIMULATOR;
 
 export type TranscriptionPhase =
   | 'idle'
@@ -41,14 +55,22 @@ type NativeSpeech = {
 function initNativeSpeechModule(): NativeSpeech | null {
   const raw = requireOptionalNativeModule<NativeSpeech>('ExpoSpeechRecognition');
   if (!raw) return null;
+  const start = raw.start.bind(raw);
   const stop = raw.stop.bind(raw);
   const abort = raw.abort.bind(raw);
+  raw.start = (options: Record<string, unknown>) => {
+    start({
+      ...options,
+      iosVoiceProcessingEnabled: false,
+      volumeChangeEventOptions: { enabled: false },
+    });
+  };
   raw.stop = () => stop();
   raw.abort = () => abort();
   return raw;
 }
 
-const NATIVE_SPEECH = initNativeSpeechModule();
+const NATIVE_SPEECH = DISABLE_NATIVE_SPEECH_RECOGNITION ? null : initNativeSpeechModule();
 
 function debugVoice(message: string, details?: Record<string, unknown>) {
   if (process.env.EXPO_PUBLIC_CENAIVA_VOICE_DEBUG === 'true') {
@@ -113,10 +135,7 @@ function shouldFallbackToNative(error: unknown) {
 
 export function useMobileTranscription() {
   const { session } = useAuthSession();
-  const recorder = useAudioRecorder({
-    ...RecordingPresets.HIGH_QUALITY,
-    isMeteringEnabled: true,
-  });
+  const recorder = useAudioRecorder(CENAIVA_STT_RECORDING_OPTIONS);
   const [isListening, setIsListening] = useState(false);
   const [liveTranscript, setLiveTranscript] = useState('');
   const [permissionDenied, setPermissionDenied] = useState(false);
@@ -314,8 +333,9 @@ export function useMobileTranscription() {
             maxAlternatives: 3,
             contextualStrings: normalizeKeyterms(hints),
             addsPunctuation: true,
+            iosVoiceProcessingEnabled: false,
+            volumeChangeEventOptions: { enabled: false },
             iosTaskHint: 'search',
-            iosVoiceProcessingEnabled: true,
             androidIntentOptions: {
               EXTRA_LANGUAGE_MODEL: 'free_form',
               EXTRA_PARTIAL_RESULTS: true,
@@ -402,7 +422,19 @@ export function useMobileTranscription() {
           return await startNativeSpeechRecognition(hints);
         } catch (err) {
           const message = err instanceof Error ? err.message : String(err);
-          debugVoice('native-first speech failed; trying deepgram fallback', { message });
+          if (message === 'audio-capture') {
+            debugVoice('native-first speech hit mic contention; retrying native once', { message });
+            await new Promise((resolve) => setTimeout(resolve, 250));
+            try {
+              return await startNativeSpeechRecognition(hints);
+            } catch (retryErr) {
+              const retryMessage = retryErr instanceof Error ? retryErr.message : String(retryErr);
+              debugVoice('native retry failed; trying deepgram fallback', { message: retryMessage });
+              err = retryErr;
+            }
+          } else {
+            debugVoice('native-first speech failed; trying deepgram fallback', { message });
+          }
           if (!deepgramEnabled() || !session?.access_token || !isSupabaseConfigured()) {
             throw err;
           }

@@ -2,9 +2,13 @@ import { useCallback, useMemo } from 'react';
 import { useMobileTranscription } from '@/lib/cenaiva/voice/useMobileTranscription';
 import { useMobileTTS } from '@/lib/cenaiva/voice/useMobileTTS';
 
-export function useCenaivaVoice() {
+type UseCenaivaVoiceOptions = {
+  onFirstAudioStart?: () => void;
+};
+
+export function useCenaivaVoice(options: UseCenaivaVoiceOptions = {}) {
   const transcription = useMobileTranscription();
-  const tts = useMobileTTS();
+  const tts = useMobileTTS({ onFirstAudioStart: options.onFirstAudioStart });
 
   const stopListening = useCallback(() => {
     transcription.stopListening();

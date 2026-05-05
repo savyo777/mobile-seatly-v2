@@ -1,5 +1,5 @@
-import { useCallback, useRef, useState } from 'react';
-import { createAudioPlayer, setAudioModeAsync, type AudioPlayer } from 'expo-audio';
+import { useCallback, useEffect, useRef, useState } from 'react';
+import { createAudioPlayer, setAudioModeAsync, type AudioPlayer, type AudioSource } from 'expo-audio';
 import * as FileSystem from 'expo-file-system/legacy';
 import * as Speech from 'expo-speech';
 import { useAuthSession } from '@/lib/auth/AuthContext';
@@ -8,10 +8,24 @@ import { getSupabaseEnv, isSupabaseConfigured } from '@/lib/supabase/env';
 
 type QueueEntry = {
   text: string;
-  promise: Promise<string | null>;
+  promise: Promise<TTSPlayable | null>;
+  pacingAfterMs: number;
 };
 
 type PlayResult = 'played' | 'failed' | 'stopped';
+
+type StreamingChunkOptions = {
+  pacingAfterMs?: number;
+};
+
+type TTSPlayable = {
+  source: AudioSource;
+  cleanupUri?: string;
+};
+
+type UseMobileTTSOptions = {
+  onFirstAudioStart?: () => void;
+};
 
 function arrayBufferToBase64(buffer: ArrayBuffer): string {
   const bytes = new Uint8Array(buffer);
@@ -52,7 +66,11 @@ function elevenLabsEnabled() {
   return process.env.EXPO_PUBLIC_ELEVENLABS_ENABLED !== 'false';
 }
 
-export function useMobileTTS() {
+function delay(ms: number) {
+  return new Promise<void>((resolve) => setTimeout(resolve, ms));
+}
+
+export function useMobileTTS(options: UseMobileTTSOptions = {}) {
   const { session } = useAuthSession();
   const { voiceId } = useCenaivaVoicePreference();
   const [isSpeaking, setIsSpeaking] = useState(false);
@@ -63,6 +81,15 @@ export function useMobileTTS() {
   const queueRunningRef = useRef(false);
   const queueResolversRef = useRef<Array<() => void>>([]);
   const currentPlaybackResolverRef = useRef<((result: PlayResult) => void) | null>(null);
+  const onFirstAudioStartRef = useRef(options.onFirstAudioStart);
+
+  useEffect(() => {
+    onFirstAudioStartRef.current = options.onFirstAudioStart;
+  }, [options.onFirstAudioStart]);
+
+  const markFirstAudioStart = useCallback(() => {
+    onFirstAudioStartRef.current?.();
+  }, []);
 
   const cleanupTempFiles = useCallback(async () => {
     const files = tempFilesRef.current;
@@ -103,8 +130,29 @@ export function useMobileTTS() {
     void cleanupTempFiles();
   }, [cleanupTempFiles]);
 
+  const createTTSStreamPlayable = useCallback(
+    (text: string): TTSPlayable | null => {
+      if (!elevenLabsEnabled() || !isSupabaseConfigured() || !session?.access_token) {
+        return null;
+      }
+      const { url, anonKey } = getSupabaseEnv();
+      const params = new URLSearchParams({ text });
+      if (voiceId) params.set('voice_id', voiceId);
+      return {
+        source: {
+          uri: `${url}/functions/v1/elevenlabs-tts?${params.toString()}`,
+          headers: {
+            Authorization: `Bearer ${session.access_token}`,
+            apikey: anonKey,
+          },
+        },
+      };
+    },
+    [session?.access_token, voiceId],
+  );
+
   const fetchTTSFile = useCallback(
-    async (text: string): Promise<string | null> => {
+    async (text: string): Promise<TTSPlayable | null> => {
       if (!elevenLabsEnabled() || !isSupabaseConfigured() || !session?.access_token || !FileSystem.cacheDirectory) {
         return null;
       }
@@ -135,7 +183,7 @@ export function useMobileTTS() {
         const info = await FileSystem.getInfoAsync(target).catch(() => null);
         if (!info?.exists || !info.size) return null;
         if (!tempFilesRef.current.includes(target)) tempFilesRef.current.push(target);
-        return target;
+        return { source: { uri: target }, cleanupUri: target };
       } catch {
         return null;
       }
@@ -146,20 +194,27 @@ export function useMobileTTS() {
   const speakWithFallback = useCallback(
     async (text: string) => {
       await new Promise<void>((resolve) => {
+        let started = false;
+        const markStarted = () => {
+          if (started) return;
+          started = true;
+          markFirstAudioStart();
+        };
         Speech.speak(text, {
           language: 'en',
+          onStart: markStarted,
           onDone: resolve,
           onStopped: resolve,
           onError: () => resolve(),
         });
+        setTimeout(markStarted, 0);
       });
     },
-    [],
+    [markFirstAudioStart],
   );
 
-  const playFile = useCallback(
-    async (uri: string): Promise<PlayResult> => {
-      if (!uri.trim()) return 'failed';
+  const playSource = useCallback(
+    async (playable: TTSPlayable): Promise<PlayResult> => {
       try {
         await setAudioModeAsync({
           playsInSilentMode: true,
@@ -171,28 +226,51 @@ export function useMobileTTS() {
         } catch {
           // ignore stale player
         }
-        const player = createAudioPlayer({ uri }, { downloadFirst: false });
+        const player = createAudioPlayer(playable.source, {
+          downloadFirst: false,
+          preferredForwardBufferDuration: 0.2,
+        });
         playerRef.current = player;
         setIsSpeaking(true);
 
         const result = await new Promise<PlayResult>((resolve) => {
           let resolved = false;
+          let firstAudioStarted = false;
           let timeout: ReturnType<typeof setTimeout> | null = null;
+          let startTimeout: ReturnType<typeof setTimeout> | null = null;
+          const markStarted = () => {
+            if (resolved) return;
+            if (firstAudioStarted) return;
+            firstAudioStarted = true;
+            if (startTimeout) {
+              clearTimeout(startTimeout);
+              startTimeout = null;
+            }
+            markFirstAudioStart();
+          };
           const finish = (next: PlayResult) => {
             if (resolved) return;
             resolved = true;
             currentPlaybackResolverRef.current = null;
             sub?.remove?.();
             if (timeout) clearTimeout(timeout);
+            if (startTimeout) clearTimeout(startTimeout);
             resolve(next);
           };
           currentPlaybackResolverRef.current = finish;
           const sub = (player as unknown as {
             addListener?: (
               event: string,
-              listener: (status: { didJustFinish?: boolean; playing?: boolean }) => void,
+              listener: (status: {
+                didJustFinish?: boolean;
+                playing?: boolean;
+                error?: string | null;
+                playbackState?: string;
+              }) => void,
             ) => { remove: () => void };
           }).addListener?.('playbackStatusUpdate', (status) => {
+            if (status.error || status.playbackState === 'error') finish('failed');
+            if (status.playing) markStarted();
             if (status.didJustFinish) finish('played');
           });
           try {
@@ -201,6 +279,8 @@ export function useMobileTTS() {
             finish('failed');
             return;
           }
+          setTimeout(markStarted, 120);
+          startTimeout = setTimeout(() => finish('failed'), 4_000);
           timeout = setTimeout(() => finish('failed'), 30_000);
         });
 
@@ -215,7 +295,7 @@ export function useMobileTTS() {
         }
         playerRef.current = null;
         setIsSpeaking(false);
-        await cleanupTempFile(uri);
+        if (playable.cleanupUri) await cleanupTempFile(playable.cleanupUri);
       }
     },
     [cleanupTempFile],
@@ -226,9 +306,15 @@ export function useMobileTTS() {
       const trimmed = text.trim();
       if (!trimmed) return true;
       stopSpeaking();
+      const streamPlayable = createTTSStreamPlayable(trimmed);
+      if (streamPlayable) {
+        const result = await playSource(streamPlayable);
+        if (result === 'played') return true;
+        if (result === 'stopped') return false;
+      }
       const file = await fetchTTSFile(trimmed);
       if (file) {
-        const result = await playFile(file);
+        const result = await playSource(file);
         if (result === 'played') return true;
         if (result === 'stopped') return false;
       }
@@ -237,7 +323,7 @@ export function useMobileTTS() {
       setIsSpeaking(false);
       return false;
     },
-    [fetchTTSFile, playFile, speakWithFallback, stopSpeaking],
+    [createTTSStreamPlayable, fetchTTSFile, playSource, speakWithFallback, stopSpeaking],
   );
 
   const runQueue = useCallback(
@@ -250,18 +336,32 @@ export function useMobileTTS() {
           if (queueGenerationRef.current !== generation) return;
           const entry = queueRef.current.shift();
           if (!entry) continue;
-          const file = await entry.promise;
+          const playable = await entry.promise;
           if (queueGenerationRef.current !== generation) return;
-          if (file) {
-            const result = await playFile(file);
+          if (playable) {
+            const result = await playSource(playable);
             if (queueGenerationRef.current !== generation || result === 'stopped') return;
             if (result === 'failed') {
-              await speakWithFallback(entry.text);
+              const file = await fetchTTSFile(entry.text);
               if (queueGenerationRef.current !== generation) return;
+              if (file) {
+                const fallbackResult = await playSource(file);
+                if (queueGenerationRef.current !== generation || fallbackResult === 'stopped') return;
+                if (fallbackResult === 'failed') {
+                  await speakWithFallback(entry.text);
+                  if (queueGenerationRef.current !== generation) return;
+                }
+              } else {
+                await speakWithFallback(entry.text);
+                if (queueGenerationRef.current !== generation) return;
+              }
             }
           } else {
             await speakWithFallback(entry.text);
             if (queueGenerationRef.current !== generation) return;
+          }
+          if (entry.pacingAfterMs > 0 && queueGenerationRef.current === generation) {
+            await delay(entry.pacingAfterMs);
           }
         }
       } finally {
@@ -274,18 +374,22 @@ export function useMobileTTS() {
         for (const resolve of resolvers) resolve();
       }
     },
-    [fetchTTSFile, playFile, speakWithFallback],
+    [fetchTTSFile, playSource, speakWithFallback],
   );
 
   const speakStreamingChunk = useCallback(
-    (text: string) => {
+    (text: string, options: StreamingChunkOptions = {}) => {
       const trimmed = text.trim();
       if (!trimmed) return;
       const generation = queueGenerationRef.current;
-      queueRef.current.push({ text: trimmed, promise: fetchTTSFile(trimmed) });
+      queueRef.current.push({
+        text: trimmed,
+        promise: Promise.resolve(createTTSStreamPlayable(trimmed)),
+        pacingAfterMs: options.pacingAfterMs ?? 0,
+      });
       void runQueue(generation);
     },
-    [fetchTTSFile, runQueue],
+    [createTTSStreamPlayable, runQueue],
   );
 
   const discardStreamingSpeech = useCallback(() => {
@@ -304,13 +408,36 @@ export function useMobileTTS() {
     [],
   );
 
+  const ttsPrewarmedRef = useRef(false);
   const primeTTS = useCallback(() => {
     try {
       Speech.stop();
     } catch {
       // noop
     }
-  }, []);
+    // WS-1.7: Fire a tiny ElevenLabs request on assistant open so the first
+    // real synthesis doesn't pay TLS + DNS + cold-edge cost. Request body is
+    // a single token; we discard the audio. Best-effort, runs once per mount.
+    if (ttsPrewarmedRef.current) return;
+    ttsPrewarmedRef.current = true;
+    if (!elevenLabsEnabled() || !isSupabaseConfigured() || !session?.access_token) return;
+    try {
+      const { url, anonKey } = getSupabaseEnv();
+      void fetch(`${url}/functions/v1/elevenlabs-tts`, {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${session.access_token}`,
+          apikey: anonKey,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ text: '.', voice_id: voiceId ?? undefined, prewarm: true }),
+      })
+        .then((res) => res.arrayBuffer().catch(() => undefined))
+        .catch(() => undefined);
+    } catch {
+      // ignore
+    }
+  }, [session?.access_token, voiceId]);
 
   return {
     isSpeaking,
