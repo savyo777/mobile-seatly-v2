@@ -20,17 +20,11 @@ describe('Cenaiva simple prompt intent', () => {
     expect(isCenaivaProcessPrompt('Table for 2.')).toBe(true);
   });
 
-  it('uses task-specific filler copy only for complex process prompts', () => {
-    expect(getCenaivaImmediateFiller('Book a table for two tonight')).toBe(
-      'Hold on while I check that reservation.',
-    );
-    expect(getCenaivaImmediateFiller('What times are available?')).toBe(
-      'Hold on while I check the times.',
-    );
-    expect(getCenaivaImmediateFiller('Show me the menu')).toBe('Hold on while I pull that up.');
-    expect(getCenaivaImmediateFiller('Find Italian restaurants near me.')).toBe(
-      'Hold on while I find spots near you.',
-    );
+  it('uses short generic filler copy only for complex process prompts', () => {
+    expect(getCenaivaImmediateFiller('Book a table for two tonight')).toBe('One moment please.');
+    expect(getCenaivaImmediateFiller('What times are available?')).toBe('One moment please.');
+    expect(getCenaivaImmediateFiller('Show me the menu')).toBe('One moment please.');
+    expect(getCenaivaImmediateFiller('Find Italian restaurants near me.')).toBe('One moment please.');
   });
 
   it('does not emit filler for off-topic or personal small prompts', () => {
@@ -44,9 +38,7 @@ describe('Cenaiva simple prompt intent', () => {
 
   it('does not block real dining requests that contain profanity', () => {
     expect(isCenaivaProcessPrompt('Find me fucking Italian food nearby')).toBe(true);
-    expect(getCenaivaImmediateFiller('Find me fucking Italian food nearby')).toBe(
-      'Hold on while I find spots near you.',
-    );
+    expect(getCenaivaImmediateFiller('Find me fucking Italian food nearby')).toBe('One moment please.');
   });
 
   it('resets stale restaurant context for explicit resets and new discovery searches', () => {

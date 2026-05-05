@@ -59,20 +59,11 @@ export function getCenaivaImmediateFiller(transcript: string): string | null {
   if (CLEAR_SMALL_PROMPT_PATTERN.test(normalized)) return null;
   if (!normalized || !isCenaivaProcessPrompt(normalized)) return null;
   if (PURE_IMPATIENCE_PATTERN.test(normalized)) return null;
+  if (/^(table for|for\s+\d+|for\s+(one|two|three|four|five|six|seven|eight|nine|ten)\b)/i.test(normalized)) {
+    return null;
+  }
 
-  if (/\b(availability|available|time|times|slot|slots|openings?)\b/i.test(normalized)) {
-    return 'Hold on while I check the times.';
-  }
-  if (/\b(book|reserve|reservation|confirm)\b/i.test(normalized)) {
-    return 'Hold on while I check that reservation.';
-  }
-  if (/\b(menu|dish|dishes|preorder|pre-order|order|checkout|pay|payment)\b/i.test(normalized)) {
-    return 'Hold on while I pull that up.';
-  }
-  if (/\b(find|show|recommend|closest|nearest|best|restaurants?|places?|spots?|near me|nearby|food|cuisine|eat|dinner|lunch|breakfast|brunch)\b/i.test(normalized)) {
-    return 'Hold on while I find spots near you.';
-  }
-  return null;
+  return 'One moment please.';
 }
 
 export function shouldResetCenaivaBookingContext(transcript: string): boolean {

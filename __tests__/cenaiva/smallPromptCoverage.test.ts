@@ -369,10 +369,10 @@ describe('Hey Cenaiva small prompt coverage', () => {
     expect(missing).toEqual([]);
   });
 
-  it('allows immediate filler only for tool-like process prompts', () => {
-    expect(getCenaivaImmediateFiller('Find Italian restaurants near me.')).toMatch(/find spots/i);
-    expect(getCenaivaImmediateFiller('What times are available?')).toMatch(/check the times/i);
-    expect(getCenaivaImmediateFiller('Show me the menu.')).toMatch(/pull that up/i);
+  it('allows generic deferred filler only for tool-like process prompts', () => {
+    expect(getCenaivaImmediateFiller('Find Italian restaurants near me.')).toBe('One moment please.');
+    expect(getCenaivaImmediateFiller('What times are available?')).toBe('One moment please.');
+    expect(getCenaivaImmediateFiller('Show me the menu.')).toBe('One moment please.');
     expect(getCenaivaImmediateFiller('Table for 2.')).toBeNull();
     expect(getCenaivaImmediateFiller('What time is it?')).toBeNull();
   });

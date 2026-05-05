@@ -196,18 +196,18 @@ function hasRestaurantSelectionIntent(transcript: string, priorWhichAsks: number
 // continuous speech and never feels stuck. Keep these short (≤6 words) so
 // they finish playing before the real answer arrives.
 const TOOL_FILLERS: Record<string, string> = {
-  search_restaurants: "Hold on while I find spots near you.",
-  check_availability: "Hold on while I check the times.",
-  complete_booking: "Hold on while I lock in that reservation.",
-  patch_post_booking: "Hold on while I update that reservation.",
-  get_menu: "Hold on while I pull up the menu.",
-  create_preorder_order: "Hold on while I add that to your order.",
-  charge_saved_card: "Hold on while I charge your card.",
+  search_restaurants: "One moment please.",
+  check_availability: "One moment please.",
+  complete_booking: "One moment please.",
+  patch_post_booking: "One moment please.",
+  get_menu: "One moment please.",
+  create_preorder_order: "One moment please.",
+  charge_saved_card: "One moment please.",
 };
 
 function fillerForTool(toolName: string | null | undefined): string {
-  if (!toolName) return "One moment.";
-  return TOOL_FILLERS[toolName] ?? "One moment.";
+  if (!toolName) return "One moment please.";
+  return TOOL_FILLERS[toolName] ?? "One moment please.";
 }
 
 function buildSmallPromptSystemPrompt(opts: {
@@ -4092,7 +4092,7 @@ Deno.serve(async (req) => {
         // lookup, Stripe), emit a follow-up filler at 2.5s so the user
         // doesn't hear silence. Cleared once the tool loop iterates again.
         const toolWatchdog = setTimeout(() => {
-          const safeWait = safeStreamingSpeechChunk("Still working on that.");
+          const safeWait = safeStreamingSpeechChunk("One moment please.");
           if (safeWait) {
             try { send({ type: "speech_chunk", text: safeWait }); } catch { /* stream may be closed */ }
           }

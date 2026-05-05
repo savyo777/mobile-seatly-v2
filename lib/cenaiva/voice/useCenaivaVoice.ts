@@ -6,6 +6,15 @@ type UseCenaivaVoiceOptions = {
   onFirstAudioStart?: () => void;
 };
 
+type SpeakOptions = {
+  onFirstAudioStart?: () => void;
+};
+
+type StreamingChunkOptions = {
+  pacingAfterMs?: number;
+  onFirstAudioStart?: () => void;
+};
+
 export function useCenaivaVoice(options: UseCenaivaVoiceOptions = {}) {
   const transcription = useMobileTranscription();
   const tts = useMobileTTS({ onFirstAudioStart: options.onFirstAudioStart });
@@ -38,8 +47,8 @@ export function useCenaivaVoice(options: UseCenaivaVoiceOptions = {}) {
       stopListening,
       isSpeaking: tts.isSpeaking,
       isStreamingTTSAvailable: tts.isStreamingTTSAvailable,
-      speak: tts.speak,
-      speakStreamingChunk: tts.speakStreamingChunk,
+      speak: tts.speak as (text: string, options?: SpeakOptions) => Promise<boolean>,
+      speakStreamingChunk: tts.speakStreamingChunk as (text: string, options?: StreamingChunkOptions) => void,
       discardStreamingSpeech: tts.discardStreamingSpeech,
       drainStreamingSpeech: tts.drainStreamingSpeech,
       stopSpeaking,

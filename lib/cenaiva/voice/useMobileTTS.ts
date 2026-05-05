@@ -10,12 +10,18 @@ type QueueEntry = {
   text: string;
   promise: Promise<TTSPlayable | null>;
   pacingAfterMs: number;
+  onFirstAudioStart?: () => void;
 };
 
 type PlayResult = 'played' | 'failed' | 'stopped';
 
 type StreamingChunkOptions = {
   pacingAfterMs?: number;
+  onFirstAudioStart?: () => void;
+};
+
+type SpeakOptions = {
+  onFirstAudioStart?: () => void;
 };
 
 type TTSPlayable = {
@@ -87,8 +93,9 @@ export function useMobileTTS(options: UseMobileTTSOptions = {}) {
     onFirstAudioStartRef.current = options.onFirstAudioStart;
   }, [options.onFirstAudioStart]);
 
-  const markFirstAudioStart = useCallback(() => {
+  const markFirstAudioStart = useCallback((localCallback?: () => void) => {
     onFirstAudioStartRef.current?.();
+    localCallback?.();
   }, []);
 
   const cleanupTempFiles = useCallback(async () => {
@@ -192,13 +199,13 @@ export function useMobileTTS(options: UseMobileTTSOptions = {}) {
   );
 
   const speakWithFallback = useCallback(
-    async (text: string) => {
+    async (text: string, options: SpeakOptions = {}) => {
       await new Promise<void>((resolve) => {
         let started = false;
         const markStarted = () => {
           if (started) return;
           started = true;
-          markFirstAudioStart();
+          markFirstAudioStart(options.onFirstAudioStart);
         };
         Speech.speak(text, {
           language: 'en',
@@ -214,7 +221,7 @@ export function useMobileTTS(options: UseMobileTTSOptions = {}) {
   );
 
   const playSource = useCallback(
-    async (playable: TTSPlayable): Promise<PlayResult> => {
+    async (playable: TTSPlayable, options: SpeakOptions = {}): Promise<PlayResult> => {
       try {
         await setAudioModeAsync({
           playsInSilentMode: true,
@@ -246,7 +253,7 @@ export function useMobileTTS(options: UseMobileTTSOptions = {}) {
               clearTimeout(startTimeout);
               startTimeout = null;
             }
-            markFirstAudioStart();
+            markFirstAudioStart(options.onFirstAudioStart);
           };
           const finish = (next: PlayResult) => {
             if (resolved) return;
@@ -302,24 +309,24 @@ export function useMobileTTS(options: UseMobileTTSOptions = {}) {
   );
 
   const speak = useCallback(
-    async (text: string): Promise<boolean> => {
+    async (text: string, options: SpeakOptions = {}): Promise<boolean> => {
       const trimmed = text.trim();
       if (!trimmed) return true;
       stopSpeaking();
       const streamPlayable = createTTSStreamPlayable(trimmed);
       if (streamPlayable) {
-        const result = await playSource(streamPlayable);
+        const result = await playSource(streamPlayable, options);
         if (result === 'played') return true;
         if (result === 'stopped') return false;
       }
       const file = await fetchTTSFile(trimmed);
       if (file) {
-        const result = await playSource(file);
+        const result = await playSource(file, options);
         if (result === 'played') return true;
         if (result === 'stopped') return false;
       }
       setIsSpeaking(true);
-      await speakWithFallback(trimmed);
+      await speakWithFallback(trimmed, options);
       setIsSpeaking(false);
       return false;
     },
@@ -339,25 +346,25 @@ export function useMobileTTS(options: UseMobileTTSOptions = {}) {
           const playable = await entry.promise;
           if (queueGenerationRef.current !== generation) return;
           if (playable) {
-            const result = await playSource(playable);
+            const result = await playSource(playable, { onFirstAudioStart: entry.onFirstAudioStart });
             if (queueGenerationRef.current !== generation || result === 'stopped') return;
             if (result === 'failed') {
               const file = await fetchTTSFile(entry.text);
               if (queueGenerationRef.current !== generation) return;
               if (file) {
-                const fallbackResult = await playSource(file);
+                const fallbackResult = await playSource(file, { onFirstAudioStart: entry.onFirstAudioStart });
                 if (queueGenerationRef.current !== generation || fallbackResult === 'stopped') return;
                 if (fallbackResult === 'failed') {
-                  await speakWithFallback(entry.text);
+                  await speakWithFallback(entry.text, { onFirstAudioStart: entry.onFirstAudioStart });
                   if (queueGenerationRef.current !== generation) return;
                 }
               } else {
-                await speakWithFallback(entry.text);
+                await speakWithFallback(entry.text, { onFirstAudioStart: entry.onFirstAudioStart });
                 if (queueGenerationRef.current !== generation) return;
               }
             }
           } else {
-            await speakWithFallback(entry.text);
+            await speakWithFallback(entry.text, { onFirstAudioStart: entry.onFirstAudioStart });
             if (queueGenerationRef.current !== generation) return;
           }
           if (entry.pacingAfterMs > 0 && queueGenerationRef.current === generation) {
@@ -386,6 +393,7 @@ export function useMobileTTS(options: UseMobileTTSOptions = {}) {
         text: trimmed,
         promise: Promise.resolve(createTTSStreamPlayable(trimmed)),
         pacingAfterMs: options.pacingAfterMs ?? 0,
+        onFirstAudioStart: options.onFirstAudioStart,
       });
       void runQueue(generation);
     },
