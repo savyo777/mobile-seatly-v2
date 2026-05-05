@@ -10,6 +10,11 @@ type SpeakOptions = {
   onFirstAudioStart?: () => void;
 };
 
+type PreparedAudio = {
+  audio_base64: string;
+  audio_content_type?: string | null;
+};
+
 type StreamingChunkOptions = {
   pacingAfterMs?: number;
   onFirstAudioStart?: () => void;
@@ -48,6 +53,11 @@ export function useCenaivaVoice(options: UseCenaivaVoiceOptions = {}) {
       isSpeaking: tts.isSpeaking,
       isStreamingTTSAvailable: tts.isStreamingTTSAvailable,
       speak: tts.speak as (text: string, options?: SpeakOptions) => Promise<boolean>,
+      speakPreparedAudio: tts.speakPreparedAudio as (
+        text: string,
+        audio?: PreparedAudio | null,
+        options?: SpeakOptions,
+      ) => Promise<boolean>,
       speakStreamingChunk: tts.speakStreamingChunk as (text: string, options?: StreamingChunkOptions) => void,
       discardStreamingSpeech: tts.discardStreamingSpeech,
       drainStreamingSpeech: tts.drainStreamingSpeech,
@@ -66,6 +76,7 @@ export function useCenaivaVoice(options: UseCenaivaVoiceOptions = {}) {
       tts.isSpeaking,
       tts.isStreamingTTSAvailable,
       tts.speak,
+      tts.speakPreparedAudio,
       tts.speakStreamingChunk,
       tts.discardStreamingSpeech,
       tts.drainStreamingSpeech,

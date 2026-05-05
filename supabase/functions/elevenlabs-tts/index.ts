@@ -7,6 +7,7 @@ import { decodeJwtPayload } from "../_shared/jwt.ts";
 
 const ELEVENLABS_BASE = "https://api.elevenlabs.io/v1";
 const DEFAULT_VOICE_ID = Deno.env.get("ELEVENLABS_VOICE_ID") ?? "EXAVITQu4vr4xnSDxMaL";
+const OUTPUT_FORMAT = Deno.env.get("ELEVENLABS_OUTPUT_FORMAT") ?? "mp3_44100_128";
 
 // Reuse same pronunciation map as useCenaivaSpeech.ts
 function applyPronunciation(text: string): string {
@@ -57,7 +58,7 @@ Deno.serve(async (req) => {
     // inconsistency reported by users. Stability bumped to 0.5 for more
     // consistent prosody across turns.
     const callEleven = () =>
-      fetch(`${ELEVENLABS_BASE}/text-to-speech/${voiceId}/stream`, {
+      fetch(`${ELEVENLABS_BASE}/text-to-speech/${voiceId}/stream?output_format=${OUTPUT_FORMAT}`, {
         method: "POST",
         headers: {
           "xi-api-key": apiKey,

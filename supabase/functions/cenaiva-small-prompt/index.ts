@@ -5,6 +5,9 @@ import { jsonRes } from "../_shared/json-response.ts";
 
 const openai = new OpenAI({ apiKey: Deno.env.get("OPENAI_API_KEY")! });
 const SMALL_PROMPT_MODEL = Deno.env.get("CENAIVA_SMALL_PROMPT_MODEL") ?? "gpt-4.1-nano";
+const ELEVENLABS_BASE = "https://api.elevenlabs.io/v1";
+const DEFAULT_VOICE_ID = Deno.env.get("ELEVENLABS_VOICE_ID") ?? "EXAVITQu4vr4xnSDxMaL";
+const TTS_OUTPUT_FORMAT = Deno.env.get("ELEVENLABS_OUTPUT_FORMAT") ?? "mp3_44100_128";
 
 type Body = {
   transcript?: unknown;
@@ -15,6 +18,7 @@ type Body = {
     date?: unknown;
     time?: unknown;
   };
+  voice_id?: unknown;
 };
 
 function stringOrNull(value: unknown): string | null {
@@ -68,6 +72,55 @@ function enforceQuestion(text: string, question: string): string {
   return result.length > 180 ? question : result;
 }
 
+function applyPronunciation(text: string): string {
+  return text
+    .replace(/\bCenaiva\b/gi, "sin eye vuh")
+    .replace(/\bCENAIVA\b/g, "sin eye vuh");
+}
+
+function arrayBufferToBase64(buffer: ArrayBuffer): string {
+  const bytes = new Uint8Array(buffer);
+  const chunkSize = 0x8000;
+  let binary = "";
+  for (let i = 0; i < bytes.length; i += chunkSize) {
+    binary += String.fromCharCode(...bytes.subarray(i, i + chunkSize));
+  }
+  return btoa(binary);
+}
+
+async function synthesizeSmallPromptAudio(text: string, voiceId: string) {
+  const apiKey = Deno.env.get("ELEVENLABS_API_KEY");
+  if (!apiKey) return null;
+
+  try {
+    const response = await fetch(
+      `${ELEVENLABS_BASE}/text-to-speech/${voiceId}/stream?output_format=${TTS_OUTPUT_FORMAT}`,
+      {
+        method: "POST",
+        headers: {
+          "xi-api-key": apiKey,
+          "Content-Type": "application/json",
+          Accept: "audio/mpeg",
+        },
+        body: JSON.stringify({
+          text: applyPronunciation(text),
+          model_id: "eleven_flash_v2_5",
+          voice_settings: { stability: 0.5, similarity_boost: 0.8, speed: 1.1 },
+        }),
+      },
+    );
+    if (!response.ok) return null;
+    const buffer = await response.arrayBuffer();
+    if (!buffer.byteLength) return null;
+    return {
+      audio_base64: arrayBufferToBase64(buffer),
+      audio_content_type: response.headers.get("content-type") ?? "audio/mpeg",
+    };
+  } catch {
+    return null;
+  }
+}
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response("ok", { headers: corsHeaders });
@@ -96,9 +149,14 @@ Deno.serve(async (req) => {
       response.choices[0]?.message?.content ?? "",
       missing.question,
     );
+    const audio = await synthesizeSmallPromptAudio(
+      spokenText,
+      stringOrNull(body.voice_id) ?? DEFAULT_VOICE_ID,
+    );
     return jsonRes({
       spoken_text: spokenText,
       next_expected_input: missing.next,
+      audio,
     });
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);

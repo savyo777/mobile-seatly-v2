@@ -233,6 +233,7 @@ function AssistantInner({ children }: { children: ReactNode }) {
   const {
     isLoading: isVoicePreferenceLoading,
     needsSelection: voiceSelectionRequired,
+    voiceId,
   } = useCenaivaVoicePreference();
   const router = useRouter();
   const pathname = usePathname();
@@ -379,6 +380,7 @@ function AssistantInner({ children }: { children: ReactNode }) {
         spokenText: string | null | undefined,
         debugEvent: string,
         apply: () => void,
+        preparedAudio?: { audio_base64: string; audio_content_type?: string | null } | null,
       ) => {
         let applied = false;
         const applyOnce = () => {
@@ -397,11 +399,19 @@ function AssistantInner({ children }: { children: ReactNode }) {
         debugTiming(debugEvent, {
           elapsedMs: Date.now() - turnStartedAt,
         });
-        await voice.speak(spokenText, { onFirstAudioStart: applyOnce });
+        if (preparedAudio?.audio_base64) {
+          await voice.speakPreparedAudio(spokenText, preparedAudio, { onFirstAudioStart: applyOnce });
+        } else {
+          await voice.speak(spokenText, { onFirstAudioStart: applyOnce });
+        }
         applyOnce();
       };
 
-      const finishLocalResponse = async (response: AssistantResponseType, outcome: string) => {
+      const finishLocalResponse = async (
+        response: AssistantResponseType,
+        outcome: string,
+        preparedAudio?: { audio_base64: string; audio_content_type?: string | null } | null,
+      ) => {
         await speakWithSyncedApply(
           response.spoken_text,
           'local speech playback requested',
@@ -409,6 +419,7 @@ function AssistantInner({ children }: { children: ReactNode }) {
             processingRef.current = false;
             commit({ type: 'APPLY_RESPONSE', response });
           },
+          preparedAudio,
         );
 
         const responseStatus = stateRef.current.booking.status;
@@ -561,6 +572,7 @@ function AssistantInner({ children }: { children: ReactNode }) {
               date: current.booking.date,
               time: current.booking.time,
             },
+            voice_id: voiceId,
           }, {
             accessToken: session?.access_token,
             signal: controller.signal,
@@ -592,7 +604,11 @@ function AssistantInner({ children }: { children: ReactNode }) {
             assistant_memory: null,
           };
           checkpoints.firstSpeechChunkAt = checkpoints.finalReceivedAt;
-          await finishLocalResponse(response, result.error ? 'small_prompt_error' : 'small_prompt_ok');
+          await finishLocalResponse(
+            response,
+            result.error ? 'small_prompt_error' : 'small_prompt_ok',
+            result.data?.audio,
+          );
           return;
         } catch {
           clearTimeout(timeoutId);
@@ -880,6 +896,7 @@ function AssistantInner({ children }: { children: ReactNode }) {
       router,
       session?.access_token,
       voice,
+      voiceId,
       voiceSelectionRequired,
     ],
   );
@@ -1036,7 +1053,7 @@ function AssistantInner({ children }: { children: ReactNode }) {
       forceStopWakeWordRef.current();
       voice.primeTTS();
       orchestrator.prewarm?.();
-      prewarmCenaivaSmallPrompt({ accessToken: session?.access_token });
+      prewarmCenaivaSmallPrompt({ accessToken: session?.access_token, voiceId });
       void requestWakePermissionRef.current();
       void requestLocation().then((location) => {
         if (!location || !isOpenRef.current) return;
@@ -1065,6 +1082,7 @@ function AssistantInner({ children }: { children: ReactNode }) {
       session?.access_token,
       speakGreetingThenListen,
       voice,
+      voiceId,
       voiceSelectionRequired,
     ],
   );

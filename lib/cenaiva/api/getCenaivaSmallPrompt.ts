@@ -4,6 +4,10 @@ import { getSupabaseEnv, isSupabaseConfigured } from '@/lib/supabase/env';
 export type CenaivaSmallPromptResponse = {
   spoken_text: string;
   next_expected_input: 'restaurant' | 'party_size' | 'date' | 'time' | 'confirmation';
+  audio?: {
+    audio_base64: string;
+    audio_content_type?: string | null;
+  } | null;
 };
 
 type FetchLikeResponse = {
@@ -30,6 +34,19 @@ function parseSmallPromptResponse(payload: unknown): CenaivaSmallPromptResponse 
   return {
     spoken_text: value.spoken_text.trim(),
     next_expected_input: value.next_expected_input,
+    audio:
+      value.audio &&
+      typeof value.audio === 'object' &&
+      typeof value.audio.audio_base64 === 'string' &&
+      value.audio.audio_base64.trim()
+        ? {
+            audio_base64: value.audio.audio_base64,
+            audio_content_type:
+              typeof value.audio.audio_content_type === 'string'
+                ? value.audio.audio_content_type
+                : null,
+          }
+        : null,
   };
 }
 
@@ -37,6 +54,7 @@ export async function postCenaivaSmallPrompt(
   req: {
     transcript: string;
     booking: Pick<BookingState, 'restaurant_id' | 'restaurant_name' | 'party_size' | 'date' | 'time'>;
+    voice_id?: string | null;
   },
   options: {
     accessToken: string | null | undefined;
@@ -69,6 +87,7 @@ export async function postCenaivaSmallPrompt(
 
 export function prewarmCenaivaSmallPrompt(options: {
   accessToken: string | null | undefined;
+  voiceId?: string | null;
   fetchImpl?: FetchLike;
 }) {
   if (!isSupabaseConfigured() || !options.accessToken) return;
@@ -88,6 +107,7 @@ export function prewarmCenaivaSmallPrompt(options: {
     body: JSON.stringify({
       transcript: 'Thanks',
       booking: {},
+      voice_id: options.voiceId ?? undefined,
       prewarm: true,
     }),
     signal: controller?.signal,
