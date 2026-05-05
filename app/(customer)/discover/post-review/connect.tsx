@@ -247,7 +247,10 @@ export default function SnapCaptionScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const { width: windowW } = useWindowDimensions();
-  const { photoUri, restaurantId } = useLocalSearchParams<{ photoUri: string; restaurantId?: string }>();
+  const { photoUri, restaurantId } = useLocalSearchParams<{
+    photoUri: string;
+    restaurantId?: string;
+  }>();
   const [caption, setCaption] = useState('');
   const [rating, setRating] = useState<1 | 2 | 3 | 4 | 5>(5);
   const [dish, setDish] = useState('');

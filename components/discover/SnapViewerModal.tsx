@@ -32,6 +32,12 @@ const useStyles = createStyles((c) => ({
     aspectRatio: 1,
     backgroundColor: c.bgElevated,
   },
+  imageWrap: {
+    width: '100%',
+    aspectRatio: 1,
+    backgroundColor: c.bgElevated,
+    position: 'relative',
+  },
   body: {
     padding: spacing.md,
     gap: spacing.sm,
@@ -85,7 +91,11 @@ export function SnapViewerModal({ visible, post, onClose }: SnapViewerModalProps
       <View style={styles.backdrop}>
         <Pressable style={StyleSheet.absoluteFill} onPress={onClose} />
         <View style={styles.sheet}>
-          {post ? <Image source={{ uri: post.image }} style={styles.image} /> : null}
+          {post ? (
+            <View style={styles.imageWrap}>
+              <Image source={{ uri: post.image }} style={styles.image} />
+            </View>
+          ) : null}
           <View style={styles.body}>
             <View style={styles.row}>
               {user?.avatarUrl ? <Image source={{ uri: user.avatarUrl }} style={styles.avatar} /> : <View style={styles.avatar} />}

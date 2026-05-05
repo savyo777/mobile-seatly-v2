@@ -5,7 +5,6 @@ import {
   Animated,
   Platform,
   Pressable,
-  ScrollView,
   StyleSheet,
   Text,
   View,
@@ -19,8 +18,6 @@ import { useFocusEffect } from '@react-navigation/native';
 import { useLocalSearchParams, useNavigation, useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { StatusBar } from 'expo-status-bar';
-import { snapFilters } from '@/lib/mock/reviewSnap';
-import { SnapFilterOverlay } from '@/components/snaps/SnapFilterOverlay';
 import { useColors, createStyles, borderRadius, spacing, typography } from '@/lib/theme';
 import { getSnapRestaurantName } from '@/lib/mock/snaps';
 import { openAppPhotoSettings } from '@/lib/device/openAppPhotoSettings';
@@ -75,9 +72,6 @@ const useStyles = createStyles((c) => ({
   cameraFill: {
     ...StyleSheet.absoluteFillObject,
   },
-  filterTint: {
-    ...StyleSheet.absoluteFillObject,
-  },
   shutter: {
     ...StyleSheet.absoluteFillObject,
     backgroundColor: '#fff',
@@ -99,7 +93,7 @@ const useStyles = createStyles((c) => ({
     flexDirection: 'row',
     alignItems: 'center',
     paddingHorizontal: 16,
-    paddingBottom: 10,
+    paddingBottom: 6,
     gap: 8,
     zIndex: 20,
     elevation: 20,
@@ -126,50 +120,6 @@ const useStyles = createStyles((c) => ({
     gap: 20,
     zIndex: 20,
     elevation: 20,
-  },
-  filterScrollContent: {
-    flexDirection: 'row',
-    flexGrow: 1,
-    justifyContent: 'center',
-    alignItems: 'flex-end',
-    paddingTop: 8,
-    paddingBottom: 2,
-    gap: 20,
-    paddingHorizontal: 20,
-    minWidth: '100%',
-  },
-  filterItem: {
-    alignItems: 'center',
-    minWidth: 72,
-  },
-  filterTextHit: {
-    paddingVertical: 8,
-    paddingHorizontal: 2,
-  },
-  filterText: {
-    fontSize: 13,
-    fontWeight: '500',
-    color: 'rgba(255,255,255,0.38)',
-    letterSpacing: 0.35,
-    textTransform: 'uppercase' as const,
-    ...Platform.select({
-      ios: { fontFamily: 'System' },
-      default: {},
-    }),
-  },
-  filterTextSelected: {
-    fontSize: 13,
-    fontWeight: '700',
-    color: '#fff',
-    letterSpacing: 0.35,
-    textTransform: 'uppercase' as const,
-  },
-  filterIndicator: {
-    marginTop: 6,
-    width: 4,
-    height: 4,
-    borderRadius: 2,
-    backgroundColor: '#FFD60A',
   },
   galleryBtn: {
     width: 48,
@@ -242,32 +192,66 @@ const useStyles = createStyles((c) => ({
     color: '#DDD5C4',
     fontWeight: '700',
   },
-  permissionRoot: {
-    flex: 1,
-    backgroundColor: '#000',
+  cameraFallback: {
+    ...StyleSheet.absoluteFillObject,
+    alignItems: 'center',
     justifyContent: 'center',
     paddingHorizontal: spacing.xl,
-    gap: spacing.md,
+    paddingBottom: 260,
+    backgroundColor: '#111',
   },
-  permissionTitle: {
-    ...typography.h2,
+  cameraFallbackIcon: {
+    width: 58,
+    height: 58,
+    borderRadius: 29,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: 'rgba(201,168,76,0.14)',
+    borderWidth: 1,
+    borderColor: 'rgba(201,168,76,0.42)',
+    marginBottom: spacing.md,
+  },
+  cameraFallbackTitle: {
+    ...typography.h3,
     color: '#fff',
+    textAlign: 'center',
   },
-  permissionBody: {
-    ...typography.body,
-    color: c.textSecondary,
+  cameraFallbackBody: {
+    ...typography.bodySmall,
+    color: 'rgba(255,255,255,0.68)',
+    textAlign: 'center',
+    marginTop: spacing.xs,
+    maxWidth: 280,
   },
-  permissionBtn: {
-    alignSelf: 'flex-start',
-    paddingVertical: spacing.sm,
-    paddingHorizontal: spacing.lg,
+  cameraFallbackActions: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: spacing.sm,
+    marginTop: spacing.lg,
+  },
+  cameraFallbackBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    paddingHorizontal: 13,
+    paddingVertical: 9,
     borderRadius: borderRadius.full,
-    backgroundColor: c.gold,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.16)',
+    backgroundColor: 'rgba(0,0,0,0.36)',
   },
-  permissionBtnText: {
-    ...typography.body,
-    color: c.bgBase,
+  cameraFallbackBtnGold: {
+    backgroundColor: c.gold,
+    borderColor: c.gold,
+  },
+  cameraFallbackBtnText: {
+    ...typography.bodySmall,
+    color: '#fff',
     fontWeight: '700',
+  },
+  cameraFallbackBtnTextGold: {
+    color: c.bgBase,
   },
 }));
 
@@ -277,12 +261,14 @@ export default function ReviewCameraScreen() {
   const router = useRouter();
   const navigation = useNavigation();
   const insets = useSafeAreaInsets();
-  const { restaurantId } = useLocalSearchParams<{ restaurantId: string }>();
+  const params = useLocalSearchParams<{
+    restaurantId: string;
+  }>();
+  const { restaurantId } = params;
 
   const [permission, requestPermission] = useCameraPermissions();
   const [cameraFacing, setCameraFacing] = useState<CameraType>('back');
   const [flash, setFlash] = useState<FlashMode>('off');
-  const [selectedFilter, setSelectedFilter] = useState(snapFilters[0].id);
   const [cameraReady, setCameraReady] = useState(false);
   const [cameraUnavailable, setCameraUnavailable] = useState(false);
   const [capturing, setCapturing] = useState(false);
@@ -300,14 +286,11 @@ export default function ReviewCameraScreen() {
     () => (restaurantId ? getSnapRestaurantName(restaurantId) : 'Restaurant'),
     [restaurantId],
   );
-  const activeFilter = useMemo(
-    () => snapFilters.find((f) => f.id === selectedFilter) ?? snapFilters[0],
-    [selectedFilter],
-  );
   const effectiveFlash = useMemo(
     () => (cameraFacing === 'back' ? flash : 'off'),
     [cameraFacing, flash],
   );
+  const canUseCamera = Boolean(permission?.granted) && !cameraUnavailable;
 
   const TAB_BAR_STYLE = {
     backgroundColor: c.bgSurface,
@@ -451,7 +434,16 @@ export default function ReviewCameraScreen() {
       setCapturing(true);
       pulseCapture();
       runShutter();
-      const photo = await cameraRef.current.takePictureAsync({ quality: 0.9 });
+      // skipProcessing: tells expo-camera to NOT apply HDR / auto-tone / etc.
+      // The pixels we save match exactly what was on screen at the moment of
+      // capture — no lighting/colour shift between live view and saved frame.
+      // exif: keeps EXIF metadata so iOS knows the rotation; downstream
+      // <Image> renders it in the correct orientation (no horizontal flip).
+      const photo = await cameraRef.current.takePictureAsync({
+        quality: 1,
+        skipProcessing: true,
+        exif: true,
+      });
       if (!photo?.uri) return;
       setSelectedImageUri(photo.uri);
       setSelectedSource('camera');
@@ -463,8 +455,10 @@ export default function ReviewCameraScreen() {
   const goNext = () => {
     if (!selectedImageUri) return;
     const encodedUri = encodeURIComponent(selectedImageUri);
+    // Skip the standalone preview screen — go straight to the filter picker.
+    // Filters + captioning happen there; preview was a redundant step.
     router.push(
-      `/(customer)/discover/post-review/preview?photoUri=${encodedUri}&filter=${selectedFilter}&restaurantId=${restaurantId}`,
+      `/(customer)/discover/post-review/styles?photoUri=${encodedUri}&restaurantId=${restaurantId}`,
     );
   };
 
@@ -477,29 +471,13 @@ export default function ReviewCameraScreen() {
     router.back();
   };
 
-  if (!permission) {
-    return <View style={styles.root} />;
-  }
-
-  if (!permission.granted) {
-    return (
-      <View style={styles.permissionRoot}>
-        <Text style={styles.permissionTitle}>Camera access needed</Text>
-        <Text style={styles.permissionBody}>Allow camera to capture your snap.</Text>
-        <Pressable onPress={requestPermission} style={styles.permissionBtn}>
-          <Text style={styles.permissionBtnText}>Continue</Text>
-        </Pressable>
-      </View>
-    );
-  }
-
   return (
     <View style={styles.root}>
       <StatusBar style="light" />
 
       {isEditMode ? (
         <Image source={{ uri: selectedImageUri! }} style={styles.cameraFill} contentFit="contain" />
-      ) : !cameraUnavailable ? (
+      ) : canUseCamera ? (
         <CameraView
           ref={cameraRef}
           pointerEvents="none"
@@ -513,12 +491,46 @@ export default function ReviewCameraScreen() {
           onMountError={() => setCameraUnavailable(true)}
         />
       ) : (
-        <View style={[styles.cameraFill, { backgroundColor: '#1a1a1a' }]} />
+        <View style={styles.cameraFallback}>
+          <View style={styles.cameraFallbackIcon}>
+            {permission ? (
+              <Ionicons name="camera-outline" size={26} color="#E2C778" />
+            ) : (
+              <ActivityIndicator color="#E2C778" size="small" />
+            )}
+          </View>
+          <Text style={styles.cameraFallbackTitle}>
+            {permission ? 'Camera access needed' : 'Preparing camera'}
+          </Text>
+          <Text style={styles.cameraFallbackBody}>
+            Allow camera access or choose a photo to continue.
+          </Text>
+          <View style={styles.cameraFallbackActions}>
+            <Pressable
+              onPress={() => void requestPermission()}
+              disabled={!permission}
+              style={({ pressed }) => [
+                styles.cameraFallbackBtn,
+                styles.cameraFallbackBtnGold,
+                pressed && { opacity: 0.82 },
+                !permission && { opacity: 0.5 },
+              ]}
+            >
+              <Ionicons name="camera" size={14} color={c.bgBase} />
+              <Text style={[styles.cameraFallbackBtnText, styles.cameraFallbackBtnTextGold]}>
+                Allow
+              </Text>
+            </Pressable>
+            <Pressable
+              onPress={() => void openGallery()}
+              style={({ pressed }) => [styles.cameraFallbackBtn, pressed && { opacity: 0.82 }]}
+            >
+              <Ionicons name="images-outline" size={14} color="#fff" />
+              <Text style={styles.cameraFallbackBtnText}>Photos</Text>
+            </Pressable>
+          </View>
+        </View>
       )}
-
-      <View pointerEvents="none" style={styles.filterTint}>
-        <SnapFilterOverlay filter={activeFilter} />
-      </View>
 
       <Animated.View pointerEvents="none" style={[styles.shutter, { opacity: shutterOpacity }]} />
 
@@ -540,14 +552,14 @@ export default function ReviewCameraScreen() {
           {isEditMode ? <View style={styles.topIconHit} /> : (
             <Pressable
               onPress={() => {
-                if (cameraFacing !== 'back') return;
+                if (!canUseCamera || cameraFacing !== 'back') return;
                 setFlash((f) => (f === 'off' ? 'on' : 'off'));
               }}
               hitSlop={12}
-              style={[styles.topIconHit, cameraFacing !== 'back' && { opacity: 0.35 }]}
+              style={[styles.topIconHit, (!canUseCamera || cameraFacing !== 'back') && { opacity: 0.35 }]}
               accessibilityRole="button"
               accessibilityLabel={flash === 'on' ? 'Flash on' : 'Flash off'}
-              accessibilityState={{ disabled: cameraFacing !== 'back' }}
+              accessibilityState={{ disabled: !canUseCamera || cameraFacing !== 'back' }}
             >
               <Ionicons
                 name={flash === 'on' ? 'flash' : 'flash-off'}
@@ -562,34 +574,6 @@ export default function ReviewCameraScreen() {
           pointerEvents="auto"
           style={[styles.bottomUi, { paddingBottom: insets.bottom + 20 }]}
         >
-          <ScrollView
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            contentContainerStyle={styles.filterScrollContent}
-            decelerationRate="fast"
-            keyboardShouldPersistTaps="handled"
-            style={{ flexGrow: 0, flexShrink: 0 }}
-          >
-            {snapFilters.map((f) => {
-              const selected = selectedFilter === f.id;
-              return (
-                <View key={f.id} style={styles.filterItem}>
-                  <Pressable
-                    onPress={() => {
-                      setSelectedFilter(f.id);
-                    }}
-                    style={({ pressed }) => [styles.filterTextHit, pressed && { opacity: 0.7 }]}
-                  >
-                    <Text style={[styles.filterText, selected && styles.filterTextSelected]} numberOfLines={1}>
-                      {f.name}
-                    </Text>
-                  </Pressable>
-                  {selected ? <View style={styles.filterIndicator} /> : <View style={{ height: 10 }} />}
-                </View>
-              );
-            })}
-          </ScrollView>
-
           {!isEditMode ? (
             <View style={styles.captureRow}>
               <Pressable
@@ -603,10 +587,10 @@ export default function ReviewCameraScreen() {
               </Pressable>
 
               <Pressable
-                onPress={cameraUnavailable ? () => void openGallery() : capturePhoto}
+                onPress={canUseCamera ? capturePhoto : () => void openGallery()}
                 onPressIn={onCapturePressIn}
                 onPressOut={onCapturePressOut}
-                disabled={!cameraUnavailable && (!cameraReady || capturing)}
+                disabled={canUseCamera && (!cameraReady || capturing)}
                 style={styles.captureHit}
               >
                 <Animated.View style={[styles.captureRing, { transform: [{ scale: pressScale }] }]}>

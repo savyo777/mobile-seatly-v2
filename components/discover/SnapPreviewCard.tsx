@@ -31,6 +31,7 @@ const useStyles = createStyles((c) => ({
   imageWrap: {
     height: 180,
     backgroundColor: c.bgElevated,
+    position: 'relative',
   },
   imageLoader: {
     ...StyleSheet.absoluteFillObject,

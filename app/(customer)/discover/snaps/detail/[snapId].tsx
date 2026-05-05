@@ -124,7 +124,6 @@ const useStyles = createStyles((c) => ({
     height: SCREEN_W,
     backgroundColor: c.bgElevated,
   },
-
   actionBar: {
     flexDirection: 'row',
     alignItems: 'center',

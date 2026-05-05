@@ -2,12 +2,9 @@ import React, { useCallback, useMemo, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, useWindowDimensions, View } from 'react-native';
 import { Image } from 'expo-image';
 import { useLocalSearchParams, useRouter, type Href } from 'expo-router';
-import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Button, ScreenWrapper } from '@/components/ui';
-import { snapFilters } from '@/lib/mock/reviewSnap';
-import { SnapFilterOverlay } from '@/components/snaps/SnapFilterOverlay';
 import { useColors, createStyles, borderRadius, spacing, typography } from '@/lib/theme';
 import { getSnapRestaurantName } from '@/lib/mock/snaps';
 
@@ -84,12 +81,6 @@ const useStyles = createStyles((c) => ({
     ...typography.bodySmall,
     color: c.textMuted,
   },
-  filterOverlay: {
-    ...StyleSheet.absoluteFillObject,
-  },
-  depthOverlay: {
-    ...StyleSheet.absoluteFillObject,
-  },
   postingTo: {
     ...typography.body,
     color: '#DDD5C4',
@@ -122,10 +113,9 @@ export default function ReviewPreviewScreen() {
   const styles = useStyles();
   const router = useRouter();
   const insets = useSafeAreaInsets();
-  const { restaurantId, photoUri, filter } = useLocalSearchParams<{
+  const { restaurantId, photoUri } = useLocalSearchParams<{
     restaurantId?: string;
     photoUri?: string;
-    filter?: string;
   }>();
 
   const { width: windowW, height: windowH } = useWindowDimensions();
@@ -136,11 +126,6 @@ export default function ReviewPreviewScreen() {
   const photoDisplayH = Math.max(
     240,
     Math.min(photoDisplayW * (4 / 3), windowH - insets.top - insets.bottom - 270),
-  );
-
-  const activeFilter = useMemo(
-    () => snapFilters.find((filterOption) => filterOption.id === filter) ?? snapFilters[0],
-    [filter],
   );
 
   const decodedUri = useMemo(() => {
@@ -170,11 +155,10 @@ export default function ReviewPreviewScreen() {
 
     try {
       const href: Href = {
-        pathname: '/(customer)/discover/post-review/details',
+        pathname: '/(customer)/discover/post-review/styles',
         params: {
           photoUri: encodeURIComponent(decodedUri),
           restaurantId,
-          filter: filter ?? snapFilters[0].id,
         },
       };
       router.push(href);
@@ -183,7 +167,7 @@ export default function ReviewPreviewScreen() {
     } finally {
       setNavigating(false);
     }
-  }, [decodedUri, filter, hasImage, restaurantId, router]);
+  }, [decodedUri, hasImage, restaurantId, router]);
 
   return (
     <ScreenWrapper scrollable={false} padded={false}>
@@ -209,7 +193,9 @@ export default function ReviewPreviewScreen() {
           showsVerticalScrollIndicator={false}
           keyboardShouldPersistTaps="handled"
         >
-          <Text style={styles.subtitle}>Make sure this moment looks right, then continue to add your caption.</Text>
+          <Text style={styles.subtitle}>
+            Looks good? Next you’ll choose Cenaiva filters & stickers (optional), then write your caption.
+          </Text>
 
           <View style={[styles.photoWrap, { height: photoDisplayH }]}>
             {hasImage ? (
@@ -223,10 +209,6 @@ export default function ReviewPreviewScreen() {
                 <Text style={styles.placeholderText}>No image loaded</Text>
               </View>
             )}
-            <LinearGradient colors={['transparent', 'rgba(0,0,0,0.45)']} style={styles.depthOverlay} />
-            <View pointerEvents="none" style={styles.filterOverlay}>
-              <SnapFilterOverlay filter={activeFilter} />
-            </View>
           </View>
 
           <Text style={styles.postingTo}>Posting to {restaurantName}</Text>
@@ -248,7 +230,7 @@ export default function ReviewPreviewScreen() {
           ]}
         >
           <Button
-            title="Next"
+            title="Next — filters & caption"
             onPress={goToPostDetails}
             disabled={!hasImage || !restaurantId || navigating}
             loading={navigating}

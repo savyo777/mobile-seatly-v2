@@ -103,7 +103,18 @@ export default function ReviewRewardScreen() {
 
         <Animated.View style={[styles.actions, { opacity: actionFade }]}>
           {decodedPhoto ? (
-            <SnapShareSheet imageUrl={decodedPhoto} />
+            <SnapShareSheet
+              imageUrl={decodedPhoto}
+              rewardContext={
+                restaurantId
+                  ? {
+                      restaurantId,
+                      points: String(numericPoints),
+                      restaurantName: decodedName,
+                    }
+                  : undefined
+              }
+            />
           ) : null}
 
           <Button

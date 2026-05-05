@@ -20,7 +20,7 @@ function normalizeLocalFileUri(uri: string): string {
 function buildOutputUri(mimeType: string): string {
   const extension = getFileExtensionForMime(mimeType);
   const nonce = `${Date.now()}-${Math.round(Math.random() * 1_000_000)}`;
-  return `${SHARE_DIRECTORY}cenaiva-filtered-${nonce}.${extension}`;
+  return `${SHARE_DIRECTORY}cenaiva-share-${nonce}.${extension}`;
 }
 
 function resolveExportMimeType(sourceUri: string, fallbackMimeType: 'image/jpeg' | 'video/mp4') {
@@ -53,7 +53,7 @@ async function exportDataUri(sourceUri: string, destinationUri: string): Promise
 
 async function exportMedia({ sourceUri, fallbackMimeType }: ExportOptions): Promise<string> {
   if (!sourceUri) {
-    throw new Error('No filtered media file was provided for sharing.');
+    throw new Error('No media file was provided for sharing.');
   }
 
   await ensureShareDirectory();
