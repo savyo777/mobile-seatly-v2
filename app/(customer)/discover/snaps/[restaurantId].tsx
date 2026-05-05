@@ -1,9 +1,10 @@
 import React, { useMemo, useState } from 'react';
 import { FlatList, Image, Pressable, StyleSheet, Text, View } from 'react-native';
-import { useLocalSearchParams, useRouter } from 'expo-router';
+import { useLocalSearchParams, useRouter, type Href } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { ScreenWrapper } from '@/components/ui';
 import { useColors, createStyles, borderRadius, spacing, typography } from '@/lib/theme';
+import { safeRouterBack } from '@/lib/navigation/transitions';
 import { getSnapUser, listSnapPostsByRestaurant, getSnapRestaurantName } from '@/lib/mock/snaps';
 
 const useStyles = createStyles((c) => ({
@@ -97,12 +98,18 @@ export default function RestaurantSnapGalleryScreen() {
 
   const snaps = useMemo(() => listSnapPostsByRestaurant(restaurantId), [restaurantId]);
   const restaurantName = useMemo(() => getSnapRestaurantName(restaurantId), [restaurantId]);
+  const restaurantFallback = restaurantId
+    ? (`/(customer)/discover/${restaurantId}` as Href)
+    : '/(customer)/discover';
 
   return (
     <ScreenWrapper scrollable={false}>
       <View style={styles.root}>
         <View style={styles.header}>
-          <Pressable onPress={() => router.back()} style={styles.backBtn}>
+          <Pressable
+            onPress={() => safeRouterBack(router, restaurantFallback)}
+            style={styles.backBtn}
+          >
             <Ionicons name="chevron-back" size={20} color={c.textPrimary} />
           </Pressable>
           <View style={styles.headerText}>

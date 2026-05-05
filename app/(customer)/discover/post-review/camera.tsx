@@ -15,8 +15,7 @@ import { CameraView, CameraType, FlashMode, useCameraPermissions } from 'expo-ca
 import * as ImagePicker from 'expo-image-picker';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
-import { useFocusEffect } from '@react-navigation/native';
-import { useLocalSearchParams, useNavigation, useRouter } from 'expo-router';
+import { useFocusEffect, useLocalSearchParams, useNavigation, useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { StatusBar } from 'expo-status-bar';
 import { snapFilters } from '@/lib/mock/reviewSnap';
@@ -24,6 +23,7 @@ import { SnapFilterOverlay } from '@/components/snaps/SnapFilterOverlay';
 import { useColors, createStyles, borderRadius, spacing, typography } from '@/lib/theme';
 import { getSnapRestaurantName } from '@/lib/mock/snaps';
 import { openAppPhotoSettings } from '@/lib/device/openAppPhotoSettings';
+import { safeRouterBack } from '@/lib/navigation/transitions';
 
 function GlassCircle({
   onPress,
@@ -318,10 +318,10 @@ export default function ReviewCameraScreen() {
 
   useFocusEffect(
     useCallback(() => {
-      const tab = navigation.getParent();
-      tab?.setOptions({ tabBarStyle: { display: 'none', height: 0, overflow: 'hidden' } });
+      const tab = navigation.getParent?.();
+      tab?.setOptions?.({ tabBarStyle: { display: 'none', height: 0, overflow: 'hidden' } });
       return () => {
-        tab?.setOptions({ tabBarStyle: TAB_BAR_STYLE });
+        tab?.setOptions?.({ tabBarStyle: TAB_BAR_STYLE });
       };
     }, [navigation]),
   );
@@ -474,7 +474,7 @@ export default function ReviewCameraScreen() {
       setSelectedSource(null);
       return;
     }
-    router.back();
+    safeRouterBack(router, '/(customer)/discover/post-review');
   };
 
   if (!permission) {

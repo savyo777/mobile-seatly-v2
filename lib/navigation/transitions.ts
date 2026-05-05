@@ -1,6 +1,22 @@
 import type { BottomTabNavigationOptions } from '@react-navigation/bottom-tabs';
 import type { NativeStackNavigationOptions } from '@react-navigation/native-stack';
+import type { Href } from 'expo-router';
 import { Easing } from 'react-native';
+
+type SafeBackRouter = {
+  back: () => void;
+  canGoBack: () => boolean;
+  replace: (href: Href) => void;
+};
+
+export function safeRouterBack(router: SafeBackRouter, fallback: Href) {
+  if (router.canGoBack()) {
+    router.back();
+    return;
+  }
+
+  router.replace(fallback);
+}
 
 export function createStackTransitionOptions(backgroundColor: string): NativeStackNavigationOptions {
   return {
