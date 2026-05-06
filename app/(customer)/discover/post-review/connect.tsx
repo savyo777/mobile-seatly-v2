@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useCallback, useMemo, useState } from 'react';
 import {
   KeyboardAvoidingView,
   Platform,
@@ -11,16 +11,25 @@ import {
   View,
 } from 'react-native';
 import { Image } from 'expo-image';
+import type { ImageLoadEventData } from 'expo-image';
 import { useLocalSearchParams, useRouter, type Href } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { StatusBar } from 'expo-status-bar';
 import { Button } from '@/components/ui';
+import { StoryFilterFrame } from '@/components/storyFilters/StoryFilterFrame';
 import { useColors, createStyles, borderRadius, spacing, typography } from '@/lib/theme';
 import { safeRouterBack } from '@/lib/navigation/transitions';
 import { createSnapPost, getSnapRestaurantName, TAG_POOL } from '@/lib/mock/snaps';
+import { mockRestaurants } from '@/lib/mock/restaurants';
 import { mockCustomer } from '@/lib/mock/users';
+import { STORY_FILTERS } from '@/lib/storyFilters/registry';
+import {
+  DEFAULT_SNAP_PHOTO_ASPECT,
+  getSnapPreviewLayout,
+} from '@/lib/storyFilters/previewLayout';
+import type { StoryFilterId } from '@/lib/storyFilters/types';
 
 const H_PAD = 18;
 
@@ -247,16 +256,24 @@ export default function SnapCaptionScreen() {
   const styles = useStyles();
   const router = useRouter();
   const insets = useSafeAreaInsets();
-  const { width: windowW } = useWindowDimensions();
-  const { photoUri, restaurantId } = useLocalSearchParams<{
+  const { width: windowW, height: windowH } = useWindowDimensions();
+  const {
+    photoUri,
+    restaurantId,
+    filterId,
+    capturedAt: capturedAtParam,
+  } = useLocalSearchParams<{
     photoUri: string;
     restaurantId?: string;
+    filterId?: string;
+    capturedAt?: string;
   }>();
   const [caption, setCaption] = useState('');
   const [rating, setRating] = useState<1 | 2 | 3 | 4 | 5>(5);
   const [dish, setDish] = useState('');
   const [tags, setTags] = useState<string[]>([]);
   const [tagInput, setTagInput] = useState('');
+  const [photoAspect, setPhotoAspect] = useState(DEFAULT_SNAP_PHOTO_ASPECT);
 
   const toggleTag = (tag: string) => {
     setTags((prev) => (prev.includes(tag) ? prev.filter((t) => t !== tag) : [...prev, tag]));
@@ -279,8 +296,23 @@ export default function SnapCaptionScreen() {
         }
       })()
     : '';
-  const photoW = Math.max(1, Math.min(windowW - H_PAD * 2, 300));
-  const photoH = photoW * (4 / 3);
+  const selectedFilterId = useMemo<StoryFilterId | null>(() => {
+    if (!filterId) return null;
+    return STORY_FILTERS.some((filter) => filter.id === filterId)
+      ? (filterId as StoryFilterId)
+      : null;
+  }, [filterId]);
+  const capturedAt = useMemo(() => {
+    const value = Number(capturedAtParam);
+    return Number.isFinite(value) && value > 0 ? value : Date.now();
+  }, [capturedAtParam]);
+  const previewLayout = getSnapPreviewLayout({
+    photoAspect,
+    maxWidth: windowW - spacing.lg * 2,
+    maxHeight: Math.min(420, Math.max(320, windowH - insets.top - insets.bottom - 280)),
+  });
+  const photoW = previewLayout.width;
+  const photoH = previewLayout.height;
 
   const restaurantName = restaurantId ? getSnapRestaurantName(restaurantId) : 'Restaurant';
   const goBackToCapture = () => {
@@ -292,6 +324,20 @@ export default function SnapCaptionScreen() {
       : '/(customer)/discover/post-review';
     safeRouterBack(router, fallback);
   };
+  const restaurant = useMemo(
+    () => mockRestaurants.find((item) => item.id === restaurantId) ?? null,
+    [restaurantId],
+  );
+  const selectedRestaurantName = restaurant?.name ?? restaurantName;
+  const selectedRestaurantCity = restaurant?.city ?? 'Toronto';
+  const selectedRestaurantArea = restaurant?.area ?? selectedRestaurantCity;
+
+  const handlePhotoLoad = useCallback((event: ImageLoadEventData) => {
+    const { width, height } = event.source ?? {};
+    if (width > 0 && height > 0) {
+      setPhotoAspect(width / height);
+    }
+  }, []);
 
   const postSnap = () => {
     if (!restaurantId || !decodedUri || !caption.trim()) return;
@@ -303,12 +349,25 @@ export default function SnapCaptionScreen() {
       rating,
       tags,
       dish: dish.trim() || undefined,
+      storyFilterId: selectedFilterId ?? undefined,
+      storyFilterCapturedAt: selectedFilterId ? capturedAt : undefined,
     });
-    router.replace(
-      `/(customer)/discover/post-review/reward?points=25&restaurantName=${encodeURIComponent(
+    router.replace({
+      pathname: '/(customer)/discover/post-review/reward',
+      params: {
+        points: '25',
         restaurantName,
-      )}&restaurantId=${restaurantId}&photoUri=${encodeURIComponent(decodedUri)}&rating=${rating}`,
-    );
+        restaurantId,
+        photoUri: encodeURIComponent(decodedUri),
+        rating: String(rating),
+        ...(selectedFilterId
+          ? {
+              filterId: selectedFilterId,
+              capturedAt: String(capturedAt),
+            }
+          : {}),
+      },
+    });
   };
 
   return (
@@ -344,16 +403,38 @@ export default function SnapCaptionScreen() {
           keyboardShouldPersistTaps="handled"
         >
           {decodedUri ? (
-            <View style={[styles.imageBlock, { width: photoW, height: photoH }]}>
-              <Image source={{ uri: decodedUri }} style={styles.previewBackdrop} contentFit="cover" blurRadius={24} />
-              <View style={styles.previewBackdropShade} />
-              <Image source={{ uri: decodedUri }} style={styles.previewImage} contentFit="contain" />
-              <LinearGradient
-                colors={['transparent', 'rgba(0,0,0,0.5)']}
-                style={styles.imageBottomFade}
-                pointerEvents="none"
-              />
-            </View>
+            selectedFilterId ? (
+              <View style={[styles.imageBlock, { width: photoW, height: photoH }]}>
+                <StoryFilterFrame
+                  filterId={selectedFilterId}
+                  width={photoW}
+                  height={photoH}
+                  capturedAt={capturedAt}
+                  restaurantName={selectedRestaurantName}
+                  city={selectedRestaurantCity}
+                  area={selectedRestaurantArea}
+                  mediaSlot={
+                    <Image
+                      source={{ uri: decodedUri }}
+                      style={styles.previewImage}
+                      contentFit="cover"
+                      contentPosition="bottom"
+                      onLoad={handlePhotoLoad}
+                    />
+                  }
+                />
+              </View>
+            ) : (
+              <View style={[styles.imageBlock, { width: photoW, height: photoH }]}>
+                <Image
+                  source={{ uri: decodedUri }}
+                  style={styles.previewImage}
+                  contentFit="cover"
+                  contentPosition="bottom"
+                  onLoad={handlePhotoLoad}
+                />
+              </View>
+            )
           ) : (
             <View style={[styles.previewImage, styles.imagePlaceholder, { width: photoW, height: photoH }]} />
           )}
@@ -473,7 +554,7 @@ export default function SnapCaptionScreen() {
           style={[
             styles.footer,
             {
-              paddingBottom: Math.max(insets.bottom, spacing.md) + spacing.xs,
+              paddingBottom: Math.max(4, Math.min(insets.bottom, 8)),
               paddingHorizontal: H_PAD,
             },
           ]}

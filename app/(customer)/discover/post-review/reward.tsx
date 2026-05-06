@@ -1,9 +1,12 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useMemo, useRef } from 'react';
 import { Animated, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Button, ScreenWrapper } from '@/components/ui';
 import { SnapShareSheet } from '@/components/snaps/SnapShareSheet';
-import { useColors, createStyles, borderRadius, spacing, typography } from '@/lib/theme';
+import { createStyles, borderRadius, spacing, typography } from '@/lib/theme';
+import { mockRestaurants } from '@/lib/mock/restaurants';
+import { STORY_FILTERS } from '@/lib/storyFilters/registry';
+import type { StoryFilterId } from '@/lib/storyFilters/types';
 
 const useStyles = createStyles((c) => ({
   scroll: {
@@ -52,14 +55,22 @@ const useStyles = createStyles((c) => ({
 }));
 
 export default function ReviewRewardScreen() {
-  const c = useColors();
   const styles = useStyles();
   const router = useRouter();
-  const { points, restaurantName, restaurantId, photoUri } = useLocalSearchParams<{
+  const {
+    points,
+    restaurantName,
+    restaurantId,
+    photoUri,
+    filterId,
+    capturedAt: capturedAtParam,
+  } = useLocalSearchParams<{
     points: string;
     restaurantName: string;
     restaurantId?: string;
     photoUri?: string;
+    filterId?: string;
+    capturedAt?: string;
   }>();
   const pulse = useRef(new Animated.Value(0.9)).current;
   const actionFade = useRef(new Animated.Value(0)).current;
@@ -67,6 +78,23 @@ export default function ReviewRewardScreen() {
   const numericPoints = Number(points ?? 25);
   const decodedName = restaurantName ? decodeURIComponent(restaurantName) : 'Restaurant';
   const decodedPhoto = photoUri ? decodeURIComponent(photoUri) : '';
+  const selectedFilterId = useMemo<StoryFilterId | null>(() => {
+    if (!filterId) return null;
+    return STORY_FILTERS.some((filter) => filter.id === filterId)
+      ? (filterId as StoryFilterId)
+      : null;
+  }, [filterId]);
+  const capturedAt = useMemo(() => {
+    const value = Number(capturedAtParam);
+    return Number.isFinite(value) && value > 0 ? value : Date.now();
+  }, [capturedAtParam]);
+  const restaurant = useMemo(
+    () => mockRestaurants.find((item) => item.id === restaurantId) ?? null,
+    [restaurantId],
+  );
+  const previewRestaurantName = restaurant?.name ?? decodedName;
+  const previewRestaurantCity = restaurant?.city ?? 'Toronto';
+  const previewRestaurantArea = restaurant?.area ?? previewRestaurantCity;
 
   useEffect(() => {
     Animated.parallel([
@@ -105,15 +133,12 @@ export default function ReviewRewardScreen() {
           {decodedPhoto ? (
             <SnapShareSheet
               imageUrl={decodedPhoto}
-              rewardContext={
-                restaurantId
-                  ? {
-                      restaurantId,
-                      points: String(numericPoints),
-                      restaurantName: decodedName,
-                    }
-                  : undefined
-              }
+              storyFilterId={selectedFilterId}
+              storyFilterCapturedAt={selectedFilterId ? capturedAt : undefined}
+              restaurantName={previewRestaurantName}
+              city={previewRestaurantCity}
+              area={previewRestaurantArea}
+              autoSaveToCameraRoll
             />
           ) : null}
 

@@ -13,29 +13,26 @@ import {
 // portrait shot stays portrait — react-native's <Image> sometimes ignores
 // EXIF, which is what made captures appear horizontal here.
 import { Image } from 'expo-image';
+import type { ImageLoadEventData } from 'expo-image';
 import { useLocalSearchParams, useRouter, type Href } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Button, ScreenWrapper } from '@/components/ui';
-import { SnapOverlayLayer } from '@/components/snapOverlays/SnapOverlayLayer';
+import { StoryFilterFrame } from '@/components/storyFilters/StoryFilterFrame';
+import { STORY_FILTERS } from '@/lib/storyFilters/registry';
 import {
-  SNAP_OVERLAY_CATEGORIES,
-  SNAP_OVERLAY_NONE_ID,
-  overlaysForCategory,
-} from '@/lib/snapOverlays/catalog';
-import type { SnapOverlayCategoryId, SnapOverlayContext } from '@/lib/snapOverlays/types';
+  STORY_CATEGORIES,
+  type StoryFilterCategory,
+  type StoryFilterId,
+} from '@/lib/storyFilters/types';
 import { getSnapRestaurantName } from '@/lib/mock/snaps';
 import { mockRestaurants } from '@/lib/mock/restaurants';
 import { captureStyledSnapToTmpFile } from '@/lib/snapOverlays/captureStyledSnap';
+import {
+  DEFAULT_SNAP_PHOTO_ASPECT,
+  getSnapPreviewLayout,
+} from '@/lib/storyFilters/previewLayout';
 import { useColors, createStyles, borderRadius, spacing, typography } from '@/lib/theme';
-
-function formatBookedTimeLabel(d: Date): string {
-  try {
-    return d.toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' });
-  } catch {
-    return 'Tonight';
-  }
-}
 
 const useStyles = createStyles((c) => ({
   flex: { flex: 1 },
@@ -64,15 +61,9 @@ const useStyles = createStyles((c) => ({
     textAlign: 'center',
   },
   headerSpacer: { width: 40 },
-  subtitle: {
-    ...typography.bodySmall,
-    color: c.textSecondary,
-    paddingHorizontal: spacing.lg,
-    marginBottom: spacing.sm,
-  },
   previewOuter: {
     paddingHorizontal: spacing.lg,
-    marginBottom: spacing.md,
+    marginBottom: spacing.sm,
   },
   previewWrap: {
     alignSelf: 'center',
@@ -82,14 +73,7 @@ const useStyles = createStyles((c) => ({
     alignSelf: 'center',
     overflow: 'hidden',
     borderRadius: borderRadius.xl,
-    backgroundColor: '#000',
-  },
-  captureBackdrop: {
-    ...StyleSheet.absoluteFillObject,
-  },
-  captureBackdropShade: {
-    ...StyleSheet.absoluteFillObject,
-    backgroundColor: 'rgba(0,0,0,0.28)',
+    backgroundColor: '#0c0a08',
   },
   captureImage: {
     ...StyleSheet.absoluteFillObject,
@@ -164,7 +148,7 @@ const useStyles = createStyles((c) => ({
     borderTopWidth: StyleSheet.hairlineWidth,
     borderTopColor: c.border,
     backgroundColor: c.bgBase,
-    paddingTop: spacing.md,
+    paddingTop: spacing.xs,
     gap: spacing.sm,
   },
 }));
@@ -174,19 +158,20 @@ export default function SnapStylesScreen() {
   const styles = useStyles();
   const router = useRouter();
   const insets = useSafeAreaInsets();
-  const { width: windowW } = useWindowDimensions();
+  const { width: windowW, height: windowH } = useWindowDimensions();
   const captureRefView = useRef<View>(null);
 
   const {
     restaurantId,
     photoUri,
-    partySize: partySizeParam,
+    capturedAt: capturedAtParam,
     returnTo,
     points: pointsParam,
     restaurantName: rewardRestaurantNameParam,
   } = useLocalSearchParams<{
     restaurantId?: string;
     photoUri?: string;
+    capturedAt?: string;
     partySize?: string;
     /** When `reward`, Continue returns to post-reward share screen instead of caption. */
     returnTo?: string;
@@ -205,60 +190,72 @@ export default function SnapStylesScreen() {
     }
   }, [photoUri]);
 
+  const capturedAt = useMemo(() => {
+    const value = Number(capturedAtParam);
+    return Number.isFinite(value) && value > 0 ? value : Date.now();
+  }, [capturedAtParam]);
+
   const restaurant = useMemo(
-    () => mockRestaurants.find((r) => r.id === restaurantId),
+    () => mockRestaurants.find((item) => item.id === restaurantId) ?? null,
     [restaurantId],
   );
+  const selectedRestaurantName = useMemo(() => {
+    if (restaurant?.name) return restaurant.name;
+    if (restaurantId) return getSnapRestaurantName(restaurantId);
+    return 'Restaurant';
+  }, [restaurant?.name, restaurantId]);
+  const selectedRestaurantCity = restaurant?.city ?? 'Toronto';
+  const selectedRestaurantArea = restaurant?.area ?? selectedRestaurantCity;
 
-  const restaurantName = restaurantId ? getSnapRestaurantName(restaurantId) : 'Restaurant';
-  const city = restaurant?.city ?? '';
-  const area = restaurant?.area ?? '';
-
-  const partySize = Math.min(25, Math.max(1, parseInt(partySizeParam ?? '2', 10) || 2));
-
-  const overlayContext: SnapOverlayContext = useMemo(
-    () => ({
-      restaurantName,
-      city: city || 'Your city',
-      area: area || city || 'Neighbourhood',
-      bookedTimeLabel: formatBookedTimeLabel(new Date()),
-      partySize,
-    }),
-    [restaurantName, city, area, partySize],
-  );
-
-  const previewW = Math.max(1, windowW - spacing.lg * 2);
-  const previewH = previewW * (4 / 3);
-
-  const [categoryId, setCategoryId] = useState<SnapOverlayCategoryId>('branded');
-  const [overlayId, setOverlayId] = useState<string>(SNAP_OVERLAY_NONE_ID);
-  const [reviewTexts, setReviewTexts] = useState<Record<string, string>>({});
+  const [categoryId, setCategoryId] = useState<StoryFilterCategory>('cute');
+  const [filterId, setFilterId] = useState<StoryFilterId | null>(null);
+  const [photoAspect, setPhotoAspect] = useState(DEFAULT_SNAP_PHOTO_ASPECT);
   const [busy, setBusy] = useState(false);
 
-  const onReviewChange = useCallback((id: string, text: string) => {
-    setReviewTexts((prev) => ({ ...prev, [id]: text }));
+  const previewLayout = getSnapPreviewLayout({
+    photoAspect,
+    maxWidth: windowW - spacing.lg * 2,
+    maxHeight: Math.min(420, Math.max(320, windowH - insets.top - insets.bottom - 280)),
+  });
+  const previewW = previewLayout.width;
+  const previewH = previewLayout.height;
+
+  const categoryOptions = STORY_CATEGORIES;
+  const filterOptions = useMemo(
+    () => STORY_FILTERS.filter((filter) => filter.category === categoryId),
+    [categoryId],
+  );
+
+  const handlePhotoLoad = useCallback((event: ImageLoadEventData) => {
+    const { width, height } = event.source ?? {};
+    if (width > 0 && height > 0) {
+      setPhotoAspect(width / height);
+    }
   }, []);
 
-  const categoryOptions = SNAP_OVERLAY_CATEGORIES;
-  const overlayOptions = useMemo(() => overlaysForCategory(categoryId), [categoryId]);
-
   const goDetails = useCallback(
-    async (finalUri: string) => {
+    async (finalUri: string, preservedFilterId?: StoryFilterId | null) => {
       if (!restaurantId) return;
       const href: Href = {
         pathname: '/(customer)/discover/post-review/details',
         params: {
           photoUri: encodeURIComponent(finalUri),
           restaurantId,
+          ...(preservedFilterId
+            ? {
+                filterId: preservedFilterId,
+                capturedAt: String(capturedAt),
+              }
+            : {}),
         },
       };
       router.push(href);
     },
-    [restaurantId, router],
+    [capturedAt, restaurantId, router],
   );
 
   const goReward = useCallback(
-    (finalUri: string) => {
+    (finalUri: string, preservedFilterId?: StoryFilterId | null) => {
       if (!restaurantId) return;
       router.replace({
         pathname: '/(customer)/discover/post-review/reward',
@@ -267,10 +264,16 @@ export default function SnapStylesScreen() {
           restaurantName: rewardRestaurantNameParam ?? '',
           restaurantId,
           photoUri: encodeURIComponent(finalUri),
+          ...(preservedFilterId
+            ? {
+                filterId: preservedFilterId,
+                capturedAt: String(capturedAt),
+              }
+            : {}),
         },
       });
     },
-    [restaurantId, router, pointsParam, rewardRestaurantNameParam],
+    [capturedAt, restaurantId, router, pointsParam, rewardRestaurantNameParam],
   );
 
   const handleContinue = useCallback(async () => {
@@ -279,15 +282,15 @@ export default function SnapStylesScreen() {
       return;
     }
 
-    const finish = async (finalUri: string) => {
+    const finish = async (finalUri: string, preservedFilterId?: StoryFilterId | null) => {
       if (returningToReward) {
-        goReward(finalUri);
+        goReward(finalUri, preservedFilterId);
         return;
       }
-      await goDetails(finalUri);
+      await goDetails(finalUri, preservedFilterId);
     };
 
-    if (!overlayId || overlayId === SNAP_OVERLAY_NONE_ID) {
+    if (!filterId) {
       await finish(decodedUri);
       return;
     }
@@ -299,11 +302,7 @@ export default function SnapStylesScreen() {
       if (uri) {
         await finish(uri);
       } else {
-        Alert.alert(
-          'Stickers not flattened',
-          'Expo Go cannot bake stickers onto your photo yet. Use a Cenaiva development build for that. Continuing with your original photo.',
-        );
-        await finish(decodedUri);
+        await finish(decodedUri, filterId);
       }
     } catch (e) {
       const msg = e instanceof Error ? e.message : 'Could not render your styled snap.';
@@ -314,7 +313,7 @@ export default function SnapStylesScreen() {
   }, [
     decodedUri,
     restaurantId,
-    overlayId,
+    filterId,
     goDetails,
     returningToReward,
     goReward,
@@ -325,7 +324,7 @@ export default function SnapStylesScreen() {
   return (
     <ScreenWrapper scrollable={false} padded={false}>
       <View style={styles.flex}>
-        <View style={[styles.topBar, { paddingTop: insets.top + spacing.sm }]}>
+        <View style={[styles.topBar, { paddingTop: spacing.xs }]}>
           <Pressable
             onPress={() => router.back()}
             style={({ pressed }) => [styles.backBtn, pressed && styles.pressed]}
@@ -346,10 +345,6 @@ export default function SnapStylesScreen() {
           keyboardShouldPersistTaps="handled"
           showsVerticalScrollIndicator={false}
         >
-          <Text style={styles.subtitle}>
-            Choose a filter: Cenaiva branded, location, occasion, food, vibe, or review cards. Type on review filters before continuing — with a dev build we bake everything into one image for sharing.
-          </Text>
-
           <View style={styles.previewOuter}>
             <View style={[styles.previewWrap, { width: previewW, height: previewH }]}>
               <View
@@ -357,30 +352,25 @@ export default function SnapStylesScreen() {
                 collapsable={false}
                 style={[styles.captureBox, { width: previewW, height: previewH }]}
               >
-                {hasImage ? (
-                  <>
-                    {/* Blurred copy fills the box so we can use contentFit="contain"
-                        on the real photo — that preserves the user's exact framing
-                        & orientation, no cropping, no stretch, no rotation. */}
-                    <Image
-                      source={{ uri: decodedUri }}
-                      style={styles.captureBackdrop}
-                      contentFit="cover"
-                      blurRadius={28}
-                    />
-                    <View style={styles.captureBackdropShade} />
-                    <Image
-                      source={{ uri: decodedUri }}
-                      style={styles.captureImage}
-                      contentFit="contain"
-                    />
-                  </>
-                ) : null}
-                <SnapOverlayLayer
-                  overlayId={overlayId}
-                  context={overlayContext}
-                  reviewTexts={reviewTexts}
-                  onReviewChange={onReviewChange}
+                <StoryFilterFrame
+                  filterId={filterId}
+                  width={previewW}
+                  height={previewH}
+                  capturedAt={capturedAt}
+                  restaurantName={selectedRestaurantName}
+                  city={selectedRestaurantCity}
+                  area={selectedRestaurantArea}
+                  mediaSlot={
+                    hasImage ? (
+                      <Image
+                        source={{ uri: decodedUri }}
+                        style={styles.captureImage}
+                        contentFit="cover"
+                        contentPosition="bottom"
+                        onLoad={handlePhotoLoad}
+                      />
+                    ) : undefined
+                  }
                 />
               </View>
               {busy ? (
@@ -431,28 +421,28 @@ export default function SnapStylesScreen() {
             contentContainerStyle={{ paddingRight: spacing.md }}
           >
             <Pressable
-              onPress={() => setOverlayId(SNAP_OVERLAY_NONE_ID)}
-              style={[styles.noneChip, overlayId === SNAP_OVERLAY_NONE_ID && styles.overlayChipOn]}
+              onPress={() => setFilterId(null)}
+              style={[styles.noneChip, !filterId && styles.overlayChipOn]}
             >
               <Text
                 style={[
                   styles.overlayChipText,
-                  overlayId === SNAP_OVERLAY_NONE_ID && styles.overlayChipTextOn,
+                  !filterId && styles.overlayChipTextOn,
                 ]}
               >
                 Original
               </Text>
             </Pressable>
-            {overlayOptions.map((o) => {
-              const on = o.id === overlayId;
+            {filterOptions.map((o) => {
+              const on = o.id === filterId;
               return (
                 <Pressable
                   key={o.id}
-                  onPress={() => setOverlayId(o.id)}
+                  onPress={() => setFilterId(o.id)}
                   style={[styles.overlayChip, on && styles.overlayChipOn]}
                 >
                   <Text style={[styles.overlayChipText, on && styles.overlayChipTextOn]} numberOfLines={2}>
-                    {o.label}
+                    {o.name}
                   </Text>
                 </Pressable>
               );
@@ -464,7 +454,8 @@ export default function SnapStylesScreen() {
           style={[
             styles.footer,
             {
-              paddingBottom: Math.max(insets.bottom, spacing.md),
+              marginBottom: -insets.bottom,
+              paddingBottom: spacing.xs,
               paddingHorizontal: spacing.lg,
             },
           ]}

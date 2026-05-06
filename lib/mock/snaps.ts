@@ -1,5 +1,6 @@
 import { mockCustomer } from '@/lib/mock/users';
 import { mockRestaurants } from '@/lib/mock/restaurants';
+import type { StoryFilterId } from '@/lib/storyFilters/types';
 
 export type SnapUser = {
   id: string;
@@ -21,6 +22,8 @@ export type SnapPost = {
   saves: number;
   tags: string[];
   dish?: string;
+  storyFilterId?: StoryFilterId;
+  storyFilterCapturedAt?: number;
 };
 
 export const TAG_POOL = [

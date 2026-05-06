@@ -1,5 +1,20 @@
 import type { RefObject } from 'react';
-import type { View } from 'react-native';
+import Constants from 'expo-constants';
+import { NativeModules, TurboModuleRegistry, type View } from 'react-native';
+
+function hasNativeViewShotModule(): boolean {
+  if (Constants.appOwnership === 'expo') {
+    return false;
+  }
+
+  try {
+    const turboModule = TurboModuleRegistry.get?.('RNViewShot');
+    const nativeModule = NativeModules.RNViewShot;
+    return Boolean(turboModule || nativeModule);
+  } catch {
+    return false;
+  }
+}
 
 /**
  * Saves the given view (photo + overlays) to a temporary JPEG.
@@ -9,6 +24,10 @@ import type { View } from 'react-native';
 export async function captureStyledSnapToTmpFile(
   viewRef: RefObject<View | null>,
 ): Promise<string | undefined> {
+  if (!viewRef.current || !hasNativeViewShotModule()) {
+    return undefined;
+  }
+
   try {
     const { captureRef } = await import('react-native-view-shot');
     const uri = await captureRef(viewRef, {

@@ -100,13 +100,13 @@ export default function CustomerTabsLayout() {
           router.push('/(customer)/discover/post-review' as Href);
         }}
         style={styles.centerBtnWrapper}
-        accessibilityLabel="Post food"
+        accessibilityLabel="Open snap camera"
       >
         {({ pressed }) => (
           <View style={[styles.centerBtn, pressed && styles.centerBtnActive]}>
             <Ionicons
-              name="add"
-              size={30}
+              name="camera"
+              size={28}
               color={c.bgBase}
             />
           </View>

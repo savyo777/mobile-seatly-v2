@@ -93,6 +93,14 @@
         }
       ],
       [
+        "expo-media-library",
+        {
+          "photosPermission": "Cenaiva needs access to your photo library so it can save your finished snap.",
+          "savePhotosPermission": "Cenaiva needs permission to save your finished snap to your camera roll.",
+          "isAccessMediaLocationEnabled": false
+        }
+      ],
+      [
         "expo-location",
         {
           "locationWhenInUsePermission": "Cenaiva uses your location to find nearby restaurants.",

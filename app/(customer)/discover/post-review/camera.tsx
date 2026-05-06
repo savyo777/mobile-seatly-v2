@@ -64,6 +64,24 @@ const glassStyles = StyleSheet.create({
   },
 });
 
+function readExifTimestamp(exif: unknown): number | null {
+  if (!exif || typeof exif !== 'object') return null;
+  const record = exif as Record<string, unknown>;
+  const raw =
+    record.DateTimeOriginal ??
+    record.DateTimeDigitized ??
+    record.DateTime ??
+    record.CreationDate;
+  if (typeof raw !== 'string' || raw.trim().length === 0) return null;
+
+  const withDateDashes = raw.trim().replace(/^(\d{4}):(\d{2}):(\d{2})/, '$1-$2-$3');
+  const normalized = withDateDashes.includes('T')
+    ? withDateDashes
+    : withDateDashes.replace(' ', 'T');
+  const timestamp = Date.parse(normalized);
+  return Number.isFinite(timestamp) ? timestamp : null;
+}
+
 const useStyles = createStyles((c) => ({
   root: {
     flex: 1,
@@ -274,6 +292,7 @@ export default function ReviewCameraScreen() {
   const [capturing, setCapturing] = useState(false);
   const [selectedImageUri, setSelectedImageUri] = useState<string | null>(null);
   const [selectedSource, setSelectedSource] = useState<'camera' | 'gallery' | null>(null);
+  const [selectedCapturedAt, setSelectedCapturedAt] = useState<number | null>(null);
 
   const cameraRef = useRef<CameraView | null>(null);
   const shutterOpacity = useRef(new Animated.Value(0)).current;
@@ -321,6 +340,7 @@ export default function ReviewCameraScreen() {
           if (uri) {
             setSelectedImageUri(uri);
             setSelectedSource('gallery');
+            setSelectedCapturedAt(readExifTimestamp(pending.assets?.[0]?.exif) ?? Date.now());
           }
         } catch {
           // Android may surface edge cases; ignore
@@ -362,10 +382,13 @@ export default function ReviewCameraScreen() {
         mediaTypes: ['images'],
         quality: 0.9,
         allowsMultipleSelection: false,
+        exif: true,
       });
       if (result.canceled || !result.assets?.[0]?.uri) return;
-      setSelectedImageUri(result.assets[0].uri);
+      const asset = result.assets[0];
+      setSelectedImageUri(asset.uri);
       setSelectedSource('gallery');
+      setSelectedCapturedAt(readExifTimestamp(asset.exif) ?? Date.now());
     } catch {
       Alert.alert(
         'Could not open photos',
@@ -439,6 +462,7 @@ export default function ReviewCameraScreen() {
       // capture — no lighting/colour shift between live view and saved frame.
       // exif: keeps EXIF metadata so iOS knows the rotation; downstream
       // <Image> renders it in the correct orientation (no horizontal flip).
+      const capturedAt = Date.now();
       const photo = await cameraRef.current.takePictureAsync({
         quality: 1,
         skipProcessing: true,
@@ -447,6 +471,7 @@ export default function ReviewCameraScreen() {
       if (!photo?.uri) return;
       setSelectedImageUri(photo.uri);
       setSelectedSource('camera');
+      setSelectedCapturedAt(readExifTimestamp(photo.exif) ?? capturedAt);
     } finally {
       setCapturing(false);
     }
@@ -455,10 +480,11 @@ export default function ReviewCameraScreen() {
   const goNext = () => {
     if (!selectedImageUri) return;
     const encodedUri = encodeURIComponent(selectedImageUri);
+    const capturedAt = selectedCapturedAt ?? Date.now();
     // Skip the standalone preview screen — go straight to the filter picker.
     // Filters + captioning happen there; preview was a redundant step.
     router.push(
-      `/(customer)/discover/post-review/styles?photoUri=${encodedUri}&restaurantId=${restaurantId}`,
+      `/(customer)/discover/post-review/styles?photoUri=${encodedUri}&restaurantId=${restaurantId}&capturedAt=${capturedAt}`,
     );
   };
 
@@ -466,6 +492,7 @@ export default function ReviewCameraScreen() {
     if (isEditMode) {
       setSelectedImageUri(null);
       setSelectedSource(null);
+      setSelectedCapturedAt(null);
       return;
     }
     safeRouterBack(router, '/(customer)/discover/post-review');
