@@ -10,7 +10,7 @@ import React, {
 import { AppState } from 'react-native';
 import * as Location from 'expo-location';
 import { usePathname, useRouter } from 'expo-router';
-import type { OrchestratorRequestType } from '@cenaiva/assistant';
+import type { AssistantResponseType, OrchestratorRequestType } from '@cenaiva/assistant';
 import { useAuthSession } from '@/lib/auth/AuthContext';
 import {
   AssistantStoreProvider,
@@ -18,7 +18,10 @@ import {
   useAssistantStore,
   type AssistantAction,
 } from '@/lib/cenaiva/state/assistantStore';
-import { useCenaivaOrchestrator } from '@/lib/cenaiva/api/useCenaivaOrchestrator';
+import {
+  useCenaivaOrchestrator,
+  type OrchestratorTransport,
+} from '@/lib/cenaiva/api/useCenaivaOrchestrator';
 import { useCenaivaVoice } from '@/lib/cenaiva/voice/useCenaivaVoice';
 import { useCenaivaVoicePreference } from '@/lib/cenaiva/voice/CenaivaVoicePreferenceProvider';
 import type { TranscriptionPhase } from '@/lib/cenaiva/voice/useMobileTranscription';
@@ -30,6 +33,18 @@ import {
   getCenaivaRecommendationMode,
   normalizeSingleRestaurantRecommendationResponse,
 } from '@/lib/cenaiva/recommendationIntent';
+import {
+  getCenaivaImmediateFiller,
+  isCenaivaProcessPrompt,
+  shouldResetCenaivaBookingContext,
+} from '@/lib/cenaiva/simplePromptIntent';
+import {
+  buildLocalAvailabilityResponse,
+  planLocalBookingTurn,
+  type CenaivaAvailabilityOption,
+} from '@/lib/cenaiva/localBookingCollector';
+import { postCenaivaAvailability } from '@/lib/cenaiva/api/checkCenaivaAvailability';
+import { postCenaivaSmallPrompt, prewarmCenaivaSmallPrompt } from '@/lib/cenaiva/api/getCenaivaSmallPrompt';
 
 type OpenOptions = { autoListen?: boolean; greetingText?: string };
 
@@ -59,9 +74,14 @@ const CenaivaAssistantContext = createContext<CenaivaAssistant | null>(null);
 const RELISTEN_AFTER_EMPTY_TURN_MS = 260;
 const RELISTEN_AFTER_ERROR_MS = 320;
 const RELISTEN_AFTER_RESPONSE_MS = 260;
+const DEFERRED_FILLER_DELAY_MS = 2_000;
+const FILLER_TO_RESPONSE_PAUSE_MS = 240;
 const MAX_EMPTY_RELISTENS = 2;
 const LOCATION_TURN_WAIT_MS = 250;
 const CENAIVA_OPEN_MAP_ZOOM = 11;
+const LOCAL_AVAILABILITY_TIMEOUT_MS = 20_000;
+const LOCAL_FILLER_TO_RESULT_PAUSE_MS = 260;
+const SMALL_PROMPT_TIMEOUT_MS = 8_000;
 
 const NO_AUTO_RELISTEN_STATUSES = new Set([
   'offering_preorder',
@@ -117,17 +137,107 @@ function debugTiming(event: string, details?: Record<string, unknown>) {
   else console.log(`[Cenaiva timing] ${event}`);
 }
 
+function wait(ms: number) {
+  return new Promise((resolve) => {
+    setTimeout(resolve, ms);
+  });
+}
+
+type DeferredAction = {
+  cancel: () => boolean;
+  done: Promise<void>;
+};
+
+function createDeferredAction(delayMs: number, action: () => void | Promise<void>): DeferredAction {
+  let started = false;
+  let settled = false;
+  let timeout: ReturnType<typeof setTimeout> | null = null;
+  let resolveDone: (() => void) | null = null;
+  const done = new Promise<void>((resolve) => {
+    resolveDone = () => {
+      if (settled) return;
+      settled = true;
+      resolve();
+    };
+    timeout = setTimeout(() => {
+      timeout = null;
+      started = true;
+      Promise.resolve(action()).finally(() => {
+        resolveDone?.();
+      });
+    }, delayMs);
+  });
+
+  return {
+    cancel() {
+      if (!started) {
+        if (timeout) clearTimeout(timeout);
+        timeout = null;
+        resolveDone?.();
+        return false;
+      }
+      return true;
+    },
+    done,
+  };
+}
+
+// WS-3.1: Per-turn latency summary. Aggregates the individual debugTiming
+// checkpoints into a single line at end of turn so we can spot regressions
+// against the 1500ms simple-prompt budget without scrolling through events.
+type LatencyCheckpoints = {
+  transcriptAt?: number;
+  firstSpeechChunkAt?: number;
+  requestSentAt?: number;
+  finalReceivedAt?: number;
+  playbackRequestedAt?: number;
+  firstAudioDecodedAt?: number;
+  streamingTransport?: OrchestratorTransport;
+};
+function logLatencySummary(turnStartedAt: number, c: LatencyCheckpoints, outcome: string) {
+  if (process.env.EXPO_PUBLIC_CENAIVA_VOICE_DEBUG !== 'true') return;
+  const ms = (t?: number) => (t == null ? null : t - turnStartedAt);
+  console.log('[Cenaiva timing] summary', {
+    outcome,
+    transcript_ms: ms(c.transcriptAt),
+    request_sent_ms: ms(c.requestSentAt),
+    first_speech_chunk_ms: ms(c.firstSpeechChunkAt),
+    final_received_ms: ms(c.finalReceivedAt),
+    playback_requested_ms: ms(c.playbackRequestedAt),
+    first_audio_decoded_ms: ms(c.firstAudioDecodedAt),
+    streaming_transport: c.streamingTransport ?? null,
+    total_ms: Date.now() - turnStartedAt,
+  });
+}
+
+function looksLikeFillerSpeech(text: string) {
+  return /^(hold on while i\b|hold on a second\b|one moment\b|still working\b)/i.test(text.trim());
+}
+
 function AssistantInner({ children }: { children: ReactNode }) {
   const { state, dispatch } = useAssistantStore();
   const orchestrator = useCenaivaOrchestrator();
-  const voice = useCenaivaVoice();
+  const activeLatencyRef = useRef<{
+    turnStartedAt: number;
+    checkpoints: LatencyCheckpoints;
+  } | null>(null);
+  const handleFirstAudioStart = useCallback(() => {
+    const active = activeLatencyRef.current;
+    if (!active || active.checkpoints.firstAudioDecodedAt) return;
+    active.checkpoints.firstAudioDecodedAt = Date.now();
+    debugTiming('first audio decoded', {
+      elapsedMs: active.checkpoints.firstAudioDecodedAt - active.turnStartedAt,
+    });
+  }, []);
+  const voice = useCenaivaVoice({ onFirstAudioStart: handleFirstAudioStart });
   const {
     isLoading: isVoicePreferenceLoading,
     needsSelection: voiceSelectionRequired,
+    voiceId,
   } = useCenaivaVoicePreference();
   const router = useRouter();
   const pathname = usePathname();
-  const { isAuthenticated, user } = useAuthSession();
+  const { isAuthenticated, session, user } = useAuthSession();
 
   const stateRef = useRef(state);
   stateRef.current = state;
@@ -144,6 +254,7 @@ function AssistantInner({ children }: { children: ReactNode }) {
   const wakePermissionPromptedRef = useRef(false);
   const emptyRelistenStreakRef = useRef(0);
   const pendingOpenRef = useRef<OpenOptions | null>(null);
+  const pendingAvailabilityOptionsRef = useRef<CenaivaAvailabilityOption[]>([]);
 
   const commit = useCallback(
     (action: AssistantAction) => {
@@ -235,6 +346,8 @@ function AssistantInner({ children }: { children: ReactNode }) {
         processingRef.current = false;
       }
       const turnStartedAt = Date.now();
+      const checkpoints: LatencyCheckpoints = { transcriptAt: turnStartedAt };
+      activeLatencyRef.current = { turnStartedAt, checkpoints };
       const recommendationMode = getCenaivaRecommendationMode(trimmed);
       debugTiming('transcript accepted', {
         length: trimmed.length,
@@ -251,7 +364,271 @@ function AssistantInner({ children }: { children: ReactNode }) {
       voice.stopListening();
       commit({ type: 'SET_VOICE_STATUS', status: 'processing' });
 
+      const shouldResetContext = shouldResetCenaivaBookingContext(trimmed);
+      if (shouldResetContext && stateRef.current.booking.restaurant_id) {
+        commit({ type: 'RESET_ASSISTANT_CONTEXT' });
+        debugTiming('booking context reset for new search', { transcript: trimmed });
+      }
+
       const current = stateRef.current;
+      const timezone =
+        typeof Intl !== 'undefined'
+          ? Intl.DateTimeFormat().resolvedOptions().timeZone
+          : undefined;
+
+      const speakWithSyncedApply = async (
+        spokenText: string | null | undefined,
+        debugEvent: string,
+        apply: () => void,
+        preparedAudio?: { audio_base64: string; audio_content_type?: string | null } | null,
+      ) => {
+        let applied = false;
+        const applyOnce = () => {
+          if (applied) return;
+          applied = true;
+          apply();
+        };
+
+        if (!spokenText || opts?.silent) {
+          applyOnce();
+          return;
+        }
+
+        commit({ type: 'SET_VOICE_STATUS', status: 'speaking' });
+        checkpoints.playbackRequestedAt = Date.now();
+        debugTiming(debugEvent, {
+          elapsedMs: Date.now() - turnStartedAt,
+        });
+        if (preparedAudio?.audio_base64) {
+          await voice.speakPreparedAudio(spokenText, preparedAudio, { onFirstAudioStart: applyOnce });
+        } else {
+          await voice.speak(spokenText, { onFirstAudioStart: applyOnce });
+        }
+        applyOnce();
+      };
+
+      const finishLocalResponse = async (
+        response: AssistantResponseType,
+        outcome: string,
+        preparedAudio?: { audio_base64: string; audio_content_type?: string | null } | null,
+      ) => {
+        await speakWithSyncedApply(
+          response.spoken_text,
+          'local speech playback requested',
+          () => {
+            processingRef.current = false;
+            commit({ type: 'APPLY_RESPONSE', response });
+          },
+          preparedAudio,
+        );
+
+        const responseStatus = stateRef.current.booking.status;
+        const skipRelisten = NO_AUTO_RELISTEN_STATUSES.has(responseStatus);
+        if (isOpenRef.current && !textModeRef.current && !skipRelisten) {
+          setTimeout(() => {
+            if (isOpenRef.current && !textModeRef.current) void startListeningRef.current();
+          }, RELISTEN_AFTER_RESPONSE_MS);
+        } else {
+          commit({ type: 'SET_VOICE_STATUS', status: 'idle' });
+        }
+        logLatencySummary(turnStartedAt, checkpoints, outcome);
+        activeLatencyRef.current = null;
+      };
+
+      const localDecision = planLocalBookingTurn({
+        transcript: trimmed,
+        booking: current.booking,
+        conversationId: current.conversationId,
+        selectedRestaurantId: opts?.restaurantId ?? current.booking.restaurant_id,
+        selectedRestaurantName: current.booking.restaurant_name,
+        timezone,
+        pendingOptions: pendingAvailabilityOptionsRef.current,
+      });
+
+      if (localDecision.kind === 'local_response') {
+        if (localDecision.clearPendingOptions) pendingAvailabilityOptionsRef.current = [];
+        await finishLocalResponse(localDecision.response, 'local_booking_collect');
+        return;
+      }
+
+      if (localDecision.kind === 'check_availability') {
+        pendingAvailabilityOptionsRef.current = [];
+        let deferredFiller: DeferredAction | null = null;
+        if (!opts?.silent) {
+          deferredFiller = createDeferredAction(
+            Math.max(0, DEFERRED_FILLER_DELAY_MS - (Date.now() - turnStartedAt)),
+            async () => {
+              let fillerApplied = false;
+              const applyFiller = () => {
+                if (fillerApplied) return;
+                fillerApplied = true;
+                commit({ type: 'APPLY_RESPONSE', response: localDecision.responseBeforeCheck });
+                checkpoints.firstSpeechChunkAt = Date.now();
+                debugTiming('local availability filler started', {
+                  elapsedMs: Date.now() - turnStartedAt,
+                });
+              };
+              commit({ type: 'SET_VOICE_STATUS', status: 'speaking' });
+              checkpoints.playbackRequestedAt = Date.now();
+              await voice.speak(localDecision.filler, { onFirstAudioStart: applyFiller });
+              applyFiller();
+            },
+          );
+        }
+
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), LOCAL_AVAILABILITY_TIMEOUT_MS);
+        checkpoints.requestSentAt = Date.now();
+        debugTiming('availability request sent', {
+          elapsedMs: Date.now() - turnStartedAt,
+          mode: localDecision.request.mode,
+        });
+
+        try {
+          const result = await postCenaivaAvailability(localDecision.request, {
+            accessToken: session?.access_token,
+            signal: controller.signal,
+          });
+          checkpoints.finalReceivedAt = Date.now();
+          debugTiming('availability final received', {
+            elapsedMs: Date.now() - turnStartedAt,
+            error: result.error,
+          });
+          clearTimeout(timeoutId);
+          const fillerWasStarted = deferredFiller?.cancel() ?? false;
+
+          const availabilityResult = result.data ?? {
+            status: 'unavailable' as const,
+            alternatives: [],
+            message: friendlyError(result.error),
+          };
+          const { response, pendingOptions } = buildLocalAvailabilityResponse({
+            conversationId: current.conversationId,
+            request: localDecision.request,
+            result: availabilityResult,
+          });
+          pendingAvailabilityOptionsRef.current = pendingOptions;
+
+          if (response.spoken_text && !opts?.silent) {
+            if (fillerWasStarted) {
+              await deferredFiller?.done.catch(() => undefined);
+              await wait(LOCAL_FILLER_TO_RESULT_PAUSE_MS);
+            }
+            await speakWithSyncedApply(
+              response.spoken_text,
+              'availability speech playback requested',
+              () => {
+                processingRef.current = false;
+                commit({ type: 'APPLY_RESPONSE', response });
+              },
+            );
+          } else {
+            processingRef.current = false;
+            commit({ type: 'APPLY_RESPONSE', response });
+          }
+
+          if (isOpenRef.current && !textModeRef.current) {
+            setTimeout(() => {
+              if (isOpenRef.current && !textModeRef.current) void startListeningRef.current();
+            }, RELISTEN_AFTER_RESPONSE_MS);
+          } else {
+            commit({ type: 'SET_VOICE_STATUS', status: 'idle' });
+          }
+          logLatencySummary(turnStartedAt, checkpoints, result.error ? 'availability_error' : 'availability_ok');
+          activeLatencyRef.current = null;
+          return;
+        } catch {
+          clearTimeout(timeoutId);
+          processingRef.current = false;
+          const fillerWasStarted = deferredFiller?.cancel() ?? false;
+          if (fillerWasStarted) await deferredFiller?.done.catch(() => undefined);
+          const message = 'I could not check availability. Try another date and time.';
+          commit({ type: 'SET_LAST_SPOKEN_TEXT', text: message });
+          if (!opts?.silent && !textModeRef.current) {
+            commit({ type: 'SET_VOICE_STATUS', status: 'speaking' });
+            await voice.speak(message);
+          }
+          commit({ type: 'SET_VOICE_STATUS', status: 'idle' });
+          logLatencySummary(turnStartedAt, checkpoints, 'availability_exception');
+          activeLatencyRef.current = null;
+          return;
+        }
+      }
+
+      if (!isCenaivaProcessPrompt(trimmed)) {
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), SMALL_PROMPT_TIMEOUT_MS);
+        checkpoints.requestSentAt = Date.now();
+        debugTiming('small prompt request sent', {
+          elapsedMs: Date.now() - turnStartedAt,
+        });
+        try {
+          const result = await postCenaivaSmallPrompt({
+            transcript: trimmed,
+            booking: {
+              restaurant_id: current.booking.restaurant_id,
+              restaurant_name: current.booking.restaurant_name,
+              party_size: current.booking.party_size,
+              date: current.booking.date,
+              time: current.booking.time,
+            },
+            voice_id: voiceId,
+          }, {
+            accessToken: session?.access_token,
+            signal: controller.signal,
+          });
+          clearTimeout(timeoutId);
+          checkpoints.finalReceivedAt = Date.now();
+          debugTiming('small prompt final received', {
+            elapsedMs: Date.now() - turnStartedAt,
+            error: result.error,
+          });
+
+          const next = result.data?.next_expected_input ?? 'restaurant';
+          const step =
+            next === 'party_size' ? 'choose_party' :
+              next === 'date' ? 'choose_date' :
+                next === 'time' ? 'choose_time' :
+                  next === 'confirmation' ? 'confirm' :
+                    'choose_restaurant';
+          const response: AssistantResponseType = {
+            conversation_id: current.conversationId ?? '',
+            spoken_text: result.data?.spoken_text ?? friendlyError(result.error),
+            intent: 'general_question',
+            step,
+            next_expected_input: next,
+            ui_actions: [],
+            booking: null,
+            map: null,
+            filters: null,
+            assistant_memory: null,
+          };
+          checkpoints.firstSpeechChunkAt = checkpoints.finalReceivedAt;
+          await finishLocalResponse(
+            response,
+            result.error ? 'small_prompt_error' : 'small_prompt_ok',
+            result.data?.audio,
+          );
+          return;
+        } catch {
+          clearTimeout(timeoutId);
+          const response: AssistantResponseType = {
+            conversation_id: current.conversationId ?? '',
+            spoken_text: 'I could not answer that quickly. What restaurant or area should I book?',
+            intent: 'general_question',
+            step: 'choose_restaurant',
+            next_expected_input: 'restaurant',
+            ui_actions: [],
+            booking: null,
+            map: null,
+            filters: null,
+            assistant_memory: null,
+          };
+          await finishLocalResponse(response, 'small_prompt_exception');
+          return;
+        }
+      }
+
       const currentLocation = await getLocationForTurn();
       if (currentLocation) {
         commit({
@@ -261,11 +638,6 @@ function AssistantInner({ children }: { children: ReactNode }) {
           zoom: current.map.zoom,
         });
       }
-      const timezone =
-        typeof Intl !== 'undefined'
-          ? Intl.DateTimeFormat().resolvedOptions().timeZone
-          : undefined;
-
       const req: OrchestratorRequestType = {
         transcript: trimmed,
         screen: pathname ?? 'discover',
@@ -312,31 +684,101 @@ function AssistantInner({ children }: { children: ReactNode }) {
         reservation_id: current.booking.reservation_id,
       };
 
-      let streamedText = '';
+      let serverStreamedText = '';
+      let serverChunkSeen = false;
+      let fillerQueued = false;
+      let deferredFiller: DeferredAction | null = null;
       const streamingActive = voice.isStreamingTTSAvailable && !opts?.silent;
+      const immediateFiller = streamingActive ? getCenaivaImmediateFiller(trimmed) : null;
+      const scheduleDeferredFiller = () => {
+        if (!immediateFiller || deferredFiller) return;
+        deferredFiller = createDeferredAction(
+          Math.max(0, DEFERRED_FILLER_DELAY_MS - (Date.now() - turnStartedAt)),
+          () => {
+            if (serverChunkSeen || serverStreamedText.trim()) return;
+            fillerQueued = true;
+            let fillerApplied = false;
+            const applyFiller = () => {
+              if (fillerApplied) return;
+              fillerApplied = true;
+              checkpoints.firstSpeechChunkAt = Date.now();
+              debugTiming('client filler started', {
+                elapsedMs: Date.now() - turnStartedAt,
+                text: immediateFiller,
+              });
+              commit({ type: 'SET_LAST_SPOKEN_TEXT', text: immediateFiller });
+            };
+            voice.speakStreamingChunk(immediateFiller, {
+              pacingAfterMs: FILLER_TO_RESPONSE_PAUSE_MS,
+              onFirstAudioStart: applyFiller,
+            });
+          },
+        );
+      };
+      const cancelDeferredFiller = () => {
+        if (deferredFiller == null) return false;
+        const currentFiller = deferredFiller as DeferredAction;
+        const started = currentFiller.cancel();
+        if (!started) deferredFiller = null;
+        return started;
+      };
+      scheduleDeferredFiller();
       const callbacks = streamingActive
         ? {
+            onTransport: (transport: OrchestratorTransport) => {
+              checkpoints.streamingTransport = transport;
+            },
             onSpeechChunk: (text: string) => {
-              if (!streamedText) {
+              const normalize = (value: string) =>
+                value.replace(/\s+/g, ' ').replace(/[.!?,\s]+$/, '').trim().toLowerCase();
+              if (
+                immediateFiller &&
+                !serverChunkSeen &&
+                (normalize(text) === normalize(immediateFiller) || looksLikeFillerSpeech(text))
+              ) {
+                return;
+              }
+              if (!serverChunkSeen && !immediateFiller && !checkpoints.firstSpeechChunkAt) {
+                checkpoints.firstSpeechChunkAt = Date.now();
                 debugTiming('first speech chunk', { elapsedMs: Date.now() - turnStartedAt });
               }
-              streamedText += (streamedText ? ' ' : '') + text;
-              voice.speakStreamingChunk(text);
+              cancelDeferredFiller();
+              serverChunkSeen = true;
+              if (looksLikeFillerSpeech(text)) {
+                scheduleDeferredFiller();
+                return;
+              }
+              serverStreamedText += (serverStreamedText ? ' ' : '') + text;
+              const nextStreamedText = serverStreamedText;
+              voice.speakStreamingChunk(text, {
+                onFirstAudioStart: () => {
+                  commit({ type: 'SET_LAST_SPOKEN_TEXT', text: nextStreamedText });
+                },
+              });
             },
             onDiscardPendingSpeech: () => {
-              streamedText = '';
+              cancelDeferredFiller();
+              if (!serverChunkSeen) return;
+              serverChunkSeen = false;
+              serverStreamedText = '';
+              if (immediateFiller) {
+                scheduleDeferredFiller();
+              }
               voice.discardStreamingSpeech();
             },
           }
         : undefined;
 
       try {
+        checkpoints.requestSentAt = Date.now();
         debugTiming('orchestrator request sent', {
           elapsedMs: Date.now() - turnStartedAt,
           hasLocation: Boolean(currentLocation),
         });
         const response = await orchestrator.send(req, callbacks);
+        checkpoints.finalReceivedAt = Date.now();
         debugTiming('orchestrator final received', { elapsedMs: Date.now() - turnStartedAt });
+        const fillerWasStarted = cancelDeferredFiller();
         processingRef.current = false;
 
         if (!response) {
@@ -348,6 +790,8 @@ function AssistantInner({ children }: { children: ReactNode }) {
             await voice.speak(message);
           }
           commit({ type: 'SET_VOICE_STATUS', status: 'idle' });
+          logLatencySummary(turnStartedAt, checkpoints, 'no_response');
+          activeLatencyRef.current = null;
           return;
         }
 
@@ -373,36 +817,44 @@ function AssistantInner({ children }: { children: ReactNode }) {
         const appliedResponse = spokenText === recommendationResponse.spoken_text
           ? recommendationResponse
           : { ...recommendationResponse, spoken_text: spokenText };
-        commit({
-          type: 'APPLY_RESPONSE',
-          response: appliedResponse,
-        });
+        let finalApplied = false;
+        const applyFinalResponse = () => {
+          if (finalApplied) return;
+          finalApplied = true;
+          commit({
+            type: 'APPLY_RESPONSE',
+            response: appliedResponse,
+          });
 
-        for (const action of appliedResponse.ui_actions ?? []) {
-          if (action.type === 'navigate') {
-            router.push(action.path as never);
+          for (const action of appliedResponse.ui_actions ?? []) {
+            if (action.type === 'navigate') {
+              router.push(action.path as never);
+            }
+            if (action.type === 'navigate_to_checkout') {
+              voice.stopSpeaking();
+              voice.stopListening();
+              commit({ type: 'CLOSE' });
+              router.push(action.path as never);
+            }
           }
-          if (action.type === 'navigate_to_checkout') {
-            voice.stopSpeaking();
-            voice.stopListening();
-            commit({ type: 'CLOSE' });
-            router.push(action.path as never);
-          }
-        }
+        };
 
         if (spokenText && !opts?.silent) {
           const normalize = (value: string) =>
             value.replace(/\s+/g, ' ').replace(/[.!?,\s]+$/, '').trim().toLowerCase();
-          commit({ type: 'SET_VOICE_STATUS', status: 'speaking' });
-          debugTiming('speech playback requested', { elapsedMs: Date.now() - turnStartedAt });
-          if (streamingActive && normalize(streamedText) && normalize(streamedText) === normalize(spokenText)) {
+          if (streamingActive && normalize(serverStreamedText) && normalize(serverStreamedText) === normalize(spokenText)) {
+            applyFinalResponse();
             await voice.drainStreamingSpeech();
+          } else if (streamingActive && (fillerQueued || fillerWasStarted) && !normalize(serverStreamedText)) {
+            await voice.drainStreamingSpeech();
+            await speakWithSyncedApply(spokenText, 'speech playback requested', applyFinalResponse);
           } else {
             if (streamingActive) voice.discardStreamingSpeech();
-            await voice.speak(spokenText);
+            await speakWithSyncedApply(spokenText, 'speech playback requested', applyFinalResponse);
           }
-        } else if (streamingActive) {
-          voice.discardStreamingSpeech();
+        } else {
+          applyFinalResponse();
+          if (streamingActive) voice.discardStreamingSpeech();
         }
 
         const responseStatus = stateRef.current.booking.status;
@@ -419,6 +871,8 @@ function AssistantInner({ children }: { children: ReactNode }) {
         } else {
           commit({ type: 'SET_VOICE_STATUS', status: 'idle' });
         }
+        logLatencySummary(turnStartedAt, checkpoints, 'ok');
+        activeLatencyRef.current = null;
       } catch {
         processingRef.current = false;
         if (streamingActive) voice.discardStreamingSpeech();
@@ -429,6 +883,8 @@ function AssistantInner({ children }: { children: ReactNode }) {
           await voice.speak(message);
         }
         commit({ type: 'SET_VOICE_STATUS', status: 'idle' });
+        logLatencySummary(turnStartedAt, checkpoints, 'error');
+        activeLatencyRef.current = null;
       }
     },
     [
@@ -438,7 +894,9 @@ function AssistantInner({ children }: { children: ReactNode }) {
       orchestrator,
       pathname,
       router,
+      session?.access_token,
       voice,
+      voiceId,
       voiceSelectionRequired,
     ],
   );
@@ -551,9 +1009,15 @@ function AssistantInner({ children }: { children: ReactNode }) {
       const trimmedGreeting = greetingText?.trim();
 
       if (trimmedGreeting) {
-        commit({ type: 'SET_LAST_SPOKEN_TEXT', text: trimmedGreeting });
+        let greetingApplied = false;
+        const applyGreeting = () => {
+          if (greetingApplied) return;
+          greetingApplied = true;
+          commit({ type: 'SET_LAST_SPOKEN_TEXT', text: trimmedGreeting });
+        };
         commit({ type: 'SET_VOICE_STATUS', status: 'speaking' });
-        await voice.speak(trimmedGreeting);
+        await voice.speak(trimmedGreeting, { onFirstAudioStart: applyGreeting });
+        applyGreeting();
       }
 
       if (isOpenRef.current && !textModeRef.current) {
@@ -588,6 +1052,8 @@ function AssistantInner({ children }: { children: ReactNode }) {
       }
       forceStopWakeWordRef.current();
       voice.primeTTS();
+      orchestrator.prewarm?.();
+      prewarmCenaivaSmallPrompt({ accessToken: session?.access_token, voiceId });
       void requestWakePermissionRef.current();
       void requestLocation().then((location) => {
         if (!location || !isOpenRef.current) return;
@@ -613,8 +1079,10 @@ function AssistantInner({ children }: { children: ReactNode }) {
       commit,
       isVoicePreferenceLoading,
       requestLocation,
+      session?.access_token,
       speakGreetingThenListen,
       voice,
+      voiceId,
       voiceSelectionRequired,
     ],
   );
@@ -696,24 +1164,35 @@ function AssistantInner({ children }: { children: ReactNode }) {
   }, [commit, forceStopWakeWord, voice]);
 
   const value = useMemo<CenaivaAssistant>(
-    () => ({
-      open,
-      close,
-      sendTranscript,
-      startListening,
-      stopListening,
-      stopSpeaking,
-      setSpeechHints,
-      setTextMode,
-      voicePermissionStatus: wakePermissionStatus,
-      canAskVoicePermission: canAskWakePermissionAgain,
-      isWakeWordSupported,
-      requestVoicePermission: requestWakePermission,
-      openVoicePermissionSettings: openWakePermissionSettings,
-      voiceTranscript: voice.liveTranscript,
-      voiceActivity: voice.transcriptionPhase,
-      voiceLastError: voice.transcriptionLastError,
-    }),
+    () => {
+      const voicePermissionStatus: CenaivaVoicePermissionStatus =
+        voice.permissionDenied
+          ? 'denied'
+          : voice.transcriptionUnavailable
+            ? 'unavailable'
+            : wakePermissionStatus === 'blocked' || wakePermissionStatus === 'denied'
+              ? wakePermissionStatus
+              : 'unknown';
+
+      return {
+        open,
+        close,
+        sendTranscript,
+        startListening,
+        stopListening,
+        stopSpeaking,
+        setSpeechHints,
+        setTextMode,
+        voicePermissionStatus,
+        canAskVoicePermission: canAskWakePermissionAgain,
+        isWakeWordSupported,
+        requestVoicePermission: requestWakePermission,
+        openVoicePermissionSettings: openWakePermissionSettings,
+        voiceTranscript: voice.liveTranscript,
+        voiceActivity: voice.transcriptionPhase,
+        voiceLastError: voice.transcriptionLastError,
+      };
+    },
     [
       canAskWakePermissionAgain,
       close,
@@ -727,8 +1206,10 @@ function AssistantInner({ children }: { children: ReactNode }) {
       startListening,
       stopListening,
       stopSpeaking,
+      voice.permissionDenied,
       voice.liveTranscript,
       voice.transcriptionPhase,
+      voice.transcriptionUnavailable,
       voice.transcriptionLastError,
       wakePermissionStatus,
     ],

@@ -1,6 +1,7 @@
 import { requireOptionalNativeModule } from 'expo';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { AppState, Linking, Platform } from 'react-native';
+import * as Device from 'expo-device';
 import {
   getRecordingPermissionsAsync,
   requestRecordingPermissionsAsync,
@@ -34,10 +35,32 @@ const RESTART_AFTER_END_MS = 400;
 const MAX_CONSECUTIVE_ERRORS = 4;
 const ROLLING_WAKE_WINDOW_MS = 3_500;
 const ROLLING_WAKE_WORD_LIMIT = 18;
-const USE_ON_DEVICE_WAKE_RECOGNITION = Platform.OS === 'ios';
+const IS_IOS_SIMULATOR = Platform.OS === 'ios' && Device.isDevice === false;
+const USE_ON_DEVICE_WAKE_RECOGNITION = Platform.OS === 'ios' && !IS_IOS_SIMULATOR;
 const WAKE_CONTEXT_STRINGS = [
   'Cenaiva',
   'Hey Cenaiva',
+  'Hey Caniva',
+  'Hey Canniva',
+  'Hey Cheneva',
+  'Hey Chineva',
+  'Hey Cindyiva',
+  'Hey Coniva',
+  'Hey Geneva',
+  'Hey Genevia',
+  'Hey Hasteniva',
+  'Hey Hastenova',
+  'Hey Jeaniva',
+  'Hey Kennaiva',
+  'Hey Saniva',
+  'Hey Seneva',
+  'Hey Senevia',
+  'Hey Semiiva',
+  'Hey Shaniva',
+  'Hey Sinaiva',
+  'Hey Siniva',
+  'Hey Soniva',
+  'Hey Son over',
   'Senaiva',
   'Saniva',
   'Soniva',
@@ -56,8 +79,16 @@ const WAKE_CONTEXT_STRINGS = [
 function initNativeSpeechModule(): NativeSpeech | null {
   const raw = requireOptionalNativeModule<NativeSpeech>('ExpoSpeechRecognition');
   if (!raw) return null;
+  const start = raw.start.bind(raw);
   const stop = raw.stop.bind(raw);
   const abort = raw.abort.bind(raw);
+  raw.start = (options: Record<string, unknown>) => {
+    start({
+      ...options,
+      iosVoiceProcessingEnabled: false,
+      volumeChangeEventOptions: { enabled: false },
+    });
+  };
   raw.stop = () => stop();
   raw.abort = () => abort();
   return raw;
@@ -167,6 +198,11 @@ export function useCenaivaWakeWord(onWake: () => void, lang = 'en-US') {
     rollingTranscriptRef.current = '';
     rollingTranscriptAtRef.current = 0;
   }, []);
+
+  const shouldHandleNativeEvent = useCallback(
+    () => enabledRef.current || activeRef.current || startingRef.current || wakeActivatedRef.current,
+    [],
+  );
 
   const buildWakeCandidates = useCallback((transcripts: string[]) => {
     const now = Date.now();
@@ -337,8 +373,9 @@ export function useCenaivaWakeWord(onWake: () => void, lang = 'en-US') {
         requiresOnDeviceRecognition: USE_ON_DEVICE_WAKE_RECOGNITION,
         addsPunctuation: false,
         contextualStrings: WAKE_CONTEXT_STRINGS,
+        iosVoiceProcessingEnabled: false,
+        volumeChangeEventOptions: { enabled: false },
         iosTaskHint: 'search',
-        volumeChangeEventOptions: { enabled: true, intervalMillis: 150 },
         androidIntentOptions: {
           EXTRA_LANGUAGE_MODEL: 'free_form',
           EXTRA_PARTIAL_RESULTS: true,
@@ -383,12 +420,14 @@ export function useCenaivaWakeWord(onWake: () => void, lang = 'en-US') {
     if (!NATIVE_SPEECH) return undefined;
 
     const startSub = NATIVE_SPEECH.addListener('start', () => {
+      if (!shouldHandleNativeEvent()) return;
       activeRef.current = true;
       startingRef.current = false;
       debugWake('native start');
     });
 
     const resultSub = NATIVE_SPEECH.addListener('result', (payload: unknown) => {
+      if (!shouldHandleNativeEvent()) return;
       activeRef.current = true;
       startingRef.current = false;
       const transcripts = transcriptsFromResult(payload);
@@ -433,6 +472,7 @@ export function useCenaivaWakeWord(onWake: () => void, lang = 'en-US') {
     const errorSub = NATIVE_SPEECH.addListener('error', (payload: unknown) => {
       const event = payload as { error?: string };
       const error = event.error ?? 'unknown';
+      if (!shouldHandleNativeEvent()) return;
       debugWake('error', { error });
       if (error === 'no-speech' || error === 'speech-timeout') {
         activeRef.current = false;
@@ -467,6 +507,7 @@ export function useCenaivaWakeWord(onWake: () => void, lang = 'en-US') {
     });
 
     const endSub = NATIVE_SPEECH.addListener('end', () => {
+      if (!shouldHandleNativeEvent()) return;
       activeRef.current = false;
       startingRef.current = false;
       debugWake('native end', { enabled: enabledRef.current });
@@ -489,7 +530,15 @@ export function useCenaivaWakeWord(onWake: () => void, lang = 'en-US') {
       endSub.remove();
       stopNative(true, true);
     };
-  }, [buildWakeCandidates, clearRestartTimer, forceStop, resetRollingTranscript, startListening, stopNative]);
+  }, [
+    buildWakeCandidates,
+    clearRestartTimer,
+    forceStop,
+    resetRollingTranscript,
+    shouldHandleNativeEvent,
+    startListening,
+    stopNative,
+  ]);
 
   useEffect(() => {
     enabledRef.current = enabled;

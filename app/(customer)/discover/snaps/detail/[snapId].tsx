@@ -35,6 +35,7 @@ import { mockCustomer } from '@/lib/mock/users';
 import { isPostInAnyCollection } from '@/lib/mock/collections';
 import { SaveToCollectionSheet } from '@/components/snaps/SaveToCollectionSheet';
 import { useColors, createStyles, borderRadius, spacing, typography } from '@/lib/theme';
+import { safeRouterBack } from '@/lib/navigation/transitions';
 
 const ME = mockCustomer.id;
 const SCREEN_W = Dimensions.get('window').width;
@@ -345,11 +346,20 @@ export default function SnapDetailScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const { t } = useTranslation();
-  const { snapId } = useLocalSearchParams<{ snapId: string }>();
+  const { snapId, restaurantId } = useLocalSearchParams<{ snapId: string; restaurantId?: string }>();
 
   const post = snapId ? getSnapPostById(snapId) : undefined;
   const user = post ? getSnapUser(post.user_id) : undefined;
   const restaurant = post ? getRestaurantForPost(post.restaurant_id) : null;
+  const snapListFallback = useMemo<Href>(() => {
+    const fallbackRestaurantId = restaurantId ?? post?.restaurant_id;
+    return fallbackRestaurantId
+      ? (`/(customer)/discover/snaps/${fallbackRestaurantId}` as Href)
+      : '/(customer)/discover';
+  }, [post?.restaurant_id, restaurantId]);
+  const goBackToSnapList = useCallback(() => {
+    safeRouterBack(router, snapListFallback);
+  }, [router, snapListFallback]);
 
   const [liked, setLiked] = useState(() => (post ? isLiked(ME, post.id) : false));
   const [saved, setSaved] = useState(() =>
@@ -376,12 +386,12 @@ export default function SnapDetailScreen() {
           style: 'destructive',
           onPress: () => {
             deleteSnapPost(post.id, ME);
-            router.back();
+            goBackToSnapList();
           },
         },
       ],
     );
-  }, [post, router]);
+  }, [goBackToSnapList, post]);
 
   const displayLikeCount = useMemo(
     () => (post ? post.likes + (liked ? 1 : 0) : 0),
@@ -410,7 +420,7 @@ export default function SnapDetailScreen() {
     return (
       <View style={[styles.root, styles.centered, { paddingTop: insets.top + spacing['3xl'] }]}>
         <Text style={styles.emptyTitle}>{t('snapDetail.notFound')}</Text>
-        <Pressable onPress={() => router.back()} style={styles.backGhost}>
+        <Pressable onPress={goBackToSnapList} style={styles.backGhost}>
           <Text style={styles.backGhostText}>{t('snapDetail.goBack')}</Text>
         </Pressable>
       </View>
@@ -547,7 +557,7 @@ export default function SnapDetailScreen() {
   return (
     <View style={[styles.root, { paddingTop: insets.top }]}>
       <View style={styles.topBar}>
-        <Pressable onPress={() => router.back()} hitSlop={10} style={styles.topBarBtn}>
+        <Pressable onPress={goBackToSnapList} hitSlop={10} style={styles.topBarBtn}>
           <Ionicons name="chevron-back" size={24} color={c.textPrimary} />
         </Pressable>
         <Text style={styles.topBarTitle}>{t('snapDetail.title')}</Text>

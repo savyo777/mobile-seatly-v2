@@ -2,9 +2,27 @@ import { useCallback, useMemo } from 'react';
 import { useMobileTranscription } from '@/lib/cenaiva/voice/useMobileTranscription';
 import { useMobileTTS } from '@/lib/cenaiva/voice/useMobileTTS';
 
-export function useCenaivaVoice() {
+type UseCenaivaVoiceOptions = {
+  onFirstAudioStart?: () => void;
+};
+
+type SpeakOptions = {
+  onFirstAudioStart?: () => void;
+};
+
+type PreparedAudio = {
+  audio_base64: string;
+  audio_content_type?: string | null;
+};
+
+type StreamingChunkOptions = {
+  pacingAfterMs?: number;
+  onFirstAudioStart?: () => void;
+};
+
+export function useCenaivaVoice(options: UseCenaivaVoiceOptions = {}) {
   const transcription = useMobileTranscription();
-  const tts = useMobileTTS();
+  const tts = useMobileTTS({ onFirstAudioStart: options.onFirstAudioStart });
 
   const stopListening = useCallback(() => {
     transcription.stopListening();
@@ -34,8 +52,13 @@ export function useCenaivaVoice() {
       stopListening,
       isSpeaking: tts.isSpeaking,
       isStreamingTTSAvailable: tts.isStreamingTTSAvailable,
-      speak: tts.speak,
-      speakStreamingChunk: tts.speakStreamingChunk,
+      speak: tts.speak as (text: string, options?: SpeakOptions) => Promise<boolean>,
+      speakPreparedAudio: tts.speakPreparedAudio as (
+        text: string,
+        audio?: PreparedAudio | null,
+        options?: SpeakOptions,
+      ) => Promise<boolean>,
+      speakStreamingChunk: tts.speakStreamingChunk as (text: string, options?: StreamingChunkOptions) => void,
       discardStreamingSpeech: tts.discardStreamingSpeech,
       drainStreamingSpeech: tts.drainStreamingSpeech,
       stopSpeaking,
@@ -53,6 +76,7 @@ export function useCenaivaVoice() {
       tts.isSpeaking,
       tts.isStreamingTTSAvailable,
       tts.speak,
+      tts.speakPreparedAudio,
       tts.speakStreamingChunk,
       tts.discardStreamingSpeech,
       tts.drainStreamingSpeech,

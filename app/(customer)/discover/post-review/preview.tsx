@@ -7,6 +7,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Button, ScreenWrapper } from '@/components/ui';
 import { useColors, createStyles, borderRadius, spacing, typography } from '@/lib/theme';
 import { getSnapRestaurantName } from '@/lib/mock/snaps';
+import { safeRouterBack } from '@/lib/navigation/transitions';
 
 const useStyles = createStyles((c) => ({
   screen: {
@@ -144,6 +145,16 @@ export default function ReviewPreviewScreen() {
     [restaurantId],
   );
 
+  const goBackToCapture = useCallback(() => {
+    const fallback: Href = restaurantId
+      ? {
+          pathname: '/(customer)/discover/post-review/camera',
+          params: { restaurantId },
+        }
+      : '/(customer)/discover/post-review';
+    safeRouterBack(router, fallback);
+  }, [restaurantId, router]);
+
   const goToPostDetails = useCallback(() => {
     if (!hasImage || !restaurantId) {
       setNavError('Something went wrong. Go back and try again.');
@@ -174,7 +185,7 @@ export default function ReviewPreviewScreen() {
       <View style={styles.screen}>
         <View style={[styles.topBar, { paddingTop: insets.top + spacing.sm }]}>
           <Pressable
-            onPress={() => router.back()}
+            onPress={goBackToCapture}
             style={({ pressed }) => [styles.backBtn, pressed && styles.pressed]}
             accessibilityRole="button"
             accessibilityLabel="Back"
@@ -215,7 +226,7 @@ export default function ReviewPreviewScreen() {
 
           {navError ? <Text style={styles.errorText}>{navError}</Text> : null}
 
-          <Pressable onPress={() => router.back()} style={styles.retakeLink}>
+          <Pressable onPress={goBackToCapture} style={styles.retakeLink}>
             <Text style={styles.retakeLinkText}>Retake or choose another photo</Text>
           </Pressable>
         </ScrollView>

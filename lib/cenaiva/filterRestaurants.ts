@@ -103,11 +103,13 @@ export function filterCenaivaRestaurants(
 ): Restaurant[] {
   const markerIds = Array.isArray(markerRestaurantIds) ? markerRestaurantIds : [];
   const restaurantsById = new Map(restaurants.map((restaurant) => [restaurant.id, restaurant]));
-  let next = markerIds.length
-    ? markerIds
-        .map((restaurantId) => restaurantsById.get(restaurantId))
-        .filter((restaurant): restaurant is Restaurant => Boolean(restaurant))
-    : restaurants;
+  if (markerIds.length) {
+    return markerIds
+      .map((restaurantId) => restaurantsById.get(restaurantId))
+      .filter((restaurant): restaurant is Restaurant => Boolean(restaurant));
+  }
+
+  let next = restaurants;
 
   next = next.filter((restaurant) => matchesCuisine(restaurant, filters?.cuisine));
 

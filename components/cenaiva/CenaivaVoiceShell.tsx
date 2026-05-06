@@ -574,7 +574,8 @@ const useStyles = createStyles(() => ({
   },
 }));
 
-function statusCopy(status: string, inManualMenu: boolean, spokenText: string) {
+function statusCopy(status: string, inManualMenu: boolean, spokenText: string, voiceUnavailable = false) {
+  if (voiceUnavailable) return 'Voice recognition is unavailable in this build. Type your request.';
   if (status === 'listening') return 'Listening...';
   if (status === 'processing') return 'Thinking...';
   if (status === 'speaking') return spokenText || 'Cenaiva is speaking.';
@@ -834,6 +835,7 @@ export function CenaivaVoiceShell({ onClose }: { onClose?: () => void }) {
     (assistant.voicePermissionStatus === 'denied' ||
       assistant.voicePermissionStatus === 'blocked' ||
       assistant.voicePermissionStatus === 'unavailable');
+  const voiceUnavailable = assistant.voicePermissionStatus === 'unavailable';
 
   useEffect(() => {
     assistant.setSpeechHints(visibleRestaurants.map((restaurant) => restaurant.name));
@@ -940,6 +942,7 @@ export function CenaivaVoiceShell({ onClose }: { onClose?: () => void }) {
   }, [assistant]);
 
   const onMicPress = useCallback(() => {
+    if (showPermissionRecovery) return;
     if (state.voiceStatus === 'processing') return;
     if (state.voiceStatus === 'listening') {
       assistant.stopListening();
@@ -950,7 +953,7 @@ export function CenaivaVoiceShell({ onClose }: { onClose?: () => void }) {
       return;
     }
     void assistant.startListening();
-  }, [assistant, state.voiceStatus]);
+  }, [assistant, showPermissionRecovery, state.voiceStatus]);
 
   const sendDisabled = !input.trim() || state.voiceStatus === 'processing';
 
@@ -1234,7 +1237,7 @@ export function CenaivaVoiceShell({ onClose }: { onClose?: () => void }) {
         ) : null}
 
         <View style={[styles.controls, { paddingBottom: Math.max(insets.bottom, spacing.lg) }]}>
-          <VoiceOrb status={state.voiceStatus} onPress={onMicPress} />
+          <VoiceOrb status={state.voiceStatus} onPress={onMicPress} disabled={showPermissionRecovery} />
 
           {textMode ? (
             <View style={styles.textInputWrap}>
@@ -1266,7 +1269,7 @@ export function CenaivaVoiceShell({ onClose }: { onClose?: () => void }) {
             </View>
           ) : (
             <Text style={styles.statusText} numberOfLines={3}>
-              {statusCopy(state.voiceStatus, inManualMenu, state.lastSpokenText)}
+              {statusCopy(state.voiceStatus, inManualMenu, state.lastSpokenText, voiceUnavailable)}
             </Text>
           )}
 

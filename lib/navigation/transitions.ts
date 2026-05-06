@@ -1,8 +1,41 @@
-import type { BottomTabNavigationOptions } from '@react-navigation/bottom-tabs';
-import type { NativeStackNavigationOptions } from '@react-navigation/native-stack';
+import type { Href } from 'expo-router';
 import { Easing } from 'react-native';
 
-export function createStackTransitionOptions(backgroundColor: string): NativeStackNavigationOptions {
+type SafeBackRouter = {
+  back: () => void;
+  canGoBack: () => boolean;
+  replace: (href: Href) => void;
+};
+
+type StackTransitionOptions = {
+  headerShown: false;
+  contentStyle: { backgroundColor: string };
+  animation: 'slide_from_right';
+  gestureEnabled: true;
+  fullScreenGestureEnabled?: true;
+};
+
+type TabTransitionOptions = {
+  animation: 'fade';
+  transitionSpec: {
+    animation: 'timing';
+    config: {
+      duration: number;
+      easing: (value: number) => number;
+    };
+  };
+};
+
+export function safeRouterBack(router: SafeBackRouter, fallback: Href) {
+  if (router.canGoBack()) {
+    router.back();
+    return;
+  }
+
+  router.replace(fallback);
+}
+
+export function createStackTransitionOptions(backgroundColor: string): StackTransitionOptions {
   return {
     headerShown: false,
     contentStyle: { backgroundColor },
@@ -12,7 +45,7 @@ export function createStackTransitionOptions(backgroundColor: string): NativeSta
   };
 }
 
-export function createTransparentStackTransitionOptions(): NativeStackNavigationOptions {
+export function createTransparentStackTransitionOptions(): StackTransitionOptions {
   return {
     headerShown: false,
     contentStyle: { backgroundColor: 'transparent' },
@@ -21,10 +54,7 @@ export function createTransparentStackTransitionOptions(): NativeStackNavigation
   };
 }
 
-export const tabTransitionOptions: Pick<
-  BottomTabNavigationOptions,
-  'animation' | 'transitionSpec'
-> = {
+export const tabTransitionOptions: TabTransitionOptions = {
   animation: 'fade',
   transitionSpec: {
     animation: 'timing',

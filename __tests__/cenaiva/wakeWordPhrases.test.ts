@@ -26,6 +26,23 @@ describe('isCenaivaWakePhrase (strict)', () => {
     'hey senaiva',
     'hey sanaiva',
     'hey sonaiva',
+    'hey can iva',
+    'hey coniva',
+    'hey geneva',
+    'hey genevia',
+    'hey h niver',
+    'hey jean iva',
+    'hey kenna iva',
+    'hey saniva',
+    'hey seneva',
+    'hey senevia',
+    'hey semi iva',
+    'hey shaniva',
+    'hey sinaiva',
+    'hey siniva',
+    'hey son iva',
+    'hey son over',
+    'hi shaniva',
   ];
 
   const trueNegatives = [
@@ -50,7 +67,6 @@ describe('isCenaivaWakePhrase (strict)', () => {
     'hey gene',
     'hey jeni',
     'hey nova',
-    'hey geneva',
     'hey hacienda',
     'hey cinnabon',
     'hes anova',
@@ -60,7 +76,6 @@ describe('isCenaivaWakePhrase (strict)', () => {
     'hes a nova',
     'a sonova',
     'um its an ivor',
-    'chernobyl hey hey geneva',
   ];
 
   it('recognizes canonical greeting + cenaiva phrasing', () => {

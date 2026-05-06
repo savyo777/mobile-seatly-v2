@@ -57,6 +57,7 @@ describe('consumeSseText', () => {
 describe('postCenaivaOrchestrator', () => {
   it('posts to cenaiva-orchestrate with bearer token, anon key, SSE accept header, body, and signal', async () => {
     const controller = new AbortController();
+    const transports: string[] = [];
     const fetchImpl = jest.fn(async () => ({
       ok: true,
       status: 200,
@@ -91,11 +92,15 @@ describe('postCenaivaOrchestrator', () => {
         accessToken: 'access-token',
         signal: controller.signal,
         fetchImpl,
+        callbacks: {
+          onTransport: (transport) => transports.push(transport),
+        },
       },
     );
 
     expect(result.error).toBeNull();
     expect(result.data?.conversation_id).toBe('conv-1');
+    expect(transports).toEqual(['buffered_text']);
     expect(fetchImpl).toHaveBeenCalledTimes(1);
     const [[url, init]] = fetchImpl.mock.calls as unknown as Array<[string, RequestInit]>;
     expect(url).toBe('https://example.supabase.co/functions/v1/cenaiva-orchestrate');
@@ -178,5 +183,53 @@ describe('postCenaivaOrchestrator', () => {
     );
 
     expect(result).toEqual({ data: null, error: 'no_final_payload' });
+  });
+
+  it('uses XHR event-source streaming when provided before falling back to fetch buffering', async () => {
+    const chunks: string[] = [];
+    const transports: string[] = [];
+    const fetchImpl = jest.fn();
+
+    class FakeEventSource {
+      private listeners: Record<string, Array<(event: { data?: string | null; type?: string }) => void>> = {};
+
+      constructor(public url: string, public options?: Record<string, unknown>) {
+        queueMicrotask(() => {
+          this.listeners.message?.forEach((listener) =>
+            listener({ data: JSON.stringify({ type: 'speech_chunk', text: 'One moment.' }) }),
+          );
+          this.listeners.message?.forEach((listener) =>
+            listener({ data: JSON.stringify({ type: 'final', payload: finalPayload }) }),
+          );
+        });
+      }
+
+      addEventListener(type: string, listener: (event: { data?: string | null; type?: string }) => void) {
+        this.listeners[type] = [...(this.listeners[type] ?? []), listener];
+      }
+
+      close() {}
+    }
+
+    const result = await postCenaivaOrchestrator(
+      { transcript: 'find Italian near me' },
+      {
+        url: 'https://example.supabase.co',
+        anonKey: 'anon-key',
+        accessToken: 'access-token',
+        fetchImpl,
+        eventSourceImpl: FakeEventSource as any,
+        callbacks: {
+          onSpeechChunk: (text) => chunks.push(text),
+          onTransport: (transport) => transports.push(transport),
+        },
+      },
+    );
+
+    expect(result.error).toBeNull();
+    expect(result.data?.conversation_id).toBe('conv-1');
+    expect(chunks).toEqual(['One moment.']);
+    expect(transports).toEqual(['xhr_event_source']);
+    expect(fetchImpl).not.toHaveBeenCalled();
   });
 });

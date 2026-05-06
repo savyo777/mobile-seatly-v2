@@ -11,13 +11,14 @@ import {
   View,
 } from 'react-native';
 import { Image } from 'expo-image';
-import { useLocalSearchParams, useRouter } from 'expo-router';
+import { useLocalSearchParams, useRouter, type Href } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { StatusBar } from 'expo-status-bar';
 import { Button } from '@/components/ui';
 import { useColors, createStyles, borderRadius, spacing, typography } from '@/lib/theme';
+import { safeRouterBack } from '@/lib/navigation/transitions';
 import { createSnapPost, getSnapRestaurantName, TAG_POOL } from '@/lib/mock/snaps';
 import { mockCustomer } from '@/lib/mock/users';
 
@@ -282,6 +283,15 @@ export default function SnapCaptionScreen() {
   const photoH = photoW * (4 / 3);
 
   const restaurantName = restaurantId ? getSnapRestaurantName(restaurantId) : 'Restaurant';
+  const goBackToCapture = () => {
+    const fallback: Href = restaurantId
+      ? {
+          pathname: '/(customer)/discover/post-review/camera',
+          params: { restaurantId },
+        }
+      : '/(customer)/discover/post-review';
+    safeRouterBack(router, fallback);
+  };
 
   const postSnap = () => {
     if (!restaurantId || !decodedUri || !caption.trim()) return;
@@ -313,7 +323,7 @@ export default function SnapCaptionScreen() {
       >
         <View style={[styles.header, { paddingTop: insets.top + spacing.sm }]}>
           <Pressable
-            onPress={() => router.back()}
+            onPress={goBackToCapture}
             hitSlop={12}
             style={({ pressed }) => [styles.headerIconBtn, pressed && styles.pressed]}
             accessibilityRole="button"

@@ -16,7 +16,10 @@ export type OrchestratorError =
 export type SendCallbacks = {
   onSpeechChunk?: (text: string) => void;
   onDiscardPendingSpeech?: () => void;
+  onTransport?: (transport: OrchestratorTransport) => void;
 };
+
+export type OrchestratorTransport = 'readable_stream' | 'buffered_text' | 'xhr_event_source';
 
 type SseFrame = {
   type?: string;
@@ -36,6 +39,34 @@ type FetchLikeResponse = {
 
 type FetchLike = (input: string, init: RequestInit) => Promise<FetchLikeResponse>;
 
+type EventSourceLikeEvent = {
+  data?: string | null;
+  message?: string;
+  xhrStatus?: number;
+  xhrState?: number;
+  error?: Error;
+  type?: string;
+};
+
+type EventSourceLike = {
+  addEventListener: (type: 'message' | 'error' | 'close' | 'open', listener: (event: EventSourceLikeEvent) => void) => void;
+  close: () => void;
+};
+
+type EventSourceConstructor = new (url: string, options?: Record<string, unknown>) => EventSourceLike;
+
+function resolveDefaultEventSource(): EventSourceConstructor | null {
+  try {
+    // Lazy-load so Jest/Node never parses react-native-sse's untranspiled ESM
+    // file unless the React Native XHR streaming path is actually used.
+    // eslint-disable-next-line @typescript-eslint/no-var-requires
+    const mod = require('react-native-sse') as { default?: EventSourceConstructor } | EventSourceConstructor;
+    return ((mod as { default?: EventSourceConstructor }).default ?? mod) as EventSourceConstructor;
+  } catch {
+    return null;
+  }
+}
+
 function parseSseFrame(rawFrame: string): SseFrame | null {
   const data = rawFrame
     .split(/\r?\n/)
@@ -43,6 +74,38 @@ function parseSseFrame(rawFrame: string): SseFrame | null {
     .map((line) => line.replace(/^data:\s?/, ''))
     .join('\n')
     .trim();
+  if (!data) return null;
+  try {
+    return JSON.parse(data) as SseFrame;
+  } catch {
+    return null;
+  }
+}
+
+function consumeSseFrame(
+  frame: SseFrame | null,
+  callbacks?: SendCallbacks,
+): { finalPayload: unknown | null; error: string | null } {
+  if (!frame?.type) return { finalPayload: null, error: null };
+  switch (frame.type) {
+    case 'speech_chunk':
+      if (typeof frame.text === 'string' && frame.text.length) {
+        callbacks?.onSpeechChunk?.(frame.text);
+      }
+      return { finalPayload: null, error: null };
+    case 'discard_pending_speech':
+      callbacks?.onDiscardPendingSpeech?.();
+      return { finalPayload: null, error: null };
+    case 'final':
+      return { finalPayload: frame.payload ?? null, error: null };
+    case 'error':
+      return { finalPayload: null, error: frame.message ?? `http_${frame.status ?? 500}` };
+    default:
+      return { finalPayload: null, error: null };
+  }
+}
+
+function parseSseData(data: string | null | undefined): SseFrame | null {
   if (!data) return null;
   try {
     return JSON.parse(data) as SseFrame;
@@ -60,24 +123,9 @@ export function consumeSseText(
   const frames = text.split(/\r?\n\r?\n/);
 
   for (const rawFrame of frames) {
-    const frame = parseSseFrame(rawFrame);
-    if (!frame?.type) continue;
-    switch (frame.type) {
-      case 'speech_chunk':
-        if (typeof frame.text === 'string' && frame.text.length) {
-          callbacks?.onSpeechChunk?.(frame.text);
-        }
-        break;
-      case 'discard_pending_speech':
-        callbacks?.onDiscardPendingSpeech?.();
-        break;
-      case 'final':
-        finalPayload = frame.payload ?? null;
-        break;
-      case 'error':
-        error = frame.message ?? `http_${frame.status ?? 500}`;
-        break;
-    }
+    const result = consumeSseFrame(parseSseFrame(rawFrame), callbacks);
+    finalPayload = result.finalPayload ?? finalPayload;
+    error = result.error ?? error;
   }
 
   return { finalPayload, error };
@@ -136,6 +184,87 @@ function hasReadableStreamBody(body: unknown): body is ReadableStream<Uint8Array
   );
 }
 
+function shouldUseEventSource(fetchImpl: FetchLike, eventSourceImpl?: EventSourceConstructor | null) {
+  if (eventSourceImpl) return true;
+  const defaultFetch = typeof fetch !== 'undefined' ? (fetch as FetchLike) : null;
+  return (
+    fetchImpl === defaultFetch &&
+    typeof XMLHttpRequest !== 'undefined' &&
+    typeof resolveDefaultEventSource() === 'function'
+  );
+}
+
+function eventSourceErrorMessage(event: EventSourceLikeEvent): string {
+  if (event.type === 'timeout') return 'timeout';
+  if (typeof event.message === 'string' && event.message.trim()) {
+    try {
+      const parsed = JSON.parse(event.message) as { error?: unknown; message?: unknown };
+      if (typeof parsed.error === 'string') return parsed.error;
+      if (typeof parsed.message === 'string') return parsed.message;
+    } catch {
+      // plain text response body
+    }
+    return event.message;
+  }
+  if (typeof event.xhrStatus === 'number' && event.xhrStatus > 0) {
+    return `http_${event.xhrStatus}`;
+  }
+  return event.error?.message ?? 'network_error';
+}
+
+function readEventSourceBody(
+  input: string,
+  init: RequestInit,
+  callbacks?: SendCallbacks,
+  eventSourceImpl?: EventSourceConstructor | null,
+): Promise<{ finalPayload: unknown | null; error: string | null }> {
+  const Source = eventSourceImpl ?? resolveDefaultEventSource();
+  if (!Source) return Promise.resolve({ finalPayload: null, error: 'event_source_unavailable' });
+  callbacks?.onTransport?.('xhr_event_source');
+
+  return new Promise((resolve) => {
+    let settled = false;
+    const settle = (result: { finalPayload: unknown | null; error: string | null }) => {
+      if (settled) return;
+      settled = true;
+      source.close();
+      resolve(result);
+    };
+
+    const source = new Source(input, {
+      method: init.method ?? 'GET',
+      headers: init.headers as Record<string, unknown>,
+      body: init.body,
+      timeout: REQUEST_TIMEOUT_MS,
+      timeoutBeforeConnection: 0,
+      pollingInterval: 0,
+      lineEndingCharacter: '\n',
+    });
+
+    const signal = init.signal;
+    if (signal) {
+      if (signal.aborted) {
+        settle({ finalPayload: null, error: 'timeout' });
+        return;
+      }
+      signal.addEventListener(
+        'abort',
+        () => settle({ finalPayload: null, error: 'timeout' }),
+        { once: true },
+      );
+    }
+
+    source.addEventListener('message', (event) => {
+      const result = consumeSseFrame(parseSseData(event.data), callbacks);
+      if (result.error || result.finalPayload) settle(result);
+    });
+
+    source.addEventListener('error', (event) => {
+      settle({ finalPayload: null, error: eventSourceErrorMessage(event) });
+    });
+  });
+}
+
 export async function postCenaivaOrchestrator(
   req: OrchestratorRequestType,
   options: {
@@ -145,14 +274,16 @@ export async function postCenaivaOrchestrator(
     signal?: AbortSignal;
     callbacks?: SendCallbacks;
     fetchImpl?: FetchLike;
+    eventSourceImpl?: EventSourceConstructor | null;
   },
 ): Promise<{ data: AssistantResponseType | null; error: OrchestratorError | null }> {
-  const { url, anonKey, accessToken, signal, callbacks, fetchImpl = fetch as FetchLike } = options;
+  const { url, anonKey, accessToken, signal, callbacks, fetchImpl = fetch as FetchLike, eventSourceImpl } = options;
   if (!accessToken) {
     return { data: null, error: 'not_authenticated' };
   }
 
-  const response = await fetchImpl(`${url}/functions/v1/cenaiva-orchestrate`, {
+  const requestUrl = `${url}/functions/v1/cenaiva-orchestrate`;
+  const requestInit: RequestInit = {
     method: 'POST',
     headers: {
       Authorization: `Bearer ${accessToken}`,
@@ -162,7 +293,20 @@ export async function postCenaivaOrchestrator(
     },
     body: JSON.stringify(req),
     signal,
-  });
+  };
+
+  if (shouldUseEventSource(fetchImpl, eventSourceImpl)) {
+    const result = await readEventSourceBody(requestUrl, requestInit, callbacks, eventSourceImpl);
+    if (result.error) {
+      return { data: null, error: result.error };
+    }
+    if (!result.finalPayload) {
+      return { data: null, error: 'no_final_payload' };
+    }
+    return { data: parseAssistantResponse(result.finalPayload), error: null };
+  }
+
+  const response = await fetchImpl(requestUrl, requestInit);
 
   if (!response.ok) {
     let message: OrchestratorError = `http_${response.status}`;
@@ -177,8 +321,11 @@ export async function postCenaivaOrchestrator(
     return { data: null, error: message };
   }
 
-  const result = hasReadableStreamBody(response.body)
-    ? await readStreamBody(response.body, callbacks)
+  const body = response.body;
+  const streamBody = hasReadableStreamBody(body);
+  callbacks?.onTransport?.(streamBody ? 'readable_stream' : 'buffered_text');
+  const result = streamBody
+    ? await readStreamBody(body, callbacks)
     : consumeSseText(await response.text(), callbacks);
 
   if (result.error) {
@@ -256,8 +403,24 @@ export function useCenaivaOrchestrator() {
     [recordError, session?.access_token],
   );
 
+  // WS-1.3: Pre-open the TLS connection to the edge function so that the
+  // first real POST after wake doesn't pay the handshake cost. We send a
+  // cheap OPTIONS preflight (no auth required) and ignore the result.
+  const prewarm = useCallback(() => {
+    if (!isSupabaseConfigured()) return;
+    try {
+      const { url } = getSupabaseEnv();
+      void fetch(`${url}/functions/v1/cenaiva-orchestrate`, {
+        method: 'OPTIONS',
+        headers: { 'Access-Control-Request-Method': 'POST' },
+      }).catch(() => undefined);
+    } catch {
+      // ignore
+    }
+  }, []);
+
   return useMemo(
-    () => ({ send, cancel, loading, error, lastErrorRef }),
-    [send, cancel, loading, error, lastErrorRef],
+    () => ({ send, cancel, loading, error, lastErrorRef, prewarm }),
+    [send, cancel, loading, error, lastErrorRef, prewarm],
   );
 }

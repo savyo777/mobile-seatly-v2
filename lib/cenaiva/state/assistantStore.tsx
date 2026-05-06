@@ -94,6 +94,7 @@ type LocalAction =
   | { type: 'SET_AVAILABILITY_OPEN'; open: boolean }
   | { type: 'SET_HAS_SAVED_CARD'; value: boolean }
   | { type: 'SET_BOOKING_STATUS'; status: BookingState['status'] }
+  | { type: 'RESET_ASSISTANT_CONTEXT' }
   | { type: 'PRESELECT_RESTAURANT'; restaurant_id: string; restaurant_name: string };
 
 export type AssistantAction = UIActionType | LocalAction;
@@ -451,6 +452,17 @@ export function assistantReducer(state: AssistantState, action: AssistantAction)
         }
       }
 
+      if (
+        next.booking.status === 'loading_availability' &&
+        !/checking availability/i.test(response.spoken_text ?? '')
+      ) {
+        next = {
+          ...next,
+          availabilityOpen: false,
+          booking: { ...next.booking, status: 'collecting_minimum_fields' },
+        };
+      }
+
       const wasNotBooked = !state.booking.reservation_id;
       const isNowBooked = !!next.booking.reservation_id;
       const alreadyPastPreorder: BookingState['status'][] = [
@@ -496,6 +508,27 @@ export function assistantReducer(state: AssistantState, action: AssistantAction)
           ...state.memory,
           booking_process: null,
         },
+        showExitX: false,
+        customerAccepted: false,
+        availabilityOpen: false,
+      };
+
+    case 'RESET_ASSISTANT_CONTEXT':
+      return {
+        ...state,
+        conversationId: null,
+        booking: {
+          ...initialBooking,
+          has_saved_card: state.booking.has_saved_card,
+        },
+        map: {
+          ...initialMap,
+          visible: true,
+          center: state.map.center,
+          zoom: state.map.zoom,
+        },
+        filters: {},
+        memory: initialMemory,
         showExitX: false,
         customerAccepted: false,
         availabilityOpen: false,

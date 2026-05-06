@@ -18,6 +18,43 @@ export interface AvailabilityResult {
   message?: string;
 }
 
+export type FlexibleAvailabilityMode =
+  | "exact"
+  | "any_day_at_time"
+  | "weekday_any_time"
+  | "date_any_time"
+  | "first_available";
+
+export interface FlexibleAvailabilityRequest {
+  restaurant_id: string;
+  party_size: number;
+  mode: FlexibleAvailabilityMode;
+  date?: string | null;
+  time?: string | null;
+  weekday?: number | null;
+  timezone?: string | null;
+  search_days?: number;
+  nearest_count?: number;
+  split_at?: string;
+}
+
+export interface FlexibleAvailabilityOption extends AvailabilitySlot {
+  date: string;
+  diff_minutes?: number;
+}
+
+export interface FlexibleAvailabilityResult {
+  status: "available" | "unavailable" | "options" | "needs_more_info";
+  requested?: {
+    date?: string | null;
+    time?: string | null;
+    weekday?: number | null;
+  };
+  selected_slot?: FlexibleAvailabilityOption | null;
+  alternatives?: FlexibleAvailabilityOption[];
+  message?: string;
+}
+
 export async function getAvailability(
   restaurant_id: string,
   date: string, // YYYY-MM-DD
@@ -171,4 +208,264 @@ export async function getAvailability(
       ? `${limited[0].display_time} to ${limited[limited.length - 1].display_time}`
       : null);
   return { slots: limited, hours_window };
+}
+
+function formatISODateInTimeZone(date: Date, timezone: string): string {
+  const parts = new Intl.DateTimeFormat("en-CA", {
+    timeZone: timezone,
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).formatToParts(date);
+  const byType = Object.fromEntries(parts.map((part) => [part.type, part.value]));
+  return `${byType.year}-${byType.month}-${byType.day}`;
+}
+
+function addDaysToISODate(dateStr: string, days: number): string {
+  const [year, month, day] = dateStr.split("-").map(Number);
+  const utc = new Date(Date.UTC(year, month - 1, day));
+  utc.setUTCDate(utc.getUTCDate() + days);
+  return utc.toISOString().slice(0, 10);
+}
+
+function dateOffsetMinutes(anchorDate: string, candidateDate: string): number {
+  const [ay, am, ad] = anchorDate.split("-").map(Number);
+  const [cy, cm, cd] = candidateDate.split("-").map(Number);
+  const anchor = Date.UTC(ay, am - 1, ad);
+  const candidate = Date.UTC(cy, cm - 1, cd);
+  return Math.round((candidate - anchor) / 60_000);
+}
+
+function displayTimeToMinutes(display: string): number | null {
+  const m = display.match(/^(\d{1,2}):(\d{2})\s+(AM|PM)$/i);
+  if (!m) return null;
+  let h = parseInt(m[1], 10);
+  const min = parseInt(m[2], 10);
+  const period = m[3].toUpperCase();
+  if (period === "PM" && h < 12) h += 12;
+  if (period === "AM" && h === 12) h = 0;
+  return h * 60 + min;
+}
+
+function hhmmToMinutes(value: string | null | undefined): number | null {
+  if (!value) return null;
+  const m = value.match(/^(\d{2}):(\d{2})$/);
+  if (!m) return null;
+  const h = parseInt(m[1], 10);
+  const min = parseInt(m[2], 10);
+  if (h < 0 || h > 23 || min < 0 || min > 59) return null;
+  return h * 60 + min;
+}
+
+function uniqueOptions(options: FlexibleAvailabilityOption[]): FlexibleAvailabilityOption[] {
+  const seen = new Set<string>();
+  const out: FlexibleAvailabilityOption[] = [];
+  for (const option of options) {
+    const key = `${option.date}:${option.date_time}`;
+    if (seen.has(key)) continue;
+    seen.add(key);
+    out.push(option);
+  }
+  return out;
+}
+
+async function getRestaurantTimezone(restaurantId: string): Promise<string> {
+  const { data } = await supabaseAdmin
+    .from("restaurants")
+    .select("timezone")
+    .eq("id", restaurantId)
+    .single();
+  return data?.timezone || "UTC";
+}
+
+async function getOptionsForDates(
+  restaurantId: string,
+  dates: string[],
+  partySize: number,
+): Promise<FlexibleAvailabilityOption[]> {
+  const results = await Promise.all(
+    dates.map(async (date) => {
+      const availability = await getAvailability(restaurantId, date, partySize);
+      return (availability.slots ?? []).map((slot) => ({ ...slot, date }));
+    }),
+  );
+  return results.flat();
+}
+
+function datesFromToday(today: string, searchDays: number): string[] {
+  return Array.from({ length: searchDays }, (_, index) => addDaysToISODate(today, index));
+}
+
+function nextWeekdayDates(today: string, weekday: number, searchDays: number, timezone: string): string[] {
+  const dates: string[] = [];
+  for (let i = 0; i < searchDays; i += 1) {
+    const date = addDaysToISODate(today, i);
+    if (localDayOfWeek(date, timezone) === weekday) dates.push(date);
+  }
+  return dates;
+}
+
+function rankByAbsoluteDateTime(
+  anchorDate: string,
+  targetMinutes: number,
+  options: FlexibleAvailabilityOption[],
+): FlexibleAvailabilityOption[] {
+  return uniqueOptions(options)
+    .map((option) => {
+      const slotMinutes = displayTimeToMinutes(option.display_time);
+      const diff = slotMinutes == null
+        ? Number.POSITIVE_INFINITY
+        : Math.abs(dateOffsetMinutes(anchorDate, option.date) + slotMinutes - targetMinutes);
+      return { ...option, diff_minutes: diff };
+    })
+    .sort((a, b) =>
+      (a.diff_minutes ?? Number.POSITIVE_INFINITY) - (b.diff_minutes ?? Number.POSITIVE_INFINITY) ||
+      a.date.localeCompare(b.date) ||
+      a.display_time.localeCompare(b.display_time)
+    );
+}
+
+function rankByTimeThenDate(
+  anchorDate: string,
+  targetMinutes: number,
+  options: FlexibleAvailabilityOption[],
+): FlexibleAvailabilityOption[] {
+  return uniqueOptions(options)
+    .map((option) => {
+      const slotMinutes = displayTimeToMinutes(option.display_time);
+      const timeDiff = slotMinutes == null ? Number.POSITIVE_INFINITY : Math.abs(slotMinutes - targetMinutes);
+      const dayDiff = Math.abs(dateOffsetMinutes(anchorDate, option.date) / 1440);
+      return { ...option, diff_minutes: timeDiff * 10_000 + dayDiff };
+    })
+    .sort((a, b) =>
+      (a.diff_minutes ?? Number.POSITIVE_INFINITY) - (b.diff_minutes ?? Number.POSITIVE_INFINITY) ||
+      a.date.localeCompare(b.date)
+    );
+}
+
+function optionsAroundSplit(
+  options: FlexibleAvailabilityOption[],
+  splitMinutes: number,
+): FlexibleAvailabilityOption[] {
+  const withMinutes = uniqueOptions(options)
+    .map((option) => ({ option, minutes: displayTimeToMinutes(option.display_time) }))
+    .filter((item): item is { option: FlexibleAvailabilityOption; minutes: number } => item.minutes != null)
+    .sort((a, b) => a.option.date.localeCompare(b.option.date) || a.minutes - b.minutes);
+
+  const before = [...withMinutes]
+    .filter((item) => item.minutes < splitMinutes)
+    .sort((a, b) => b.minutes - a.minutes)[0]?.option ?? null;
+  const after = withMinutes
+    .filter((item) => item.minutes > splitMinutes)
+    .sort((a, b) => a.minutes - b.minutes)[0]?.option ?? null;
+
+  const picked = [before, after].filter((option): option is FlexibleAvailabilityOption => Boolean(option));
+  if (picked.length >= 2) return picked;
+  return uniqueOptions([
+    ...picked,
+    ...withMinutes
+      .map((item) => ({
+        ...item.option,
+        diff_minutes: Math.abs(item.minutes - splitMinutes),
+      }))
+      .sort((a, b) => (a.diff_minutes ?? 0) - (b.diff_minutes ?? 0)),
+  ]).slice(0, 2);
+}
+
+export async function getFlexibleAvailability(
+  request: FlexibleAvailabilityRequest,
+): Promise<FlexibleAvailabilityResult> {
+  const timezone = request.timezone || await getRestaurantTimezone(request.restaurant_id);
+  const today = formatISODateInTimeZone(new Date(), timezone);
+  const nearestCount = Math.max(1, Math.min(request.nearest_count ?? 2, 4));
+  const searchDays = Math.max(1, Math.min(request.search_days ?? 14, 28));
+  const requested = {
+    date: request.date ?? null,
+    time: request.time ?? null,
+    weekday: request.weekday ?? null,
+  };
+
+  if (request.party_size == null || request.party_size < 1) {
+    return { status: "needs_more_info", requested, message: "Party size is required." };
+  }
+
+  if (request.mode === "exact") {
+    const targetMinutes = hhmmToMinutes(request.time);
+    if (!request.date || targetMinutes == null) {
+      return { status: "needs_more_info", requested, message: "Date and time are required." };
+    }
+    const dates = datesFromToday(request.date, searchDays);
+    const options = await getOptionsForDates(request.restaurant_id, dates, request.party_size);
+    const exact = options.find((option) =>
+      option.date === request.date && displayTimeToMinutes(option.display_time) === targetMinutes
+    );
+    if (exact) {
+      return { status: "available", requested, selected_slot: exact, alternatives: [] };
+    }
+    return {
+      status: "unavailable",
+      requested,
+      selected_slot: null,
+      alternatives: rankByAbsoluteDateTime(request.date, targetMinutes, options).slice(0, nearestCount),
+    };
+  }
+
+  if (request.mode === "any_day_at_time") {
+    const targetMinutes = hhmmToMinutes(request.time);
+    if (targetMinutes == null) {
+      return { status: "needs_more_info", requested, message: "Time is required." };
+    }
+    const dates = datesFromToday(today, searchDays);
+    const options = await getOptionsForDates(request.restaurant_id, dates, request.party_size);
+    const ranked = rankByTimeThenDate(today, targetMinutes, options);
+    const exact = ranked.find((option) => displayTimeToMinutes(option.display_time) === targetMinutes);
+    if (exact) {
+      return { status: "available", requested, selected_slot: exact, alternatives: [] };
+    }
+    return {
+      status: "options",
+      requested,
+      alternatives: ranked.slice(0, nearestCount),
+    };
+  }
+
+  if (request.mode === "weekday_any_time") {
+    if (request.weekday == null) {
+      return { status: "needs_more_info", requested, message: "Weekday is required." };
+    }
+    const dates = nextWeekdayDates(today, request.weekday, searchDays, timezone);
+    const options = await getOptionsForDates(request.restaurant_id, dates, request.party_size);
+    const split = hhmmToMinutes(request.split_at) ?? 14 * 60 + 30;
+    return {
+      status: "options",
+      requested,
+      alternatives: optionsAroundSplit(options, split).slice(0, nearestCount),
+    };
+  }
+
+  if (request.mode === "date_any_time") {
+    if (!request.date) {
+      return { status: "needs_more_info", requested, message: "Date is required." };
+    }
+    const options = await getOptionsForDates(request.restaurant_id, [request.date], request.party_size);
+    const split = hhmmToMinutes(request.split_at) ?? 14 * 60 + 30;
+    return {
+      status: "options",
+      requested,
+      alternatives: optionsAroundSplit(options, split).slice(0, nearestCount),
+    };
+  }
+
+  const options = await getOptionsForDates(
+    request.restaurant_id,
+    datesFromToday(today, searchDays),
+    request.party_size,
+  );
+  return {
+    status: "options",
+    requested,
+    alternatives: uniqueOptions(options)
+      .sort((a, b) => a.date.localeCompare(b.date) || a.display_time.localeCompare(b.display_time))
+      .slice(0, nearestCount),
+  };
 }

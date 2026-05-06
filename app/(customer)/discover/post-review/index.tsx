@@ -3,6 +3,7 @@ import { Image, Pressable, ScrollView, StyleSheet, Text, View } from 'react-nati
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Input, ScreenWrapper } from '@/components/ui';
 import { useColors, createStyles, borderRadius, spacing, typography } from '@/lib/theme';
+import { safeRouterBack } from '@/lib/navigation/transitions';
 import { snapRestaurants } from '@/lib/mock/snaps';
 import { mockReservations } from '@/lib/mock/reservations';
 import { Ionicons } from '@expo/vector-icons';
@@ -145,7 +146,11 @@ export default function ReviewRestaurantSelectScreen() {
     <ScreenWrapper scrollable={false}>
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.content}>
         <View style={styles.header}>
-          <Pressable onPress={() => router.back()} hitSlop={10} style={styles.backBtn}>
+          <Pressable
+            onPress={() => safeRouterBack(router, '/(customer)/discover')}
+            hitSlop={10}
+            style={styles.backBtn}
+          >
             <Ionicons name="chevron-back" size={22} color={c.textPrimary} />
           </Pressable>
           <Text style={styles.title}>Where are you posting?</Text>

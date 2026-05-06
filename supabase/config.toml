@@ -3,6 +3,12 @@ project_id = "exbjodmnpdiayfzrdyux"
 [functions.cenaiva-orchestrate]
 verify_jwt = false
 
+[functions.cenaiva-availability]
+verify_jwt = false
+
+[functions.cenaiva-small-prompt]
+verify_jwt = false
+
 [functions.elevenlabs-tts]
 verify_jwt = false
 
