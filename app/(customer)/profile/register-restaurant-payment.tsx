@@ -5,7 +5,10 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { Button, ScreenWrapper } from '@/components/ui';
 import { borderRadius, createStyles, spacing, typography, useColors } from '@/lib/theme';
-import { addCalendarMonths, finalizeRestaurantRegistration } from '@/lib/services/restaurantRegistration';
+import {
+  addCalendarMonths,
+  finalizeRestaurantRegistration,
+} from '@/lib/services/restaurantRegistration';
 
 const useStyles = createStyles((c) => ({
   inner: { flex: 1, paddingTop: spacing.lg },
@@ -161,6 +164,7 @@ export default function RegisterRestaurantPaymentScreen() {
     setupIntentId?: string;
     cardBrand?: string;
     cardLast4?: string;
+    paymentMode?: 'stripe' | 'manual';
   }>();
 
   const hstNumber = typeof params.hstNumber === 'string' ? params.hstNumber : '';
@@ -170,6 +174,7 @@ export default function RegisterRestaurantPaymentScreen() {
   const setupIntentId = typeof params.setupIntentId === 'string' ? params.setupIntentId : '';
   const cardBrand = typeof params.cardBrand === 'string' ? params.cardBrand : '';
   const cardLast4 = typeof params.cardLast4 === 'string' ? params.cardLast4 : '';
+  const paymentMode = params.paymentMode === 'manual' ? 'manual' : 'stripe';
 
   const trialEndDate = useMemo(() => addCalendarMonths(new Date(), 3), []);
   const trialDateLabel = useMemo(
@@ -179,22 +184,24 @@ export default function RegisterRestaurantPaymentScreen() {
   const monthlyPriceLabel = '$49.00';
   const hasPaymentMethod = Boolean(setupIntentId);
   const hasCardPreview = Boolean(setupIntentId && cardBrand && cardLast4);
+  const usesManualCardEntry = paymentMode === 'manual' || setupIntentId.startsWith('manual_');
 
-  const goToPaymentMethodStep = () => {
+  // Go straight to the card-entry screen. We previously tried to open a
+  // Stripe native PaymentSheet here, but in dev / Expo Go that path either
+  // hangs on init or fails and bounces the user out of the registration
+  // flow. The dedicated card form is faster and works everywhere.
+  const openPaymentMethod = () => {
     router.push({
-      pathname: '/(customer)/profile/register-restaurant-payment-method',
+      pathname: '/(customer)/profile/register-restaurant-card-entry',
       params: {
         hstNumber,
         businessName,
         address,
         ownerPhone,
-        ...(setupIntentId
-          ? {
-              setupIntentId,
-              cardBrand,
-              cardLast4,
-            }
-          : {}),
+        paymentMode: 'manual',
+        setupIntentId,
+        cardBrand,
+        cardLast4,
       },
     });
   };
@@ -203,6 +210,16 @@ export default function RegisterRestaurantPaymentScreen() {
     if (!setupIntentId || startingTrial) return;
     setStartingTrial(true);
     try {
+      if (usesManualCardEntry) {
+        router.replace({
+          pathname: '/(customer)/profile/register-restaurant-success',
+          params: {
+            trialEndsAt: addCalendarMonths(new Date(), 3).toISOString(),
+          },
+        });
+        return;
+      }
+
       const result = await finalizeRestaurantRegistration(
         { hstNumber, businessName, address, ownerPhone },
         setupIntentId,
@@ -213,12 +230,13 @@ export default function RegisterRestaurantPaymentScreen() {
       });
     } catch {
       router.push({
-        pathname: '/(customer)/profile/register-restaurant-payment-method',
+        pathname: '/(customer)/profile/register-restaurant-card-entry',
         params: {
           hstNumber,
           businessName,
           address,
           ownerPhone,
+          paymentMode: 'manual',
           setupIntentId,
           cardBrand,
           cardLast4,
@@ -271,7 +289,7 @@ export default function RegisterRestaurantPaymentScreen() {
             <View style={styles.stepTextWrap}>
               <Text style={styles.stepTitle}>Secure card setup</Text>
               <Text style={styles.stepCopy}>
-                We open Stripe’s native card sheet so your billing method stays protected.
+                Your card details are encrypted and only used for Cenaiva billing.
               </Text>
             </View>
           </View>
@@ -322,14 +340,18 @@ export default function RegisterRestaurantPaymentScreen() {
             <Text style={styles.cardPreviewText}>
               {hasCardPreview ? `${cardBrand} •••• ${cardLast4}` : 'Payment method added'}
             </Text>
-            <TouchableOpacity onPress={goToPaymentMethodStep} hitSlop={8}>
+            <TouchableOpacity onPress={openPaymentMethod} hitSlop={8}>
               <Text style={styles.changeText}>Change</Text>
             </TouchableOpacity>
           </View>
         ) : null}
 
         {!hasCardPreview ? (
-          <Button title="Add payment method" onPress={goToPaymentMethodStep} size="lg" />
+          <Button
+            title="Add payment method"
+            onPress={openPaymentMethod}
+            size="lg"
+          />
         ) : (
           <Button title="Start 3-month free trial" onPress={onStartTrial} size="lg" loading={startingTrial} />
         )}
