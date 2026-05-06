@@ -296,7 +296,7 @@ export function BookingSheet({ fullScreen = false }: { fullScreen?: boolean }) {
             <Button
               title="Change details"
               variant="outlined"
-              onPress={() => assistant.sendTranscript('change the booking details', { force: true })}
+              onPress={() => assistant.sendTranscript('change the guest count, date, or time', { force: true })}
             />
           </View>
           <View style={styles.half}>

@@ -447,6 +447,49 @@ describe('local Hey Cenaiva booking collector', () => {
     );
   });
 
+  it('explains when a requested time lacks enough seats but nearby times exist', () => {
+    const result: CenaivaAvailabilityResponse = {
+      status: 'unavailable',
+      unavailable_reason: 'insufficient_capacity',
+      hours_window: '11:00 AM to 10:00 PM',
+      alternatives: [
+        {
+          shift_id: 'shift-1',
+          date: '2026-01-26',
+          date_time: '2026-01-26T19:30:00.000Z',
+          display_time: '7:30 PM',
+          hours_window: '11:00 AM to 10:00 PM',
+        },
+        {
+          shift_id: 'shift-1',
+          date: '2026-01-26',
+          date_time: '2026-01-26T18:30:00.000Z',
+          display_time: '6:30 PM',
+          hours_window: '11:00 AM to 10:00 PM',
+        },
+      ],
+      message: 'There are not enough seats available at that time.',
+    };
+
+    const { response, pendingOptions } = buildLocalAvailabilityResponse({
+      conversationId: null,
+      request: {
+        restaurant_id: 'rest-1',
+        restaurant_name: 'Echoria',
+        party_size: 47,
+        mode: 'exact',
+        date: '2026-01-26',
+        time: '19:00',
+      },
+      result,
+    });
+
+    expect(pendingOptions).toHaveLength(2);
+    expect(response.spoken_text).toBe(
+      "Echoria does not have enough seats available at 7:00 PM for 47 guests. They're open 11:00 AM to 10:00 PM on January 26. I found January 26 at 7:30 PM or January 26 at 6:30 PM. Which should I use?",
+    );
+  });
+
   it('keeps unavailable alternatives pending for first or second selection', () => {
     const result: CenaivaAvailabilityResponse = {
       status: 'unavailable',

@@ -51,6 +51,7 @@ export type CenaivaAvailabilityResponse = {
     | 'closed'
     | 'no_shifts'
     | 'party_size_out_of_range'
+    | 'insufficient_capacity'
     | 'fully_booked'
     | 'no_future_slots'
     | 'no_slots'
@@ -953,6 +954,11 @@ function isPartySizeOutOfRangeResult(result: CenaivaAvailabilityResponse): boole
     /\b(party size|guests?|people)\b[\s\S]{0,60}\b(outside|exceeds|too large|capacity|range)\b/i.test(result.message ?? '');
 }
 
+function isInsufficientCapacityResult(result: CenaivaAvailabilityResponse): boolean {
+  return result.unavailable_reason === 'insufficient_capacity' ||
+    /\b(not enough seats|insufficient capacity|not enough capacity)\b/i.test(result.message ?? '');
+}
+
 function fullCapacityText(dateStr: string | null | undefined): string {
   return dateStr
     ? `${formatDateForSpeech(dateStr)} is fully booked.`
@@ -962,6 +968,16 @@ function fullCapacityText(dateStr: string | null | undefined): string {
 function partySizeOutOfRangeText(restaurantName: string | null | undefined, partySize: number): string {
   const restaurant = restaurantName || 'this restaurant';
   return `${restaurant} cannot book ${partySize} guests. What smaller party size should I check?`;
+}
+
+function insufficientCapacityText(
+  restaurantName: string | null | undefined,
+  partySize: number,
+  time: string | null | undefined,
+): string {
+  const restaurant = restaurantName || 'The restaurant';
+  const displayTime = time ? ` at ${formatHHMMForSpeech(time)}` : '';
+  return `${restaurant} does not have enough seats available${displayTime} for ${partySize} guests.`;
 }
 
 function formatHoursSentence(hoursWindow: string | null | undefined, dateStr: string | null | undefined): string {
@@ -1117,6 +1133,8 @@ export function buildLocalAvailabilityResponse(args: {
     const unavailablePrefix =
       isFullCapacityResult(result)
         ? `${fullCapacityText(request.date ?? alternatives[0]?.date)} `
+        : isInsufficientCapacityResult(result)
+        ? `${insufficientCapacityText(request.restaurant_name, request.party_size, request.time)} `
         : isPartySizeOutOfRangeResult(result)
         ? `${partySizeOutOfRangeText(request.restaurant_name, request.party_size)} `
         : request.mode === 'exact' && request.date && requestedTime
@@ -1154,6 +1172,8 @@ export function buildLocalAvailabilityResponse(args: {
         const hoursSentence = formatHoursSentence(hours?.window, hours?.date);
         const fallback = isFullCapacityResult(result)
           ? fullCapacityText(request.date)
+          : isInsufficientCapacityResult(result)
+          ? insufficientCapacityText(request.restaurant_name, request.party_size, request.time)
           : isPartySizeOutOfRangeResult(result)
           ? partySizeOutOfRangeText(request.restaurant_name, request.party_size)
           : result.message || 'I could not find availability for that.';
