@@ -875,6 +875,32 @@ function findNearestSlot(
   return best;
 }
 
+function hasBlockedExactCapacity(availability: AvailabilityResult, targetHHMM: string): boolean {
+  const [th, tm] = targetHHMM.split(":").map(Number);
+  const target = th * 60 + tm;
+  return (availability.blocked_slots ?? []).some((slot) =>
+    slot.unavailable_reason === "insufficient_capacity" &&
+    displayTimeToMinutes(slot.display_time) === target
+  );
+}
+
+function nearestSlotLabels(
+  slots: Array<{ display_time: string }>,
+  targetHHMM: string,
+  limit = 2,
+): string[] {
+  const [th, tm] = targetHHMM.split(":").map(Number);
+  const target = th * 60 + tm;
+  return [...slots]
+    .map((slot) => {
+      const minutes = displayTimeToMinutes(slot.display_time);
+      return { slot, diff: minutes == null ? Number.POSITIVE_INFINITY : Math.abs(minutes - target) };
+    })
+    .sort((a, b) => a.diff - b.diff)
+    .slice(0, limit)
+    .map((item) => item.slot.display_time);
+}
+
 function formatBookingDateForSpeech(dateStr: string): string {
   const [year, month, day] = dateStr.slice(0, 10).split("-").map(Number);
   if (!year || !month || !day) return dateStr;
@@ -1128,6 +1154,7 @@ RULES:
 - CUSTOMER VOCABULARY: NEVER say the words "shift", "shifts", "lunch shift", "dinner shift", or any internal scheduling term in spoken_text. These are operational concepts the customer doesn't care about. Always use customer-friendly wording: "no availability", "no openings", "no tables at that time", "we don't have anything then". If a tool message contains the word "shift", paraphrase it before speaking — never echo it verbatim.
 - NO-AVAILABILITY RE-PROMPT: When check_availability returns zero slots OR the user picks a time outside the available slots, offer a safer alternative: nearby time, different day, similar restaurant, waitlist/contact if available. If asking again, ask "What date and time would you like instead?" — not just "What time?".
 - FULL-CAPACITY WORDING: If check_availability returns unavailable_reason="fully_booked" or says the restaurant is fully booked / at capacity, say that clearly: "<Restaurant> is fully booked on <date>." Then ask for another date/time or offer nearby alternatives. Do not soften this into "I can't check availability."
+- INSUFFICIENT-SEATS WORDING: If check_availability returns unavailable_reason="insufficient_capacity", say the restaurant does not have enough seats available at that requested time for that party size, then offer the nearest available times. Do not make it sound like the restaurant is closed just because store hours are shown.
 - LARGE-PARTY WORDING: If the user gives a large guest count, still treat it as party_size and call check_availability once restaurant/date/time are known. If check_availability returns unavailable_reason="party_size_out_of_range", say the party is too large for that restaurant's bookable range and ask what smaller party size to check. Do not treat a numeric guest answer as a small prompt.
 - NEVER say "no reservations available" unless you've called check_availability and confirmed it returned no slots. If search_restaurants returns results, show them.
 - NEVER call check_availability unless restaurant_id, date, AND party_size are all known.
@@ -1878,6 +1905,24 @@ function fullCapacityAvailabilityText(
     : `${name} is fully booked.`;
 }
 
+function isInsufficientCapacityAvailability(availability: Pick<AvailabilityResult, "unavailable_reason" | "message">): boolean {
+  return availability.unavailable_reason === "insufficient_capacity" ||
+    /\b(not enough seats|insufficient capacity|not enough capacity)\b/i.test(availability.message ?? "");
+}
+
+function insufficientCapacityAvailabilityText(
+  availability: Pick<AvailabilityResult, "unavailable_reason" | "message">,
+  restaurantName: string | null | undefined,
+  partySize: number | null | undefined,
+  time: string | null | undefined,
+): string | null {
+  if (!isInsufficientCapacityAvailability(availability)) return null;
+  const name = restaurantName || "The restaurant";
+  const timeText = time ? ` at ${formatTimeForSpeech(time)}` : "";
+  const partyText = typeof partySize === "number" ? ` for ${partySize} guests` : "";
+  return `${name} does not have enough seats available${timeText}${partyText}.`;
+}
+
 function directBookingIntent(transcript: string): boolean {
   return /\b(book|reserve|get me a table|get me a spot|make a reservation)\b/i.test(transcript);
 }
@@ -2459,17 +2504,33 @@ async function buildPreflightResponse(opts: {
   const currentStatus = typeof bookingState.status === "string" ? bookingState.status : "idle";
   const rawReservationId = typeof bookingState.reservation_id === "string" ? bookingState.reservation_id : null;
   const reservationId = rawReservationId && UUID_RE.test(rawReservationId) ? rawReservationId : null;
+  const lastAssistantPrompt = opts.assistantMemory?.booking_process?.last_prompt ?? null;
+  const changeDetailsChoicePrompt =
+    typeof lastAssistantPrompt === "string" &&
+    /\bwhat would you like to change\b/i.test(lastAssistantPrompt) &&
+    /\bguest count\b/i.test(lastAssistantPrompt) &&
+    /\bdate\b/i.test(lastAssistantPrompt) &&
+    /\btime\b/i.test(lastAssistantPrompt);
+  const preConfirmationChangeChoice =
+    /\b(guest count|guest number|guests?|people|party size|party|date and time|time and date|date|day|time|hour)\b/i.test(transcript);
   const explicitPartySize = parsePartySize(transcript);
   const explicitDate = parseDateInTimeZone(transcript, opts.timezone);
   const explicitTime =
     parseTime(transcript) ??
-    resolveAmbiguousTimePeriodReply(transcript, opts.assistantMemory?.booking_process?.last_prompt ?? null);
+    resolveAmbiguousTimePeriodReply(transcript, lastAssistantPrompt);
   const ambiguousTime = explicitTime ? null : parseAmbiguousBareTime(transcript);
   const partySize =
     (bookingState.party_size as number | null | undefined) ??
     explicitPartySize;
   const date = (bookingState.date as string | null | undefined) ?? explicitDate;
   const time = (bookingState.time as string | null | undefined) ?? explicitTime;
+  const preConfirmationMemory = (spokenText: string, bookingPatch: Record<string, unknown> = {}) =>
+    mergeAssistantMemory(opts.assistantMemory, {
+      booking_process: bookingProcessMemoryFromRecord(
+        { ...bookingState, ...bookingPatch },
+        spokenText,
+      ),
+    });
 
   if (currentStatus === "confirming" && currentRestaurantId && !reservationId && isSafeBookingConfirmationText(transcript)) {
     const shiftId = typeof bookingState.shift_id === "string" ? bookingState.shift_id : null;
@@ -2585,18 +2646,86 @@ async function buildPreflightResponse(opts: {
       explicitTime != null ||
       ambiguousTime != null ||
       isNegativeText(transcript) ||
+      (changeDetailsChoicePrompt && preConfirmationChangeChoice) ||
+      /\b(guest count|guest number|party size|date and time|time and date)\b/i.test(transcript) ||
       /\b(change|edit|update|switch|different|another|wrong|details|make it)\b/i.test(transcript)
     );
 
   if (wantsPreConfirmationChange) {
     if (explicitPartySize == null && !explicitDate && !explicitTime && !ambiguousTime) {
+      if (/\bguest count\b[\s\S]{0,40}\bdate\b[\s\S]{0,40}\btime\b/i.test(transcript) ||
+        /\bguests?\b[\s\S]{0,40}\bdate\b[\s\S]{0,40}\btime\b/i.test(transcript) ||
+        /\b(change|edit|update)\b[\s\S]{0,40}\bdetails?\b/i.test(transcript)) {
+        const spokenText = "What would you like to change: guest count, date, or time?";
+        return makeAssistantPayload({
+          conversationId,
+          spokenText,
+          intent: "reservation_modify",
+          step: "confirm",
+          nextExpectedInput: "confirmation",
+          booking: { status: "confirming" },
+          assistantMemory: preConfirmationMemory(spokenText, { status: "confirming" }),
+        });
+      }
+      if (/\b(guest count|guest number|guests?|people|party size|party)\b/i.test(transcript) &&
+        !/\b(date|time|when)\b/i.test(transcript)) {
+        const spokenText = "How many guests?";
+        return makeAssistantPayload({
+          conversationId,
+          spokenText,
+          intent: "reservation_modify",
+          step: "choose_party",
+          nextExpectedInput: "party_size",
+          booking: { status: "confirming" },
+          assistantMemory: preConfirmationMemory(spokenText, { status: "confirming" }),
+        });
+      }
+      if (/\b(date and time|time and date)\b/i.test(transcript)) {
+        const spokenText = "What date and time?";
+        return makeAssistantPayload({
+          conversationId,
+          spokenText,
+          intent: "reservation_modify",
+          step: "choose_date",
+          nextExpectedInput: "date",
+          booking: { status: "confirming" },
+          assistantMemory: preConfirmationMemory(spokenText, { status: "confirming" }),
+        });
+      }
+      if (/\b(date|day|tomorrow|today|tonight|friday|saturday|sunday|monday|tuesday|wednesday|thursday)\b/i.test(transcript) &&
+        !/\b(time|hour)\b/i.test(transcript)) {
+        const spokenText = "What date and time?";
+        return makeAssistantPayload({
+          conversationId,
+          spokenText,
+          intent: "reservation_modify",
+          step: "choose_date",
+          nextExpectedInput: "date",
+          booking: { status: "confirming" },
+          assistantMemory: preConfirmationMemory(spokenText, { status: "confirming" }),
+        });
+      }
+      if (/\b(time|hour)\b/i.test(transcript)) {
+        const spokenText = "What time?";
+        return makeAssistantPayload({
+          conversationId,
+          spokenText,
+          intent: "reservation_modify",
+          step: "choose_time",
+          nextExpectedInput: "time",
+          booking: { status: "confirming" },
+          assistantMemory: preConfirmationMemory(spokenText, { status: "confirming" }),
+        });
+      }
+      const spokenText = "What would you like to change: guest count, date, or time?";
       return makeAssistantPayload({
         conversationId,
-        spokenText: "What would you like to change?",
+        spokenText,
         intent: "reservation_modify",
-        step: "choose_date",
-        nextExpectedInput: "date",
+        step: "confirm",
+        nextExpectedInput: "confirmation",
         booking: { status: "confirming" },
+        assistantMemory: preConfirmationMemory(spokenText, { status: "confirming" }),
       });
     }
 
@@ -2649,16 +2778,22 @@ async function buildPreflightResponse(opts: {
     }
 
     const availability = await getAvailability(currentRestaurantId, nextDate, nextPartySize);
+    const blockedExactCapacity = hasBlockedExactCapacity(availability, nextTime);
     const nearest = findNearestSlot(availability.slots ?? [], nextTime);
-    if (!nearest) {
-      const offered = (availability.slots ?? []).slice(0, 2).map((slot) => slot.display_time);
+    if (blockedExactCapacity || !nearest) {
+      const offered = nearestSlotLabels(availability.slots ?? [], nextTime);
       const capacityText = fullCapacityAvailabilityText(availability, currentRestaurantName, nextDate);
+      const insufficientSeatsText = blockedExactCapacity
+        ? insufficientCapacityAvailabilityText({ unavailable_reason: "insufficient_capacity" }, currentRestaurantName, nextPartySize, nextTime)
+        : insufficientCapacityAvailabilityText(availability, currentRestaurantName, nextPartySize, nextTime);
       return makeAssistantPayload({
         conversationId,
         spokenText: offered.length
-          ? `No tables at ${formatTimeForSpeech(nextTime)}. They have ${offered.join(" or ")}.`
+          ? `${insufficientSeatsText ?? `No tables at ${formatTimeForSpeech(nextTime)}.`} They have ${offered.join(" or ")}.`
           : capacityText
             ? `${capacityText} What date and time would you like instead?`
+            : insufficientSeatsText
+              ? `${insufficientSeatsText} What date and time would you like instead?`
             : `No tables at ${formatTimeForSpeech(nextTime)}. What time should I check?`,
         intent: "reservation_create",
         step: "choose_time",
@@ -3019,16 +3154,22 @@ async function buildPreflightResponse(opts: {
     }
 
     const availability = await getAvailability(currentRestaurantId, nextDate, nextPartySize);
+    const blockedExactCapacity = hasBlockedExactCapacity(availability, nextTime);
     const nearest = findNearestSlot(availability.slots ?? [], nextTime);
-    if (!nearest) {
-      const offered = (availability.slots ?? []).slice(0, 2).map((slot) => slot.display_time);
+    if (blockedExactCapacity || !nearest) {
+      const offered = nearestSlotLabels(availability.slots ?? [], nextTime);
       const capacityText = fullCapacityAvailabilityText(availability, restaurantName, nextDate);
+      const insufficientSeatsText = blockedExactCapacity
+        ? insufficientCapacityAvailabilityText({ unavailable_reason: "insufficient_capacity" }, restaurantName, nextPartySize, nextTime)
+        : insufficientCapacityAvailabilityText(availability, restaurantName, nextPartySize, nextTime);
       return makeAssistantPayload({
         conversationId,
         spokenText: offered.length
-          ? `${restaurantName} has no tables at ${formatTimeForSpeech(nextTime)} for ${nextPartySize}. They have ${offered.join(" or ")}.`
+          ? `${insufficientSeatsText ?? `${restaurantName} has no tables at ${formatTimeForSpeech(nextTime)} for ${nextPartySize}.`} They have ${offered.join(" or ")}.`
           : capacityText
             ? `${capacityText} What date and time would you like instead?`
+            : insufficientSeatsText
+              ? `${insufficientSeatsText} What date and time would you like instead?`
             : `${restaurantName} has no tables at ${formatTimeForSpeech(nextTime)} for ${nextPartySize}. What date and time would you like instead?`,
         intent: "reservation_create",
         step: "choose_time",
@@ -3405,16 +3546,22 @@ async function buildPreflightResponse(opts: {
     }
 
     const availability = await getAvailability(restaurant.id, date, partySize);
+    const blockedExactCapacity = hasBlockedExactCapacity(availability, time);
     const nearest = findNearestSlot(availability.slots ?? [], time);
-    if (!nearest) {
-      const offered = (availability.slots ?? []).slice(0, 2).map((slot) => slot.display_time);
+    if (blockedExactCapacity || !nearest) {
+      const offered = nearestSlotLabels(availability.slots ?? [], time);
       const capacityText = fullCapacityAvailabilityText(availability, restaurant.name, date);
+      const insufficientSeatsText = blockedExactCapacity
+        ? insufficientCapacityAvailabilityText({ unavailable_reason: "insufficient_capacity" }, restaurant.name, partySize, time)
+        : insufficientCapacityAvailabilityText(availability, restaurant.name, partySize, time);
       return makeAssistantPayload({
         conversationId,
         spokenText: offered.length
-          ? `${restaurant.name} has no tables at ${formatTimeForSpeech(time)} for ${partySize}. They have ${offered.join(" or ")}.`
+          ? `${insufficientSeatsText ?? `${restaurant.name} has no tables at ${formatTimeForSpeech(time)} for ${partySize}.`} They have ${offered.join(" or ")}.`
           : capacityText
             ? `${capacityText} What date and time would you like instead?`
+            : insufficientSeatsText
+              ? `${insufficientSeatsText} What date and time would you like instead?`
             : `${restaurant.name} has no tables at ${formatTimeForSpeech(time)} for ${partySize}. What date and time would you like instead?`,
         intent: "reservation_create",
         step: "choose_time",
