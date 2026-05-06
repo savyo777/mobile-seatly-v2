@@ -214,7 +214,7 @@ export default function Step4Preorder() {
   ].join('&');
 
   const postBooking = afterBooking === '1' || afterBooking === 'true';
-  const prepayUrl = `/booking/${restaurantId}/step-prepay-offer?${qpBase}&cartTotal=${cartTotal}&cartCount=${cart.length}`;
+  const prepayUrl = `/booking/${restaurantId}/step-prepay-offer?${qpBase}&cartTotal=${cartTotal}&cartCount=${cart.length}&cart=${encodedCart}`;
   const reviewUrl = `/booking/${restaurantId}/step5-review?${qpBase}&cartTotal=${cartSubtotal(cartPayload)}&cartCount=${cart.length}&cart=${encodedCart}`;
   const confirmUrl = `/booking/${restaurantId}/step7-confirmation?${qpBase}&cart=`;
 
