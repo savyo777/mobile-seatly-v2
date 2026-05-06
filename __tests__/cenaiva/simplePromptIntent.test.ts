@@ -16,6 +16,9 @@ describe('Cenaiva simple prompt intent', () => {
     expect(isCenaivaProcessPrompt('Find European foods nearby')).toBe(true);
     expect(isCenaivaProcessPrompt('I want Italian.')).toBe(true);
     expect(isCenaivaProcessPrompt('Something with sushi.')).toBe(true);
+    expect(isCenaivaProcessPrompt('I want the nearest spot.')).toBe(true);
+    expect(isCenaivaProcessPrompt('Find me a food spot nearby.')).toBe(true);
+    expect(isCenaivaProcessPrompt('Show me a good place close by.')).toBe(true);
     expect(isCenaivaProcessPrompt('Can I bring a dog?')).toBe(true);
     expect(isCenaivaProcessPrompt('Table for 2.')).toBe(true);
   });
@@ -25,6 +28,7 @@ describe('Cenaiva simple prompt intent', () => {
     expect(getCenaivaImmediateFiller('What times are available?')).toBe('One moment please.');
     expect(getCenaivaImmediateFiller('Show me the menu')).toBe('One moment please.');
     expect(getCenaivaImmediateFiller('Find Italian restaurants near me.')).toBe('One moment please.');
+    expect(getCenaivaImmediateFiller('I want the nearest spot.')).toBe('One moment please.');
   });
 
   it('does not emit filler for off-topic or personal small prompts', () => {

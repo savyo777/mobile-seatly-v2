@@ -5,6 +5,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTranslation } from 'react-i18next';
 import { Button, Card } from '@/components/ui';
+import { cartSubtotal, parseBookingCartParam } from '@/lib/booking/publicBookingApi';
 import { formatCurrency } from '@/lib/utils/formatCurrency';
 import { useColors, createStyles, borderRadius } from '@/lib/theme';
 
@@ -43,7 +44,38 @@ const useStyles = createStyles((c) => ({
 }));
 
 export default function Step6Payment() {
-  const { restaurantId, date, time, partySize, tableId, cartTotal, occasion, notes } = useLocalSearchParams<{ restaurantId: string; date: string; time: string; partySize: string; tableId: string; cartTotal: string; occasion: string; notes?: string }>();
+  const {
+    restaurantId,
+    date,
+    time,
+    partySize,
+    tableId,
+    occasion,
+    notes,
+    shiftId,
+    slotDateTime,
+    name,
+    email,
+    phone,
+    seatingPreference,
+    cart: cartParam,
+  } = useLocalSearchParams<{
+    restaurantId: string;
+    date: string;
+    time: string;
+    partySize: string;
+    tableId: string;
+    cartTotal: string;
+    occasion: string;
+    notes?: string;
+    shiftId?: string;
+    slotDateTime?: string;
+    name?: string;
+    email?: string;
+    phone?: string;
+    seatingPreference?: string;
+    cart?: string;
+  }>();
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const { t } = useTranslation();
@@ -54,11 +86,27 @@ export default function Step6Payment() {
   const STEP = 5;
   const progress = STEP / BOOKING_STEPS;
 
-  const preorderTotal = parseFloat(cartTotal || '0');
-  const depositAmount = 25.00;
+  const cart = parseBookingCartParam(cartParam);
+  const preorderTotal = cartSubtotal(cart);
   const hasPreorder = preorderTotal > 0;
-  const totalDue = hasPreorder ? preorderTotal + depositAmount : depositAmount;
   const taxAmount = preorderTotal * 0.13;
+  const totalDue = preorderTotal + taxAmount;
+  const qpBase = [
+    `date=${encodeURIComponent(date ?? '')}`,
+    `time=${encodeURIComponent(time ?? '')}`,
+    `partySize=${partySize}`,
+    `tableId=${encodeURIComponent(tableId ?? 'auto')}`,
+    `shiftId=${encodeURIComponent(shiftId ?? '')}`,
+    `slotDateTime=${encodeURIComponent(slotDateTime ?? '')}`,
+    `name=${encodeURIComponent(name ?? '')}`,
+    `email=${encodeURIComponent(email ?? '')}`,
+    `phone=${encodeURIComponent(phone ?? '')}`,
+    `occasion=${encodeURIComponent(occasion ?? '')}`,
+    `seatingPreference=${encodeURIComponent(seatingPreference ?? '')}`,
+    `notes=${encodeURIComponent(notes ?? '')}`,
+    `paymentMethod=${selectedMethod === 'card' ? 'card' : 'card'}`,
+    `cart=${encodeURIComponent(cartParam ?? '')}`,
+  ].join('&');
 
   const paymentMethods: { id: PaymentMethod; label: string; icon: keyof typeof Ionicons.glyphMap; platform?: string }[] = [
     { id: 'card', label: 'Credit / Debit Card', icon: 'card-outline' },
@@ -86,10 +134,6 @@ export default function Step6Payment() {
         <Text style={styles.title}>{t('booking.step6Title')}</Text>
 
         <Card style={styles.breakdownCard}>
-          <View style={styles.lineItem}>
-            <Text style={styles.lineLabel}>{t('booking.deposit')}</Text>
-            <Text style={styles.lineValue}>{formatCurrency(depositAmount)}</Text>
-          </View>
           {hasPreorder && (
             <>
               <View style={styles.lineItem}>
@@ -102,9 +146,15 @@ export default function Step6Payment() {
               </View>
             </>
           )}
+          {!hasPreorder && (
+            <View style={styles.lineItem}>
+              <Text style={styles.lineLabel}>Reservation</Text>
+              <Text style={styles.lineValue}>No payment due now</Text>
+            </View>
+          )}
           <View style={[styles.lineItem, styles.totalLine]}>
             <Text style={styles.totalLabel}>{t('orders.total')}</Text>
-            <Text style={styles.totalValue}>{formatCurrency(hasPreorder ? totalDue + taxAmount : totalDue)}</Text>
+            <Text style={styles.totalValue}>{formatCurrency(totalDue)}</Text>
           </View>
         </Card>
 
@@ -149,8 +199,8 @@ export default function Step6Payment() {
 
       <View style={[styles.footer, { paddingBottom: insets.bottom + 16 }]}>
         <Button
-          title={`${t('booking.confirmBooking')} · ${formatCurrency(hasPreorder ? totalDue + taxAmount : totalDue)}`}
-          onPress={() => router.push(`/booking/${restaurantId}/step7-confirmation?date=${encodeURIComponent(date ?? '')}&time=${encodeURIComponent(time ?? '')}&partySize=${partySize}&occasion=${encodeURIComponent(occasion ?? '')}&notes=${encodeURIComponent(notes ?? '')}`)}
+          title={`${t('booking.confirmBooking')} · ${formatCurrency(totalDue)}`}
+          onPress={() => router.push(`/booking/${restaurantId}/step7-confirmation?${qpBase}`)}
         />
       </View>
     </View>

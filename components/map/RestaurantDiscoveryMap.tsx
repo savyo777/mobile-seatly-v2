@@ -1,9 +1,9 @@
-import React, { useCallback, useEffect, useRef } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef } from 'react';
 import { View, Text, StyleSheet, Platform, Pressable, ActivityIndicator } from 'react-native';
 import MapView, { Marker, PROVIDER_GOOGLE, type MapPressEvent } from 'react-native-maps';
 import { Ionicons } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
-import { RestaurantMapMarker } from '@/components/map/RestaurantMapMarker';
+import { RestaurantMapMarkerContent } from '@/components/map/RestaurantMapMarker';
 import { googleDarkMapStyle } from '@/lib/map/darkMapStyle';
 import { DEFAULT_MAP_CENTER } from '@/lib/map/mapFilters';
 import type { RestaurantDiscoveryMapProps } from '@/components/map/restaurantMapTypes';
@@ -13,6 +13,25 @@ const DEFAULT_RECENTER_REGION_DELTA = {
   latitudeDelta: 0.025,
   longitudeDelta: 0.025,
 };
+
+function isFiniteCoordinate(latitude: unknown, longitude: unknown): boolean {
+  return (
+    typeof latitude === 'number' &&
+    typeof longitude === 'number' &&
+    Number.isFinite(latitude) &&
+    Number.isFinite(longitude) &&
+    Math.abs(latitude) <= 90 &&
+    Math.abs(longitude) <= 180
+  );
+}
+
+function safeRating(value: number): number {
+  return Number.isFinite(value) ? value : 0;
+}
+
+function safePriceTier(value: number): number {
+  return Math.max(1, Math.min(4, Number.isFinite(value) ? value : 1));
+}
 
 const useStyles = createStyles((c) => ({
   mapShell: {
@@ -100,23 +119,37 @@ export function RestaurantDiscoveryMap({
   const mapRef = useRef<MapView>(null);
   const autoFocusDoneRef = useRef(false);
   const autoFocusResetKeyRef = useRef(autoFocusResetKey);
+  const safeUserLocation = useMemo(
+    () =>
+      userLocation && isFiniteCoordinate(userLocation.latitude, userLocation.longitude)
+        ? userLocation
+        : null,
+    [userLocation],
+  );
+  const safeRestaurants = useMemo(
+    () =>
+      filteredRestaurants.filter((restaurant) =>
+        isFiniteCoordinate(restaurant.lat, restaurant.lng),
+      ),
+    [filteredRestaurants],
+  );
   const detailOpen = !!selectedId;
   const selectedRestaurant = selectedId
-    ? filteredRestaurants.find((restaurant) => restaurant.id === selectedId) ?? null
+    ? safeRestaurants.find((restaurant) => restaurant.id === selectedId) ?? null
     : null;
 
   const recenterOnUser = useCallback(() => {
-    if (!userLocation) return;
+    if (!safeUserLocation) return;
     mapRef.current?.animateToRegion(
       {
-        latitude: userLocation.latitude,
-        longitude: userLocation.longitude,
+        latitude: safeUserLocation.latitude,
+        longitude: safeUserLocation.longitude,
         latitudeDelta: recenterRegionDelta.latitudeDelta,
         longitudeDelta: recenterRegionDelta.longitudeDelta,
       },
       420,
     );
-  }, [recenterRegionDelta.latitudeDelta, recenterRegionDelta.longitudeDelta, userLocation]);
+  }, [recenterRegionDelta.latitudeDelta, recenterRegionDelta.longitudeDelta, safeUserLocation]);
 
   useEffect(() => {
     if (autoFocusResetKeyRef.current !== autoFocusResetKey) {
@@ -126,9 +159,9 @@ export function RestaurantDiscoveryMap({
   }, [autoFocusResetKey]);
 
   useEffect(() => {
-    if (!autoFocusUserLocation || autoFocusDoneRef.current || !userLocation) return;
+    if (!autoFocusUserLocation || autoFocusDoneRef.current || !safeUserLocation) return;
     const focusRestaurants = autoFocusRestaurants
-      ? filteredRestaurants.slice(0, Math.max(0, autoFocusMaxRestaurants))
+      ? safeRestaurants.slice(0, Math.max(0, autoFocusMaxRestaurants))
       : [];
     if (autoFocusRestaurants && !focusRestaurants.length) return;
 
@@ -138,7 +171,7 @@ export function RestaurantDiscoveryMap({
       if (focusRestaurants.length) {
         mapRef.current?.fitToCoordinates(
           [
-            { latitude: userLocation.latitude, longitude: userLocation.longitude },
+            { latitude: safeUserLocation.latitude, longitude: safeUserLocation.longitude },
             ...focusRestaurants.map((restaurant) => ({
               latitude: restaurant.lat,
               longitude: restaurant.lng,
@@ -159,8 +192,8 @@ export function RestaurantDiscoveryMap({
 
       mapRef.current?.animateToRegion(
         {
-          latitude: userLocation.latitude,
-          longitude: userLocation.longitude,
+          latitude: safeUserLocation.latitude,
+          longitude: safeUserLocation.longitude,
           latitudeDelta: regionDelta.latitudeDelta,
           longitudeDelta: regionDelta.longitudeDelta,
         },
@@ -175,16 +208,16 @@ export function RestaurantDiscoveryMap({
     autoFocusResetKey,
     autoFocusUserLocation,
     contentBottomInset,
-    filteredRestaurants,
-    userLocation,
+    safeRestaurants,
+    safeUserLocation,
   ]);
 
   useEffect(() => {
-    if (!focusSelectedWithUser || !userLocation || !selectedRestaurant) return;
+    if (!focusSelectedWithUser || !safeUserLocation || !selectedRestaurant) return;
     const timer = setTimeout(() => {
       const sameCoordinate =
-        Math.abs(userLocation.latitude - selectedRestaurant.lat) < 0.00005 &&
-        Math.abs(userLocation.longitude - selectedRestaurant.lng) < 0.00005;
+        Math.abs(safeUserLocation.latitude - selectedRestaurant.lat) < 0.00005 &&
+        Math.abs(safeUserLocation.longitude - selectedRestaurant.lng) < 0.00005;
 
       if (sameCoordinate) {
         mapRef.current?.animateToRegion(
@@ -201,7 +234,7 @@ export function RestaurantDiscoveryMap({
 
       mapRef.current?.fitToCoordinates(
         [
-          { latitude: userLocation.latitude, longitude: userLocation.longitude },
+          { latitude: safeUserLocation.latitude, longitude: safeUserLocation.longitude },
           { latitude: selectedRestaurant.lat, longitude: selectedRestaurant.lng },
         ],
         {
@@ -223,13 +256,13 @@ export function RestaurantDiscoveryMap({
     selectedRestaurant?.id,
     selectedRestaurant?.lat,
     selectedRestaurant?.lng,
-    userLocation?.latitude,
-    userLocation?.longitude,
+    safeUserLocation?.latitude,
+    safeUserLocation?.longitude,
   ]);
 
   const initialRegion = {
-    latitude: autoFocusUserLocation && userLocation ? userLocation.latitude : DEFAULT_MAP_CENTER.latitude,
-    longitude: autoFocusUserLocation && userLocation ? userLocation.longitude : DEFAULT_MAP_CENTER.longitude,
+    latitude: autoFocusUserLocation && safeUserLocation ? safeUserLocation.latitude : DEFAULT_MAP_CENTER.latitude,
+    longitude: autoFocusUserLocation && safeUserLocation ? safeUserLocation.longitude : DEFAULT_MAP_CENTER.longitude,
     latitudeDelta: autoFocusUserLocation && autoFocusRegionDelta
       ? autoFocusRegionDelta.latitudeDelta
       : DEFAULT_MAP_CENTER.latitudeDelta,
@@ -270,11 +303,12 @@ export function RestaurantDiscoveryMap({
         toolbarEnabled={false}
         onPress={handleMapPress}
       >
-        {!!userLocation && !showUserLocation && (
+        {safeUserLocation && !showUserLocation ? (
           <Marker
+            key="user-location-fallback"
             coordinate={{
-              latitude: userLocation.latitude,
-              longitude: userLocation.longitude,
+              latitude: safeUserLocation.latitude,
+              longitude: safeUserLocation.longitude,
             }}
             anchor={{ x: 0.5, y: 0.5 }}
             tracksViewChanges={false}
@@ -283,25 +317,37 @@ export function RestaurantDiscoveryMap({
               <View style={styles.fallbackUserDotInner} />
             </View>
           </Marker>
-        )}
+        ) : null}
 
-        {filteredRestaurants.map((r) => (
-          <RestaurantMapMarker
-            key={r.id}
-            id={r.id}
-            latitude={r.lat}
-            longitude={r.lng}
-            name={r.name}
-            rating={r.avgRating}
-            priceTier={r.priceRange}
-            selected={selectedId === r.id}
-            variant={markerVariant}
-            onPress={onSelectRestaurant}
-          />
-        ))}
+        {safeRestaurants.map((r) => {
+          const selected = selectedId === r.id;
+          const displayRating = safeRating(r.avgRating);
+          const displayPriceTier = safePriceTier(r.priceRange);
+          return (
+            <Marker
+              key={`restaurant-${r.id}`}
+              coordinate={{ latitude: r.lat, longitude: r.lng }}
+              accessibilityLabel={`${r.name ?? 'Restaurant'}, ${displayRating.toFixed(1)} rating · ${'$'.repeat(displayPriceTier)}`}
+              accessibilityHint={markerVariant === 'cenaiva' ? 'Shows restaurant catalog' : undefined}
+              accessibilityRole="button"
+              anchor={markerVariant === 'cenaiva' ? { x: 0.5, y: 0.36 } : { x: 0.5, y: 1 }}
+              zIndex={selected ? 1000 : 1}
+              onPress={() => onSelectRestaurant(r.id)}
+              tracksViewChanges={selected}
+            >
+              <RestaurantMapMarkerContent
+                name={r.name}
+                rating={displayRating}
+                priceTier={displayPriceTier}
+                selected={selected}
+                variant={markerVariant}
+              />
+            </Marker>
+          );
+        })}
       </MapView>
 
-      {locationReady && filteredRestaurants.length === 0 && (
+      {locationReady && safeRestaurants.length === 0 && (
         <View style={styles.emptyOverlay} pointerEvents="none">
           <Text style={styles.emptyTitle}>{t('mapScreen.noMatchesTitle')}</Text>
           <Text style={styles.emptySub}>{t('mapScreen.noMatchesHint')}</Text>
@@ -314,7 +360,7 @@ export function RestaurantDiscoveryMap({
         </View>
       )}
 
-      {locationReady && userLocation ? (
+      {locationReady && safeUserLocation ? (
         <Pressable
           accessibilityRole="button"
           accessibilityLabel="Recenter on your location"

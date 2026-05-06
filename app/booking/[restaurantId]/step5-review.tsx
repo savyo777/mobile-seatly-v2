@@ -1,11 +1,12 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { View, Text, TouchableOpacity, ScrollView, TextInput } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTranslation } from 'react-i18next';
 import { Button, Card } from '@/components/ui';
-import { mockRestaurants } from '@/lib/mock/restaurants';
+import { getCachedRestaurantById, loadRestaurantForBooking } from '@/lib/data/restaurantCatalog';
+import { cartSubtotal, parseBookingCartParam } from '@/lib/booking/publicBookingApi';
 import { formatCurrency } from '@/lib/utils/formatCurrency';
 import { useColors, createStyles, borderRadius } from '@/lib/theme';
 
@@ -37,7 +38,40 @@ const useStyles = createStyles((c) => ({
 }));
 
 export default function Step5Review() {
-  const { restaurantId, date, time, partySize, tableId, cartTotal, cartCount, occasion: initialOccasion, notes } = useLocalSearchParams<{ restaurantId: string; date: string; time: string; partySize: string; tableId: string; cartTotal: string; cartCount: string; occasion?: string; notes?: string }>();
+  const {
+    restaurantId,
+    date,
+    time,
+    partySize,
+    tableId,
+    cartCount,
+    occasion: initialOccasion,
+    notes,
+    shiftId,
+    slotDateTime,
+    name,
+    email,
+    phone,
+    seatingPreference,
+    cart: cartParam,
+  } = useLocalSearchParams<{
+    restaurantId: string;
+    date: string;
+    time: string;
+    partySize: string;
+    tableId: string;
+    cartTotal: string;
+    cartCount: string;
+    occasion?: string;
+    notes?: string;
+    shiftId?: string;
+    slotDateTime?: string;
+    name?: string;
+    email?: string;
+    phone?: string;
+    seatingPreference?: string;
+    cart?: string;
+  }>();
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const { t } = useTranslation();
@@ -45,14 +79,42 @@ export default function Step5Review() {
   const styles = useStyles();
   const [specialRequest, setSpecialRequest] = useState(notes ?? '');
   const [occasion, setOccasion] = useState(initialOccasion || 'None');
+  const [restaurant, setRestaurant] = useState(() => getCachedRestaurantById(restaurantId));
   const BOOKING_STEPS = 6;
   const STEP = 4;
   const progress = STEP / BOOKING_STEPS;
 
-  const restaurant = mockRestaurants.find((r) => r.id === restaurantId);
+  useEffect(() => {
+    let cancelled = false;
+    loadRestaurantForBooking(restaurantId).then((loaded) => {
+      if (!cancelled) setRestaurant(loaded ?? getCachedRestaurantById(restaurantId));
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [restaurantId]);
+
+  const cart = parseBookingCartParam(cartParam);
   const parsedDate = date ? new Date(date) : new Date();
-  const preorderTotal = parseFloat(cartTotal || '0');
+  const preorderTotal = cartSubtotal(cart);
   const preorderCount = parseInt(cartCount || '0', 10);
+  const qpBase = [
+    `date=${encodeURIComponent(date ?? '')}`,
+    `time=${encodeURIComponent(time ?? '')}`,
+    `partySize=${partySize}`,
+    `tableId=${encodeURIComponent(tableId ?? 'auto')}`,
+    `shiftId=${encodeURIComponent(shiftId ?? '')}`,
+    `slotDateTime=${encodeURIComponent(slotDateTime ?? '')}`,
+    `name=${encodeURIComponent(name ?? '')}`,
+    `email=${encodeURIComponent(email ?? '')}`,
+    `phone=${encodeURIComponent(phone ?? '')}`,
+    `occasion=${encodeURIComponent(occasion === 'None' ? '' : occasion)}`,
+    `seatingPreference=${encodeURIComponent(seatingPreference ?? '')}`,
+    `notes=${encodeURIComponent(specialRequest)}`,
+    `cartTotal=${preorderTotal}`,
+    `cartCount=${preorderCount}`,
+    `cart=${encodeURIComponent(cartParam ?? '')}`,
+  ].join('&');
 
   return (
     <View style={[styles.container, { paddingTop: insets.top }]}>
@@ -132,7 +194,7 @@ export default function Step5Review() {
       </ScrollView>
 
       <View style={[styles.footer, { paddingBottom: insets.bottom + 16 }]}>
-        <Button title={t('common.next')} onPress={() => router.push(`/booking/${restaurantId}/step6-payment?date=${encodeURIComponent(date ?? '')}&time=${encodeURIComponent(time ?? '')}&partySize=${partySize}&tableId=${tableId}&cartTotal=${cartTotal}&occasion=${encodeURIComponent(occasion)}&notes=${encodeURIComponent(specialRequest)}`)} />
+        <Button title={t('common.next')} onPress={() => router.push(`/booking/${restaurantId}/step6-payment?${qpBase}`)} />
       </View>
     </View>
   );

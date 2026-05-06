@@ -8,6 +8,7 @@ import {
   Animated,
   Platform,
   Alert,
+  ActivityIndicator,
 } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
@@ -17,32 +18,15 @@ import {
   getCachedRestaurantById,
   loadRestaurantForBooking,
 } from '@/lib/data/restaurantCatalog';
-import { addMockReservation } from '@/lib/mock/reservations';
-import { mockCustomer } from '@/lib/mock/users';
-import { parseBookingDateParam, parseDateKeyLocal } from '@/lib/booking/dateUtils';
-import { isDateBookable } from '@/lib/booking/getAvailability';
+import { parseDateKeyLocal } from '@/lib/booking/dateUtils';
+import {
+  cartSubtotal,
+  createPublicBooking,
+  parseBookingCartParam,
+  type PublicBookingResponse,
+} from '@/lib/booking/publicBookingApi';
 import { useColors, createStyles, spacing, borderRadius, shadows } from '@/lib/theme';
 import type { DateKey } from '@/lib/booking/availabilityTypes';
-
-function generateCode(): string {
-  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
-  let code = 'SEAT-';
-  for (let i = 0; i < 6; i++) code += chars[Math.floor(Math.random() * chars.length)];
-  return code;
-}
-
-function reservationDateTimeIso(dateKey?: string, timeLabel?: string): string {
-  const base = dateKey ? parseDateKeyLocal(dateKey as DateKey) : new Date();
-  const match = timeLabel?.match(/(\d{1,2})(?::(\d{2}))?\s*(AM|PM)?/i);
-  if (!match) return base.toISOString();
-  let hour = parseInt(match[1], 10);
-  const minute = parseInt(match[2] ?? '0', 10);
-  const meridiem = match[3]?.toUpperCase();
-  if (meridiem === 'PM' && hour < 12) hour += 12;
-  if (meridiem === 'AM' && hour === 12) hour = 0;
-  base.setHours(hour, minute, 0, 0);
-  return base.toISOString();
-}
 
 const useStyles = createStyles((c) => ({
   container: { flex: 1, backgroundColor: c.bgBase },
@@ -176,6 +160,24 @@ const useStyles = createStyles((c) => ({
 
   // Done
   doneWrap: { gap: 12 },
+  loadingBox: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 12,
+    paddingVertical: 48,
+  },
+  loadingText: {
+    fontSize: 15,
+    fontWeight: '600',
+    color: c.textSecondary,
+    textAlign: 'center',
+  },
+  errorText: {
+    fontSize: 14,
+    color: c.danger,
+    textAlign: 'center',
+    lineHeight: 20,
+  },
   skipBtn: { alignItems: 'center', paddingVertical: 4 },
   skipText: {
     fontSize: 14,
@@ -185,13 +187,36 @@ const useStyles = createStyles((c) => ({
 }));
 
 export default function Step7Confirmation() {
-  const { restaurantId, date, time, partySize, occasion, notes } = useLocalSearchParams<{
+  const {
+    restaurantId,
+    date,
+    time,
+    partySize,
+    occasion,
+    notes,
+    shiftId,
+    slotDateTime,
+    name,
+    email,
+    phone,
+    seatingPreference,
+    paymentMethod,
+    cart: cartParam,
+  } = useLocalSearchParams<{
     restaurantId: string;
     date: string;
     time: string;
     partySize: string;
     occasion: string;
     notes?: string;
+    shiftId?: string;
+    slotDateTime?: string;
+    name?: string;
+    email?: string;
+    phone?: string;
+    seatingPreference?: string;
+    paymentMethod?: string;
+    cart?: string;
   }>();
   const router = useRouter();
   const insets = useSafeAreaInsets();
@@ -200,9 +225,12 @@ export default function Step7Confirmation() {
   const rid = restaurantId ?? '';
 
   const [restaurant, setRestaurant] = useState(() => getCachedRestaurantById(rid));
+  const [confirmation, setConfirmation] = useState<PublicBookingResponse | null>(null);
+  const [submitError, setSubmitError] = useState<string | null>(null);
   const guests = parseInt(partySize ?? '2', 10);
-  const confirmationCode = useRef(generateCode()).current;
   const savedReservationRef = useRef(false);
+  const cart = parseBookingCartParam(cartParam);
+  const preorderSubtotal = cartSubtotal(cart);
 
   const dateLabel = (() => {
     try {
@@ -219,46 +247,68 @@ export default function Step7Confirmation() {
   useEffect(() => {
     let cancelled = false;
 
-    async function saveReservation() {
+    async function submitBooking() {
       if (savedReservationRef.current || !rid) return;
       const loaded = await loadRestaurantForBooking(rid);
       if (cancelled) return;
       const currentRestaurant = loaded ?? getCachedRestaurantById(rid);
       setRestaurant(currentRestaurant);
-      const parsedDate = parseBookingDateParam(date);
-      if (!parsedDate || !isDateBookable(rid, parsedDate)) {
+      if (!currentRestaurant) return;
+      if (!shiftId || !slotDateTime || !name || !email) {
         savedReservationRef.current = true;
         Alert.alert(
-          'Date unavailable',
-          'This restaurant is closed that day or is no longer accepting reservations for today.',
+          'Missing booking details',
+          'Please choose an available time and enter your guest details.',
         );
         router.replace(`/booking/${rid}/step2-time`);
         return;
       }
-      if (!currentRestaurant) return;
+
       savedReservationRef.current = true;
-      addMockReservation({
-        id: `res-${confirmationCode.toLowerCase()}`,
-        restaurantId: currentRestaurant.id,
-        restaurantName: currentRestaurant.name,
-        guestId: mockCustomer.id,
-        partySize: guests,
-        reservedAt: reservationDateTimeIso(date, time),
-        status: 'confirmed',
-        source: 'app',
-        confirmationCode,
-        occasion: occasion || undefined,
-        specialRequest: notes || undefined,
-        guestName: mockCustomer.fullName,
-        depositAmount: 25,
-      });
+      setSubmitError(null);
+      try {
+        const taxAmount = Math.round(preorderSubtotal * currentRestaurant.taxRate * 100) / 100;
+        const result = await createPublicBooking({
+          restaurant_id: rid,
+          shift_id: shiftId,
+          date_time: slotDateTime,
+          party_size: guests,
+          guest_name: name,
+          guest_email: email,
+          guest_phone: phone || null,
+          allergies: notes || null,
+          seating_preference: seatingPreference || null,
+          occasion: occasion || null,
+          cart_items: cart,
+          subtotal: preorderSubtotal,
+          tax_amount: taxAmount,
+          tip_amount: 0,
+          total_amount: Math.round((preorderSubtotal + taxAmount) * 100) / 100,
+          discount_amount: null,
+          discount_reason: null,
+          promotion_id: null,
+          payment_method: paymentMethod === 'split' ? 'split' : 'card',
+        });
+        if (!cancelled) setConfirmation(result);
+      } catch (error) {
+        const status = (error as Error & { status?: number }).status;
+        const message = error instanceof Error ? error.message : 'Reservation failed.';
+        if (!cancelled) {
+          setSubmitError(message);
+          if (status === 409) {
+            Alert.alert('Time no longer available', message, [
+              { text: 'Choose another time', onPress: () => router.replace(`/booking/${rid}/step2-time?date=${encodeURIComponent(date ?? '')}`) },
+            ]);
+          }
+        }
+      }
     }
 
-    saveReservation();
+    submitBooking();
     return () => {
       cancelled = true;
     };
-  }, [confirmationCode, date, guests, notes, occasion, rid, router, time]);
+  }, [cart, date, email, guests, name, notes, occasion, paymentMethod, phone, preorderSubtotal, rid, router, seatingPreference, shiftId, slotDateTime]);
 
   useEffect(() => {
     Animated.sequence([
@@ -275,11 +325,26 @@ export default function Step7Confirmation() {
     ]).start();
   }, [fadeAnim, scaleAnim, slideAnim]);
 
-  const navigateToPreorder = () => {
-    router.push(
-      `/booking/${restaurantId}/step4-preorder?afterBooking=1&date=${encodeURIComponent(date ?? '')}&time=${encodeURIComponent(time ?? '')}&partySize=${partySize}&occasion=${encodeURIComponent(occasion ?? '')}&notes=${encodeURIComponent(notes ?? '')}&tableId=auto`,
+  if (!confirmation) {
+    return (
+      <View style={[styles.container, { paddingTop: insets.top }]}>
+        <View style={[styles.body, styles.loadingBox, { paddingBottom: insets.bottom + 32 }]}>
+          {submitError ? (
+            <>
+              <Ionicons name="alert-circle-outline" size={42} color={c.danger} />
+              <Text style={styles.errorText}>{submitError}</Text>
+              <Button title="Choose another time" onPress={() => router.replace(`/booking/${rid}/step2-time?date=${encodeURIComponent(date ?? '')}`)} />
+            </>
+          ) : (
+            <>
+              <ActivityIndicator color={c.gold} />
+              <Text style={styles.loadingText}>Confirming your reservation...</Text>
+            </>
+          )}
+        </View>
+      </View>
     );
-  };
+  }
 
   return (
     <View style={[styles.container, { paddingTop: insets.top }]}>
@@ -331,32 +396,20 @@ export default function Step7Confirmation() {
         <Animated.View style={[styles.codeWrap, { opacity: fadeAnim }]}>
           <Text style={styles.codeLabel}>Confirmation code</Text>
           <View style={styles.codeBox}>
-            <Text style={styles.codeText}>{confirmationCode}</Text>
+            <Text style={styles.codeText}>{confirmation.confirmation_code}</Text>
           </View>
         </Animated.View>
 
-        {/* Upsell divider */}
+        {/* Confirmation delivery */}
         <Animated.View style={[{ opacity: fadeAnim }]}>
-          <Text style={styles.upsellHeading}>Optional next step</Text>
+          <Text style={styles.upsellHeading}>Confirmation</Text>
           <Text style={styles.upsellIntro}>
-            Your reservation is confirmed. Want dishes waiting when you arrive?
+            {confirmation.reused
+              ? 'We found your existing matching reservation and reused it.'
+              : confirmation.confirmation_delivery === 'sent'
+                ? `Confirmation sent by ${confirmation.confirmation_delivery_channel ?? 'message'}.`
+                : 'Your reservation is confirmed. Keep this code for check-in.'}
           </Text>
-
-          <Pressable
-            style={({ pressed }) => [styles.upsellCard, pressed && { opacity: 0.88 }]}
-            onPress={navigateToPreorder}
-          >
-            <View style={[styles.upsellIconWrap, { backgroundColor: 'rgba(201,162,74,0.12)' }]}>
-              <Ionicons name="restaurant-outline" size={24} color={c.gold} />
-            </View>
-            <View style={styles.upsellBody}>
-              <Text style={styles.upsellTitle}>Pre-order your meal</Text>
-              <Text style={styles.upsellDesc}>
-                Browse the menu and have dishes ready when you arrive. You can pre-pay after selecting items.
-              </Text>
-            </View>
-            <Ionicons name="chevron-forward" size={18} color={c.textMuted} />
-          </Pressable>
         </Animated.View>
 
         {/* Done */}

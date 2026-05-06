@@ -4,17 +4,39 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTranslation } from 'react-i18next';
-import { Button, Card, Badge } from '@/components/ui';
+import { Button, Badge } from '@/components/ui';
 import { mockMenuItems, menuCategories } from '@/lib/mock/menuItems';
+import {
+  usePublicMenuCategories,
+  usePublicMenuItems,
+  type MenuItem as LiveMenuItem,
+} from '@/lib/cenaiva/api/dataHooks';
+import {
+  cartSubtotal,
+  makeBookingCartParam,
+  type PublicBookingCartItem,
+} from '@/lib/booking/publicBookingApi';
 import { formatCurrency } from '@/lib/utils/formatCurrency';
 import { useColors, createStyles, borderRadius } from '@/lib/theme';
 
 interface CartItem {
   menuItemId: string;
+  menuItemDbId: string | null;
   name: string;
   price: number;
   quantity: number;
 }
+
+type DisplayMenuItem = {
+  id: string;
+  dbId: string | null;
+  name: string;
+  description: string;
+  price: number;
+  category: string;
+  photoUrl: string | null;
+  dietaryFlags: string[];
+};
 
 const useStyles = createStyles((c) => ({
   container: { flex: 1, backgroundColor: c.bgBase },
@@ -59,6 +81,12 @@ export default function Step4Preorder() {
     occasion,
     notes,
     afterBooking,
+    shiftId,
+    slotDateTime,
+    name,
+    email,
+    phone,
+    seatingPreference,
   } = useLocalSearchParams<{
     restaurantId: string;
     date: string;
@@ -68,6 +96,12 @@ export default function Step4Preorder() {
     occasion?: string;
     notes?: string;
     afterBooking?: string;
+    shiftId?: string;
+    slotDateTime?: string;
+    name?: string;
+    email?: string;
+    phone?: string;
+    seatingPreference?: string;
   }>();
   const router = useRouter();
   const insets = useSafeAreaInsets();
@@ -76,30 +110,79 @@ export default function Step4Preorder() {
   const styles = useStyles();
   const [cart, setCart] = useState<CartItem[]>([]);
   const [selectedCategory, setSelectedCategory] = useState('All');
+  const { categories: liveCategories } = usePublicMenuCategories(restaurantId);
+  const { items: liveMenuItems, loading: liveMenuLoading } = usePublicMenuItems(restaurantId);
   const BOOKING_STEPS = 6;
   const STEP = 3;
   const progress = STEP / BOOKING_STEPS;
 
+  const liveCategoryNameById = useMemo(
+    () => new Map(liveCategories.map((category) => [category.id, category.name])),
+    [liveCategories],
+  );
+
   const items = useMemo(() => {
-    const restaurantItems = mockMenuItems.filter((m) => m.restaurantId === restaurantId && m.isPreorderable && m.isAvailable);
+    const liveItems: DisplayMenuItem[] = liveMenuItems
+      .filter((item) => item.is_available !== false)
+      .map((item: LiveMenuItem) => ({
+        id: item.id,
+        dbId: item.id,
+        name: item.name,
+        description: item.description ?? '',
+        price: item.price,
+        category: item.category_id
+          ? liveCategoryNameById.get(item.category_id) ?? item.category ?? 'Menu'
+          : item.category ?? 'Menu',
+        photoUrl: item.photo_url,
+        dietaryFlags: [],
+      }));
+    const fallbackItems: DisplayMenuItem[] = mockMenuItems
+      .filter((m) => m.restaurantId === restaurantId && m.isAvailable)
+      .map((item) => ({
+        id: item.id,
+        dbId: item.id.startsWith('m') ? null : item.id,
+        name: item.name,
+        description: item.description,
+        price: item.price,
+        category: item.category,
+        photoUrl: item.photoUrl || null,
+        dietaryFlags: item.dietaryFlags,
+      }));
+    const restaurantItems = liveItems.length || liveMenuLoading ? liveItems : fallbackItems;
     if (selectedCategory === 'All') return restaurantItems;
     return restaurantItems.filter((m) => m.category === selectedCategory);
-  }, [restaurantId, selectedCategory]);
+  }, [liveCategoryNameById, liveMenuItems, liveMenuLoading, restaurantId, selectedCategory]);
 
   const categories = useMemo(() => {
-    const cats = [...new Set(mockMenuItems.filter((m) => m.restaurantId === restaurantId && m.isPreorderable).map((m) => m.category))];
+    const liveCats = liveMenuItems
+      .filter((item) => item.is_available !== false)
+      .map((item) => item.category_id ? liveCategoryNameById.get(item.category_id) ?? item.category ?? 'Menu' : item.category ?? 'Menu');
+    const fallbackCats = mockMenuItems
+      .filter((m) => m.restaurantId === restaurantId && m.isAvailable)
+      .map((m) => m.category);
+    const cats = [...new Set((liveCats.length || liveMenuLoading ? liveCats : fallbackCats).filter(Boolean))];
     return ['All', ...cats];
-  }, [restaurantId]);
+  }, [liveCategoryNameById, liveMenuItems, liveMenuLoading, restaurantId]);
 
   const cartTotal = cart.reduce((sum, item) => sum + item.price * item.quantity, 0);
+  const cartPayload = useMemo<PublicBookingCartItem[]>(
+    () => cart.map((item) => ({
+      menu_item_id: item.menuItemDbId,
+      name: item.name,
+      quantity: item.quantity,
+      unit_price: item.price,
+    })),
+    [cart],
+  );
+  const encodedCart = makeBookingCartParam(cartPayload);
 
-  const addToCart = (item: typeof mockMenuItems[0]) => {
+  const addToCart = (item: DisplayMenuItem) => {
     setCart((prev) => {
       const existing = prev.find((c) => c.menuItemId === item.id);
       if (existing) {
         return prev.map((c) => c.menuItemId === item.id ? { ...c, quantity: c.quantity + 1 } : c);
       }
-      return [...prev, { menuItemId: item.id, name: item.name, price: item.price, quantity: 1 }];
+      return [...prev, { menuItemId: item.id, menuItemDbId: item.dbId, name: item.name, price: item.price, quantity: 1 }];
     });
   };
 
@@ -120,20 +203,27 @@ export default function Step4Preorder() {
     `time=${encodeURIComponent(time ?? '')}`,
     `partySize=${partySize}`,
     `tableId=${encodeURIComponent(tableId ?? 'auto')}`,
+    `shiftId=${encodeURIComponent(shiftId ?? '')}`,
+    `slotDateTime=${encodeURIComponent(slotDateTime ?? '')}`,
+    `name=${encodeURIComponent(name ?? '')}`,
+    `email=${encodeURIComponent(email ?? '')}`,
+    `phone=${encodeURIComponent(phone ?? '')}`,
     `occasion=${encodeURIComponent(occasion ?? '')}`,
+    `seatingPreference=${encodeURIComponent(seatingPreference ?? '')}`,
     `notes=${encodeURIComponent(notes ?? '')}`,
   ].join('&');
 
   const postBooking = afterBooking === '1' || afterBooking === 'true';
   const prepayUrl = `/booking/${restaurantId}/step-prepay-offer?${qpBase}&cartTotal=${cartTotal}&cartCount=${cart.length}`;
-  const reviewUrl = `/booking/${restaurantId}/step5-review?${qpBase}&cartTotal=${cartTotal}&cartCount=${cart.length}`;
+  const reviewUrl = `/booking/${restaurantId}/step5-review?${qpBase}&cartTotal=${cartSubtotal(cartPayload)}&cartCount=${cart.length}&cart=${encodedCart}`;
+  const confirmUrl = `/booking/${restaurantId}/step7-confirmation?${qpBase}&cart=`;
 
   const handleSkip = () => {
     if (postBooking) {
       router.dismissAll();
       router.navigate('/(customer)/activity');
     } else {
-      router.push(reviewUrl);
+      router.push(confirmUrl);
     }
   };
 
@@ -148,7 +238,7 @@ export default function Step4Preorder() {
       }
       router.push(prepayUrl);
     } else {
-      router.push(reviewUrl);
+      router.push(cart.length > 0 ? reviewUrl : confirmUrl);
     }
   };
 
@@ -198,7 +288,13 @@ export default function Step4Preorder() {
           const qty = getQuantity(item.id);
           return (
             <View style={styles.menuItem}>
-              <Image source={{ uri: item.photoUrl }} style={styles.menuPhoto} />
+              {item.photoUrl ? (
+                <Image source={{ uri: item.photoUrl }} style={styles.menuPhoto} />
+              ) : (
+                <View style={[styles.menuPhoto, { alignItems: 'center', justifyContent: 'center', backgroundColor: c.bgSurface }]}>
+                  <Ionicons name="restaurant-outline" size={22} color={c.textMuted} />
+                </View>
+              )}
               <View style={styles.menuInfo}>
                 <Text style={styles.menuName}>{item.name}</Text>
                 <Text style={styles.menuDesc} numberOfLines={2}>{item.description}</Text>

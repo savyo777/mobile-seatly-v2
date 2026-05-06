@@ -22,13 +22,6 @@ const MIN_RECORDING_MS = 800;
 const IS_IOS_SIMULATOR = Platform.OS === 'ios' && Device.isDevice === false;
 const CENAIVA_STT_RECORDING_OPTIONS = {
   ...RecordingPresets.HIGH_QUALITY,
-  ...(IS_IOS_SIMULATOR
-    ? {}
-    : {
-        sampleRate: 16_000,
-        numberOfChannels: 1,
-        bitRate: 64_000,
-      }),
   isMeteringEnabled: true,
 };
 const DISABLE_NATIVE_SPEECH_RECOGNITION = IS_IOS_SIMULATOR;

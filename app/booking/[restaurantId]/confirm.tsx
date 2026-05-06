@@ -22,11 +22,18 @@ import {
   loadRestaurantForBooking,
 } from '@/lib/data/restaurantCatalog';
 import { parseBookingDateParam, parseDateKeyLocal } from '@/lib/booking/dateUtils';
-import { coerceBookableDateKey, isDateBookable } from '@/lib/booking/getAvailability';
+import { coerceBookableDateKey } from '@/lib/booking/getAvailability';
+import { fetchBookingProfile } from '@/lib/booking/publicBookingApi';
 import { useColors, createStyles, spacing, borderRadius } from '@/lib/theme';
 import type { DateKey } from '@/lib/booking/availabilityTypes';
 
 const OCCASIONS = ['Birthday', 'Anniversary', 'Date Night', 'Business', 'Celebration'];
+
+const SEATING_OPTIONS = ['Window', 'Booth', 'Outdoor', 'Bar', 'Quiet'];
+
+function isValidEmail(value: string) {
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value.trim());
+}
 
 const useStyles = createStyles((c) => ({
   container: { flex: 1, backgroundColor: c.bgBase },
@@ -193,6 +200,30 @@ const useStyles = createStyles((c) => ({
     fontSize: 14,
     minHeight: 80,
   },
+  fieldGroup: {
+    marginHorizontal: 20,
+    gap: 10,
+  },
+  fieldInput: {
+    backgroundColor: c.bgSurface,
+    borderRadius: borderRadius.lg,
+    borderWidth: 1,
+    borderColor: c.border,
+    paddingHorizontal: spacing.md,
+    paddingVertical: 13,
+    color: c.textPrimary,
+    fontSize: 15,
+  },
+  fieldInputError: {
+    borderColor: c.danger,
+  },
+  fieldError: {
+    marginHorizontal: 20,
+    marginTop: -8,
+    fontSize: 12,
+    fontWeight: '600',
+    color: c.danger,
+  },
 
   // Policy
   policyRow: {
@@ -219,11 +250,13 @@ const useStyles = createStyles((c) => ({
 }));
 
 export default function ConfirmScreen() {
-  const { restaurantId, date, time, partySize } = useLocalSearchParams<{
+  const { restaurantId, date, time, partySize, shiftId, slotDateTime } = useLocalSearchParams<{
     restaurantId: string;
     date: string;
     time: string;
     partySize: string;
+    shiftId: string;
+    slotDateTime: string;
   }>();
   const router = useRouter();
   const insets = useSafeAreaInsets();
@@ -243,8 +276,13 @@ export default function ConfirmScreen() {
   const [guests, setGuests] = useState(parseInt(partySize ?? '2', 10));
   const [guestInput, setGuestInput] = useState(String(parseInt(partySize ?? '2', 10)));
   const [guestError, setGuestError] = useState('');
+  const [name, setName] = useState('');
+  const [email, setEmail] = useState('');
+  const [phone, setPhone] = useState('');
   const [occasion, setOccasion] = useState('');
+  const [seatingPreference, setSeatingPreference] = useState('');
   const [notes, setNotes] = useState('');
+  const [contactError, setContactError] = useState('');
   const [calendarOpen, setCalendarOpen] = useState(false);
   const [restaurantVersion, setRestaurantVersion] = useState(0);
   const [restaurant, setRestaurant] = useState(() => getCachedRestaurantById(rid));
@@ -268,6 +306,25 @@ export default function ConfirmScreen() {
     };
   }, [rid]);
 
+  useEffect(() => {
+    let cancelled = false;
+    fetchBookingProfile().then((profile) => {
+      if (cancelled || !profile) return;
+      setName((current) => current || profile.full_name || '');
+      setEmail((current) => current || profile.email || '');
+      setPhone((current) => current || profile.phone || '');
+      setSeatingPreference((current) => current || profile.seating_preference || '');
+      const allergyText = [
+        ...(profile.allergies ?? []),
+        ...(profile.dietary_restrictions ?? []),
+      ].filter(Boolean).join(', ');
+      setNotes((current) => current || allergyText);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
   const dateLabel = useMemo(() => {
     try {
       return parseDateKeyLocal(dateKey).toLocaleDateString(undefined, {
@@ -278,18 +335,27 @@ export default function ConfirmScreen() {
 
   const handleConfirm = useCallback(() => {
     if (!restaurantReady || guestError || !guestInput) return;
-    if (!isDateBookable(rid, dateKey)) {
+    if (!slotDateTime || !shiftId) {
       Alert.alert(
-        'Date unavailable',
-        'This restaurant is closed that day or is no longer accepting reservations for today.',
+        'Select a time',
+        'Please choose an available time before continuing.',
       );
       return;
     }
+    if (!name.trim()) {
+      setContactError('Enter the guest name.');
+      return;
+    }
+    if (!isValidEmail(email)) {
+      setContactError('Enter a valid email address.');
+      return;
+    }
+    setContactError('');
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-    router.replace(
-      `/booking/${restaurantId}/step7-confirmation?date=${encodeURIComponent(dateKey)}&time=${encodeURIComponent(time ?? '')}&partySize=${guests}&occasion=${encodeURIComponent(occasion)}&notes=${encodeURIComponent(notes)}`,
+    router.push(
+      `/booking/${restaurantId}/step4-preorder?date=${encodeURIComponent(dateKey)}&time=${encodeURIComponent(time ?? '')}&partySize=${guests}&shiftId=${encodeURIComponent(shiftId)}&slotDateTime=${encodeURIComponent(slotDateTime)}&name=${encodeURIComponent(name.trim())}&email=${encodeURIComponent(email.trim())}&phone=${encodeURIComponent(phone.trim())}&occasion=${encodeURIComponent(occasion)}&seatingPreference=${encodeURIComponent(seatingPreference)}&notes=${encodeURIComponent(notes)}`,
     );
-  }, [restaurantReady, guestError, guestInput, restaurantId, rid, dateKey, time, guests, occasion, notes, router]);
+  }, [restaurantReady, guestError, guestInput, slotDateTime, shiftId, name, email, router, restaurantId, dateKey, time, guests, phone, occasion, seatingPreference, notes]);
 
   const updateGuestsFromInput = useCallback((value: string) => {
     const digits = value.replace(/\D/g, '');
@@ -400,6 +466,40 @@ export default function ConfirmScreen() {
         {guestError ? <Text style={styles.guestErrorText}>{guestError}</Text> : null}
 
         {/* Occasion */}
+        <Text style={styles.sectionLabel}>Guest details</Text>
+        <View style={styles.fieldGroup}>
+          <TextInput
+            style={[styles.fieldInput, contactError && !name.trim() ? styles.fieldInputError : null]}
+            placeholder="Full name"
+            placeholderTextColor={c.textMuted}
+            value={name}
+            onChangeText={setName}
+            autoCapitalize="words"
+            textContentType="name"
+          />
+          <TextInput
+            style={[styles.fieldInput, contactError && !isValidEmail(email) ? styles.fieldInputError : null]}
+            placeholder="Email"
+            placeholderTextColor={c.textMuted}
+            value={email}
+            onChangeText={setEmail}
+            autoCapitalize="none"
+            keyboardType="email-address"
+            textContentType="emailAddress"
+          />
+          <TextInput
+            style={styles.fieldInput}
+            placeholder="Phone (optional)"
+            placeholderTextColor={c.textMuted}
+            value={phone}
+            onChangeText={setPhone}
+            keyboardType="phone-pad"
+            textContentType="telephoneNumber"
+          />
+        </View>
+        {contactError ? <Text style={styles.fieldError}>{contactError}</Text> : null}
+
+        {/* Occasion */}
         <Text style={styles.sectionLabel}>
           Occasion <Text style={styles.optional}>(optional)</Text>
         </Text>
@@ -411,6 +511,21 @@ export default function ConfirmScreen() {
               style={[styles.chip, occasion === o && styles.chipSelected]}
             >
               <Text style={[styles.chipText, occasion === o && styles.chipTextSelected]}>{o}</Text>
+            </Pressable>
+          ))}
+        </ScrollView>
+
+        <Text style={styles.sectionLabel}>
+          Seating preference <Text style={styles.optional}>(optional)</Text>
+        </Text>
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.chipRow}>
+          {SEATING_OPTIONS.map((option) => (
+            <Pressable
+              key={option}
+              onPress={() => setSeatingPreference(seatingPreference === option ? '' : option)}
+              style={[styles.chip, seatingPreference === option && styles.chipSelected]}
+            >
+              <Text style={[styles.chipText, seatingPreference === option && styles.chipTextSelected]}>{option}</Text>
             </Pressable>
           ))}
         </ScrollView>
@@ -439,7 +554,7 @@ export default function ConfirmScreen() {
 
       {/* CTA */}
       <View style={[styles.footer, { paddingBottom: insets.bottom + 12 }]}>
-        <Button title="Confirm Reservation" onPress={handleConfirm} disabled={!restaurantReady || !!guestError || !guestInput} />
+        <Button title="Continue to menu" onPress={handleConfirm} disabled={!restaurantReady || !!guestError || !guestInput} />
       </View>
 
       <BookingCalendarModal
@@ -448,7 +563,10 @@ export default function ConfirmScreen() {
         selectedDateKey={dateKey}
         availabilityVersion={restaurantVersion}
         onClose={() => setCalendarOpen(false)}
-        onSelect={(k) => { setDateKey(k); setCalendarOpen(false); }}
+        onSelect={(k) => {
+          setCalendarOpen(false);
+          router.replace(`/booking/${restaurantId}/step2-time?date=${encodeURIComponent(k)}`);
+        }}
       />
     </View>
   );

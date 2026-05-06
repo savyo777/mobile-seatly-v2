@@ -130,6 +130,34 @@ Deno.test("first cuisine search with one match asks the user to confirm the rest
   );
 });
 
+Deno.test("yes to one visible recommendation starts booking that restaurant", () => {
+  const result = buildDeterministicFollowUp(makeContext({
+    transcript: "yes",
+    visibleRestaurants: [
+      { id: "r1", name: "Pai Northern Thai Kitchen", cuisine_type: "Thai" },
+    ],
+  }));
+
+  assertEquals(
+    pick(result),
+    {
+      spoken_text: "How many guests?",
+      intent: "select_restaurant",
+      step: "choose_party",
+      next_expected_input: "party_size",
+      ui_actions: [
+        { type: "highlight_restaurant", restaurant_id: "r1" },
+        { type: "start_booking", restaurant_id: "r1" },
+      ],
+      booking: { restaurant_id: "r1", status: "collecting_minimum_fields" },
+      map: null,
+      filters: null,
+      promoted_selected_restaurant_id: "r1",
+    },
+    "single visible yes follow-up",
+  );
+});
+
 Deno.test("single recommendation mode on visible refinements caps cards and markers", () => {
   const result = buildDeterministicFollowUp(makeContext({
     transcript: "Only Japanese",

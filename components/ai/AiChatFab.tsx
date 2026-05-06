@@ -6,6 +6,7 @@ import {
   type ViewStyle,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { CenaivaAssistantBoundary } from '@/components/cenaiva/CenaivaAssistantBoundary';
 import { CenaivaVoiceShell } from '@/components/cenaiva/CenaivaVoiceShell';
 import { useCenaivaAssistant } from '@/lib/cenaiva/CenaivaAssistantProvider';
 import { useAssistantStore } from '@/lib/cenaiva/state/assistantStore';
@@ -73,7 +74,9 @@ export const AiChatFab = React.memo(function AiChatFab({ bottomOffset = 100, sty
         presentationStyle="fullScreen"
       >
         <View style={styles.fullScreen}>
-          <CenaivaVoiceShell onClose={assistant.close} />
+          <CenaivaAssistantBoundary onClose={assistant.close}>
+            <CenaivaVoiceShell onClose={assistant.close} />
+          </CenaivaAssistantBoundary>
         </View>
       </Modal>
     </>

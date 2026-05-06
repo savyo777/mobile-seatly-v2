@@ -15,11 +15,21 @@ type Props = {
   onPress: (id: string) => void;
 };
 
+type ContentProps = Pick<Props, 'name' | 'rating' | 'priceTier' | 'selected' | 'variant'>;
+
 const PIN = 40;
 const CENAIVA_FRAME_WIDTH = 96;
 const CENAIVA_FRAME_HEIGHT = 78;
 const CENAIVA_PIN_STAGE = 56;
 const CENAIVA_ANCHOR_Y = (CENAIVA_PIN_STAGE / 2) / CENAIVA_FRAME_HEIGHT;
+
+function safeRating(value: number): number {
+  return Number.isFinite(value) ? value : 0;
+}
+
+function safePriceTier(value: number): number {
+  return Math.max(1, Math.min(4, Number.isFinite(value) ? value : 1));
+}
 
 const useStyles = createStyles((c) => ({
   wrap: {
@@ -170,6 +180,54 @@ const useStyles = createStyles((c) => ({
   },
 }));
 
+export function RestaurantMapMarkerContent({
+  name,
+  rating,
+  priceTier,
+  selected,
+  variant = 'default',
+}: ContentProps) {
+  const styles = useStyles();
+  const isCenaiva = variant === 'cenaiva';
+  const displayRating = safeRating(rating);
+  const displayPriceTier = safePriceTier(priceTier);
+
+  if (isCenaiva) {
+    return (
+      <View style={styles.cenaivaFrame} pointerEvents="none">
+        <View style={styles.cenaivaPinStage}>
+          <View style={[styles.cenaivaGlow, selected && styles.glowSelected]} />
+          <View style={[styles.cenaivaPin, selected && styles.cenaivaPinSelected]}>
+            <View style={styles.cenaivaPinInner} />
+          </View>
+        </View>
+        <View style={[styles.cenaivaLabel, selected && styles.cenaivaLabelSelected]}>
+          <Text style={styles.cenaivaLabelText} numberOfLines={1} ellipsizeMode="tail">
+            {name ?? 'Restaurant'}
+          </Text>
+        </View>
+      </View>
+    );
+  }
+
+  return (
+    <View style={styles.wrap} pointerEvents="box-none">
+      <View style={[styles.glow, selected && styles.glowSelected]} />
+      <View style={[styles.pin, selected && styles.pinSelected]}>
+        <View style={styles.contentRow}>
+          <Text style={[styles.starGlyph, selected && styles.starGlyphSelected]} accessible={false}>
+            ★
+          </Text>
+          <View style={styles.gap} />
+          <Text style={[styles.ratingText, selected && styles.ratingTextSelected]}>{displayRating.toFixed(1)}</Text>
+          <Text style={[styles.dot, selected && styles.dotSelected]}>•</Text>
+          <Text style={[styles.priceText, selected && styles.priceTextSelected]}>{'$'.repeat(displayPriceTier)}</Text>
+        </View>
+      </View>
+    </View>
+  );
+}
+
 function RestaurantMapMarkerComponent({
   id,
   latitude,
@@ -181,14 +239,15 @@ function RestaurantMapMarkerComponent({
   variant = 'default',
   onPress,
 }: Props) {
-  const styles = useStyles();
   const isCenaiva = variant === 'cenaiva';
+  const displayRating = safeRating(rating);
+  const displayPriceTier = safePriceTier(priceTier);
 
   if (isCenaiva) {
     return (
       <Marker
         coordinate={{ latitude, longitude }}
-        accessibilityLabel={`${name ?? 'Restaurant'}, ${rating.toFixed(1)} rating · ${'$'.repeat(Math.max(1, Math.min(4, priceTier)))}`}
+        accessibilityLabel={`${name ?? 'Restaurant'}, ${displayRating.toFixed(1)} rating · ${'$'.repeat(displayPriceTier)}`}
         accessibilityHint="Shows restaurant catalog"
         accessibilityRole="button"
         anchor={{ x: 0.5, y: CENAIVA_ANCHOR_Y }}
@@ -196,19 +255,13 @@ function RestaurantMapMarkerComponent({
         onPress={() => onPress(id)}
         tracksViewChanges={selected}
       >
-        <View style={styles.cenaivaFrame} pointerEvents="none">
-          <View style={styles.cenaivaPinStage}>
-            <View style={[styles.cenaivaGlow, selected && styles.glowSelected]} />
-            <View style={[styles.cenaivaPin, selected && styles.cenaivaPinSelected]}>
-              <View style={styles.cenaivaPinInner} />
-            </View>
-          </View>
-          <View style={[styles.cenaivaLabel, selected && styles.cenaivaLabelSelected]}>
-            <Text style={styles.cenaivaLabelText} numberOfLines={1} ellipsizeMode="tail">
-              {name ?? 'Restaurant'}
-            </Text>
-          </View>
-        </View>
+        <RestaurantMapMarkerContent
+          name={name}
+          rating={rating}
+          priceTier={priceTier}
+          selected={selected}
+          variant={variant}
+        />
       </Marker>
     );
   }
@@ -221,20 +274,13 @@ function RestaurantMapMarkerComponent({
       onPress={() => onPress(id)}
       tracksViewChanges={selected}
     >
-      <View style={styles.wrap} pointerEvents="box-none">
-        <View style={[styles.glow, selected && styles.glowSelected]} />
-        <View style={[styles.pin, selected && styles.pinSelected]}>
-          <View style={styles.contentRow}>
-            <Text style={[styles.starGlyph, selected && styles.starGlyphSelected]} accessible={false}>
-              ★
-            </Text>
-            <View style={styles.gap} />
-            <Text style={[styles.ratingText, selected && styles.ratingTextSelected]}>{rating.toFixed(1)}</Text>
-            <Text style={[styles.dot, selected && styles.dotSelected]}>•</Text>
-            <Text style={[styles.priceText, selected && styles.priceTextSelected]}>{'$'.repeat(Math.max(1, Math.min(4, priceTier)))}</Text>
-          </View>
-        </View>
-      </View>
+      <RestaurantMapMarkerContent
+        name={name}
+        rating={rating}
+        priceTier={priceTier}
+        selected={selected}
+        variant={variant}
+      />
     </Marker>
   );
 }

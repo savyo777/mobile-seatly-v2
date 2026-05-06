@@ -4,7 +4,7 @@ import { corsHeaders } from "../_shared/cors.ts";
 import { supabaseAdmin } from "../_shared/supabase.ts";
 import { jsonRes } from "../_shared/json-response.ts";
 import { decodeJwtPayload } from "../_shared/jwt.ts";
-import { getAvailability } from "../_shared/availability.ts";
+import { getAvailability, type AvailabilityResult } from "../_shared/availability.ts";
 import { completeBooking, patchPostBooking } from "../_shared/booking.ts";
 import { localDayOfWeek } from "../_shared/time.ts";
 import {
@@ -530,20 +530,20 @@ function normalizeSpokenDigits(t: string): string {
 function numberTokenToInt(token: string): number | null {
   if (/^\d+$/.test(token)) {
     const n = parseInt(token, 10);
-    return n >= 1 && n <= 20 ? n : null;
+    return n >= 1 && n <= 9999 ? n : null;
   }
   return NUMBER_WORDS[token] ?? null;
 }
 
 function hasUncertainPartySize(raw: string): boolean {
   const t = normalizeSpokenDigits(stripFiller(raw));
-  return /\b(\d{1,2}|one|two|three|four|five|six|seven|eight|nine|ten|eleven|twelve)\s*(?:or|to|-)\s*(\d{1,2}|one|two|three|four|five|six|seven|eight|nine|ten|eleven|twelve)\b/.test(t);
+  return /\b(\d{1,4}|one|two|three|four|five|six|seven|eight|nine|ten|eleven|twelve)\s*(?:or|to|-)\s*(\d{1,4}|one|two|three|four|five|six|seven|eight|nine|ten|eleven|twelve)\b/.test(t);
 }
 
 function parsePartySizeRange(raw: string): { min: number; max: number } | null {
   const t = normalizeSpokenDigits(stripFiller(raw));
   const m = t.match(
-    /\b(\d{1,2}|one|two|three|four|five|six|seven|eight|nine|ten|eleven|twelve)\s*(?:or|to|-)\s*(\d{1,2}|one|two|three|four|five|six|seven|eight|nine|ten|eleven|twelve)\b/,
+    /\b(\d{1,4}|one|two|three|four|five|six|seven|eight|nine|ten|eleven|twelve)\s*(?:or|to|-)\s*(\d{1,4}|one|two|three|four|five|six|seven|eight|nine|ten|eleven|twelve)\b/,
   );
   if (!m) return null;
   const a = numberTokenToInt(m[1]);
@@ -556,7 +556,7 @@ function parsePartySize(raw: string): number | null {
   const t = normalizeSpokenDigits(stripFiller(raw));
   if (hasUncertainPartySize(raw)) return null;
   const adultsKids = t.match(
-    /\b(\d{1,2}|one|two|three|four|five|six|seven|eight|nine|ten)\s+adults?\b[\s\S]{0,30}\b(\d{1,2}|one|two|three|four|five|six|seven|eight|nine|ten)\s+(?:kids?|children)\b/,
+    /\b(\d{1,4}|one|two|three|four|five|six|seven|eight|nine|ten)\s+adults?\b[\s\S]{0,30}\b(\d{1,4}|one|two|three|four|five|six|seven|eight|nine|ten)\s+(?:kids?|children)\b/,
   );
   if (adultsKids) {
     const adults = numberTokenToInt(adultsKids[1]);
@@ -564,7 +564,7 @@ function parsePartySize(raw: string): number | null {
     if (adults != null && kids != null) return adults + kids;
   }
   const kidsAdults = t.match(
-    /\b(\d{1,2}|one|two|three|four|five|six|seven|eight|nine|ten)\s+(?:kids?|children)\b[\s\S]{0,30}\b(\d{1,2}|one|two|three|four|five|six|seven|eight|nine|ten)\s+adults?\b/,
+    /\b(\d{1,4}|one|two|three|four|five|six|seven|eight|nine|ten)\s+(?:kids?|children)\b[\s\S]{0,30}\b(\d{1,4}|one|two|three|four|five|six|seven|eight|nine|ten)\s+adults?\b/,
   );
   if (kidsAdults) {
     const kids = numberTokenToInt(kidsAdults[1]);
@@ -576,20 +576,20 @@ function parsePartySize(raw: string): number | null {
   if (/\b(me\s+and\s+my\s+(wife|husband|partner|boyfriend|girlfriend|girl|friend|kid|date))\b/.test(t)) return 2;
   // "party of N" / "table for N" / "N people" / "N of us"
   const numMatch = t.match(
-    /\b(?:party of|table for|for|just|group of|we are|we're|make it)\s+(\d{1,2}|one|two|three|four|five|six|seven|eight|nine|ten|eleven|twelve|a|couple|duo|pair)\b/,
+    /\b(?:party of|table for|for|just|group of|we are|we're|make it)\s+(\d{1,4}|one|two|three|four|five|six|seven|eight|nine|ten|eleven|twelve|a|couple|duo|pair)\b/,
   );
   if (numMatch) {
     const n = numberTokenToInt(numMatch[1]);
     if (n != null) return n;
   }
   // "N people" / "N guests"
-  const peopleMatch = t.match(/\b(\d{1,2}|one|two|three|four|five|six|seven|eight|nine|ten)\s+(people|guests|adults|pax|persons?|of us)\b/);
+  const peopleMatch = t.match(/\b(\d{1,4}|one|two|three|four|five|six|seven|eight|nine|ten)\s+(people|guests|adults|pax|persons?|of us)\b/);
   if (peopleMatch) {
     const n = numberTokenToInt(peopleMatch[1]);
     if (n != null) return n;
   }
   // Bare "two" / "3" when the assistant just asked party size — last resort.
-  const bare = t.trim().match(/^(\d{1,2}|one|two|three|four|five|six|seven|eight|nine|ten|eleven|twelve)$/);
+  const bare = t.trim().match(/^(\d{1,4}|one|two|three|four|five|six|seven|eight|nine|ten|eleven|twelve)$/);
   if (bare) {
     const n = numberTokenToInt(bare[1]);
     if (n != null) return n;
@@ -662,6 +662,97 @@ const TIME_WORDS: Record<string, number> = {
   noon: 12, midnight: 0,
 };
 
+type AmbiguousBareTime = {
+  hour: number;
+  minute: number;
+  label: string;
+};
+
+function ambiguousBareTime(hour: number, minute: number): AmbiguousBareTime | null {
+  if (!Number.isFinite(hour) || !Number.isFinite(minute)) return null;
+  if (hour < 1 || hour > 12 || minute < 0 || minute >= 60) return null;
+  const label = minute === 0 ? String(hour) : `${hour}:${String(minute).padStart(2, "0")}`;
+  return { hour, minute, label };
+}
+
+function hhmmForAmbiguousPeriod(time: AmbiguousBareTime, period: "am" | "pm"): string {
+  let hour = time.hour;
+  if (period === "pm" && hour < 12) hour += 12;
+  if (period === "am" && hour === 12) hour = 0;
+  return `${String(hour).padStart(2, "0")}:${String(time.minute).padStart(2, "0")}`;
+}
+
+function ambiguousBareTimePrompt(time: AmbiguousBareTime): string {
+  return `Did you mean ${time.label} AM or ${time.label} PM?`;
+}
+
+function parseAmbiguousBareTime(raw: string): AmbiguousBareTime | null {
+  const t = raw
+    .toLowerCase()
+    .replace(
+      /\b(uh+|um+|er+|ah+|hmm+|mm+|like|so|well|please|pls|thanks|thank you|thx|actually|maybe|i think|i guess|let'?s say|i'?d say|let me see|sorry|okay|ok|yeah|yep|yes|sure|alright)\b/g,
+      " ",
+    )
+    .replace(/[-,.!?;]/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+  if (!t || /\b(am|pm|a\.?m\.?|p\.?m\.?)\b/.test(t)) return null;
+
+  const colon = t.match(/\b(\d{1,2}):(\d{2})\b/);
+  if (colon) return ambiguousBareTime(parseInt(colon[1], 10), parseInt(colon[2], 10));
+
+  const word =
+    t.match(
+      /\b(?:at|around|maybe|about|how about|tonight|tomorrow|sunday|monday|tuesday|wednesday|thursday|friday|saturday)\s+(twelve|one|two|three|four|five|six|seven|eight|nine|ten|eleven)\b\s*(thirty|fifteen|forty.?five)?/,
+    ) ??
+    t.trim().match(
+      /^(twelve|one|two|three|four|five|six|seven|eight|nine|ten|eleven)\b\s*(thirty|fifteen|forty.?five)?$/,
+    );
+  if (word) {
+    const hour = TIME_WORDS[word[1]];
+    if (hour != null) {
+      const modifier = word[2];
+      const minute = modifier === "thirty" ? 30 : modifier === "fifteen" ? 15 : modifier && /forty/.test(modifier) ? 45 : 0;
+      return ambiguousBareTime(hour, minute);
+    }
+  }
+
+  const bare = t.match(
+    /\b(?:at|around|maybe|how about|book|tonight|tomorrow|sunday|monday|tuesday|wednesday|thursday|friday|saturday)\s+(\d{1,2})(?:\s*ish)?\b(?!\s*(?:people|guests|of|year|years))/,
+  );
+  if (bare) return ambiguousBareTime(parseInt(bare[1], 10), 0);
+
+  return null;
+}
+
+function resolveAmbiguousTimePeriodReply(raw: string, lastPrompt?: string | null): string | null {
+  if (!lastPrompt) return null;
+  const promptMatch = lastPrompt.match(/did you mean\s+(\d{1,2})(?::(\d{2}))?\s+am\s+or\s+\d{1,2}(?::\d{2})?\s+pm/i);
+  if (!promptMatch) return null;
+  const pending = ambiguousBareTime(
+    parseInt(promptMatch[1], 10),
+    promptMatch[2] ? parseInt(promptMatch[2], 10) : 0,
+  );
+  if (!pending) return null;
+  const t = raw.toLowerCase().replace(/[-,.!?;]/g, " ");
+  if (/\b(am|a\.?m\.?|morning|breakfast)\b/.test(t)) return hhmmForAmbiguousPeriod(pending, "am");
+  if (/\b(pm|p\.?m\.?|afternoon|evening|night|tonight|dinner)\b/.test(t)) return hhmmForAmbiguousPeriod(pending, "pm");
+  return null;
+}
+
+function isPartySizeReplyPrompt(lastPrompt?: string | null): boolean {
+  if (!lastPrompt) return false;
+  return /\b(how many guests|how many people|party size|guest count|smaller party size|smaller group|how many seats)\b/i
+    .test(lastPrompt);
+}
+
+function hasExplicitPartySizeCue(raw: string): boolean {
+  const t = normalizeSpokenDigits(stripFiller(raw));
+  return /\b(?:party of|table for|group of|we are|we're|make it|book for|reservation for)\s+(\d{1,4}|one|two|three|four|five|six|seven|eight|nine|ten|eleven|twelve|a|couple|duo|pair)\b/.test(t) ||
+    /\b(\d{1,4}|one|two|three|four|five|six|seven|eight|nine|ten)\s+(?:people|guests|adults|pax|persons?|of us)\b/.test(t) ||
+    /\b(just\s+me|solo|alone|by\s+myself|me\s+and\s+my\s+(?:wife|husband|partner|boyfriend|girlfriend|girl|friend|kid|date))\b/.test(t);
+}
+
 function parseTime(raw: string): string | null {
   const t = raw
     .toLowerCase()
@@ -669,7 +760,7 @@ function parseTime(raw: string): string | null {
       /\b(uh+|um+|er+|ah+|hmm+|mm+|like|so|well|please|pls|thanks|thank you|thx|actually|maybe|i think|i guess|let'?s say|i'?d say|let me see|sorry|okay|ok|yeah|yep|yes|sure|alright)\b/g,
       " ",
     )
-    .replace(/[,.!?;]/g, " ")
+    .replace(/[-,.!?;]/g, " ")
     .replace(/\s+/g, " ")
     .trim();
   // "9pm" / "9 pm" / "9:30 pm" / "9:30pm"
@@ -687,10 +778,9 @@ function parseTime(raw: string): string | null {
   // "21:00" or "9:30" (24-hour)
   const colon = t.match(/\b(\d{1,2}):(\d{2})\b/);
   if (colon) {
-    let h = parseInt(colon[1], 10);
+    const h = parseInt(colon[1], 10);
     const min = parseInt(colon[2], 10);
-    if (h >= 1 && h <= 10) h += 12;
-    if (h >= 0 && h <= 23 && min >= 0 && min < 60) {
+    if (h >= 0 && h <= 23 && min >= 0 && min < 60 && !ambiguousBareTime(h, min)) {
       return `${String(h).padStart(2, "0")}:${String(min).padStart(2, "0")}`;
     }
   }
@@ -715,27 +805,29 @@ function parseTime(raw: string): string | null {
       else if (mid === "am" || mid === "pm") period = mid;
       if (period === "pm" && h < 12) h += 12;
       if (period === "am" && h === 12) h = 0;
-      // If no period specified and hour 1–10, assume PM (dinner context).
-      if (!period && h >= 1 && h <= 10) h += 12;
+      if (!period && (word[1] === "noon" || word[1] === "midnight")) {
+        return `${String(h).padStart(2, "0")}:${String(min).padStart(2, "0")}`;
+      }
+      if (!period) return null;
       return `${String(h).padStart(2, "0")}:${String(min).padStart(2, "0")}`;
     }
   }
   // Bare digit + period split: "9 pm" already covered. "9" alone is too
   // ambiguous — only match when paired with a context word.
   const bare = t.match(
-    /\b(?:at|around|maybe|like|how about|book)\s+(\d{1,2})\b(?!\s*(?:people|guests|of|year|years))/,
+    /\b(?:at|around|maybe|like|how about|book)\s+(\d{1,2})(?:\s*ish)?\b(?!\s*(?:people|guests|of|year|years))/,
   );
   if (bare) {
-    let h = parseInt(bare[1], 10);
-    if (h >= 1 && h <= 11) h += 12; // dinner default
+    const h = parseInt(bare[1], 10);
+    if (ambiguousBareTime(h, 0)) return null;
     if (h >= 0 && h <= 23) return `${String(h).padStart(2, "0")}:00`;
   }
   const dateAdjacentBare = t.match(
-    /\b(?:today|tonight|tomorrow|sunday|monday|tuesday|wednesday|thursday|friday|saturday)\s+(\d{1,2})\b(?!\s*(?:people|guests|of|year|years))/,
+    /\b(?:today|tonight|tomorrow|sunday|monday|tuesday|wednesday|thursday|friday|saturday)\s+(\d{1,2})(?:\s*ish)?\b(?!\s*(?:people|guests|of|year|years))/,
   );
   if (dateAdjacentBare) {
-    let h = parseInt(dateAdjacentBare[1], 10);
-    if (h >= 1 && h <= 11) h += 12;
+    const h = parseInt(dateAdjacentBare[1], 10);
+    if (ambiguousBareTime(h, 0)) return null;
     if (h >= 0 && h <= 23) return `${String(h).padStart(2, "0")}:00`;
   }
   return null;
@@ -964,7 +1056,7 @@ INTENT CLASSIFICATION — classify every user turn mentally before acting:
 - If no restaurant or area is already set after a small prompt, ask for the restaurant or area. Do not ask for cuisine, restaurant type, vibe, dining preferences, or "a place to eat or hang out" after an unrelated/personal question.
 - reservation_create: user wants to book, reserve, get a table, or "get a spot".
 - reservation_modify / reservation_cancel: user wants to change, move, add guests, add a note, or cancel an existing booking. Do not claim the change is done until the restaurant system confirms it.
-- restaurant_search / dinner_plan: user asks what is good, open, nearby, romantic, cheap, family-friendly, quiet, business-appropriate, after a movie/game, or suitable for an occasion. Show options first unless they clearly ask to book.
+- restaurant_search / dinner_plan: user asks what is good, open, nearby, nearest/closest, a spot/place/food spot, romantic, cheap, family-friendly, quiet, business-appropriate, after a movie/game, or suitable for an occasion. Show options first unless they clearly ask to book.
 - menu_question: user asks about dishes, ingredients, alcohol, kids meals, preorderability, spice, allergens, or substitutions. Use confirmed data only; if missing, say you do not have it confirmed.
 - preorder_food / payment_question / rewards_question: keep reservation confirmation separate from preorder/payment/rewards actions.
 - directions / restaurant_contact: provide directions/contact help without modifying bookings.
@@ -975,7 +1067,7 @@ MESSY SPEECH — users will be rushed, emotional, vague, broken-English, or mis-
 
 RECOMMENDATIONS — search_restaurants is your recommendation engine. ALWAYS call it (with the right structured filters) when the user asks for ideas, suggestions, "what's good", "where should I eat", or any open-ended discovery request. NEVER reply "What would you like to do?" / "Got it!" without first running a search when the user has clearly expressed a preference, budget, occasion, location, event interest, or deal interest. Map intent → filters like this:
 - BUDGET signals ("cheap", "affordable", "budget", "under $20", "not too expensive") → set price_range_max (1 or 2). "fancy"/"upscale"/"fine dining"/"splurge"/"high-end" → set price_range_min=3 (or sort_by=price_desc).
-- PROXIMITY signals ("near me", "closest", "nearby", "around here", "walking distance") → near_user=true, sort_by="distance". If the user does NOT name another city, local discovery should still stay nearby by default.
+- PROXIMITY signals ("near me", "closest", "nearest", "nearby", "around here", "walking distance", "nearest spot", "closest place") → near_user=true, sort_by="distance". If the user does NOT name another city, local discovery should still stay nearby by default.
 - DIFFERENT-CITY signals ("in Calgary", "show me Montreal", "out of town") → set city to that city. Combine with other filters as needed.
 - OCCASION signals ("date night", "anniversary", "romantic", "impress my date") → set occasion="date" plus min_rating=4 (and price_range_min=3 if they sound upscale). "birthday"/"family"/"group"/"business" → set occasion accordingly.
 - TOP-RATED signals ("best", "top rated", "highly rated", "great spots", "favorites") → min_rating=4, sort_by="rating".
@@ -1003,6 +1095,7 @@ FLOW — follow exactly in this order:
        - party_size: "two" / "for 2" / "party of three" / "me and my wife" → 2/3/2. "a couple" → 2. "solo" / "just me" → 1.
        - date: "tonight" / "today" → today's YYYY-MM-DD. "tomorrow" → today+1. "Friday" / "next Saturday" → the next occurrence of that weekday in YYYY-MM-DD.
        - time: "7pm" → "19:00". "seven thirty" → "19:30". "noon" → "12:00".
+       - If the user gives a time without AM/PM ("7", "around seven", "7:30"), do NOT assume morning or evening. Ask "Did you mean 7 AM or 7 PM?" and wait for the clarification before checking availability.
    4d. Once restaurant_id + party_size + date are SET, proceed silently to check_availability. Do NOT ask for budget/vibe/dietary/seating unless the user raised it or it is required to avoid a wrong booking.
    4e. Call check_availability only once restaurant_id, date, AND party_size are all SET. The server will match the user's stated time to the nearest slot. If the user did NOT include a time, ask "What time?" after availability comes back.
 5. FINAL BOOKING CONFIRMATION IS MANDATORY. After a live slot is selected, emit select_time_slot + confirm_booking and ask the user to confirm the exact details before any reservation is created. Use a short exact summary: "Just confirming: table for 4 at La Piazza, Friday May 1 at 8:00 PM. Should I book it?" Do NOT call complete_booking in the same turn that selects the slot.
@@ -1034,6 +1127,8 @@ RULES:
 - NEVER speak as if YOU are the guest (see PERSPECTIVE above).
 - CUSTOMER VOCABULARY: NEVER say the words "shift", "shifts", "lunch shift", "dinner shift", or any internal scheduling term in spoken_text. These are operational concepts the customer doesn't care about. Always use customer-friendly wording: "no availability", "no openings", "no tables at that time", "we don't have anything then". If a tool message contains the word "shift", paraphrase it before speaking — never echo it verbatim.
 - NO-AVAILABILITY RE-PROMPT: When check_availability returns zero slots OR the user picks a time outside the available slots, offer a safer alternative: nearby time, different day, similar restaurant, waitlist/contact if available. If asking again, ask "What date and time would you like instead?" — not just "What time?".
+- FULL-CAPACITY WORDING: If check_availability returns unavailable_reason="fully_booked" or says the restaurant is fully booked / at capacity, say that clearly: "<Restaurant> is fully booked on <date>." Then ask for another date/time or offer nearby alternatives. Do not soften this into "I can't check availability."
+- LARGE-PARTY WORDING: If the user gives a large guest count, still treat it as party_size and call check_availability once restaurant/date/time are known. If check_availability returns unavailable_reason="party_size_out_of_range", say the party is too large for that restaurant's bookable range and ask what smaller party size to check. Do not treat a numeric guest answer as a small prompt.
 - NEVER say "no reservations available" unless you've called check_availability and confirmed it returned no slots. If search_restaurants returns results, show them.
 - NEVER call check_availability unless restaurant_id, date, AND party_size are all known.
 - If you have enough info, act (emit actions) instead of asking.
@@ -1278,6 +1373,18 @@ function isNegativeText(transcript: string): boolean {
 function isSafeBookingConfirmationText(transcript: string): boolean {
   return isAffirmativeText(transcript) &&
     !/\b(change|modify|cancel|late|running late|preorder|menu|pay|payment|deposit|send|share|remember|weather|different)\b/i.test(transcript);
+}
+
+function singleDisplayedRestaurantId(memory: AssistantMemory | null | undefined): string | null {
+  const ids = memory?.discovery?.displayed_restaurant_ids ?? [];
+  return ids.length === 1 && typeof ids[0] === "string" ? ids[0] : null;
+}
+
+function singleProposedRestaurantId(
+  visibleRestaurantIds: string[],
+  memory: AssistantMemory | null | undefined,
+): string | null {
+  return visibleRestaurantIds.length === 1 ? visibleRestaurantIds[0] : singleDisplayedRestaurantId(memory);
 }
 
 function makeAssistantPayload(opts: {
@@ -1699,6 +1806,78 @@ function formatTimeForSpeech(hhmm: string): string {
   return `${hour12}:${String(mRaw).padStart(2, "0")} ${period}`;
 }
 
+function formatDateForSpeech(dateStr: string): string {
+  const [year, month, day] = dateStr.slice(0, 10).split("-").map(Number);
+  if (!year || !month || !day) return dateStr;
+  const localNoon = new Date(Date.UTC(year, month - 1, day, 12, 0, 0));
+  return new Intl.DateTimeFormat("en-US", {
+    month: "long",
+    day: "numeric",
+  }).format(localNoon);
+}
+
+function restaurantHoursQuestionIntent(transcript: string): boolean {
+  return /\b(hours?|store hours|business hours|open|opens|closed|close|closes|closing)\b/i.test(transcript) &&
+    /\b(when|what|what time|how late|are they|is it|open|closed|hours?|closes?|closing)\b/i.test(transcript);
+}
+
+function formatHoursWindowForSpeech(value: string | null | undefined): string | null {
+  if (!value) return null;
+  const parts = value.split(/\s+(?:to|-)\s+/i);
+  if (parts.length !== 2) return value;
+  const formatted = parts.map((part) => {
+    const match = part.trim().match(/^(\d{1,2})(?::(\d{2}))?\s*(AM|PM)?$/i);
+    if (!match) return null;
+    let hour = Number(match[1]);
+    const minute = match[2] ? Number(match[2]) : 0;
+    const period = match[3]?.toUpperCase();
+    if (!Number.isFinite(hour) || !Number.isFinite(minute) || minute < 0 || minute > 59) return null;
+    if (period) {
+      if (hour < 1 || hour > 12) return null;
+      if (period === "PM" && hour < 12) hour += 12;
+      if (period === "AM" && hour === 12) hour = 0;
+    } else if (hour < 0 || hour > 23) {
+      return null;
+    }
+    const displayPeriod = hour >= 12 ? "PM" : "AM";
+    const displayHour = hour % 12 || 12;
+    return `${displayHour}:${String(minute).padStart(2, "0")} ${displayPeriod}`;
+  });
+  return formatted[0] && formatted[1] ? `${formatted[0]} to ${formatted[1]}` : value;
+}
+
+function normalizeAvailabilityHoursForSpeech<T extends object>(result: T): T {
+  const record = result as Record<string, unknown>;
+  const hoursWindow = formatHoursWindowForSpeech(record.hours_window as string | null | undefined);
+  return {
+    ...result,
+    ...(hoursWindow ? { hours_window: hoursWindow } : {}),
+    slots: Array.isArray(record.slots)
+      ? record.slots.map((slot) => {
+        if (!slot || typeof slot !== "object") return slot;
+        return { ...(slot as Record<string, unknown>), ...(hoursWindow ? { hours_window: hoursWindow } : {}) };
+      })
+      : record.slots,
+  };
+}
+
+function isFullCapacityAvailability(availability: Pick<AvailabilityResult, "unavailable_reason" | "message">): boolean {
+  return availability.unavailable_reason === "fully_booked" ||
+    /\b(fully booked|full capacity|at capacity)\b/i.test(availability.message ?? "");
+}
+
+function fullCapacityAvailabilityText(
+  availability: Pick<AvailabilityResult, "unavailable_reason" | "message">,
+  restaurantName: string | null | undefined,
+  date: string | null | undefined,
+): string | null {
+  if (!isFullCapacityAvailability(availability)) return null;
+  const name = restaurantName || "The restaurant";
+  return date
+    ? `${name} is fully booked on ${formatDateForSpeech(date)}.`
+    : `${name} is fully booked.`;
+}
+
 function directBookingIntent(transcript: string): boolean {
   return /\b(book|reserve|get me a table|get me a spot|make a reservation)\b/i.test(transcript);
 }
@@ -1747,7 +1926,7 @@ function clearlySmallPromptIntent(transcript: string): boolean {
 }
 
 function discoveryIntent(transcript: string): boolean {
-  return /\b(find|show|where|what'?s good|best|recommend|plan|somewhere|restaurant|restaurants|dinner|lunch|breakfast|brunch|meal|food|eat|hungry|cheap|deals|romantic|business|family|date|anniversary|open|near me|nearby|around me|close by)\b/i.test(transcript);
+  return /\b(find|show|where|what'?s good|best|recommend|suggest|pick|choose|plan|somewhere|restaurant|restaurants|place|places|spot|spots|food spot|dinner|lunch|breakfast|brunch|meal|food|eat|hungry|cheap|deals|romantic|business|family|date|anniversary|open|near me|nearby|around me|around here|close by|closest|nearest|walking distance)\b/i.test(transcript);
 }
 
 function noPreferenceDiscoveryIntent(transcript: string): boolean {
@@ -1777,6 +1956,10 @@ function bookingFieldReplyIntent(
   if (!hasRestaurant) return false;
 
   const status = typeof bookingState.status === "string" ? bookingState.status : "idle";
+  if ((status === "idle" || status === "collecting_minimum_fields") && isSafeBookingConfirmationText(transcript)) {
+    return true;
+  }
+
   if ((status === "confirming" || status === "awaiting_time_selection") &&
     (isSafeBookingConfirmationText(transcript) || isNegativeText(transcript))) {
     return true;
@@ -2278,7 +2461,10 @@ async function buildPreflightResponse(opts: {
   const reservationId = rawReservationId && UUID_RE.test(rawReservationId) ? rawReservationId : null;
   const explicitPartySize = parsePartySize(transcript);
   const explicitDate = parseDateInTimeZone(transcript, opts.timezone);
-  const explicitTime = parseTime(transcript);
+  const explicitTime =
+    parseTime(transcript) ??
+    resolveAmbiguousTimePeriodReply(transcript, opts.assistantMemory?.booking_process?.last_prompt ?? null);
+  const ambiguousTime = explicitTime ? null : parseAmbiguousBareTime(transcript);
   const partySize =
     (bookingState.party_size as number | null | undefined) ??
     explicitPartySize;
@@ -2397,12 +2583,13 @@ async function buildPreflightResponse(opts: {
       explicitPartySize != null ||
       explicitDate != null ||
       explicitTime != null ||
+      ambiguousTime != null ||
       isNegativeText(transcript) ||
       /\b(change|edit|update|switch|different|another|wrong|details|make it)\b/i.test(transcript)
     );
 
   if (wantsPreConfirmationChange) {
-    if (explicitPartySize == null && !explicitDate && !explicitTime) {
+    if (explicitPartySize == null && !explicitDate && !explicitTime && !ambiguousTime) {
       return makeAssistantPayload({
         conversationId,
         spokenText: "What would you like to change?",
@@ -2416,6 +2603,20 @@ async function buildPreflightResponse(opts: {
     const nextPartySize = explicitPartySize ?? partySize;
     const nextDate = explicitDate ?? date;
     const nextTime = explicitTime ?? time;
+    if (ambiguousTime) {
+      return makeAssistantPayload({
+        conversationId,
+        spokenText: ambiguousBareTimePrompt(ambiguousTime),
+        intent: "reservation_create",
+        step: "choose_time",
+        nextExpectedInput: "time",
+        booking: {
+          status: "collecting_minimum_fields",
+          ...(nextPartySize != null ? { party_size: nextPartySize } : {}),
+          ...(nextDate ? { date: nextDate } : {}),
+        },
+      });
+    }
     if (!nextPartySize) {
       return makeAssistantPayload({
         conversationId,
@@ -2451,11 +2652,14 @@ async function buildPreflightResponse(opts: {
     const nearest = findNearestSlot(availability.slots ?? [], nextTime);
     if (!nearest) {
       const offered = (availability.slots ?? []).slice(0, 2).map((slot) => slot.display_time);
+      const capacityText = fullCapacityAvailabilityText(availability, currentRestaurantName, nextDate);
       return makeAssistantPayload({
         conversationId,
         spokenText: offered.length
           ? `No tables at ${formatTimeForSpeech(nextTime)}. They have ${offered.join(" or ")}.`
-          : `No tables at ${formatTimeForSpeech(nextTime)}. What time should I check?`,
+          : capacityText
+            ? `${capacityText} What date and time would you like instead?`
+            : `No tables at ${formatTimeForSpeech(nextTime)}. What time should I check?`,
         intent: "reservation_create",
         step: "choose_time",
         nextExpectedInput: "time",
@@ -2605,6 +2809,85 @@ async function buildPreflightResponse(opts: {
   const selectedRestaurant = currentRestaurantId
     ? restaurants.find((row) => row.id === currentRestaurantId) ?? null
     : null;
+
+  if (restaurantHoursQuestionIntent(transcript)) {
+    if (!selectedRestaurant && namedRestaurants.length > 1) {
+      const labels = namedRestaurants.slice(0, 3).map(restaurantLabel);
+      return makeAssistantPayload({
+        conversationId,
+        spokenText: `I found a few: ${labels.join("; ")}. Which one should I check?`,
+        intent: "restaurant_search",
+        step: "choose_restaurant",
+        nextExpectedInput: "restaurant",
+        uiActions: [
+          { type: "show_restaurant_cards", restaurant_ids: namedRestaurants.map((row) => row.id) },
+          { type: "update_map_markers", restaurant_ids: namedRestaurants.map((row) => row.id) },
+          { type: "highlight_restaurant", restaurant_id: namedRestaurants[0].id },
+        ],
+        map: {
+          visible: true,
+          marker_restaurant_ids: namedRestaurants.map((row) => row.id),
+          highlighted_restaurant_id: namedRestaurants[0].id,
+        },
+      });
+    }
+
+    const restaurant = selectedRestaurant ?? namedRestaurants[0] ?? null;
+    if (!restaurant) {
+      return makeAssistantPayload({
+        conversationId,
+        spokenText: "Which restaurant should I check hours for?",
+        intent: "restaurant_search",
+        step: "choose_restaurant",
+        nextExpectedInput: "restaurant",
+      });
+    }
+
+    const hoursDate = explicitDate ?? date ?? formatISODateInTimeZone(new Date(), opts.timezone);
+    const partyForAvailability = typeof partySize === "number" && partySize >= 1 ? partySize : 1;
+    const availability = await getAvailability(restaurant.id, hoursDate, partyForAvailability);
+    const offered = (availability.slots ?? []).slice(0, 2).map((slot) => slot.display_time);
+    const dateLabel = formatDateForSpeech(hoursDate);
+    const hoursWindow = formatHoursWindowForSpeech(availability.hours_window);
+    const hoursText = hoursWindow
+      ? `${restaurant.name} is open ${hoursWindow} on ${dateLabel}.`
+      : `${restaurant.name} appears closed on ${dateLabel}.`;
+    const capacityText = fullCapacityAvailabilityText(availability, restaurant.name, hoursDate);
+    const availabilityText = offered.length
+      ? `I see availability around ${offered.join(" or ")}.`
+      : capacityText
+        ? capacityText
+      : availability.message && !/closed/i.test(availability.message)
+        ? availability.message
+        : "I do not see bookable times for that date.";
+
+    return makeAssistantPayload({
+      conversationId,
+      spokenText: `${hoursText} ${availabilityText} Want me to check a specific time?`,
+      intent: "reservation_create",
+      step: "choose_time",
+      nextExpectedInput: "time",
+      uiActions: [
+        { type: "show_restaurant_cards", restaurant_ids: [restaurant.id] },
+        { type: "update_map_markers", restaurant_ids: [restaurant.id] },
+        { type: "highlight_restaurant", restaurant_id: restaurant.id },
+        { type: "start_booking", restaurant_id: restaurant.id },
+        { type: "load_availability" },
+      ],
+      map: {
+        visible: true,
+        marker_restaurant_ids: [restaurant.id],
+        highlighted_restaurant_id: restaurant.id,
+      },
+      booking: {
+        restaurant_id: restaurant.id,
+        restaurant_name: restaurant.name,
+        date: hoursDate,
+        status: "collecting_minimum_fields",
+      },
+    });
+  }
+
   const looksLikeRestaurantSelection =
     namedRestaurants.length > 0 &&
     !menuQuestionIntent(transcript) &&
@@ -2690,6 +2973,17 @@ async function buildPreflightResponse(opts: {
       ...(nextTime ? [{ type: "set_booking_field", field: "time", value: nextTime }] : []),
     ];
 
+    if (ambiguousTime) {
+      return makeAssistantPayload({
+        conversationId,
+        spokenText: ambiguousBareTimePrompt(ambiguousTime),
+        intent: "reservation_create",
+        step: "choose_time",
+        nextExpectedInput: "time",
+        uiActions: baseActions,
+        booking: bookingPatch,
+      });
+    }
     if (nextPartySize == null) {
       return makeAssistantPayload({
         conversationId,
@@ -2728,11 +3022,14 @@ async function buildPreflightResponse(opts: {
     const nearest = findNearestSlot(availability.slots ?? [], nextTime);
     if (!nearest) {
       const offered = (availability.slots ?? []).slice(0, 2).map((slot) => slot.display_time);
+      const capacityText = fullCapacityAvailabilityText(availability, restaurantName, nextDate);
       return makeAssistantPayload({
         conversationId,
         spokenText: offered.length
           ? `${restaurantName} has no tables at ${formatTimeForSpeech(nextTime)} for ${nextPartySize}. They have ${offered.join(" or ")}.`
-          : `${restaurantName} has no tables at ${formatTimeForSpeech(nextTime)} for ${nextPartySize}. What date and time would you like instead?`,
+          : capacityText
+            ? `${capacityText} What date and time would you like instead?`
+            : `${restaurantName} has no tables at ${formatTimeForSpeech(nextTime)} for ${nextPartySize}. What date and time would you like instead?`,
         intent: "reservation_create",
         step: "choose_time",
         nextExpectedInput: "time",
@@ -3062,13 +3359,13 @@ async function buildPreflightResponse(opts: {
       });
     }
 
-    if (partySize == null && hasAmbiguousBareTwelve(transcript) && date) {
+    if (ambiguousTime) {
       return makeAssistantPayload({
         conversationId,
-        spokenText: `How many guests, and is 12 noon or midnight on ${formatBookingDateForSpeech(date)}?`,
+        spokenText: ambiguousBareTimePrompt(ambiguousTime),
         intent: "reservation_create",
-        step: "choose_party",
-        nextExpectedInput: "party_size",
+        step: "choose_time",
+        nextExpectedInput: "time",
         uiActions: baseActions,
         booking: bookingPatch,
       });
@@ -3095,17 +3392,6 @@ async function buildPreflightResponse(opts: {
         booking: bookingPatch,
       });
     }
-    if (hasAmbiguousBareTwelve(transcript)) {
-      return makeAssistantPayload({
-        conversationId,
-        spokenText: `Do you mean ${formatBookingDateForSpeech(date)} at noon or midnight?`,
-        intent: "reservation_create",
-        step: "choose_time",
-        nextExpectedInput: "time",
-        uiActions: baseActions,
-        booking: bookingPatch,
-      });
-    }
     if (!time) {
       return makeAssistantPayload({
         conversationId,
@@ -3122,11 +3408,14 @@ async function buildPreflightResponse(opts: {
     const nearest = findNearestSlot(availability.slots ?? [], time);
     if (!nearest) {
       const offered = (availability.slots ?? []).slice(0, 2).map((slot) => slot.display_time);
+      const capacityText = fullCapacityAvailabilityText(availability, restaurant.name, date);
       return makeAssistantPayload({
         conversationId,
         spokenText: offered.length
           ? `${restaurant.name} has no tables at ${formatTimeForSpeech(time)} for ${partySize}. They have ${offered.join(" or ")}.`
-          : `${restaurant.name} has no tables at ${formatTimeForSpeech(time)} for ${partySize}. What date and time would you like instead?`,
+          : capacityText
+            ? `${capacityText} What date and time would you like instead?`
+            : `${restaurant.name} has no tables at ${formatTimeForSpeech(time)} for ${partySize}. What date and time would you like instead?`,
         intent: "reservation_create",
         step: "choose_time",
         nextExpectedInput: "time",
@@ -3322,6 +3611,7 @@ Deno.serve(async (req) => {
     const recommendationMode = parseRecommendationMode(rawRecommendationMode);
     const requestAssistantMemory = parseAssistantMemory(rawAssistantMemory);
     let assistantMemory = requestAssistantMemory;
+    const proposedRestaurantId = singleProposedRestaurantId(visible_restaurant_ids, requestAssistantMemory);
     const effectiveTimeZone =
       typeof requestTimeZone === "string" && requestTimeZone.trim()
         ? requestTimeZone.trim()
@@ -3349,10 +3639,10 @@ Deno.serve(async (req) => {
     if (
       !selected_restaurant_id &&
       isAffirmative &&
-      visible_restaurant_ids.length === 1 &&
+      proposedRestaurantId &&
       (currentStatus === "idle" || currentStatus === "collecting_minimum_fields")
     ) {
-      selected_restaurant_id = visible_restaurant_ids[0];
+      selected_restaurant_id = proposedRestaurantId;
     }
 
     // Pre-fill booking_state from the current transcript so the system prompt
@@ -3366,12 +3656,14 @@ Deno.serve(async (req) => {
       const canReplaceUnavailableSlot =
         hasRestaurantContext &&
         (currentStatus === "loading_availability" || currentStatus === "awaiting_time_selection");
-      if (booking_state.party_size == null) {
-        const n = parsePartySize(transcript);
-        if (n != null) {
-          booking_state.party_size = n;
-          preFilled.party_size = n;
-        }
+      const lastPrompt = requestAssistantMemory?.booking_process?.last_prompt ?? null;
+      const canReplacePartySize =
+        hasRestaurantContext &&
+        (isPartySizeReplyPrompt(lastPrompt) || hasExplicitPartySizeCue(transcript));
+      const n = parsePartySize(transcript);
+      if (n != null && (booking_state.party_size == null || canReplacePartySize)) {
+        booking_state.party_size = n;
+        preFilled.party_size = n;
       }
       const d = parseDateInTimeZone(transcript, effectiveTimeZone);
       if (d && (booking_state.date == null || canReplaceUnavailableSlot)) {
@@ -3382,7 +3674,9 @@ Deno.serve(async (req) => {
       // ("tomorrow at 7pm"), the LLM was occasionally emitting set_booking_field
       // for date but dropping the time, so the next turn saw time=MISSING and
       // re-asked. Mirror the parsePartySize/parseDate pattern so time survives.
-      const t = parseTime(transcript);
+      const t =
+        parseTime(transcript) ??
+        resolveAmbiguousTimePeriodReply(transcript, requestAssistantMemory?.booking_process?.last_prompt ?? null);
       if (t && (booking_state.time == null || canReplaceUnavailableSlot)) {
         booking_state.time = t;
         preFilled.time = t;
@@ -3437,6 +3731,11 @@ Deno.serve(async (req) => {
       ? `User said: "${transcript}"`
       : "User opened the assistant.";
     const hasPendingAction = parsePendingAction(booking_state.pending_action) != null;
+    const rejectedSingleRecommendation =
+      !selected_restaurant_id &&
+      Boolean(proposedRestaurantId) &&
+      isNegativeConfirmation &&
+      (currentStatus === "idle" || currentStatus === "collecting_minimum_fields");
     const needsHistoryBeforePreflight =
       !hasPendingAction &&
       !selected_restaurant_id &&
@@ -3452,11 +3751,36 @@ Deno.serve(async (req) => {
       Boolean(transcript && selected_restaurant_id && hasRestaurantSelectionIntent(transcript, 0));
     const isSmallPromptTurn = Boolean(
       transcript &&
+      !needsHistoryBeforePreflight &&
       !hasPrefilledBookingField &&
       !hasExplicitRestaurantSelection &&
       !bookingProcessIntent(transcript) &&
       !bookingFieldReplyIntent(transcript, booking_state, selected_restaurant_id, effectiveTimeZone)
     );
+
+    if (rejectedSingleRecommendation) {
+      const payload = makeAssistantPayload({
+        conversationId: activeConversationId,
+        spokenText: "No problem. Want another option?",
+        intent: "restaurant_search",
+        step: "choose_restaurant",
+        nextExpectedInput: "confirmation",
+        booking: null,
+        map: proposedRestaurantId
+          ? { visible: true, marker_restaurant_ids: [proposedRestaurantId], highlighted_restaurant_id: proposedRestaurantId }
+          : null,
+        filters: null,
+        assistantMemory,
+      });
+      await sendEarlyFinal(
+        send,
+        activeConversationId,
+        userContentForPersistence,
+        payload,
+      );
+      latency.done({ path: "single_recommendation_rejected" });
+      return;
+    }
 
     if (!needsHistoryBeforePreflight && !isSmallPromptTurn) {
       triedPreflightBeforeHistory = true;
@@ -4379,7 +4703,7 @@ Deno.serve(async (req) => {
                 toolInput.date,
                 toolInput.party_size,
               );
-              toolResult = JSON.stringify(result);
+              toolResult = JSON.stringify(normalizeAvailabilityHoursForSpeech(result));
               if (Array.isArray(result.slots) && result.slots.length) {
                 lastAvailabilitySlots = result.slots.map((s) => ({
                   shift_id: s.shift_id,
@@ -5036,7 +5360,9 @@ Deno.serve(async (req) => {
         lastAvailabilitySlots.length > 0;
 
       if (allFieldsReady && transcript) {
-        const parsedTimeHHMM = parseTime(transcript);
+        const parsedTimeHHMM =
+          parseTime(transcript) ??
+          resolveAmbiguousTimePeriodReply(transcript, assistantMemory?.booking_process?.last_prompt ?? null);
         if (parsedTimeHHMM) {
           const nearest = findNearestSlot(lastAvailabilitySlots, parsedTimeHHMM);
           if (nearest) {
@@ -5534,9 +5860,12 @@ Deno.serve(async (req) => {
     }
 
     if (transcript) {
-      if (currentPartySize == null && !alreadySetsField("party_size")) {
+      const canCorrectPartySize =
+        isPartySizeReplyPrompt(assistantMemory?.booking_process?.last_prompt ?? null) ||
+        hasExplicitPartySizeCue(transcript);
+      if ((currentPartySize == null || canCorrectPartySize) && !alreadySetsField("party_size")) {
         const parsedSize = parsePartySize(transcript);
-        if (parsedSize != null) {
+        if (parsedSize != null && parsedSize !== currentPartySize) {
           responseActions.push({ type: "set_booking_field", field: "party_size", value: parsedSize });
           parsed.booking = { ...((parsed.booking as Record<string, unknown>) ?? {}), party_size: parsedSize };
         }
@@ -5549,7 +5878,9 @@ Deno.serve(async (req) => {
         }
       }
       if (currentTime == null && !alreadySetsField("time")) {
-        const parsedTime = parseTime(transcript);
+        const parsedTime =
+          parseTime(transcript) ??
+          resolveAmbiguousTimePeriodReply(transcript, assistantMemory?.booking_process?.last_prompt ?? null);
         if (parsedTime) {
           responseActions.push({ type: "set_booking_field", field: "time", value: parsedTime });
           parsed.booking = { ...((parsed.booking as Record<string, unknown>) ?? {}), time: parsedTime };

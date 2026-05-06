@@ -47,7 +47,7 @@ const COMMON_TTS_CACHE_TEXTS = [
   'What date and time should I book?',
   'What date should I book?',
   'What time should I book?',
-  'I could not check availability. Try another date and time.',
+  'I could not reach live availability. Try another date and time, or ask for the restaurant hours.',
   'Something went wrong. Try again.',
   'Please sign in to continue.',
 ];

@@ -1,4 +1,4 @@
-import React, { useCallback, useMemo, useReducer, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useReducer, useRef, useState } from 'react';
 import {
   View,
   Text,
@@ -20,8 +20,8 @@ import {
   cancelReservationByIdAsync,
   getMockReservationsVersion,
 } from '@/lib/mock/reservations';
-import { mockCustomer } from '@/lib/mock/users';
 import { mockRestaurants } from '@/lib/mock/restaurants';
+import { fetchMyBookingItems, type MyBookingItem } from '@/lib/booking/myReservations';
 import { useColors, createStyles, spacing, borderRadius } from '@/lib/theme';
 
 type SegmentKey = 'upcoming' | 'past';
@@ -46,9 +46,9 @@ const OCCASION_ICONS: Record<string, string> = {
   'Business': '💼',
 };
 
-function isUpcoming(r: Reservation): boolean {
-  if (['completed', 'cancelled', 'no_show'].includes(r.status)) return false;
-  return new Date(r.reservedAt).getTime() >= Date.now();
+function isUpcomingItem(item: BookingItem): boolean {
+  if (['completed', 'cancelled', 'no_show'].includes(item.status)) return false;
+  return new Date(item.whenIso).getTime() >= Date.now();
 }
 
 function formatDateTime(iso: string): { primary: string; sub: string } {
@@ -288,6 +288,22 @@ export default function ActivityScreen() {
   const [segment, setSegment] = useState<SegmentKey>('upcoming');
   const [refreshKey, refreshList] = useReducer((n: number) => n + 1, 0);
   const seenReservationsVersionRef = useRef(getMockReservationsVersion());
+  const [liveItems, setLiveItems] = useState<MyBookingItem[]>([]);
+  const [liveLoaded, setLiveLoaded] = useState(false);
+
+  const reloadLiveBookings = useCallback(async () => {
+    try {
+      const rows = await fetchMyBookingItems();
+      setLiveItems(rows);
+      setLiveLoaded(true);
+    } catch {
+      setLiveLoaded(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    void reloadLiveBookings();
+  }, [reloadLiveBookings]);
 
   useFocusEffect(useCallback(() => {
     const version = getMockReservationsVersion();
@@ -295,7 +311,8 @@ export default function ActivityScreen() {
       seenReservationsVersionRef.current = version;
       refreshList();
     }
-  }, []));
+    void reloadLiveBookings();
+  }, [reloadLiveBookings]));
 
   const pastStatusChip = useCallback((status: Reservation['status']): { label: string; color: string } | null => {
     if (status === 'completed') return { label: 'Completed', color: c.success };
@@ -305,25 +322,26 @@ export default function ActivityScreen() {
   }, [c.success, c.danger, c.textMuted]);
 
   const items = useMemo<BookingItem[]>(() =>
-    mockReservations
-      .filter((r) => r.guestId === mockCustomer.id)
-      .map((r) => ({
-        id: r.id,
-        restaurantName: r.restaurantName,
-        restaurantId: r.restaurantId,
-        coverPhotoUrl: mockRestaurants.find((rest) => rest.id === r.restaurantId)?.coverPhotoUrl ?? '',
-        whenIso: r.reservedAt,
-        status: r.status,
-        partySize: r.partySize,
-        occasion: r.occasion,
-        confirmationCode: r.confirmationCode,
-      })),
-  [refreshKey]);
+    liveLoaded
+      ? liveItems
+      : mockReservations
+        .filter((r) => r.guestId === 'u1')
+        .map((r) => ({
+          id: r.id,
+          restaurantName: r.restaurantName,
+          restaurantId: r.restaurantId,
+          coverPhotoUrl: mockRestaurants.find((rest) => rest.id === r.restaurantId)?.coverPhotoUrl ?? '',
+          whenIso: r.reservedAt,
+          status: r.status,
+          partySize: r.partySize,
+          occasion: r.occasion,
+          confirmationCode: r.confirmationCode,
+        })),
+  [liveItems, liveLoaded, refreshKey]);
 
   const segmentItems = useMemo(() => {
     const filtered = items.filter((item) => {
-      const r = mockReservations.find((r) => r.id === item.id)!;
-      return segment === 'upcoming' ? isUpcoming(r) : !isUpcoming(r);
+      return segment === 'upcoming' ? isUpcomingItem(item) : !isUpcomingItem(item);
     });
     return filtered.sort((a, b) => {
       const ta = new Date(a.whenIso).getTime();
@@ -333,7 +351,7 @@ export default function ActivityScreen() {
   }, [items, segment]);
 
   const upcomingCount = useMemo(
-    () => items.filter((item) => isUpcoming(mockReservations.find((r) => r.id === item.id)!)).length,
+    () => items.filter(isUpcomingItem).length,
     [items],
   );
 
@@ -353,13 +371,14 @@ export default function ActivityScreen() {
               return;
             }
             seenReservationsVersionRef.current = getMockReservationsVersion();
+            void reloadLiveBookings();
             refreshList();
             void Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
           },
         },
       ],
     );
-  }, []);
+  }, [reloadLiveBookings]);
 
   const renderItem = useCallback(
     ({ item }: { item: BookingItem }) => {

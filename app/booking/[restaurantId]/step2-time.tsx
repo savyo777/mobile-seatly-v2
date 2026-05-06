@@ -6,6 +6,7 @@ import {
   Pressable,
   ScrollView,
   TextInput,
+  ActivityIndicator,
 } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
@@ -17,10 +18,13 @@ import { parseBookingDateParam, parseDateKeyLocal } from '@/lib/booking/dateUtil
 import { isClosedBookingDate } from '@/lib/booking/hoursSchedule';
 import {
   coerceBookableDateKey,
-  getTimeSlotsForDate,
   getShiftConfig,
   nextBookableDateAfter,
 } from '@/lib/booking/getAvailability';
+import {
+  getAvailability as getPublicAvailability,
+  type AvailabilitySlot,
+} from '@/lib/booking/publicBookingApi';
 import {
   getCachedRestaurantById,
   loadRestaurantForBooking,
@@ -30,6 +34,10 @@ import type { DateKey } from '@/lib/booking/availabilityTypes';
 
 const SLOT_COLS = 3;
 const SLOT_GAP = 10;
+
+function availabilitySlotKey(slot: AvailabilitySlot) {
+  return `${slot.shift_id}|${slot.date_time}`;
+}
 
 const useStyles = createStyles((c) => ({
   container: { flex: 1, backgroundColor: c.bgBase },
@@ -200,6 +208,12 @@ const useStyles = createStyles((c) => ({
     fontWeight: '600',
     color: c.gold,
   },
+  slotError: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: c.danger,
+    textAlign: 'center',
+  },
 
   // Footer
   footer: {
@@ -243,7 +257,9 @@ export default function Step2Time() {
   const [partySizeInput, setPartySizeInput] = useState('2');
   const [partySizeError, setPartySizeError] = useState('');
   const [selectedSlotId, setSelectedSlotId] = useState<string | null>(null);
-  const [selectedLabel, setSelectedLabel] = useState<string | null>(null);
+  const [slots, setSlots] = useState<AvailabilitySlot[]>([]);
+  const [slotsLoading, setSlotsLoading] = useState(false);
+  const [slotsError, setSlotsError] = useState<string | null>(null);
   const [calendarOpen, setCalendarOpen] = useState(false);
   const [restaurantVersion, setRestaurantVersion] = useState(0);
   const [restaurant, setRestaurant] = useState(() => getCachedRestaurantById(rid));
@@ -254,10 +270,11 @@ export default function Step2Time() {
     return d.toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' });
   }, [dateKey]);
 
-  const slots = useMemo(
-    () => getTimeSlotsForDate(rid, dateKey, partySize),
-    [rid, dateKey, partySize, restaurantVersion],
+  const selectedSlot = useMemo(
+    () => slots.find((slot) => availabilitySlotKey(slot) === selectedSlotId) ?? null,
+    [selectedSlotId, slots],
   );
+  const selectedLabel = selectedSlot?.display_time ?? null;
 
   const isClosedDay = useMemo(() => {
     const d = parseDateKeyLocal(dateKey);
@@ -287,15 +304,33 @@ export default function Step2Time() {
   }, [rid]);
 
   useEffect(() => {
-    const first = slots.find((s) => s.available);
-    if (first) {
-      setSelectedSlotId(first.slotId);
-      setSelectedLabel(first.label);
-    } else {
+    if (!rid || partySizeError || !partySizeInput) {
+      setSlots([]);
       setSelectedSlotId(null);
-      setSelectedLabel(null);
+      return;
     }
-  }, [slots]);
+    let cancelled = false;
+    setSlotsLoading(true);
+    setSlotsError(null);
+    setSelectedSlotId(null);
+    getPublicAvailability({ restaurantId: rid, date: dateKey, partySize })
+      .then((result) => {
+        if (cancelled) return;
+        setSlots(result.slots);
+        setSelectedSlotId(result.slots[0] ? availabilitySlotKey(result.slots[0]) : null);
+      })
+      .catch((error) => {
+        if (cancelled) return;
+        setSlots([]);
+        setSlotsError(error instanceof Error ? error.message : 'Could not load availability.');
+      })
+      .finally(() => {
+        if (!cancelled) setSlotsLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [dateKey, partySize, partySizeError, partySizeInput, rid, restaurantVersion]);
 
   const updatePartySize = useCallback((value: string) => {
     const digits = value.replace(/\D/g, '');
@@ -322,18 +357,17 @@ export default function Step2Time() {
     setPartySizeInput(String(normalized));
   }, [partySize, partySizeError]);
 
-  const handleSelectSlot = useCallback((slotId: string, label: string) => {
+  const handleSelectSlot = useCallback((slot: AvailabilitySlot) => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    setSelectedSlotId(slotId);
-    setSelectedLabel(label);
+    setSelectedSlotId(availabilitySlotKey(slot));
   }, []);
 
   const handleNext = useCallback(() => {
-    if (!selectedLabel || partySizeError || !partySizeInput) return;
+    if (!selectedSlot || partySizeError || !partySizeInput) return;
     router.push(
-      `/booking/${restaurantId}/confirm?date=${encodeURIComponent(dateKey)}&time=${encodeURIComponent(selectedLabel)}&partySize=${partySize}`,
+      `/booking/${restaurantId}/confirm?date=${encodeURIComponent(dateKey)}&time=${encodeURIComponent(selectedSlot.display_time)}&partySize=${partySize}&shiftId=${encodeURIComponent(selectedSlot.shift_id)}&slotDateTime=${encodeURIComponent(selectedSlot.date_time)}`,
     );
-  }, [selectedLabel, partySizeError, partySizeInput, restaurantId, dateKey, partySize, router]);
+  }, [selectedSlot, partySizeError, partySizeInput, restaurantId, dateKey, partySize, router]);
 
   const handleNextDate = useCallback(() => {
     setDateKey(nextBookableDateAfter(rid, dateKey));
@@ -395,25 +429,34 @@ export default function Step2Time() {
 
         {/* Time slots */}
         <Text style={styles.sectionLabel}>Available times</Text>
-        {slots.some((s) => s.available) ? (
+        {slotsLoading ? (
+          <View style={styles.noTimesBox}>
+            <ActivityIndicator color={c.gold} />
+            <Text style={styles.noTimesText}>Checking live availability</Text>
+          </View>
+        ) : slotsError ? (
+          <View style={styles.noTimesBox}>
+            <Text style={styles.slotError}>{slotsError}</Text>
+            <Pressable onPress={() => setRestaurantVersion((version) => version + 1)}>
+              <Text style={styles.noTimesLink}>Try again</Text>
+            </Pressable>
+          </View>
+        ) : slots.length > 0 ? (
           <View style={styles.slotsGrid}>
             {slots.map((slot) => (
               <Pressable
-                key={slot.slotId}
-                onPress={() => slot.available && handleSelectSlot(slot.slotId, slot.label)}
-                disabled={!slot.available}
+                key={availabilitySlotKey(slot)}
+                onPress={() => handleSelectSlot(slot)}
                 style={[
                   styles.slotPill,
-                  slot.available && selectedSlotId === slot.slotId && styles.slotPillSelected,
-                  !slot.available && styles.slotPillUnavailable,
+                  selectedSlotId === availabilitySlotKey(slot) && styles.slotPillSelected,
                 ]}
               >
                 <Text style={[
                   styles.slotText,
-                  slot.available && selectedSlotId === slot.slotId && styles.slotTextSelected,
-                  !slot.available && styles.slotTextUnavailable,
+                  selectedSlotId === availabilitySlotKey(slot) && styles.slotTextSelected,
                 ]}>
-                  {slot.label}
+                  {slot.display_time}
                 </Text>
               </Pressable>
             ))}
@@ -443,7 +486,7 @@ export default function Step2Time() {
         <Button
           title="Continue"
           onPress={handleNext}
-          disabled={!restaurantReady || !selectedLabel || !!partySizeError || !partySizeInput}
+          disabled={!restaurantReady || slotsLoading || !selectedSlot || !!partySizeError || !partySizeInput}
         />
       </View>
 

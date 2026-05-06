@@ -219,12 +219,22 @@ function resolveOrdinalSelection(transcript: string, visibleRestaurants: Visible
   return null;
 }
 
+function isAffirmativeSelection(transcript: string): boolean {
+  return /^\s*(yes|yeah|yep|yup|sure|ok|okay|alright|sounds good|that one|this one|book it|go ahead|do it|let'?s do it|lets do it)[\s.!,]*$/i.test(
+    transcript,
+  );
+}
+
 function resolveVisibleRestaurantSelection(
   transcript: string,
   visibleRestaurants: VisibleRestaurant[],
 ): VisibleRestaurantResolution {
   if (!transcript.trim() || visibleRestaurants.length === 0) {
     return { selected: null, suggested: null };
+  }
+
+  if (visibleRestaurants.length === 1 && isAffirmativeSelection(transcript)) {
+    return { selected: visibleRestaurants[0], suggested: visibleRestaurants[0] };
   }
 
   const ordinalMatch = resolveOrdinalSelection(transcript, visibleRestaurants);

@@ -17,6 +17,7 @@ export type CenaivaAvailabilityRequest = {
   restaurant_name?: string | null;
   party_size: number;
   mode: AvailabilityMode;
+  purpose?: 'booking' | 'hours';
   date?: string | null;
   time?: string | null;
   weekday?: number | null;
@@ -33,6 +34,7 @@ export type CenaivaAvailabilityOption = {
   display_time: string;
   date: string;
   diff_minutes?: number;
+  hours_window?: string | null;
 };
 
 export type CenaivaAvailabilityResponse = {
@@ -44,6 +46,16 @@ export type CenaivaAvailabilityResponse = {
   };
   selected_slot?: CenaivaAvailabilityOption | null;
   alternatives?: CenaivaAvailabilityOption[];
+  hours_window?: string | null;
+  unavailable_reason?:
+    | 'closed'
+    | 'no_shifts'
+    | 'party_size_out_of_range'
+    | 'fully_booked'
+    | 'no_future_slots'
+    | 'no_slots'
+    | string
+    | null;
   message?: string;
 };
 
@@ -69,6 +81,13 @@ type LocalBookingContext = {
   selectedRestaurantName?: string | null;
   timezone?: string | null;
   pendingOptions?: CenaivaAvailabilityOption[];
+  lastAssistantPrompt?: string | null;
+};
+
+type AmbiguousBareTime = {
+  hour: number;
+  minute: number;
+  label: string;
 };
 
 const NUMBER_WORDS: Record<string, number> = {
@@ -176,22 +195,31 @@ function normalize(value: string): string {
     .trim();
 }
 
+function normalizeTimeText(value: string): string {
+  return value
+    .toLowerCase()
+    .replace(/[-,.!?;]/g, ' ')
+    .replace(/\b(uh+|um+|er+|ah+|hmm+|please|pls|thanks|thank you|actually|maybe|i think|okay|ok|yeah|yep|yes|sure|alright)\b/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
 function numberTokenToInt(token: string | undefined): number | null {
   if (!token) return null;
   if (/^\d+$/.test(token)) {
     const n = parseInt(token, 10);
-    return n >= 1 && n <= 20 ? n : null;
+    return n >= 1 && n <= 9999 ? n : null;
   }
   return NUMBER_WORDS[token] ?? null;
 }
 
 export function parseLocalPartySize(raw: string): number | null {
   const t = normalize(raw);
-  if (/\b(\d{1,2}|one|two|three|four|five|six|seven|eight|nine|ten|eleven|twelve)\s*(?:or|to|-)\s*(\d{1,2}|one|two|three|four|five|six|seven|eight|nine|ten|eleven|twelve)\b/.test(t)) {
+  if (/\b(\d{1,4}|one|two|three|four|five|six|seven|eight|nine|ten|eleven|twelve)\s*(?:or|to|-)\s*(\d{1,4}|one|two|three|four|five|six|seven|eight|nine|ten|eleven|twelve)\b/.test(t)) {
     return null;
   }
   const adultsKids = t.match(
-    /\b(\d{1,2}|one|two|three|four|five|six|seven|eight|nine|ten)\s+adults?\b[\s\S]{0,30}\b(\d{1,2}|one|two|three|four|five|six|seven|eight|nine|ten)\s+(?:kids?|children)\b/,
+    /\b(\d{1,4}|one|two|three|four|five|six|seven|eight|nine|ten)\s+adults?\b[\s\S]{0,30}\b(\d{1,4}|one|two|three|four|five|six|seven|eight|nine|ten)\s+(?:kids?|children)\b/,
   );
   if (adultsKids) {
     const adults = numberTokenToInt(adultsKids[1]);
@@ -199,7 +227,7 @@ export function parseLocalPartySize(raw: string): number | null {
     if (adults != null && kids != null) return adults + kids;
   }
   const kidsAdults = t.match(
-    /\b(\d{1,2}|one|two|three|four|five|six|seven|eight|nine|ten)\s+(?:kids?|children)\b[\s\S]{0,30}\b(\d{1,2}|one|two|three|four|five|six|seven|eight|nine|ten)\s+adults?\b/,
+    /\b(\d{1,4}|one|two|three|four|five|six|seven|eight|nine|ten)\s+(?:kids?|children)\b[\s\S]{0,30}\b(\d{1,4}|one|two|three|four|five|six|seven|eight|nine|ten)\s+adults?\b/,
   );
   if (kidsAdults) {
     const kids = numberTokenToInt(kidsAdults[1]);
@@ -213,7 +241,7 @@ export function parseLocalPartySize(raw: string): number | null {
   if (/\b(double date)\b/.test(t)) return 4;
 
   const explicit = t.match(
-    /\b(?:party of|table for|for|group of|we are|we're|make it|book for|reservation for)\s+(\d{1,2}|one|two|three|four|five|six|seven|eight|nine|ten|eleven|twelve|a|couple|pair)\b/,
+    /\b(?:party of|table for|for|group of|we are|we're|make it|book for|reservation for)\s+(\d{1,4}|one|two|three|four|five|six|seven|eight|nine|ten|eleven|twelve|a|couple|pair)\b/,
   );
   if (explicit) {
     const n = numberTokenToInt(explicit[1]);
@@ -221,14 +249,14 @@ export function parseLocalPartySize(raw: string): number | null {
   }
 
   const people = t.match(
-    /\b(\d{1,2}|one|two|three|four|five|six|seven|eight|nine|ten|eleven|twelve)\s+(?:people|guests|guest|adults|pax|persons?|of us)\b/,
+    /\b(\d{1,4}|one|two|three|four|five|six|seven|eight|nine|ten|eleven|twelve)\s+(?:people|guests|guest|adults|pax|persons?|of us)\b/,
   );
   if (people) {
     const n = numberTokenToInt(people[1]);
     if (n != null) return n;
   }
 
-  const bare = t.match(/^(\d{1,2}|one|two|three|four|five|six|seven|eight|nine|ten|eleven|twelve)$/);
+  const bare = t.match(/^(\d{1,4}|one|two|three|four|five|six|seven|eight|nine|ten|eleven|twelve)$/);
   if (bare) return numberTokenToInt(bare[1]);
   return null;
 }
@@ -304,11 +332,100 @@ export function parseLocalWeekday(raw: string): number | null {
   return null;
 }
 
+function ambiguousTime(hour: number, minute: number): AmbiguousBareTime | null {
+  if (!Number.isFinite(hour) || !Number.isFinite(minute)) return null;
+  if (hour < 1 || hour > 12 || minute < 0 || minute >= 60) return null;
+  const label = minute === 0 ? String(hour) : `${hour}:${String(minute).padStart(2, '0')}`;
+  return { hour, minute, label };
+}
+
+function hhmmFromPeriod(time: AmbiguousBareTime, period: 'am' | 'pm'): string {
+  let hour = time.hour;
+  if (period === 'pm' && hour < 12) hour += 12;
+  if (period === 'am' && hour === 12) hour = 0;
+  return `${String(hour).padStart(2, '0')}:${String(time.minute).padStart(2, '0')}`;
+}
+
+function ambiguousTimePrompt(time: AmbiguousBareTime): string {
+  return `Did you mean ${time.label} AM or ${time.label} PM?`;
+}
+
+function detectAmbiguousBareTime(
+  raw: string,
+  opts: { allowBareTime?: boolean } = {},
+): AmbiguousBareTime | null {
+  const t = normalizeTimeText(raw);
+  if (!t) return null;
+
+  if (/\b(am|pm|a m|p m)\b/.test(t)) return null;
+
+  const colon = t.match(/\b(\d{1,2}):(\d{2})\b/);
+  if (colon) {
+    return ambiguousTime(parseInt(colon[1], 10), parseInt(colon[2], 10));
+  }
+
+  const word =
+    t.match(
+      /\b(?:at|around|about|after|before|by|maybe|like|how about|tonight|tomorrow|sunday|monday|tuesday|wednesday|thursday|friday|saturday)\s+(twelve|one|two|three|four|five|six|seven|eight|nine|ten|eleven)\s*(thirty|fifteen|forty five)?\b(?!\s+(?:people|guests|guest|of us|adults|kids|children))/,
+    ) ??
+    (opts.allowBareTime
+      ? t.match(/^(twelve|one|two|three|four|five|six|seven|eight|nine|ten|eleven)\s*(thirty|fifteen|forty five)?$/)
+      : null);
+  if (word) {
+    const hour = TIME_WORDS[word[1]];
+    if (hour != null) {
+      const modifier = word[2];
+      const minute = modifier === 'thirty' ? 30 : modifier === 'fifteen' ? 15 : modifier === 'forty five' ? 45 : 0;
+      return ambiguousTime(hour, minute);
+    }
+  }
+
+  const contextualBare = t.match(
+    /\b(?:at|around|about|for|after|before|by|tonight|tomorrow|sunday|monday|tuesday|wednesday|thursday|friday|saturday)\s+(\d{1,2})(?:\s*ish)?\b(?!\s*(?:people|guests|of us))/,
+  );
+  if (contextualBare) {
+    return ambiguousTime(parseInt(contextualBare[1], 10), 0);
+  }
+
+  if (opts.allowBareTime) {
+    const bare = t.match(/^(\d{1,2})(?:\s*ish)?$/);
+    if (bare) return ambiguousTime(parseInt(bare[1], 10), 0);
+  }
+
+  return null;
+}
+
+function resolvePendingTimeClarification(raw: string, lastAssistantPrompt?: string | null): string | null {
+  if (!lastAssistantPrompt) return null;
+  const promptMatch = lastAssistantPrompt.match(/did you mean\s+(\d{1,2})(?::(\d{2}))?\s+am\s+or\s+\d{1,2}(?::\d{2})?\s+pm/i);
+  if (!promptMatch) return null;
+  const pending = ambiguousTime(
+    parseInt(promptMatch[1], 10),
+    promptMatch[2] ? parseInt(promptMatch[2], 10) : 0,
+  );
+  if (!pending) return null;
+
+  const t = normalizeTimeText(raw);
+  if (/\b(am|a m|morning|breakfast)\b/.test(t)) return hhmmFromPeriod(pending, 'am');
+  if (/\b(pm|p m|afternoon|evening|night|tonight|dinner)\b/.test(t)) return hhmmFromPeriod(pending, 'pm');
+  return null;
+}
+
+function isPartySizeReplyPrompt(lastAssistantPrompt?: string | null): boolean {
+  if (!lastAssistantPrompt) return false;
+  return /\b(how many guests|how many people|party size|guest count|smaller party size|smaller group|how many seats)\b/i
+    .test(lastAssistantPrompt);
+}
+
+function hasExplicitPartySizeCue(raw: string): boolean {
+  const t = normalize(raw);
+  return /\b(?:party of|table for|group of|we are|we're|make it|book for|reservation for)\s+(\d{1,4}|one|two|three|four|five|six|seven|eight|nine|ten|eleven|twelve|a|couple|pair)\b/.test(t) ||
+    /\b(\d{1,4}|one|two|three|four|five|six|seven|eight|nine|ten|eleven|twelve)\s+(?:people|guests|guest|adults|pax|persons?|of us)\b/.test(t) ||
+    /\b(just me|solo|alone|by myself|me plus one|double date)\b/.test(t);
+}
+
 export function parseLocalTime(raw: string, opts: { allowBareTime?: boolean } = {}): string | null {
-  const t = normalize(raw)
-    .replace(/\b(uh+|um+|er+|ah+|hmm+|please|pls|thanks|thank you|actually|maybe|i think|okay|ok|yeah|yep|yes|sure|alright)\b/g, ' ')
-    .replace(/\s+/g, ' ')
-    .trim();
+  const t = normalizeTimeText(raw);
 
   const ampm = t.match(/\b(\d{1,2})(?::(\d{2}))?\s*(am|pm|a m|p m)\b/);
   if (ampm) {
@@ -324,10 +441,9 @@ export function parseLocalTime(raw: string, opts: { allowBareTime?: boolean } = 
 
   const colon = t.match(/\b(\d{1,2}):(\d{2})\b/);
   if (colon) {
-    let h = parseInt(colon[1], 10);
+    const h = parseInt(colon[1], 10);
     const min = parseInt(colon[2], 10);
-    if (h >= 1 && h <= 10) h += 12;
-    if (h >= 0 && h <= 23 && min >= 0 && min < 60) {
+    if (h >= 0 && h <= 23 && min >= 0 && min < 60 && !ambiguousTime(h, min)) {
       return `${String(h).padStart(2, '0')}:${String(min).padStart(2, '0')}`;
     }
   }
@@ -354,25 +470,28 @@ export function parseLocalTime(raw: string, opts: { allowBareTime?: boolean } = 
       else if (modifier === 'am' || modifier === 'pm') period = modifier;
       if (period === 'pm' && h < 12) h += 12;
       if (period === 'am' && h === 12) h = 0;
-      if (!period && h >= 1 && h <= 10) h += 12;
+      if (!period && (word[1] === 'noon' || word[1] === 'midnight')) {
+        return `${String(h).padStart(2, '0')}:${String(min).padStart(2, '0')}`;
+      }
+      if (!period) return null;
       return `${String(h).padStart(2, '0')}:${String(min).padStart(2, '0')}`;
     }
   }
 
   const contextualBare = t.match(
-    /\b(?:at|around|about|for|after|before|by|tonight|tomorrow|friday|saturday|sunday|monday|tuesday|wednesday|thursday)\s+(\d{1,2})(?:ish)?\b(?!\s*(?:people|guests|of us))/,
+    /\b(?:at|around|about|for|after|before|by|tonight|tomorrow|friday|saturday|sunday|monday|tuesday|wednesday|thursday)\s+(\d{1,2})(?:\s*ish)?\b(?!\s*(?:people|guests|of us))/,
   );
   if (contextualBare) {
-    let h = parseInt(contextualBare[1], 10);
-    if (h >= 1 && h <= 10) h += 12;
+    const h = parseInt(contextualBare[1], 10);
+    if (ambiguousTime(h, 0)) return null;
     if (h >= 0 && h <= 23) return `${String(h).padStart(2, '0')}:00`;
   }
 
   if (opts.allowBareTime) {
-    const bare = t.match(/^(\d{1,2})(?:ish)?$/);
+    const bare = t.match(/^(\d{1,2})(?:\s*ish)?$/);
     if (bare) {
-      let h = parseInt(bare[1], 10);
-      if (h >= 1 && h <= 10) h += 12;
+      const h = parseInt(bare[1], 10);
+      if (ambiguousTime(h, 0)) return null;
       if (h >= 0 && h <= 23) return `${String(h).padStart(2, '0')}:00`;
     }
   }
@@ -409,9 +528,15 @@ function shouldUseBackendProcess(raw: string): boolean {
   return PREORDER_PAYMENT_OR_POLICY_PATTERN.test(raw);
 }
 
+function isRestaurantHoursQuestion(raw: string): boolean {
+  const t = normalize(raw);
+  return /\b(hours?|store hours|business hours|open|opens|opened|closed|close|closes|closing)\b/.test(t) &&
+    /\b(when|what|what time|how late|are they|is it|is the restaurant|open|closed|hours?|closes?|closing)\b/.test(t);
+}
+
 function hasNamedBookingRequest(raw: string): boolean {
   const t = normalize(raw);
-  return /\b(book|reserve)\s+(?!it\b|anything\b|a table\b|table\b|me\b|somewhere\b|something\b|the usual\b)([a-z0-9']{3,})/.test(t);
+  return /\b(book|reserve)\s+(?!it\b|anything\b|a table\b|table\b|me\b|somewhere\b|something\b|the usual\b)(?:[a-z0-9']{3,}|[a-z0-9']{1,2}\s+[a-z0-9']{3,})/.test(t);
 }
 
 function isVagueBookingStart(raw: string): boolean {
@@ -585,7 +710,8 @@ function buildSelectionResponse(
 ): AssistantResponseType {
   const restaurantId = ctx.booking.restaurant_id ?? ctx.selectedRestaurantId ?? null;
   const restaurantName = ctx.booking.restaurant_name ?? ctx.selectedRestaurantName ?? null;
-  const spokenText = `Great, ${formatDateForSpeech(option.date)} at ${option.display_time} is available. Should I book it?`;
+  const hoursSentence = formatHoursSentence(option.hours_window, option.date);
+  const spokenText = `Great, ${formatDateForSpeech(option.date)} at ${option.display_time} is available.${hoursSentence ? ` ${hoursSentence}` : ''} Should I book it?`;
   return makeResponse({
     conversationId: ctx.conversationId,
     spokenText,
@@ -635,32 +761,104 @@ export function planLocalBookingTurn(ctx: LocalBookingContext): LocalBookingDeci
   if (restaurantId) patch.restaurant_id = restaurantId;
   if (restaurantName) patch.restaurant_name = restaurantName;
 
-  const partySize = booking.party_size == null ? parseLocalPartySize(transcript) : null;
+  const parsedPartySize = parseLocalPartySize(transcript);
+  const acceptingPartySizeReply =
+    booking.party_size == null ||
+    isPartySizeReplyPrompt(ctx.lastAssistantPrompt) ||
+    hasExplicitPartySizeCue(transcript);
+  const partySize = acceptingPartySizeReply ? parsedPartySize : null;
   if (partySize != null) patch.party_size = partySize;
 
   const nextPartySize = patch.party_size ?? booking.party_size;
   const parsedDate = parseLocalDate(transcript, timezone);
-  const parsedTime = parseLocalTime(transcript, {
-    allowBareTime: booking.party_size != null,
+  const expectingPartySizeReply = partySize != null || isPartySizeReplyPrompt(ctx.lastAssistantPrompt);
+  const explicitParsedTime = parseLocalTime(transcript, {
+    allowBareTime: booking.party_size != null && !expectingPartySizeReply,
   });
+  const parsedTime = explicitParsedTime ?? resolvePendingTimeClarification(transcript, ctx.lastAssistantPrompt);
+  const ambiguousBareTime = parsedTime
+    ? null
+    : detectAmbiguousBareTime(transcript, { allowBareTime: booking.party_size != null && !expectingPartySizeReply });
   if (parsedDate) patch.date = parsedDate;
   if (parsedTime) patch.time = parsedTime;
 
   const specialRequest = parseSpecialRequest(transcript);
   if (specialRequest) patch.special_request = specialRequest;
 
+  const hasAmbiguousTimeDetail =
+    ambiguousBareTime != null &&
+    (hasRestaurant || booking.status !== 'idle');
   const hasLocalBookingDetail =
     partySize != null ||
     parsedDate != null ||
     parsedTime != null ||
-    specialRequest != null;
+    specialRequest != null ||
+    hasAmbiguousTimeDetail;
 
   if (!isCenaivaProcessPrompt(transcript) && !hasLocalBookingDetail) return { kind: 'pass' };
+  const wantsHours = isRestaurantHoursQuestion(transcript);
+  const explicitlyAsksAvailability = /\b(available|availability|openings?)\b/i.test(transcript);
+  if (wantsHours && restaurantId && !parsedTime && !explicitlyAsksAvailability) {
+    const hoursDate = parsedDate ?? booking.date ?? formatISODateInTimeZone(new Date(), timezone);
+    const responseBeforeCheck = makeResponse({
+      conversationId: ctx.conversationId,
+      spokenText: 'One moment please.',
+      intent: 'choose_time',
+      step: 'choose_time',
+      nextExpectedInput: 'none',
+      uiActions: buildSetFieldActions({ ...patch, date: hoursDate }),
+      booking: {
+        ...patch,
+        date: hoursDate,
+        status: 'loading_availability',
+      },
+    });
+
+    return {
+      kind: 'check_availability',
+      filler: responseBeforeCheck.spoken_text,
+      responseBeforeCheck,
+      request: {
+        restaurant_id: restaurantId,
+        restaurant_name: restaurantName,
+        party_size: nextPartySize ?? 1,
+        mode: 'date_any_time',
+        purpose: 'hours',
+        date: hoursDate,
+        time: null,
+        weekday: null,
+        timezone,
+        search_days: 1,
+        nearest_count: 2,
+        split_at: '14:30',
+      },
+    };
+  }
   if (shouldUseBackendProcess(transcript)) return { kind: 'pass' };
   if (!hasRestaurant && hasNamedBookingRequest(transcript)) return { kind: 'pass' };
   if (wantsBackendDiscovery(transcript, hasRestaurant)) return { kind: 'pass' };
 
   const nextBooking = withPatch(booking, patch);
+
+  if (ambiguousBareTime && hasAmbiguousTimeDetail) {
+    return {
+      kind: 'local_response',
+      clearPendingOptions: true,
+      response: makeResponse({
+        conversationId: ctx.conversationId,
+        spokenText: ambiguousTimePrompt(ambiguousBareTime),
+        intent: 'choose_time',
+        step: 'choose_time',
+        nextExpectedInput: 'time',
+        uiActions: buildSetFieldActions(patch),
+        booking: {
+          ...patch,
+          status: 'collecting_minimum_fields',
+        },
+      }),
+    };
+  }
+
   const availabilityIntent = buildAvailabilityIntent(
     transcript,
     nextBooking.date,
@@ -745,6 +943,111 @@ function formatOptionList(options: CenaivaAvailabilityOption[]): string {
   return `${labels[0]} or ${labels[1]}`;
 }
 
+function isFullCapacityResult(result: CenaivaAvailabilityResponse): boolean {
+  return result.unavailable_reason === 'fully_booked' ||
+    /\b(fully booked|full capacity|at capacity)\b/i.test(result.message ?? '');
+}
+
+function isPartySizeOutOfRangeResult(result: CenaivaAvailabilityResponse): boolean {
+  return result.unavailable_reason === 'party_size_out_of_range' ||
+    /\b(party size|guests?|people)\b[\s\S]{0,60}\b(outside|exceeds|too large|capacity|range)\b/i.test(result.message ?? '');
+}
+
+function fullCapacityText(dateStr: string | null | undefined): string {
+  return dateStr
+    ? `${formatDateForSpeech(dateStr)} is fully booked.`
+    : 'The restaurant is fully booked.';
+}
+
+function partySizeOutOfRangeText(restaurantName: string | null | undefined, partySize: number): string {
+  const restaurant = restaurantName || 'this restaurant';
+  return `${restaurant} cannot book ${partySize} guests. What smaller party size should I check?`;
+}
+
+function formatHoursSentence(hoursWindow: string | null | undefined, dateStr: string | null | undefined): string {
+  const displayHours = formatHoursWindowForSpeech(hoursWindow);
+  if (!displayHours) return '';
+  return `They're open ${displayHours}${dateStr ? ` on ${formatDateForSpeech(dateStr)}` : ''}.`;
+}
+
+function formatHoursWindowForSpeech(value: string | null | undefined): string | null {
+  if (!value) return null;
+  const parts = value.split(/\s+(?:to|-)\s+/i);
+  if (parts.length !== 2) return value;
+  const formatted = parts.map(formatClockForSpeech);
+  return formatted[0] && formatted[1] ? `${formatted[0]} to ${formatted[1]}` : value;
+}
+
+function formatClockForSpeech(value: string): string | null {
+  const match = value.trim().match(/^(\d{1,2})(?::(\d{2}))?\s*(AM|PM)?$/i);
+  if (!match) return null;
+  let hour = Number(match[1]);
+  const minute = match[2] ? Number(match[2]) : 0;
+  const period = match[3]?.toUpperCase();
+  if (!Number.isFinite(hour) || !Number.isFinite(minute) || minute < 0 || minute > 59) return null;
+  if (period) {
+    if (hour < 1 || hour > 12) return null;
+    if (period === 'PM' && hour < 12) hour += 12;
+    if (period === 'AM' && hour === 12) hour = 0;
+  } else if (hour < 0 || hour > 23) {
+    return null;
+  }
+  const displayPeriod = hour >= 12 ? 'PM' : 'AM';
+  const displayHour = hour % 12 || 12;
+  return `${displayHour}:${String(minute).padStart(2, '0')} ${displayPeriod}`;
+}
+
+function bestHoursInfo(
+  result: CenaivaAvailabilityResponse,
+  selected: CenaivaAvailabilityOption | null,
+  alternatives: CenaivaAvailabilityOption[],
+  requestedDate?: string | null,
+): { window: string; date: string | null } | null {
+  if (selected?.hours_window) return { window: selected.hours_window, date: selected.date };
+  if (result.hours_window) return { window: result.hours_window, date: requestedDate ?? null };
+  const option = alternatives.find((item) => item.hours_window);
+  return option?.hours_window ? { window: option.hours_window, date: option.date } : null;
+}
+
+function formatHoursAvailabilityResponse(args: {
+  conversationId: string | null;
+  request: CenaivaAvailabilityRequest;
+  result: CenaivaAvailabilityResponse;
+  selected: CenaivaAvailabilityOption | null;
+  alternatives: CenaivaAvailabilityOption[];
+}): AssistantResponseType {
+  const { conversationId, request, result, selected, alternatives } = args;
+  const date = request.date ?? selected?.date ?? alternatives[0]?.date ?? null;
+  const restaurant = request.restaurant_name || 'The restaurant';
+  const hours = bestHoursInfo(result, selected, alternatives, date);
+  const optionText = alternatives.length
+    ? `I see availability around ${formatOptionList(alternatives)}.`
+    : selected
+      ? `I see ${selected.display_time} available.`
+        : result.message
+          ? result.message
+          : 'I do not see bookable times for that date.';
+  const displayHours = formatHoursWindowForSpeech(hours?.window);
+  const spokenText = displayHours
+    ? `${restaurant} is open ${displayHours}${hours?.date ? ` on ${formatDateForSpeech(hours.date)}` : ''}. ${optionText}`
+    : `${restaurant} appears closed${date ? ` on ${formatDateForSpeech(date)}` : ''}. ${optionText}`;
+
+  return makeResponse({
+    conversationId,
+    spokenText,
+    intent: 'choose_time',
+    step: 'choose_time',
+    nextExpectedInput: 'time',
+    uiActions: [{ type: 'load_availability' }],
+    booking: {
+      restaurant_id: request.restaurant_id,
+      restaurant_name: request.restaurant_name ?? null,
+      date: request.date ?? null,
+      status: 'collecting_minimum_fields',
+    },
+  });
+}
+
 function formatDateForSpeech(dateStr: string): string {
   const [year, month, day] = dateStr.slice(0, 10).split('-').map(Number);
   if (!year || !month || !day) return dateStr;
@@ -762,6 +1065,20 @@ export function buildLocalAvailabilityResponse(args: {
 }): { response: AssistantResponseType; pendingOptions: CenaivaAvailabilityOption[] } {
   const { conversationId, request, result } = args;
   const selected = result.selected_slot ?? null;
+  const alternatives = result.alternatives ?? [];
+  if (request.purpose === 'hours') {
+    return {
+      pendingOptions: [],
+      response: formatHoursAvailabilityResponse({
+        conversationId,
+        request,
+        result,
+        selected,
+        alternatives,
+      }),
+    };
+  }
+
   if (result.status === 'available' && selected) {
     const ctx: LocalBookingContext = {
       transcript: '',
@@ -795,18 +1112,23 @@ export function buildLocalAvailabilityResponse(args: {
     return { response: buildSelectionResponse(selected, ctx), pendingOptions: [] };
   }
 
-  const alternatives = result.alternatives ?? [];
   if (alternatives.length) {
     const requestedTime = request.time ? formatHHMMForSpeech(request.time) : null;
     const unavailablePrefix =
-      request.mode === 'exact' && request.date && requestedTime
+      isFullCapacityResult(result)
+        ? `${fullCapacityText(request.date ?? alternatives[0]?.date)} `
+        : isPartySizeOutOfRangeResult(result)
+        ? `${partySizeOutOfRangeText(request.restaurant_name, request.party_size)} `
+        : request.mode === 'exact' && request.date && requestedTime
         ? `${formatDateForSpeech(request.date)} at ${requestedTime} is not available. `
         : '';
+    const hours = bestHoursInfo(result, selected, alternatives, request.date);
+    const hoursSentence = formatHoursSentence(hours?.window, hours?.date);
     return {
       pendingOptions: alternatives,
       response: makeResponse({
         conversationId,
-        spokenText: `${unavailablePrefix}I found ${formatOptionList(alternatives)}. Which should I use?`,
+        spokenText: `${unavailablePrefix}${hoursSentence ? `${hoursSentence} ` : ''}I found ${formatOptionList(alternatives)}. Which should I use?`,
         intent: 'choose_time',
         step: 'choose_time',
         nextExpectedInput: 'time',
@@ -827,10 +1149,22 @@ export function buildLocalAvailabilityResponse(args: {
     pendingOptions: [],
     response: makeResponse({
       conversationId,
-      spokenText: result.message || 'I could not find availability for that. What date and time should I try instead?',
-      intent: 'choose_time',
-      step: 'choose_time',
-      nextExpectedInput: 'time',
+      spokenText: (() => {
+        const hours = bestHoursInfo(result, selected, alternatives, request.date);
+        const hoursSentence = formatHoursSentence(hours?.window, hours?.date);
+        const fallback = isFullCapacityResult(result)
+          ? fullCapacityText(request.date)
+          : isPartySizeOutOfRangeResult(result)
+          ? partySizeOutOfRangeText(request.restaurant_name, request.party_size)
+          : result.message || 'I could not find availability for that.';
+        if (isPartySizeOutOfRangeResult(result)) {
+          return `${hoursSentence ? `${hoursSentence} ` : ''}${fallback}`;
+        }
+        return `${hoursSentence ? `${hoursSentence} ` : ''}${fallback} What date and time should I try instead?`;
+      })(),
+      intent: isPartySizeOutOfRangeResult(result) ? 'choose_party_size' : 'choose_time',
+      step: isPartySizeOutOfRangeResult(result) ? 'choose_party' : 'choose_time',
+      nextExpectedInput: isPartySizeOutOfRangeResult(result) ? 'party_size' : 'time',
       booking: {
         restaurant_id: request.restaurant_id,
         restaurant_name: request.restaurant_name ?? null,

@@ -443,6 +443,7 @@ function AssistantInner({ children }: { children: ReactNode }) {
         selectedRestaurantName: current.booking.restaurant_name,
         timezone,
         pendingOptions: pendingAvailabilityOptionsRef.current,
+        lastAssistantPrompt: current.memory.booking_process?.last_prompt ?? current.lastSpokenText,
       });
 
       if (localDecision.kind === 'local_response') {
@@ -542,7 +543,7 @@ function AssistantInner({ children }: { children: ReactNode }) {
           processingRef.current = false;
           const fillerWasStarted = deferredFiller?.cancel() ?? false;
           if (fillerWasStarted) await deferredFiller?.done.catch(() => undefined);
-          const message = 'I could not check availability. Try another date and time.';
+          const message = 'I could not reach live availability. Try another date and time, or ask for the restaurant hours.';
           commit({ type: 'SET_LAST_SPOKEN_TEXT', text: message });
           if (!opts?.silent && !textModeRef.current) {
             commit({ type: 'SET_VOICE_STATUS', status: 'speaking' });

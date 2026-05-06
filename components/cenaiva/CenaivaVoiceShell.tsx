@@ -77,6 +77,17 @@ function normalizeRestaurantKey(value: string) {
   return value.toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim();
 }
 
+function isFiniteLatLng(lat: unknown, lng: unknown): boolean {
+  return (
+    typeof lat === 'number' &&
+    typeof lng === 'number' &&
+    Number.isFinite(lat) &&
+    Number.isFinite(lng) &&
+    Math.abs(lat) <= 90 &&
+    Math.abs(lng) <= 180
+  );
+}
+
 const discoverMapRestaurantById = new Map(mockMapRestaurants.map((restaurant) => [restaurant.id, restaurant]));
 const discoverMapRestaurantByName = new Map(
   mockMapRestaurants.map((restaurant) => [normalizeRestaurantKey(restaurant.name), restaurant]),
@@ -87,10 +98,13 @@ function withDiscoverMapCoordinates(
   anchor: { lat: number; lng: number },
   index: number,
 ): Restaurant {
+  const safeAnchor = isFiniteLatLng(anchor.lat, anchor.lng)
+    ? anchor
+    : { lat: DEFAULT_MAP_CENTER.latitude, lng: DEFAULT_MAP_CENTER.longitude };
   if (
     Number.isFinite(restaurant.lat) &&
     Number.isFinite(restaurant.lng) &&
-    haversineMeters(anchor.lat, anchor.lng, restaurant.lat, restaurant.lng) <= CENAIVA_LOCAL_COORDINATE_RADIUS_METERS
+    haversineMeters(safeAnchor.lat, safeAnchor.lng, restaurant.lat, restaurant.lng) <= CENAIVA_LOCAL_COORDINATE_RADIUS_METERS
   ) {
     return restaurant;
   }
@@ -98,14 +112,22 @@ function withDiscoverMapCoordinates(
   const discoverRestaurant =
     discoverMapRestaurantById.get(restaurant.id) ??
     discoverMapRestaurantByName.get(normalizeRestaurantKey(restaurant.name)) ??
-    mockMapRestaurants[index % mockMapRestaurants.length];
-  if (!discoverRestaurant) return restaurant;
+    (mockMapRestaurants.length ? mockMapRestaurants[index % mockMapRestaurants.length] : null);
+  if (!discoverRestaurant || !isFiniteLatLng(discoverRestaurant.lat, discoverRestaurant.lng)) {
+    return {
+      ...restaurant,
+      lat: safeAnchor.lat,
+      lng: safeAnchor.lng,
+    };
+  }
   const latOffset = discoverRestaurant.lat - DEFAULT_MAP_CENTER.latitude;
   const lngOffset = discoverRestaurant.lng - DEFAULT_MAP_CENTER.longitude;
+  const lat = safeAnchor.lat + latOffset;
+  const lng = safeAnchor.lng + lngOffset;
   return {
     ...restaurant,
-    lat: anchor.lat + latOffset,
-    lng: anchor.lng + lngOffset,
+    lat: isFiniteLatLng(lat, lng) ? lat : safeAnchor.lat,
+    lng: isFiniteLatLng(lat, lng) ? lng : safeAnchor.lng,
   };
 }
 
@@ -705,10 +727,13 @@ export function CenaivaVoiceShell({ onClose }: { onClose?: () => void }) {
     [restaurants, state.filters, state.map.marker_restaurant_ids],
   );
   const mapAnchor = useMemo(
-    () => ({
-      lat: state.map.center?.lat ?? DEFAULT_MAP_CENTER.latitude,
-      lng: state.map.center?.lng ?? DEFAULT_MAP_CENTER.longitude,
-    }),
+    () => {
+      const center = state.map.center;
+      if (isFiniteLatLng(center?.lat, center?.lng)) {
+        return { lat: center!.lat, lng: center!.lng };
+      }
+      return { lat: DEFAULT_MAP_CENTER.latitude, lng: DEFAULT_MAP_CENTER.longitude };
+    },
     [state.map.center?.lat, state.map.center?.lng],
   );
   const mapCoordinateRestaurants = useMemo(

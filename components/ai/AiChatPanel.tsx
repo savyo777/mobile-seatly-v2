@@ -1,4 +1,5 @@
 import React from 'react';
+import { CenaivaAssistantBoundary } from '@/components/cenaiva/CenaivaAssistantBoundary';
 import { CenaivaVoiceShell } from '@/components/cenaiva/CenaivaVoiceShell';
 
 export type AiChatPanelProps = {
@@ -9,5 +10,9 @@ export type AiChatPanelProps = {
 };
 
 export function AiChatPanel({ onClose }: AiChatPanelProps) {
-  return <CenaivaVoiceShell onClose={onClose} />;
+  return (
+    <CenaivaAssistantBoundary onClose={onClose}>
+      <CenaivaVoiceShell onClose={onClose} />
+    </CenaivaAssistantBoundary>
+  );
 }

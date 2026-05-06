@@ -41,14 +41,13 @@ export async function postCenaivaAvailability(
   },
 ): Promise<{ data: CenaivaAvailabilityResponse | null; error: CenaivaAvailabilityError | null }> {
   if (!isSupabaseConfigured()) return { data: null, error: 'not_configured' };
-  if (!options.accessToken) return { data: null, error: 'not_authenticated' };
 
   const { url, anonKey } = getSupabaseEnv();
   const fetchImpl = options.fetchImpl ?? (fetch as FetchLike);
   const response = await fetchImpl(`${url}/functions/v1/cenaiva-availability`, {
     method: 'POST',
     headers: {
-      Authorization: `Bearer ${options.accessToken}`,
+      Authorization: `Bearer ${options.accessToken || anonKey}`,
       apikey: anonKey,
       'Content-Type': 'application/json',
       Accept: 'application/json',

@@ -1,6 +1,7 @@
 import React, { useCallback } from 'react';
 import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
 import { ScreenWrapper } from '@/components/ui';
+import { CenaivaAssistantBoundary } from '@/components/cenaiva/CenaivaAssistantBoundary';
 import { CenaivaVoiceShell } from '@/components/cenaiva/CenaivaVoiceShell';
 import { useCenaivaAssistant } from '@/lib/cenaiva/CenaivaAssistantProvider';
 
@@ -23,7 +24,9 @@ export default function AiChatScreen() {
 
   return (
     <ScreenWrapper scrollable={false} withKeyboardAvoiding padded={false}>
-      <CenaivaVoiceShell onClose={closeRoute} />
+      <CenaivaAssistantBoundary onClose={closeRoute}>
+        <CenaivaVoiceShell onClose={closeRoute} />
+      </CenaivaAssistantBoundary>
     </ScreenWrapper>
   );
 }

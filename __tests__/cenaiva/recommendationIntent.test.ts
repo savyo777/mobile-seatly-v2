@@ -25,6 +25,7 @@ function response(patch: Partial<AssistantResponseType>): AssistantResponseType 
 describe('recommendation intent', () => {
   it('detects one-restaurant recommendation requests', () => {
     expect(getCenaivaRecommendationMode("what's the closest restaurant to me")).toBe('single');
+    expect(getCenaivaRecommendationMode('I want the nearest spot')).toBe('single');
     expect(getCenaivaRecommendationMode('pick one place for dinner')).toBe('single');
     expect(isSingleRestaurantRecommendationIntent('where should I eat?')).toBe(true);
   });

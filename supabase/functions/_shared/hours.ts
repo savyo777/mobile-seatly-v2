@@ -1,4 +1,5 @@
 export const DOW_NAMES = ["sunday", "monday", "tuesday", "wednesday", "thursday", "friday", "saturday"] as const;
+const DOW_SHORT_NAMES = ["sun", "mon", "tue", "wed", "thu", "fri", "sat"] as const;
 
 export interface ParsedHoursWindow {
   open: number;
@@ -61,8 +62,17 @@ function normalizeHours(openLabel: string, closeLabel: string): ParsedHoursWindo
   return {
     open: open.minutes,
     close: closeMinutes,
-    label: `${openLabel} to ${closeLabel}`,
+    label: `${formatMinutesForDisplay(open.minutes)} to ${formatMinutesForDisplay(closeMinutes)}`,
   };
+}
+
+function formatMinutesForDisplay(totalMinutes: number): string {
+  const normalized = ((totalMinutes % 1440) + 1440) % 1440;
+  const hour24 = Math.floor(normalized / 60);
+  const minute = normalized % 60;
+  const period = hour24 >= 12 ? "PM" : "AM";
+  const hour12 = hour24 % 12 || 12;
+  return `${hour12}:${String(minute).padStart(2, "0")} ${period}`;
 }
 
 function readHoursRange(raw: unknown): ParsedHoursWindow | null {
@@ -92,7 +102,14 @@ export function resolveRestaurantHoursForDate(
   }
 
   const dayName = DOW_NAMES[dayOfWeek] ?? "monday";
-  const window = readHoursRange(hoursJson[dayName]);
+  const shortDayName = DOW_SHORT_NAMES[dayOfWeek] ?? dayName.slice(0, 3);
+  const weeklyKey =
+    Object.prototype.hasOwnProperty.call(hoursJson, dayName)
+      ? dayName
+      : Object.prototype.hasOwnProperty.call(hoursJson, shortDayName)
+        ? shortDayName
+        : dayName;
+  const window = readHoursRange(hoursJson[weeklyKey]);
   return { hasHoursJson: true, closed: !window, window };
 }
 
