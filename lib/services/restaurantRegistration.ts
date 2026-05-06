@@ -26,6 +26,18 @@ export type RestaurantPaymentMethodPreview = {
   last4: string;
 };
 
+export function addCalendarMonths(base: Date, months: number): Date {
+  const result = new Date(base.getTime());
+  const originalDay = result.getDate();
+
+  result.setDate(1);
+  result.setMonth(result.getMonth() + months);
+
+  const lastDayOfTargetMonth = new Date(result.getFullYear(), result.getMonth() + 1, 0).getDate();
+  result.setDate(Math.min(originalDay, lastDayOfTargetMonth));
+  return result;
+}
+
 function normalizeHst(value: string): string {
   return value.trim().toUpperCase().replace(/[^A-Z0-9]/g, '');
 }

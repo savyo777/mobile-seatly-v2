@@ -1,20 +1,99 @@
 import React, { useMemo, useState } from 'react';
-import { Text, TouchableOpacity, View } from 'react-native';
+import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { Input, Button, ScreenWrapper } from '@/components/ui';
-import { createStyles, spacing, typography, useColors } from '@/lib/theme';
+import { borderRadius, createStyles, spacing, typography, useColors } from '@/lib/theme';
 import { isValidCanadianHst, normalizePhoneWithCountryCode } from '@/lib/services/restaurantRegistration';
 
 const useStyles = createStyles((c) => ({
   inner: { flex: 1, paddingTop: spacing.lg },
-  topBar: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: spacing.xl },
+  scroll: {
+    flex: 1,
+  },
+  scrollContent: {
+    paddingBottom: spacing['3xl'],
+  },
+  topBar: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: spacing.lg },
   backBtn: { flexDirection: 'row', alignItems: 'center', gap: spacing.xs },
   backText: { ...typography.body, color: c.textSecondary },
   topRight: { width: 60 },
-  title: { ...typography.serifDisplay, color: c.textPrimary, textAlign: 'center', marginBottom: spacing.xs },
-  subtitle: { ...typography.body, color: c.textMuted, textAlign: 'center', marginBottom: spacing.lg },
+  hero: {
+    marginBottom: spacing.lg,
+    borderRadius: borderRadius.xl,
+    borderWidth: 1,
+    borderColor: 'rgba(201,168,76,0.18)',
+    backgroundColor: c.bgSurface,
+    padding: spacing.lg,
+    gap: spacing.sm,
+  },
+  stepPill: {
+    alignSelf: 'flex-start',
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: borderRadius.full,
+    backgroundColor: 'rgba(201,168,76,0.12)',
+    borderWidth: 1,
+    borderColor: 'rgba(201,168,76,0.25)',
+  },
+  stepText: {
+    ...typography.label,
+    color: c.gold,
+    fontWeight: '700',
+  },
+  title: { ...typography.h2, color: c.textPrimary },
+  subtitle: { ...typography.body, color: c.textSecondary, lineHeight: 22 },
+  checklist: {
+    marginBottom: spacing.lg,
+    borderRadius: borderRadius.lg,
+    backgroundColor: 'rgba(255,255,255,0.04)',
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: 'rgba(255,255,255,0.08)',
+    padding: spacing.md,
+    gap: spacing.sm,
+  },
+  checklistRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+  },
+  checklistIcon: {
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: 'rgba(201,168,76,0.12)',
+  },
+  checklistText: {
+    ...typography.bodySmall,
+    color: c.textPrimary,
+    flex: 1,
+    lineHeight: 18,
+  },
+  formCard: {
+    borderRadius: borderRadius.xl,
+    backgroundColor: 'rgba(255,255,255,0.03)',
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: 'rgba(255,255,255,0.08)',
+    padding: spacing.md,
+    gap: 2,
+    marginBottom: spacing.lg,
+  },
+  formCardTitle: {
+    ...typography.body,
+    color: c.textPrimary,
+    fontWeight: '700',
+  },
+  formCardText: {
+    ...typography.bodySmall,
+    color: c.textSecondary,
+    lineHeight: 18,
+  },
+  footer: {
+    marginTop: spacing.sm,
+  },
 }));
 
 export default function RegisterRestaurantFormScreen() {
@@ -105,7 +184,11 @@ export default function RegisterRestaurantFormScreen() {
 
   return (
     <ScreenWrapper withKeyboardAvoiding padded>
-      <View style={[styles.inner, { paddingBottom: Math.max(insets.bottom, spacing.lg) }]}>
+      <ScrollView
+        style={styles.scroll}
+        contentContainerStyle={[styles.scrollContent, { paddingBottom: Math.max(insets.bottom, spacing.lg) }]}
+        showsVerticalScrollIndicator={false}
+      >
         <View style={styles.topBar}>
           <TouchableOpacity onPress={() => router.back()} style={styles.backBtn} activeOpacity={0.7} hitSlop={12}>
             <Ionicons name="chevron-back" size={20} color={c.textSecondary} />
@@ -115,8 +198,42 @@ export default function RegisterRestaurantFormScreen() {
           <View style={styles.topRight} />
         </View>
 
-        <Text style={styles.title}>Restaurant details</Text>
-        <Text style={styles.subtitle}>Tell us about your business before payment setup.</Text>
+        <View style={styles.hero}>
+          <View style={styles.stepPill}>
+            <Text style={styles.stepText}>Step 1 of 2</Text>
+          </View>
+          <Text style={styles.title}>Restaurant details</Text>
+          <Text style={styles.subtitle}>Tell us about your business before payment setup.</Text>
+        </View>
+
+        <View style={styles.checklist}>
+          <View style={styles.checklistRow}>
+            <View style={styles.checklistIcon}>
+              <Ionicons name="receipt-outline" size={14} color={c.gold} />
+            </View>
+            <Text style={styles.checklistText}>We verify the HST number before the account moves forward.</Text>
+          </View>
+          <View style={styles.checklistRow}>
+            <View style={styles.checklistIcon}>
+              <Ionicons name="location-outline" size={14} color={c.gold} />
+            </View>
+            <Text style={styles.checklistText}>The business address helps keep the profile tied to the right venue.</Text>
+          </View>
+          <View style={styles.checklistRow}>
+            <View style={styles.checklistIcon}>
+              <Ionicons name="call-outline" size={14} color={c.gold} />
+            </View>
+            <Text style={styles.checklistText}>The owner phone number is used for restaurant-owner contact.</Text>
+          </View>
+        </View>
+
+        <View style={styles.formCard}>
+          <Text style={styles.formCardTitle}>Why we ask for this</Text>
+          <Text style={styles.formCardText}>
+            Cenaiva uses these details to keep restaurant profiles accurate and to make the onboarding feel
+            intentional instead of generic.
+          </Text>
+        </View>
 
         <Input
           icon="receipt-outline"
@@ -167,8 +284,10 @@ export default function RegisterRestaurantFormScreen() {
           error={errors.ownerPhone}
         />
 
-        <Button title="Continue to payment" onPress={onContinue} size="lg" />
-      </View>
+        <View style={styles.footer}>
+          <Button title="Continue to payment" onPress={onContinue} size="lg" />
+        </View>
+      </ScrollView>
     </ScreenWrapper>
   );
 }

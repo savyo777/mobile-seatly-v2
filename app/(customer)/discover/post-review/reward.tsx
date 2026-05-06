@@ -143,16 +143,16 @@ export default function ReviewRewardScreen() {
           ) : null}
 
           <Button
+            title="Home"
+            onPress={() => router.replace('/(customer)')}
+          />
+          <Button
             title="Go to Restaurant"
             onPress={() =>
               restaurantId
                 ? router.replace(`/(customer)/discover/${restaurantId}`)
                 : router.replace('/(customer)/discover')
             }
-          />
-          <Button
-            title="View My Snaps"
-            onPress={() => router.push('/(customer)/profile')}
             variant="outlined"
           />
         </Animated.View>

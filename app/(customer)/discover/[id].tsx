@@ -510,6 +510,25 @@ const useStyles = createStyles((c) => ({
     backgroundColor: c.bgElevated,
     overflow: 'hidden',
   },
+  photoEmpty: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: spacing.sm,
+    height: 90,
+    borderRadius: borderRadius.lg,
+    borderWidth: 1,
+    borderStyle: 'dashed',
+    borderColor: 'rgba(201, 168, 76, 0.45)',
+    backgroundColor: 'rgba(201, 168, 76, 0.06)',
+    paddingHorizontal: spacing.md,
+  },
+  photoEmptyText: {
+    ...typography.bodySmall,
+    color: c.gold,
+    fontWeight: '600',
+    textAlign: 'center',
+  },
   footer: {
     position: 'absolute',
     left: 0,
@@ -846,28 +865,61 @@ export default function RestaurantDetailScreen() {
           </View>
 
           {(() => {
-            const snapPhotos = listSnapPostsByRestaurant(restaurant.id).slice(0, 3);
-            if (snapPhotos.length === 0) return null;
+            const allSnapPhotos = listSnapPostsByRestaurant(restaurant.id);
+            const snapPhotos = allSnapPhotos.slice(0, 3);
+            const isEmpty = snapPhotos.length === 0;
             return (
               <View style={{ marginTop: spacing.xl }}>
                 <View style={styles.photoSectionHeader}>
                   <Text style={styles.sectionHeading}>Photos</Text>
-                  <Pressable hitSlop={8} onPress={() => router.push(`/(customer)/discover/snaps/${restaurant.id}`)}>
-                    <Text style={styles.seeAll}>See all</Text>
-                  </Pressable>
+                  {/* Hide "See all" when empty — there's nothing to navigate to. */}
+                  {!isEmpty ? (
+                    <Pressable
+                      hitSlop={8}
+                      onPress={() => router.push(`/(customer)/discover/snaps/${restaurant.id}`)}
+                    >
+                      <Text style={styles.seeAll}>See all</Text>
+                    </Pressable>
+                  ) : null}
                 </View>
                 <Text style={styles.photoSubtitle}>See what people are eating here</Text>
-                <View style={styles.photoStrip}>
-                  {snapPhotos.map((snap) => (
-                    <Pressable
-                      key={snap.id}
-                      style={styles.photoThumb}
-                      onPress={() => router.push(`/(customer)/discover/snaps/detail/${snap.id}`)}
-                    >
-                      <Image source={{ uri: snap.image }} style={{ width: '100%', height: '100%' }} resizeMode="cover" />
-                    </Pressable>
-                  ))}
-                </View>
+
+                {isEmpty ? (
+                  // Empty state — keeps the section discoverable and lets the
+                  // first diner kick things off straight from the restaurant page.
+                  <Pressable
+                    onPress={() =>
+                      router.push(
+                        `/(customer)/discover/post-review/camera?restaurantId=${restaurant.id}`,
+                      )
+                    }
+                    style={({ pressed }) => [
+                      styles.photoEmpty,
+                      pressed && { opacity: 0.85 },
+                    ]}
+                  >
+                    <Ionicons name="camera-outline" size={22} color={c.gold} />
+                    <Text style={styles.photoEmptyText}>
+                      No photos yet — be the first to share one
+                    </Text>
+                  </Pressable>
+                ) : (
+                  <View style={styles.photoStrip}>
+                    {snapPhotos.map((snap) => (
+                      <Pressable
+                        key={snap.id}
+                        style={styles.photoThumb}
+                        onPress={() => router.push(`/(customer)/discover/snaps/detail/${snap.id}`)}
+                      >
+                        <Image
+                          source={{ uri: snap.image }}
+                          style={{ width: '100%', height: '100%' }}
+                          resizeMode="cover"
+                        />
+                      </Pressable>
+                    ))}
+                  </View>
+                )}
               </View>
             );
           })()}

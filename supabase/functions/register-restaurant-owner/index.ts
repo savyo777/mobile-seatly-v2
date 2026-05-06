@@ -28,6 +28,18 @@ function json(status: number, body: Record<string, unknown>) {
   });
 }
 
+function addCalendarMonths(base: Date, months: number): Date {
+  const result = new Date(base.getTime());
+  const originalDay = result.getDate();
+
+  result.setDate(1);
+  result.setMonth(result.getMonth() + months);
+
+  const lastDayOfTargetMonth = new Date(result.getFullYear(), result.getMonth() + 1, 0).getDate();
+  result.setDate(Math.min(originalDay, lastDayOfTargetMonth));
+  return result;
+}
+
 async function stripeRequest(path: string, body: Record<string, string>) {
   if (!stripeSecretKey) throw new Error('Missing STRIPE_SECRET_KEY.');
   const form = new URLSearchParams(body);
@@ -165,15 +177,17 @@ Deno.serve(async (req) => {
       'invoice_settings[default_payment_method]': paymentMethodId,
     });
 
+    const trialEnd = Math.floor(addCalendarMonths(new Date(), 3).getTime() / 1000);
+
     const subscription = await stripeRequest('subscriptions', {
       customer: customerId,
       'items[0][price]': Deno.env.get('STRIPE_OWNER_PLAN_PRICE_ID') ?? '',
-      trial_period_days: '90',
+      trial_end: String(trialEnd),
     });
 
     const trialEndsAt = subscription.trial_end
       ? new Date(subscription.trial_end * 1000).toISOString()
-      : new Date(Date.now() + 90 * 24 * 60 * 60 * 1000).toISOString();
+      : new Date(trialEnd * 1000).toISOString();
 
     const { data: inserted, error: insertError } = await adminClient
       .from('restaurants')

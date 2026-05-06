@@ -20,14 +20,13 @@ import {
 import { getMediaTypeFromMime, type SocialMediaType } from '@/lib/sharing/mime';
 import {
   shareToInstagramFeed,
-  shareToInstagramStory,
   shareToYouTube,
   isNativeSocialShareAvailable,
   type SocialShareDestination,
 } from '@/lib/sharing/nativeSocialShare';
 import { openPersonalSnapchatApp, openPersonalTikTokApp } from '@/lib/sharing/personalSocialApp';
 import { captureStyledSnapToTmpFile } from '@/lib/snapOverlays/captureStyledSnap';
-import { saveMediaToCameraRoll } from '@/lib/storage/cameraRoll';
+import { saveMediaToCameraRollDetailed } from '@/lib/storage/cameraRoll';
 import {
   DEFAULT_SNAP_PHOTO_ASPECT,
   getSnapPreviewLayout,
@@ -55,8 +54,7 @@ type ShareOption = {
 };
 
 const SHARE_OPTIONS: ShareOption[] = [
-  { destination: 'instagram-story', label: 'Instagram Story', icon: 'logo-instagram' },
-  { destination: 'instagram-feed', label: 'Instagram Feed', icon: 'logo-instagram' },
+  { destination: 'instagram-feed', label: 'Instagram', icon: 'logo-instagram' },
   { destination: 'snapchat-story', label: 'Snapchat', icon: 'chatbubble-ellipses-outline', personalSocial: true },
   { destination: 'tiktok', label: 'TikTok', icon: 'logo-tiktok', personalSocial: true },
   { destination: 'youtube', label: 'YouTube', icon: 'logo-youtube', videoOnly: true },
@@ -64,7 +62,7 @@ const SHARE_OPTIONS: ShareOption[] = [
 
 const DESTINATION_LABEL: Record<SocialShareDestination, string> = {
   'instagram-story': 'Instagram Story',
-  'instagram-feed': 'Instagram Feed',
+  'instagram-feed': 'Instagram',
   tiktok: 'TikTok',
   'snapchat-story': 'Snapchat',
   youtube: 'YouTube',
@@ -304,10 +302,19 @@ export function SnapShareSheet({
           return;
         }
 
-        const saved = await saveMediaToCameraRoll(uri);
-        if (!saved) {
+        const result = await saveMediaToCameraRollDetailed(uri);
+        if (!result.ok) {
+          // Map typed reasons to messages users can act on. The previous
+          // "allow photo access" string was misleading when the real cause
+          // was "module unavailable" or a low-level save failure.
           const message =
-            'Cenaiva could not save this snap. Allow photo access for Cenaiva, then try again.';
+            result.reason === 'permission-denied'
+              ? 'Cenaiva needs photo-library access to save this snap. Open Settings → Cenaiva → Photos and allow access.'
+              : result.reason === 'unavailable'
+                ? 'Saving to your camera roll requires the Cenaiva app. Expo Go can\'t save snaps directly.'
+                : result.reason === 'no-uri'
+                  ? 'This snap is missing a photo to save.'
+                  : 'Cenaiva could not save this snap. Please try again.';
           if (!silent) {
             setCameraRollError(message);
             Alert.alert('Save unavailable', message);
@@ -416,9 +423,6 @@ export function SnapShareSheet({
       if (!uri) return;
 
       switch (destination) {
-        case 'instagram-story':
-          await shareToInstagramStory(uri, resolvedMediaType);
-          break;
         case 'instagram-feed':
           await shareToInstagramFeed(uri, resolvedMediaType);
           break;
