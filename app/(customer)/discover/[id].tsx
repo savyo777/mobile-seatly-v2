@@ -15,6 +15,11 @@ import {
 } from '@/lib/cenaiva/api/dataHooks';
 import { listSnapPostsByRestaurant } from '@/lib/mock/snaps';
 import { formatCurrency } from '@/lib/utils/formatCurrency';
+import {
+  currentRestaurantWeekdayKey,
+  formatHoursRange as formatRestaurantHoursRange,
+  isRestaurantOpenForHours,
+} from '@/lib/restaurants/hoursStatus';
 import { useColors, createStyles, spacing, borderRadius, typography, shadows } from '@/lib/theme';
 import { Ionicons } from '@expo/vector-icons';
 
@@ -22,85 +27,8 @@ const WEEKDAY_KEYS = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'f
 const WEEKDAY_SHORT = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 const MENU_ALL_TAB = '__all__';
 
-type HoursRange = { open: string; close: string };
-type HoursByWeekday = Partial<Record<typeof WEEKDAY_KEYS[number], HoursRange | null | undefined>>;
-type ParsedClockTime = {
-  hour: number;
-  minute: number;
-  minutes: number;
-  hasMeridiem: boolean;
-};
-
 function priceRangeLabel(range: number): string {
   return '$'.repeat(range) as string;
-}
-
-function parseClockTime(value: string | null | undefined): ParsedClockTime | null {
-  const cleaned = String(value ?? '').trim().toLowerCase().replace(/\./g, '');
-  const match = cleaned.match(/^(\d{1,2})(?::(\d{1,2}))?(?::\d{1,2})?\s*(am|pm)?$/);
-  if (!match) return null;
-
-  const rawHour = Number(match[1]);
-  const minute = match[2] == null ? 0 : Number(match[2]);
-  const meridiem = match[3] as 'am' | 'pm' | undefined;
-  if (!Number.isFinite(rawHour) || !Number.isFinite(minute) || minute < 0 || minute > 59) {
-    return null;
-  }
-  if (!meridiem && (rawHour < 0 || rawHour > 23)) return null;
-  if (meridiem && (rawHour < 1 || rawHour > 12)) return null;
-
-  let hour = rawHour;
-  if (meridiem === 'pm' && hour < 12) hour += 12;
-  if (meridiem === 'am' && hour === 12) hour = 0;
-
-  return {
-    hour,
-    minute,
-    minutes: hour * 60 + minute,
-    hasMeridiem: Boolean(meridiem),
-  };
-}
-
-function normalizeHoursRange(hours: HoursRange | null | undefined): { open: number; close: number } | null {
-  if (!hours) return null;
-  const open = parseClockTime(hours.open);
-  const close = parseClockTime(hours.close);
-  if (!open || !close) return null;
-
-  let closeMinutes = close.minutes;
-  if (!close.hasMeridiem && closeMinutes <= open.minutes) {
-    closeMinutes += open.minutes < 12 * 60 && close.hour <= 12 ? 12 * 60 : 24 * 60;
-    if (closeMinutes <= open.minutes) closeMinutes += 12 * 60;
-  } else if (closeMinutes <= open.minutes) {
-    closeMinutes += 24 * 60;
-  }
-
-  return { open: open.minutes, close: closeMinutes };
-}
-
-function formatClockMinutes(totalMinutes: number): string {
-  const minutesInDay = ((totalMinutes % 1440) + 1440) % 1440;
-  const hour24 = Math.floor(minutesInDay / 60);
-  const minute = minutesInDay % 60;
-  const period = hour24 >= 12 ? 'PM' : 'AM';
-  const hour12 = hour24 % 12 || 12;
-  return `${hour12}:${String(minute).padStart(2, '0')} ${period}`;
-}
-
-function formatHoursRange(hours: HoursRange | null | undefined): string {
-  const range = normalizeHoursRange(hours);
-  if (!range) return 'Closed';
-  return `${formatClockMinutes(range.open)} - ${formatClockMinutes(range.close)}`;
-}
-
-function isOpenNow(hoursJson: HoursByWeekday): boolean {
-  const now = new Date();
-  const key = WEEKDAY_KEYS[now.getDay()];
-  const range = normalizeHoursRange(hoursJson[key]);
-  if (!range) return false;
-  const current = now.getHours() * 60 + now.getMinutes();
-  if (current >= range.open && current < range.close) return true;
-  return range.close > 1440 && current + 1440 < range.close;
 }
 
 function openMaps(address: string, city: string) {
@@ -640,8 +568,9 @@ export default function RestaurantDetailScreen() {
     }
   }, [menuCategoryTabs, selectedMenuTab]);
 
-  const todayKey = WEEKDAY_KEYS[new Date().getDay()];
+  const todayKey = currentRestaurantWeekdayKey();
   const todayHours = restaurant?.hoursJson[todayKey];
+  const openNow = restaurant ? isRestaurantOpenForHours(restaurant.hoursJson) : false;
 
   if (!restaurant && catalogLoading) {
     return (
@@ -757,27 +686,27 @@ export default function RestaurantDetailScreen() {
             <View style={styles.hoursHeader}>
               <Text style={styles.sectionHeading}>{t('restaurant.hours')}</Text>
               <View style={styles.openBadge}>
-                <View style={[styles.openDot, { backgroundColor: isOpenNow(restaurant.hoursJson) ? c.success : c.danger }]} />
-                <Text style={[styles.openLabel, { color: isOpenNow(restaurant.hoursJson) ? c.success : c.danger }]}>
-                  {isOpenNow(restaurant.hoursJson) ? 'Open now' : 'Closed'}
+                <View style={[styles.openDot, { backgroundColor: openNow ? c.success : c.danger }]} />
+                <Text style={[styles.openLabel, { color: openNow ? c.success : c.danger }]}>
+                  {openNow ? 'Open now' : 'Closed'}
                 </Text>
               </View>
             </View>
             <Text style={styles.todayHours}>
-              Today: {formatHoursRange(todayHours)}
+              Today: {formatRestaurantHoursRange(todayHours)}
             </Text>
             {hoursExpanded && (
               <View style={styles.hoursGrid}>
                 {WEEKDAY_KEYS.map((key, i) => {
                   const h = restaurant.hoursJson[key];
-                  const isToday = i === new Date().getDay();
+                  const isToday = key === todayKey;
                   return (
                     <View key={key} style={[styles.hoursRow, isToday && styles.hoursRowToday]}>
                       <Text style={[styles.hoursDay, isToday && styles.hoursDayToday]}>
                         {WEEKDAY_SHORT[i]}
                       </Text>
                       <Text style={[styles.hoursTime, isToday && styles.hoursTimeToday]}>
-                        {formatHoursRange(h)}
+                        {formatRestaurantHoursRange(h)}
                       </Text>
                     </View>
                   );

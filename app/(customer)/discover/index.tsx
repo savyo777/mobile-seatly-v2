@@ -17,7 +17,8 @@ import { DiscoverHeroFeatured } from '@/components/discover/DiscoverHeroFeatured
 import { DiscoverHorizontalSection } from '@/components/discover/DiscoverHorizontalSection';
 import { DiscoverMapView } from '@/components/discover/DiscoverMapView';
 import { PostVisitPrompt } from '@/components/snaps/PostVisitPrompt';
-import { DISCOVER_USER_FIRST_NAME } from '@/lib/constants/personalization';
+import { useAuthSession } from '@/lib/auth/AuthContext';
+import { resolveAuthDisplayProfile } from '@/lib/auth/displayProfile';
 import type { DiscoverCategorySlug } from '@/lib/discover/discoverCategories';
 import { getTorontoGreetingPeriod } from '@/lib/discover/torontoTime';
 import { loadRestaurantsForDiscover } from '@/lib/data/restaurantCatalog';
@@ -284,6 +285,11 @@ export default function DiscoverScreen() {
   const [searchMode, setSearchMode] = useState<SearchMode>('restaurants');
   const [baseRestaurants, setBaseRestaurants] = useState<Restaurant[]>(mockRestaurants);
   const [unreadCount, setUnreadCount] = useState(() => getUnreadCount(ME));
+  const { user } = useAuthSession();
+  const displayProfile = useMemo(
+    () => resolveAuthDisplayProfile(user, { fullName: mockCustomer.fullName }),
+    [user],
+  );
 
   useEffect(() => {
     let cancelled = false;
@@ -308,7 +314,7 @@ export default function DiscoverScreen() {
 
   const { greetingLine1, greetingLine2 } = useMemo(() => {
     const period = getTorontoGreetingPeriod();
-    const name = DISCOVER_USER_FIRST_NAME;
+    const name = displayProfile.firstName;
     const greetMap: Record<string, string> = {
       morning: `Good morning, ${name} —`,
       afternoon: `Good afternoon, ${name} —`,
@@ -323,7 +329,7 @@ export default function DiscoverScreen() {
       greetingLine1: greetMap[period] ?? greetMap.evening,
       greetingLine2: taglineMap[period] ?? taglineMap.evening,
     };
-  }, []);
+  }, [displayProfile.firstName]);
 
   const filteredRestaurants = useMemo(() => {
     let list = baseRestaurants.filter((r) => {

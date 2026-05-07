@@ -1,13 +1,15 @@
 import React from 'react';
 import { View, Text, Switch, Pressable, StyleSheet, Alert } from 'react-native';
-import { useRouter } from 'expo-router';
+import { useFocusEffect, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { OwnerScreen } from '@/components/owner/OwnerScreen';
 import { SubpageHeader } from '@/components/owner/SubpageHeader';
 import { useColors, useTheme, createStyles, spacing, borderRadius, type ThemeMode } from '@/lib/theme';
 import { useAuthSession } from '@/lib/auth/AuthContext';
+import { compactNameLabel, resolveAuthDisplayProfile } from '@/lib/auth/displayProfile';
 import { deleteAccount, signOutAllDevices } from '@/lib/services/accountSecurity';
 import { setAppShellPreference } from '@/lib/navigation/appShellPreference';
+import { getStoredRestaurantPaymentCards } from '@/lib/storage/restaurantPaymentMethod';
 
 // ── Types ──────────────────────────────────────────────────────────────────
 
@@ -314,10 +316,33 @@ export default function OwnerSettingsScreen() {
   const styles = useStyles();
   const router = useRouter();
   const { mode } = useTheme();
+  const { user } = useAuthSession();
+  const profile = React.useMemo(
+    () => resolveAuthDisplayProfile(user, { fullName: 'Restaurant owner' }),
+    [user],
+  );
 
   const [pushOn, setPushOn] = React.useState(true);
   const [soundOn, setSoundOn] = React.useState(true);
   const [emailDigest, setEmailDigest] = React.useState(true);
+  const [paymentMethodLabel, setPaymentMethodLabel] = React.useState('No card on file');
+
+  useFocusEffect(
+    React.useCallback(() => {
+      let active = true;
+      void (async () => {
+        const cards = await getStoredRestaurantPaymentCards();
+        if (!active) return;
+        const defaultCard = cards.find((card) => card.isDefault) ?? cards[0];
+        setPaymentMethodLabel(
+          defaultCard ? `${defaultCard.brand} ···· ${defaultCard.last4}` : 'No card on file',
+        );
+      })();
+      return () => {
+        active = false;
+      };
+    }, []),
+  );
 
   const sections: Section[] = [
     {
@@ -337,7 +362,7 @@ export default function OwnerSettingsScreen() {
         {
           kind: 'nav',
           label: 'Personal details',
-          value: 'Mark H.',
+          value: compactNameLabel(profile.fullName),
           icon: 'person-outline',
           route: '/(staff)/personal-details',
         },
@@ -381,7 +406,7 @@ export default function OwnerSettingsScreen() {
         {
           kind: 'nav',
           label: 'Payment method',
-          value: 'Visa ···· 4429',
+          value: paymentMethodLabel,
           icon: 'card-outline',
           route: '/(staff)/payment-method?source=settings',
         },

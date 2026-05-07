@@ -8,6 +8,7 @@ export type LocationState = {
   lng: number;
   locationReady: boolean;
   permissionDenied: boolean;
+  source: 'live' | 'fallback';
 };
 
 const FALLBACK: LocationState = {
@@ -15,6 +16,7 @@ const FALLBACK: LocationState = {
   lng: DEFAULT_MAP_CENTER.longitude,
   locationReady: true,
   permissionDenied: false,
+  source: 'fallback',
 };
 
 export function useLocation(): LocationState {
@@ -23,6 +25,7 @@ export function useLocation(): LocationState {
     lng: DEFAULT_MAP_CENTER.longitude,
     locationReady: false,
     permissionDenied: false,
+    source: 'fallback',
   });
 
   useEffect(() => {
@@ -46,6 +49,7 @@ export function useLocation(): LocationState {
           lng: pos.coords.longitude,
           locationReady: true,
           permissionDenied: false,
+          source: 'live',
         });
       } catch {
         if (!cancelled) setState(FALLBACK);

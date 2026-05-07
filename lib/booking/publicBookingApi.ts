@@ -1,5 +1,8 @@
 import { getSupabase } from '@/lib/supabase/client';
 import { getSupabaseEnv, isSupabaseConfigured } from '@/lib/supabase/env';
+import { getMockShiftConfig, getMockTimeSlots } from '@/lib/mock/bookingAvailability';
+import { mockRestaurants } from '@/lib/mock/restaurants';
+import { getCachedRestaurantById } from '@/lib/data/restaurantCatalog';
 
 export type AvailabilitySlot = {
   shift_id: string;
@@ -68,9 +71,76 @@ export type BookingProfile = {
 };
 
 const AVAILABILITY_CACHE_TTL_MS = 45_000;
+const AVAILABILITY_REQUEST_TIMEOUT_MS = 3500;
 
 const availabilityCache = new Map<string, { expiresAt: number; value: AvailabilityResponse }>();
 const availabilityInflight = new Map<string, Promise<AvailabilityResponse>>();
+
+function isDemoRestaurantKey(value: string): boolean {
+  const key = value.trim().toLowerCase();
+  return mockRestaurants.some(
+    (restaurant) => restaurant.id.toLowerCase() === key || restaurant.slug.toLowerCase() === key,
+  );
+}
+
+function cacheAvailability(cacheKey: string, value: AvailabilityResponse): AvailabilityResponse {
+  availabilityCache.set(cacheKey, {
+    expiresAt: Date.now() + AVAILABILITY_CACHE_TTL_MS,
+    value,
+  });
+  return value;
+}
+
+function demoAvailabilityFor(params: {
+  restaurantId: string;
+  date: string;
+  partySize: number;
+}): AvailabilityResponse | null {
+  if (!isDemoRestaurantKey(params.restaurantId) || !getCachedRestaurantById(params.restaurantId)) {
+    return null;
+  }
+
+  const partySize = Math.max(1, Math.floor(params.partySize));
+  const shift = getMockShiftConfig(params.restaurantId);
+  const slots = getMockTimeSlots(params.restaurantId, params.date, partySize)
+    .filter((slot) => slot.available)
+    .map<AvailabilitySlot>((slot) => {
+      const time = slot.slotId.includes('T') ? slot.slotId.split('T')[1] : '18:00';
+      return {
+        shift_id: `demo-${params.restaurantId}`,
+        shift_name: 'Dining room',
+        date_time: `${params.date}T${time}:00`,
+        display_time: slot.label,
+        table_ids: [`demo-table-${params.restaurantId}`],
+        duration_minutes: shift.slotDurationMinutes,
+        floor_capacity: 150,
+      };
+    });
+
+  return {
+    slots,
+    floorCapacity: slots.length ? 150 : null,
+  };
+}
+
+function demoBookingFor(payload: PublicBookingPayload): PublicBookingResponse | null {
+  if (!isDemoRestaurantKey(payload.restaurant_id)) return null;
+  const seed = `${payload.restaurant_id}-${payload.date_time}-${payload.guest_email}`;
+  let hash = 0;
+  for (let i = 0; i < seed.length; i += 1) {
+    hash = (hash * 31 + seed.charCodeAt(i)) >>> 0;
+  }
+  const suffix = String(hash % 1000000).padStart(6, '0');
+  return {
+    reservation_id: `demo-res-${suffix}`,
+    order_id: payload.cart_items.length ? `demo-order-${suffix}` : null,
+    confirmation_code: `CNV-${suffix}`,
+    table_ids: payload.shift_id ? [`demo-table-${payload.restaurant_id}`] : [],
+    duration_minutes: null,
+    confirmation_delivery: 'skipped',
+    confirmation_delivery_channel: null,
+  };
+}
 
 function roundMoney(value: number): number {
   return Math.round(value * 100) / 100;
@@ -95,7 +165,6 @@ export async function getAvailability(params: {
   date: string;
   partySize: number;
 }): Promise<AvailabilityResponse> {
-  const { url, anonKey } = assertConfigured();
   const partySize = Math.max(1, Math.floor(params.partySize));
   const cacheKey = `${params.restaurantId}|${params.date}|${partySize}`;
   const cached = availabilityCache.get(cacheKey);
@@ -104,19 +173,33 @@ export async function getAvailability(params: {
   const existing = availabilityInflight.get(cacheKey);
   if (existing) return existing;
 
+  const demoFallback = demoAvailabilityFor({ ...params, partySize });
+  if (!isSupabaseConfigured()) {
+    return cacheAvailability(cacheKey, demoFallback ?? { slots: [], floorCapacity: null });
+  }
+
   const request = (async () => {
+    const { url, anonKey } = assertConfigured();
     const token = await getAccessToken();
     const endpoint = new URL(`${url}/functions/v1/get-availability`);
     endpoint.searchParams.set('restaurant_id', params.restaurantId);
     endpoint.searchParams.set('date', params.date);
     endpoint.searchParams.set('party_size', String(partySize));
 
-    const response = await fetch(endpoint.toString(), {
-      headers: {
-        apikey: anonKey,
-        ...(token ? { Authorization: `Bearer ${token}` } : {}),
-      },
-    });
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), AVAILABILITY_REQUEST_TIMEOUT_MS);
+    let response: Response;
+    try {
+      response = await fetch(endpoint.toString(), {
+        signal: controller.signal,
+        headers: {
+          apikey: anonKey,
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
+      });
+    } finally {
+      clearTimeout(timeout);
+    }
 
     const body = await response.json().catch(() => ({})) as {
       slots?: AvailabilitySlot[];
@@ -125,12 +208,16 @@ export async function getAvailability(params: {
     };
 
     if (!response.ok || body.error) {
+      if (demoFallback) return cacheAvailability(cacheKey, demoFallback);
       throw new Error(body.error ?? 'Could not load availability.');
     }
 
     const slots = (body.slots ?? [])
       .filter((slot) => new Date(slot.date_time).getTime() >= Date.now())
       .sort((a, b) => new Date(a.date_time).getTime() - new Date(b.date_time).getTime());
+    if (!slots.length && demoFallback?.slots.length) {
+      return cacheAvailability(cacheKey, demoFallback);
+    }
     const value = {
       slots,
       floorCapacity:
@@ -138,14 +225,15 @@ export async function getAvailability(params: {
         slots.find((slot) => typeof slot.floor_capacity === 'number')?.floor_capacity ??
         null,
     };
-    availabilityCache.set(cacheKey, {
-      expiresAt: Date.now() + AVAILABILITY_CACHE_TTL_MS,
-      value,
+    return cacheAvailability(cacheKey, value);
+  })()
+    .catch((error) => {
+      if (demoFallback) return cacheAvailability(cacheKey, demoFallback);
+      throw error;
+    })
+    .finally(() => {
+      availabilityInflight.delete(cacheKey);
     });
-    return value;
-  })().finally(() => {
-    availabilityInflight.delete(cacheKey);
-  });
 
   availabilityInflight.set(cacheKey, request);
   return request;
@@ -154,32 +242,42 @@ export async function getAvailability(params: {
 export async function createPublicBooking(
   payload: PublicBookingPayload,
 ): Promise<PublicBookingResponse> {
+  const demoFallback = demoBookingFor(payload);
+  if (!isSupabaseConfigured() && demoFallback) return demoFallback;
+
   const { url, anonKey } = assertConfigured();
   const token = await getAccessToken();
-  const response = await fetch(`${url}/functions/v1/create-public-booking`, {
-    method: 'POST',
-    headers: {
-      apikey: anonKey,
-      'Content-Type': 'application/json',
-      ...(token ? { Authorization: `Bearer ${token}` } : {}),
-    },
-    body: JSON.stringify({
-      ...payload,
-      subtotal: roundMoney(payload.subtotal),
-      tax_amount: roundMoney(payload.tax_amount),
-      tip_amount: roundMoney(payload.tip_amount),
-      total_amount: roundMoney(payload.total_amount),
-      discount_amount: payload.discount_amount == null ? null : roundMoney(payload.discount_amount),
-      cart_items: payload.cart_items.map((item) => ({
-        ...item,
-        quantity: Math.max(1, Math.floor(item.quantity)),
-        unit_price: roundMoney(item.unit_price),
-      })),
-    }),
-  });
+  let response: Response;
+  try {
+    response = await fetch(`${url}/functions/v1/create-public-booking`, {
+      method: 'POST',
+      headers: {
+        apikey: anonKey,
+        'Content-Type': 'application/json',
+        ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      },
+      body: JSON.stringify({
+        ...payload,
+        subtotal: roundMoney(payload.subtotal),
+        tax_amount: roundMoney(payload.tax_amount),
+        tip_amount: roundMoney(payload.tip_amount),
+        total_amount: roundMoney(payload.total_amount),
+        discount_amount: payload.discount_amount == null ? null : roundMoney(payload.discount_amount),
+        cart_items: payload.cart_items.map((item) => ({
+          ...item,
+          quantity: Math.max(1, Math.floor(item.quantity)),
+          unit_price: roundMoney(item.unit_price),
+        })),
+      }),
+    });
+  } catch (error) {
+    if (demoFallback) return demoFallback;
+    throw error;
+  }
 
   const body = await response.json().catch(() => ({})) as Partial<PublicBookingResponse>;
   if (!response.ok || body.error || !body.reservation_id) {
+    if (demoFallback) return demoFallback;
     const error = new Error(body.error ?? 'Reservation failed.');
     (error as Error & { status?: number }).status = response.status;
     throw error;

@@ -18,12 +18,27 @@ export interface DiningEvent {
   savedBy: string[]; // user IDs
 }
 
-// Anchored to 2026-04-21 (today in-app)
-const T = '2026-04-21';
-const SAT = '2026-04-25';
-const SUN = '2026-04-26';
-const MON = '2026-04-27';
-const FRI = '2026-04-24';
+function dateKeyForOffset(offsetDays: number): string {
+  const d = new Date();
+  d.setHours(0, 0, 0, 0);
+  d.setDate(d.getDate() + offsetDays);
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${y}-${m}-${day}`;
+}
+
+function nextWeekdayOffset(targetDow: number): number {
+  const today = new Date().getDay();
+  const diff = (targetDow - today + 7) % 7;
+  return diff === 0 ? 7 : diff;
+}
+
+const T = dateKeyForOffset(0);
+const FRI = dateKeyForOffset(nextWeekdayOffset(5));
+const SAT = dateKeyForOffset(nextWeekdayOffset(6));
+const SUN = dateKeyForOffset(nextWeekdayOffset(0));
+const MON = dateKeyForOffset(nextWeekdayOffset(1));
 
 let diningEvents: DiningEvent[] = [
   {
@@ -243,24 +258,29 @@ export function filterEvents(
   dateFilter: DateFilter,
   typeFilter: EventType | 'all',
 ): DiningEvent[] {
-  const now = new Date('2026-04-21T00:00:00');
+  const now = new Date();
+  now.setHours(0, 0, 0, 0);
   return events.filter((ev) => {
     const evDate = new Date(ev.date);
+    const eventDay = new Date(evDate);
+    eventDay.setHours(0, 0, 0, 0);
 
     if (typeFilter !== 'all' && ev.type !== typeFilter) return false;
 
     if (dateFilter === 'tonight') {
-      return evDate.toDateString() === now.toDateString();
+      return eventDay.getTime() === now.getTime();
     }
     if (dateFilter === 'this_weekend') {
-      // Sat Apr 25 – Sun Apr 26
-      const sat = new Date('2026-04-25');
-      const sun = new Date('2026-04-27'); // exclusive
-      return evDate >= sat && evDate < sun;
+      const sat = new Date(now);
+      sat.setDate(now.getDate() + nextWeekdayOffset(6));
+      const mon = new Date(sat);
+      mon.setDate(sat.getDate() + 2);
+      return eventDay >= sat && eventDay < mon;
     }
     if (dateFilter === 'this_week') {
-      const weekEnd = new Date('2026-04-28');
-      return evDate >= now && evDate < weekEnd;
+      const weekEnd = new Date(now);
+      weekEnd.setDate(now.getDate() + 7);
+      return eventDay >= now && eventDay < weekEnd;
     }
     return true;
   });

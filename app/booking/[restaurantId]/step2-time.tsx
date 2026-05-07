@@ -30,6 +30,7 @@ import {
   getCachedRestaurantById,
   loadRestaurantForBooking,
 } from '@/lib/data/restaurantCatalog';
+import { getEventById } from '@/lib/mock/events';
 import { useColors, createStyles, spacing, borderRadius } from '@/lib/theme';
 import type { DateKey } from '@/lib/booking/availabilityTypes';
 
@@ -123,6 +124,34 @@ const useStyles = createStyles((c) => ({
     fontWeight: '600',
     color: c.danger,
     marginTop: -6,
+  },
+
+  eventContext: {
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    backgroundColor: 'rgba(201,168,76,0.08)',
+    borderRadius: borderRadius.lg,
+    borderWidth: 1,
+    borderColor: 'rgba(201,168,76,0.22)',
+    gap: 4,
+  },
+  eventEyebrow: {
+    fontSize: 11,
+    fontWeight: '800',
+    color: c.gold,
+    textTransform: 'uppercase',
+    letterSpacing: 0.8,
+  },
+  eventTitle: {
+    fontSize: 15,
+    fontWeight: '800',
+    color: c.textPrimary,
+  },
+  eventSub: {
+    fontSize: 12,
+    fontWeight: '500',
+    color: c.textSecondary,
+    lineHeight: 17,
   },
 
   // Date row
@@ -239,7 +268,7 @@ const useStyles = createStyles((c) => ({
 }));
 
 export default function Step2Time() {
-  const { restaurantId, date } = useLocalSearchParams<{ restaurantId: string; date: string }>();
+  const { restaurantId, date, eventId } = useLocalSearchParams<{ restaurantId: string; date: string; eventId?: string }>();
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const c = useColors();
@@ -265,6 +294,10 @@ export default function Step2Time() {
   const [restaurantVersion, setRestaurantVersion] = useState(0);
   const [restaurant, setRestaurant] = useState(() => getCachedRestaurantById(rid));
   const [restaurantReady, setRestaurantReady] = useState(() => Boolean(getCachedRestaurantById(rid)) || !rid);
+  const eventContext = useMemo(
+    () => (typeof eventId === 'string' ? getEventById(eventId) : undefined),
+    [eventId],
+  );
 
   const pillLabel = useMemo(() => {
     const d = parseDateKeyLocal(dateKey);
@@ -365,10 +398,11 @@ export default function Step2Time() {
 
   const handleNext = useCallback(() => {
     if (!selectedSlot || partySizeError || !partySizeInput) return;
+    const eventQuery = eventContext ? `&eventId=${encodeURIComponent(eventContext.id)}` : '';
     router.push(
-      `/booking/${restaurantId}/confirm?date=${encodeURIComponent(dateKey)}&time=${encodeURIComponent(selectedSlot.display_time)}&partySize=${partySize}&shiftId=${encodeURIComponent(selectedSlot.shift_id)}&slotDateTime=${encodeURIComponent(selectedSlot.date_time)}`,
+      `/booking/${restaurantId}/confirm?date=${encodeURIComponent(dateKey)}&time=${encodeURIComponent(selectedSlot.display_time)}&partySize=${partySize}&shiftId=${encodeURIComponent(selectedSlot.shift_id)}&slotDateTime=${encodeURIComponent(selectedSlot.date_time)}${eventQuery}`,
     );
-  }, [selectedSlot, partySizeError, partySizeInput, restaurantId, dateKey, partySize, router]);
+  }, [selectedSlot, partySizeError, partySizeInput, eventContext, restaurantId, dateKey, partySize, router]);
 
   const handleNextDate = useCallback(() => {
     setDateKey(nextBookableDateAfter(rid, dateKey));
@@ -394,6 +428,16 @@ export default function Step2Time() {
         showsVerticalScrollIndicator={false}
         keyboardShouldPersistTaps="handled"
       >
+        {eventContext ? (
+          <View style={styles.eventContext}>
+            <Text style={styles.eventEyebrow}>Event reservation</Text>
+            <Text style={styles.eventTitle}>{eventContext.title}</Text>
+            <Text style={styles.eventSub}>
+              Choose a table for the event date. The restaurant will receive the event context with your booking.
+            </Text>
+          </View>
+        ) : null}
+
         {/* Party size */}
         <Text style={styles.sectionLabel}>Guests</Text>
         <View style={styles.partyInputRow}>

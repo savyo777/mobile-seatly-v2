@@ -9,10 +9,10 @@ import { getAppShellPreference } from '@/lib/navigation/appShellPreference';
 export default function AuthCallbackScreen() {
   const router = useRouter();
   const c = useColors();
-  const { loading, isAuthenticated, isStaffLike } = useAuthSession();
+  const { loading, isAuthenticated, isStaffLike, role } = useAuthSession();
 
   useEffect(() => {
-    if (loading) return;
+    if (loading || (isAuthenticated && role === null)) return;
     const id = setTimeout(async () => {
       const url = await Linking.getInitialURL();
       if (url) {
@@ -34,7 +34,7 @@ export default function AuthCallbackScreen() {
       router.replace('/(customer)');
     }, 150);
     return () => clearTimeout(id);
-  }, [router, loading, isAuthenticated, isStaffLike]);
+  }, [router, loading, isAuthenticated, isStaffLike, role]);
 
   return (
     <View style={[styles.root, { backgroundColor: c.bgBase }]}>

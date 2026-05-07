@@ -21,6 +21,7 @@ import { ChevronGlyph } from '@/components/ui/ChevronGlyph';
 import { useColors, createStyles, spacing, borderRadius, typography } from '@/lib/theme';
 import { mockCustomer } from '@/lib/mock/users';
 import { useAuthSession } from '@/lib/auth/AuthContext';
+import { resolveAuthDisplayProfile } from '@/lib/auth/displayProfile';
 import { deleteAccount, signOutAllDevices } from '@/lib/services/accountSecurity';
 import {
   getAppShellPreference,
@@ -248,7 +249,11 @@ export default function SettingsScreen() {
   const router = useRouter();
   const navigation = useNavigation();
   const insets = useSafeAreaInsets();
-  const { signOut, isStaffLike } = useAuthSession();
+  const { signOut, isStaffLike, user } = useAuthSession();
+  const displayProfile = useMemo(
+    () => resolveAuthDisplayProfile(user, { fullName: mockCustomer.fullName, avatarUrl: mockCustomer.avatarUrl }),
+    [user],
+  );
   const pts = mockCustomer.loyaltyPointsBalance ?? 0;
   const tier = getTier(pts);
 
@@ -491,7 +496,7 @@ export default function SettingsScreen() {
         <View style={styles.headerCenter}>
           <Text style={styles.headerTitle}>Settings</Text>
           <Text style={styles.headerSub}>
-            {mockCustomer.fullName} · {tier.name} Member
+            {displayProfile.fullName} · {tier.name} Member
           </Text>
         </View>
         <View style={{ width: 32 }} />
@@ -507,8 +512,8 @@ export default function SettingsScreen() {
           style={({ pressed }) => [styles.profileBar, pressed && { opacity: 0.85 }]}
         >
           <View style={styles.profileAvatarRing}>
-            {mockCustomer.avatarUrl ? (
-              <Image source={{ uri: mockCustomer.avatarUrl }} style={styles.profileAvatar} />
+            {displayProfile.avatarUrl ? (
+              <Image source={{ uri: displayProfile.avatarUrl }} style={styles.profileAvatar} />
             ) : (
               <View style={[styles.profileAvatar, styles.profileAvatarFallback]}>
                 <Ionicons name="person" size={24} color={c.textMuted} />
@@ -516,7 +521,7 @@ export default function SettingsScreen() {
             )}
           </View>
           <View style={styles.profileInfo}>
-            <Text style={styles.profileName}>{mockCustomer.fullName}</Text>
+            <Text style={styles.profileName}>{displayProfile.fullName}</Text>
             <Text style={styles.profileHandle}>Member since {memberSinceLabel()} · {tier.name}</Text>
           </View>
           <ChevronGlyph color={c.textMuted} size={16} />

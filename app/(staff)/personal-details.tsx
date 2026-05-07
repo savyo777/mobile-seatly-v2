@@ -1,19 +1,13 @@
-import React, { useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { Alert, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { useRouter } from 'expo-router';
 import { OwnerScreen } from '@/components/owner/OwnerScreen';
 import { SubpageHeader } from '@/components/owner/SubpageHeader';
+import { useAuthSession } from '@/lib/auth/AuthContext';
+import { resolveAuthDisplayProfile } from '@/lib/auth/displayProfile';
 import { borderRadius, createStyles, spacing, typography, useColors } from '@/lib/theme';
 
 const useStyles = createStyles((c) => ({
-  intro: {
-    paddingHorizontal: 4,
-    marginBottom: spacing.lg,
-    gap: spacing.xs,
-  },
-  introTitle: { ...typography.h2, color: c.textPrimary },
-  introText: { ...typography.body, color: c.textMuted, lineHeight: 22 },
-
   /* Avatar block */
   avatarBlock: {
     alignItems: 'center',
@@ -108,13 +102,34 @@ export default function PersonalDetailsScreen() {
   const c = useColors();
   const styles = useStyles();
   const router = useRouter();
+  const { user, role: authRole } = useAuthSession();
+  const profile = useMemo(
+    () => resolveAuthDisplayProfile(user, { fullName: 'Restaurant owner' }),
+    [user],
+  );
+  const roleLabel = useMemo(() => {
+    const normalized = authRole ?? (user?.app_metadata?.role as string | undefined) ?? 'owner';
+    return normalized
+      .split(/[_\s-]+/)
+      .filter(Boolean)
+      .map((part) => part[0].toUpperCase() + part.slice(1))
+      .join(' ');
+  }, [authRole, user?.app_metadata?.role]);
 
-  const [firstName, setFirstName] = useState('Mark');
-  const [lastName, setLastName] = useState('Henderson');
-  const [role, setRole] = useState('Owner');
-  const [email, setEmail] = useState('mark@novaristorante.com');
-  const [phone, setPhone] = useState('+1 416 555 0142');
-  const [pronouns, setPronouns] = useState('he/him');
+  const [firstName, setFirstName] = useState(profile.firstName);
+  const [lastName, setLastName] = useState(profile.lastName);
+  const [role, setRole] = useState(roleLabel || 'Owner');
+  const [email, setEmail] = useState(profile.email);
+  const [phone, setPhone] = useState(profile.phone);
+  const [pronouns, setPronouns] = useState('');
+
+  useEffect(() => {
+    setFirstName(profile.firstName);
+    setLastName(profile.lastName);
+    setEmail(profile.email);
+    setPhone(profile.phone);
+    setRole(roleLabel || 'Owner');
+  }, [profile.email, profile.firstName, profile.lastName, profile.phone, roleLabel]);
 
   const initial = (firstName.trim()[0] ?? 'M').toUpperCase();
 
@@ -133,13 +148,6 @@ export default function PersonalDetailsScreen() {
       }
     >
       <ScrollView showsVerticalScrollIndicator={false}>
-        <View style={styles.intro}>
-          <Text style={styles.introTitle}>Your information</Text>
-          <Text style={styles.introText}>
-            Used inside Cenaiva and to verify the restaurant owner. Never shown to diners.
-          </Text>
-        </View>
-
         <View style={styles.avatarBlock}>
           <View style={styles.avatar}>
             <Text style={styles.avatarInitial}>{initial}</Text>

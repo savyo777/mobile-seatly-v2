@@ -5,6 +5,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
 import { RestaurantMapMarkerContent } from '@/components/map/RestaurantMapMarker';
 import { googleDarkMapStyle } from '@/lib/map/darkMapStyle';
+import { haversineMeters } from '@/lib/map/geo';
 import { DEFAULT_MAP_CENTER } from '@/lib/map/mapFilters';
 import type { RestaurantDiscoveryMapProps } from '@/components/map/restaurantMapTypes';
 import { useColors, useTheme, createStyles, spacing, borderRadius, typography, shadows } from '@/lib/theme';
@@ -13,6 +14,8 @@ const DEFAULT_RECENTER_REGION_DELTA = {
   latitudeDelta: 0.025,
   longitudeDelta: 0.025,
 };
+const DEFAULT_CLUSTER_RADIUS_METERS = 430;
+const CENAIVA_CLUSTER_RADIUS_METERS = 560;
 
 function isFiniteCoordinate(latitude: unknown, longitude: unknown): boolean {
   return (
@@ -31,6 +34,57 @@ function safeRating(value: number): number {
 
 function safePriceTier(value: number): number {
   return Math.max(1, Math.min(4, Number.isFinite(value) ? value : 1));
+}
+
+type ClusterableRestaurant = RestaurantDiscoveryMapProps['filteredRestaurants'][number];
+type MarkerCluster = {
+  id: string;
+  latitude: number;
+  longitude: number;
+  restaurants: ClusterableRestaurant[];
+};
+
+function clusterRestaurants(
+  restaurants: ClusterableRestaurant[],
+  selectedId: string | null | undefined,
+  radiusMeters: number,
+): MarkerCluster[] {
+  const clusters: MarkerCluster[] = [];
+
+  restaurants.forEach((restaurant) => {
+    if (selectedId === restaurant.id) {
+      clusters.push({
+        id: `single-${restaurant.id}`,
+        latitude: restaurant.lat,
+        longitude: restaurant.lng,
+        restaurants: [restaurant],
+      });
+      return;
+    }
+
+    const existing = clusters.find((cluster) => {
+      if (cluster.restaurants.some((item) => item.id === selectedId)) return false;
+      return haversineMeters(cluster.latitude, cluster.longitude, restaurant.lat, restaurant.lng) <= radiusMeters;
+    });
+
+    if (!existing) {
+      clusters.push({
+        id: `cluster-${restaurant.id}`,
+        latitude: restaurant.lat,
+        longitude: restaurant.lng,
+        restaurants: [restaurant],
+      });
+      return;
+    }
+
+    existing.restaurants.push(restaurant);
+    const count = existing.restaurants.length;
+    existing.latitude = existing.restaurants.reduce((sum, item) => sum + item.lat, 0) / count;
+    existing.longitude = existing.restaurants.reduce((sum, item) => sum + item.lng, 0) / count;
+    existing.id = `cluster-${existing.restaurants.map((item) => item.id).join('-')}`;
+  });
+
+  return clusters;
 }
 
 const useStyles = createStyles((c) => ({
@@ -92,6 +146,31 @@ const useStyles = createStyles((c) => ({
     borderRadius: borderRadius.full,
     backgroundColor: c.info,
   },
+  clusterBubble: {
+    minWidth: 48,
+    height: 42,
+    borderRadius: 21,
+    paddingHorizontal: 12,
+    backgroundColor: c.gold,
+    borderWidth: 2,
+    borderColor: c.bgBase,
+    alignItems: 'center',
+    justifyContent: 'center',
+    ...shadows.goldGlow,
+  },
+  clusterCount: {
+    fontSize: 15,
+    lineHeight: 18,
+    fontWeight: '900',
+    color: c.bgBase,
+  },
+  clusterLabel: {
+    fontSize: 8,
+    lineHeight: 10,
+    fontWeight: '800',
+    color: c.bgBase,
+    textTransform: 'uppercase',
+  },
 }));
 
 export function RestaurantDiscoveryMap({
@@ -132,6 +211,15 @@ export function RestaurantDiscoveryMap({
         isFiniteCoordinate(restaurant.lat, restaurant.lng),
       ),
     [filteredRestaurants],
+  );
+  const markerClusters = useMemo(
+    () =>
+      clusterRestaurants(
+        safeRestaurants,
+        selectedId,
+        markerVariant === 'cenaiva' ? CENAIVA_CLUSTER_RADIUS_METERS : DEFAULT_CLUSTER_RADIUS_METERS,
+      ),
+    [markerVariant, safeRestaurants, selectedId],
   );
   const detailOpen = !!selectedId;
   const selectedRestaurant = selectedId
@@ -280,6 +368,30 @@ export function RestaurantDiscoveryMap({
     [onMapPress],
   );
 
+  const focusCluster = useCallback((cluster: MarkerCluster) => {
+    if (cluster.restaurants.length <= 1) {
+      const restaurant = cluster.restaurants[0];
+      if (restaurant) onSelectRestaurant(restaurant.id);
+      return;
+    }
+
+    mapRef.current?.fitToCoordinates(
+      cluster.restaurants.map((restaurant) => ({
+        latitude: restaurant.lat,
+        longitude: restaurant.lng,
+      })),
+      {
+        edgePadding: {
+          top: 84,
+          right: 64,
+          bottom: 180 + contentBottomInset,
+          left: 64,
+        },
+        animated: true,
+      },
+    );
+  }, [contentBottomInset, onSelectRestaurant]);
+
   return (
     <View style={styles.mapShell}>
       <MapView
@@ -319,7 +431,29 @@ export function RestaurantDiscoveryMap({
           </Marker>
         ) : null}
 
-        {safeRestaurants.map((r) => {
+        {markerClusters.map((cluster) => {
+          if (cluster.restaurants.length > 1) {
+            return (
+              <Marker
+                key={cluster.id}
+                coordinate={{ latitude: cluster.latitude, longitude: cluster.longitude }}
+                accessibilityLabel={`${cluster.restaurants.length} restaurants nearby`}
+                accessibilityHint="Zooms into this group"
+                accessibilityRole="button"
+                anchor={{ x: 0.5, y: 0.5 }}
+                zIndex={500}
+                onPress={() => focusCluster(cluster)}
+                tracksViewChanges={false}
+              >
+                <View style={styles.clusterBubble}>
+                  <Text style={styles.clusterCount}>{cluster.restaurants.length}</Text>
+                  <Text style={styles.clusterLabel}>spots</Text>
+                </View>
+              </Marker>
+            );
+          }
+
+          const r = cluster.restaurants[0];
           const selected = selectedId === r.id;
           const displayRating = safeRating(r.avgRating);
           const displayPriceTier = safePriceTier(r.priceRange);

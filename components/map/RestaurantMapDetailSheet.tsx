@@ -273,7 +273,9 @@ export function RestaurantMapDetailSheet({
     return null;
   }
 
-  const distLabel = formatDistanceMeters(restaurant.distanceMeters);
+  const distLabel = Number.isFinite(restaurant.distanceMeters)
+    ? formatDistanceMeters(restaurant.distanceMeters)
+    : null;
   const imageUrl = restaurant.coverPhotoUrl?.trim();
 
   return (
@@ -338,11 +340,15 @@ export function RestaurantMapDetailSheet({
                     {restaurant.avgRating.toFixed(1)} ({restaurant.totalReviews})
                   </Text>
                 </View>
-                <View style={styles.dot} />
-                <View style={styles.stat}>
-                  <Ionicons name="navigate-outline" size={14} color={c.textSecondary} />
-                  <Text style={styles.statText}>{distLabel} away</Text>
-                </View>
+                {distLabel ? (
+                  <>
+                    <View style={styles.dot} />
+                    <View style={styles.stat}>
+                      <Ionicons name="navigate-outline" size={14} color={c.textSecondary} />
+                      <Text style={styles.statText}>{distLabel} away</Text>
+                    </View>
+                  </>
+                ) : null}
               </View>
             </View>
           </View>

@@ -29,6 +29,8 @@ const Ctx = createContext<AuthCtx>({
   signOut: async () => {},
 });
 
+const ROLE_LOOKUP_FALLBACK_MS = 2500;
+
 function resolveRoleFromMetadata(user: User | null): string | null {
   if (!user) return null;
   const roleFromMetadata =
@@ -169,9 +171,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       return;
     }
 
-    // Resolve from user_profiles first to avoid stale metadata causing wrong redirects.
-    // Keep role null while loading so guarded layouts can avoid flash/misroute.
+    // Resolve from user_profiles first, but do not let a dev/offline Supabase
+    // request keep the app on a spinner forever.
     setRole(null);
+    const fallbackRole = resolveRoleFromMetadata(currentUser) ?? 'customer';
+    const fallbackTimer = setTimeout(() => {
+      if (!cancelled) setRole(fallbackRole);
+    }, ROLE_LOOKUP_FALLBACK_MS);
+
     const loadRole = async () => {
       try {
         const { data, error } = await supabase
@@ -185,22 +192,24 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             setRole(profileRole);
             return;
           }
-          const fallbackRole = resolveRoleFromMetadata(currentUser) ?? 'customer';
           if (!error && !data) {
-            await supabase.from('user_profiles').upsert(
+            void supabase.from('user_profiles').upsert(
               resolveDefaultProfile(currentUser, fallbackRole),
               { onConflict: 'auth_user_id' },
-            );
+            ).then(() => undefined, () => undefined);
           }
           if (!cancelled) setRole(fallbackRole);
         }
       } catch {
-        if (!cancelled) setRole(resolveRoleFromMetadata(currentUser) ?? 'customer');
+        if (!cancelled) setRole(fallbackRole);
+      } finally {
+        clearTimeout(fallbackTimer);
       }
     };
     void loadRole();
     return () => {
       cancelled = true;
+      clearTimeout(fallbackTimer);
     };
   }, [session?.user?.id]);
 

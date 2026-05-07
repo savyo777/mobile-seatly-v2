@@ -1,9 +1,11 @@
-import React, { useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { Alert, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { OwnerScreen } from '@/components/owner/OwnerScreen';
 import { SubpageHeader } from '@/components/owner/SubpageHeader';
+import { useAuthSession } from '@/lib/auth/AuthContext';
+import { resolveAuthDisplayProfile } from '@/lib/auth/displayProfile';
 import { borderRadius, createStyles, spacing, typography, useColors } from '@/lib/theme';
 import {
   inferCardBrand,
@@ -205,7 +207,12 @@ export default function AddCardScreen() {
   const styles = useStyles();
   const router = useRouter();
   const { source } = useLocalSearchParams<{ source?: string }>();
-  const [cardholder, setCardholder] = useState('');
+  const { user } = useAuthSession();
+  const profile = useMemo(
+    () => resolveAuthDisplayProfile(user, { fullName: 'Restaurant owner' }),
+    [user],
+  );
+  const [cardholder, setCardholder] = useState(profile.fullName);
   const [number, setNumber] = useState('');
   const [expiry, setExpiry] = useState('');
   const [cvc, setCvc] = useState('');
@@ -218,6 +225,10 @@ export default function AddCardScreen() {
     cvc?: string;
     postal?: string;
   }>({});
+
+  useEffect(() => {
+    setCardholder((current) => (current.trim() ? current : profile.fullName));
+  }, [profile.fullName]);
 
   const onSave = () => {
     const digits = sanitizeDigits(number);
@@ -301,7 +312,7 @@ export default function AddCardScreen() {
                   setCardholder(v);
                   if (errors.cardholder) setErrors((p) => ({ ...p, cardholder: undefined }));
                 }}
-                placeholder="Alex Johnson"
+                placeholder={profile.fullName}
                 placeholderTextColor={c.textMuted}
                 style={styles.fieldInput}
                 autoCapitalize="words"

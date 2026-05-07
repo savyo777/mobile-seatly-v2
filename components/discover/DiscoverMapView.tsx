@@ -7,11 +7,11 @@ import { mockMapRestaurants } from '@/lib/mock/mapRestaurants';
 import {
   applyMapFilter,
   DEFAULT_MAP_CENTER,
+  isMapLocationInDemoRegion,
   type RestaurantWithDistance,
   type MapFilterId,
   withDistances,
 } from '@/lib/map/mapFilters';
-import { formatDistanceMeters } from '@/lib/map/geo';
 import { useLocation } from '@/lib/location/useLocation';
 import { createStyles, spacing, borderRadius, typography } from '@/lib/theme';
 import { Ionicons } from '@expo/vector-icons';
@@ -65,18 +65,22 @@ export function DiscoverMapView() {
   const router = useRouter();
   const assistant = useCenaivaAssistant();
   const styles = useStyles();
-  const { lat, lng, locationReady } = useLocation();
+  const { lat, lng, locationReady, permissionDenied, source } = useLocation();
   const [filter, setFilter] = useState<MapFilterId>('nearby');
   const [focusedId, setFocusedId] = useState<string | null>(null);
   const [selectedRestaurant, setSelectedRestaurant] = useState<RestaurantWithDistance | null>(null);
 
-  const userCoords = locationReady
+  const hasReliableUserLocation =
+    locationReady && !permissionDenied && source === 'live' && isMapLocationInDemoRegion(lat, lng);
+  const userCoords = hasReliableUserLocation
     ? { lat, lng }
     : { lat: DEFAULT_MAP_CENTER.latitude, lng: DEFAULT_MAP_CENTER.longitude };
 
   const restaurantsWithDistance: RestaurantWithDistance[] = useMemo(
-    () => withDistances(mockMapRestaurants, userCoords.lat, userCoords.lng),
-    [userCoords.lat, userCoords.lng],
+    () => withDistances(mockMapRestaurants, userCoords.lat, userCoords.lng, {
+      distanceAvailable: hasReliableUserLocation,
+    }),
+    [hasReliableUserLocation, userCoords.lat, userCoords.lng],
   );
 
   const filtered = useMemo(
@@ -98,8 +102,8 @@ export function DiscoverMapView() {
           setFocusedId(null);
           setSelectedRestaurant(null);
         }}
-        userLocation={locationReady ? { latitude: lat, longitude: lng } : null}
-        showUserLocation={locationReady}
+        userLocation={hasReliableUserLocation ? { latitude: lat, longitude: lng } : null}
+        showUserLocation={hasReliableUserLocation}
         locationReady={locationReady}
         contentBottomInset={180}
       />

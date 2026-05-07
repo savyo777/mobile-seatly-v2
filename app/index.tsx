@@ -33,10 +33,10 @@ export default function SplashScreen() {
   const router = useRouter();
   const c = useColors();
   const styles = useStyles();
-  const { loading, isAuthenticated, isStaffLike } = useAuthSession();
+  const { loading, isAuthenticated, isStaffLike, role } = useAuthSession();
 
   useEffect(() => {
-    if (loading) return;
+    if (loading || (isAuthenticated && role === null)) return;
     let cancelled = false;
     void (async () => {
       if (cancelled) return;
@@ -59,7 +59,7 @@ export default function SplashScreen() {
     return () => {
       cancelled = true;
     };
-  }, [router, loading, isAuthenticated, isStaffLike]);
+  }, [router, loading, isAuthenticated, isStaffLike, role]);
 
   return (
     <View style={styles.container}>

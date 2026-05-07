@@ -12,6 +12,16 @@ export type RestaurantPaymentCard = {
 
 const STORAGE_KEY = 'restaurant-payment-cards-v1';
 
+const DEFAULT_REGISTRATION_CARD: RestaurantPaymentCard = {
+  id: 'registration-card-default',
+  brand: 'Visa',
+  last4: '4429',
+  expiry: '06/28',
+  cardholder: 'Restaurant owner',
+  isDefault: true,
+  source: 'registration',
+};
+
 function makeId() {
   return `card_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
 }
@@ -25,9 +35,13 @@ export function inferCardBrand(cardNumber: string): string {
   return 'Card';
 }
 
-async function readCards(): Promise<RestaurantPaymentCard[]> {
+async function readCards(options: { hydrateDefault?: boolean } = {}): Promise<RestaurantPaymentCard[]> {
   const raw = await AsyncStorage.getItem(STORAGE_KEY);
-  if (!raw) return [];
+  if (!raw) {
+    if (!options.hydrateDefault) return [];
+    await writeCards([DEFAULT_REGISTRATION_CARD]);
+    return [DEFAULT_REGISTRATION_CARD];
+  }
   try {
     const parsed = JSON.parse(raw);
     return Array.isArray(parsed) ? (parsed as RestaurantPaymentCard[]) : [];
@@ -41,7 +55,7 @@ async function writeCards(cards: RestaurantPaymentCard[]): Promise<void> {
 }
 
 export async function getStoredRestaurantPaymentCards(): Promise<RestaurantPaymentCard[]> {
-  return readCards();
+  return readCards({ hydrateDefault: true });
 }
 
 export async function saveRestaurantPaymentCard(
@@ -75,14 +89,14 @@ export async function saveRestaurantPaymentCard(
 }
 
 export async function setDefaultRestaurantPaymentCard(id: string): Promise<RestaurantPaymentCard[]> {
-  const cards = await readCards();
+  const cards = await readCards({ hydrateDefault: true });
   const next = cards.map((card) => ({ ...card, isDefault: card.id === id }));
   await writeCards(next);
   return next;
 }
 
 export async function removeRestaurantPaymentCard(id: string): Promise<RestaurantPaymentCard[]> {
-  const cards = await readCards();
+  const cards = await readCards({ hydrateDefault: true });
   const next = cards.filter((card) => card.id !== id);
   if (next.length && !next.some((card) => card.isDefault)) {
     next[0] = { ...next[0], isDefault: true };

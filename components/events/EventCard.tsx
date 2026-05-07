@@ -201,8 +201,11 @@ export function EventCard({ event, isHero = false }: Props) {
   }, [event.id]);
 
   const handleBook = useCallback(() => {
-    router.push(`/(customer)/discover/${event.restaurantId}` as Href);
-  }, [event.restaurantId, router]);
+    const eventDateKey = event.date.slice(0, 10);
+    router.push(
+      `/booking/${event.restaurantId}/step2-time?date=${encodeURIComponent(eventDateKey)}&eventId=${encodeURIComponent(event.id)}` as Href,
+    );
+  }, [event.date, event.id, event.restaurantId, router]);
 
   const isUrgent = event.spotsLeft !== undefined && event.spotsLeft <= 6;
 

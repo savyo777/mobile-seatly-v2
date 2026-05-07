@@ -23,6 +23,7 @@ import { mockMapRestaurants } from '@/lib/mock/mapRestaurants';
 import {
   applyMapFilter,
   DEFAULT_MAP_CENTER,
+  isMapLocationInDemoRegion,
   type RestaurantWithDistance,
   type MapFilterId,
   withDistances,
@@ -282,12 +283,16 @@ export default function MapScreen() {
     };
   }, []);
 
-  const anchorLat = userCoords.lat;
-  const anchorLng = userCoords.lng;
+  const hasReliableUserLocation =
+    locationMode === 'live' && isMapLocationInDemoRegion(userCoords.lat, userCoords.lng);
+  const anchorLat = hasReliableUserLocation ? userCoords.lat : DEFAULT_MAP_CENTER.latitude;
+  const anchorLng = hasReliableUserLocation ? userCoords.lng : DEFAULT_MAP_CENTER.longitude;
 
   const withDist = useMemo(
-    () => withDistances(mockMapRestaurants, anchorLat, anchorLng),
-    [anchorLat, anchorLng],
+    () => withDistances(mockMapRestaurants, anchorLat, anchorLng, {
+      distanceAvailable: hasReliableUserLocation,
+    }),
+    [anchorLat, anchorLng, hasReliableUserLocation],
   );
 
   const filtered = useMemo(() => applyMapFilter(withDist, filter), [withDist, filter]);
@@ -339,7 +344,7 @@ export default function MapScreen() {
     setFocusedId(null);
   }, []);
 
-  const showUserLocation = locationMode === 'live' && !!userCoords && !permissionDenied;
+  const showUserLocation = hasReliableUserLocation && !!userCoords && !permissionDenied;
 
   const onCarouselMomentumEnd = useCallback(
     (event: NativeSyntheticEvent<NativeScrollEvent>) => {
@@ -378,8 +383,12 @@ export default function MapScreen() {
                 ★
               </Text>
               <Text style={styles.restaurantStatText}>{item.avgRating.toFixed(1)}</Text>
-              <Text style={styles.restaurantDot}>·</Text>
-              <Text style={styles.restaurantStatText}>{formatDistanceMeters(item.distanceMeters)}</Text>
+              {Number.isFinite(item.distanceMeters) ? (
+                <>
+                  <Text style={styles.restaurantDot}>·</Text>
+                  <Text style={styles.restaurantStatText}>{formatDistanceMeters(item.distanceMeters)}</Text>
+                </>
+              ) : null}
             </View>
           </View>
         </Pressable>
@@ -395,7 +404,7 @@ export default function MapScreen() {
         selectedId={focusedId}
         onSelectRestaurant={onSelectRestaurant}
         onMapPress={onMapPress}
-        userLocation={{ latitude: userCoords.lat, longitude: userCoords.lng }}
+        userLocation={hasReliableUserLocation ? { latitude: userCoords.lat, longitude: userCoords.lng } : null}
         showUserLocation={showUserLocation}
         locationReady={locationReady}
         contentBottomInset={bottomRailInset}

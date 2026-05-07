@@ -12,6 +12,8 @@ export type MapFilterId =
 
 export type RestaurantWithDistance = Restaurant & { distanceMeters: number };
 
+const DEMO_MAP_LOCATION_RADIUS_METERS = 100_000;
+
 export const DEFAULT_MAP_CENTER = {
   latitude: 43.51025,
   longitude: -79.86635,
@@ -19,14 +21,27 @@ export const DEFAULT_MAP_CENTER = {
   longitudeDelta: 0.022,
 };
 
+export function isMapLocationInDemoRegion(lat: number, lng: number): boolean {
+  return (
+    Number.isFinite(lat) &&
+    Number.isFinite(lng) &&
+    haversineMeters(DEFAULT_MAP_CENTER.latitude, DEFAULT_MAP_CENTER.longitude, lat, lng) <=
+      DEMO_MAP_LOCATION_RADIUS_METERS
+  );
+}
+
 export function withDistances(
   restaurants: Restaurant[],
   userLat: number,
   userLng: number,
+  options: { distanceAvailable?: boolean } = {},
 ): RestaurantWithDistance[] {
+  const distanceAvailable = options.distanceAvailable ?? true;
   return restaurants.map((r) => ({
     ...r,
-    distanceMeters: haversineMeters(userLat, userLng, r.lat, r.lng),
+    distanceMeters: distanceAvailable
+      ? haversineMeters(userLat, userLng, r.lat, r.lng)
+      : Number.POSITIVE_INFINITY,
   }));
 }
 

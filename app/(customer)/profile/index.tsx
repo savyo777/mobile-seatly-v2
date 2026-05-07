@@ -15,6 +15,7 @@ import { mockCustomer } from '@/lib/mock/users';
 import { getSavedRestaurants } from '@/lib/mock/profileScreens';
 import { mockReservations } from '@/lib/mock/reservations';
 import { mockRestaurants } from '@/lib/mock/restaurants';
+import { resolveAuthDisplayProfile, initialsFromDisplayName } from '@/lib/auth/displayProfile';
 import { useColors, useTheme, createStyles, spacing, borderRadius } from '@/lib/theme';
 import { useAuthSession } from '@/lib/auth/AuthContext';
 
@@ -48,9 +49,7 @@ function getNextTier(dinners: number) {
 }
 
 function initialsFromName(name: string): string {
-  const parts = name.trim().split(/\s+/);
-  if (parts.length >= 2) return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
-  return name.slice(0, 2).toUpperCase();
+  return initialsFromDisplayName(name);
 }
 
 function formatVisitDate(iso: string): string {
@@ -622,7 +621,11 @@ export default function ProfileScreen() {
   const c = useColors();
   const styles = useStyles();
   const { effective, setMode } = useTheme();
-  const { signOut } = useAuthSession();
+  const { signOut, user } = useAuthSession();
+  const displayProfile = useMemo(
+    () => resolveAuthDisplayProfile(user, { fullName: mockCustomer.fullName }),
+    [user],
+  );
 
   async function handleLogout() {
     try {
@@ -637,7 +640,7 @@ export default function ProfileScreen() {
   const nextTier = getNextTier(MOCK_DINNERS);
   const dinnersUntilNext = nextTier ? nextTier.min - MOCK_DINNERS : 0;
   const progressRatio = nextTier ? MOCK_DINNERS / nextTier.min : 1;
-  const initials = initialsFromName(mockCustomer.fullName);
+  const initials = initialsFromName(displayProfile.fullName);
   const [cuisinePrefs, setCuisinePrefs] = useState(MOCK_CUISINES.join(', '));
   const [dietaryPrefs, setDietaryPrefs] = useState(MOCK_DIETARY.join(', '));
   const [vibePrefs, setVibePrefs] = useState(MOCK_VIBES.join(', '));
@@ -678,7 +681,7 @@ export default function ProfileScreen() {
             <Text style={styles.avatarInitials}>{initials}</Text>
           </View>
           <View style={styles.avatarMeta}>
-            <Text style={styles.userName}>{mockCustomer.fullName}</Text>
+            <Text style={styles.userName}>{displayProfile.fullName}</Text>
             <Text style={styles.userLocation}>
               {MOCK_LOCATION} · since {MOCK_MEMBER_SINCE}
             </Text>
