@@ -9,6 +9,7 @@ import { ScreenWrapper, Input, Button } from '@/components/ui';
 import { ensureCustomerProfile, ensureOwnerProfile } from '@/lib/services/oauth';
 import { sendPhoneOtp, verifyPhoneOtp } from '@/lib/services/phoneAuth';
 import { getSupabase } from '@/lib/supabase/client';
+import { setAppShellPreference } from '@/lib/navigation/appShellPreference';
 import { roleIncludes } from '@/lib/auth/roles';
 import { resolveHomeForSignedInUser, type AuthHomeHref } from '@/lib/auth/postSignInRouting';
 
@@ -170,7 +171,8 @@ export default function VerifyPhoneOtpScreen() {
       if (source === 'owner-login') {
         const allowed = await enforceRole(session.user.id, 'owner');
         if (!allowed) return;
-        nextHref = '/(customer)';
+        await setAppShellPreference('staff');
+        nextHref = '/(staff)';
       } else if (source === 'login') {
         const { href, role } = await resolveHomeForSignedInUser(session.user.id, session.user);
         if (!role) {
@@ -189,7 +191,8 @@ export default function VerifyPhoneOtpScreen() {
         } catch {
           // best-effort
         }
-        nextHref = '/(customer)';
+        await setAppShellPreference('staff');
+        nextHref = '/(staff)';
       } else {
         try {
           await ensureCustomerProfile(session, {

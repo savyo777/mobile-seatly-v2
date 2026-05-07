@@ -14,6 +14,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as Haptics from 'expo-haptics';
 import { Button } from '@/components/ui';
 import { BookingCalendarModal } from '@/components/booking/BookingCalendarModal';
+import { MAX_ONLINE_PARTY_SIZE } from '@/lib/booking/bookingLimits';
 import { parseBookingDateParam, parseDateKeyLocal } from '@/lib/booking/dateUtils';
 import { isClosedBookingDate } from '@/lib/booking/hoursSchedule';
 import {
@@ -340,8 +341,8 @@ export default function Step2Time() {
       return;
     }
     const parsed = parseInt(digits, 10);
-    if (parsed > 25) {
-      setPartySizeError('25 is the maximum');
+    if (parsed > MAX_ONLINE_PARTY_SIZE) {
+      setPartySizeError(`${MAX_ONLINE_PARTY_SIZE} is the maximum`);
       return;
     }
     const nextSize = Math.max(1, parsed);
@@ -352,7 +353,7 @@ export default function Step2Time() {
 
   const normalizePartySize = useCallback(() => {
     if (partySizeError) return;
-    const normalized = Math.max(1, Math.min(25, partySize));
+    const normalized = Math.max(1, Math.min(MAX_ONLINE_PARTY_SIZE, partySize));
     setPartySize(normalized);
     setPartySizeInput(String(normalized));
   }, [partySize, partySizeError]);
@@ -409,7 +410,7 @@ export default function Step2Time() {
             onBlur={normalizePartySize}
             keyboardType="number-pad"
             inputMode="numeric"
-            maxLength={2}
+            maxLength={3}
             selectTextOnFocus
             style={[styles.partyInput, partySizeError ? styles.partyInputError : null]}
             accessibilityLabel="Number of guests"

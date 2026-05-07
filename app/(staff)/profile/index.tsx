@@ -536,7 +536,11 @@ export default function OwnerBusinessScreen() {
             <>
               <View style={styles.sectionRow}>
                 <Text style={styles.sectionTitle}>Photos</Text>
-                <Pressable onPress={() => {}} accessibilityRole="button">
+                <Pressable
+                  onPress={() => router.push('/(customer)/discover/snaps/r1' as never)}
+                  accessibilityRole="button"
+                  hitSlop={8}
+                >
                   <Text style={styles.sectionAction}>See all</Text>
                 </Pressable>
               </View>

@@ -334,41 +334,94 @@ export default function OwnerSettingsScreen() {
     {
       title: 'Account',
       rows: [
-        { kind: 'nav', label: 'Personal details', value: 'Mark H.', icon: 'person-outline' },
+        {
+          kind: 'nav',
+          label: 'Personal details',
+          value: 'Mark H.',
+          icon: 'person-outline',
+          route: '/(staff)/personal-details',
+        },
         { kind: 'nav', label: 'Log out of all devices', icon: 'globe-outline' },
-        { kind: 'nav', label: 'Password & security', icon: 'lock-closed-outline' },
-        { kind: 'nav', label: 'Face ID / Touch ID', value: 'Enabled', icon: 'finger-print-outline' },
-      ],
-    },
-    {
-      title: 'Account Security',
-      rows: [
-        { kind: 'nav', label: 'Change Password', icon: 'lock-closed-outline', route: '/(staff)/security/change-password' },
-        { kind: 'nav', label: 'Change Email', icon: 'mail-outline', route: '/(staff)/security/change-email' },
+        {
+          kind: 'nav',
+          label: 'Password & security',
+          icon: 'lock-closed-outline',
+          route: '/(staff)/password-security',
+        },
       ],
     },
     {
       title: 'Business',
       rows: [
-        { kind: 'nav', label: 'Business hours', value: 'Mon–Sun', icon: 'time-outline' },
-        { kind: 'nav', label: 'Reservation settings', value: 'Max 10 · 60d window', icon: 'calendar-outline' },
-        { kind: 'nav', label: 'Holiday & closures', value: 'None scheduled', icon: 'ban-outline' },
+        {
+          kind: 'nav',
+          label: 'Business hours',
+          value: 'Mon–Sun',
+          icon: 'time-outline',
+          route: '/(staff)/business-hours',
+        },
+        {
+          kind: 'nav',
+          label: 'Reservation settings',
+          icon: 'calendar-outline',
+          route: '/(staff)/reservation-settings',
+        },
+        {
+          kind: 'nav',
+          label: 'Holidays & closures',
+          value: '2 scheduled',
+          icon: 'ban-outline',
+          route: '/(staff)/closures',
+        },
       ],
     },
     {
       title: 'Payments & Billing',
       rows: [
-        { kind: 'nav', label: 'Payout method', value: 'Stripe · ···· 4429', icon: 'card-outline' },
-        { kind: 'nav', label: 'Billing history', icon: 'receipt-outline' },
-        { kind: 'nav', label: 'Subscription plan', value: 'Pro', icon: 'star-outline' },
+        {
+          kind: 'nav',
+          label: 'Payment method',
+          value: 'Visa ···· 4429',
+          icon: 'card-outline',
+          route: '/(staff)/payment-method?source=settings',
+        },
+        {
+          kind: 'nav',
+          label: 'Billing history',
+          icon: 'receipt-outline',
+          route: '/(staff)/billing-history',
+        },
+        {
+          kind: 'nav',
+          label: 'Subscription plan',
+          value: '$200 / month',
+          icon: 'star-outline',
+          route: '/(staff)/subscription-plan',
+        },
       ],
     },
     {
       title: 'Team',
       rows: [
-        { kind: 'nav', label: 'Staff members', value: '5 members', icon: 'people-outline' },
-        { kind: 'nav', label: 'Roles & permissions', icon: 'shield-checkmark-outline' },
-        { kind: 'nav', label: 'Staff PIN codes', icon: 'keypad-outline' },
+        {
+          kind: 'nav',
+          label: 'Staff members',
+          value: '5 members',
+          icon: 'people-outline',
+          route: '/(staff)/staff-members',
+        },
+        {
+          kind: 'nav',
+          label: 'Roles & permissions',
+          icon: 'shield-checkmark-outline',
+          route: '/(staff)/roles-permissions',
+        },
+        {
+          kind: 'nav',
+          label: 'Staff PIN codes',
+          icon: 'keypad-outline',
+          route: '/(staff)/staff-pins',
+        },
       ],
     },
     {
@@ -377,7 +430,7 @@ export default function OwnerSettingsScreen() {
         { kind: 'toggle', label: 'Push notifications', icon: 'notifications-outline', value: pushOn, onChange: setPushOn },
         { kind: 'toggle', label: 'Sound alerts', icon: 'volume-high-outline', value: soundOn, onChange: setSoundOn },
         { kind: 'toggle', label: 'Email digest', icon: 'mail-outline', value: emailDigest, onChange: setEmailDigest },
-        { kind: 'nav', label: 'Quiet hours', value: 'Off', icon: 'moon-outline' },
+        { kind: 'nav', label: 'Quiet hours', icon: 'moon-outline', route: '/(staff)/quiet-hours' },
       ],
     },
     {
@@ -390,10 +443,9 @@ export default function OwnerSettingsScreen() {
     {
       title: 'Support & Legal',
       rows: [
-        { kind: 'nav', label: 'Help & support', icon: 'help-circle-outline' },
-        { kind: 'nav', label: 'Privacy policy', icon: 'shield-outline' },
-        { kind: 'nav', label: 'Terms of service', icon: 'document-outline' },
-        { kind: 'nav', label: 'Rate Seatly', icon: 'heart-outline' },
+        { kind: 'nav', label: 'Support', icon: 'help-circle-outline', route: '/(staff)/support' },
+        { kind: 'nav', label: 'Legal', icon: 'shield-outline', route: '/(staff)/legal' },
+        { kind: 'nav', label: 'Rate Seatly', icon: 'heart-outline', route: '/(staff)/rate-seatly' },
       ],
     },
     {
@@ -412,7 +464,6 @@ export default function OwnerSettingsScreen() {
           title="Settings"
           fallbackTab="more"
           accentBack
-          onBack={() => router.replace('/(staff)/profile' as never)}
         />
       }
     >

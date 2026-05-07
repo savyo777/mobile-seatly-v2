@@ -6,6 +6,10 @@ import { Ionicons } from '@expo/vector-icons';
 import { Button, Input, ScreenWrapper } from '@/components/ui';
 import { borderRadius, createStyles, spacing, typography, useColors } from '@/lib/theme';
 import { addCalendarMonths } from '@/lib/services/restaurantRegistration';
+import {
+  inferCardBrand,
+  saveRestaurantPaymentCard,
+} from '@/lib/storage/restaurantPaymentMethod';
 
 const useStyles = createStyles((c) => ({
   scroll: { flex: 1 },
@@ -205,20 +209,33 @@ export default function RegisterRestaurantCardEntryScreen() {
     setErrors(nextErrors);
     if (Object.keys(nextErrors).length > 0) return;
 
-    router.replace({
-      pathname: '/(customer)/profile/register-restaurant-payment',
-      params: {
-        hstNumber: typeof params.hstNumber === 'string' ? params.hstNumber : '',
-        businessName: typeof params.businessName === 'string' ? params.businessName : '',
-        address: typeof params.address === 'string' ? params.address : '',
-        ownerPhone: typeof params.ownerPhone === 'string' ? params.ownerPhone : '',
-        paymentMode: 'manual',
-        setupIntentId: `manual_${Date.now()}`,
-        cardBrand: 'Card',
-        cardLast4: digits.slice(-4),
-        trialEndsAt,
-      },
-    });
+    void (async () => {
+      await saveRestaurantPaymentCard({
+        brand: inferCardBrand(digits),
+        last4: digits.slice(-4),
+        expiry,
+        cardholder: cardholderName.trim(),
+        isDefault: true,
+        source: 'registration',
+      });
+
+      // Saving the card finishes the restaurant registration. Previously this
+      // bounced through a separate "Start your free trial" screen; we now go
+      // straight to the success page since no charge happens today anyway.
+      router.replace({
+        pathname: '/(customer)/profile/register-restaurant-success',
+        params: {
+          trialEndsAt,
+          // Forward the input in case the success page wants to display it.
+          hstNumber: typeof params.hstNumber === 'string' ? params.hstNumber : '',
+          businessName: typeof params.businessName === 'string' ? params.businessName : '',
+          address: typeof params.address === 'string' ? params.address : '',
+          ownerPhone: typeof params.ownerPhone === 'string' ? params.ownerPhone : '',
+          cardBrand: inferCardBrand(digits),
+          cardLast4: digits.slice(-4),
+        },
+      });
+    })();
   };
 
   return (

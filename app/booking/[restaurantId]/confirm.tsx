@@ -17,6 +17,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as Haptics from 'expo-haptics';
 import { Button } from '@/components/ui';
 import { BookingCalendarModal } from '@/components/booking/BookingCalendarModal';
+import { MAX_ONLINE_PARTY_SIZE } from '@/lib/booking/bookingLimits';
 import {
   getCachedRestaurantById,
   loadRestaurantForBooking,
@@ -365,8 +366,8 @@ export default function ConfirmScreen() {
       return;
     }
     const parsed = parseInt(digits, 10);
-    if (parsed > 25) {
-      setGuestError('25 is the maximum');
+    if (parsed > MAX_ONLINE_PARTY_SIZE) {
+      setGuestError(`${MAX_ONLINE_PARTY_SIZE} is the maximum`);
       return;
     }
     const nextGuests = Math.max(1, parsed);
@@ -376,7 +377,7 @@ export default function ConfirmScreen() {
 
   const normalizeGuestInput = useCallback(() => {
     if (guestError) return;
-    const normalized = Math.max(1, Math.min(25, guests));
+    const normalized = Math.max(1, Math.min(MAX_ONLINE_PARTY_SIZE, guests));
     setGuests(normalized);
     setGuestInput(String(normalized));
   }, [guests, guestError]);
@@ -456,7 +457,7 @@ export default function ConfirmScreen() {
               onBlur={normalizeGuestInput}
               keyboardType="number-pad"
               inputMode="numeric"
-              maxLength={2}
+              maxLength={3}
               selectTextOnFocus
               style={[styles.guestInput, guestError ? styles.guestInputError : null]}
               accessibilityLabel="Number of guests"

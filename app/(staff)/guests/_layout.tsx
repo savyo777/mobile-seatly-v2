@@ -1,11 +1,9 @@
 import React from 'react';
 import { Stack } from 'expo-router';
-import { createTransparentStackTransitionOptions } from '@/lib/navigation/transitions';
+import { createStackTransitionOptions } from '@/lib/navigation/transitions';
+import { useColors } from '@/lib/theme';
 
 export default function GuestsStackLayout() {
-  return (
-    <Stack
-      screenOptions={createTransparentStackTransitionOptions()}
-    />
-  );
+  const c = useColors();
+  return <Stack screenOptions={createStackTransitionOptions(c.bgBase)} />;
 }

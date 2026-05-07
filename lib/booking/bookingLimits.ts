@@ -1,0 +1,6 @@
+export const MAX_ONLINE_PARTY_SIZE = 150;
+
+export const BOOKING_WINDOW_MIN_DAYS = 7;
+export const BOOKING_WINDOW_MAX_DAYS = 182;
+export const BOOKING_WINDOW_STEP_DAYS = 7;
+export const DEFAULT_BOOKING_WINDOW_DAYS = 63;

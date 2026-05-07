@@ -1,4 +1,4 @@
-import React, { useCallback, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   Pressable,
   StyleSheet,
@@ -13,8 +13,11 @@ import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useColors, createStyles, spacing, borderRadius } from '@/lib/theme';
-import { tabTransitionOptions } from '@/lib/navigation/transitions';
 import { useAuthSession } from '@/lib/auth/AuthContext';
+import {
+  getAppShellPreference,
+  type AppShellPreference,
+} from '@/lib/navigation/appShellPreference';
 
 type IoniconName = React.ComponentProps<typeof Ionicons>['name'];
 
@@ -143,6 +146,22 @@ export default function OwnerTabsLayout() {
   const pathname = usePathname();
   const { loading, isAuthenticated, isStaffLike, role } = useAuthSession();
 
+  // Honor the user's chosen "shell" (customer vs staff). After the user
+  // finishes the restaurant registration we set this to 'staff', and we
+  // want to keep them on the staff side even if their role hasn't synced
+  // yet — otherwise switching tabs bounces them back to the diner app.
+  const [shellPref, setShellPref] = useState<AppShellPreference | null>(null);
+  useEffect(() => {
+    let cancelled = false;
+    void (async () => {
+      const pref = await getAppShellPreference();
+      if (!cancelled) setShellPref(pref);
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
   const showFab = TAB_ROOTS.includes(pathname);
 
   const TAB_BAR_HEIGHT = 49;
@@ -158,10 +177,14 @@ export default function OwnerTabsLayout() {
   );
   const screenOptions = useMemo(
     () => ({
-      ...tabTransitionOptions,
-      lazy: true,
-      freezeOnBlur: true,
-      popToTopOnBlur: false,
+      // Don't spread tabTransitionOptions: it sets `animation: 'fade'`, which
+      // cross-fades both scenes through opacity 0 — the navigator's background
+      // (and any transparent inner stack) bleeds through as a black flash.
+      // `'shift'` slides the destination in horizontally with no opacity gap.
+      animation: 'shift' as const,
+      // Note: do NOT set lazy/freezeOnBlur here — they can leave a destination
+      // screen un-mounted (or frozen) right after a router.push, which renders
+      // as a black scene until you tap the tab a second time.
       headerShown: false,
       sceneStyle: { backgroundColor: c.bgBase },
       tabBarActiveTintColor: c.gold,
@@ -190,7 +213,7 @@ export default function OwnerTabsLayout() {
     setTimeout(() => router.push(route as never), 180);
   }, [router]);
 
-  if (loading || (isAuthenticated && role === null)) {
+  if (loading || (isAuthenticated && role === null) || shellPref === null) {
     return (
       <View style={[styles.root, { alignItems: 'center', justifyContent: 'center' }]}>
         <ActivityIndicator color={c.gold} />
@@ -200,7 +223,10 @@ export default function OwnerTabsLayout() {
   if (!isAuthenticated) {
     return <Redirect href="/(auth)/welcome" />;
   }
-  if (!isStaffLike) {
+  // Allow the staff shell when the user is staff-like *or* they explicitly
+  // chose to be on the restaurant side (e.g. just finished registration).
+  // Only redirect them out if they're a pure customer with no staff intent.
+  if (!isStaffLike && shellPref !== 'staff') {
     return <Redirect href="/(customer)" />;
   }
 
@@ -268,6 +294,29 @@ export default function OwnerTabsLayout() {
         <Tabs.Screen name="events"      options={{ href: null }} />
         <Tabs.Screen name="export"      options={{ href: null }} />
         <Tabs.Screen name="settings"    options={{ href: null, tabBarStyle: { display: 'none' } }} />
+        <Tabs.Screen name="personal-details" options={{ href: null, tabBarStyle: { display: 'none' } }} />
+        <Tabs.Screen name="password-security" options={{ href: null, tabBarStyle: { display: 'none' } }} />
+        <Tabs.Screen name="biometric"   options={{ href: null, tabBarStyle: { display: 'none' } }} />
+        <Tabs.Screen name="active-sessions" options={{ href: null, tabBarStyle: { display: 'none' } }} />
+        <Tabs.Screen name="two-factor"  options={{ href: null, tabBarStyle: { display: 'none' } }} />
+        <Tabs.Screen name="business-hours" options={{ href: null, tabBarStyle: { display: 'none' } }} />
+        <Tabs.Screen name="reservation-settings" options={{ href: null, tabBarStyle: { display: 'none' } }} />
+        <Tabs.Screen name="closures"    options={{ href: null, tabBarStyle: { display: 'none' } }} />
+        <Tabs.Screen name="payment-method" options={{ href: null, tabBarStyle: { display: 'none' } }} />
+        <Tabs.Screen name="add-card"    options={{ href: null, tabBarStyle: { display: 'none' } }} />
+        <Tabs.Screen name="billing-history" options={{ href: null, tabBarStyle: { display: 'none' } }} />
+        <Tabs.Screen name="billing-year" options={{ href: null, tabBarStyle: { display: 'none' } }} />
+        <Tabs.Screen name="subscription-plan" options={{ href: null, tabBarStyle: { display: 'none' } }} />
+        <Tabs.Screen name="staff-members" options={{ href: null, tabBarStyle: { display: 'none' } }} />
+        <Tabs.Screen name="roles-permissions" options={{ href: null, tabBarStyle: { display: 'none' } }} />
+        <Tabs.Screen name="staff-pins"  options={{ href: null, tabBarStyle: { display: 'none' } }} />
+        <Tabs.Screen name="team" options={{ href: null, tabBarStyle: { display: 'none' } }} />
+        <Tabs.Screen name="add-pin" options={{ href: null, tabBarStyle: { display: 'none' } }} />
+        <Tabs.Screen name="invite-team-member" options={{ href: null, tabBarStyle: { display: 'none' } }} />
+        <Tabs.Screen name="support" options={{ href: null, tabBarStyle: { display: 'none' } }} />
+        <Tabs.Screen name="legal" options={{ href: null, tabBarStyle: { display: 'none' } }} />
+        <Tabs.Screen name="rate-seatly" options={{ href: null, tabBarStyle: { display: 'none' } }} />
+        <Tabs.Screen name="quiet-hours" options={{ href: null, tabBarStyle: { display: 'none' } }} />
         <Tabs.Screen name="security/change-password" options={{ href: null, tabBarStyle: { display: 'none' } }} />
         <Tabs.Screen name="security/change-email" options={{ href: null, tabBarStyle: { display: 'none' } }} />
         <Tabs.Screen name="menu-manage" options={{ href: null, tabBarStyle: { display: 'none' } }} />

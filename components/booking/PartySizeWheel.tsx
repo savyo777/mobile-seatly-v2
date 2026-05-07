@@ -2,10 +2,11 @@ import React, { useCallback } from 'react';
 import { View, Text, Pressable } from 'react-native';
 import * as Haptics from 'expo-haptics';
 import { Ionicons } from '@expo/vector-icons';
+import { MAX_ONLINE_PARTY_SIZE } from '@/lib/booking/bookingLimits';
 import { borderRadius, createStyles, useColors } from '@/lib/theme';
 
 const MIN = 1;
-const MAX = 20;
+const MAX = MAX_ONLINE_PARTY_SIZE;
 
 interface Props {
   value: number;

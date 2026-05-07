@@ -3,12 +3,16 @@ import { ActivityIndicator, View, StyleSheet } from 'react-native';
 import { useRouter } from 'expo-router';
 import * as Linking from 'expo-linking';
 import { useColors } from '@/lib/theme';
+import { useAuthSession } from '@/lib/auth/AuthContext';
+import { getAppShellPreference } from '@/lib/navigation/appShellPreference';
 
 export default function AuthCallbackScreen() {
   const router = useRouter();
   const c = useColors();
+  const { loading, isAuthenticated, isStaffLike } = useAuthSession();
 
   useEffect(() => {
+    if (loading) return;
     const id = setTimeout(async () => {
       const url = await Linking.getInitialURL();
       if (url) {
@@ -20,10 +24,17 @@ export default function AuthCallbackScreen() {
           return;
         }
       }
+      if (isAuthenticated) {
+        const pref = await getAppShellPreference();
+        if (pref === 'staff' && isStaffLike) {
+          router.replace('/(staff)');
+          return;
+        }
+      }
       router.replace('/(customer)');
     }, 150);
     return () => clearTimeout(id);
-  }, [router]);
+  }, [router, loading, isAuthenticated, isStaffLike]);
 
   return (
     <View style={[styles.root, { backgroundColor: c.bgBase }]}>

@@ -15,6 +15,7 @@ import { CenaivaAssistantProvider } from '@/lib/cenaiva/CenaivaAssistantProvider
 import { CenaivaVoicePreferenceProvider } from '@/lib/cenaiva/voice/CenaivaVoicePreferenceProvider';
 import { getSupabase } from '@/lib/supabase/client';
 import { CookieConsentBanner } from '@/components/cookie-consent/CookieConsentBanner';
+import { KeyboardDoneBar } from '@/components/ui/KeyboardDoneBar';
 import { getStripeEnv } from '@/lib/stripe/env';
 
 enableScreens(true);
@@ -140,6 +141,7 @@ function ThemedRootShell() {
         <Stack.Screen name="auth-callback" options={{ animation: 'none' }} />
       </Stack>
       <CookieConsentBanner />
+      <KeyboardDoneBar />
     </>
   );
 }

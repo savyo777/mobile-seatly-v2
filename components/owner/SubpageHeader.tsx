@@ -22,14 +22,6 @@ type SubpageHeaderProps = {
   accentBack?: boolean;
 };
 
-const FALLBACK_TAB_HREF: Record<RootFallbackTab, Href> = {
-  home: '/(staff)/home',
-  reservations: '/(staff)/reservations',
-  floor: '/(staff)/floor',
-  menu: '/(staff)/menu',
-  more: '/(staff)/profile',
-};
-
 export function SubpageHeader({
   title,
   subtitle,
@@ -45,7 +37,8 @@ export function SubpageHeader({
   const styles = useStyles();
   const router = useRouter();
   const navigation = useNavigation();
-  const safeFallbackHref = fallbackHref ?? FALLBACK_TAB_HREF[fallbackTab];
+  void fallbackTab;
+  void fallbackHref;
 
   const handleBack = useCallback(() => {
     if (onBack) {
@@ -56,8 +49,8 @@ export function SubpageHeader({
       navigation.goBack();
       return;
     }
-    router.replace(safeFallbackHref);
-  }, [onBack, navigation, router, safeFallbackHref]);
+    router.back();
+  }, [onBack, navigation, router]);
 
   if (accentBack) {
     return (

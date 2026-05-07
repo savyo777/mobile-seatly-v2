@@ -7,6 +7,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { borderRadius, createStyles, spacing, typography, useColors } from '@/lib/theme';
 import { getSupabase } from '@/lib/supabase/client';
+import { setAppShellPreference } from '@/lib/navigation/appShellPreference';
 import { sendPasswordResetEmail } from '@/lib/services/accountSecurity';
 import { signInWithGoogle } from '@/lib/services/oauth';
 import { normalizePhoneToE164, sendPhoneOtp } from '@/lib/services/phoneAuth';
@@ -256,7 +257,8 @@ export default function OwnerLoginScreen() {
       }
       const allowed = await enforceOwnerRole(signedInUserId);
       if (!allowed) return;
-      router.replace('/(customer)');
+      await setAppShellPreference('staff');
+      router.replace('/(staff)');
     } finally {
       setSubmitting(false);
     }
@@ -300,7 +302,8 @@ export default function OwnerLoginScreen() {
       }
       const allowed = await enforceOwnerRole(result.session.user.id);
       if (!allowed) return;
-      router.replace('/(customer)');
+      await setAppShellPreference('staff');
+      router.replace('/(staff)');
     } finally {
       setSubmitting(false);
     }
@@ -393,7 +396,10 @@ export default function OwnerLoginScreen() {
         </View>
 
         <SocialAuthButtons
-          onApple={() => router.replace('/(customer)')}
+          onApple={async () => {
+            await setAppShellPreference('staff');
+            router.replace('/(staff)');
+          }}
           onGoogle={handleGoogle}
         />
 

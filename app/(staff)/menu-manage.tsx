@@ -416,7 +416,6 @@ export default function MenuManageScreen() {
           subtitle="Manage your dishes & prices"
           fallbackTab="more"
           accentBack
-          onBack={() => router.replace('/(staff)/profile' as never)}
           rightAction={(
             <Pressable
               onPress={handleAddNew}

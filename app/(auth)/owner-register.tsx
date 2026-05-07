@@ -6,6 +6,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useColors, createStyles, spacing, typography, borderRadius } from '@/lib/theme';
 import { getSupabase } from '@/lib/supabase/client';
+import { setAppShellPreference } from '@/lib/navigation/appShellPreference';
 import { ensureOwnerProfile, signInWithGoogle } from '@/lib/services/oauth';
 import { normalizePhoneToE164, sendPhoneOtp } from '@/lib/services/phoneAuth';
 import { Input, Button, SocialAuthButtons, TermsFooter, Checkbox } from '@/components/ui';
@@ -286,7 +287,8 @@ export default function OwnerRegisterScreen() {
             // best-effort
           }
           Alert.alert('Account updated', 'Restaurant access has been added to your existing account.');
-          router.replace('/(customer)');
+          await setAppShellPreference('staff');
+          router.replace('/(staff)');
           return;
         }
         Alert.alert('Sign up failed', error.message);
@@ -307,7 +309,12 @@ export default function OwnerRegisterScreen() {
         'Account created',
         'If email confirmation is enabled, please verify your email before signing in.',
       );
-      router.replace(data.session ? '/(customer)' : '/(auth)/login');
+      if (data.session) {
+        await setAppShellPreference('staff');
+        router.replace('/(staff)');
+      } else {
+        router.replace('/(auth)/login');
+      }
     } finally {
       setSubmitting(false);
     }
@@ -380,7 +387,8 @@ export default function OwnerRegisterScreen() {
       } catch {
         // ignore: profile creation is best-effort and can be retried later
       }
-      router.replace('/(customer)');
+      await setAppShellPreference('staff');
+      router.replace('/(staff)');
     } finally {
       setSubmitting(false);
     }
@@ -572,7 +580,10 @@ export default function OwnerRegisterScreen() {
         </View>
 
         <SocialAuthButtons
-          onApple={() => router.replace('/(customer)')}
+          onApple={async () => {
+            await setAppShellPreference('staff');
+            router.replace('/(staff)');
+          }}
           onGoogle={handleGoogle}
         />
 

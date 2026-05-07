@@ -28,18 +28,40 @@ function iconForType(type: AppNotification['type']): keyof typeof Ionicons.glyph
   }
 }
 
+// Plain relative-time formatter. We previously used Intl.RelativeTimeFormat,
+// but that API is missing on some React Native Hermes builds and threw at
+// render time, breaking the whole notifications screen.
 function timeAgo(iso: string, locale: string): string {
-  const then = new Date(iso).getTime();
-  const now = Date.now();
-  const sec = Math.max(0, Math.floor((now - then) / 1000));
-  const rtf = new Intl.RelativeTimeFormat(locale === 'fr' ? 'fr' : 'en', { numeric: 'auto' });
-  if (sec < 60) return rtf.format(-sec, 'second');
+  const fr = locale === 'fr';
+  const ts = new Date(iso).getTime();
+  if (!Number.isFinite(ts)) return '';
+  const sec = Math.max(0, Math.floor((Date.now() - ts) / 1000));
+
+  if (sec < 60) return fr ? "à l'instant" : 'just now';
   const min = Math.floor(sec / 60);
-  if (min < 60) return rtf.format(-min, 'minute');
+  if (min < 60) {
+    if (fr) return `il y a ${min} min`;
+    return `${min} min ago`;
+  }
   const hr = Math.floor(min / 60);
-  if (hr < 24) return rtf.format(-hr, 'hour');
+  if (hr < 24) {
+    if (fr) return `il y a ${hr} h`;
+    return `${hr}h ago`;
+  }
   const day = Math.floor(hr / 24);
-  return rtf.format(-day, 'day');
+  if (day < 7) {
+    if (fr) return `il y a ${day} j`;
+    return `${day}d ago`;
+  }
+  const week = Math.floor(day / 7);
+  if (week < 5) {
+    if (fr) return `il y a ${week} sem`;
+    return `${week}w ago`;
+  }
+  return new Date(ts).toLocaleDateString(fr ? 'fr-FR' : 'en-US', {
+    month: 'short',
+    day: 'numeric',
+  });
 }
 
 const useStyles = createStyles((c) => ({

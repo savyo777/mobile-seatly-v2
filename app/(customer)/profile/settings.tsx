@@ -1,4 +1,4 @@
-import React, { useCallback, useMemo } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 
 const MEMBER_SINCE = new Date('2025-03-15');
 function memberSinceLabel(): string {
@@ -22,7 +22,11 @@ import { useColors, createStyles, spacing, borderRadius, typography } from '@/li
 import { mockCustomer } from '@/lib/mock/users';
 import { useAuthSession } from '@/lib/auth/AuthContext';
 import { deleteAccount, signOutAllDevices } from '@/lib/services/accountSecurity';
-import { setAppShellPreference } from '@/lib/navigation/appShellPreference';
+import {
+  getAppShellPreference,
+  setAppShellPreference,
+  type AppShellPreference,
+} from '@/lib/navigation/appShellPreference';
 import { CENAIVA_FOLLOW_URLS } from '@/lib/config/cenaivaSocial';
 
 const TIERS = [
@@ -248,21 +252,39 @@ export default function SettingsScreen() {
   const pts = mockCustomer.loyaltyPointsBalance ?? 0;
   const tier = getTier(pts);
 
-  const sections: Section[] = useMemo(() => {
-    const restaurantRows: Row[] = [
-      { kind: 'registerRestaurant', icon: 'storefront-outline', label: 'Register your restaurant' },
-    ];
-    if (isStaffLike) {
-      restaurantRows.unshift({
-        kind: 'switchToRestaurant',
-        icon: 'swap-horizontal-outline',
-        label: 'Switch to Restaurant View',
-      });
-    }
-    const restaurantSection: Section = {
-      title: 'For Restaurant Owners',
-      rows: restaurantRows,
+  // After registering a restaurant we set the shell preference to 'staff',
+  // but the local `role` (and therefore `isStaffLike`) may not have synced
+  // yet. Treat the saved preference as a signal that the user has a
+  // restaurant side they can switch to.
+  const [shellPref, setShellPref] = useState<AppShellPreference | null>(null);
+  useEffect(() => {
+    let cancelled = false;
+    void (async () => {
+      const pref = await getAppShellPreference();
+      if (!cancelled) setShellPref(pref);
+    })();
+    return () => {
+      cancelled = true;
     };
+  }, []);
+  const hasRestaurantSide = isStaffLike || shellPref === 'staff';
+
+  const sections: Section[] = useMemo(() => {
+    const restaurantRows: Row[] = hasRestaurantSide
+      ? [
+          {
+            kind: 'switchToRestaurant',
+            icon: 'storefront-outline',
+            label: 'Switch to Restaurant Side',
+          },
+        ]
+      : [
+          {
+            kind: 'registerRestaurant',
+            icon: 'storefront-outline',
+            label: 'Register your restaurant',
+          },
+        ];
 
     const core: Section[] = [
     {
@@ -377,10 +399,16 @@ export default function SettingsScreen() {
           href: '/(customer)/profile/about',
         },
       ],
-    },
+      },
     ];
-    return [restaurantSection, ...core];
-  }, [isStaffLike]);
+    return [
+      {
+        title: 'For Restaurant Owners',
+        rows: restaurantRows,
+      },
+      ...core,
+    ];
+  }, [hasRestaurantSide]);
 
   const handleLogout = async () => {
     try {
@@ -504,14 +532,6 @@ export default function SettingsScreen() {
 
             {/* Card */}
             <View style={styles.card}>
-              {section.title === 'For Restaurant Owners' ? (
-                <View style={styles.ownerBanner}>
-                  <Text style={styles.ownerBannerText}>
-                    Get 3 months free when you register your restaurant. After 3 months, billing begins
-                    automatically.
-                  </Text>
-                </View>
-              ) : null}
               {section.rows.map((row, i) => (
                 <Pressable
                   key={row.label}

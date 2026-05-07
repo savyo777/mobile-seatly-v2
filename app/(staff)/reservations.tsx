@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useCallback, useMemo, useState } from 'react';
 import {
   View,
   Text,
@@ -7,6 +7,7 @@ import {
   StyleSheet,
   Modal,
   ScrollView,
+  Alert,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
@@ -717,17 +718,86 @@ export default function OwnerReservationsScreen() {
     return new Date(d.getFullYear(), d.getMonth(), 1);
   });
   const [selected, setSelected] = useState<OwnerReservationSlot | null>(null);
+  // Track local status overrides so Seat / Cancel feel responsive even though
+  // we're working off mock data.
+  const [statusOverrides, setStatusOverrides] = useState<
+    Record<string, OwnerReservationSlot['status'] | 'cancelled'>
+  >({});
+
+  const handleSeatGuest = useCallback((res: OwnerReservationSlot) => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
+    setStatusOverrides((prev) => ({ ...prev, [res.id]: 'seated' }));
+    setSelected(null);
+    Alert.alert('Seated', `${res.guestName} marked as seated.`);
+  }, []);
+
+  const handleMessageGuest = useCallback((res: OwnerReservationSlot) => {
+    Haptics.selectionAsync().catch(() => {});
+    Alert.alert(
+      `Message ${res.guestName}`,
+      'Choose how to reach the guest.',
+      [
+        {
+          text: 'Send a reminder',
+          onPress: () =>
+            Alert.alert(
+              'Reminder sent',
+              `A booking reminder was sent to ${res.guestName}.`,
+            ),
+        },
+        {
+          text: 'Send "Table is ready"',
+          onPress: () =>
+            Alert.alert(
+              'Message sent',
+              `${res.guestName} was notified that their table is ready.`,
+            ),
+        },
+        { text: 'Close', style: 'cancel' },
+      ],
+    );
+  }, []);
+
+  const handleCancelReservation = useCallback((res: OwnerReservationSlot) => {
+    Haptics.selectionAsync().catch(() => {});
+    Alert.alert(
+      'Cancel reservation?',
+      `This will cancel ${res.guestName}'s booking for ${res.partySize} at ${res.startTime}.`,
+      [
+        { text: 'Keep it', style: 'cancel' },
+        {
+          text: 'Cancel booking',
+          style: 'destructive',
+          onPress: () => {
+            setStatusOverrides((prev) => ({ ...prev, [res.id]: 'cancelled' }));
+            setSelected(null);
+            Alert.alert('Cancelled', `${res.guestName}'s reservation was cancelled.`);
+          },
+        },
+      ],
+    );
+  }, []);
 
   const todayKey = toDateKey(new Date());
 
   const dateFiltered = useMemo(() => {
-    if (dateFilter === 'today' || dateFilter === 'week') return OWNER_RESERVATIONS;
-    if (dateFilter === 'custom') {
-      if (customDates.length === 0) return [];
-      return OWNER_RESERVATIONS;
-    }
-    return OWNER_RESERVATIONS.filter((_, i) => i % 2 === 1);
-  }, [dateFilter, customDates]);
+    const base = (() => {
+      if (dateFilter === 'today' || dateFilter === 'week') return OWNER_RESERVATIONS;
+      if (dateFilter === 'custom') {
+        if (customDates.length === 0) return [];
+        return OWNER_RESERVATIONS;
+      }
+      return OWNER_RESERVATIONS.filter((_, i) => i % 2 === 1);
+    })();
+    // Apply local Seat / Cancel overrides from the modal so the list reflects
+    // the action immediately. Cancelled reservations drop out of the list.
+    return base.flatMap((r) => {
+      const override = statusOverrides[r.id];
+      if (override === 'cancelled') return [];
+      if (override) return [{ ...r, status: override as OwnerReservationSlot['status'] }];
+      return [r];
+    });
+  }, [dateFilter, customDates, statusOverrides]);
 
   const filtered = dateFiltered;
 
@@ -1157,17 +1227,42 @@ export default function OwnerReservationsScreen() {
                   ) : null}
 
                   <View style={styles.modalActions}>
-                    <Pressable style={[styles.modalActionBtn, styles.modalActionPrimary]}>
+                    <Pressable
+                      style={({ pressed }) => [
+                        styles.modalActionBtn,
+                        styles.modalActionPrimary,
+                        pressed && { opacity: 0.85 },
+                      ]}
+                      onPress={() => handleSeatGuest(selected)}
+                      accessibilityRole="button"
+                      accessibilityLabel={`Seat ${selected.guestName}`}
+                    >
                       <Ionicons name="checkmark" size={16} color="#FFFFFF" />
                       <Text style={[styles.modalActionText, styles.modalActionPrimaryText]}>
                         Seat
                       </Text>
                     </Pressable>
-                    <Pressable style={styles.modalActionBtn}>
+                    <Pressable
+                      style={({ pressed }) => [
+                        styles.modalActionBtn,
+                        pressed && { opacity: 0.7 },
+                      ]}
+                      onPress={() => handleMessageGuest(selected)}
+                      accessibilityRole="button"
+                      accessibilityLabel={`Message ${selected.guestName}`}
+                    >
                       <Ionicons name="chatbubble-outline" size={16} color={c.textPrimary} />
                       <Text style={styles.modalActionText}>Message</Text>
                     </Pressable>
-                    <Pressable style={styles.modalActionBtn}>
+                    <Pressable
+                      style={({ pressed }) => [
+                        styles.modalActionBtn,
+                        pressed && { opacity: 0.7 },
+                      ]}
+                      onPress={() => handleCancelReservation(selected)}
+                      accessibilityRole="button"
+                      accessibilityLabel={`Cancel ${selected.guestName}'s reservation`}
+                    >
                       <Ionicons name="close" size={16} color={c.textPrimary} />
                       <Text style={styles.modalActionText}>Cancel</Text>
                     </Pressable>

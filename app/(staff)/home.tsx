@@ -684,7 +684,7 @@ export default function OwnerHomeScreen() {
       sub: `${guestProfiles} profiles · VIPs & notes`,
       route: '/(staff)/guests',
     },
-    { icon: 'restaurant-outline', label: 'Menu', sub: 'Dishes & prices', route: '/(staff)/menu?returnTo=home' },
+    { icon: 'restaurant-outline', label: 'Menu', sub: 'Dishes & prices', route: '/(staff)/menu' },
   ];
 
   return (
