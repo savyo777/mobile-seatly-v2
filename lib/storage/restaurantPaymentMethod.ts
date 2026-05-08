@@ -3,9 +3,12 @@ import { isDemoModeEnabled } from '@/lib/config/demoMode';
 import { fetchCurrentOwnerRestaurant } from '@/lib/services/ownerRestaurant';
 import { getSupabase } from '@/lib/supabase/client';
 
+export type CardFunding = 'credit' | 'debit' | 'prepaid' | 'unknown';
+
 export type RestaurantPaymentCard = {
   id: string;
   brand: string;
+  funding: CardFunding;
   last4: string;
   expiry: string;
   cardholder: string;
@@ -54,6 +57,7 @@ export async function getStoredRestaurantPaymentCards(): Promise<RestaurantPayme
     return [{
       id: restaurant.stripePaymentMethodId || `restaurant-card-${restaurant.id}`,
       brand: restaurant.billingCardBrand || 'Card',
+      funding: 'unknown',
       last4: restaurant.billingCardLast4,
       expiry: expiryLabel(restaurant.billingCardExpMonth, restaurant.billingCardExpYear),
       cardholder: restaurant.name,
@@ -66,7 +70,7 @@ export async function getStoredRestaurantPaymentCards(): Promise<RestaurantPayme
 }
 
 export async function saveRestaurantPaymentCard(
-  card: Omit<RestaurantPaymentCard, 'id'> & { id?: string },
+  card: Omit<RestaurantPaymentCard, 'id' | 'funding'> & { id?: string; funding?: CardFunding },
 ): Promise<RestaurantPaymentCard[]> {
   const supabase = getSupabase();
   const restaurant = await fetchCurrentOwnerRestaurant();
@@ -95,6 +99,7 @@ export async function saveRestaurantPaymentCard(
   const next: RestaurantPaymentCard = {
     id: card.id ?? makeId(),
     brand: card.brand,
+    funding: card.funding ?? 'unknown',
     last4: card.last4,
     expiry: card.expiry,
     cardholder: card.cardholder,

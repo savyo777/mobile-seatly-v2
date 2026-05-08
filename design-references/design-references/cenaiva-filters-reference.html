@@ -1,0 +1,394 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Cenaiva Filters · Story Overlays</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">pwd
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;0,700;1,300;1,400;1,500&family=DM+Mono:wght@300;400;500&family=Inter:wght@200;300;400;500;600;700;800&family=Italiana&family=Pinyon+Script&family=Caveat:wght@400;500;600&family=Bodoni+Moda:ital,wght@0,400;0,600;0,800;1,400&family=Permanent+Marker&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --paper:#f5f1ec;
+    --ink:#101010;
+    --muted:#7a766f;
+    --rule:rgba(0,0,0,.08);
+    --pink:#f4b6c2;
+    --pink-deep:#e58aa0;
+    --rose:#d4546e;
+    --burgundy:#5a1224;
+    --cream:#f0e6d2;
+    --gold:#c9a86a;
+    --gold-deep:#a07c34;
+    --lilac:#c8b6e2;
+    --teal:#0fa39a;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;padding:0;background:var(--paper);color:var(--ink);font-family:"Inter",system-ui,sans-serif;-webkit-font-smoothing:antialiased}
+  .page{max-width:1480px;margin:0 auto;padding:56px 40px 96px}
+  .masthead{display:flex;align-items:flex-end;justify-content:space-between;border-bottom:1px solid var(--rule);padding-bottom:24px;margin-bottom:40px}
+  .lockup{display:flex;flex-direction:column;gap:8px}
+  .eyebrow{font-size:11px;letter-spacing:.22em;text-transform:uppercase;color:var(--muted);font-weight:500}
+  .wordmark{font-family:"Italiana",serif;font-size:54px;line-height:.9;letter-spacing:.02em}
+  .wordmark em{font-family:"Cormorant Garamond",serif;font-style:italic;font-weight:300;color:var(--muted)}
+  .meta{text-align:right;font-size:11px;color:var(--muted);line-height:1.7;font-family:"DM Mono",monospace}
+  .meta b{color:var(--ink);font-weight:500}
+  .cat{margin-top:56px}
+  .cat-head{display:flex;align-items:baseline;gap:14px;margin-bottom:22px}
+  .cat-num{font-family:"DM Mono",monospace;font-size:11px;color:var(--muted);letter-spacing:.18em}
+  .cat-title{font-family:"Cormorant Garamond",serif;font-size:30px;font-weight:400;letter-spacing:-.01em}
+  .cat-rule{flex:1;height:1px;background:var(--rule);transform:translateY(-4px)}
+  .cat-sub{font-size:12px;color:var(--muted);line-height:1.5;max-width:340px;text-align:right}
+  .grid{display:grid;grid-template-columns:repeat(6,224px);gap:28px 20px;justify-content:start}
+  @media (max-width:1480px){.grid{grid-template-columns:repeat(5,224px)}}
+  @media (max-width:1240px){.grid{grid-template-columns:repeat(4,224px)}}
+  @media (max-width:1000px){.grid{grid-template-columns:repeat(3,224px)}}
+  @media (max-width:760px){.grid{grid-template-columns:repeat(2,224px)}}
+  @media (max-width:520px){.grid{grid-template-columns:224px}}
+  .card{display:flex;flex-direction:column;gap:8px}
+  .frame{position:relative;width:224px;height:398px;border-radius:22px;overflow:hidden;background:#0c0a08;isolation:isolate;box-shadow:0 1px 0 rgba(0,0,0,.04),0 14px 30px -16px rgba(0,0,0,.4)}
+  .photo{position:absolute;inset:0;background-size:cover;background-position:center}
+  .grain{position:absolute;inset:0;pointer-events:none;mix-blend-mode:overlay;opacity:.14;background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='160' height='160'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' seed='3'/><feColorMatrix values='0 0 0 0 1 0 0 0 0 1 0 0 0 0 1 0 0 0 0.6 0'/></filter><rect width='100%' height='100%' filter='url(%23n)' opacity='.45'/></svg>")}
+  .vignette{position:absolute;inset:0;pointer-events:none;background:radial-gradient(120% 90% at 50% 55%,transparent 55%,rgba(0,0,0,.45) 100%)}
+  .wm{position:absolute;z-index:8;font-family:"Inter",sans-serif;font-weight:200;font-size:9px;color:rgba(255,255,255,.55);letter-spacing:.04em;text-shadow:0 1px 2px rgba(0,0,0,.4)}
+  .wm.tr{top:10px;right:12px}
+  .wm.bl{bottom:10px;left:12px}
+  .wm i{font-style:italic;font-family:"Cormorant Garamond",serif;font-weight:300;font-size:10px;margin-right:1px;opacity:.85}
+  .cap{display:flex;align-items:baseline;justify-content:space-between;gap:8px;padding:0 4px}
+  .cap .id{font-family:"DM Mono",monospace;font-size:10px;color:var(--muted)}
+  .cap .nm{font-size:12.5px;font-weight:500;letter-spacing:.005em}
+  .cap .nt{font-family:"DM Mono",monospace;font-size:10px;color:var(--muted)}
+  .ph-charcuterie{background:radial-gradient(140px 100px at 30% 40%,#d8a878 0%,#7a4a28 40%,#2a1810 80%),radial-gradient(160px 130px at 70% 65%,#a8484a 0%,#5a1a1c 50%,#1a0808 90%),radial-gradient(80px 80px at 50% 22%,#e8c890 0%,#6a4a28 60%,transparent 90%),linear-gradient(180deg,#1a100a,#070302)}
+  .ph-pasta{background:radial-gradient(150px 110px at 50% 55%,#f0c884 0%,#a87238 40%,#3a200e 75%,#0c0604 100%),radial-gradient(220px 200px at 50% 100%,#1a0c08,#040201),linear-gradient(180deg,#0e0806,#030201)}
+  .ph-rose{background:radial-gradient(180px 220px at 50% 55%,#f4b6c2 0%,#d97488 35%,#7a2434 70%,#2a0a14 95%),radial-gradient(60px 60px at 30% 30%,#f8d4dc 0%,transparent 70%),linear-gradient(180deg,#2a0e16,#0a0408)}
+  .ph-martini{background:radial-gradient(140px 200px at 50% 50%,#e8d8b8 0%,#c8a878 35%,#3a280e 75%,#0c0604 100%),linear-gradient(180deg,#0e0806,#030201)}
+  .ph-cake{background:radial-gradient(160px 200px at 50% 55%,#f4d4c8 0%,#d8987a 35%,#5a3024 70%,#1a0c08 100%),radial-gradient(20px 50px at 38% 28%,#ffd07a 0%,transparent 80%),radial-gradient(20px 50px at 50% 24%,#ffd07a 0%,transparent 80%),radial-gradient(20px 50px at 62% 28%,#ffd07a 0%,transparent 80%),linear-gradient(180deg,#1a0e08,#040202)}
+  .ph-butterfly{background:radial-gradient(220px 280px at 50% 60%,#c8b6e2 0%,#7a5a98 35%,#2a1838 75%,#0e0418 100%),radial-gradient(60px 60px at 25% 25%,#f4b6c2 0%,transparent 70%),linear-gradient(180deg,#1a0a20,#040108)}
+  .ph-steak{background:radial-gradient(180px 130px at 50% 60%,#a8341e 0%,#5a1810 45%,#1a0806 80%),radial-gradient(260px 220px at 50% 0%,#2a1410 0%,#0a0604 90%),linear-gradient(180deg,#0c0604,#040201)}
+  .ph-sushi{background:radial-gradient(130px 100px at 35% 50%,#d8584a 0%,#7a2418 50%,#2a0a08 90%),radial-gradient(120px 100px at 65% 60%,#f0c890 0%,#8a5828 50%,#2a1808 90%),radial-gradient(160px 140px at 50% 60%,#3a2418 0%,#0a0604 80%),linear-gradient(180deg,#0c0604,#020100)}
+  .ph-pizza{background:radial-gradient(180px 140px at 50% 55%,#f0c884 0%,#c8784a 30%,#7a3818 60%,#2a1208 90%),radial-gradient(40px 40px at 38% 50%,#c8281e 0%,transparent 70%),radial-gradient(40px 40px at 60% 60%,#f0e8c8 0%,transparent 70%),linear-gradient(180deg,#1a0e08,#040201)}
+  .ph-cocktailamber{background:radial-gradient(140px 200px at 50% 55%,#f0a868 0%,#a8581a 40%,#3a1808 80%,#0c0604 100%),radial-gradient(280px 220px at 50% 0%,#2a1814 0%,#0a0604 80%),linear-gradient(180deg,#0e0804,#030201)}
+  .ph-brunch{background:radial-gradient(180px 150px at 30% 50%,#f0d4a8 0%,#d09858 40%,#5a3818 80%),radial-gradient(140px 130px at 70% 60%,#f4c890 0%,#a87038 50%,#3a200e 90%),radial-gradient(60px 60px at 80% 30%,#a8e0a8 0%,#3a6a3a 60%,transparent 90%),linear-gradient(180deg,#1a0e08,#040202)}
+  .ph-dessert{background:radial-gradient(180px 150px at 50% 55%,#f4d8b8 0%,#c89070 35%,#5a3424 70%,#1a0e08 100%),radial-gradient(60px 60px at 28% 30%,#f4b6c2 0%,transparent 70%),linear-gradient(180deg,#1a0e08,#040202)}
+  .ph-toronto{background:linear-gradient(180deg,#0a1830 0%,#1a2a4a 35%,#3a2424 70%,#1a0e0a 100%),radial-gradient(40px 40px at 25% 70%,#ffba6a 0%,transparent 70%),radial-gradient(30px 30px at 65% 76%,#ffba6a 0%,transparent 70%),radial-gradient(50px 50px at 80% 50%,#f0a8c8 0%,transparent 70%)}
+  .ph-velvet{background:radial-gradient(220px 280px at 50% 50%,#7a1a2e 0%,#3a0a18 50%,#0e0408 95%),linear-gradient(180deg,#1a0408,#040102)}
+  .ph-champagne{background:radial-gradient(140px 220px at 50% 55%,#f4e4b8 0%,#c8a868 30%,#5a3818 75%,#1a0e08 100%),radial-gradient(8px 8px at 48% 30%,#fff8d8 0%,transparent 70%),linear-gradient(180deg,#1a0e08,#040202)}
+  .ph-blackcard{background:radial-gradient(220px 220px at 50% 50%,#1a1a1a 0%,#0a0a0a 70%,#000 100%),linear-gradient(180deg,#080808,#000)}
+  .ph-bokeh{background:radial-gradient(40px 40px at 22% 28%,#ffd28a 0%,#a8702a 60%,transparent 70%),radial-gradient(60px 60px at 70% 22%,#ffba6a 0%,#a8702a 50%,transparent 70%),radial-gradient(50px 50px at 82% 60%,#ffc878 0%,#a8702a 55%,transparent 70%),radial-gradient(70px 70px at 30% 78%,#ffba6a 0%,#a8702a 50%,transparent 70%),linear-gradient(180deg,#1a0c06,#070302)}
+  .ph-table2{background:radial-gradient(120px 200px at 35% 50%,#caa074 0%,#7a5028 30%,transparent 65%),radial-gradient(120px 200px at 65% 50%,#caa074 0%,#7a5028 30%,transparent 65%),linear-gradient(180deg,#0a0604,#020100)}
+  .ph-bestseat{background:radial-gradient(220px 200px at 50% 55%,#5a3a1a 0%,#2a1808 50%,#0a0604 90%),radial-gradient(80px 80px at 50% 45%,#caa074 0%,#5a3a1a 60%,transparent 90%),linear-gradient(180deg,#0a0604,#020100)}
+  .ph-diary{background:radial-gradient(180px 200px at 50% 55%,#f0d6a8 0%,#a8784a 40%,#3a200e 80%,#0e0804 100%),linear-gradient(180deg,#1a0e08,#040202)}
+  .ph-kiss{background:radial-gradient(160px 200px at 50% 55%,#f4a8c0 0%,#c84e6a 35%,#5a1224 75%,#1a0408 100%),radial-gradient(80px 80px at 28% 30%,#f8d4dc 0%,transparent 70%),linear-gradient(180deg,#2a0a14,#0a0204)}
+  .sparkle{position:absolute;color:#fff;font-size:9px;text-shadow:0 0 6px rgba(255,255,255,.7)}
+  .f-bowdinner .bow{position:absolute;width:34px;height:24px;z-index:6}
+  .f-bowdinner .bow.tl{top:14px;left:14px;transform:rotate(-15deg)}
+  .f-bowdinner .bow.br{bottom:60px;right:14px;transform:rotate(20deg) scale(.85)}
+  .f-bowdinner .glow{position:absolute;inset:0;background:radial-gradient(160% 80% at 50% 110%,rgba(244,182,194,.32),transparent 60%);pointer-events:none}
+  .f-bowdinner .sp1{top:30%;left:60%;font-size:10px}
+  .f-bowdinner .sp2{top:55%;left:18%;font-size:8px}
+  .f-bowdinner .sp3{top:70%;left:75%;font-size:11px}
+  .f-bowdinner .lbl{position:absolute;left:0;right:0;bottom:18px;text-align:center;font-family:"Pinyon Script",cursive;font-size:18px;color:#fff;text-shadow:0 1px 4px rgba(212,84,110,.6)}
+  .f-coquette .pearls{position:absolute;top:14px;left:14px;right:14px;display:flex;justify-content:center;gap:5px}
+  .f-coquette .pearls span{width:7px;height:7px;border-radius:50%;background:radial-gradient(circle at 30% 30%,#fff,#e8d8c8 60%,#a89878);box-shadow:0 1px 2px rgba(0,0,0,.3)}
+  .f-coquette .ribbon{position:absolute;left:50%;top:36px;transform:translateX(-50%);width:60px;height:14px}
+  .f-coquette .lbl{position:absolute;left:0;right:0;bottom:22px;text-align:center;font-family:"Cormorant Garamond",serif;font-style:italic;font-weight:400;font-size:13px;color:var(--cream);letter-spacing:.04em;text-shadow:0 1px 3px rgba(0,0,0,.4)}
+  .f-coquette .lbl small{display:block;font-family:"Inter",sans-serif;font-size:8px;letter-spacing:.4em;color:rgba(255,255,255,.7);margin-bottom:4px;font-weight:300;text-transform:uppercase}
+  .f-coquette .h1{position:absolute;top:22%;left:14%;color:var(--pink);font-size:9px}
+  .f-coquette .h2{position:absolute;top:60%;right:18%;color:var(--pink);font-size:7px}
+  .f-martini .doodle{position:absolute;color:#fff;opacity:.92;filter:drop-shadow(0 1px 3px rgba(0,0,0,.5))}
+  .f-martini .d1{top:12%;left:10%;width:26px;height:30px}
+  .f-martini .d2{top:8%;right:14%;width:22px;height:26px;transform:rotate(8deg)}
+  .f-martini .d3{bottom:20%;left:14%;width:20px;height:24px;transform:rotate(-6deg)}
+  .f-martini .badge{position:absolute;left:50%;bottom:18px;transform:translateX(-50%);background:rgba(245,225,225,.92);color:var(--burgundy);padding:5px 12px;border-radius:999px;font-family:"Cormorant Garamond",serif;font-style:italic;font-size:11px;font-weight:600;letter-spacing:.02em;border:1px solid rgba(90,18,36,.2);box-shadow:0 4px 10px rgba(90,18,36,.18)}
+  .f-gloss .kiss{position:absolute;top:14px;left:14px;font-size:24px;transform:rotate(-15deg);filter:drop-shadow(0 0 8px rgba(212,84,110,.5))}
+  .f-gloss .sub{position:absolute;left:0;right:0;bottom:20px;text-align:center}
+  .f-gloss .ttl{font-family:"Bodoni Moda",serif;font-style:italic;font-weight:600;font-size:14px;background:linear-gradient(180deg,#ffe4ec,#f4a8c0 60%,#c84e6a);-webkit-background-clip:text;background-clip:text;color:transparent;text-shadow:0 1px 6px rgba(212,84,110,.35);letter-spacing:.005em}
+  .f-gloss .sub small{display:block;font-size:8px;letter-spacing:.4em;color:rgba(255,255,255,.75);text-transform:uppercase;margin-top:3px;font-weight:300}
+  .f-princess .crown{position:absolute;top:12px;left:50%;transform:translateX(-50%);width:36px;height:22px;filter:drop-shadow(0 1px 3px rgba(201,168,106,.6))}
+  .f-princess .lbl{position:absolute;left:0;right:0;bottom:22px;text-align:center;font-family:"Cormorant Garamond",serif;font-style:italic;font-weight:500;font-size:13px;color:#fff;letter-spacing:.02em;text-shadow:0 1px 3px rgba(201,168,106,.5)}
+  .f-princess .lbl small{display:block;font-family:"Inter",sans-serif;font-size:7px;letter-spacing:.4em;color:rgba(255,255,255,.7);margin-bottom:3px;font-weight:300}
+  .f-princess .sp{color:var(--gold);font-size:10px}
+  .f-princess .s1{top:24%;left:18%}
+  .f-princess .s2{top:30%;right:16%;font-size:7px}
+  .f-princess .s3{top:55%;left:75%;font-size:11px}
+  .f-princess .s4{bottom:30%;left:12%;font-size:8px}
+  .f-butterfly .leak{position:absolute;inset:0;background:radial-gradient(180% 60% at 110% 0%,rgba(244,182,194,.45),transparent 55%),radial-gradient(180% 60% at -10% 100%,rgba(200,182,226,.45),transparent 55%);pointer-events:none;mix-blend-mode:screen}
+  .f-butterfly .b1{position:absolute;top:18%;left:14%;width:24px;height:20px}
+  .f-butterfly .b2{position:absolute;top:38%;right:18%;width:18px;height:15px;transform:rotate(15deg)}
+  .f-butterfly .b3{position:absolute;bottom:24%;left:65%;width:14px;height:12px;transform:rotate(-10deg)}
+  .f-butterfly .lbl{position:absolute;left:0;right:0;bottom:18px;text-align:center;font-family:"Cormorant Garamond",serif;font-style:italic;font-weight:400;font-size:12px;color:#fff;text-shadow:0 1px 4px rgba(124,90,170,.55);letter-spacing:.04em}
+  .funny-tag{position:absolute;font-family:"Caveat",cursive;font-weight:600;color:#fff;font-size:22px;line-height:1;text-shadow:0 1px 4px rgba(0,0,0,.55);transform:rotate(-4deg)}
+  .funny-tag.pink{color:#ffd6e0}
+  .f-crumbs .tag{left:14px;bottom:18px;transform:rotate(-6deg)}
+  .f-crumbs .arrow{position:absolute;left:64px;bottom:66px;width:36px;height:32px;color:#ffd6e0;filter:drop-shadow(0 1px 3px rgba(0,0,0,.5))}
+  .f-expensive .badge{position:absolute;left:50%;bottom:24px;transform:translateX(-50%) rotate(-3deg);background:#0a0a0a;color:var(--gold);padding:6px 14px;border:1px solid var(--gold);border-radius:999px;font-family:"Bodoni Moda",serif;font-weight:600;font-style:italic;font-size:13px;letter-spacing:.04em;box-shadow:0 4px 12px rgba(0,0,0,.4)}
+  .f-expensive .price{position:absolute;top:14px;left:14px;font-family:"Bodoni Moda",serif;font-style:italic;font-size:14px;font-weight:400;color:#fff;text-shadow:0 1px 3px rgba(0,0,0,.5)}
+  .f-main .ticket{position:absolute;left:12px;bottom:18px;background:rgba(245,241,236,.95);color:#0a0a0a;padding:6px 10px 8px;max-width:170px;transform:rotate(-3deg);box-shadow:0 6px 16px rgba(0,0,0,.3);border:1px dashed rgba(0,0,0,.3)}
+  .f-main .ticket small{display:block;font-family:"DM Mono",monospace;font-size:8px;letter-spacing:.18em;color:#7a766f;text-transform:uppercase}
+  .f-main .ticket b{display:block;font-family:"Caveat",cursive;font-weight:600;font-size:18px;line-height:1;margin-top:2px}
+  .f-pretty .pill{position:absolute;left:50%;top:16px;transform:translateX(-50%);background:rgba(244,182,194,.92);color:var(--burgundy);padding:5px 12px;border-radius:999px;font-family:"Cormorant Garamond",serif;font-weight:600;font-style:italic;font-size:11px;letter-spacing:.04em}
+  .f-pretty .heart{position:absolute;top:50%;left:14%;color:var(--pink);font-size:11px;filter:drop-shadow(0 0 4px rgba(244,182,194,.6))}
+  .f-pretty .heart.h2{top:70%;right:12%;font-size:8px}
+  .f-plot .scrip{position:absolute;left:50%;bottom:22px;transform:translateX(-50%);text-align:center}
+  .f-plot .scrip b{display:block;font-family:"Pinyon Script",cursive;font-size:22px;color:#fff;line-height:1;text-shadow:0 1px 4px rgba(0,0,0,.5)}
+  .f-plot .scrip small{display:block;font-family:"Inter";font-weight:300;font-size:9px;letter-spacing:.4em;color:rgba(255,255,255,.7);text-transform:uppercase;margin-top:5px}
+  .f-pov .pov{position:absolute;top:16px;left:14px;font-family:"Inter";font-weight:700;font-size:11px;color:#fff;letter-spacing:.18em;text-shadow:0 1px 3px rgba(0,0,0,.55)}
+  .f-pov .pov span{font-weight:300;letter-spacing:.04em;font-style:italic;font-family:"Cormorant Garamond",serif;font-size:13px;text-transform:none;margin-left:4px;color:#ffd6e0}
+  .f-dnv{position:absolute;left:14px;bottom:14px;display:flex;align-items:center;gap:6px;background:rgba(10,8,6,.55);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);border:1px solid rgba(201,168,106,.45);padding:5px 10px 5px 6px;border-radius:999px}
+  .f-dnv .b{width:13px;height:13px;border-radius:50%;background:var(--gold);color:#1a1208;font-size:8px;font-weight:800;display:grid;place-items:center;line-height:1}
+  .f-dnv .t{font-family:"Cormorant Garamond",serif;font-style:italic;font-weight:500;font-size:11px;color:#fff;letter-spacing:.02em}
+  .f-champ::before{content:"";position:absolute;inset:0;pointer-events:none;background:radial-gradient(120% 90% at 50% 60%,transparent 50%,rgba(232,196,108,.32) 100%)}
+  .f-champ .bub{position:absolute;border-radius:50%;background:radial-gradient(circle at 35% 30%,rgba(255,250,220,.95),rgba(255,228,160,.6) 60%,transparent 75%);box-shadow:0 0 6px rgba(255,228,160,.45)}
+  .f-champ .b1{width:10px;height:10px;top:60%;left:18%}
+  .f-champ .b2{width:6px;height:6px;top:48%;left:28%}
+  .f-champ .b3{width:8px;height:8px;top:35%;left:22%}
+  .f-champ .b4{width:5px;height:5px;top:25%;left:30%}
+  .f-champ .lbl{position:absolute;left:0;right:0;bottom:20px;text-align:center;font-family:"Cormorant Garamond",serif;font-style:italic;font-weight:300;font-size:12px;color:var(--cream);letter-spacing:.06em;text-shadow:0 1px 3px rgba(0,0,0,.4)}
+  .f-gh::before{content:"";position:absolute;inset:0;pointer-events:none;background:radial-gradient(120% 90% at 50% 50%,transparent 55%,rgba(214,148,58,.38) 100%)}
+  .f-gh .lbl{position:absolute;left:14px;bottom:14px;font-family:"Cormorant Garamond",serif;font-style:italic;font-weight:300;font-size:11px;color:#f0d49a;letter-spacing:.04em;text-shadow:0 1px 3px rgba(0,0,0,.5)}
+  .f-gh .sun{position:absolute;top:24%;right:18%;width:18px;height:18px;border-radius:50%;background:radial-gradient(circle,#ffd07a 0%,rgba(255,208,122,.4) 60%,transparent 80%);filter:blur(.5px)}
+  .f-hid{position:absolute;left:14px;top:14px;display:flex;align-items:center;gap:5px;text-shadow:0 1px 4px rgba(0,0,0,.55)}
+  .f-hid .ic{font-size:11px;filter:drop-shadow(0 0 4px rgba(140,200,255,.45))}
+  .f-hid .t{font-family:"Cormorant Garamond",serif;font-style:italic;font-weight:400;font-size:11px;color:#dfe9ff;letter-spacing:.04em}
+  .f-velvet .lbl{position:absolute;left:50%;bottom:24px;transform:translateX(-50%);text-align:center}
+  .f-velvet .lbl b{display:block;font-family:"Italiana",serif;font-size:14px;color:#f4d4c8;letter-spacing:.18em;text-transform:uppercase}
+  .f-velvet .lbl small{display:block;font-family:"Cormorant Garamond",serif;font-style:italic;color:rgba(244,212,200,.7);font-size:10px;margin-top:3px}
+  .f-velvet .corner{position:absolute;top:14px;left:14px;width:30px;height:30px;border:1px solid rgba(244,212,200,.5);border-right:none;border-bottom:none}
+  .f-velvet .corner.br{top:auto;left:auto;bottom:14px;right:14px;border:1px solid rgba(244,212,200,.5);border-left:none;border-top:none}
+  .f-bc .ccard{position:absolute;left:14px;bottom:14px;width:130px;height:42px;border-radius:6px;background:linear-gradient(135deg,#1a1a1a,#000);border:1px solid #2a2a2a;box-shadow:0 6px 14px rgba(0,0,0,.5);padding:6px 10px;display:flex;flex-direction:column;justify-content:space-between;transform:rotate(-3deg)}
+  .f-bc .ccard .top{display:flex;justify-content:space-between;align-items:center}
+  .f-bc .ccard .top b{font-family:"Italiana",serif;color:var(--gold);font-size:9px;letter-spacing:.18em;text-transform:uppercase}
+  .f-bc .ccard .top span{width:14px;height:10px;border-radius:1px;background:linear-gradient(135deg,#c9a86a,#7a5a28);opacity:.9}
+  .f-bc .ccard .num{font-family:"DM Mono",monospace;color:rgba(201,168,106,.85);font-size:9px;letter-spacing:.12em}
+  .f-pasta-n .doodle{position:absolute;top:14px;left:14px;width:36px;height:30px;color:#fff;filter:drop-shadow(0 1px 3px rgba(0,0,0,.5))}
+  .f-pasta-n .lbl{position:absolute;left:0;right:0;bottom:20px;text-align:center;font-family:"Caveat",cursive;font-size:22px;color:#fff;font-weight:600;text-shadow:0 1px 3px rgba(0,0,0,.55);transform:rotate(-2deg);line-height:1}
+  .f-pasta-n .lbl small{display:block;font-family:"Inter";font-weight:300;font-size:8px;letter-spacing:.4em;color:rgba(255,255,255,.7);text-transform:uppercase;margin-top:6px}
+  .f-sushi-d .doodle{position:absolute;width:24px;height:24px;color:#fff;opacity:.9;filter:drop-shadow(0 1px 3px rgba(0,0,0,.5))}
+  .f-sushi-d .d1{top:14px;left:14px}
+  .f-sushi-d .d2{top:18px;right:18px;transform:rotate(10deg);width:18px;height:18px}
+  .f-sushi-d .lbl{position:absolute;left:0;right:0;bottom:18px;text-align:center;font-family:"Cormorant Garamond",serif;font-style:italic;font-size:13px;font-weight:500;color:#ffd6e0;text-shadow:0 1px 3px rgba(0,0,0,.5);letter-spacing:.06em}
+  .f-sushi-d .heart{position:absolute;top:50%;left:75%;color:var(--pink);font-size:9px;filter:drop-shadow(0 0 4px rgba(244,182,194,.5))}
+  .f-df .stamp{position:absolute;left:14px;bottom:14px;border:1.5px solid rgba(244,182,194,.85);color:#ffd6e0;padding:6px 10px;border-radius:4px;font-family:"Bodoni Moda",serif;font-style:italic;font-weight:600;font-size:11px;letter-spacing:.06em;transform:rotate(-3deg);background:rgba(212,84,110,.15);backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px)}
+  .f-df .spoon{position:absolute;top:14%;right:16%;font-size:14px;filter:drop-shadow(0 1px 3px rgba(0,0,0,.5))}
+  .f-brunch .seal{position:absolute;left:50%;top:18px;transform:translateX(-50%);width:64px;height:64px;border-radius:50%;border:1.5px dashed rgba(255,255,255,.85);display:grid;place-items:center;text-align:center;background:rgba(10,8,6,.25);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px)}
+  .f-brunch .seal b{font-family:"Cormorant Garamond",serif;font-weight:600;font-style:italic;color:#fff;font-size:13px;line-height:1}
+  .f-brunch .seal small{display:block;font-family:"Inter";font-weight:300;font-size:6px;letter-spacing:.3em;color:rgba(255,255,255,.75);text-transform:uppercase;margin-top:2px}
+  .f-pizza-d .ticket{position:absolute;left:50%;bottom:20px;transform:translateX(-50%) rotate(-3deg);background:#fff;color:#0a0a0a;padding:5px 10px;border-radius:3px;font-family:"DM Mono",monospace;font-size:9px;letter-spacing:.18em;text-transform:uppercase;font-weight:500;box-shadow:0 5px 12px rgba(0,0,0,.4)}
+  .f-pizza-d .ticket b{font-family:"Cormorant Garamond",serif;font-weight:700;font-size:13px;letter-spacing:.04em;text-transform:none;display:block;margin-top:1px}
+  .f-pizza-d .pep{position:absolute;top:18%;left:18%;width:10px;height:10px;border-radius:50%;background:#c83a2a;box-shadow:0 0 4px rgba(200,58,42,.5)}
+  .f-pizza-d .pep.p2{top:32%;right:20%;width:7px;height:7px}
+  .f-cock .clock{position:absolute;top:14px;right:14px;display:flex;align-items:center;gap:5px;font-family:"DM Mono",monospace;font-size:10px;color:#fff;text-shadow:0 1px 3px rgba(0,0,0,.5);letter-spacing:.04em}
+  .f-cock .clock svg{width:11px;height:11px;stroke:#fff;stroke-width:1.4;fill:none}
+  .f-cock .lbl{position:absolute;left:14px;bottom:14px;font-family:"Cormorant Garamond",serif;font-style:italic;font-weight:500;font-size:13px;color:#f0d49a;text-shadow:0 1px 3px rgba(0,0,0,.5);letter-spacing:.02em}
+  .f-cock .lbl small{display:block;font-family:"Inter";font-weight:300;font-size:8px;color:rgba(255,255,255,.7);letter-spacing:.3em;text-transform:uppercase;margin-top:2px;font-style:normal}
+  .f-toronto .pin{position:absolute;left:14px;bottom:14px;background:rgba(255,255,255,.92);color:#0a0a0a;padding:5px 11px 5px 8px;border-radius:999px;display:flex;align-items:center;gap:5px;box-shadow:0 4px 12px rgba(0,0,0,.3)}
+  .f-toronto .pin .ic{color:#e63946;font-size:11px;line-height:1}
+  .f-toronto .pin .t{font-family:"Cormorant Garamond",serif;font-weight:600;font-size:12px;letter-spacing:.005em}
+  .f-toronto .pin .t small{font-family:"Inter";font-weight:300;font-size:8px;color:#7a766f;letter-spacing:.18em;text-transform:uppercase;display:block;margin-bottom:-1px}
+  .f-booked2{position:absolute;left:14px;bottom:14px;display:flex;align-items:center;gap:6px;background:rgba(255,255,255,.16);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);border-radius:999px;padding:6px 12px 6px 8px;box-shadow:inset 0 0 0 1px rgba(255,255,255,.14)}
+  .f-booked2 .ck{width:13px;height:13px;border-radius:50%;background:rgba(255,255,255,.85);color:#0a0a0a;font-size:8px;font-weight:800;display:grid;place-items:center;line-height:1}
+  .f-booked2 .t{font-size:10px;font-weight:300;color:#fff;letter-spacing:.02em}
+  .f-t42 .lbl{position:absolute;left:0;right:0;bottom:20px;text-align:center}
+  .f-t42 .lbl b{font-family:"Italiana",serif;color:#fff;font-size:13px;letter-spacing:.28em;text-transform:uppercase;display:block}
+  .f-t42 .lbl small{font-family:"Cormorant Garamond",serif;font-style:italic;color:rgba(255,255,255,.7);font-size:10px;display:block;margin-top:2px}
+  .f-t42 .rule{position:absolute;left:50%;bottom:62px;transform:translateX(-50%);width:30px;height:1px;background:rgba(255,255,255,.6)}
+  .f-spot .star{position:absolute;left:14px;top:14px;color:var(--gold);font-size:11px;filter:drop-shadow(0 0 4px rgba(201,168,106,.45))}
+  .f-spot .lbl{position:absolute;left:32px;top:14px;font-family:"Cormorant Garamond",serif;font-style:italic;font-weight:500;font-size:12px;color:#f0d49a;letter-spacing:.04em;text-shadow:0 1px 3px rgba(0,0,0,.5)}
+  .f-spot .ts{position:absolute;left:0;right:0;bottom:18px;text-align:center;font-family:"DM Mono",monospace;font-size:9px;color:rgba(255,255,255,.75);letter-spacing:.18em;text-shadow:0 1px 3px rgba(0,0,0,.5)}
+  .f-bestseat .badge{position:absolute;left:50%;top:18px;transform:translateX(-50%);background:rgba(245,225,200,.92);color:#3a200e;padding:5px 12px;border-radius:999px;font-family:"Cormorant Garamond",serif;font-weight:600;font-style:italic;font-size:11px;letter-spacing:.02em;border:1px solid rgba(58,32,14,.18);box-shadow:0 4px 10px rgba(0,0,0,.3)}
+  .f-bestseat .arrow{position:absolute;left:50%;top:46px;transform:translateX(-50%);color:#fff;opacity:.8;font-size:12px;text-shadow:0 1px 3px rgba(0,0,0,.5)}
+  .f-diary .polaroid{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%) rotate(-3deg);width:170px;background:#f5f1ec;padding:10px 10px 36px;box-shadow:0 14px 30px rgba(0,0,0,.45);border-radius:2px}
+  .f-diary .polaroid .inner{width:100%;aspect-ratio:1/1;border-radius:1px;overflow:hidden;background:radial-gradient(120px 100px at 50% 55%,#f0d4a8,#a8784a 50%,#3a200e 90%),linear-gradient(180deg,#1a0e08,#040202)}
+  .f-diary .polaroid .pcap{position:absolute;left:0;right:0;bottom:6px;text-align:center;font-family:"Caveat",cursive;font-size:14px;font-weight:600;color:#0a0a0a;line-height:1}
+  .f-diary .tape{position:absolute;left:50%;top:48px;transform:translateX(-50%) rotate(-4deg);width:60px;height:14px;background:rgba(244,212,184,.55);box-shadow:0 1px 3px rgba(0,0,0,.18)}
+  .f-diary .date{position:absolute;right:14px;bottom:14px;font-family:"DM Mono",monospace;font-size:8px;color:#7ee07a;letter-spacing:.05em;text-shadow:0 0 4px rgba(126,224,122,.4)}
+</style>
+</head>
+<body>
+<div class="page">
+  <header class="masthead">
+    <div class="lockup">
+      <div class="eyebrow">Story Filters · v2.0</div>
+      <div class="wordmark">Cenaiva <em>filters</em></div>
+    </div>
+    <div class="meta">
+      <div><b>30 overlays</b> · 5 categories</div>
+      <div>Frame · 224 × 398 · 9:16</div>
+      <div>Watermark · TR or BL · 9px / 55%</div>
+    </div>
+  </header>
+
+  <section class="cat">
+    <div class="cat-head"><span class="cat-num">01 / CUTE</span><h2 class="cat-title">Girls Night</h2><div class="cat-rule"></div><div class="cat-sub">Pink, pearls, bows, sparkles. Premium not childish.</div></div>
+    <div class="grid">
+      <div class="card"><div class="frame f-bowdinner"><div class="photo ph-cake"></div><div class="grain"></div><div class="vignette"></div><div class="glow"></div>
+        <svg class="bow tl" viewBox="0 0 60 40"><path d="M30 20 Q10 4 6 18 Q4 30 18 26 L30 22 L42 26 Q56 30 54 18 Q50 4 30 20 Z M26 22 L34 22 L32 32 L28 32 Z" fill="#f4b6c2" stroke="#d97488" stroke-width="1"/></svg>
+        <svg class="bow br" viewBox="0 0 60 40"><path d="M30 20 Q10 4 6 18 Q4 30 18 26 L30 22 L42 26 Q56 30 54 18 Q50 4 30 20 Z M26 22 L34 22 L32 32 L28 32 Z" fill="#f4b6c2" stroke="#d97488" stroke-width="1"/></svg>
+        <span class="sparkle sp1">✦</span><span class="sparkle sp2">✦</span><span class="sparkle sp3">✦</span>
+        <div class="lbl">Pink Bow Dinner</div><div class="wm tr"><i>by</i> Cenaiva</div></div>
+        <div class="cap"><span class="id">01</span><span class="nm">Pink Bow Dinner</span><span class="nt">Bows</span></div></div>
+
+      <div class="card"><div class="frame f-coquette"><div class="photo ph-rose"></div><div class="grain"></div><div class="vignette"></div>
+        <div class="pearls"><span></span><span></span><span></span><span></span><span></span><span></span><span></span></div>
+        <svg class="ribbon" viewBox="0 0 60 14"><path d="M0 7 Q10 0 30 7 Q50 14 60 7 L60 10 Q50 17 30 10 Q10 3 0 10 Z" fill="#f4b6c2"/></svg>
+        <span class="h1">♡</span><span class="h2">♡</span>
+        <div class="lbl"><small>Coquette</small>une belle soirée</div><div class="wm tr"><i>by</i> Cenaiva</div></div>
+        <div class="cap"><span class="id">02</span><span class="nm">Coquette Dinner</span><span class="nt">Pearls</span></div></div>
+
+      <div class="card"><div class="frame f-martini"><div class="photo ph-martini"></div><div class="grain"></div><div class="vignette"></div>
+        <svg class="doodle d1" viewBox="0 0 30 36" fill="none" stroke="white" stroke-width="1.4"><path d="M3 4 L27 4 L15 18 Z M15 18 L15 30 M9 30 L21 30"/><circle cx="22" cy="6" r="1.4" fill="#f4b6c2" stroke="none"/></svg>
+        <svg class="doodle d2" viewBox="0 0 30 36" fill="none" stroke="white" stroke-width="1.4"><path d="M3 4 L27 4 L15 18 Z M15 18 L15 30 M9 30 L21 30"/></svg>
+        <svg class="doodle d3" viewBox="0 0 30 36" fill="none" stroke="white" stroke-width="1.4"><path d="M3 4 L27 4 L15 18 Z M15 18 L15 30 M9 30 L21 30"/><circle cx="22" cy="6" r="1.4" fill="#f4b6c2" stroke="none"/></svg>
+        <div class="badge">girls' night</div><div class="wm tr"><i>by</i> Cenaiva</div></div>
+        <div class="cap"><span class="id">03</span><span class="nm">Martini Girls Night</span><span class="nt">Doodle</span></div></div>
+
+      <div class="card"><div class="frame f-gloss"><div class="photo ph-kiss"></div><div class="grain"></div><div class="vignette"></div>
+        <span class="kiss">💋</span><div class="sub"><div class="ttl">Lip Gloss Night</div><small>· glossy ·</small></div><div class="wm tr"><i>by</i> Cenaiva</div></div>
+        <div class="cap"><span class="id">04</span><span class="nm">Lip Gloss Night</span><span class="nt">Sticker</span></div></div>
+
+      <div class="card"><div class="frame f-princess"><div class="photo ph-cake"></div><div class="grain"></div><div class="vignette"></div>
+        <svg class="crown" viewBox="0 0 60 36"><path d="M4 32 L8 12 L20 24 L30 6 L40 24 L52 12 L56 32 Z" fill="#c9a86a" stroke="#7a5a28" stroke-width="1"/><circle cx="30" cy="14" r="2" fill="#f4b6c2"/></svg>
+        <div class="lbl"><small>It's her day</small>Birthday Princess</div>
+        <span class="sp s1">✦</span><span class="sp s2">✦</span><span class="sp s3">✦</span><span class="sp s4">✦</span>
+        <div class="wm tr"><i>by</i> Cenaiva</div></div>
+        <div class="cap"><span class="id">05</span><span class="nm">Birthday Princess</span><span class="nt">Crown</span></div></div>
+
+      <div class="card"><div class="frame f-butterfly"><div class="photo ph-butterfly"></div><div class="grain"></div><div class="vignette"></div><div class="leak"></div>
+        <svg class="b1" viewBox="0 0 30 24"><path d="M15 12 Q4 0 2 10 Q4 18 15 13 Q26 18 28 10 Q26 0 15 12 Z M15 13 L15 22" fill="#f4b6c2" stroke="#d97488" stroke-width=".7" opacity=".95"/></svg>
+        <svg class="b2" viewBox="0 0 30 24"><path d="M15 12 Q4 0 2 10 Q4 18 15 13 Q26 18 28 10 Q26 0 15 12 Z M15 13 L15 22" fill="#c8b6e2" stroke="#7a5a98" stroke-width=".7" opacity=".95"/></svg>
+        <svg class="b3" viewBox="0 0 30 24"><path d="M15 12 Q4 0 2 10 Q4 18 15 13 Q26 18 28 10 Q26 0 15 12 Z M15 13 L15 22" fill="#f4b6c2" stroke="#d97488" stroke-width=".7" opacity=".9"/></svg>
+        <div class="lbl">Butterfly Glow</div><div class="wm tr"><i>by</i> Cenaiva</div></div>
+        <div class="cap"><span class="id">06</span><span class="nm">Butterfly Glow</span><span class="nt">Leak</span></div></div>
+    </div>
+  </section>
+
+  <section class="cat">
+    <div class="cat-head"><span class="cat-num">02 / PLAYFUL</span><h2 class="cat-title">Funny one-liners</h2><div class="cat-rule"></div><div class="cat-sub">Hand-written tags, tickets, badges. Off-axis &amp; small.</div></div>
+    <div class="grid">
+      <div class="card"><div class="frame f-crumbs"><div class="photo ph-pasta"></div><div class="grain"></div><div class="vignette"></div>
+        <span class="funny-tag tag pink">no crumbs left.</span>
+        <svg class="arrow" viewBox="0 0 40 36" fill="none" stroke="#ffd6e0" stroke-width="1.6" stroke-linecap="round"><path d="M6 6 Q26 4 32 22"/><path d="M28 16 L32 22 L24 22"/></svg>
+        <div class="wm tr"><i>by</i> Cenaiva</div></div>
+        <div class="cap"><span class="id">07</span><span class="nm">No Crumbs Left</span><span class="nt">Tag</span></div></div>
+
+      <div class="card"><div class="frame f-expensive"><div class="photo ph-champagne"></div><div class="grain"></div><div class="vignette"></div>
+        <span class="price">$$$ · 24</span><div class="badge">she's expensive.</div><div class="wm tr"><i>by</i> Cenaiva</div></div>
+        <div class="cap"><span class="id">08</span><span class="nm">She's Expensive</span><span class="nt">Badge</span></div></div>
+
+      <div class="card"><div class="frame f-main"><div class="photo ph-steak"></div><div class="grain"></div><div class="vignette"></div>
+        <div class="ticket"><small>scene 04 · take 1</small><b>main character meal</b></div><div class="wm tr"><i>by</i> Cenaiva</div></div>
+        <div class="cap"><span class="id">09</span><span class="nm">Main Character Meal</span><span class="nt">Ticket</span></div></div>
+
+      <div class="card"><div class="frame f-pretty"><div class="photo ph-dessert"></div><div class="grain"></div><div class="vignette"></div>
+        <div class="pill">pretty food only</div><span class="heart">♡</span><span class="heart h2">♡</span><div class="wm bl"><i>by</i> Cenaiva</div></div>
+        <div class="cap"><span class="id">10</span><span class="nm">Pretty Food Only</span><span class="nt">Pill</span></div></div>
+
+      <div class="card"><div class="frame f-plot"><div class="photo ph-velvet"></div><div class="grain"></div><div class="vignette"></div>
+        <div class="scrip"><b>Dinner was the plot</b><small>· chapter one ·</small></div><div class="wm tr"><i>by</i> Cenaiva</div></div>
+        <div class="cap"><span class="id">11</span><span class="nm">Dinner Was the Plot</span><span class="nt">Script</span></div></div>
+
+      <div class="card"><div class="frame f-pov"><div class="photo ph-bokeh"></div><div class="grain"></div><div class="vignette"></div>
+        <div class="pov">POV: <span>best table.</span></div><div class="wm bl"><i>by</i> Cenaiva</div></div>
+        <div class="cap"><span class="id">12</span><span class="nm">POV: Best Table</span><span class="nt">Caps</span></div></div>
+    </div>
+  </section>
+
+  <section class="cat">
+    <div class="cat-head"><span class="cat-num">03 / FANCY</span><h2 class="cat-title">Date Night</h2><div class="cat-rule"></div><div class="cat-sub">Gold, velvet, glow. Editorial restraint.</div></div>
+    <div class="grid">
+      <div class="card"><div class="frame"><div class="photo ph-charcuterie"></div><div class="grain"></div><div class="vignette"></div>
+        <div class="f-dnv"><span class="b">✓</span><span class="t">Date Night Verified</span></div><div class="wm tr"><i>by</i> Cenaiva</div></div>
+        <div class="cap"><span class="id">13</span><span class="nm">Date Night Verified</span><span class="nt">Pill</span></div></div>
+
+      <div class="card"><div class="frame f-champ"><div class="photo ph-champagne"></div><div class="grain"></div><div class="vignette"></div>
+        <span class="bub b1"></span><span class="bub b2"></span><span class="bub b3"></span><span class="bub b4"></span>
+        <div class="lbl">— Champagne Glow —</div><div class="wm tr"><i>by</i> Cenaiva</div></div>
+        <div class="cap"><span class="id">14</span><span class="nm">Champagne Glow</span><span class="nt">Bubbles</span></div></div>
+
+      <div class="card"><div class="frame f-gh"><div class="photo ph-bokeh"></div><div class="grain"></div><div class="vignette"></div>
+        <div class="sun"></div><div class="lbl">Golden Hour Dinner</div><div class="wm tr"><i>by</i> Cenaiva</div></div>
+        <div class="cap"><span class="id">15</span><span class="nm">Golden Hour Dinner</span><span class="nt">Vignette</span></div></div>
+
+      <div class="card"><div class="frame"><div class="photo ph-bestseat"></div><div class="grain"></div><div class="vignette"></div>
+        <div class="f-hid"><span class="ic">💎</span><span class="t">Hidden Gem</span></div><div class="wm bl"><i>by</i> Cenaiva</div></div>
+        <div class="cap"><span class="id">16</span><span class="nm">Hidden Gem</span><span class="nt">Float</span></div></div>
+
+      <div class="card"><div class="frame f-velvet"><div class="photo ph-velvet"></div><div class="grain"></div><div class="vignette"></div>
+        <div class="corner"></div><div class="corner br"></div>
+        <div class="lbl"><b>Velvet Night</b><small>— a private room —</small></div><div class="wm tr"><i>by</i> Cenaiva</div></div>
+        <div class="cap"><span class="id">17</span><span class="nm">Velvet Night</span><span class="nt">Frame</span></div></div>
+
+      <div class="card"><div class="frame f-bc"><div class="photo ph-blackcard"></div><div class="grain"></div><div class="vignette"></div>
+        <div class="ccard"><div class="top"><b>Cenaiva</b><span></span></div><div class="num">•••• •••• •••• 0824</div></div>
+        <div class="wm tr"><i>by</i> Cenaiva</div></div>
+        <div class="cap"><span class="id">18</span><span class="nm">Black Card Dinner</span><span class="nt">Card</span></div></div>
+    </div>
+  </section>
+
+  <section class="cat">
+    <div class="cat-head"><span class="cat-num">04 / FOOD</span><h2 class="cat-title">By the dish</h2><div class="cat-rule"></div><div class="cat-sub">A specific cue per cuisine. Doodles, stamps, tickets.</div></div>
+    <div class="grid">
+      <div class="card"><div class="frame f-pasta-n"><div class="photo ph-pasta"></div><div class="grain"></div><div class="vignette"></div>
+        <svg class="doodle" viewBox="0 0 36 30" fill="none" stroke="#fff" stroke-width="1.4" stroke-linecap="round"><path d="M4 4 Q10 16 4 28 M10 4 Q16 16 10 28 M16 4 Q22 16 16 28 M22 4 Q28 16 22 28 M28 4 Q34 16 28 28"/></svg>
+        <div class="lbl">pasta night<small>· al dente ·</small></div><div class="wm tr"><i>by</i> Cenaiva</div></div>
+        <div class="cap"><span class="id">19</span><span class="nm">Pasta Night</span><span class="nt">Doodle</span></div></div>
+
+      <div class="card"><div class="frame f-sushi-d"><div class="photo ph-sushi"></div><div class="grain"></div><div class="vignette"></div>
+        <svg class="doodle d1" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.4"><ellipse cx="12" cy="14" rx="9" ry="5"/><rect x="3" y="9" width="18" height="2.5" fill="#fff" stroke="none"/><circle cx="12" cy="14" r="2.4" fill="#ffd6e0" stroke="none"/></svg>
+        <svg class="doodle d2" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.3"><path d="M3 6 L21 6 M3 12 L21 12 M3 18 L21 18"/></svg>
+        <span class="heart">♡</span><div class="lbl">— sushi date —</div><div class="wm tr"><i>by</i> Cenaiva</div></div>
+        <div class="cap"><span class="id">20</span><span class="nm">Sushi Date</span><span class="nt">Doodle</span></div></div>
+
+      <div class="card"><div class="frame f-df"><div class="photo ph-dessert"></div><div class="grain"></div><div class="vignette"></div>
+        <span class="spoon">🥄</span><div class="stamp">DESSERT FIRST</div><div class="wm tr"><i>by</i> Cenaiva</div></div>
+        <div class="cap"><span class="id">21</span><span class="nm">Dessert First</span><span class="nt">Stamp</span></div></div>
+
+      <div class="card"><div class="frame f-brunch"><div class="photo ph-brunch"></div><div class="grain"></div><div class="vignette"></div>
+        <div class="seal"><div><b>Brunch</b><small>club · est ’26</small></div></div><div class="wm bl"><i>by</i> Cenaiva</div></div>
+        <div class="cap"><span class="id">22</span><span class="nm">Brunch Club</span><span class="nt">Seal</span></div></div>
+
+      <div class="card"><div class="frame f-pizza-d"><div class="photo ph-pizza"></div><div class="grain"></div><div class="vignette"></div>
+        <span class="pep"></span><span class="pep p2"></span>
+        <div class="ticket">slice night<b>Pizza Date</b></div><div class="wm tr"><i>by</i> Cenaiva</div></div>
+        <div class="cap"><span class="id">23</span><span class="nm">Pizza Date</span><span class="nt">Ticket</span></div></div>
+
+      <div class="card"><div class="frame f-cock"><div class="photo ph-cocktailamber"></div><div class="grain"></div><div class="vignette"></div>
+        <div class="clock"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7 L12 12 L16 14"/></svg>17:32</div>
+        <div class="lbl">Cocktail Hour<small>· apéritif ·</small></div><div class="wm tr"><i>by</i> Cenaiva</div></div>
+        <div class="cap"><span class="id">24</span><span class="nm">Cocktail Hour</span><span class="nt">Clock</span></div></div>
+    </div>
+  </section>
+
+  <section class="cat">
+    <div class="cat-head"><span class="cat-num">05 / LOCATION</span><h2 class="cat-title">Booked &amp; Dined</h2><div class="cat-rule"></div><div class="cat-sub">Geo pins, booking confirms, table moments.</div></div>
+    <div class="grid">
+      <div class="card"><div class="frame f-toronto"><div class="photo ph-toronto"></div><div class="grain"></div><div class="vignette"></div>
+        <div class="pin"><span class="ic">📍</span><div class="t"><small>Dined in</small>Toronto</div></div><div class="wm tr"><i>by</i> Cenaiva</div></div>
+        <div class="cap"><span class="id">25</span><span class="nm">Dined in Toronto</span><span class="nt">Pin</span></div></div>
+
+      <div class="card"><div class="frame"><div class="photo ph-charcuterie"></div><div class="grain"></div><div class="vignette"></div>
+        <div class="f-booked2"><span class="ck">✓</span><span class="t">Booked on Cenaiva</span></div><div class="wm tr"><i>by</i> Cenaiva</div></div>
+        <div class="cap"><span class="id">26</span><span class="nm">Booked on Cenaiva</span><span class="nt">Glass</span></div></div>
+
+      <div class="card"><div class="frame f-t42"><div class="photo ph-table2"></div><div class="grain"></div><div class="vignette"></div>
+        <div class="rule"></div><div class="lbl"><b>Table for Two</b><small>— reserved —</small></div><div class="wm tr"><i>by</i> Cenaiva</div></div>
+        <div class="cap"><span class="id">27</span><span class="nm">Table for Two</span><span class="nt">Editorial</span></div></div>
+
+      <div class="card"><div class="frame f-spot"><div class="photo ph-rooftop" style="background:radial-gradient(220px 200px at 50% 60%,#5a2818 0%,#1a0a08 80%),linear-gradient(180deg,#1a0a18,#040102)"></div><div class="grain"></div><div class="vignette"></div>
+        <span class="star">★</span><div class="lbl">Tonight's Spot</div><div class="ts">19:30 · CONFIRMED</div><div class="wm tr"><i>by</i> Cenaiva</div></div>
+        <div class="cap"><span class="id">28</span><span class="nm">Tonight's Spot</span><span class="nt">Star</span></div></div>
+
+      <div class="card"><div class="frame f-bestseat"><div class="photo ph-bestseat"></div><div class="grain"></div><div class="vignette"></div>
+        <div class="badge">best seat in the house</div><div class="arrow">↓</div><div class="wm bl"><i>by</i> Cenaiva</div></div>
+        <div class="cap"><span class="id">29</span><span class="nm">Best Seat in the House</span><span class="nt">Badge</span></div></div>
+
+      <div class="card"><div class="frame f-diary"><div class="photo ph-diary"></div><div class="grain"></div><div class="vignette"></div>
+        <div class="tape"></div>
+        <div class="polaroid"><div class="inner"></div><div class="pcap">dinner diaries · vol. 12</div></div>
+        <div class="date">REC ● 24·05·26</div><div class="wm tr"><i>by</i> Cenaiva</div></div>
+        <div class="cap"><span class="id">30</span><span class="nm">Dinner Diaries</span><span class="nt">Polaroid</span></div></div>
+    </div>
+  </section>
+</div>
+</body>
+</html>

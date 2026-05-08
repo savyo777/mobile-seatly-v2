@@ -9,8 +9,9 @@ import {
   View,
   type KeyboardEvent,
 } from 'react-native';
+import { BlurView } from 'expo-blur';
 import { useTranslation } from 'react-i18next';
-import { createStyles, spacing, typography } from '@/lib/theme';
+import { createStyles, spacing, typography, useColors } from '@/lib/theme';
 
 type KeyboardState = {
   visible: boolean;
@@ -27,27 +28,33 @@ const useStyles = createStyles((c) => ({
     position: 'absolute',
     left: 0,
     right: 0,
-    minHeight: 44,
+    height: 36,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'flex-end',
-    paddingHorizontal: spacing.md,
-    paddingVertical: 8,
-    backgroundColor: c.bgSurface,
+    paddingHorizontal: spacing.sm,
+    overflow: 'hidden',
+    // Subtle hairline at the top only — separates from app content but blends
+    // into the keyboard below.
     borderTopWidth: StyleSheet.hairlineWidth,
-    borderTopColor: c.border,
-    borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: c.border,
+    borderTopColor: 'rgba(0,0,0,0.18)',
+  },
+  androidFill: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: c.bgElevated,
   },
   doneButton: {
-    minHeight: 28,
+    height: 28,
+    minWidth: 56,
+    paddingHorizontal: spacing.sm,
+    alignItems: 'center',
     justifyContent: 'center',
-    paddingHorizontal: 8,
   },
   doneText: {
     ...typography.bodySmall,
+    fontWeight: '600',
+    fontSize: 15,
     color: c.gold,
-    fontWeight: '700',
   },
 }));
 
@@ -59,6 +66,7 @@ function keyboardHeightFromEvent(event: KeyboardEvent) {
 
 export function KeyboardDoneBar() {
   const styles = useStyles();
+  const c = useColors();
   const { t } = useTranslation();
   const [keyboard, setKeyboard] = useState<KeyboardState>({ visible: false, height: 0 });
 
@@ -84,10 +92,19 @@ export function KeyboardDoneBar() {
   return (
     <View pointerEvents="box-none" style={styles.overlay}>
       <View style={[styles.bar, { bottom: keyboard.height }]}>
+        {Platform.OS === 'ios' ? (
+          <BlurView
+            tint={c.bgBase === '#0A0A0A' || c.bgBase.startsWith('#0') ? 'dark' : 'light'}
+            intensity={92}
+            style={StyleSheet.absoluteFill}
+          />
+        ) : (
+          <View style={styles.androidFill} />
+        )}
         <Pressable
           onPress={Keyboard.dismiss}
           hitSlop={12}
-          style={styles.doneButton}
+          style={({ pressed }) => [styles.doneButton, pressed && { opacity: 0.6 }]}
           accessibilityRole="button"
           accessibilityLabel={t('common.done')}
         >

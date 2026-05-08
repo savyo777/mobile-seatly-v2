@@ -25,6 +25,7 @@ import {
   parseBookingCartParam,
   type PublicBookingResponse,
 } from '@/lib/booking/publicBookingApi';
+import { addBookingToCalendar } from '@/lib/booking/addToCalendar';
 import { useColors, createStyles, spacing, borderRadius, shadows } from '@/lib/theme';
 import type { DateKey } from '@/lib/booking/availabilityTypes';
 
@@ -158,6 +159,25 @@ const useStyles = createStyles((c) => ({
     lineHeight: 18,
   },
 
+  // Calendar action
+  calendarBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    paddingVertical: 14,
+    paddingHorizontal: 16,
+    borderRadius: borderRadius.xl,
+    borderWidth: 1,
+    borderColor: c.gold,
+    backgroundColor: 'rgba(201,162,74,0.08)',
+  },
+  calendarBtnText: {
+    fontSize: 14,
+    fontWeight: '700',
+    color: c.gold,
+  },
+
   // Done
   doneWrap: { gap: 12 },
   loadingBox: {
@@ -227,6 +247,8 @@ export default function Step7Confirmation() {
   const [restaurant, setRestaurant] = useState(() => getCachedRestaurantById(rid));
   const [confirmation, setConfirmation] = useState<PublicBookingResponse | null>(null);
   const [submitError, setSubmitError] = useState<string | null>(null);
+  const [calendarAdding, setCalendarAdding] = useState(false);
+  const [calendarAdded, setCalendarAdded] = useState(false);
   const guests = parseInt(partySize ?? '2', 10);
   const savedReservationRef = useRef(false);
   const cart = parseBookingCartParam(cartParam);
@@ -332,6 +354,32 @@ export default function Step7Confirmation() {
     ]).start();
   }, [fadeAnim, scaleAnim, slideAnim]);
 
+  const handleAddToCalendar = async () => {
+    if (!confirmation || !slotDateTime || calendarAdding) return;
+    setCalendarAdding(true);
+    try {
+      const addressParts = restaurant
+        ? [restaurant.address, restaurant.city, restaurant.province].filter(Boolean)
+        : [];
+      await addBookingToCalendar({
+        reservationId: confirmation.reservation_id,
+        confirmationCode: confirmation.confirmation_code,
+        restaurantName: restaurant?.name ?? 'Restaurant',
+        restaurantAddress: addressParts.length ? addressParts.join(', ') : null,
+        startDateTime: slotDateTime,
+        durationMinutes: confirmation.duration_minutes,
+        partySize: guests,
+        notes: notes ?? null,
+      });
+      setCalendarAdded(true);
+    } catch (error) {
+      const message = error instanceof Error && error.message ? error.message : 'Could not add to calendar.';
+      Alert.alert('Add to calendar', message);
+    } finally {
+      setCalendarAdding(false);
+    }
+  };
+
   if (!confirmation) {
     return (
       <View style={[styles.container, { paddingTop: insets.top }]}>
@@ -417,6 +465,38 @@ export default function Step7Confirmation() {
                 ? `Confirmation sent by ${confirmation.confirmation_delivery_channel ?? 'message'}.`
                 : 'Your reservation is confirmed. Keep this code for check-in.'}
           </Text>
+        </Animated.View>
+
+        {/* Add to calendar */}
+        <Animated.View style={[{ opacity: fadeAnim }]}>
+          <Pressable
+            onPress={handleAddToCalendar}
+            disabled={calendarAdding || !slotDateTime}
+            style={({ pressed }) => [
+              styles.calendarBtn,
+              pressed && { opacity: 0.7 },
+              (calendarAdding || !slotDateTime) && { opacity: 0.6 },
+            ]}
+            accessibilityRole="button"
+            accessibilityLabel="Add reservation to calendar"
+          >
+            {calendarAdding ? (
+              <ActivityIndicator color={c.gold} />
+            ) : (
+              <Ionicons
+                name={calendarAdded ? 'checkmark-circle' : 'calendar-outline'}
+                size={18}
+                color={c.gold}
+              />
+            )}
+            <Text style={styles.calendarBtnText}>
+              {calendarAdding
+                ? 'Opening calendar…'
+                : calendarAdded
+                  ? 'Added to calendar'
+                  : 'Add to calendar'}
+            </Text>
+          </Pressable>
         </Animated.View>
 
         {/* Done */}

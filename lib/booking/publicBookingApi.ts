@@ -3,7 +3,6 @@ import { getSupabaseEnv, isSupabaseConfigured } from '@/lib/supabase/env';
 import { getMockShiftConfig, getMockTimeSlots } from '@/lib/mock/bookingAvailability';
 import { mockRestaurants } from '@/lib/mock/restaurants';
 import { getCachedRestaurantById } from '@/lib/data/restaurantCatalog';
-import { isDemoModeEnabled } from '@/lib/config/demoMode';
 
 export type AvailabilitySlot = {
   shift_id: string;
@@ -98,7 +97,10 @@ function demoAvailabilityFor(params: {
   date: string;
   partySize: number;
 }): AvailabilityResponse | null {
-  if (!isDemoModeEnabled()) return null;
+  // Mock restaurants (r1, r3, r5, r7, etc.) don't exist in Supabase, so we
+  // serve mock availability for them regardless of the demo-mode flag.
+  // This keeps the events flow working when supabase is configured but the
+  // mock restaurants don't have a real backend record.
   if (!isDemoRestaurantKey(params.restaurantId) || !getCachedRestaurantById(params.restaurantId)) {
     return null;
   }
@@ -127,7 +129,8 @@ function demoAvailabilityFor(params: {
 }
 
 function demoBookingFor(payload: PublicBookingPayload): PublicBookingResponse | null {
-  if (!isDemoModeEnabled()) return null;
+  // Mirror demoAvailabilityFor — mock restaurants always use the mock booking
+  // path because they don't have a real Supabase row to write against.
   if (!isDemoRestaurantKey(payload.restaurant_id)) return null;
   const seed = `${payload.restaurant_id}-${payload.date_time}-${payload.guest_email}`;
   let hash = 0;
@@ -169,6 +172,34 @@ function isAbortError(error: unknown): boolean {
     error instanceof Error &&
     (error.name === 'AbortError' || /abort/i.test(error.message))
   );
+}
+
+function isJunkErrorString(value: string): boolean {
+  const lower = value.trim().toLowerCase();
+  return (
+    !lower ||
+    lower === '[object object]' ||
+    lower === 'object object' ||
+    lower === '{}' ||
+    lower === 'null' ||
+    lower === 'undefined'
+  );
+}
+
+function coerceErrorMessage(value: unknown, fallback: string): string {
+  if (typeof value === 'string' && !isJunkErrorString(value)) {
+    return value.trim();
+  }
+  if (value && typeof value === 'object') {
+    const record = value as Record<string, unknown>;
+    for (const key of ['message', 'error', 'detail', 'description'] as const) {
+      const candidate = record[key];
+      if (typeof candidate === 'string' && !isJunkErrorString(candidate)) {
+        return candidate.trim();
+      }
+    }
+  }
+  return fallback;
 }
 
 export async function getAvailability(params: {
@@ -215,12 +246,12 @@ export async function getAvailability(params: {
     const body = await response.json().catch(() => ({})) as {
       slots?: AvailabilitySlot[];
       floor_capacity?: number;
-      error?: string;
+      error?: unknown;
     };
 
     if (!response.ok || body.error) {
       if (demoFallback) return cacheAvailability(cacheKey, demoFallback);
-      throw new Error(body.error ?? 'Could not load availability.');
+      throw new Error(coerceErrorMessage(body.error, 'Could not load availability.'));
     }
 
     const slots = (body.slots ?? [])
@@ -297,10 +328,10 @@ export async function createPublicBooking(
     clearTimeout(timeout);
   }
 
-  const body = await response.json().catch(() => ({})) as Partial<PublicBookingResponse>;
+  const body = await response.json().catch(() => ({})) as Partial<PublicBookingResponse> & { error?: unknown };
   if (!response.ok || body.error || !body.reservation_id) {
     if (demoFallback) return demoFallback;
-    const error = new Error(body.error ?? 'Reservation failed.');
+    const error = new Error(coerceErrorMessage(body.error, 'Reservation failed.'));
     (error as Error & { status?: number }).status = response.status;
     throw error;
   }

@@ -10,7 +10,24 @@ import { borderRadius, createStyles, spacing, typography, useColors } from '@/li
 import {
   inferCardBrand,
   saveRestaurantPaymentCard,
+  type CardFunding,
 } from '@/lib/storage/restaurantPaymentMethod';
+
+type CardBrandKey = 'Visa' | 'Mastercard' | 'Amex' | 'Discover' | 'Other';
+
+const BRAND_OPTIONS: { key: CardBrandKey; label: string }[] = [
+  { key: 'Visa', label: 'Visa' },
+  { key: 'Mastercard', label: 'Mastercard' },
+  { key: 'Amex', label: 'Amex' },
+  { key: 'Discover', label: 'Discover' },
+  { key: 'Other', label: 'Other' },
+];
+
+const FUNDING_OPTIONS: { key: CardFunding; label: string }[] = [
+  { key: 'credit', label: 'Credit' },
+  { key: 'debit', label: 'Debit' },
+  { key: 'prepaid', label: 'Prepaid' },
+];
 
 const useStyles = createStyles((c) => ({
   scroll: { flex: 1 },
@@ -73,6 +90,33 @@ const useStyles = createStyles((c) => ({
     gap: 4,
   },
   fieldDivider: { borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: c.border },
+  pickerRow: {
+    flexDirection: 'row',
+    gap: 8,
+    flexWrap: 'wrap',
+    marginTop: 8,
+  },
+  pickerChip: {
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: borderRadius.full,
+    borderWidth: 1,
+    borderColor: c.border,
+    backgroundColor: c.bgElevated,
+  },
+  pickerChipActive: {
+    borderColor: c.gold,
+    backgroundColor: 'rgba(201,168,76,0.18)',
+  },
+  pickerChipText: {
+    ...typography.bodySmall,
+    color: c.textSecondary,
+    fontWeight: '600',
+  },
+  pickerChipTextActive: {
+    color: c.gold,
+    fontWeight: '700',
+  },
   fieldLabel: {
     ...typography.label,
     color: c.textMuted,
@@ -218,6 +262,9 @@ export default function AddCardScreen() {
   const [cvc, setCvc] = useState('');
   const [postal, setPostal] = useState('');
   const [makeDefault, setMakeDefault] = useState(true);
+  const [brand, setBrand] = useState<CardBrandKey>('Visa');
+  const [brandManuallySet, setBrandManuallySet] = useState(false);
+  const [funding, setFunding] = useState<CardFunding>('credit');
   const [errors, setErrors] = useState<{
     cardholder?: string;
     number?: string;
@@ -229,6 +276,16 @@ export default function AddCardScreen() {
   useEffect(() => {
     setCardholder((current) => (current.trim() ? current : profile.fullName));
   }, [profile.fullName]);
+
+  // Auto-detect the brand from the card number until the user picks one
+  // explicitly — once they do, we honor their choice.
+  useEffect(() => {
+    if (brandManuallySet) return;
+    const inferred = inferCardBrand(sanitizeDigits(number));
+    if (inferred === 'Visa' || inferred === 'Mastercard' || inferred === 'Amex' || inferred === 'Discover') {
+      setBrand(inferred);
+    }
+  }, [number, brandManuallySet]);
 
   const onSave = () => {
     const digits = sanitizeDigits(number);
@@ -245,8 +302,10 @@ export default function AddCardScreen() {
     if (Object.keys(next).length > 0) return;
 
     void (async () => {
+      const finalBrand = brand === 'Other' ? inferCardBrand(digits) : brand;
       await saveRestaurantPaymentCard({
-        brand: inferCardBrand(digits),
+        brand: finalBrand,
+        funding,
         last4: digits.slice(-4),
         expiry,
         cardholder: cardholder.trim(),
@@ -303,6 +362,63 @@ export default function AddCardScreen() {
           </View>
 
           <View style={styles.field}>
+            <Text style={styles.fieldLabel}>CARD BRAND</Text>
+            <View style={styles.pickerRow}>
+              {BRAND_OPTIONS.map((option) => {
+                const active = brand === option.key;
+                return (
+                  <Pressable
+                    key={option.key}
+                    onPress={() => {
+                      setBrand(option.key);
+                      setBrandManuallySet(true);
+                    }}
+                    style={({ pressed }) => [
+                      styles.pickerChip,
+                      active && styles.pickerChipActive,
+                      pressed && { opacity: 0.85 },
+                    ]}
+                    accessibilityRole="button"
+                    accessibilityState={{ selected: active }}
+                    accessibilityLabel={`Card brand ${option.label}`}
+                  >
+                    <Text style={[styles.pickerChipText, active && styles.pickerChipTextActive]}>
+                      {option.label}
+                    </Text>
+                  </Pressable>
+                );
+              })}
+            </View>
+          </View>
+
+          <View style={[styles.field, styles.fieldDivider]}>
+            <Text style={styles.fieldLabel}>CARD TYPE</Text>
+            <View style={styles.pickerRow}>
+              {FUNDING_OPTIONS.map((option) => {
+                const active = funding === option.key;
+                return (
+                  <Pressable
+                    key={option.key}
+                    onPress={() => setFunding(option.key)}
+                    style={({ pressed }) => [
+                      styles.pickerChip,
+                      active && styles.pickerChipActive,
+                      pressed && { opacity: 0.85 },
+                    ]}
+                    accessibilityRole="button"
+                    accessibilityState={{ selected: active }}
+                    accessibilityLabel={`Card type ${option.label}`}
+                  >
+                    <Text style={[styles.pickerChipText, active && styles.pickerChipTextActive]}>
+                      {option.label}
+                    </Text>
+                  </Pressable>
+                );
+              })}
+            </View>
+          </View>
+
+          <View style={[styles.field, styles.fieldDivider]}>
             <Text style={styles.fieldLabel}>CARDHOLDER NAME</Text>
             <View style={styles.fieldRow}>
               <Ionicons name="person-outline" size={16} color={c.textMuted} style={styles.fieldIcon} />

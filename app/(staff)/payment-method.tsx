@@ -10,16 +10,31 @@ import {
   removeRestaurantPaymentCard,
   setDefaultRestaurantPaymentCard,
 } from '@/lib/storage/restaurantPaymentMethod';
+import {
+  EMPTY_BILLING_ADDRESS,
+  formatBillingAddressOneLine,
+  getStoredBillingAddress,
+  isBillingAddressComplete,
+  type RestaurantBillingAddress,
+} from '@/lib/storage/restaurantBillingAddress';
 
 type Card = {
   id: string;
   brand: string;
+  funding: 'credit' | 'debit' | 'prepaid' | 'unknown';
   last4: string;
   expiry: string;
   cardholder: string;
   isDefault: boolean;
   source: 'registration' | 'manual';
 };
+
+function fundingLabel(funding: Card['funding']): string {
+  if (funding === 'credit') return 'Credit';
+  if (funding === 'debit') return 'Debit';
+  if (funding === 'prepaid') return 'Prepaid';
+  return '';
+}
 
 const useStyles = createStyles((c) => ({
   intro: {
@@ -182,6 +197,39 @@ const useStyles = createStyles((c) => ({
     fontWeight: '800',
   },
 
+  /* Billing address row */
+  addressRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.md,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.md,
+    borderRadius: borderRadius.xl,
+    backgroundColor: c.bgSurface,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.08)',
+    marginBottom: spacing.lg,
+  },
+  addressIcon: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: 'rgba(201,168,76,0.14)',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  addressText: { flex: 1, gap: 2 },
+  addressTitle: {
+    ...typography.body,
+    color: c.textPrimary,
+    fontWeight: '700',
+  },
+  addressSub: {
+    ...typography.bodySmall,
+    color: c.textMuted,
+    lineHeight: 18,
+  },
+
   /* Empty */
   empty: {
     padding: spacing['2xl'],
@@ -219,6 +267,7 @@ export default function PaymentMethodScreen() {
   const router = useRouter();
   const { source } = useLocalSearchParams<{ source?: string }>();
   const [cards, setCards] = useState<Card[]>(INITIAL_CARDS);
+  const [billingAddress, setBillingAddress] = useState<RestaurantBillingAddress>(EMPTY_BILLING_ADDRESS);
   const returnRoute =
     source === 'subscription-plan'
       ? '/(staff)/subscription-plan'
@@ -231,6 +280,7 @@ export default function PaymentMethodScreen() {
         stored.map((card) => ({
           id: card.id,
           brand: card.brand,
+          funding: card.funding,
           last4: card.last4,
           expiry: card.expiry,
           cardholder: card.cardholder,
@@ -238,6 +288,8 @@ export default function PaymentMethodScreen() {
           source: card.source,
         })),
       );
+      const address = await getStoredBillingAddress();
+      setBillingAddress(address);
     })();
   }, []);
 
@@ -250,6 +302,7 @@ export default function PaymentMethodScreen() {
         next.map((card) => ({
           id: card.id,
           brand: card.brand,
+          funding: card.funding,
           last4: card.last4,
           expiry: card.expiry,
           cardholder: card.cardholder,
@@ -285,6 +338,7 @@ export default function PaymentMethodScreen() {
                 next.map((card) => ({
                   id: card.id,
                   brand: card.brand,
+                  funding: card.funding,
                   last4: card.last4,
                   expiry: card.expiry,
                   cardholder: card.cardholder,
@@ -320,6 +374,18 @@ export default function PaymentMethodScreen() {
       params: { source: source ?? 'settings' },
     } as never);
   };
+
+  const onEditBillingAddress = () => {
+    router.push({
+      pathname: '/(staff)/billing-address',
+      params: { source: source ?? 'settings' },
+    } as never);
+  };
+
+  const billingAddressComplete = isBillingAddressComplete(billingAddress);
+  const billingAddressLine = billingAddressComplete
+    ? formatBillingAddressOneLine(billingAddress)
+    : 'Add a billing address for receipts and tax docs.';
 
   return (
     <OwnerScreen
@@ -386,7 +452,7 @@ export default function PaymentMethodScreen() {
                 </View>
                 <View style={styles.cardText}>
                   <Text style={styles.cardTitle}>
-                    {card.brand} ···· {card.last4}
+                    {card.brand}{fundingLabel(card.funding) ? ` ${fundingLabel(card.funding)}` : ''} ···· {card.last4}
                   </Text>
                   <Text style={styles.cardSub}>
                     Expires {card.expiry}
@@ -407,6 +473,26 @@ export default function PaymentMethodScreen() {
           </View>
         </View>
       )}
+
+      <Pressable
+        onPress={onEditBillingAddress}
+        style={({ pressed }) => [styles.addressRow, pressed && { opacity: 0.85 }]}
+        accessibilityRole="button"
+        accessibilityLabel="Edit billing address"
+      >
+        <View style={styles.addressIcon}>
+          <Ionicons name="home-outline" size={18} color={c.gold} />
+        </View>
+        <View style={styles.addressText}>
+          <Text style={styles.addressTitle}>
+            {billingAddressComplete ? 'Billing address' : 'Add billing address'}
+          </Text>
+          <Text style={styles.addressSub} numberOfLines={2}>
+            {billingAddressLine}
+          </Text>
+        </View>
+        <Ionicons name="chevron-forward" size={18} color={c.textMuted} />
+      </Pressable>
 
       <Pressable
         onPress={onAddCard}

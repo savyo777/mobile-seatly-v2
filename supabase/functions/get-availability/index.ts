@@ -159,8 +159,21 @@ Deno.serve(async (req) => {
         : availability.message ?? null,
     });
   } catch (error) {
-    const message = error instanceof Error ? error.message : String(error);
-    console.error("get-availability error:", message);
-    return jsonRes({ error: message || "availability_failed" }, 500);
+    let message = "availability_failed";
+    if (error instanceof Error && error.message) {
+      message = error.message;
+    } else if (typeof error === "string" && error.trim()) {
+      message = error;
+    } else if (error && typeof error === "object") {
+      const candidate =
+        (error as { message?: unknown }).message ??
+        (error as { error?: unknown }).error ??
+        (error as { detail?: unknown }).detail;
+      if (typeof candidate === "string" && candidate.trim()) {
+        message = candidate;
+      }
+    }
+    console.error("get-availability error:", message, error);
+    return jsonRes({ error: message }, 500);
   }
 });

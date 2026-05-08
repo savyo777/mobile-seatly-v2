@@ -357,7 +357,17 @@ export default function Step2Time() {
       .catch((error) => {
         if (cancelled) return;
         setSlots([]);
-        setSlotsError(error instanceof Error ? error.message : 'Could not load availability.');
+        const rawMessage = error instanceof Error ? error.message : '';
+        const trimmed = typeof rawMessage === 'string' ? rawMessage.trim() : '';
+        const lower = trimmed.toLowerCase();
+        const looksLikeJunk =
+          !trimmed ||
+          lower === '[object object]' ||
+          lower === 'object object' ||
+          lower === '{}' ||
+          lower === 'null' ||
+          lower === 'undefined';
+        setSlotsError(looksLikeJunk ? 'Could not load availability.' : trimmed);
       })
       .finally(() => {
         if (!cancelled) setSlotsLoading(false);

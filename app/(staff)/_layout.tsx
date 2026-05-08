@@ -321,6 +321,7 @@ export default function OwnerTabsLayout() {
         <Tabs.Screen name="closures"    options={{ href: null, tabBarStyle: { display: 'none' } }} />
         <Tabs.Screen name="payment-method" options={{ href: null, tabBarStyle: { display: 'none' } }} />
         <Tabs.Screen name="add-card"    options={{ href: null, tabBarStyle: { display: 'none' } }} />
+        <Tabs.Screen name="billing-address" options={{ href: null, tabBarStyle: { display: 'none' } }} />
         <Tabs.Screen name="billing-history" options={{ href: null, tabBarStyle: { display: 'none' } }} />
         <Tabs.Screen name="billing-year" options={{ href: null, tabBarStyle: { display: 'none' } }} />
         <Tabs.Screen name="subscription-plan" options={{ href: null, tabBarStyle: { display: 'none' } }} />
