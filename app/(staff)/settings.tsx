@@ -9,6 +9,7 @@ import { useAuthSession } from '@/lib/auth/AuthContext';
 import { compactNameLabel, resolveAuthDisplayProfile } from '@/lib/auth/displayProfile';
 import { deleteAccount, signOutAllDevices } from '@/lib/services/accountSecurity';
 import { setAppShellPreference } from '@/lib/navigation/appShellPreference';
+import { withOwnerReturnTarget } from '@/lib/navigation/ownerReturnTargets';
 import { getStoredRestaurantPaymentCards } from '@/lib/storage/restaurantPaymentMethod';
 
 // ── Types ──────────────────────────────────────────────────────────────────
@@ -285,7 +286,7 @@ function SettingsSection({ section }: { section: Section }) {
         router.replace('/(customer)' as never);
       })();
     } else if (item.route) {
-      router.push(item.route as never);
+      router.push(withOwnerReturnTarget(item.route, 'settings') as never);
     } else {
       Alert.alert(item.label, 'Coming soon.');
     }

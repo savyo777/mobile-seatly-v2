@@ -657,7 +657,7 @@ function PeopleResults({
           <Pressable
             key={user.id}
             style={({ pressed }) => [peopleStyles.row, pressed && { opacity: 0.75 }]}
-            onPress={() => router.push(`/(customer)/profile/${user.id}` as Href)}
+            onPress={() => router.push('/(customer)/profile' as Href)}
           >
             {user.avatarUrl ? (
               <Image source={{ uri: user.avatarUrl }} style={peopleStyles.avatar} />

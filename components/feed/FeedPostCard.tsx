@@ -29,7 +29,6 @@ interface Props {
 
 const SCREEN_W = Dimensions.get('window').width;
 const IMAGE_H = SCREEN_W * 1.15;
-const PRICE_LABELS = ['', '$', '$$', '$$$', '$$$$'];
 
 const useStyles = createStyles((c) => ({
   card: {},

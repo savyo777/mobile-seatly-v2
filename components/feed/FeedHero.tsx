@@ -3,6 +3,7 @@ import { View, Text, StyleSheet, ImageBackground, Pressable } from 'react-native
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import type { Restaurant } from '@/lib/mock/restaurants';
+import { restaurantPriceLabel } from '@/lib/restaurants/pricing';
 import { useColors, createStyles, spacing, borderRadius, shadows } from '@/lib/theme';
 
 interface Props {
@@ -10,8 +11,6 @@ interface Props {
   onPressCard: () => void;
   onPressReserve: () => void;
 }
-
-const PRICE_LABELS = ['', '$', '$$', '$$$', '$$$$'];
 
 const useStyles = createStyles((c) => ({
   wrap: {
@@ -148,7 +147,7 @@ export function FeedHero({ restaurant, onPressCard, onPressReserve }: Props) {
 
           <View style={styles.bottom}>
             <Text style={styles.cuisine}>
-              {restaurant.cuisineType.toUpperCase()} · {PRICE_LABELS[restaurant.priceRange]} · {restaurant.distanceKm.toFixed(1)} km
+              {restaurant.cuisineType.toUpperCase()} · {restaurantPriceLabel(restaurant.priceRange)} · {restaurant.distanceKm.toFixed(1)} km
             </Text>
             <Text style={styles.name} numberOfLines={2}>{restaurant.name}</Text>
             <Text style={styles.ambiance} numberOfLines={1}>{restaurant.ambiance}</Text>

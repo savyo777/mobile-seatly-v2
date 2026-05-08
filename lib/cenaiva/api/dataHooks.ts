@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { fetchRestaurantsFromSupabase } from '@/lib/supabase/fetchRestaurants';
+import { loadRestaurantsForDiscover } from '@/lib/data/restaurantCatalog';
 import { isDemoModeEnabled } from '@/lib/config/demoMode';
 import { getSupabase } from '@/lib/supabase/client';
 import { mockRestaurants, type Restaurant } from '@/lib/mock/restaurants';
@@ -89,8 +89,8 @@ export function useCenaivaRestaurants() {
     if (!options?.silent && restaurants.length === 0) setLoading(true);
     setError(null);
     try {
-      const live = await fetchRestaurantsFromSupabase();
-      setRestaurants(live.length ? live : isDemoModeEnabled() ? mockRestaurants : []);
+      const { list } = await loadRestaurantsForDiscover();
+      setRestaurants(list);
     } catch (err) {
       setError(String(err));
       setRestaurants(isDemoModeEnabled() ? mockRestaurants : []);

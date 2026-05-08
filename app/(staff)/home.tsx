@@ -16,6 +16,8 @@ import { useColors, createStyles, spacing, borderRadius, typography } from '@/li
 import { useAuthSession } from '@/lib/auth/AuthContext';
 import { resolveAuthDisplayProfile } from '@/lib/auth/displayProfile';
 import { fetchCurrentOwnerRestaurant, type OwnerRestaurant } from '@/lib/services/ownerRestaurant';
+import { safeOwnerPush } from '@/lib/navigation/safeOwnerNavigation';
+import { withOwnerReturnTarget } from '@/lib/navigation/ownerReturnTargets';
 import {
   BOOKING_TREND_WEEK,
   BOOKINGS_BY_HOUR,
@@ -710,7 +712,9 @@ export default function OwnerHomeScreen() {
       <View style={[styles.brandBar, { paddingTop: insets.top + spacing.xs }]}>
         <Text style={styles.brandLogo}>{t('common.appName')}</Text>
         <Pressable
-          onPress={() => router.push('/(staff)/notifications' as never)}
+          onPress={() =>
+            safeOwnerPush(router, withOwnerReturnTarget('/(staff)/notifications', 'home') as never)
+          }
           hitSlop={8}
           style={({ pressed }) => [styles.brandBellBtn, pressed && styles.brandBellPressed]}
           accessibilityRole="button"

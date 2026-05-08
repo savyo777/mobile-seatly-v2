@@ -14,6 +14,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Button, Badge } from '@/components/ui';
 import { formatDistanceMeters } from '@/lib/map/geo';
 import type { RestaurantWithDistance } from '@/lib/map/mapFilters';
+import { restaurantPriceLabel } from '@/lib/restaurants/pricing';
 import { useColors, createStyles, spacing, borderRadius, typography, shadows } from '@/lib/theme';
 
 const { height: SCREEN_H } = Dimensions.get('window');
@@ -26,10 +27,6 @@ type Props = {
   onViewDetails: () => void;
   onAskAi: () => void;
 };
-
-function priceTierLabel(range: number): string {
-  return '$'.repeat(Math.min(4, Math.max(1, range))) as string;
-}
 
 function availabilityVariant(
   a: RestaurantWithDistance['availability'],
@@ -356,7 +353,7 @@ export function RestaurantMapDetailSheet({
           <View style={styles.topTagsRow}>
             <Badge label={restaurant.availability} variant={availabilityVariant(restaurant.availability)} size="sm" />
             <View style={styles.pricePill}>
-              <Text style={styles.priceText}>{priceTierLabel(restaurant.priceRange)}</Text>
+              <Text style={styles.priceText}>{restaurantPriceLabel(restaurant.priceRange)}</Text>
             </View>
           </View>
 

@@ -13,12 +13,14 @@ import { getSupabaseEnv, isSupabaseConfigured } from '@/lib/supabase/env';
 
 const DEEPGRAM_URL = 'https://api.deepgram.com/v1/listen';
 const MAX_KEYTERMS = 12;
-const SILENCE_TIMEOUT_MS = 400;
+const SILENCE_TIMEOUT_MS = 320;
 const NO_SPEECH_TIMEOUT_MS = 3_000;
 const TURN_TIMEOUT_MS = 30_000;
 const NATIVE_TURN_TIMEOUT_MS = 12_000;
+const NATIVE_INTERIM_STABLE_MS = 650;
 const METERING_SPEECH_DB = -24;
-const MIN_RECORDING_MS = 800;
+const MIN_RECORDING_MS = 650;
+const RECORDING_MONITOR_INTERVAL_MS = 80;
 const IS_IOS_SIMULATOR = Platform.OS === 'ios' && Device.isDevice === false;
 const CENAIVA_STT_RECORDING_OPTIONS = {
   ...RecordingPresets.HIGH_QUALITY,
@@ -231,12 +233,15 @@ export function useMobileTranscription() {
       return new Promise<ListenResult>((resolve, reject) => {
         let done = false;
         let timeout: ReturnType<typeof setTimeout> | null = null;
+        let interimStableTimeout: ReturnType<typeof setTimeout> | null = null;
         let transcript = '';
         const subscriptions: Array<{ remove: () => void }> = [];
 
         const cleanup = () => {
           if (timeout) clearTimeout(timeout);
+          if (interimStableTimeout) clearTimeout(interimStableTimeout);
           timeout = null;
+          interimStableTimeout = null;
           for (const sub of subscriptions) sub.remove();
           nativeCancelRef.current = null;
         };
@@ -252,6 +257,22 @@ export function useMobileTranscription() {
             return;
           }
           resolve(result);
+        };
+
+        const finishStableInterim = () => {
+          if (done || !transcript.trim()) return;
+          debugVoice('native speech stable interim finalized', { length: transcript.length });
+          try {
+            NATIVE_SPEECH.stop();
+          } catch {
+            // ignore
+          }
+          finish({ transcript });
+        };
+
+        const scheduleStableInterimFinish = () => {
+          if (interimStableTimeout) clearTimeout(interimStableTimeout);
+          interimStableTimeout = setTimeout(finishStableInterim, NATIVE_INTERIM_STABLE_MS);
         };
 
         const cancel = (manualStop: boolean) => {
@@ -285,6 +306,7 @@ export function useMobileTranscription() {
               });
             }
             if (next.isFinal) finish({ transcript });
+            else if (transcript) scheduleStableInterimFinish();
           }),
           NATIVE_SPEECH.addListener('error', (payload: unknown) => {
             const event = payload as { error?: string; message?: string };
@@ -558,7 +580,7 @@ export function useMobileTranscription() {
           ) {
             void finish(false);
           }
-        }, 120);
+        }, RECORDING_MONITOR_INTERVAL_MS);
       });
 
       try {

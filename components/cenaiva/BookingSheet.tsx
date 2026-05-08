@@ -53,6 +53,39 @@ const useStyles = createStyles((c) => ({
     color: c.textPrimary,
     fontWeight: '700',
   },
+  flowHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: spacing.sm,
+  },
+  flowTitle: {
+    ...typography.h3,
+    color: c.textPrimary,
+    fontWeight: '800',
+    flex: 1,
+  },
+  headerIconBtn: {
+    width: 40,
+    height: 40,
+    borderRadius: borderRadius.full,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: c.bgElevated,
+    borderWidth: 1,
+    borderColor: c.border,
+  },
+  headerTextBtn: {
+    minHeight: 40,
+    paddingHorizontal: spacing.sm,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  headerText: {
+    ...typography.bodySmall,
+    color: c.gold,
+    fontWeight: '800',
+  },
   actions: {
     flexDirection: 'row',
     gap: spacing.sm,
@@ -249,6 +282,14 @@ export function BookingSheet({ fullScreen = false }: { fullScreen?: boolean }) {
     }
   };
 
+  const exitPreorderFlow = () => {
+    setMenuStep('browsing');
+    setPrepayBusy(false);
+    setPrepayError(null);
+    dispatch({ type: 'clear_cart' });
+    assistant.close();
+  };
+
   if (booking.status === 'idle' || booking.status === 'collecting_minimum_fields') return null;
 
   if (booking.status === 'loading_availability') {
@@ -340,7 +381,27 @@ export function BookingSheet({ fullScreen = false }: { fullScreen?: boolean }) {
   if (booking.status === 'browsing_menu' && menuStep === 'browsing') {
     return (
       <View style={shellStyle}>
-        <Text style={styles.title}>Pre-order menu</Text>
+        <View style={styles.flowHeader}>
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel="Back to preorder choice"
+            hitSlop={8}
+            style={({ pressed }) => [styles.headerIconBtn, pressed && { opacity: 0.78 }]}
+            onPress={() => dispatch({ type: 'offer_preorder' })}
+          >
+            <Ionicons name="chevron-back" size={22} color={c.gold} />
+          </Pressable>
+          <Text style={styles.flowTitle}>Pre-order menu</Text>
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel="Nevermind, skip preorder"
+            hitSlop={8}
+            style={({ pressed }) => [styles.headerTextBtn, pressed && { opacity: 0.72 }]}
+            onPress={exitPreorderFlow}
+          >
+            <Text style={styles.headerText}>Nevermind</Text>
+          </Pressable>
+        </View>
         {loading ? (
           <View style={styles.row}>
             <ActivityIndicator color={c.gold} />
@@ -402,6 +463,11 @@ export function BookingSheet({ fullScreen = false }: { fullScreen?: boolean }) {
           disabled={booking.cart.length === 0}
           onPress={() => setMenuStep('review')}
         />
+        <Button
+          title="Nevermind"
+          variant="outlined"
+          onPress={exitPreorderFlow}
+        />
       </View>
     );
   }
@@ -409,7 +475,37 @@ export function BookingSheet({ fullScreen = false }: { fullScreen?: boolean }) {
   if (booking.status === 'browsing_menu' && menuStep === 'review') {
     return (
       <View style={shellStyle}>
-        <Text style={styles.title}>Review your order</Text>
+        <View style={styles.flowHeader}>
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel="Back to menu"
+            hitSlop={8}
+            disabled={prepayBusy}
+            style={({ pressed }) => [
+              styles.headerIconBtn,
+              prepayBusy && { opacity: 0.5 },
+              pressed && !prepayBusy && { opacity: 0.78 },
+            ]}
+            onPress={() => setMenuStep('browsing')}
+          >
+            <Ionicons name="chevron-back" size={22} color={c.gold} />
+          </Pressable>
+          <Text style={styles.flowTitle}>Review your order</Text>
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel="Nevermind, skip prepay"
+            hitSlop={8}
+            disabled={prepayBusy}
+            style={({ pressed }) => [
+              styles.headerTextBtn,
+              prepayBusy && { opacity: 0.5 },
+              pressed && !prepayBusy && { opacity: 0.72 },
+            ]}
+            onPress={exitPreorderFlow}
+          >
+            <Text style={styles.headerText}>Nevermind</Text>
+          </Pressable>
+        </View>
         {booking.cart.map((item) => (
           <View key={item.menu_item_id} style={styles.line}>
             <Text style={styles.lineName}>{item.qty}x {item.name}</Text>
@@ -430,7 +526,7 @@ export function BookingSheet({ fullScreen = false }: { fullScreen?: boolean }) {
               title="No, pay at table"
               variant="outlined"
               disabled={prepayBusy}
-              onPress={assistant.close}
+              onPress={exitPreorderFlow}
             />
           </View>
           <View style={styles.half}>

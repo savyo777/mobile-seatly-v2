@@ -1,12 +1,13 @@
-import React, { useCallback, useEffect, useMemo, useRef } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { View, Text, StyleSheet, Platform, Pressable, ActivityIndicator } from 'react-native';
-import MapView, { Marker, PROVIDER_GOOGLE, type MapPressEvent } from 'react-native-maps';
+import MapView, { Marker, PROVIDER_GOOGLE, type MapPressEvent, type Region } from 'react-native-maps';
 import { Ionicons } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
 import { RestaurantMapMarkerContent } from '@/components/map/RestaurantMapMarker';
 import { googleDarkMapStyle } from '@/lib/map/darkMapStyle';
 import { haversineMeters } from '@/lib/map/geo';
 import { DEFAULT_MAP_CENTER } from '@/lib/map/mapFilters';
+import { normalizeRestaurantPriceRange, restaurantPriceLabel } from '@/lib/restaurants/pricing';
 import type { RestaurantDiscoveryMapProps } from '@/components/map/restaurantMapTypes';
 import { useColors, useTheme, createStyles, spacing, borderRadius, typography, shadows } from '@/lib/theme';
 
@@ -16,6 +17,8 @@ const DEFAULT_RECENTER_REGION_DELTA = {
 };
 const DEFAULT_CLUSTER_RADIUS_METERS = 430;
 const CENAIVA_CLUSTER_RADIUS_METERS = 560;
+const MIN_CLUSTER_RADIUS_METERS = 28;
+const CLUSTER_RADIUS_VISIBLE_SPAN_RATIO = 0.24;
 
 function isFiniteCoordinate(latitude: unknown, longitude: unknown): boolean {
   return (
@@ -32,10 +35,6 @@ function safeRating(value: number): number {
   return Number.isFinite(value) ? value : 0;
 }
 
-function safePriceTier(value: number): number {
-  return Math.max(1, Math.min(4, Number.isFinite(value) ? value : 1));
-}
-
 type ClusterableRestaurant = RestaurantDiscoveryMapProps['filteredRestaurants'][number];
 type MarkerCluster = {
   id: string;
@@ -44,15 +43,34 @@ type MarkerCluster = {
   restaurants: ClusterableRestaurant[];
 };
 
+function clusterKey(restaurants: ClusterableRestaurant[]): string {
+  return restaurants.map((restaurant) => restaurant.id).sort().join('|');
+}
+
+function clusterRadiusForRegion(region: Region, variant: 'default' | 'cenaiva'): number {
+  const baseRadius = variant === 'cenaiva' ? CENAIVA_CLUSTER_RADIUS_METERS : DEFAULT_CLUSTER_RADIUS_METERS;
+  const latitude = Number.isFinite(region.latitude) ? region.latitude : DEFAULT_MAP_CENTER.latitude;
+  const latitudeRadians = (latitude * Math.PI) / 180;
+  const longitudeMeters =
+    Math.abs(region.longitudeDelta) * 111_320 * Math.max(Math.cos(latitudeRadians), 0.2);
+  const latitudeMeters = Math.abs(region.latitudeDelta) * 111_320;
+  const visibleSpanMeters = Math.max(longitudeMeters, latitudeMeters);
+  const scaledRadius = visibleSpanMeters * CLUSTER_RADIUS_VISIBLE_SPAN_RATIO;
+
+  if (!Number.isFinite(scaledRadius) || scaledRadius <= 0) return baseRadius;
+  return Math.max(MIN_CLUSTER_RADIUS_METERS, Math.min(baseRadius, scaledRadius));
+}
+
 function clusterRestaurants(
   restaurants: ClusterableRestaurant[],
   selectedId: string | null | undefined,
   radiusMeters: number,
+  expandedRestaurantIds: Set<string>,
 ): MarkerCluster[] {
   const clusters: MarkerCluster[] = [];
 
   restaurants.forEach((restaurant) => {
-    if (selectedId === restaurant.id) {
+    if (selectedId === restaurant.id || expandedRestaurantIds.has(restaurant.id)) {
       clusters.push({
         id: `single-${restaurant.id}`,
         latitude: restaurant.lat,
@@ -64,6 +82,7 @@ function clusterRestaurants(
 
     const existing = clusters.find((cluster) => {
       if (cluster.restaurants.some((item) => item.id === selectedId)) return false;
+      if (cluster.restaurants.some((item) => expandedRestaurantIds.has(item.id))) return false;
       return haversineMeters(cluster.latitude, cluster.longitude, restaurant.lat, restaurant.lng) <= radiusMeters;
     });
 
@@ -199,6 +218,13 @@ export function RestaurantDiscoveryMap({
   const mapRef = useRef<MapView>(null);
   const autoFocusDoneRef = useRef(false);
   const autoFocusResetKeyRef = useRef(autoFocusResetKey);
+  const [currentRegion, setCurrentRegion] = useState<Region>(() => ({
+    latitude: DEFAULT_MAP_CENTER.latitude,
+    longitude: DEFAULT_MAP_CENTER.longitude,
+    latitudeDelta: DEFAULT_MAP_CENTER.latitudeDelta,
+    longitudeDelta: DEFAULT_MAP_CENTER.longitudeDelta,
+  }));
+  const [expandedClusterKey, setExpandedClusterKey] = useState<string | null>(null);
   const safeUserLocation = useMemo(
     () =>
       userLocation && isFiniteCoordinate(userLocation.latitude, userLocation.longitude)
@@ -213,14 +239,27 @@ export function RestaurantDiscoveryMap({
       ),
     [filteredRestaurants],
   );
+  const safeRestaurantIdsKey = useMemo(
+    () => safeRestaurants.map((restaurant) => restaurant.id).join('|'),
+    [safeRestaurants],
+  );
+  const expandedRestaurantIds = useMemo(
+    () => new Set(expandedClusterKey ? expandedClusterKey.split('|') : []),
+    [expandedClusterKey],
+  );
+  const clusterRadiusMeters = useMemo(
+    () => clusterRadiusForRegion(currentRegion, markerVariant),
+    [currentRegion, markerVariant],
+  );
   const markerClusters = useMemo(
     () =>
       clusterRestaurants(
         safeRestaurants,
         selectedId,
-        markerVariant === 'cenaiva' ? CENAIVA_CLUSTER_RADIUS_METERS : DEFAULT_CLUSTER_RADIUS_METERS,
+        clusterRadiusMeters,
+        expandedRestaurantIds,
       ),
-    [markerVariant, safeRestaurants, selectedId],
+    [clusterRadiusMeters, expandedRestaurantIds, safeRestaurants, selectedId],
   );
   const detailOpen = !!selectedId;
   const selectedRestaurant = selectedId
@@ -241,6 +280,10 @@ export function RestaurantDiscoveryMap({
   }, [recenterRegionDelta.latitudeDelta, recenterRegionDelta.longitudeDelta, safeUserLocation]);
 
   useEffect(() => {
+    setExpandedClusterKey(null);
+  }, [safeRestaurantIdsKey]);
+
+  useEffect(() => {
     if (autoFocusResetKeyRef.current !== autoFocusResetKey) {
       autoFocusResetKeyRef.current = autoFocusResetKey;
       autoFocusDoneRef.current = false;
@@ -256,6 +299,12 @@ export function RestaurantDiscoveryMap({
 
     autoFocusDoneRef.current = true;
     const regionDelta = autoFocusRegionDelta ?? DEFAULT_RECENTER_REGION_DELTA;
+    const nextRegion = {
+      latitude: safeUserLocation.latitude,
+      longitude: safeUserLocation.longitude,
+      latitudeDelta: regionDelta.latitudeDelta,
+      longitudeDelta: regionDelta.longitudeDelta,
+    };
     const timer = setTimeout(() => {
       if (focusRestaurants.length) {
         mapRef.current?.fitToCoordinates(
@@ -280,14 +329,10 @@ export function RestaurantDiscoveryMap({
       }
 
       mapRef.current?.animateToRegion(
-        {
-          latitude: safeUserLocation.latitude,
-          longitude: safeUserLocation.longitude,
-          latitudeDelta: regionDelta.latitudeDelta,
-          longitudeDelta: regionDelta.longitudeDelta,
-        },
+        nextRegion,
         260,
       );
+      setCurrentRegion(nextRegion);
     }, 80);
     return () => clearTimeout(timer);
   }, [
@@ -364,6 +409,7 @@ export function RestaurantDiscoveryMap({
     (event: MapPressEvent) => {
       const action = event?.nativeEvent?.action;
       if (action === 'marker-press') return;
+      setExpandedClusterKey(null);
       onMapPress();
     },
     [onMapPress],
@@ -376,6 +422,7 @@ export function RestaurantDiscoveryMap({
       return;
     }
 
+    setExpandedClusterKey(clusterKey(cluster.restaurants));
     onSelectCluster?.(cluster.restaurants);
 
     mapRef.current?.fitToCoordinates(
@@ -417,6 +464,7 @@ export function RestaurantDiscoveryMap({
         pitchEnabled={false}
         toolbarEnabled={false}
         onPress={handleMapPress}
+        onRegionChangeComplete={setCurrentRegion}
       >
         {safeUserLocation && !showUserLocation ? (
           <Marker
@@ -459,12 +507,13 @@ export function RestaurantDiscoveryMap({
           const r = cluster.restaurants[0];
           const selected = selectedId === r.id;
           const displayRating = safeRating(r.avgRating);
-          const displayPriceTier = safePriceTier(r.priceRange);
+          const displayPriceTier = normalizeRestaurantPriceRange(r.priceRange);
+          const displayPriceLabel = restaurantPriceLabel(displayPriceTier);
           return (
             <Marker
               key={`restaurant-${r.id}`}
               coordinate={{ latitude: r.lat, longitude: r.lng }}
-              accessibilityLabel={`${r.name ?? 'Restaurant'}, ${displayRating.toFixed(1)} rating · ${'$'.repeat(displayPriceTier)}`}
+              accessibilityLabel={`${r.name ?? 'Restaurant'}, ${displayRating.toFixed(1)} rating · ${displayPriceLabel}`}
               accessibilityHint={markerVariant === 'cenaiva' ? 'Shows restaurant catalog' : undefined}
               accessibilityRole="button"
               anchor={markerVariant === 'cenaiva' ? { x: 0.5, y: 0.36 } : { x: 0.5, y: 1 }}

@@ -7,6 +7,7 @@ import {
   type RestaurantSpecialHours,
   type RestaurantWeekdayKey,
 } from '@/lib/mock/restaurants';
+import { normalizeRestaurantPriceRange } from '@/lib/restaurants/pricing';
 
 const DEFAULT_RESTAURANT_COVER = 'https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=1200';
 
@@ -24,15 +25,6 @@ function readSettingsLatLng(settings: Record<string, unknown> | null | undefined
     lat: typeof lat === 'number' ? lat : 43.6532,
     lng: typeof lng === 'number' ? lng : -79.3832,
   };
-}
-
-function clampPriceRange(value: unknown, fallback: 1 | 2 | 3 | 4 = 2): 1 | 2 | 3 | 4 {
-  const parsed = num(value as string | number | null | undefined, fallback);
-  if (parsed >= 4) return 4;
-  if (parsed >= 3) return 3;
-  if (parsed >= 2) return 2;
-  if (parsed >= 1) return 1;
-  return fallback;
 }
 
 const WEEKDAY_SET = new Set<string>(RESTAURANT_WEEKDAY_KEYS);
@@ -104,7 +96,7 @@ export function mapRestaurantRowToRestaurant(row: RestaurantRow): Restaurant {
     ? ((settings!.featured_in as string[]).filter(Boolean) as DiscoverSectionKey[])
     : ['recommended'];
 
-  const priceRange = clampPriceRange(row.price_range ?? settings?.price_range);
+  const priceRange = normalizeRestaurantPriceRange(row.price_range ?? settings?.price_range);
 
   const availability = (settings?.availability as Restaurant['availability']) ?? 'Popular';
 

@@ -6,6 +6,7 @@ import {
   clearUnusablePersistedSupabaseSession,
   getSupabase,
 } from '@/lib/supabase/client';
+import { isUnusablePersistedSupabaseAuthError } from '@/lib/supabase/authErrors';
 import { clearAppShellPreference } from '@/lib/navigation/appShellPreference';
 import { resolveIsStaffLike } from '@/lib/auth/roles';
 
@@ -62,16 +63,6 @@ function resolveDefaultProfile(user: User, role: string) {
   };
 }
 
-function isInvalidRefreshTokenError(error: unknown): boolean {
-  const message =
-    error instanceof Error
-      ? error.message
-      : typeof error === 'object' && error && 'message' in error
-        ? String((error as { message?: unknown }).message)
-        : String(error ?? '');
-  return /invalid refresh token|refresh token not found/i.test(message);
-}
-
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [session, setSession] = useState<Session | null>(null);
   const [role, setRole] = useState<string | null>(null);
@@ -93,24 +84,27 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         }
         activeSupabase = supabase;
         const { data, error } = await supabase.auth.getSession();
-        if (error && isInvalidRefreshTokenError(error)) {
+        let authSupabase = supabase;
+        if (error && isUnusablePersistedSupabaseAuthError(error)) {
           await clearPersistedSupabaseSession();
+          authSupabase = getSupabase() ?? supabase;
+          activeSupabase = authSupabase;
         }
         if (!cancelled) {
           setSession(error ? null : data.session ?? null);
           if (!error && data.session) {
-            void supabase.auth.startAutoRefresh();
+            void authSupabase.auth.startAutoRefresh();
           }
         }
         if (cancelled) return;
 
-        const { data: sub } = supabase.auth.onAuthStateChange((event, next) => {
+        const { data: sub } = authSupabase.auth.onAuthStateChange((event, next) => {
           if (!cancelled) {
             if (event === 'SIGNED_OUT') {
               void clearAppShellPreference();
-              void supabase.auth.stopAutoRefresh();
+              void authSupabase.auth.stopAutoRefresh();
             } else if (next) {
-              void supabase.auth.startAutoRefresh();
+              void authSupabase.auth.startAutoRefresh();
             }
             setSession(next);
             setLoading(false);
@@ -118,7 +112,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         });
         unsubscribe = () => sub.subscription.unsubscribe();
       } catch (error) {
-        if (isInvalidRefreshTokenError(error)) {
+        if (isUnusablePersistedSupabaseAuthError(error)) {
           await clearPersistedSupabaseSession();
         }
         if (!cancelled) setSession(null);
@@ -217,12 +211,22 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const signOut = async () => {
     const supabase = getSupabase();
     if (!supabase) return;
-    await supabase.auth.stopAutoRefresh();
-    const { error } = await supabase.auth.signOut();
-    if (error && isInvalidRefreshTokenError(error)) {
+    try {
+      await supabase.auth.stopAutoRefresh();
+      const { error } = await supabase.auth.signOut({ scope: 'local' });
+      if (error && isUnusablePersistedSupabaseAuthError(error)) {
+        await clearPersistedSupabaseSession();
+      }
+    } catch (error) {
+      if (isUnusablePersistedSupabaseAuthError(error)) {
+        await clearPersistedSupabaseSession();
+      }
+    } finally {
       await clearPersistedSupabaseSession();
+      await clearAppShellPreference();
+      setSession(null);
+      setRole(null);
     }
-    setRole(null);
   };
 
   const user = session?.user ?? null;

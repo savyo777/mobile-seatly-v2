@@ -31,10 +31,6 @@ const WEEKDAY_KEYS = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'f
 const WEEKDAY_SHORT = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 const MENU_ALL_TAB = '__all__';
 
-function priceRangeLabel(range: number): string {
-  return '$'.repeat(range) as string;
-}
-
 function openMaps(address: string, city: string) {
   const query = encodeURIComponent(`${address}, ${city}`);
   Linking.openURL(`https://maps.apple.com/?q=${query}`).catch(() =>

@@ -1,5 +1,5 @@
 import React, { useEffect } from 'react';
-import { Stack, useRouter } from 'expo-router';
+import { Stack, usePathname, useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { enableFreeze, enableScreens } from 'react-native-screens';
@@ -14,47 +14,27 @@ import { MenuProvider } from '@/lib/context/MenuContext';
 import { createStackTransitionOptions } from '@/lib/navigation/transitions';
 import { CenaivaAssistantProvider } from '@/lib/cenaiva/CenaivaAssistantProvider';
 import { CenaivaVoicePreferenceProvider } from '@/lib/cenaiva/voice/CenaivaVoicePreferenceProvider';
-import { getSupabase } from '@/lib/supabase/client';
+import { clearPersistedSupabaseSession, getSupabase } from '@/lib/supabase/client';
+import { isUnusablePersistedSupabaseAuthError } from '@/lib/supabase/authErrors';
 import { CookieConsentBanner } from '@/components/cookie-consent/CookieConsentBanner';
 import { KeyboardDoneBar } from '@/components/ui/KeyboardDoneBar';
 import { PostTurnPromptHost } from '@/components/postVisit/PostTurnPromptHost';
+import { AppErrorBoundary } from '@/components/ui/AppErrorBoundary';
 import { getStripeEnv } from '@/lib/stripe/env';
+import {
+  installGlobalCrashGuard,
+  installRouterCrashGuard,
+} from '@/lib/runtime/installCrashGuards';
+import {
+  getRecoveryAuthCodeFromUrl,
+  getRecoveryTokenHashFromUrl,
+  getRecoveryTokensFromUrl,
+} from '@/lib/auth/recoveryLinks';
 
 enableScreens(true);
 enableFreeze(true);
-
-type RecoveryTokens = {
-  accessToken: string;
-  refreshToken: string;
-  type: string;
-};
-
-function getRecoveryTokensFromUrl(url: string): RecoveryTokens | null {
-  const hashPart = url.includes('#') ? url.split('#')[1] : '';
-  const queryPart = url.includes('?') ? url.split('?')[1]?.split('#')[0] ?? '' : '';
-  const hashParams = new URLSearchParams(hashPart);
-  const queryParams = new URLSearchParams(queryPart);
-  const type = hashParams.get('type') ?? queryParams.get('type') ?? '';
-  const accessToken = hashParams.get('access_token') ?? queryParams.get('access_token') ?? '';
-  const refreshToken = hashParams.get('refresh_token') ?? queryParams.get('refresh_token') ?? '';
-  if (type !== 'recovery' || !accessToken || !refreshToken) return null;
-  return { type, accessToken, refreshToken };
-}
-
-function getAuthCodeFromUrl(url: string): string | null {
-  const queryPart = url.includes('?') ? url.split('?')[1]?.split('#')[0] ?? '' : '';
-  const params = new URLSearchParams(queryPart);
-  return params.get('code');
-}
-
-function getTokenHashFromUrl(url: string): { tokenHash: string; type: string } | null {
-  const queryPart = url.includes('?') ? url.split('?')[1]?.split('#')[0] ?? '' : '';
-  const params = new URLSearchParams(queryPart);
-  const tokenHash = params.get('token_hash');
-  const type = params.get('type');
-  if (tokenHash && type) return { tokenHash, type };
-  return null;
-}
+installGlobalCrashGuard();
+installRouterCrashGuard();
 
 function RecoveryLinkHandler() {
   const router = useRouter();
@@ -65,45 +45,63 @@ function RecoveryLinkHandler() {
     if (!supabase) return;
 
     const handleUrl = async (url: string) => {
-      // Direct token_hash deep link (email template uses cenaiva://reset-password?token_hash=...&type=recovery)
-      const tokenHashData = getTokenHashFromUrl(url);
-      if (tokenHashData?.type === 'recovery') {
-        const { error } = await supabase.auth.verifyOtp({
-          token_hash: tokenHashData.tokenHash,
-          type: 'recovery',
-        });
-        if (!error && isMounted) {
-          router.replace('/(auth)/reset-password?recovery=1');
-        }
-        return;
-      }
+      try {
+        const clearIfUnusableAuthError = async (error: unknown) => {
+          if (isUnusablePersistedSupabaseAuthError(error)) {
+            await clearPersistedSupabaseSession();
+          }
+        };
 
-      // Implicit flow: access_token + refresh_token in hash fragment
-      const tokens = getRecoveryTokensFromUrl(url);
-      if (tokens) {
-        const { error } = await supabase.auth.setSession({
-          access_token: tokens.accessToken,
-          refresh_token: tokens.refreshToken,
-        });
-        if (!error && isMounted) {
-          router.replace('/(auth)/reset-password?recovery=1');
+        // Direct token_hash deep link (email template uses cenaiva://reset-password?token_hash=...&type=recovery)
+        const tokenHashData = getRecoveryTokenHashFromUrl(url);
+        if (tokenHashData) {
+          const { error } = await supabase.auth.verifyOtp({
+            token_hash: tokenHashData.tokenHash,
+            type: 'recovery',
+          });
+          if (error) {
+            await clearIfUnusableAuthError(error);
+          } else if (isMounted) {
+            router.replace('/(auth)/reset-password?recovery=1');
+          }
+          return;
         }
-        return;
-      }
 
-      // PKCE flow: authorization code in query string
-      const code = getAuthCodeFromUrl(url);
-      if (code) {
-        const { error } = await supabase.auth.exchangeCodeForSession(code);
-        if (!error && isMounted) {
-          router.replace('/(auth)/reset-password?recovery=1');
+        // Implicit flow: access_token + refresh_token in hash fragment
+        const tokens = getRecoveryTokensFromUrl(url);
+        if (tokens) {
+          const { error } = await supabase.auth.setSession({
+            access_token: tokens.accessToken,
+            refresh_token: tokens.refreshToken,
+          });
+          if (error) {
+            await clearIfUnusableAuthError(error);
+          } else if (isMounted) {
+            router.replace('/(auth)/reset-password?recovery=1');
+          }
+          return;
         }
+
+        // PKCE flow: authorization code in query string
+        const code = getRecoveryAuthCodeFromUrl(url);
+        if (code) {
+          const { error } = await supabase.auth.exchangeCodeForSession(code);
+          if (error) {
+            await clearIfUnusableAuthError(error);
+          } else if (isMounted) {
+            router.replace('/(auth)/reset-password?recovery=1');
+          }
+        }
+      } catch (error) {
+        if (isUnusablePersistedSupabaseAuthError(error)) await clearPersistedSupabaseSession();
       }
     };
 
-    Linking.getInitialURL().then((initialUrl) => {
-      if (initialUrl) void handleUrl(initialUrl);
-    });
+    Linking.getInitialURL()
+      .then((initialUrl) => {
+        if (initialUrl) void handleUrl(initialUrl);
+      })
+      .catch(() => undefined);
 
     const sub = Linking.addEventListener('url', ({ url }) => {
       void handleUrl(url);
@@ -127,24 +125,30 @@ function RecoveryLinkHandler() {
 
 function ThemedRootShell() {
   const c = useColors();
+  const router = useRouter();
+  const pathname = usePathname();
+  const handleGoHome = React.useCallback(() => {
+    router.replace('/' as never);
+  }, [router]);
+
   return (
     <>
       <RecoveryLinkHandler />
       <StatusBar style="auto" backgroundColor={c.bgBase} />
-      <Stack
-        screenOptions={createStackTransitionOptions(c.bgBase)}
-      >
-        <Stack.Screen name="index" />
-        <Stack.Screen name="onboarding" options={{ animation: 'fade' }} />
-        <Stack.Screen name="(auth)" />
-        <Stack.Screen name="(customer)" />
-        <Stack.Screen name="(staff)" />
-        <Stack.Screen name="booking" />
-        <Stack.Screen name="auth-callback" options={{ animation: 'none' }} />
-      </Stack>
-      <PostTurnPromptHost />
-      <CookieConsentBanner />
-      <KeyboardDoneBar />
+      <AppErrorBoundary resetKey={pathname} onGoHome={handleGoHome}>
+        <Stack screenOptions={createStackTransitionOptions(c.bgBase)}>
+          <Stack.Screen name="index" />
+          <Stack.Screen name="onboarding" options={{ animation: 'fade' }} />
+          <Stack.Screen name="(auth)" />
+          <Stack.Screen name="(customer)" />
+          <Stack.Screen name="(staff)" />
+          <Stack.Screen name="booking" />
+          <Stack.Screen name="auth-callback" options={{ animation: 'none' }} />
+        </Stack>
+        <PostTurnPromptHost />
+        <CookieConsentBanner />
+        <KeyboardDoneBar />
+      </AppErrorBoundary>
     </>
   );
 }

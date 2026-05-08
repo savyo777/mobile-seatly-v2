@@ -13,6 +13,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { getSavedRestaurants } from '@/lib/mock/profileScreens';
 import { resolveAuthDisplayProfile, initialsFromDisplayName } from '@/lib/auth/displayProfile';
+import { restaurantPriceLabel } from '@/lib/restaurants/pricing';
 import { useColors, useTheme, createStyles, spacing, borderRadius } from '@/lib/theme';
 import { useAuthSession } from '@/lib/auth/AuthContext';
 import { fetchMyBookingItems, type MyBookingItem } from '@/lib/booking/myReservations';
@@ -46,10 +47,6 @@ function initialsFromName(name: string): string {
 
 function formatVisitDate(iso: string): string {
   return new Date(iso).toLocaleDateString('en-CA', { month: 'short', day: 'numeric' });
-}
-
-function priceLabel(n: number) {
-  return '$'.repeat(n);
 }
 
 function parsePreferenceInput(value: string): string[] {
@@ -804,7 +801,7 @@ export default function ProfileScreen() {
               <View style={styles.savedCardBody}>
                 <Text style={styles.savedName} numberOfLines={1}>{r.name}</Text>
                 <Text style={styles.savedMeta}>
-                  {r.cuisineType} · {priceLabel(r.priceRange)}
+                  {r.cuisineType} · {restaurantPriceLabel(r.priceRange)}
                 </Text>
               </View>
             </Pressable>

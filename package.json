@@ -17,7 +17,8 @@
     "eas:ios:dev": "eas build --profile development --platform ios",
     "test:cenaiva": "jest __tests__/cenaiva --runInBand",
     "test": "jest",
-    "test:watch": "jest --watch"
+    "test:watch": "jest --watch",
+    "smoke:ios": "node scripts/qa/mobile-click-smoke.mjs"
   },
   "dependencies": {
     "@cenaiva/assistant": "file:packages/assistant",

@@ -39,6 +39,10 @@ import {
   shouldResetCenaivaBookingContext,
 } from '@/lib/cenaiva/simplePromptIntent';
 import {
+  shouldRouteAsCenaivaBookingConfirmation,
+  transcriptForCenaivaBookingConfirmation,
+} from '@/lib/cenaiva/confirmationIntent';
+import {
   buildLocalAvailabilityResponse,
   planLocalBookingTurn,
   type CenaivaAvailabilityOption,
@@ -371,6 +375,14 @@ function AssistantInner({ children }: { children: ReactNode }) {
       }
 
       const current = stateRef.current;
+      const isBookingConfirmationReply = shouldRouteAsCenaivaBookingConfirmation(
+        current.booking.status,
+        trimmed,
+      );
+      const assistantTranscript = transcriptForCenaivaBookingConfirmation(
+        current.booking.status,
+        trimmed,
+      );
       const timezone =
         typeof Intl !== 'undefined'
           ? Intl.DateTimeFormat().resolvedOptions().timeZone
@@ -436,7 +448,7 @@ function AssistantInner({ children }: { children: ReactNode }) {
       };
 
       const localDecision = planLocalBookingTurn({
-        transcript: trimmed,
+        transcript: assistantTranscript,
         booking: current.booking,
         conversationId: current.conversationId,
         selectedRestaurantId: opts?.restaurantId ?? current.booking.restaurant_id,
@@ -556,7 +568,7 @@ function AssistantInner({ children }: { children: ReactNode }) {
         }
       }
 
-      if (!isCenaivaProcessPrompt(trimmed)) {
+      if (!isBookingConfirmationReply && !isCenaivaProcessPrompt(assistantTranscript)) {
         const controller = new AbortController();
         const timeoutId = setTimeout(() => controller.abort(), SMALL_PROMPT_TIMEOUT_MS);
         checkpoints.requestSentAt = Date.now();
@@ -640,7 +652,7 @@ function AssistantInner({ children }: { children: ReactNode }) {
         });
       }
       const req: OrchestratorRequestType = {
-        transcript: trimmed,
+        transcript: assistantTranscript,
         screen: pathname ?? 'discover',
         booking_state: {
           restaurant_id: current.booking.restaurant_id,

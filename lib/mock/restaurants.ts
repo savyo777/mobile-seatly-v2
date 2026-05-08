@@ -1,3 +1,5 @@
+import type { RestaurantPriceTier } from '@/lib/restaurants/pricing';
+
 export type DiscoverSectionKey =
   | 'recommended'
   | 'popular-near-you'
@@ -47,7 +49,7 @@ export interface Restaurant {
   logoUrl: string;
   avgRating: number;
   totalReviews: number;
-  priceRange: 1 | 2 | 3 | 4;
+  priceRange: RestaurantPriceTier;
   distanceKm: number;
   availability: 'Available Tonight' | 'Popular' | 'Top Rated';
   ambiance: string;
@@ -87,7 +89,7 @@ export const mockRestaurants: Restaurant[] = [
     logoUrl: 'https://images.unsplash.com/photo-1555396273-367ea4eb4db5?w=300',
     avgRating: 4.8,
     totalReviews: 342,
-    priceRange: 4,
+    priceRange: 3,
     distanceKm: 1.2,
     availability: 'Top Rated',
     ambiance: 'Great for dates',
@@ -115,7 +117,7 @@ export const mockRestaurants: Restaurant[] = [
     logoUrl: 'https://images.unsplash.com/photo-1553621042-f6e147245754?w=300',
     avgRating: 4.9,
     totalReviews: 189,
-    priceRange: 4,
+    priceRange: 3,
     distanceKm: 2.1,
     availability: 'Top Rated',
     ambiance: 'Minimal and intimate',
@@ -227,7 +229,7 @@ export const mockRestaurants: Restaurant[] = [
     logoUrl: 'https://images.unsplash.com/photo-1540189549336-e6e99c3679fe?w=300',
     avgRating: 4.8,
     totalReviews: 287,
-    priceRange: 4,
+    priceRange: 3,
     distanceKm: 2.4,
     availability: 'Top Rated',
     ambiance: 'Elegant waterfront',
@@ -423,7 +425,7 @@ export const mockRestaurants: Restaurant[] = [
     logoUrl: 'https://images.unsplash.com/photo-1514933651103-005eec06c04b?w=300',
     avgRating: 4.9,
     totalReviews: 147,
-    priceRange: 4,
+    priceRange: 3,
     distanceKm: 5.0,
     availability: 'Top Rated',
     ambiance: 'Luxury and refined',

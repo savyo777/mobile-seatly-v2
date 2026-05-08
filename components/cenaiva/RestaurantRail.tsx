@@ -2,6 +2,7 @@ import React, { useEffect, useMemo, useRef } from 'react';
 import { FlatList, Image, Pressable, Text, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import type { Restaurant } from '@/lib/mock/restaurants';
+import { restaurantPriceLabel } from '@/lib/restaurants/pricing';
 import { createStyles, borderRadius, spacing, typography } from '@/lib/theme';
 
 const CARD_WIDTH = 208;
@@ -97,6 +98,17 @@ const useStyles = createStyles(() => ({
     color: '#C8A951',
     fontWeight: '600',
   },
+  price: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 2,
+    flexShrink: 0,
+  },
+  priceText: {
+    ...typography.bodySmall,
+    color: 'rgba(255,255,255,0.62)',
+    fontWeight: '700',
+  },
   city: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -179,6 +191,10 @@ export function RestaurantRail({
                 <View style={styles.rating}>
                   <Ionicons name="star" size={12} color="#C8A951" />
                   <Text style={styles.ratingText}>{item.avgRating.toFixed(1)}</Text>
+                </View>
+                <View style={styles.price}>
+                  <Ionicons name="cash-outline" size={12} color="rgba(255,255,255,0.58)" />
+                  <Text style={styles.priceText}>{restaurantPriceLabel(item.priceRange)}</Text>
                 </View>
                 {item.city ? (
                   <View style={styles.city}>

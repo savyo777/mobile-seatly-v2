@@ -12,6 +12,7 @@ import { Redirect, Tabs, useRouter, usePathname } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { ShellErrorBoundary } from '@/components/ui/ShellErrorBoundary';
 import { useColors, createStyles, spacing, borderRadius } from '@/lib/theme';
 import { useAuthSession } from '@/lib/auth/AuthContext';
 import {
@@ -245,11 +246,9 @@ export default function OwnerTabsLayout() {
   }
 
   return (
-    <View style={styles.root}>
-      <Tabs
-        detachInactiveScreens={false}
-        screenOptions={screenOptions}
-      >
+    <ShellErrorBoundary fallbackHref="/(staff)/home">
+      <View style={styles.root}>
+        <Tabs detachInactiveScreens={false} screenOptions={screenOptions}>
         <Tabs.Screen
           name="home"
           options={{
@@ -305,7 +304,7 @@ export default function OwnerTabsLayout() {
         <Tabs.Screen name="business"    options={{ href: null }} />
         <Tabs.Screen name="ai"          options={{ href: null }} />
         <Tabs.Screen name="dashboard"   options={{ href: null }} />
-        <Tabs.Screen name="notifications" options={{ href: null }} />
+        <Tabs.Screen name="notifications" options={{ href: null, tabBarStyle: { display: 'none' } }} />
         <Tabs.Screen name="index"       options={{ href: null }} />
         <Tabs.Screen name="crm"         options={{ href: null }} />
         <Tabs.Screen name="expenses"    options={{ href: null }} />
@@ -340,28 +339,28 @@ export default function OwnerTabsLayout() {
         <Tabs.Screen name="menu-manage" options={{ href: null, tabBarStyle: { display: 'none' } }} />
         <Tabs.Screen name="menu-categories" options={{ href: null, tabBarStyle: { display: 'none' } }} />
         <Tabs.Screen name="menu-item-edit" options={{ href: null, tabBarStyle: { display: 'none' } }} />
-      </Tabs>
+        </Tabs>
 
-      {/* Persistent FAB — visible on main tabs only */}
-      {showFab && (
-        <Pressable
-          onPress={handleFab}
-          style={({ pressed }) => [styles.fab, { bottom: fabBottom }, pressed && styles.fabPressed]}
-          accessibilityRole="button"
-          accessibilityLabel="Quick actions"
+        {/* Persistent FAB — visible on main tabs only */}
+        {showFab && (
+          <Pressable
+            onPress={handleFab}
+            style={({ pressed }) => [styles.fab, { bottom: fabBottom }, pressed && styles.fabPressed]}
+            accessibilityRole="button"
+            accessibilityLabel="Quick actions"
+          >
+            <Ionicons name="add" size={28} color={c.bgBase} />
+          </Pressable>
+        )}
+
+        {/* Quick-action sheet */}
+        <Modal
+          visible={sheetOpen}
+          transparent
+          animationType="slide"
+          onRequestClose={() => setSheetOpen(false)}
+          statusBarTranslucent
         >
-          <Ionicons name="add" size={28} color={c.bgBase} />
-        </Pressable>
-      )}
-
-      {/* Quick-action sheet */}
-      <Modal
-        visible={sheetOpen}
-        transparent
-        animationType="slide"
-        onRequestClose={() => setSheetOpen(false)}
-        statusBarTranslucent
-      >
         <TouchableWithoutFeedback onPress={() => setSheetOpen(false)}>
           <View style={styles.overlay}>
             <View style={styles.overlayDim} />
@@ -404,7 +403,8 @@ export default function OwnerTabsLayout() {
             </TouchableWithoutFeedback>
           </View>
         </TouchableWithoutFeedback>
-      </Modal>
-    </View>
+        </Modal>
+      </View>
+    </ShellErrorBoundary>
   );
 }

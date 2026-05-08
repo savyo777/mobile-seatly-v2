@@ -24,18 +24,7 @@ export async function clearPersistedSupabaseSession(): Promise<void> {
     `${storageKey}-code-verifier`,
     `${storageKey}-user`,
   ]);
-}
-
-function decodeJwtPayload(token: string): { exp?: number } | null {
-  const payload = token.split('.')[1];
-  if (!payload) return null;
-  try {
-    const normalized = payload.replace(/-/g, '+').replace(/_/g, '/');
-    const padded = normalized.padEnd(normalized.length + ((4 - (normalized.length % 4)) % 4), '=');
-    return JSON.parse(atob(padded)) as { exp?: number };
-  } catch {
-    return null;
-  }
+  client = null;
 }
 
 export async function clearUnusablePersistedSupabaseSession(): Promise<boolean> {
@@ -58,14 +47,7 @@ export async function clearUnusablePersistedSupabaseSession(): Promise<boolean> 
     const session = parsed.currentSession ?? parsed;
     const accessToken = typeof session.access_token === 'string' ? session.access_token.trim() : '';
     const refreshToken = typeof session.refresh_token === 'string' ? session.refresh_token.trim() : '';
-    const expiresAt =
-      typeof parsed.expires_at === 'number'
-        ? parsed.expires_at
-        : typeof session.expires_at === 'number'
-          ? session.expires_at
-          : decodeJwtPayload(accessToken)?.exp ?? null;
-    const expired = typeof expiresAt === 'number' && expiresAt <= Math.floor(Date.now() / 1000);
-    if (accessToken && refreshToken && !expired) return false;
+    if (accessToken && refreshToken) return false;
   } catch {
     // Corrupt persisted auth JSON should not be handed to supabase-js.
   }

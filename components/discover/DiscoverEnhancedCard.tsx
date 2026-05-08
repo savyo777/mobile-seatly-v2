@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next';
 import type { Restaurant } from '@/lib/mock/restaurants';
 import type { DiscoverBadgeKind } from '@/lib/mock/discoverPresentation';
 import { getDiscoverBadges, getUrgencyCopy, shortTagLine } from '@/lib/mock/discoverPresentation';
+import { restaurantPriceLabel } from '@/lib/restaurants/pricing';
 import { borderRadius, createStyles, shadows, spacing, typography, useColors } from '@/lib/theme';
 
 type Variant = 'carousel' | 'grid';
@@ -182,7 +183,7 @@ export function DiscoverEnhancedCard({
           </Text>
         </View>
         <Text style={styles.meta} numberOfLines={1}>
-          {restaurant.cuisineType} · {t('discover.kmAway', { distance: restaurant.distanceKm.toFixed(1) })}
+          {restaurant.cuisineType} · {restaurantPriceLabel(restaurant.priceRange)} · {t('discover.kmAway', { distance: restaurant.distanceKm.toFixed(1) })}
         </Text>
         <Text style={styles.tag} numberOfLines={1}>
           {tag}

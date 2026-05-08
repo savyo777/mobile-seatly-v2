@@ -2,6 +2,7 @@ import React from 'react';
 import { Image, Pressable, Text, View } from 'react-native';
 import { borderRadius, createStyles, shadows, spacing, typography } from '@/lib/theme';
 import { Restaurant } from '@/lib/mock/restaurants';
+import { restaurantPriceLabel } from '@/lib/restaurants/pricing';
 
 interface RestaurantBrowseCardProps {
   restaurant: Restaurant;
@@ -115,7 +116,7 @@ export function RestaurantBrowseCard({ restaurant, width, onPress }: RestaurantB
             <Text style={styles.rating}>{restaurant.avgRating.toFixed(1)}</Text>
             <Text style={styles.reviews}>({restaurant.totalReviews})</Text>
           </View>
-          <Text style={styles.price}>{'$'.repeat(restaurant.priceRange)}</Text>
+          <Text style={styles.price}>{restaurantPriceLabel(restaurant.priceRange)}</Text>
         </View>
         <Text style={styles.ambiance} numberOfLines={1}>
           {restaurant.ambiance}
