@@ -57,6 +57,12 @@ function money(value: unknown): number {
   return Math.round(asNumber(value, 0) * 100) / 100;
 }
 
+function normalizePaymentMethod(value: unknown): "card" | "split" | "pay_at_restaurant" {
+  if (value === "split") return "split";
+  if (value === "pay_at_restaurant") return "pay_at_restaurant";
+  return "card";
+}
+
 function parseCartItems(value: unknown): PublicBookingCartItem[] {
   if (!Array.isArray(value)) return [];
   return value.flatMap((raw) => {
@@ -374,7 +380,7 @@ Deno.serve(async (req) => {
           discount_amount: body.discount_amount == null ? null : money(body.discount_amount),
           discount_reason: asNullableString(body.discount_reason),
           promotion_id: asNullableString(body.promotion_id),
-          payment_method: body.payment_method === "split" ? "split" : "card",
+          payment_method: normalizePaymentMethod(body.payment_method),
           confirmation_code: confirmationCode,
         })
         .select("id")

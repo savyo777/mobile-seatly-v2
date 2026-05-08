@@ -249,9 +249,12 @@ export default function Step7Confirmation() {
 
     async function submitBooking() {
       if (savedReservationRef.current || !rid) return;
-      const loaded = await loadRestaurantForBooking(rid);
-      if (cancelled) return;
-      const currentRestaurant = loaded ?? getCachedRestaurantById(rid);
+      let currentRestaurant = restaurant ?? getCachedRestaurantById(rid);
+      if (!currentRestaurant) {
+        const loaded = await loadRestaurantForBooking(rid);
+        if (cancelled) return;
+        currentRestaurant = loaded ?? getCachedRestaurantById(rid);
+      }
       setRestaurant(currentRestaurant);
       if (!currentRestaurant) return;
       if (!shiftId || !slotDateTime || !name || !email) {
@@ -287,7 +290,11 @@ export default function Step7Confirmation() {
           discount_amount: null,
           discount_reason: null,
           promotion_id: null,
-          payment_method: paymentMethod === 'split' ? 'split' : 'card',
+          payment_method: paymentMethod === 'pay_at_restaurant'
+            ? 'pay_at_restaurant'
+            : paymentMethod === 'split'
+              ? 'split'
+              : 'card',
         });
         if (!cancelled) setConfirmation(result);
       } catch (error) {
@@ -308,7 +315,7 @@ export default function Step7Confirmation() {
     return () => {
       cancelled = true;
     };
-  }, [cart, date, email, guests, name, notes, occasion, paymentMethod, phone, preorderSubtotal, rid, router, seatingPreference, shiftId, slotDateTime]);
+  }, [cart, date, email, guests, name, notes, occasion, paymentMethod, phone, preorderSubtotal, restaurant, rid, router, seatingPreference, shiftId, slotDateTime]);
 
   useEffect(() => {
     Animated.sequence([

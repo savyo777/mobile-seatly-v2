@@ -22,6 +22,7 @@ import {
 } from '@/lib/mock/reservations';
 import { mockRestaurants } from '@/lib/mock/restaurants';
 import { fetchMyBookingItems, type MyBookingItem } from '@/lib/booking/myReservations';
+import { isDemoModeEnabled } from '@/lib/config/demoMode';
 import { useColors, createStyles, spacing, borderRadius } from '@/lib/theme';
 
 type SegmentKey = 'upcoming' | 'past';
@@ -324,7 +325,8 @@ export default function ActivityScreen() {
   const items = useMemo<BookingItem[]>(() =>
     liveLoaded
       ? liveItems
-      : mockReservations
+      : isDemoModeEnabled()
+        ? mockReservations
         .filter((r) => r.guestId === 'u1')
         .map((r) => ({
           id: r.id,
@@ -336,7 +338,8 @@ export default function ActivityScreen() {
           partySize: r.partySize,
           occasion: r.occasion,
           confirmationCode: r.confirmationCode,
-        })),
+        }))
+        : [],
   [liveItems, liveLoaded, refreshKey]);
 
   const segmentItems = useMemo(() => {

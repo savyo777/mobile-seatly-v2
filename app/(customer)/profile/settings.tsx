@@ -1,9 +1,4 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
-
-const MEMBER_SINCE = new Date('2025-03-15');
-function memberSinceLabel(): string {
-  return MEMBER_SINCE.toLocaleDateString(undefined, { month: 'short', year: 'numeric' });
-}
 import {
   View,
   Text,
@@ -19,10 +14,10 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { ChevronGlyph } from '@/components/ui/ChevronGlyph';
 import { useColors, createStyles, spacing, borderRadius, typography } from '@/lib/theme';
-import { mockCustomer } from '@/lib/mock/users';
 import { useAuthSession } from '@/lib/auth/AuthContext';
 import { resolveAuthDisplayProfile } from '@/lib/auth/displayProfile';
 import { deleteAccount, signOutAllDevices } from '@/lib/services/accountSecurity';
+import { fetchCurrentUserProfile, type AppUserProfile } from '@/lib/services/userProfile';
 import {
   getAppShellPreference,
   setAppShellPreference,
@@ -250,12 +245,33 @@ export default function SettingsScreen() {
   const navigation = useNavigation();
   const insets = useSafeAreaInsets();
   const { signOut, isStaffLike, user } = useAuthSession();
+  const [accountProfile, setAccountProfile] = useState<AppUserProfile | null>(null);
   const displayProfile = useMemo(
-    () => resolveAuthDisplayProfile(user, { fullName: mockCustomer.fullName, avatarUrl: mockCustomer.avatarUrl }),
-    [user],
+    () => resolveAuthDisplayProfile(user, {
+      fullName: accountProfile?.fullName,
+      avatarUrl: accountProfile?.avatarUrl ?? undefined,
+    }),
+    [accountProfile, user],
   );
-  const pts = mockCustomer.loyaltyPointsBalance ?? 0;
+  const pts = accountProfile?.loyaltyPointsBalance ?? 0;
   const tier = getTier(pts);
+  const memberSince = accountProfile?.createdAt
+    ? new Date(accountProfile.createdAt).toLocaleDateString(undefined, { month: 'short', year: 'numeric' })
+    : 'New member';
+
+  useEffect(() => {
+    let active = true;
+    void fetchCurrentUserProfile()
+      .then((profile) => {
+        if (active) setAccountProfile(profile);
+      })
+      .catch(() => {
+        if (active) setAccountProfile(null);
+      });
+    return () => {
+      active = false;
+    };
+  }, [user?.id]);
 
   // After registering a restaurant we set the shell preference to 'staff',
   // but the local `role` (and therefore `isStaffLike`) may not have synced
@@ -522,7 +538,7 @@ export default function SettingsScreen() {
           </View>
           <View style={styles.profileInfo}>
             <Text style={styles.profileName}>{displayProfile.fullName}</Text>
-            <Text style={styles.profileHandle}>Member since {memberSinceLabel()} · {tier.name}</Text>
+            <Text style={styles.profileHandle}>Member since {memberSince} · {tier.name}</Text>
           </View>
           <ChevronGlyph color={c.textMuted} size={16} />
         </Pressable>

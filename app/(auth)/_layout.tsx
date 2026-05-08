@@ -5,7 +5,10 @@ import type { Href } from 'expo-router';
 import { useColors } from '@/lib/theme';
 import { createStackTransitionOptions } from '@/lib/navigation/transitions';
 import { useAuthSession } from '@/lib/auth/AuthContext';
-import { getAppShellPreference } from '@/lib/navigation/appShellPreference';
+import {
+  getAppShellPreference,
+  getCachedAppShellPreference,
+} from '@/lib/navigation/appShellPreference';
 
 export default function AuthLayout() {
   const c = useColors();
@@ -21,6 +24,19 @@ export default function AuthLayout() {
       return;
     }
     let cancelled = false;
+    const cachedPref = getCachedAppShellPreference();
+    if (cachedPref) {
+      if (cachedPref === 'customer') {
+        setAuthRedirectHref('/(customer)');
+        return;
+      }
+      if (cachedPref === 'staff' && isStaffLike) {
+        setAuthRedirectHref('/(staff)');
+        return;
+      }
+      setAuthRedirectHref('/(customer)');
+      return;
+    }
     void getAppShellPreference().then((pref) => {
       if (cancelled) return;
       if (pref === 'customer') {

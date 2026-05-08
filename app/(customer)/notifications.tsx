@@ -1,4 +1,4 @@
-import React, { useCallback } from 'react';
+import React, { useCallback, useState } from 'react';
 import {
   Pressable,
   ScrollView,
@@ -6,13 +6,20 @@ import {
   Text,
   View,
 } from 'react-native';
-import { useRouter, Href } from 'expo-router';
+import { useFocusEffect, useRouter, Href } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useColors, createStyles, borderRadius, spacing } from '@/lib/theme';
+import { isDemoModeEnabled } from '@/lib/config/demoMode';
 import { mockReservations } from '@/lib/mock/reservations';
 import { mockRestaurants } from '@/lib/mock/restaurants';
 import { mockCustomer } from '@/lib/mock/users';
+import { useAuthSession } from '@/lib/auth/AuthContext';
+import {
+  getPostTurnNotifications,
+  type PostTurnRequest,
+  type PostTurnRequestType,
+} from '@/lib/postVisit/postTurn';
 
 const ME = mockCustomer.id;
 
@@ -22,7 +29,9 @@ type AppNotifType =
   | 'reminder_2h'
   | 'cancelled'
   | 'loyalty_milestone'
-  | 'waitlist_ready';
+  | 'waitlist_ready'
+  | 'review_request'
+  | 'photo_request';
 
 type AppNotification = {
   id: string;
@@ -31,6 +40,9 @@ type AppNotification = {
   body: string;
   timestamp: string;
   reservationId?: string;
+  bookingId?: string;
+  restaurantId?: string;
+  postTurnType?: PostTurnRequestType;
   read: boolean;
 };
 
@@ -47,7 +59,26 @@ const TYPE_CONFIG: Record<AppNotifType, NotifConfig> = {
   cancelled:        { icon: 'close-circle',      bg: 'rgba(239,68,68,0.12)',  color: '#EF4444' },
   loyalty_milestone:{ icon: 'star',              bg: 'rgba(201,162,74,0.15)', color: '#C9A24A' },
   waitlist_ready:   { icon: 'ticket',            bg: 'rgba(99,179,237,0.12)', color: '#63B3ED' },
+  review_request:   { icon: 'star-outline',      bg: 'rgba(201,162,74,0.14)', color: '#C9A24A' },
+  photo_request:    { icon: 'camera-outline',    bg: 'rgba(99,179,237,0.12)', color: '#63B3ED' },
 };
+
+function postTurnNotification(request: PostTurnRequest): AppNotification {
+  const isReview = request.type === 'review';
+  return {
+    id: `post-turn-${request.type}-${request.bookingId}`,
+    type: isReview ? 'review_request' : 'photo_request',
+    title: isReview ? 'Review your visit' : 'Upload photos from your visit',
+    body: isReview
+      ? `Tell other diners how ${request.restaurantName} was.`
+      : `Share photos from your visit to ${request.restaurantName}.`,
+    timestamp: request.requestedAt,
+    bookingId: request.bookingId,
+    restaurantId: request.restaurantId,
+    postTurnType: request.type,
+    read: Boolean(request.inAppReadAt),
+  };
+}
 
 function buildMockNotifications(): AppNotification[] {
   const myReservations = mockReservations
@@ -299,12 +330,49 @@ export default function NotificationsScreen() {
   const insets = useSafeAreaInsets();
   const c = useColors();
   const styles = useStyles();
+  const { user, isAuthenticated } = useAuthSession();
+  const [allNotifs, setAllNotifs] = useState<AppNotification[]>(() => (isDemoModeEnabled() ? buildMockNotifications() : []));
 
-  const allNotifs = buildMockNotifications();
   const buckets = bucket(allNotifs);
+
+  useFocusEffect(
+    useCallback(() => {
+      let cancelled = false;
+      const load = async () => {
+        const postTurn =
+          isAuthenticated && user?.id
+            ? (await getPostTurnNotifications(user)).map(postTurnNotification)
+            : [];
+        const merged = [...postTurn, ...(isDemoModeEnabled() ? buildMockNotifications() : [])].sort(
+          (a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime(),
+        );
+        if (!cancelled) setAllNotifs(merged);
+      };
+      void load();
+      return () => {
+        cancelled = true;
+      };
+    }, [isAuthenticated, user]),
+  );
 
   const handlePress = useCallback(
     (n: AppNotification) => {
+      if (n.postTurnType === 'review' && n.restaurantId && n.bookingId) {
+        router.push(
+          `/booking/${n.restaurantId}/review?bookingId=${encodeURIComponent(n.bookingId)}` as Href,
+        );
+        return;
+      }
+      if (n.postTurnType === 'photo' && n.restaurantId && n.bookingId) {
+        router.push({
+          pathname: '/(customer)/discover/post-review/camera',
+          params: {
+            restaurantId: n.restaurantId,
+            bookingId: n.bookingId,
+          },
+        } as Href);
+        return;
+      }
       if (n.reservationId) {
         router.push(`/(customer)/bookings/${n.reservationId}` as Href);
       }

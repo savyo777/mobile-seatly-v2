@@ -1,8 +1,10 @@
 import React, { useMemo, useState } from 'react';
-import { FlatList, Image, Pressable, StyleSheet, Text, View } from 'react-native';
+import { FlatList, Pressable, StyleSheet, Text, View, useWindowDimensions } from 'react-native';
+import { Image } from 'expo-image';
 import { useLocalSearchParams, useRouter, type Href } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { ScreenWrapper } from '@/components/ui';
+import { StoryFilterFrame } from '@/components/storyFilters/StoryFilterFrame';
 import { useColors, createStyles, borderRadius, spacing, typography } from '@/lib/theme';
 import { safeRouterBack } from '@/lib/navigation/transitions';
 import { getSnapUser, listSnapPostsByRestaurant, getSnapRestaurantName } from '@/lib/mock/snaps';
@@ -93,11 +95,13 @@ export default function RestaurantSnapGalleryScreen() {
   const c = useColors();
   const styles = useStyles();
   const router = useRouter();
+  const { width: windowW } = useWindowDimensions();
   const { restaurantId } = useLocalSearchParams<{ restaurantId: string }>();
   const [pressingId, setPressingId] = useState<string | null>(null);
 
   const snaps = useMemo(() => listSnapPostsByRestaurant(restaurantId), [restaurantId]);
   const restaurantName = useMemo(() => getSnapRestaurantName(restaurantId), [restaurantId]);
+  const cardPhotoWidth = Math.max(1, Math.floor((windowW - 40 - spacing.md) / 2));
   const restaurantFallback = restaurantId
     ? (`/(customer)/discover/${restaurantId}` as Href)
     : '/(customer)/discover';
@@ -135,10 +139,33 @@ export default function RestaurantSnapGalleryScreen() {
                 onPressOut={() => setPressingId(null)}
                 style={[styles.card, pressed && styles.cardPressed]}
               >
-                <Image source={{ uri: item.image }} style={styles.photo} />
+                {item.storyFilterId ? (
+                  <StoryFilterFrame
+                    filterId={item.storyFilterId}
+                    width={cardPhotoWidth}
+                    height={170}
+                    capturedAt={item.storyFilterCapturedAt}
+                    restaurantName={restaurantName}
+                    mediaSlot={
+                      <Image
+                        source={{ uri: item.image }}
+                        style={styles.photo}
+                        contentFit="cover"
+                        contentPosition="bottom"
+                      />
+                    }
+                  />
+                ) : (
+                  <Image
+                    source={{ uri: item.image }}
+                    style={styles.photo}
+                    contentFit="cover"
+                    contentPosition="bottom"
+                  />
+                )}
                 <View style={styles.cardBody}>
                   <View style={styles.userRow}>
-                    {user?.avatarUrl ? <Image source={{ uri: user.avatarUrl }} style={styles.avatar} /> : <View style={styles.avatar} />}
+                    {user?.avatarUrl ? <Image source={{ uri: user.avatarUrl }} style={styles.avatar} contentFit="cover" /> : <View style={styles.avatar} />}
                     <Text style={styles.username} numberOfLines={1}>
                       @{user?.username ?? 'guest'}
                     </Text>

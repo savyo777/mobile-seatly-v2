@@ -1,30 +1,48 @@
-import React, { useMemo } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { OwnerScreen } from '@/components/owner/OwnerScreen';
 import { SubpageHeader } from '@/components/owner/SubpageHeader';
+import { fetchCurrentOwnerRestaurant } from '@/lib/services/ownerRestaurant';
+import { getSupabase } from '@/lib/supabase/client';
 import { borderRadius, createStyles, spacing, typography, useColors } from '@/lib/theme';
 
-/** Billing model — Cenaiva charges restaurants:
- *   - $1 per booked table
- *   - 5% of customer payments collected through the app (pre-orders / in-app pay)
- *   - $200 monthly subscription
- */
+function envMoney(name: string): number {
+  const parsed = Number(process.env[name]);
+  return Number.isFinite(parsed) ? parsed : 0;
+}
+
 const PRICING = {
-  perBookingDollars: 1,
-  preOrderFeePct: 0.05, // 5%
-  monthlySubDollars: 200,
+  perBookingDollars: envMoney('EXPO_PUBLIC_OWNER_PER_BOOKING_DOLLARS'),
+  preOrderFeePct: envMoney('EXPO_PUBLIC_OWNER_PREORDER_FEE_PCT'),
+  monthlySubDollars: envMoney('EXPO_PUBLIC_OWNER_MONTHLY_SUB_DOLLARS'),
 };
 
-// Mock current-cycle activity. In production this would come from the backend.
-const ACTIVITY_THIS_CYCLE = {
-  bookingCount: 184,
-  preOrderCount: 71,
-  preOrderRevenueDollars: 6420.5, // gross customer payments through the app
+type CycleActivity = {
+  bookingCount: number;
+  preOrderCount: number;
+  preOrderRevenueDollars: number;
 };
 
-const CYCLE_LABEL = 'March 2026';
-const CYCLE_BILLED_ON = 'Apr 1, 2026';
+function cycleStart(now = new Date()) {
+  return new Date(now.getFullYear(), now.getMonth(), 1);
+}
+
+function nextCycleStart(now = new Date()) {
+  return new Date(now.getFullYear(), now.getMonth() + 1, 1);
+}
+
+function cycleLabel(now = new Date()) {
+  return cycleStart(now).toLocaleDateString('en-CA', { month: 'long', year: 'numeric' });
+}
+
+function cycleBilledOn(now = new Date()) {
+  return nextCycleStart(now).toLocaleDateString('en-CA', {
+    month: 'short',
+    day: 'numeric',
+    year: 'numeric',
+  });
+}
 
 function formatMoney(dollars: number): string {
   return dollars.toLocaleString('en-CA', {
@@ -243,26 +261,70 @@ type YearSummary = {
   total: number;
 };
 
-const PAST_YEARS: YearSummary[] = [
-  { year: 2026, invoiceCount: 2, total: 1170.5 },
-  { year: 2025, invoiceCount: 12, total: 6184.75 },
-  { year: 2024, invoiceCount: 9, total: 4280.0 },
-];
+const PAST_YEARS: YearSummary[] = [];
 
 export default function BillingHistoryScreen() {
   const c = useColors();
   const styles = useStyles();
+  const [activity, setActivity] = useState<CycleActivity>({
+    bookingCount: 0,
+    preOrderCount: 0,
+    preOrderRevenueDollars: 0,
+  });
+  const cycleName = cycleLabel();
+  const billedOn = cycleBilledOn();
+
+  useEffect(() => {
+    let active = true;
+    void (async () => {
+      const restaurant = await fetchCurrentOwnerRestaurant();
+      const supabase = getSupabase();
+      if (!restaurant?.id || !supabase) return;
+      const start = cycleStart().toISOString();
+      const end = nextCycleStart().toISOString();
+
+      const [{ count: reservationCount }, { data: orders }] = await Promise.all([
+        supabase
+          .from('reservations')
+          .select('id', { count: 'exact', head: true })
+          .eq('restaurant_id', restaurant.id)
+          .gte('reserved_at', start)
+          .lt('reserved_at', end),
+        supabase
+          .from('orders')
+          .select('total_amount')
+          .eq('restaurant_id', restaurant.id)
+          .eq('is_preorder', true)
+          .gte('created_at', start)
+          .lt('created_at', end),
+      ]);
+
+      if (!active) return;
+      const orderRows = (orders ?? []) as Array<{ total_amount?: number | string | null }>;
+      setActivity({
+        bookingCount: reservationCount ?? 0,
+        preOrderCount: orderRows.length,
+        preOrderRevenueDollars: orderRows.reduce((sum, order) => {
+          const parsed = typeof order.total_amount === 'number' ? order.total_amount : Number(order.total_amount);
+          return sum + (Number.isFinite(parsed) ? parsed : 0);
+        }, 0),
+      });
+    })().catch(() => undefined);
+    return () => {
+      active = false;
+    };
+  }, []);
 
   const categories = useMemo<Category[]>(() => {
-    const bookingTotal = ACTIVITY_THIS_CYCLE.bookingCount * PRICING.perBookingDollars;
+    const bookingTotal = activity.bookingCount * PRICING.perBookingDollars;
     const preOrderTotal =
-      ACTIVITY_THIS_CYCLE.preOrderRevenueDollars * PRICING.preOrderFeePct;
+      activity.preOrderRevenueDollars * PRICING.preOrderFeePct;
     return [
       {
         id: 'bookings',
         icon: 'calendar-outline',
         title: 'Tables booked through the app',
-        meta: `${ACTIVITY_THIS_CYCLE.bookingCount} bookings`,
+        meta: `${activity.bookingCount} bookings`,
         rate: `$${PRICING.perBookingDollars} per booking`,
         amount: bookingTotal,
       },
@@ -270,8 +332,8 @@ export default function BillingHistoryScreen() {
         id: 'preorders',
         icon: 'fast-food-outline',
         title: 'Pre-orders & in-app payments',
-        meta: `${ACTIVITY_THIS_CYCLE.preOrderCount} payments · ${formatMoney(
-          ACTIVITY_THIS_CYCLE.preOrderRevenueDollars,
+        meta: `${activity.preOrderCount} payments · ${formatMoney(
+          activity.preOrderRevenueDollars,
         )} collected`,
         rate: `${(PRICING.preOrderFeePct * 100).toFixed(0)}% transaction fee`,
         amount: preOrderTotal,
@@ -280,12 +342,12 @@ export default function BillingHistoryScreen() {
         id: 'subscription',
         icon: 'star-outline',
         title: 'Monthly subscription',
-        meta: 'Cenaiva Pro · ' + CYCLE_LABEL,
+        meta: 'Cenaiva Pro · ' + cycleName,
         rate: 'Flat rate',
         amount: PRICING.monthlySubDollars,
       },
     ];
-  }, []);
+  }, [activity, cycleName]);
 
   const total = useMemo(
     () => categories.reduce((sum, c) => sum + c.amount, 0),
@@ -308,13 +370,13 @@ export default function BillingHistoryScreen() {
 
       <View style={styles.cyclePill}>
         <Ionicons name="calendar-outline" size={12} color={c.gold} />
-        <Text style={styles.cyclePillText}>{CYCLE_LABEL.toUpperCase()}</Text>
+        <Text style={styles.cyclePillText}>{cycleName.toUpperCase()}</Text>
       </View>
 
       <View style={styles.totalCard}>
         <Text style={styles.totalLabel}>TOTAL THIS CYCLE</Text>
         <Text style={styles.totalAmount}>{formatMoney(total)}</Text>
-        <Text style={styles.totalSub}>Charges to your card on {CYCLE_BILLED_ON}.</Text>
+        <Text style={styles.totalSub}>Charges to your card on {billedOn}.</Text>
       </View>
 
       <Text style={styles.sectionLabel}>BREAKDOWN</Text>

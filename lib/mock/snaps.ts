@@ -14,6 +14,7 @@ export type SnapPost = {
   id: string;
   user_id: string;
   restaurant_id: string;
+  booking_id?: string;
   image: string;
   caption: string;
   rating?: 1 | 2 | 3 | 4 | 5;

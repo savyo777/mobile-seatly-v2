@@ -1,4 +1,7 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { isDemoModeEnabled } from '@/lib/config/demoMode';
+import { fetchCurrentOwnerRestaurant } from '@/lib/services/ownerRestaurant';
+import { getSupabase } from '@/lib/supabase/client';
 
 export type RestaurantPaymentCard = {
   id: string;
@@ -11,16 +14,6 @@ export type RestaurantPaymentCard = {
 };
 
 const STORAGE_KEY = 'restaurant-payment-cards-v1';
-
-const DEFAULT_REGISTRATION_CARD: RestaurantPaymentCard = {
-  id: 'registration-card-default',
-  brand: 'Visa',
-  last4: '4429',
-  expiry: '06/28',
-  cardholder: 'Restaurant owner',
-  isDefault: true,
-  source: 'registration',
-};
 
 function makeId() {
   return `card_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
@@ -35,13 +28,14 @@ export function inferCardBrand(cardNumber: string): string {
   return 'Card';
 }
 
-async function readCards(options: { hydrateDefault?: boolean } = {}): Promise<RestaurantPaymentCard[]> {
+function expiryLabel(month: number | null, year: number | null): string {
+  if (!month || !year) return '';
+  return `${String(month).padStart(2, '0')}/${String(year).slice(-2)}`;
+}
+
+async function readLocalDemoCards(): Promise<RestaurantPaymentCard[]> {
   const raw = await AsyncStorage.getItem(STORAGE_KEY);
-  if (!raw) {
-    if (!options.hydrateDefault) return [];
-    await writeCards([DEFAULT_REGISTRATION_CARD]);
-    return [DEFAULT_REGISTRATION_CARD];
-  }
+  if (!raw) return [];
   try {
     const parsed = JSON.parse(raw);
     return Array.isArray(parsed) ? (parsed as RestaurantPaymentCard[]) : [];
@@ -55,13 +49,49 @@ async function writeCards(cards: RestaurantPaymentCard[]): Promise<void> {
 }
 
 export async function getStoredRestaurantPaymentCards(): Promise<RestaurantPaymentCard[]> {
-  return readCards({ hydrateDefault: true });
+  const restaurant = await fetchCurrentOwnerRestaurant();
+  if (restaurant?.billingCardLast4) {
+    return [{
+      id: restaurant.stripePaymentMethodId || `restaurant-card-${restaurant.id}`,
+      brand: restaurant.billingCardBrand || 'Card',
+      last4: restaurant.billingCardLast4,
+      expiry: expiryLabel(restaurant.billingCardExpMonth, restaurant.billingCardExpYear),
+      cardholder: restaurant.name,
+      isDefault: true,
+      source: 'registration',
+    }];
+  }
+  if (isDemoModeEnabled()) return readLocalDemoCards();
+  return [];
 }
 
 export async function saveRestaurantPaymentCard(
   card: Omit<RestaurantPaymentCard, 'id'> & { id?: string },
 ): Promise<RestaurantPaymentCard[]> {
-  const cards = await readCards();
+  const supabase = getSupabase();
+  const restaurant = await fetchCurrentOwnerRestaurant();
+  if (supabase && restaurant?.id) {
+    const [expMonthRaw, expYearRaw] = card.expiry.split('/');
+    const expMonth = Number(expMonthRaw);
+    const expYear = Number(expYearRaw?.length === 2 ? `20${expYearRaw}` : expYearRaw);
+    const { error } = await supabase
+      .from('restaurants')
+      .update({
+        billing_card_brand: card.brand,
+        billing_card_last4: card.last4,
+        billing_card_exp_month: Number.isFinite(expMonth) ? expMonth : null,
+        billing_card_exp_year: Number.isFinite(expYear) ? expYear : null,
+      })
+      .eq('id', restaurant.id);
+    if (error) throw error;
+    return getStoredRestaurantPaymentCards();
+  }
+
+  if (!isDemoModeEnabled()) {
+    throw new Error('Restaurant billing is unavailable until backend billing is configured.');
+  }
+
+  const cards = await readLocalDemoCards();
   const next: RestaurantPaymentCard = {
     id: card.id ?? makeId(),
     brand: card.brand,
@@ -71,38 +101,44 @@ export async function saveRestaurantPaymentCard(
     isDefault: card.isDefault,
     source: card.source,
   };
-  const existingIndex = cards.findIndex((item) => item.id === next.id);
   const normalized = next.isDefault
     ? cards.map((item) => ({ ...item, isDefault: false }))
     : cards;
-
-  const merged = existingIndex >= 0
-    ? normalized.map((item) => (item.id === next.id ? next : item))
-    : [next, ...normalized];
-
-  const finalCards = next.isDefault
-    ? merged.map((item, idx) => ({ ...item, isDefault: idx === 0 ? true : false }))
-    : merged;
-
-  await writeCards(finalCards);
-  return finalCards;
+  const merged = [next, ...normalized.filter((item) => item.id !== next.id)];
+  await writeCards(merged);
+  return merged;
 }
 
 export async function setDefaultRestaurantPaymentCard(id: string): Promise<RestaurantPaymentCard[]> {
-  const cards = await readCards({ hydrateDefault: true });
+  const cards = await readLocalDemoCards();
   const next = cards.map((card) => ({ ...card, isDefault: card.id === id }));
   await writeCards(next);
-  return next;
+  return getStoredRestaurantPaymentCards();
 }
 
 export async function removeRestaurantPaymentCard(id: string): Promise<RestaurantPaymentCard[]> {
-  const cards = await readCards({ hydrateDefault: true });
-  const next = cards.filter((card) => card.id !== id);
+  const restaurant = await fetchCurrentOwnerRestaurant();
+  const supabase = getSupabase();
+  if (restaurant?.id && supabase && (id === restaurant.stripePaymentMethodId || id === `restaurant-card-${restaurant.id}`)) {
+    const { error } = await supabase
+      .from('restaurants')
+      .update({
+        billing_card_brand: null,
+        billing_card_last4: null,
+        billing_card_exp_month: null,
+        billing_card_exp_year: null,
+      })
+      .eq('id', restaurant.id);
+    if (error) throw error;
+    return [];
+  }
+
+  const next = (await readLocalDemoCards()).filter((card) => card.id !== id);
   if (next.length && !next.some((card) => card.isDefault)) {
     next[0] = { ...next[0], isDefault: true };
   }
   await writeCards(next);
-  return next;
+  return getStoredRestaurantPaymentCards();
 }
 
 export async function seedRestaurantPaymentCards(

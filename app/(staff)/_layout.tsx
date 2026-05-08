@@ -15,6 +15,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useColors, createStyles, spacing, borderRadius } from '@/lib/theme';
 import { useAuthSession } from '@/lib/auth/AuthContext';
 import {
+  getCachedAppShellPreference,
   getAppShellPreference,
   type AppShellPreference,
 } from '@/lib/navigation/appShellPreference';
@@ -150,7 +151,9 @@ export default function OwnerTabsLayout() {
   // finishes the restaurant registration we set this to 'staff', and we
   // want to keep them on the staff side even if their role hasn't synced
   // yet — otherwise switching tabs bounces them back to the diner app.
-  const [shellPref, setShellPref] = useState<AppShellPreference | null>(null);
+  const [shellPref, setShellPref] = useState<AppShellPreference>(
+    () => getCachedAppShellPreference() ?? 'auto',
+  );
   useEffect(() => {
     let cancelled = false;
     void (async () => {
@@ -202,6 +205,17 @@ export default function OwnerTabsLayout() {
     }),
     [c.bgBase, c.gold, c.textMuted, tabBarStyle],
   );
+  const eagerTabOptions = useMemo(() => ({ lazy: false }), []);
+
+  useEffect(() => {
+    if (loading || !isAuthenticated) return undefined;
+    const timer = setTimeout(() => {
+      router.prefetch('/(staff)/reservations' as never);
+      router.prefetch('/(staff)/promotions' as never);
+      router.prefetch('/(staff)/profile' as never);
+    }, 250);
+    return () => clearTimeout(timer);
+  }, [isAuthenticated, loading, router]);
 
   const handleFab = useCallback(() => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium).catch(() => {});
@@ -213,7 +227,7 @@ export default function OwnerTabsLayout() {
     setTimeout(() => router.push(route as never), 180);
   }, [router]);
 
-  if (loading || (isAuthenticated && role === null) || shellPref === null) {
+  if (loading || (isAuthenticated && role === null)) {
     return (
       <View style={[styles.root, { alignItems: 'center', justifyContent: 'center' }]}>
         <ActivityIndicator color={c.gold} />
@@ -233,12 +247,13 @@ export default function OwnerTabsLayout() {
   return (
     <View style={styles.root}>
       <Tabs
-        detachInactiveScreens
+        detachInactiveScreens={false}
         screenOptions={screenOptions}
       >
         <Tabs.Screen
           name="home"
           options={{
+            ...eagerTabOptions,
             title: 'Home',
             tabBarIcon: ({ color, size }) => (
               <Ionicons name="home-outline" size={size} color={color} />
@@ -248,6 +263,7 @@ export default function OwnerTabsLayout() {
         <Tabs.Screen
           name="reservations"
           options={{
+            ...eagerTabOptions,
             title: 'Bookings',
             tabBarIcon: ({ color, size }) => (
               <Ionicons name="calendar-outline" size={size} color={color} />
@@ -257,6 +273,7 @@ export default function OwnerTabsLayout() {
         <Tabs.Screen
           name="promotions"
           options={{
+            ...eagerTabOptions,
             title: 'Promos',
             tabBarIcon: ({ color, size }) => (
               <Ionicons name="pricetag-outline" size={size} color={color} />
@@ -266,6 +283,7 @@ export default function OwnerTabsLayout() {
         <Tabs.Screen
           name="profile"
           options={{
+            ...eagerTabOptions,
             title: 'Business',
             tabBarIcon: ({ color, size }) => (
               <Ionicons name="storefront-outline" size={size} color={color} />

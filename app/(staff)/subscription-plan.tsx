@@ -12,7 +12,7 @@ import {
 
 const PLAN = {
   name: 'Cenaiva Pro',
-  priceMonthly: 200,
+  priceMonthly: Number(process.env.EXPO_PUBLIC_OWNER_MONTHLY_SUB_DOLLARS) || 0,
 };
 
 const MONTH_NAMES = [

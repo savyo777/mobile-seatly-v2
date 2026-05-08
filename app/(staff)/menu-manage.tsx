@@ -371,7 +371,7 @@ export default function MenuManageScreen() {
   const c = useColors();
   const router = useRouter();
   const { t } = useTranslation();
-  const { items, updateItem, addItem, removeItem } = useMenu();
+  const { ownerRestaurantId, items, updateItem, addItem, removeItem } = useMenu();
   const [editingItem, setEditingItem] = useState<MenuItem | null>(null);
 
   const byCategory = items.reduce<Record<string, MenuItem[]>>((acc, item) => {
@@ -392,7 +392,7 @@ export default function MenuManageScreen() {
   const handleAddNew = () => {
     setEditingItem({
       id: `new_${Date.now()}`,
-      restaurantId: 'r1',
+      restaurantId: ownerRestaurantId ?? '',
       name: '',
       description: '',
       price: 0,

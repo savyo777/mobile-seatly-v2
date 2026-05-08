@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { View, Text, TouchableOpacity, ScrollView, Platform } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
@@ -6,10 +6,12 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTranslation } from 'react-i18next';
 import { Button, Card } from '@/components/ui';
 import { cartSubtotal, parseBookingCartParam } from '@/lib/booking/publicBookingApi';
+import { loadRestaurantForBooking } from '@/lib/data/restaurantCatalog';
+import { getStoredCustomerPaymentMethods, type CustomerPaymentMethod } from '@/lib/storage/customerPaymentMethods';
 import { formatCurrency } from '@/lib/utils/formatCurrency';
 import { useColors, createStyles, borderRadius } from '@/lib/theme';
 
-type PaymentMethod = 'card' | 'apple_pay' | 'google_pay';
+type PaymentMethod = 'card' | 'apple_pay' | 'google_pay' | 'pay_at_restaurant';
 
 const useStyles = createStyles((c) => ({
   container: { flex: 1, backgroundColor: c.bgBase },
@@ -31,7 +33,9 @@ const useStyles = createStyles((c) => ({
   methodCard: { flexDirection: 'row', alignItems: 'center', padding: 16, backgroundColor: c.bgSurface, borderRadius: borderRadius.md, borderWidth: 1, borderColor: c.border, marginBottom: 10, gap: 14 },
   methodCardSelected: { borderColor: c.gold, backgroundColor: 'rgba(201, 168, 76, 0.08)' },
   methodLabel: { flex: 1, fontSize: 15, color: c.textPrimary },
+  methodText: { flex: 1, gap: 2 },
   methodLabelSelected: { color: c.gold },
+  methodSubLabel: { fontSize: 12, color: c.textMuted, lineHeight: 16 },
   radio: { width: 22, height: 22, borderRadius: 11, borderWidth: 2, borderColor: c.border, alignItems: 'center', justifyContent: 'center' },
   radioSelected: { borderColor: c.gold },
   radioInner: { width: 12, height: 12, borderRadius: 6, backgroundColor: c.gold },
@@ -40,6 +44,7 @@ const useStyles = createStyles((c) => ({
   mockCardText: { fontSize: 15, color: c.textSecondary, fontFamily: Platform.OS === 'ios' ? 'Menlo' : 'monospace' },
   cardRow: { flexDirection: 'row', gap: 12 },
   secureText: { fontSize: 12, color: c.textMuted, textAlign: 'center', marginTop: 20, lineHeight: 18 },
+  payLaterNote: { fontSize: 12, color: c.textMuted, textAlign: 'center', marginTop: 20, lineHeight: 18 },
   footer: { position: 'absolute', bottom: 0, left: 0, right: 0, paddingHorizontal: 20, paddingTop: 16, backgroundColor: c.bgBase, borderTopWidth: 1, borderTopColor: c.border },
 }));
 
@@ -81,7 +86,9 @@ export default function Step6Payment() {
   const { t } = useTranslation();
   const c = useColors();
   const styles = useStyles();
-  const [selectedMethod, setSelectedMethod] = useState<PaymentMethod>('card');
+  const [selectedMethod, setSelectedMethod] = useState<PaymentMethod>('pay_at_restaurant');
+  const [taxRate, setTaxRate] = useState(0);
+  const [defaultCard, setDefaultCard] = useState<CustomerPaymentMethod | null>(null);
   const BOOKING_STEPS = 6;
   const STEP = 5;
   const progress = STEP / BOOKING_STEPS;
@@ -89,8 +96,9 @@ export default function Step6Payment() {
   const cart = parseBookingCartParam(cartParam);
   const preorderTotal = cartSubtotal(cart);
   const hasPreorder = preorderTotal > 0;
-  const taxAmount = preorderTotal * 0.13;
+  const taxAmount = preorderTotal * taxRate;
   const totalDue = preorderTotal + taxAmount;
+  const payAtRestaurant = selectedMethod === 'pay_at_restaurant';
   const qpBase = [
     `date=${encodeURIComponent(date ?? '')}`,
     `time=${encodeURIComponent(time ?? '')}`,
@@ -104,15 +112,39 @@ export default function Step6Payment() {
     `occasion=${encodeURIComponent(occasion ?? '')}`,
     `seatingPreference=${encodeURIComponent(seatingPreference ?? '')}`,
     `notes=${encodeURIComponent(notes ?? '')}`,
-    `paymentMethod=${selectedMethod === 'card' ? 'card' : 'card'}`,
+    `paymentMethod=${payAtRestaurant ? 'pay_at_restaurant' : selectedMethod === 'card' ? 'card' : 'card'}`,
     `cart=${encodeURIComponent(cartParam ?? '')}`,
   ].join('&');
 
-  const paymentMethods: { id: PaymentMethod; label: string; icon: keyof typeof Ionicons.glyphMap; platform?: string }[] = [
-    { id: 'card', label: 'Credit / Debit Card', icon: 'card-outline' },
+  const paymentMethods: { id: PaymentMethod; label: string; subLabel?: string; icon: keyof typeof Ionicons.glyphMap; platform?: string }[] = [
+    { id: 'pay_at_restaurant', label: 'Pay at the restaurant', subLabel: 'Keep the preorder, settle your bill when you dine.', icon: 'storefront-outline' },
+    { id: 'card', label: 'Pay now by card', subLabel: 'Securely pay for preorder items now.', icon: 'card-outline' },
     ...(Platform.OS === 'ios' ? [{ id: 'apple_pay' as const, label: 'Apple Pay', icon: 'logo-apple' as const }] : []),
     ...(Platform.OS === 'android' ? [{ id: 'google_pay' as const, label: 'Google Pay', icon: 'logo-google' as const }] : []),
   ];
+
+  useEffect(() => {
+    let active = true;
+    void (async () => {
+      const restaurant = await loadRestaurantForBooking(restaurantId);
+      if (active) setTaxRate(restaurant?.taxRate ?? 0);
+    })();
+    return () => {
+      active = false;
+    };
+  }, [restaurantId]);
+
+  useEffect(() => {
+    let active = true;
+    void (async () => {
+      const cards = await getStoredCustomerPaymentMethods(name || 'Cardholder').catch(() => []);
+      if (!active) return;
+      setDefaultCard(cards.find((card) => card.isDefault) ?? cards[0] ?? null);
+    })();
+    return () => {
+      active = false;
+    };
+  }, [name]);
 
   return (
     <View style={[styles.container, { paddingTop: insets.top }]}>
@@ -141,7 +173,7 @@ export default function Step6Payment() {
                 <Text style={styles.lineValue}>{formatCurrency(preorderTotal)}</Text>
               </View>
               <View style={styles.lineItem}>
-                <Text style={styles.lineLabel}>{t('orders.tax')} (13%)</Text>
+                <Text style={styles.lineLabel}>{t('orders.tax')}</Text>
                 <Text style={styles.lineValue}>{formatCurrency(taxAmount)}</Text>
               </View>
             </>
@@ -166,9 +198,12 @@ export default function Step6Payment() {
             style={[styles.methodCard, selectedMethod === method.id && styles.methodCardSelected]}
           >
             <Ionicons name={method.icon} size={24} color={selectedMethod === method.id ? c.gold : c.textSecondary} />
-            <Text style={[styles.methodLabel, selectedMethod === method.id && styles.methodLabelSelected]}>
-              {method.label}
-            </Text>
+            <View style={styles.methodText}>
+              <Text style={[styles.methodLabel, selectedMethod === method.id && styles.methodLabelSelected]}>
+                {method.label}
+              </Text>
+              {method.subLabel ? <Text style={styles.methodSubLabel}>{method.subLabel}</Text> : null}
+            </View>
             <View style={[styles.radio, selectedMethod === method.id && styles.radioSelected]}>
               {selectedMethod === method.id && <View style={styles.radioInner} />}
             </View>
@@ -179,27 +214,32 @@ export default function Step6Payment() {
           <Card style={styles.cardForm}>
             <View style={styles.mockCardInput}>
               <Ionicons name="card" size={20} color={c.textMuted} />
-              <Text style={styles.mockCardText}>•••• •••• •••• 4242</Text>
+              <Text style={styles.mockCardText}>
+                {defaultCard ? `${defaultCard.brand.toUpperCase()} •••• ${defaultCard.last4}` : 'No saved card on file'}
+              </Text>
             </View>
-            <View style={styles.cardRow}>
-              <View style={[styles.mockCardInput, { flex: 1 }]}>
-                <Text style={styles.mockCardText}>12/28</Text>
+            {defaultCard?.expiry ? (
+              <View style={styles.mockCardInput}>
+                <Text style={styles.mockCardText}>Expires {defaultCard.expiry}</Text>
               </View>
-              <View style={[styles.mockCardInput, { flex: 1 }]}>
-                <Text style={styles.mockCardText}>•••</Text>
-              </View>
-            </View>
+            ) : null}
           </Card>
         )}
 
-        <Text style={styles.secureText}>
-          <Ionicons name="lock-closed" size={12} color={c.textMuted} /> Secured by Stripe. Your payment information is encrypted.
-        </Text>
+        {payAtRestaurant ? (
+          <Text style={styles.payLaterNote}>
+            Your reservation and preorder will be sent to the restaurant. No payment is collected in the app.
+          </Text>
+        ) : (
+          <Text style={styles.secureText}>
+            <Ionicons name="lock-closed" size={12} color={c.textMuted} /> Secured by Stripe. Your payment information is encrypted.
+          </Text>
+        )}
       </ScrollView>
 
       <View style={[styles.footer, { paddingBottom: insets.bottom + 16 }]}>
         <Button
-          title={`${t('booking.confirmBooking')} · ${formatCurrency(totalDue)}`}
+          title={payAtRestaurant ? 'Confirm booking · Pay at restaurant' : `${t('booking.confirmBooking')} · ${formatCurrency(totalDue)}`}
           onPress={() => router.push(`/booking/${restaurantId}/step7-confirmation?${qpBase}`)}
         />
       </View>

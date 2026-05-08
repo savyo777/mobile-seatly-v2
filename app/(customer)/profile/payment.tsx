@@ -1,13 +1,11 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { View, Text, StyleSheet, Pressable, Alert, TextInput } from 'react-native';
-import { LinearGradient } from 'expo-linear-gradient';
 import { useTranslation } from 'react-i18next';
 import { Ionicons } from '@expo/vector-icons';
 import { ChevronGlyph } from '@/components/ui/ChevronGlyph';
 import { ProfileStackScreen } from '@/components/profile/ProfileStackScreen';
 import { ProfileSectionTitle } from '@/components/profile/ProfileSectionTitle';
 import { Card, Button, Badge } from '@/components/ui';
-import { mockWalletCredits } from '@/lib/mock/profileScreens';
 import { useAuthSession } from '@/lib/auth/AuthContext';
 import { resolveAuthDisplayProfile } from '@/lib/auth/displayProfile';
 import { inferCardBrand } from '@/lib/storage/restaurantPaymentMethod';
@@ -18,35 +16,9 @@ import {
   setDefaultCustomerPaymentMethod,
   type CustomerPaymentMethod as PaymentMethod,
 } from '@/lib/storage/customerPaymentMethods';
-import { formatCurrency } from '@/lib/utils/formatCurrency';
 import { useColors, createStyles, spacing, typography, borderRadius, shadows } from '@/lib/theme';
 
 const useStyles = createStyles((c) => ({
-  walletHero: {
-    borderRadius: borderRadius.xl,
-    padding: spacing.lg,
-    marginBottom: spacing.xl,
-    borderWidth: 1,
-    borderColor: 'rgba(201, 168, 76, 0.2)',
-  },
-  walletHeroLabel: {
-    ...typography.label,
-    fontSize: 10,
-    letterSpacing: 1.5,
-    color: c.textMuted,
-    marginBottom: spacing.xs,
-  },
-  walletHeroAmt: {
-    fontSize: 28,
-    fontWeight: '800',
-    color: c.gold,
-    letterSpacing: -0.5,
-  },
-  walletHeroHint: {
-    ...typography.bodySmall,
-    color: c.textSecondary,
-    marginTop: spacing.sm,
-  },
   card: {
     marginBottom: spacing.md,
     borderColor: 'rgba(255,255,255,0.08)',
@@ -243,7 +215,6 @@ export default function PaymentScreen() {
     cvc?: string;
     postalCode?: string;
   }>({});
-  const creditTotal = useMemo(() => mockWalletCredits.reduce((s, cr) => s + cr.amount, 0), []);
 
   useEffect(() => {
     let active = true;
@@ -308,35 +279,28 @@ export default function PaymentScreen() {
     if (Object.keys(nextErrors).length > 0) return;
 
     void (async () => {
-      const next = await saveCustomerPaymentMethod(
-        {
-          brand: inferCardBrand(digits),
-          last4: digits.slice(-4),
-          expiry: expiry.trim(),
-          cardholder: cardholder.trim(),
-          isDefault: true,
-        },
-        profile.fullName,
-      );
-      setMethods(next);
-      setAddingCard(false);
-      resetForm();
+      try {
+        const next = await saveCustomerPaymentMethod(
+          {
+            brand: inferCardBrand(digits),
+            last4: digits.slice(-4),
+            expiry: expiry.trim(),
+            cardholder: cardholder.trim(),
+            isDefault: true,
+          },
+          profile.fullName,
+        );
+        setMethods(next);
+        setAddingCard(false);
+        resetForm();
+      } catch (error) {
+        Alert.alert('Card not saved', error instanceof Error ? error.message : 'Please try again.');
+      }
     })();
   };
 
   return (
     <ProfileStackScreen title={t('profile.paymentMethods')} subtitle={t('profile.paymentMethodsSub')}>
-      <LinearGradient
-        colors={['#1E1A12', '#12100C', '#0A0A0A']}
-        start={{ x: 0, y: 0 }}
-        end={{ x: 1, y: 1 }}
-        style={styles.walletHero}
-      >
-        <Text style={styles.walletHeroLabel}>Cenaiva credits</Text>
-        <Text style={styles.walletHeroAmt}>{formatCurrency(creditTotal, 'CAD')}</Text>
-        <Text style={styles.walletHeroHint}>Applied automatically at checkout when eligible</Text>
-      </LinearGradient>
-
       <ProfileSectionTitle>Payment methods</ProfileSectionTitle>
       {methods.map((m) => (
         <Card key={m.id} style={styles.card}>
@@ -350,7 +314,7 @@ export default function PaymentScreen() {
                   {brandLabel(m.brand)} ···· {m.last4}
                 </Text>
                 <Text style={styles.meta}>
-                  {m.cardholder} · Exp {m.expiry}
+                  {[m.cardholder, m.expiry ? `Exp ${m.expiry}` : null].filter(Boolean).join(' · ')}
                 </Text>
               </View>
             </View>

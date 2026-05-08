@@ -164,6 +164,7 @@ export default function SnapStylesScreen() {
   const {
     restaurantId,
     photoUri,
+    bookingId,
     capturedAt: capturedAtParam,
     returnTo,
     points: pointsParam,
@@ -171,6 +172,7 @@ export default function SnapStylesScreen() {
   } = useLocalSearchParams<{
     restaurantId?: string;
     photoUri?: string;
+    bookingId?: string;
     capturedAt?: string;
     partySize?: string;
     /** When `reward`, Continue returns to post-reward share screen instead of caption. */
@@ -241,6 +243,7 @@ export default function SnapStylesScreen() {
         params: {
           photoUri: encodeURIComponent(finalUri),
           restaurantId,
+          ...(bookingId ? { bookingId } : {}),
           ...(preservedFilterId
             ? {
                 filterId: preservedFilterId,
@@ -251,7 +254,7 @@ export default function SnapStylesScreen() {
       };
       router.push(href);
     },
-    [capturedAt, restaurantId, router],
+    [bookingId, capturedAt, restaurantId, router],
   );
 
   const goReward = useCallback(
@@ -264,6 +267,7 @@ export default function SnapStylesScreen() {
           restaurantName: rewardRestaurantNameParam ?? '',
           restaurantId,
           photoUri: encodeURIComponent(finalUri),
+          ...(bookingId ? { bookingId } : {}),
           ...(preservedFilterId
             ? {
                 filterId: preservedFilterId,
@@ -273,7 +277,7 @@ export default function SnapStylesScreen() {
         },
       });
     },
-    [capturedAt, restaurantId, router, pointsParam, rewardRestaurantNameParam],
+    [bookingId, capturedAt, restaurantId, router, pointsParam, rewardRestaurantNameParam],
   );
 
   const handleContinue = useCallback(async () => {

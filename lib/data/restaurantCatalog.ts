@@ -2,6 +2,7 @@ import {
   fetchRestaurantByIdFromSupabase,
   fetchRestaurantsFromSupabase,
 } from '@/lib/supabase/fetchRestaurants';
+import { isDemoModeEnabled } from '@/lib/config/demoMode';
 import { isSupabaseConfigured } from '@/lib/supabase/env';
 import { mockRestaurants, type Restaurant } from '@/lib/mock/restaurants';
 
@@ -28,7 +29,7 @@ export function getCachedRestaurantById(idOrSlug: string | null | undefined): Re
   return restaurantCache.get(key) ?? null;
 }
 
-rememberRestaurants(mockRestaurants);
+if (isDemoModeEnabled()) rememberRestaurants(mockRestaurants);
 
 /**
  * Single entry for Discover (and future screens): live Supabase when configured, else mocks.
@@ -39,20 +40,23 @@ export async function loadRestaurantsForDiscover(): Promise<{
   source: RestaurantCatalogSource;
 }> {
   if (!isSupabaseConfigured()) {
-    rememberRestaurants(mockRestaurants);
-    return { list: mockRestaurants, source: 'mock' };
+    const list = isDemoModeEnabled() ? mockRestaurants : [];
+    rememberRestaurants(list);
+    return { list, source: isDemoModeEnabled() ? 'mock' : 'supabase' };
   }
   try {
     const list = await fetchRestaurantsFromSupabase();
     if (list.length === 0) {
-      rememberRestaurants(mockRestaurants);
-      return { list: mockRestaurants, source: 'mock_fallback' };
+      const fallback = isDemoModeEnabled() ? mockRestaurants : [];
+      rememberRestaurants(fallback);
+      return { list: fallback, source: isDemoModeEnabled() ? 'mock_fallback' : 'supabase' };
     }
     rememberRestaurants(list);
     return { list, source: 'supabase' };
   } catch {
-    rememberRestaurants(mockRestaurants);
-    return { list: mockRestaurants, source: 'mock_fallback' };
+    const fallback = isDemoModeEnabled() ? mockRestaurants : [];
+    rememberRestaurants(fallback);
+    return { list: fallback, source: isDemoModeEnabled() ? 'mock_fallback' : 'supabase' };
   }
 }
 

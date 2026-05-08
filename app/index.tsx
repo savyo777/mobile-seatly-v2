@@ -3,7 +3,10 @@ import { View, Text, ActivityIndicator } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useColors, createStyles } from '@/lib/theme';
 import { useAuthSession } from '@/lib/auth/AuthContext';
-import { getAppShellPreference } from '@/lib/navigation/appShellPreference';
+import {
+  getAppShellPreference,
+  getCachedAppShellPreference,
+} from '@/lib/navigation/appShellPreference';
 
 const useStyles = createStyles((c) => ({
   container: {
@@ -44,7 +47,7 @@ export default function SplashScreen() {
         router.replace('/onboarding');
         return;
       }
-      const pref = await getAppShellPreference();
+      const pref = getCachedAppShellPreference() ?? await getAppShellPreference();
       if (cancelled) return;
       if (pref === 'customer') {
         router.replace('/(customer)');

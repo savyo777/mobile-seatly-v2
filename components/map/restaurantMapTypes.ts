@@ -9,6 +9,7 @@ export type RestaurantDiscoveryMapProps = {
   filteredRestaurants: RestaurantWithDistance[];
   selectedId: string | null;
   onSelectRestaurant: (id: string) => void;
+  onSelectCluster?: (restaurants: RestaurantWithDistance[]) => void;
   onMapPress: () => void;
   /** User GPS when permission granted; otherwise null (map uses default region). */
   userLocation: { latitude: number; longitude: number } | null;

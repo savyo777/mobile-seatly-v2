@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import {
   View,
   Text,
@@ -13,6 +13,9 @@ import { useRouter } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import Svg, { Rect, Polyline, Circle, Path, Defs, LinearGradient, Stop } from 'react-native-svg';
 import { useColors, createStyles, spacing, borderRadius, typography } from '@/lib/theme';
+import { useAuthSession } from '@/lib/auth/AuthContext';
+import { resolveAuthDisplayProfile } from '@/lib/auth/displayProfile';
+import { fetchCurrentOwnerRestaurant, type OwnerRestaurant } from '@/lib/services/ownerRestaurant';
 import {
   BOOKING_TREND_WEEK,
   BOOKINGS_BY_HOUR,
@@ -21,13 +24,9 @@ import {
   LIVE_METRICS,
   HOME_ATTENTION_ITEMS,
   OWNER_FLOOR_TABLES,
-  OWNER_FIRST_NAME,
   OWNER_RESERVATIONS,
 } from '@/lib/mock/ownerApp';
 import { OWNER_GUESTS } from '@/lib/mock/guests';
-
-const RESTAURANT_NAME = 'Nova Ristorante';
-const RESTAURANT_ADDRESS = '412 King St W';
 
 type IoniconName = React.ComponentProps<typeof Ionicons>['name'];
 
@@ -664,6 +663,24 @@ export default function OwnerHomeScreen() {
   const { t } = useTranslation();
   const insets = useSafeAreaInsets();
   const router = useRouter();
+  const { user } = useAuthSession();
+  const [ownerRestaurant, setOwnerRestaurant] = useState<OwnerRestaurant | null>(null);
+  const displayProfile = useMemo(() => resolveAuthDisplayProfile(user, { fullName: 'Owner' }), [user]);
+  const firstName = displayProfile.fullName.split(/\s+/).filter(Boolean)[0] || 'Owner';
+
+  useEffect(() => {
+    let active = true;
+    void fetchCurrentOwnerRestaurant()
+      .then((restaurant) => {
+        if (active) setOwnerRestaurant(restaurant);
+      })
+      .catch(() => {
+        if (active) setOwnerRestaurant(null);
+      });
+    return () => {
+      active = false;
+    };
+  }, []);
 
   const seatedTables = OWNER_FLOOR_TABLES.filter((t) => t.status === 'occupied').length;
   const tablesTotal = OWNER_FLOOR_TABLES.length;
@@ -716,8 +733,10 @@ export default function OwnerHomeScreen() {
             <Text style={styles.kickerText}>TONIGHT · LIVE</Text>
           </View>
           <Text style={styles.greetLine1}>{greeting},</Text>
-          <Text style={styles.greetLine2}>{OWNER_FIRST_NAME}.</Text>
-          <Text style={styles.subline}>{RESTAURANT_NAME} · {RESTAURANT_ADDRESS}</Text>
+          <Text style={styles.greetLine2}>{firstName}.</Text>
+          <Text style={styles.subline}>
+            {[ownerRestaurant?.name, ownerRestaurant?.address].filter(Boolean).join(' · ') || 'Restaurant dashboard'}
+          </Text>
         </View>
 
         {/* ── Tonight hero ── */}

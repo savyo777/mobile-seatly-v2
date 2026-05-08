@@ -6,6 +6,7 @@ import { enableFreeze, enableScreens } from 'react-native-screens';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import * as Linking from 'expo-linking';
 import Constants from 'expo-constants';
+import { StripeProvider } from '@stripe/stripe-react-native';
 import '@/lib/i18n';
 import { AuthProvider } from '@/lib/auth/AuthContext';
 import { ThemeProvider, useColors } from '@/lib/theme';
@@ -16,6 +17,7 @@ import { CenaivaVoicePreferenceProvider } from '@/lib/cenaiva/voice/CenaivaVoice
 import { getSupabase } from '@/lib/supabase/client';
 import { CookieConsentBanner } from '@/components/cookie-consent/CookieConsentBanner';
 import { KeyboardDoneBar } from '@/components/ui/KeyboardDoneBar';
+import { PostTurnPromptHost } from '@/components/postVisit/PostTurnPromptHost';
 import { getStripeEnv } from '@/lib/stripe/env';
 
 enableScreens(true);
@@ -140,6 +142,7 @@ function ThemedRootShell() {
         <Stack.Screen name="booking" />
         <Stack.Screen name="auth-callback" options={{ animation: 'none' }} />
       </Stack>
+      <PostTurnPromptHost />
       <CookieConsentBanner />
       <KeyboardDoneBar />
     </>
@@ -148,7 +151,6 @@ function ThemedRootShell() {
 
 export default function RootLayout() {
   const { publishableKey } = getStripeEnv();
-  void publishableKey;
   const isExpoGo = Constants.appOwnership === 'expo';
   const providers = (
     <ThemeProvider>
@@ -164,17 +166,17 @@ export default function RootLayout() {
     </ThemeProvider>
   );
 
-  if (isExpoGo) {
-    return (
-      <GestureHandlerRootView style={{ flex: 1 }}>
-        <SafeAreaProvider>{providers}</SafeAreaProvider>
-      </GestureHandlerRootView>
-    );
-  }
-
-  return (
+  const app = (
     <GestureHandlerRootView style={{ flex: 1 }}>
       <SafeAreaProvider>{providers}</SafeAreaProvider>
     </GestureHandlerRootView>
+  );
+
+  if (isExpoGo || !publishableKey) return app;
+
+  return (
+    <StripeProvider publishableKey={publishableKey} merchantIdentifier="merchant.com.cenaiva">
+      {app}
+    </StripeProvider>
   );
 }

@@ -114,9 +114,10 @@ export default function ReviewPreviewScreen() {
   const styles = useStyles();
   const router = useRouter();
   const insets = useSafeAreaInsets();
-  const { restaurantId, photoUri } = useLocalSearchParams<{
+  const { restaurantId, photoUri, bookingId } = useLocalSearchParams<{
     restaurantId?: string;
     photoUri?: string;
+    bookingId?: string;
   }>();
 
   const { width: windowW, height: windowH } = useWindowDimensions();
@@ -149,11 +150,11 @@ export default function ReviewPreviewScreen() {
     const fallback: Href = restaurantId
       ? {
           pathname: '/(customer)/discover/post-review/camera',
-          params: { restaurantId },
+          params: { restaurantId, ...(bookingId ? { bookingId } : {}) },
         }
       : '/(customer)/discover/post-review';
     safeRouterBack(router, fallback);
-  }, [restaurantId, router]);
+  }, [bookingId, restaurantId, router]);
 
   const goToPostDetails = useCallback(() => {
     if (!hasImage || !restaurantId) {
@@ -170,6 +171,7 @@ export default function ReviewPreviewScreen() {
         params: {
           photoUri: encodeURIComponent(decodedUri),
           restaurantId,
+          ...(bookingId ? { bookingId } : {}),
         },
       };
       router.push(href);
@@ -178,7 +180,7 @@ export default function ReviewPreviewScreen() {
     } finally {
       setNavigating(false);
     }
-  }, [decodedUri, hasImage, restaurantId, router]);
+  }, [bookingId, decodedUri, hasImage, restaurantId, router]);
 
   return (
     <ScreenWrapper scrollable={false} padded={false}>

@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   View,
   Text,
@@ -16,12 +16,12 @@ import { Input, ScreenWrapper } from '@/components/ui';
 import { DiscoverHeroFeatured } from '@/components/discover/DiscoverHeroFeatured';
 import { DiscoverHorizontalSection } from '@/components/discover/DiscoverHorizontalSection';
 import { DiscoverMapView } from '@/components/discover/DiscoverMapView';
-import { PostVisitPrompt } from '@/components/snaps/PostVisitPrompt';
 import { useAuthSession } from '@/lib/auth/AuthContext';
 import { resolveAuthDisplayProfile } from '@/lib/auth/displayProfile';
 import type { DiscoverCategorySlug } from '@/lib/discover/discoverCategories';
 import { getTorontoGreetingPeriod } from '@/lib/discover/torontoTime';
 import { loadRestaurantsForDiscover } from '@/lib/data/restaurantCatalog';
+import { isDemoModeEnabled } from '@/lib/config/demoMode';
 import { pickFeaturedRestaurant } from '@/lib/mock/discoverPresentation';
 import { mockRestaurants, type Restaurant } from '@/lib/mock/restaurants';
 import {
@@ -32,11 +32,8 @@ import {
   listTrendingRestaurants,
 } from '@/lib/mock/social';
 import { getUnreadCount } from '@/lib/mock/notifications';
-import { mockCustomer } from '@/lib/mock/users';
 import type { SnapUser } from '@/lib/mock/snaps';
 import { useColors, createStyles, spacing, borderRadius, typography } from '@/lib/theme';
-
-const ME = mockCustomer.id;
 
 const FILTER_KEYS = ['all', 'italian', 'japanese', 'french', 'seafood'] as const;
 type FilterKey = (typeof FILTER_KEYS)[number];
@@ -283,11 +280,12 @@ export default function DiscoverScreen() {
   const [refreshing, setRefreshing] = useState(false);
   const [viewMode, setViewMode] = useState<ViewMode>('list');
   const [searchMode, setSearchMode] = useState<SearchMode>('restaurants');
-  const [baseRestaurants, setBaseRestaurants] = useState<Restaurant[]>(mockRestaurants);
-  const [unreadCount, setUnreadCount] = useState(() => getUnreadCount(ME));
   const { user } = useAuthSession();
+  const currentUserId = user?.id ?? '';
+  const [baseRestaurants, setBaseRestaurants] = useState<Restaurant[]>(() => (isDemoModeEnabled() ? mockRestaurants : []));
+  const [unreadCount, setUnreadCount] = useState(() => (isDemoModeEnabled() ? getUnreadCount(currentUserId) : 0));
   const displayProfile = useMemo(
-    () => resolveAuthDisplayProfile(user, { fullName: mockCustomer.fullName }),
+    () => resolveAuthDisplayProfile(user),
     [user],
   );
 
@@ -392,7 +390,7 @@ export default function DiscoverScreen() {
   }, [withoutFeatured]);
 
   const mostSnappedData = useMemo(() => {
-    const trending = listTrendingRestaurants(7);
+    const trending = isDemoModeEnabled() ? listTrendingRestaurants(7) : [];
     const idToRestaurant = new Map(baseRestaurants.map((r) => [r.id, r]));
     return trending
       .map((t) => idToRestaurant.get(t.restaurantId))
@@ -400,41 +398,41 @@ export default function DiscoverScreen() {
       .slice(0, 10);
   }, [baseRestaurants]);
 
-  const onRefresh = () => {
+  const onRefresh = useCallback(() => {
     setRefreshing(true);
     loadRestaurantsForDiscover()
       .then(({ list }) => setBaseRestaurants(list))
       .finally(() => {
         setRefreshing(false);
       });
-  };
+  }, []);
 
-  const openRestaurant = (r: Restaurant) => {
+  const openRestaurant = useCallback((r: Restaurant) => {
     router.push(`/(customer)/discover/${r.id}` as Href);
-  };
+  }, [router]);
 
-  const reserveRestaurant = (r: Restaurant) => {
+  const reserveRestaurant = useCallback((r: Restaurant) => {
     router.push(`/booking/${r.id}/step2-time` as Href);
-  };
+  }, [router]);
 
-  const goCategory = (slug: DiscoverCategorySlug) => {
+  const goCategory = useCallback((slug: DiscoverCategorySlug) => {
     router.push(`/(customer)/discover/category/${slug}` as Href);
-  };
+  }, [router]);
 
-  const onSearchChange = (text: string) => {
+  const onSearchChange = useCallback((text: string) => {
     setQuery(text);
     if (text.trim()) setQuickFilter(null);
-  };
+  }, []);
 
   const peopleResults = useMemo(
-    () => (searchMode === 'people' ? searchUsers(query) : []),
+    () => (searchMode === 'people' && isDemoModeEnabled() ? searchUsers(query) : []),
     [searchMode, query],
   );
 
-  const toggleQuick = (key: QuickFilter) => {
+  const toggleQuick = useCallback((key: QuickFilter) => {
     setQuery('');
     setQuickFilter((prev) => (prev === key ? null : key));
-  };
+  }, []);
 
   const quickChipStyle = (active: boolean) => [styles.vibeChip, active && styles.vibeChipSelected];
 
@@ -486,8 +484,6 @@ export default function DiscoverScreen() {
         }
       >
         <View style={styles.headerBlock}>
-          <PostVisitPrompt />
-
           {/* Search bar */}
           <Input
             placeholder="Restaurants, cuisines, neighborhoods..."
@@ -555,7 +551,7 @@ export default function DiscoverScreen() {
         </View>
 
         {searchMode === 'people' ? (
-          <PeopleResults users={peopleResults} router={router} />
+          <PeopleResults users={peopleResults} router={router} currentUserId={currentUserId} />
         ) : !filteredRestaurants.length ? (
           <View style={styles.empty}>
             <Text style={styles.emptyText}>{t('common.noResults')}</Text>
@@ -622,22 +618,25 @@ export default function DiscoverScreen() {
 function PeopleResults({
   users,
   router,
+  currentUserId,
 }: {
   users: SnapUser[];
   router: ReturnType<typeof useRouter>;
+  currentUserId: string;
 }) {
   const c = useColors();
   const peopleStyles = usePeopleStyles();
   const [followState, setFollowState] = useState<Record<string, boolean>>(() => {
     const init: Record<string, boolean> = {};
-    users.forEach((u) => { init[u.id] = isFollowing(ME, u.id); });
+    users.forEach((u) => { init[u.id] = currentUserId ? isFollowing(currentUserId, u.id) : false; });
     return init;
   });
 
   const handleFollow = (userId: string) => {
     const currently = followState[userId] ?? false;
-    if (currently) unfollow(ME, userId);
-    else follow(ME, userId);
+    if (!currentUserId) return;
+    if (currently) unfollow(currentUserId, userId);
+    else follow(currentUserId, userId);
     setFollowState((prev) => ({ ...prev, [userId]: !currently }));
   };
 
@@ -653,7 +652,7 @@ function PeopleResults({
     <View style={peopleStyles.list}>
       {users.map((user) => {
         const following = followState[user.id] ?? false;
-        const isSelf = user.id === ME;
+        const isSelf = user.id === currentUserId;
         return (
           <Pressable
             key={user.id}

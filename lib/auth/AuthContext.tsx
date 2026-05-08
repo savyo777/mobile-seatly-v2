@@ -29,7 +29,7 @@ const Ctx = createContext<AuthCtx>({
   signOut: async () => {},
 });
 
-const ROLE_LOOKUP_FALLBACK_MS = 2500;
+const ROLE_LOOKUP_FALLBACK_MS = 450;
 
 function resolveRoleFromMetadata(user: User | null): string | null {
   if (!user) return null;
@@ -171,10 +171,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       return;
     }
 
-    // Resolve from user_profiles first, but do not let a dev/offline Supabase
-    // request keep the app on a spinner forever.
-    setRole(null);
-    const fallbackRole = resolveRoleFromMetadata(currentUser) ?? 'customer';
+    // Prefer a live profile role, but never let that network lookup become a
+    // visible multi-second app-shell spinner.
+    const metadataRole = resolveRoleFromMetadata(currentUser);
+    const fallbackRole = metadataRole ?? 'customer';
+    setRole(metadataRole);
     const fallbackTimer = setTimeout(() => {
       if (!cancelled) setRole(fallbackRole);
     }, ROLE_LOOKUP_FALLBACK_MS);

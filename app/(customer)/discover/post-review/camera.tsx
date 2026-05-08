@@ -281,8 +281,9 @@ export default function ReviewCameraScreen() {
   const insets = useSafeAreaInsets();
   const params = useLocalSearchParams<{
     restaurantId: string;
+    bookingId?: string;
   }>();
-  const { restaurantId } = params;
+  const { restaurantId, bookingId } = params;
 
   const [permission, requestPermission] = useCameraPermissions();
   const [cameraFacing, setCameraFacing] = useState<CameraType>('back');
@@ -481,10 +482,11 @@ export default function ReviewCameraScreen() {
     if (!selectedImageUri) return;
     const encodedUri = encodeURIComponent(selectedImageUri);
     const capturedAt = selectedCapturedAt ?? Date.now();
+    const bookingQuery = bookingId ? `&bookingId=${encodeURIComponent(String(bookingId))}` : '';
     // Skip the standalone preview screen — go straight to the filter picker.
     // Filters + captioning happen there; preview was a redundant step.
     router.push(
-      `/(customer)/discover/post-review/styles?photoUri=${encodedUri}&restaurantId=${restaurantId}&capturedAt=${capturedAt}`,
+      `/(customer)/discover/post-review/styles?photoUri=${encodedUri}&restaurantId=${restaurantId}&capturedAt=${capturedAt}${bookingQuery}`,
     );
   };
 

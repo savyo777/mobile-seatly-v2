@@ -1,7 +1,13 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { fetchRestaurantsFromSupabase } from '@/lib/supabase/fetchRestaurants';
+import { isDemoModeEnabled } from '@/lib/config/demoMode';
 import { getSupabase } from '@/lib/supabase/client';
 import { mockRestaurants, type Restaurant } from '@/lib/mock/restaurants';
+import {
+  menuCategories as mockMenuCategories,
+  mockMenuItems,
+  type MenuItem as MockMenuItem,
+} from '@/lib/mock/menuItems';
 
 export type MenuCategory = {
   id: string;
@@ -32,21 +38,62 @@ function num(value: unknown, fallback = 0): number {
   return fallback;
 }
 
+const menuCategoriesCache = new Map<string, MenuCategory[]>();
+const menuItemsCache = new Map<string, MenuItem[]>();
+
+function mockMenuItemToPublic(item: MockMenuItem): MenuItem {
+  return {
+    id: item.id,
+    restaurant_id: item.restaurantId,
+    name: item.name,
+    description: item.description,
+    price: item.price,
+    category: item.category,
+    category_id: null,
+    photo_url: item.photoUrl?.trim() || null,
+    is_available: item.isAvailable,
+    is_preorderable: item.isPreorderable,
+    sort_order: 0,
+  };
+}
+
+function fallbackMenuItemsFor(restaurantId: string | null | undefined): MenuItem[] {
+  if (!restaurantId) return [];
+  return mockMenuItems
+    .filter((item) => item.restaurantId === restaurantId)
+    .map(mockMenuItemToPublic);
+}
+
+function fallbackMenuCategoriesFor(restaurantId: string | null | undefined): MenuCategory[] {
+  const items = fallbackMenuItemsFor(restaurantId);
+  if (!items.length) return [];
+  const names = new Set(items.map((item) => item.category).filter((name): name is string => Boolean(name)));
+  const ordered = [
+    ...mockMenuCategories.filter((name) => names.has(name)),
+    ...[...names].filter((name) => !mockMenuCategories.includes(name)),
+  ];
+  return ordered.map((name, index) => ({
+    id: `mock-${restaurantId}-${name.toLowerCase().replace(/[^a-z0-9]+/g, '-')}`,
+    name,
+    sort_order: index,
+  }));
+}
+
 export function useCenaivaRestaurants() {
-  const [restaurants, setRestaurants] = useState<Restaurant[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [hasLoaded, setHasLoaded] = useState(false);
+  const [restaurants, setRestaurants] = useState<Restaurant[]>(() => (isDemoModeEnabled() ? mockRestaurants : []));
+  const [loading, setLoading] = useState(false);
+  const [hasLoaded, setHasLoaded] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  const reload = useCallback(async () => {
-    setLoading(true);
+  const reload = useCallback(async (options?: { silent?: boolean }) => {
+    if (!options?.silent && restaurants.length === 0) setLoading(true);
     setError(null);
     try {
       const live = await fetchRestaurantsFromSupabase();
-      setRestaurants(live.length ? live : mockRestaurants);
+      setRestaurants(live.length ? live : isDemoModeEnabled() ? mockRestaurants : []);
     } catch (err) {
       setError(String(err));
-      setRestaurants(mockRestaurants);
+      setRestaurants(isDemoModeEnabled() ? mockRestaurants : []);
     } finally {
       setHasLoaded(true);
       setLoading(false);
@@ -54,14 +101,16 @@ export function useCenaivaRestaurants() {
   }, []);
 
   useEffect(() => {
-    void reload();
+    void reload({ silent: true });
   }, [reload]);
 
   return { restaurants, loading, hasLoaded, error, reload };
 }
 
 export function usePublicMenuCategories(restaurantId: string | null | undefined) {
-  const [categories, setCategories] = useState<MenuCategory[]>([]);
+  const [categories, setCategories] = useState<MenuCategory[]>(
+    () => menuCategoriesCache.get(String(restaurantId ?? '')) ?? (isDemoModeEnabled() ? fallbackMenuCategoriesFor(restaurantId) : []),
+  );
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -69,11 +118,16 @@ export function usePublicMenuCategories(restaurantId: string | null | undefined)
     let cancelled = false;
     if (!restaurantId) {
       setCategories([]);
+      setLoading(false);
       return;
     }
 
+    const cached = menuCategoriesCache.get(restaurantId);
+    const fallback = cached ?? (isDemoModeEnabled() ? fallbackMenuCategoriesFor(restaurantId) : []);
+    setCategories(fallback);
+    setLoading(fallback.length === 0);
+
     (async () => {
-      setLoading(true);
       setError(null);
       try {
         const supabase = getSupabase();
@@ -88,12 +142,15 @@ export function usePublicMenuCategories(restaurantId: string | null | undefined)
           .order('sort_order', { ascending: true });
         if (error) throw error;
         if (!cancelled) {
-          setCategories((data ?? []) as MenuCategory[]);
+          const liveCategories = (data ?? []) as MenuCategory[];
+          const next = liveCategories.length ? liveCategories : isDemoModeEnabled() ? fallback : [];
+          menuCategoriesCache.set(restaurantId, next);
+          setCategories(next);
         }
       } catch (err) {
         if (!cancelled) {
           setError(String(err));
-          setCategories([]);
+          setCategories(isDemoModeEnabled() ? fallback : []);
         }
       } finally {
         if (!cancelled) setLoading(false);
@@ -109,7 +166,9 @@ export function usePublicMenuCategories(restaurantId: string | null | undefined)
 }
 
 export function usePublicMenuItems(restaurantId: string | null | undefined) {
-  const [items, setItems] = useState<MenuItem[]>([]);
+  const [items, setItems] = useState<MenuItem[]>(
+    () => menuItemsCache.get(String(restaurantId ?? '')) ?? (isDemoModeEnabled() ? fallbackMenuItemsFor(restaurantId) : []),
+  );
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -117,11 +176,16 @@ export function usePublicMenuItems(restaurantId: string | null | undefined) {
     let cancelled = false;
     if (!restaurantId) {
       setItems([]);
+      setLoading(false);
       return;
     }
 
+    const cached = menuItemsCache.get(restaurantId);
+    const fallback = cached ?? (isDemoModeEnabled() ? fallbackMenuItemsFor(restaurantId) : []);
+    setItems(fallback);
+    setLoading(fallback.length === 0);
+
     (async () => {
-      setLoading(true);
       setError(null);
       try {
         const supabase = getSupabase();
@@ -139,8 +203,7 @@ export function usePublicMenuItems(restaurantId: string | null | undefined) {
           .order('name', { ascending: true });
         if (error) throw error;
         if (!cancelled) {
-          setItems(
-            (data ?? []).map((row) => ({
+          const liveItems = (data ?? []).map((row) => ({
               id: String(row.id),
               restaurant_id: String(row.restaurant_id),
               name: String(row.name ?? 'Menu item'),
@@ -152,13 +215,15 @@ export function usePublicMenuItems(restaurantId: string | null | undefined) {
               is_available: typeof row.is_available === 'boolean' ? row.is_available : null,
               is_preorderable: typeof row.is_preorderable === 'boolean' ? row.is_preorderable : null,
               sort_order: typeof row.sort_order === 'number' ? row.sort_order : null,
-            })),
-          );
+            }));
+          const next = liveItems.length ? liveItems : isDemoModeEnabled() ? fallback : [];
+          menuItemsCache.set(restaurantId, next);
+          setItems(next);
         }
       } catch (err) {
         if (!cancelled) {
           setError(String(err));
-          setItems([]);
+          setItems(isDemoModeEnabled() ? fallback : []);
         }
       } finally {
         if (!cancelled) setLoading(false);

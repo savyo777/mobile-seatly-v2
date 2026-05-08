@@ -86,6 +86,7 @@ function hoursFromJson(raw: Record<string, unknown> | null): RestaurantHoursJson
  * Fills discover-only fields with defaults until DB/marketing JSON provides them.
  */
 export function mapRestaurantRowToRestaurant(row: RestaurantRow): Restaurant {
+  const extended = row as RestaurantRow & { business_name?: string | null };
   const settings = row.settings_json as Record<string, unknown> | undefined;
   const fallbackLatLng = readSettingsLatLng(settings);
   const lat = num(row.lat, fallbackLatLng.lat);
@@ -109,8 +110,8 @@ export function mapRestaurantRowToRestaurant(row: RestaurantRow): Restaurant {
 
   return {
     id: row.id,
-    name: row.name ?? 'Restaurant',
-    slug: row.slug,
+    name: row.name ?? extended.business_name ?? 'Restaurant',
+    slug: row.slug ?? row.id,
     cuisineType: row.cuisine_type ?? '',
     description: row.description ?? '',
     address: row.address ?? '',

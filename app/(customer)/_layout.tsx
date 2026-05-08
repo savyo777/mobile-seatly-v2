@@ -1,4 +1,4 @@
-import React, { useCallback, useMemo } from 'react';
+import React, { useCallback, useEffect, useMemo } from 'react';
 import { ActivityIndicator, Pressable, StyleSheet, View } from 'react-native';
 import { Redirect, Tabs, useRouter, usePathname, Href } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
@@ -6,7 +6,6 @@ import { useTranslation } from 'react-i18next';
 import * as Haptics from 'expo-haptics';
 import { AiChatFab } from '@/components/ai/AiChatFab';
 import { useColors, createStyles } from '@/lib/theme';
-import { tabTransitionOptions } from '@/lib/navigation/transitions';
 import { useAuthSession } from '@/lib/auth/AuthContext';
 
 const HIDE_FAB_ROUTES = ['/ai-chat', '/post-review', '/camera', '/booking', '/checkout', '/register-restaurant'];
@@ -71,9 +70,9 @@ export default function CustomerTabsLayout() {
   );
   const screenOptions = useMemo(
     () => ({
-      ...tabTransitionOptions,
+      animation: 'shift' as const,
       lazy: true,
-      freezeOnBlur: true,
+      freezeOnBlur: false,
       popToTopOnBlur: false,
       headerShown: false,
       sceneStyle: { backgroundColor: c.bgBase },
@@ -92,6 +91,18 @@ export default function CustomerTabsLayout() {
     }),
     [c.bgBase, c.gold, c.textMuted, tabBarStyle],
   );
+  const eagerTabOptions = useMemo(() => ({ lazy: false }), []);
+
+  useEffect(() => {
+    if (loading || !isAuthenticated) return undefined;
+    const timer = setTimeout(() => {
+      router.prefetch('/(customer)/events' as Href);
+      router.prefetch('/(customer)/activity' as Href);
+      router.prefetch('/(customer)/profile' as Href);
+    }, 250);
+    return () => clearTimeout(timer);
+  }, [isAuthenticated, loading, router]);
+
   const renderPostButton = useCallback(
     () => (
       <Pressable
@@ -130,12 +141,13 @@ export default function CustomerTabsLayout() {
   return (
     <View style={styles.root}>
     <Tabs
-      detachInactiveScreens
+      detachInactiveScreens={false}
       screenOptions={screenOptions}
     >
       <Tabs.Screen
         name="discover"
         options={{
+          ...eagerTabOptions,
           title: t('tabs.discover'),
           tabBarIcon: ({ color, size }) => <Ionicons name="compass-outline" size={size} color={color} />,
         }}
@@ -143,6 +155,7 @@ export default function CustomerTabsLayout() {
       <Tabs.Screen
         name="events"
         options={{
+          ...eagerTabOptions,
           title: 'Events',
           tabBarIcon: ({ color, size }) => <Ionicons name="ticket-outline" size={size} color={color} />,
         }}
@@ -150,6 +163,7 @@ export default function CustomerTabsLayout() {
       <Tabs.Screen
         name="post"
         options={{
+          ...eagerTabOptions,
           title: '',
           tabBarLabel: () => null,
           tabBarButton: renderPostButton,
@@ -158,6 +172,7 @@ export default function CustomerTabsLayout() {
       <Tabs.Screen
         name="activity"
         options={{
+          ...eagerTabOptions,
           title: 'Bookings',
           tabBarIcon: ({ color, size }) => <Ionicons name="calendar-outline" size={size} color={color} />,
         }}
@@ -165,6 +180,7 @@ export default function CustomerTabsLayout() {
       <Tabs.Screen
         name="profile"
         options={{
+          ...eagerTabOptions,
           title: t('tabs.profile'),
           tabBarIcon: ({ color, size }) => <Ionicons name="person-outline" size={size} color={color} />,
         }}

@@ -177,6 +177,7 @@ export function RestaurantDiscoveryMap({
   filteredRestaurants,
   selectedId,
   onSelectRestaurant,
+  onSelectCluster,
   onMapPress,
   userLocation,
   showUserLocation,
@@ -375,6 +376,8 @@ export function RestaurantDiscoveryMap({
       return;
     }
 
+    onSelectCluster?.(cluster.restaurants);
+
     mapRef.current?.fitToCoordinates(
       cluster.restaurants.map((restaurant) => ({
         latitude: restaurant.lat,
@@ -390,7 +393,7 @@ export function RestaurantDiscoveryMap({
         animated: true,
       },
     );
-  }, [contentBottomInset, onSelectRestaurant]);
+  }, [contentBottomInset, onSelectCluster, onSelectRestaurant]);
 
   return (
     <View style={styles.mapShell}>
@@ -438,7 +441,7 @@ export function RestaurantDiscoveryMap({
                 key={cluster.id}
                 coordinate={{ latitude: cluster.latitude, longitude: cluster.longitude }}
                 accessibilityLabel={`${cluster.restaurants.length} restaurants nearby`}
-                accessibilityHint="Zooms into this group"
+                accessibilityHint="Shows the restaurants in this group"
                 accessibilityRole="button"
                 anchor={{ x: 0.5, y: 0.5 }}
                 zIndex={500}

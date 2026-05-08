@@ -3,6 +3,7 @@ import { getSupabaseEnv, isSupabaseConfigured } from '@/lib/supabase/env';
 import { getMockShiftConfig, getMockTimeSlots } from '@/lib/mock/bookingAvailability';
 import { mockRestaurants } from '@/lib/mock/restaurants';
 import { getCachedRestaurantById } from '@/lib/data/restaurantCatalog';
+import { isDemoModeEnabled } from '@/lib/config/demoMode';
 
 export type AvailabilitySlot = {
   shift_id: string;
@@ -45,7 +46,7 @@ export type PublicBookingPayload = {
   discount_amount: number | null;
   discount_reason: string | null;
   promotion_id: string | null;
-  payment_method: 'card' | 'split';
+  payment_method: 'card' | 'split' | 'pay_at_restaurant';
 };
 
 export type PublicBookingResponse = {
@@ -71,7 +72,8 @@ export type BookingProfile = {
 };
 
 const AVAILABILITY_CACHE_TTL_MS = 45_000;
-const AVAILABILITY_REQUEST_TIMEOUT_MS = 3500;
+const AVAILABILITY_REQUEST_TIMEOUT_MS = 1800;
+const BOOKING_REQUEST_TIMEOUT_MS = 6000;
 
 const availabilityCache = new Map<string, { expiresAt: number; value: AvailabilityResponse }>();
 const availabilityInflight = new Map<string, Promise<AvailabilityResponse>>();
@@ -96,6 +98,7 @@ function demoAvailabilityFor(params: {
   date: string;
   partySize: number;
 }): AvailabilityResponse | null {
+  if (!isDemoModeEnabled()) return null;
   if (!isDemoRestaurantKey(params.restaurantId) || !getCachedRestaurantById(params.restaurantId)) {
     return null;
   }
@@ -124,6 +127,7 @@ function demoAvailabilityFor(params: {
 }
 
 function demoBookingFor(payload: PublicBookingPayload): PublicBookingResponse | null {
+  if (!isDemoModeEnabled()) return null;
   if (!isDemoRestaurantKey(payload.restaurant_id)) return null;
   const seed = `${payload.restaurant_id}-${payload.date_time}-${payload.guest_email}`;
   let hash = 0;
@@ -158,6 +162,13 @@ function assertConfigured() {
     throw new Error('Supabase is not configured.');
   }
   return getSupabaseEnv();
+}
+
+function isAbortError(error: unknown): boolean {
+  return (
+    error instanceof Error &&
+    (error.name === 'AbortError' || /abort/i.test(error.message))
+  );
 }
 
 export async function getAvailability(params: {
@@ -229,6 +240,9 @@ export async function getAvailability(params: {
   })()
     .catch((error) => {
       if (demoFallback) return cacheAvailability(cacheKey, demoFallback);
+      if (isAbortError(error)) {
+        throw new Error('Availability is taking longer than expected. Please try again.');
+      }
       throw error;
     })
     .finally(() => {
@@ -248,9 +262,12 @@ export async function createPublicBooking(
   const { url, anonKey } = assertConfigured();
   const token = await getAccessToken();
   let response: Response;
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), BOOKING_REQUEST_TIMEOUT_MS);
   try {
     response = await fetch(`${url}/functions/v1/create-public-booking`, {
       method: 'POST',
+      signal: controller.signal,
       headers: {
         apikey: anonKey,
         'Content-Type': 'application/json',
@@ -272,7 +289,12 @@ export async function createPublicBooking(
     });
   } catch (error) {
     if (demoFallback) return demoFallback;
+    if (isAbortError(error)) {
+      throw new Error('Confirming is taking longer than expected. Please try again.');
+    }
     throw error;
+  } finally {
+    clearTimeout(timeout);
   }
 
   const body = await response.json().catch(() => ({})) as Partial<PublicBookingResponse>;

@@ -22,17 +22,13 @@ import { type MenuItem } from '@/lib/mock/menuItems';
 import { createStyles } from '@/lib/theme';
 import { ownerColorsFromPalette, ownerRadii, ownerSpace, useOwnerColors } from '@/lib/theme/ownerTheme';
 
-const PLACEHOLDER_PHOTO =
-  'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=600&q=80';
-const OWNER_MENU_RESTAURANT_ID = 'r1';
-
 export default function MenuItemEditScreen() {
   const { t } = useTranslation();
   const router = useRouter();
   const ownerColors = useOwnerColors();
   const styles = useStyles();
   const { id } = useLocalSearchParams<{ id?: string }>();
-  const { items, addItem, updateItem, removeItem, categories } = useMenu();
+  const { ownerRestaurantId, items, addItem, updateItem, removeItem, categories } = useMenu();
 
   const editingItem = useMemo(() => (id ? items.find((i) => i.id === id) ?? null : null), [id, items]);
   const isEditing = editingItem != null;
@@ -72,7 +68,7 @@ export default function MenuItemEditScreen() {
       description: formDesc.trim() || '—',
       price,
       category: formCategory.trim() || 'Mains',
-      photoUrl: formPhotoUri ?? editingItem?.photoUrl ?? PLACEHOLDER_PHOTO,
+      photoUrl: formPhotoUri ?? editingItem?.photoUrl ?? '',
       isAvailable: formAvailable,
     };
 
@@ -81,7 +77,7 @@ export default function MenuItemEditScreen() {
     } else {
       addItem({
         id: `local-${Date.now()}`,
-        restaurantId: OWNER_MENU_RESTAURANT_ID,
+        restaurantId: ownerRestaurantId ?? '',
         name: changes.name,
         description: changes.description,
         price: changes.price,
@@ -96,7 +92,7 @@ export default function MenuItemEditScreen() {
       });
     }
     router.replace('/(staff)/menu' as never);
-  }, [addItem, editingItem, formAvailable, formCategory, formDesc, formName, formPhotoUri, formPrice, router, t, updateItem]);
+  }, [addItem, editingItem, formAvailable, formCategory, formDesc, formName, formPhotoUri, formPrice, ownerRestaurantId, router, t, updateItem]);
 
   const handleDelete = useCallback(() => {
     if (!editingItem) return;

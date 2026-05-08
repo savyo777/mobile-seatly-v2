@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react';
+import React, { memo, useCallback, useMemo } from 'react';
 import { FlatList, Pressable, Text, useWindowDimensions, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import type { Restaurant } from '@/lib/mock/restaurants';
@@ -52,12 +52,34 @@ const useStyles = createStyles((c) => ({
   },
 }));
 
-export function DiscoverHorizontalSection({ title, data, onPressCard, onPressSeeAll }: Props) {
+function DiscoverHorizontalSectionBase({ title, data, onPressCard, onPressSeeAll }: Props) {
   const { t } = useTranslation();
   const c = useColors();
   const styles = useStyles();
   const { width: winW } = useWindowDimensions();
   const cardWidth = useMemo(() => Math.min(winW * 0.72, 280), [winW]);
+  const itemStride = cardWidth + spacing.md;
+  const renderItem = useCallback(
+    ({ item, index }: { item: Restaurant; index: number }) => (
+      <View style={[styles.cardWrap, index === data.length - 1 && styles.lastWrap]}>
+        <DiscoverEnhancedCard
+          restaurant={item}
+          width={cardWidth}
+          onPress={() => onPressCard(item)}
+          variant="carousel"
+        />
+      </View>
+    ),
+    [cardWidth, data.length, onPressCard, styles.cardWrap, styles.lastWrap],
+  );
+  const getItemLayout = useCallback(
+    (_: ArrayLike<Restaurant> | null | undefined, index: number) => ({
+      length: itemStride,
+      offset: itemStride * index,
+      index,
+    }),
+    [itemStride],
+  );
 
   if (!data.length) return null;
 
@@ -76,19 +98,17 @@ export function DiscoverHorizontalSection({ title, data, onPressCard, onPressSee
         horizontal
         data={data}
         keyExtractor={(item) => item.id}
-        renderItem={({ item, index }) => (
-          <View style={[styles.cardWrap, index === data.length - 1 && styles.lastWrap]}>
-            <DiscoverEnhancedCard
-              restaurant={item}
-              width={cardWidth}
-              onPress={() => onPressCard(item)}
-              variant="carousel"
-            />
-          </View>
-        )}
+        renderItem={renderItem}
+        getItemLayout={getItemLayout}
+        initialNumToRender={4}
+        maxToRenderPerBatch={4}
+        windowSize={5}
+        updateCellsBatchingPeriod={24}
         showsHorizontalScrollIndicator={false}
         contentContainerStyle={styles.listContent}
       />
     </View>
   );
 }
+
+export const DiscoverHorizontalSection = memo(DiscoverHorizontalSectionBase);

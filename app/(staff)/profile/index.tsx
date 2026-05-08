@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   View,
   Text,
@@ -16,10 +16,10 @@ import * as Haptics from 'expo-haptics';
 import { useColors, createStyles, spacing, borderRadius } from '@/lib/theme';
 import { useOwnerTabScrollPadding } from '@/hooks/useOwnerTabScrollPadding';
 import { useMenu } from '@/lib/context/MenuContext';
+import { isDemoModeEnabled } from '@/lib/config/demoMode';
+import { fetchCurrentOwnerRestaurant, type OwnerRestaurant } from '@/lib/services/ownerRestaurant';
 import {
   OWNER_BUSINESS_PROFILE,
-  OWNER_BUSINESS_PRICE,
-  OWNER_BUSINESS_INSTAGRAM,
   OWNER_RESERVATIONS,
 } from '@/lib/mock/ownerApp';
 import { mockRestaurants } from '@/lib/mock/restaurants';
@@ -417,8 +417,23 @@ export default function OwnerBusinessScreen() {
   const router = useRouter();
   const { width } = useWindowDimensions();
   const heroH = 220 + insets.top;
+  const [ownerRestaurant, setOwnerRestaurant] = useState<OwnerRestaurant | null>(null);
 
   const { items: menuItems } = useMenu();
+
+  useEffect(() => {
+    let active = true;
+    void fetchCurrentOwnerRestaurant()
+      .then((restaurant) => {
+        if (active) setOwnerRestaurant(restaurant);
+      })
+      .catch(() => {
+        if (active) setOwnerRestaurant(null);
+      });
+    return () => {
+      active = false;
+    };
+  }, []);
 
   const menuByCategory = menuItems.reduce<Record<string, typeof menuItems>>((acc, item) => {
     if (!acc[item.category]) acc[item.category] = [];
@@ -426,20 +441,31 @@ export default function OwnerBusinessScreen() {
     return acc;
   }, {});
 
-  const coverPhotoUrl = mockRestaurants.find((r) => r.id === 'r1')?.coverPhotoUrl;
+  const coverPhotoUrl =
+    ownerRestaurant?.coverPhotoUrl ??
+    (isDemoModeEnabled() ? mockRestaurants.find((r) => r.id === 'r1')?.coverPhotoUrl : null);
+  const profileName = ownerRestaurant?.name ?? (isDemoModeEnabled() ? OWNER_BUSINESS_PROFILE.name : 'Your restaurant');
+  const profileAddress = ownerRestaurant?.address ?? '';
+  const profileRating = ownerRestaurant?.rating ?? (isDemoModeEnabled() ? OWNER_BUSINESS_PROFILE.rating : null);
+  const profileReviewCount = ownerRestaurant?.reviewCount ?? (isDemoModeEnabled() ? OWNER_BUSINESS_PROFILE.reviewCount : null);
+  const profileCuisine = ownerRestaurant?.cuisine ?? '';
 
   const todayBookings = OWNER_RESERVATIONS.length;
   const thisWeekBookings = 198;
-  const avgRating = OWNER_BUSINESS_PROFILE.rating;
+  const avgRating = profileRating ?? 0;
 
   const contactRows: { label: string; value: string }[] = [
-    { label: 'Phone', value: OWNER_BUSINESS_PROFILE.phone },
-    { label: 'Email', value: OWNER_BUSINESS_PROFILE.email },
-    { label: 'Website', value: OWNER_BUSINESS_PROFILE.website },
-  ];
+    { label: 'Phone', value: ownerRestaurant?.phone ?? '' },
+    { label: 'Email', value: ownerRestaurant?.email ?? '' },
+    { label: 'Website', value: ownerRestaurant?.website ?? '' },
+  ].filter((row) => row.value);
+
+  const billingLabel = ownerRestaurant?.billingCardLast4
+    ? `${ownerRestaurant.billingCardBrand ?? 'Card'} ···· ${ownerRestaurant.billingCardLast4}`
+    : 'No card on file';
 
   const settingsRows: { label: string; value: string; route?: string }[] = [
-    { label: 'Payout & billing', value: 'Stripe · ···· 4429', route: '/(staff)/settings' },
+    { label: 'Payout & billing', value: billingLabel, route: '/(staff)/settings' },
     { label: 'Notifications', value: 'Push + email', route: '/(staff)/notifications' },
     { label: 'Close restaurant', value: 'Not scheduled' },
     { label: 'Help & support', value: '' },
@@ -473,30 +499,30 @@ export default function OwnerBusinessScreen() {
             <View style={styles.logoRow}>
               <View style={styles.logoBox}>
                 <Text style={styles.logoLetter}>
-                  {OWNER_BUSINESS_PROFILE.name.charAt(0)}
+                  {profileName.charAt(0)}
                 </Text>
               </View>
               <View style={styles.heroTextCol}>
                 <Text style={styles.heroKicker}>BUSINESS PROFILE</Text>
-                <Text style={styles.heroTitle}>{OWNER_BUSINESS_PROFILE.name}</Text>
+                <Text style={styles.heroTitle}>{profileName}</Text>
               </View>
             </View>
             <View style={styles.heroMeta}>
               <Ionicons name="star" size={13} color={c.gold} />
-              <Text style={styles.heroMetaText}>{OWNER_BUSINESS_PROFILE.rating.toFixed(1)}</Text>
+              <Text style={styles.heroMetaText}>{avgRating ? avgRating.toFixed(1) : 'New'}</Text>
               <Text style={styles.heroMetaDot}>·</Text>
-              <Text style={styles.heroMetaText}>{OWNER_BUSINESS_PROFILE.reviewCount} reviews</Text>
+              <Text style={styles.heroMetaText}>{profileReviewCount ?? 0} reviews</Text>
               <Text style={styles.heroMetaDot}>·</Text>
-              <Text style={styles.heroMetaText}>{OWNER_BUSINESS_PROFILE.cuisine}</Text>
+              <Text style={styles.heroMetaText}>{profileCuisine || 'Restaurant'}</Text>
             </View>
             <View style={styles.addressRow}>
               <Ionicons name="location-outline" size={13} color={c.textMuted} />
-              <Text style={styles.addressText}>{OWNER_BUSINESS_PROFILE.address}</Text>
+              <Text style={styles.addressText}>{profileAddress || 'No address on file'}</Text>
             </View>
             <View style={styles.heroButtons}>
               <Pressable
                 style={({ pressed }) => [styles.previewBtn, pressed && styles.btnPressed]}
-                onPress={() => router.push('/(customer)/discover/r1?preview=1' as never)}
+                onPress={() => ownerRestaurant?.id && router.push(`/(customer)/discover/${ownerRestaurant.id}?preview=1` as never)}
                 accessibilityRole="button"
               >
                 <Text style={styles.previewBtnText}>Preview</Text>
@@ -530,14 +556,14 @@ export default function OwnerBusinessScreen() {
 
         {/* ── Photos ── */}
         {(() => {
-          const snapPhotos = listSnapPostsByRestaurant('r1').slice(0, 3);
+          const snapPhotos = ownerRestaurant?.id ? listSnapPostsByRestaurant(ownerRestaurant.id).slice(0, 3) : [];
           if (snapPhotos.length === 0) return null;
           return (
             <>
               <View style={styles.sectionRow}>
                 <Text style={styles.sectionTitle}>Photos</Text>
                 <Pressable
-                  onPress={() => router.push('/(customer)/discover/snaps/r1' as never)}
+                  onPress={() => ownerRestaurant?.id && router.push(`/(customer)/discover/snaps/${ownerRestaurant.id}` as never)}
                   accessibilityRole="button"
                   hitSlop={8}
                 >
@@ -566,7 +592,7 @@ export default function OwnerBusinessScreen() {
             <Text style={styles.sectionAction}>Edit</Text>
           </Pressable>
         </View>
-        <Text style={styles.bodyText}>{OWNER_BUSINESS_PROFILE.description}</Text>
+        <Text style={styles.bodyText}>{ownerRestaurant?.description || 'No restaurant description on file yet.'}</Text>
 
         {/* ── Menu ── */}
         <View style={styles.sectionRow}>

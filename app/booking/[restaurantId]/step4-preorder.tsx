@@ -6,6 +6,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTranslation } from 'react-i18next';
 import { Button, Badge } from '@/components/ui';
 import { mockMenuItems, menuCategories } from '@/lib/mock/menuItems';
+import { isDemoModeEnabled } from '@/lib/config/demoMode';
 import {
   usePublicMenuCategories,
   usePublicMenuItems,
@@ -136,7 +137,7 @@ export default function Step4Preorder() {
         photoUrl: item.photo_url,
         dietaryFlags: [],
       }));
-    const fallbackItems: DisplayMenuItem[] = mockMenuItems
+    const fallbackItems: DisplayMenuItem[] = isDemoModeEnabled() ? mockMenuItems
       .filter((m) => m.restaurantId === restaurantId && m.isAvailable)
       .map((item) => ({
         id: item.id,
@@ -147,7 +148,7 @@ export default function Step4Preorder() {
         category: item.category,
         photoUrl: item.photoUrl || null,
         dietaryFlags: item.dietaryFlags,
-      }));
+      })) : [];
     const restaurantItems = liveItems.length || liveMenuLoading ? liveItems : fallbackItems;
     if (selectedCategory === 'All') return restaurantItems;
     return restaurantItems.filter((m) => m.category === selectedCategory);
@@ -157,9 +158,9 @@ export default function Step4Preorder() {
     const liveCats = liveMenuItems
       .filter((item) => item.is_available !== false)
       .map((item) => item.category_id ? liveCategoryNameById.get(item.category_id) ?? item.category ?? 'Menu' : item.category ?? 'Menu');
-    const fallbackCats = mockMenuItems
+    const fallbackCats = isDemoModeEnabled() ? mockMenuItems
       .filter((m) => m.restaurantId === restaurantId && m.isAvailable)
-      .map((m) => m.category);
+      .map((m) => m.category) : [];
     const cats = [...new Set((liveCats.length || liveMenuLoading ? liveCats : fallbackCats).filter(Boolean))];
     return ['All', ...cats];
   }, [liveCategoryNameById, liveMenuItems, liveMenuLoading, restaurantId]);

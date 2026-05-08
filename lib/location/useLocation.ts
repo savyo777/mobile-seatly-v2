@@ -20,13 +20,7 @@ const FALLBACK: LocationState = {
 };
 
 export function useLocation(): LocationState {
-  const [state, setState] = useState<LocationState>({
-    lat: DEFAULT_MAP_CENTER.latitude,
-    lng: DEFAULT_MAP_CENTER.longitude,
-    locationReady: false,
-    permissionDenied: false,
-    source: 'fallback',
-  });
+  const [state, setState] = useState<LocationState>(FALLBACK);
 
   useEffect(() => {
     if (Platform.OS === 'web') {

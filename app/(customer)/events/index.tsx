@@ -7,6 +7,7 @@ import {
   TextInput,
   Animated,
   Keyboard,
+  Platform,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
@@ -314,6 +315,11 @@ export default function EventsScreen() {
         renderItem={renderEvent}
         ListHeaderComponent={ListHeader}
         showsVerticalScrollIndicator={false}
+        initialNumToRender={5}
+        maxToRenderPerBatch={6}
+        windowSize={7}
+        updateCellsBatchingPeriod={32}
+        removeClippedSubviews={Platform.OS === 'android'}
         keyboardShouldPersistTaps="handled"
         contentContainerStyle={[styles.list, { paddingBottom: spacing.lg }]}
         ListEmptyComponent={

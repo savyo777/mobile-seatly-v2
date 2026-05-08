@@ -1,9 +1,12 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { ActivityIndicator, View, Text, StyleSheet, ScrollView, Image, Pressable, Linking } from 'react-native';
+import { ActivityIndicator, View, Text, StyleSheet, ScrollView, Image, Pressable, Linking, useWindowDimensions } from 'react-native';
+import { Image as ExpoImage } from 'expo-image';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Button, Badge, ScreenWrapper } from '@/components/ui';
+import { StoryFilterFrame } from '@/components/storyFilters/StoryFilterFrame';
+import { useAuthSession } from '@/lib/auth/AuthContext';
 import { mockRestaurants } from '@/lib/mock/restaurants';
 import { mockMenuItems, type MenuItem as MockMenuItem } from '@/lib/mock/menuItems';
 import { useMenu } from '@/lib/context/MenuContext';
@@ -14,6 +17,7 @@ import {
   type MenuItem as PublicMenuItem,
 } from '@/lib/cenaiva/api/dataHooks';
 import { listSnapPostsByRestaurant } from '@/lib/mock/snaps';
+import { getLatestCompletedVisitForRestaurant } from '@/lib/postVisit/postTurn';
 import { formatCurrency } from '@/lib/utils/formatCurrency';
 import {
   currentRestaurantWeekdayKey,
@@ -493,9 +497,12 @@ export default function RestaurantDetailScreen() {
   const styles = useStyles();
   const router = useRouter();
   const insets = useSafeAreaInsets();
+  const { width: windowW } = useWindowDimensions();
   const { items: ownerMenuItems } = useMenu();
+  const { user, isAuthenticated } = useAuthSession();
   const [catalog, setCatalog] = useState(mockRestaurants);
   const [catalogLoading, setCatalogLoading] = useState(true);
+  const [shareVisitBookingId, setShareVisitBookingId] = useState<string | null>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -517,6 +524,21 @@ export default function RestaurantDetailScreen() {
     () => catalog.find((r) => r.id === restaurantId || r.slug === restaurantId),
     [catalog, restaurantId],
   );
+
+  useEffect(() => {
+    let cancelled = false;
+    setShareVisitBookingId(null);
+    if (!isAuthenticated || !user?.id || !restaurant?.id) return undefined;
+
+    getLatestCompletedVisitForRestaurant(user, restaurant.id).then((visit) => {
+      if (!cancelled) setShareVisitBookingId(visit?.bookingId ?? null);
+    });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [isAuthenticated, restaurant?.id, user]);
+
   const { categories: menuCategories } = usePublicMenuCategories(isPreview ? null : restaurant?.id);
   const { items: publicMenuItems, loading: menuLoading } = usePublicMenuItems(
     isPreview ? null : restaurant?.id,
@@ -594,6 +616,7 @@ export default function RestaurantDetailScreen() {
   }
 
   const currency = restaurant.currency.toLowerCase();
+  const photoThumbWidth = Math.max(1, Math.floor((windowW - spacing.lg * 2 - spacing.sm * 2) / 3));
 
   return (
     <View style={styles.root}>
@@ -814,24 +837,31 @@ export default function RestaurantDetailScreen() {
                 <Text style={styles.photoSubtitle}>See what people are eating here</Text>
 
                 {isEmpty ? (
-                  // Empty state — keeps the section discoverable and lets the
-                  // first diner kick things off straight from the restaurant page.
-                  <Pressable
-                    onPress={() =>
-                      router.push(
-                        `/(customer)/discover/post-review/camera?restaurantId=${restaurant.id}`,
-                      )
-                    }
-                    style={({ pressed }) => [
-                      styles.photoEmpty,
-                      pressed && { opacity: 0.85 },
-                    ]}
-                  >
-                    <Ionicons name="camera-outline" size={22} color={c.gold} />
-                    <Text style={styles.photoEmptyText}>
-                      No photos yet — be the first to share one
-                    </Text>
-                  </Pressable>
+                  shareVisitBookingId ? (
+                    <Pressable
+                      onPress={() =>
+                        router.push(
+                          `/(customer)/discover/post-review/camera?restaurantId=${restaurant.id}&bookingId=${encodeURIComponent(shareVisitBookingId)}`,
+                        )
+                      }
+                      style={({ pressed }) => [
+                        styles.photoEmpty,
+                        pressed && { opacity: 0.85 },
+                      ]}
+                    >
+                      <Ionicons name="camera-outline" size={22} color={c.gold} />
+                      <Text style={styles.photoEmptyText}>
+                        No photos yet — share one from your visit
+                      </Text>
+                    </Pressable>
+                  ) : (
+                    <View style={styles.photoEmpty}>
+                      <Ionicons name="camera-outline" size={22} color={c.textMuted} />
+                      <Text style={[styles.photoEmptyText, { color: c.textMuted }]}>
+                        Photos from completed visits will appear here.
+                      </Text>
+                    </View>
+                  )
                 ) : (
                   <View style={styles.photoStrip}>
                     {snapPhotos.map((snap) => (
@@ -840,11 +870,32 @@ export default function RestaurantDetailScreen() {
                         style={styles.photoThumb}
                         onPress={() => router.push(`/(customer)/discover/snaps/detail/${snap.id}`)}
                       >
-                        <Image
-                          source={{ uri: snap.image }}
-                          style={{ width: '100%', height: '100%' }}
-                          resizeMode="cover"
-                        />
+                        {snap.storyFilterId ? (
+                          <StoryFilterFrame
+                            filterId={snap.storyFilterId}
+                            width={photoThumbWidth}
+                            height={90}
+                            capturedAt={snap.storyFilterCapturedAt}
+                            restaurantName={restaurant.name}
+                            city={restaurant.city}
+                            area={restaurant.area}
+                            mediaSlot={
+                              <ExpoImage
+                                source={{ uri: snap.image }}
+                                style={{ width: '100%', height: '100%' }}
+                                contentFit="cover"
+                                contentPosition="bottom"
+                              />
+                            }
+                          />
+                        ) : (
+                          <ExpoImage
+                            source={{ uri: snap.image }}
+                            style={{ width: '100%', height: '100%' }}
+                            contentFit="cover"
+                            contentPosition="bottom"
+                          />
+                        )}
                       </Pressable>
                     ))}
                   </View>

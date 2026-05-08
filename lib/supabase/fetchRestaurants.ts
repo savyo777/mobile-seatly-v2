@@ -10,13 +10,14 @@ export async function fetchRestaurantsFromSupabase(): Promise<Restaurant[]> {
 
   const { data, error } = await supabase
     .from('restaurants')
-    .select('*')
-    .eq('is_active', true)
-    .order('name');
+    .select('*');
 
   if (error) throw error;
   const rows = (data ?? []) as RestaurantRow[];
-  return rows.map(mapRestaurantRowToRestaurant);
+  return rows
+    .filter((row) => row.is_active !== false)
+    .map(mapRestaurantRowToRestaurant)
+    .sort((a, b) => a.name.localeCompare(b.name));
 }
 
 export async function fetchRestaurantByIdFromSupabase(
@@ -29,10 +30,17 @@ export async function fetchRestaurantByIdFromSupabase(
   const { data, error } = await supabase
     .from('restaurants')
     .select('*')
-    .eq('is_active', true)
-    .or(`id.eq.${key},slug.eq.${key}`)
+    .eq('id', key)
     .maybeSingle();
 
   if (error) throw error;
-  return data ? mapRestaurantRowToRestaurant(data as RestaurantRow) : null;
+  if (data) return mapRestaurantRowToRestaurant(data as RestaurantRow);
+
+  const { data: slugData, error: slugError } = await supabase
+    .from('restaurants')
+    .select('*')
+    .eq('slug', key)
+    .maybeSingle();
+  if (slugError) return null;
+  return slugData ? mapRestaurantRowToRestaurant(slugData as RestaurantRow) : null;
 }

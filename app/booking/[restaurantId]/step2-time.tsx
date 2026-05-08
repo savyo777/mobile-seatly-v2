@@ -290,6 +290,7 @@ export default function Step2Time() {
   const [slots, setSlots] = useState<AvailabilitySlot[]>([]);
   const [slotsLoading, setSlotsLoading] = useState(false);
   const [slotsError, setSlotsError] = useState<string | null>(null);
+  const [availabilityRefresh, setAvailabilityRefresh] = useState(0);
   const [calendarOpen, setCalendarOpen] = useState(false);
   const [restaurantVersion, setRestaurantVersion] = useState(0);
   const [restaurant, setRestaurant] = useState(() => getCachedRestaurantById(rid));
@@ -364,7 +365,7 @@ export default function Step2Time() {
     return () => {
       cancelled = true;
     };
-  }, [dateKey, partySize, partySizeError, partySizeInput, rid, restaurantVersion]);
+  }, [availabilityRefresh, dateKey, partySize, partySizeError, partySizeInput, rid]);
 
   const updatePartySize = useCallback((value: string) => {
     const digits = value.replace(/\D/g, '');
@@ -482,7 +483,7 @@ export default function Step2Time() {
         ) : slotsError ? (
           <View style={styles.noTimesBox}>
             <Text style={styles.slotError}>{slotsError}</Text>
-            <Pressable onPress={() => setRestaurantVersion((version) => version + 1)}>
+            <Pressable onPress={() => setAvailabilityRefresh((version) => version + 1)}>
               <Text style={styles.noTimesLink}>Try again</Text>
             </Pressable>
           </View>

@@ -1,15 +1,16 @@
 import React, { useMemo, useState } from 'react';
-import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Alert, Pressable, ScrollView, Text, View } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
-import { Button, Input, ScreenWrapper } from '@/components/ui';
+import { useStripe } from '@stripe/stripe-react-native';
+import { Button, ScreenWrapper } from '@/components/ui';
 import { borderRadius, createStyles, spacing, typography, useColors } from '@/lib/theme';
-import { addCalendarMonths } from '@/lib/services/restaurantRegistration';
 import {
-  inferCardBrand,
-  saveRestaurantPaymentCard,
-} from '@/lib/storage/restaurantPaymentMethod';
+  finalizeRestaurantRegistration,
+  getRestaurantPaymentMethodPreview,
+  initRestaurantRegistrationPaymentSheet,
+} from '@/lib/services/restaurantRegistration';
 
 const useStyles = createStyles((c) => ({
   scroll: { flex: 1 },
@@ -126,6 +127,34 @@ const useStyles = createStyles((c) => ({
     color: c.textSecondary,
     lineHeight: 18,
   },
+  stripeRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.md,
+    borderRadius: borderRadius.lg,
+    borderWidth: 1,
+    borderColor: c.border,
+    backgroundColor: c.bgElevated,
+    padding: spacing.md,
+  },
+  stripeIcon: {
+    width: 42,
+    height: 42,
+    borderRadius: borderRadius.md,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: 'rgba(201,168,76,0.12)',
+  },
+  stripeTitle: {
+    ...typography.body,
+    color: c.textPrimary,
+    fontWeight: '700',
+  },
+  stripeText: {
+    ...typography.bodySmall,
+    color: c.textSecondary,
+    marginTop: 2,
+  },
   errorCard: {
     borderRadius: borderRadius.lg,
     borderWidth: 1,
@@ -161,27 +190,13 @@ const useStyles = createStyles((c) => ({
   },
 }));
 
-function sanitizeDigits(value: string): string {
-  return value.replace(/\D/g, '');
-}
-
 export default function RegisterRestaurantCardEntryScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const c = useColors();
   const styles = useStyles();
-  const [cardholderName, setCardholderName] = useState('');
-  const [cardNumber, setCardNumber] = useState('');
-  const [expiry, setExpiry] = useState('');
-  const [cvc, setCvc] = useState('');
-  const [postalCode, setPostalCode] = useState('');
-  const [errors, setErrors] = useState<{
-    cardholderName?: string;
-    cardNumber?: string;
-    expiry?: string;
-    cvc?: string;
-    postalCode?: string;
-  }>({});
+  const { initPaymentSheet, presentPaymentSheet } = useStripe();
+  const [saving, setSaving] = useState(false);
 
   const params = useLocalSearchParams<{
     hstNumber?: string;
@@ -191,59 +206,66 @@ export default function RegisterRestaurantCardEntryScreen() {
     paymentError?: string;
   }>();
 
-  const trialEndsAt = useMemo(() => addCalendarMonths(new Date(), 3).toISOString(), []);
+  const input = useMemo(() => ({
+    hstNumber: typeof params.hstNumber === 'string' ? params.hstNumber : '',
+    businessName: typeof params.businessName === 'string' ? params.businessName : '',
+    address: typeof params.address === 'string' ? params.address : '',
+    ownerPhone: typeof params.ownerPhone === 'string' ? params.ownerPhone : '',
+  }), [params.address, params.businessName, params.hstNumber, params.ownerPhone]);
 
   const onContinue = () => {
-    const digits = sanitizeDigits(cardNumber);
-    const cvcDigits = sanitizeDigits(cvc);
-    const expMatch = expiry.trim().match(/^(\d{2})\s*\/\s*(\d{2}|\d{4})$/);
-    const zip = postalCode.trim();
-
-    const nextErrors: typeof errors = {};
-    if (!cardholderName.trim()) nextErrors.cardholderName = 'Cardholder name is required.';
-    if (digits.length < 13 || digits.length > 19) nextErrors.cardNumber = 'Enter a valid card number.';
-    if (!expMatch) nextErrors.expiry = 'Use MM/YY for the expiration date.';
-    if (cvcDigits.length < 3 || cvcDigits.length > 4) nextErrors.cvc = 'Enter a 3 or 4 digit CVC.';
-    if (!zip) nextErrors.postalCode = 'Billing postal code is required.';
-
-    setErrors(nextErrors);
-    if (Object.keys(nextErrors).length > 0) return;
-
     void (async () => {
-      await saveRestaurantPaymentCard({
-        brand: inferCardBrand(digits),
-        last4: digits.slice(-4),
-        expiry,
-        cardholder: cardholderName.trim(),
-        isDefault: true,
-        source: 'registration',
-      });
+      if (saving) return;
+      setSaving(true);
+      try {
+        const paymentSheet = await initRestaurantRegistrationPaymentSheet(input);
+        const initResult = await initPaymentSheet({
+          merchantDisplayName: 'Cenaiva',
+          customerId: paymentSheet.customerId,
+          customerEphemeralKeySecret: paymentSheet.customerEphemeralKeySecret,
+          setupIntentClientSecret: paymentSheet.setupIntentClientSecret,
+          allowsDelayedPaymentMethods: false,
+          returnURL: 'cenaiva://stripe-redirect',
+        });
+        if (initResult.error) throw new Error(initResult.error.message);
 
-      // Saving the card finishes the restaurant registration. Previously this
-      // bounced through a separate "Start your free trial" screen; we now go
-      // straight to the success page since no charge happens today anyway.
-      router.replace({
-        pathname: '/(customer)/profile/register-restaurant-success',
-        params: {
-          trialEndsAt,
-          // Forward the input in case the success page wants to display it.
-          hstNumber: typeof params.hstNumber === 'string' ? params.hstNumber : '',
-          businessName: typeof params.businessName === 'string' ? params.businessName : '',
-          address: typeof params.address === 'string' ? params.address : '',
-          ownerPhone: typeof params.ownerPhone === 'string' ? params.ownerPhone : '',
-          cardBrand: inferCardBrand(digits),
-          cardLast4: digits.slice(-4),
-        },
-      });
+        const presentResult = await presentPaymentSheet();
+        if (presentResult.error) {
+          if (presentResult.error.code === 'Canceled') return;
+          throw new Error(presentResult.error.message);
+        }
+
+        const preview = await getRestaurantPaymentMethodPreview(paymentSheet.setupIntentId);
+        const registered = await finalizeRestaurantRegistration(input, paymentSheet.setupIntentId);
+
+        router.replace({
+          pathname: '/(customer)/profile/register-restaurant-success',
+          params: {
+            trialEndsAt: registered.trialEndsAt,
+            hstNumber: input.hstNumber,
+            businessName: input.businessName,
+            address: input.address,
+            ownerPhone: input.ownerPhone,
+            cardBrand: preview.brand,
+            cardLast4: preview.last4,
+          },
+        });
+      } catch (error) {
+        Alert.alert('Payment setup failed', error instanceof Error ? error.message : 'Please try again.');
+      } finally {
+        setSaving(false);
+      }
     })();
   };
 
   return (
-    <ScreenWrapper padded>
+    <ScreenWrapper withKeyboardAvoiding padded>
       <ScrollView
         style={styles.scroll}
-        contentContainerStyle={[styles.scrollContent, { paddingBottom: Math.max(insets.bottom, spacing.lg) }]}
+        contentContainerStyle={[styles.scrollContent, { paddingBottom: Math.max(insets.bottom + 76, spacing['3xl']) }]}
         showsVerticalScrollIndicator={false}
+        keyboardShouldPersistTaps="handled"
+        keyboardDismissMode="interactive"
       >
         <View style={styles.topBar}>
           <Pressable
@@ -290,82 +312,25 @@ export default function RegisterRestaurantCardEntryScreen() {
 
         <View style={styles.formCard}>
           <View style={styles.formCardHeader}>
-            <Text style={styles.formCardTitle}>Card details</Text>
+            <Text style={styles.formCardTitle}>Secure card setup</Text>
             <Text style={styles.formCardSub}>
-              Enter the payment information exactly as it appears on the card.
+              Cenaiva uses Stripe to save your billing card. The card details are collected in Stripe's secure form and are not stored on this device.
             </Text>
           </View>
 
-          <Input
-            label="Cardholder name"
-            placeholder="Alex Johnson"
-            value={cardholderName}
-            onChangeText={(value) => {
-              setCardholderName(value);
-              if (errors.cardholderName) setErrors((prev) => ({ ...prev, cardholderName: undefined }));
-            }}
-            icon="person-outline"
-            error={errors.cardholderName}
-            autoCapitalize="words"
-          />
-          <Input
-            label="Card number"
-            placeholder="4242 4242 4242 4242"
-            value={cardNumber}
-            onChangeText={(value) => {
-              setCardNumber(value);
-              if (errors.cardNumber) setErrors((prev) => ({ ...prev, cardNumber: undefined }));
-            }}
-            icon="card-outline"
-            keyboardType="number-pad"
-            error={errors.cardNumber}
-          />
-          <View style={{ flexDirection: 'row', gap: spacing.sm }}>
-            <View style={{ flex: 1 }}>
-              <Input
-                label="Expiry date"
-                placeholder="MM/YY"
-                value={expiry}
-                onChangeText={(value) => {
-                  setExpiry(value);
-                  if (errors.expiry) setErrors((prev) => ({ ...prev, expiry: undefined }));
-                }}
-                icon="calendar-outline"
-                keyboardType="numbers-and-punctuation"
-                error={errors.expiry}
-              />
+          <View style={styles.stripeRow}>
+            <View style={styles.stripeIcon}>
+              <Ionicons name="card-outline" size={20} color={c.gold} />
             </View>
             <View style={{ flex: 1 }}>
-              <Input
-                label="CVC"
-                placeholder="123"
-                value={cvc}
-                onChangeText={(value) => {
-                  setCvc(value);
-                  if (errors.cvc) setErrors((prev) => ({ ...prev, cvc: undefined }));
-                }}
-                icon="lock-closed-outline"
-                keyboardType="number-pad"
-                error={errors.cvc}
-              />
+              <Text style={styles.stripeTitle}>Open Stripe payment sheet</Text>
+              <Text style={styles.stripeText}>Add or confirm the card used after the free trial.</Text>
             </View>
           </View>
-          <Input
-            label="Billing postal code"
-            placeholder="M5V 2T6"
-            value={postalCode}
-            onChangeText={(value) => {
-              setPostalCode(value);
-              if (errors.postalCode) setErrors((prev) => ({ ...prev, postalCode: undefined }));
-            }}
-            icon="location-outline"
-            autoCapitalize="characters"
-            error={errors.postalCode}
-          />
         </View>
 
         <View style={styles.footer}>
-          <Button title="Save card and continue" onPress={onContinue} size="lg" />
+          <Button title={saving ? 'Opening secure form...' : 'Add payment method'} onPress={onContinue} size="lg" disabled={saving} />
         </View>
 
         <View style={styles.secureRow}>

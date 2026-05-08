@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import {
   View,
   Text,
@@ -11,22 +11,14 @@ import {
 import { useRouter, Href } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
-import { mockCustomer } from '@/lib/mock/users';
 import { getSavedRestaurants } from '@/lib/mock/profileScreens';
-import { mockReservations } from '@/lib/mock/reservations';
-import { mockRestaurants } from '@/lib/mock/restaurants';
 import { resolveAuthDisplayProfile, initialsFromDisplayName } from '@/lib/auth/displayProfile';
 import { useColors, useTheme, createStyles, spacing, borderRadius } from '@/lib/theme';
 import { useAuthSession } from '@/lib/auth/AuthContext';
-
-const MOCK_DINNERS = 12;
-const MOCK_CITIES = 3;
-const MOCK_POINTS = mockCustomer.loyaltyPointsBalance ?? 0;
-const MOCK_LOCATION = 'Toronto · King West';
-const MOCK_MEMBER_SINCE = 'May 2024';
-const MOCK_CUISINES = ['Italian', 'Japanese', 'French'];
-const MOCK_DIETARY = ['No shellfish', 'Pescatarian-flex'];
-const MOCK_VIBES = ['Date night', 'Counter seats'];
+import { fetchMyBookingItems, type MyBookingItem } from '@/lib/booking/myReservations';
+import { isDemoModeEnabled } from '@/lib/config/demoMode';
+import { fetchCurrentUserProfile, type AppUserProfile } from '@/lib/services/userProfile';
+import { getStoredCustomerPaymentMethods } from '@/lib/storage/customerPaymentMethods';
 
 const DINER_TIERS = [
   { name: 'Regular', min: 0 },
@@ -132,16 +124,10 @@ const SUGGESTED_VIBES = [
   'Celebration',
 ] as const;
 
-const savedRestaurants = getSavedRestaurants();
-
-const recentVisits = mockReservations
-  .filter((r) => r.status === 'completed' && r.guestId === mockCustomer.id)
-  .sort((a, b) => new Date(b.reservedAt).getTime() - new Date(a.reservedAt).getTime())
-  .slice(0, 3);
+const savedRestaurants = isDemoModeEnabled() ? getSavedRestaurants() : [];
 
 const ACCOUNT_ROWS = [
   { icon: 'notifications-outline' as const, title: 'Notifications', value: 'On', route: '/(customer)/profile/notifications' },
-  { icon: 'card-outline' as const, title: 'Payment methods', value: 'Visa · 4242', route: '/(customer)/profile/payment' },
   { icon: 'lock-closed-outline' as const, title: 'Privacy', value: null, route: '/(customer)/profile/privacy' },
   { icon: 'help-circle-outline' as const, title: 'Help & support', value: null, route: '/(customer)/profile/help' },
 ];
@@ -622,10 +608,55 @@ export default function ProfileScreen() {
   const styles = useStyles();
   const { effective, setMode } = useTheme();
   const { signOut, user } = useAuthSession();
+  const [accountProfile, setAccountProfile] = useState<AppUserProfile | null>(null);
+  const [recentVisits, setRecentVisits] = useState<MyBookingItem[]>([]);
+  const [paymentLabel, setPaymentLabel] = useState('No card on file');
   const displayProfile = useMemo(
-    () => resolveAuthDisplayProfile(user, { fullName: mockCustomer.fullName }),
-    [user],
+    () => ({
+      ...resolveAuthDisplayProfile(user, { fullName: accountProfile?.fullName }),
+      fullName: accountProfile?.fullName || resolveAuthDisplayProfile(user).fullName,
+      email: accountProfile?.email || resolveAuthDisplayProfile(user).email,
+      phone: accountProfile?.phone || resolveAuthDisplayProfile(user).phone,
+    }),
+    [accountProfile, user],
   );
+
+  useEffect(() => {
+    let active = true;
+    void fetchCurrentUserProfile()
+      .then((profile) => {
+        if (active) setAccountProfile(profile);
+      })
+      .catch(() => {
+        if (active) setAccountProfile(null);
+      });
+    void fetchMyBookingItems()
+      .then((items) => {
+        if (active) setRecentVisits(items.filter((item) => item.status === 'completed').slice(0, 3));
+      })
+      .catch(() => {
+        if (active) setRecentVisits([]);
+      });
+    return () => {
+      active = false;
+    };
+  }, [user?.id]);
+
+  useEffect(() => {
+    let active = true;
+    void getStoredCustomerPaymentMethods(displayProfile.fullName)
+      .then((cards) => {
+        if (!active) return;
+        const card = cards.find((item) => item.isDefault) ?? cards[0];
+        setPaymentLabel(card ? `${card.brand.toUpperCase()} · ${card.last4}` : 'No card on file');
+      })
+      .catch(() => {
+        if (active) setPaymentLabel('No card on file');
+      });
+    return () => {
+      active = false;
+    };
+  }, [displayProfile.fullName]);
 
   async function handleLogout() {
     try {
@@ -636,14 +667,37 @@ export default function ProfileScreen() {
     }
   }
 
-  const currentTier = getDinerTier(MOCK_DINNERS);
-  const nextTier = getNextTier(MOCK_DINNERS);
-  const dinnersUntilNext = nextTier ? nextTier.min - MOCK_DINNERS : 0;
-  const progressRatio = nextTier ? MOCK_DINNERS / nextTier.min : 1;
+  const dinnersCount = recentVisits.length;
+  const citiesCount = new Set(recentVisits.map((visit) => visit.restaurantName)).size;
+  const points = accountProfile?.loyaltyPointsBalance ?? 0;
+  const locationLabel = accountProfile?.locationLabel ?? 'No location on file';
+  const memberSince = accountProfile?.createdAt
+    ? new Date(accountProfile.createdAt).toLocaleDateString('en-CA', { month: 'short', year: 'numeric' })
+    : 'new member';
+  const currentTier = accountProfile?.loyaltyTier
+    ? { name: accountProfile.loyaltyTier, min: dinnersCount }
+    : getDinerTier(dinnersCount);
+  const nextTier = getNextTier(dinnersCount);
+  const dinnersUntilNext = nextTier ? nextTier.min - dinnersCount : 0;
+  const progressRatio = nextTier ? dinnersCount / nextTier.min : 1;
   const initials = initialsFromName(displayProfile.fullName);
-  const [cuisinePrefs, setCuisinePrefs] = useState(MOCK_CUISINES.join(', '));
-  const [dietaryPrefs, setDietaryPrefs] = useState(MOCK_DIETARY.join(', '));
-  const [vibePrefs, setVibePrefs] = useState(MOCK_VIBES.join(', '));
+  const [cuisinePrefs, setCuisinePrefs] = useState('');
+  const [dietaryPrefs, setDietaryPrefs] = useState('');
+  const [vibePrefs, setVibePrefs] = useState('');
+  const accountRows = useMemo(
+    () => [
+      ACCOUNT_ROWS[0],
+      { icon: 'card-outline' as const, title: 'Payment methods', value: paymentLabel, route: '/(customer)/profile/payment' },
+      ...ACCOUNT_ROWS.slice(1),
+    ],
+    [paymentLabel],
+  );
+
+  useEffect(() => {
+    setCuisinePrefs(accountProfile?.preferredCuisines.join(', ') ?? '');
+    setDietaryPrefs(accountProfile?.dietaryRestrictions.join(', ') ?? '');
+    setVibePrefs(accountProfile?.diningVibes.join(', ') ?? '');
+  }, [accountProfile]);
 
   function cycleTheme() {
     setMode(effective === 'dark' ? 'light' : 'dark');
@@ -683,7 +737,7 @@ export default function ProfileScreen() {
           <View style={styles.avatarMeta}>
             <Text style={styles.userName}>{displayProfile.fullName}</Text>
             <Text style={styles.userLocation}>
-              {MOCK_LOCATION} · since {MOCK_MEMBER_SINCE}
+              {locationLabel} · since {memberSince}
             </Text>
             <View style={styles.tierBadge}>
               <Ionicons name="star" size={11} color={c.gold} />
@@ -711,15 +765,15 @@ export default function ProfileScreen() {
         {/* Stats */}
         <View style={styles.statsRow}>
           <View style={styles.statCard}>
-            <Text style={styles.statValue}>{MOCK_DINNERS}</Text>
+            <Text style={styles.statValue}>{dinnersCount}</Text>
             <Text style={styles.statLabel}>Dinners</Text>
           </View>
           <View style={styles.statCard}>
-            <Text style={styles.statValue}>{MOCK_CITIES}</Text>
+            <Text style={styles.statValue}>{citiesCount}</Text>
             <Text style={styles.statLabel}>Cities</Text>
           </View>
           <View style={styles.statCard}>
-            <Text style={styles.statValue}>{MOCK_POINTS.toLocaleString()}</Text>
+            <Text style={styles.statValue}>{points.toLocaleString()}</Text>
             <Text style={styles.statLabel}>Points</Text>
           </View>
         </View>
@@ -786,17 +840,15 @@ export default function ProfileScreen() {
           </Pressable>
         </View>
         <View style={styles.visitsCard}>
-          {recentVisits.map((visit, idx) => {
-            const restaurant = mockRestaurants.find((r) => r.id === visit.restaurantId);
-            return (
+          {recentVisits.map((visit, idx) => (
               <View
                 key={visit.id}
                 style={[styles.visitRow, idx < recentVisits.length - 1 && styles.visitRowBorder]}
               >
                 <View style={styles.visitThumb}>
-                  {restaurant?.logoUrl ? (
+                  {visit.coverPhotoUrl ? (
                     <Image
-                      source={{ uri: restaurant.logoUrl }}
+                      source={{ uri: visit.coverPhotoUrl }}
                       style={styles.visitThumbImg}
                       resizeMode="cover"
                     />
@@ -809,7 +861,7 @@ export default function ProfileScreen() {
                     {visit.restaurantName}
                   </Text>
                   <Text style={styles.visitMeta}>
-                    {formatVisitDate(visit.reservedAt)} · {visit.partySize}{' '}
+                    {formatVisitDate(visit.whenIso)} · {visit.partySize}{' '}
                     {visit.partySize === 1 ? 'guest' : 'guests'}
                   </Text>
                 </View>
@@ -822,8 +874,7 @@ export default function ProfileScreen() {
                   <Text style={styles.rebookText}>Rebook</Text>
                 </Pressable>
               </View>
-            );
-          })}
+          ))}
         </View>
 
         {/* Account */}
@@ -831,12 +882,12 @@ export default function ProfileScreen() {
           <Text style={styles.sectionTitle}>Account</Text>
         </View>
         <View style={styles.accountCard}>
-          {ACCOUNT_ROWS.map((row, idx) => (
+          {accountRows.map((row, idx) => (
             <Pressable
               key={row.title}
               style={({ pressed }) => [
                 styles.accountRow,
-                idx < ACCOUNT_ROWS.length - 1 && styles.accountRowBorder,
+                idx < accountRows.length - 1 && styles.accountRowBorder,
                 pressed && styles.accountRowPressed,
               ]}
               onPress={() => router.push(row.route as Href)}

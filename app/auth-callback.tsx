@@ -4,7 +4,10 @@ import { useRouter } from 'expo-router';
 import * as Linking from 'expo-linking';
 import { useColors } from '@/lib/theme';
 import { useAuthSession } from '@/lib/auth/AuthContext';
-import { getAppShellPreference } from '@/lib/navigation/appShellPreference';
+import {
+  getAppShellPreference,
+  getCachedAppShellPreference,
+} from '@/lib/navigation/appShellPreference';
 
 export default function AuthCallbackScreen() {
   const router = useRouter();
@@ -25,14 +28,14 @@ export default function AuthCallbackScreen() {
         }
       }
       if (isAuthenticated) {
-        const pref = await getAppShellPreference();
+        const pref = getCachedAppShellPreference() ?? await getAppShellPreference();
         if (pref === 'staff' && isStaffLike) {
           router.replace('/(staff)');
           return;
         }
       }
       router.replace('/(customer)');
-    }, 150);
+    }, 40);
     return () => clearTimeout(id);
   }, [router, loading, isAuthenticated, isStaffLike, role]);
 

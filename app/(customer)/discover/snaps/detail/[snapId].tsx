@@ -9,7 +9,6 @@
 import React, { useCallback, useMemo, useState } from 'react';
 import {
   Alert,
-  Image,
   Modal,
   Pressable,
   ScrollView,
@@ -18,9 +17,12 @@ import {
   View,
   useWindowDimensions,
 } from 'react-native';
+import { Image } from 'expo-image';
+import type { ImageLoadEventData } from 'expo-image';
 import { useLocalSearchParams, useRouter, type Href } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
+import { StoryFilterFrame } from '@/components/storyFilters/StoryFilterFrame';
 import {
   deleteSnapPost,
   getRestaurantForPost,
@@ -29,6 +31,10 @@ import {
   timeAgoLabel,
 } from '@/lib/mock/snaps';
 import { mockCustomer } from '@/lib/mock/users';
+import {
+  DEFAULT_SNAP_PHOTO_ASPECT,
+  getSnapPreviewLayout,
+} from '@/lib/storyFilters/previewLayout';
 import { useColors, createStyles, borderRadius, spacing, typography } from '@/lib/theme';
 import { safeRouterBack } from '@/lib/navigation/transitions';
 
@@ -61,9 +67,15 @@ const useStyles = createStyles((c) => ({
   scrollContent: {
     paddingBottom: spacing['2xl'],
   },
+  photoWrap: {
+    alignSelf: 'center',
+    overflow: 'hidden',
+    borderRadius: borderRadius.xl,
+    backgroundColor: c.bgElevated,
+  },
   photo: {
     width: '100%',
-    backgroundColor: c.bgElevated,
+    height: '100%',
   },
   meta: {
     paddingHorizontal: spacing.lg,
@@ -182,7 +194,7 @@ export default function SnapDetailScreen() {
   const styles = useStyles();
   const router = useRouter();
   const insets = useSafeAreaInsets();
-  const { width: windowW } = useWindowDimensions();
+  const { width: windowW, height: windowH } = useWindowDimensions();
   const { snapId, restaurantId } = useLocalSearchParams<{ snapId: string; restaurantId?: string }>();
 
   const post = snapId ? getSnapPostById(snapId) : undefined;
@@ -190,6 +202,7 @@ export default function SnapDetailScreen() {
   const restaurant = post ? getRestaurantForPost(post.restaurant_id) : null;
   const isOwnPost = post?.user_id === ME;
   const [showDeleteSheet, setShowDeleteSheet] = useState(false);
+  const [photoAspect, setPhotoAspect] = useState(DEFAULT_SNAP_PHOTO_ASPECT);
 
   const snapListFallback = useMemo<Href>(() => {
     const fallbackRestaurantId = restaurantId ?? post?.restaurant_id;
@@ -222,6 +235,13 @@ export default function SnapDetailScreen() {
     );
   }, [goBack, post]);
 
+  const handlePhotoLoad = useCallback((event: ImageLoadEventData) => {
+    const { width, height } = event.source ?? {};
+    if (width > 0 && height > 0) {
+      setPhotoAspect(width / height);
+    }
+  }, []);
+
   if (!post) {
     return (
       <View style={[styles.root, styles.centered, { paddingTop: insets.top + spacing['3xl'] }]}>
@@ -233,8 +253,16 @@ export default function SnapDetailScreen() {
     );
   }
 
-  // Square-ish photo that fits screen width (matches what users captured).
-  const photoH = Math.round(windowW * 1.25); // a touch portrait, like a phone shot
+  const selectedRestaurantName = restaurant?.name ?? 'Restaurant';
+  const selectedRestaurantCity = restaurant?.city ?? 'Toronto';
+  const selectedRestaurantArea = restaurant?.area ?? selectedRestaurantCity;
+  const photoLayout = getSnapPreviewLayout({
+    photoAspect,
+    maxWidth: windowW - spacing.lg * 2,
+    maxHeight: Math.min(620, Math.max(320, windowH - insets.top - insets.bottom - 230)),
+  });
+  const photoW = photoLayout.width;
+  const photoH = photoLayout.height;
 
   return (
     <View style={[styles.root, { paddingTop: insets.top }]}>
@@ -262,16 +290,41 @@ export default function SnapDetailScreen() {
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
       >
-        <Image
-          source={{ uri: post.image }}
-          style={[styles.photo, { height: photoH }]}
-          resizeMode="cover"
-        />
+        <View style={[styles.photoWrap, { width: photoW, height: photoH }]}>
+          {post.storyFilterId ? (
+            <StoryFilterFrame
+              filterId={post.storyFilterId}
+              width={photoW}
+              height={photoH}
+              capturedAt={post.storyFilterCapturedAt}
+              restaurantName={selectedRestaurantName}
+              city={selectedRestaurantCity}
+              area={selectedRestaurantArea}
+              mediaSlot={
+                <Image
+                  source={{ uri: post.image }}
+                  style={styles.photo}
+                  contentFit="cover"
+                  contentPosition="bottom"
+                  onLoad={handlePhotoLoad}
+                />
+              }
+            />
+          ) : (
+            <Image
+              source={{ uri: post.image }}
+              style={styles.photo}
+              contentFit="cover"
+              contentPosition="bottom"
+              onLoad={handlePhotoLoad}
+            />
+          )}
+        </View>
 
         <View style={styles.meta}>
           <View style={styles.identityRow}>
             {user?.avatarUrl ? (
-              <Image source={{ uri: user.avatarUrl }} style={styles.avatar} />
+              <Image source={{ uri: user.avatarUrl }} style={styles.avatar} contentFit="cover" />
             ) : (
               <View style={styles.avatar} />
             )}

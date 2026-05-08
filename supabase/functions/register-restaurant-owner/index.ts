@@ -169,6 +169,10 @@ Deno.serve(async (req) => {
       typeof setupIntent.payment_method === 'string'
         ? setupIntent.payment_method
         : setupIntent.payment_method?.id;
+    const paymentMethod =
+      typeof setupIntent.payment_method === 'string'
+        ? null
+        : setupIntent.payment_method;
     if (!paymentMethodId) {
       return json(400, { error: 'No payment method available from setup intent.' });
     }
@@ -199,6 +203,11 @@ Deno.serve(async (req) => {
         owner_phone: payload.owner_phone,
         stripe_customer_id: customerId,
         stripe_subscription_id: subscription.id,
+        stripe_payment_method_id: paymentMethodId,
+        billing_card_brand: paymentMethod?.card?.brand ?? null,
+        billing_card_last4: paymentMethod?.card?.last4 ?? null,
+        billing_card_exp_month: paymentMethod?.card?.exp_month ?? null,
+        billing_card_exp_year: paymentMethod?.card?.exp_year ?? null,
         trial_ends_at: trialEndsAt,
       })
       .select('id')

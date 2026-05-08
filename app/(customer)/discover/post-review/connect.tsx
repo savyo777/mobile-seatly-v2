@@ -1,5 +1,6 @@
 import React, { useCallback, useMemo, useState } from 'react';
 import {
+  Alert,
   KeyboardAvoidingView,
   Platform,
   Pressable,
@@ -24,6 +25,8 @@ import { safeRouterBack } from '@/lib/navigation/transitions';
 import { createSnapPost, getSnapRestaurantName, TAG_POOL } from '@/lib/mock/snaps';
 import { mockRestaurants } from '@/lib/mock/restaurants';
 import { mockCustomer } from '@/lib/mock/users';
+import { useAuthSession } from '@/lib/auth/AuthContext';
+import { completePostTurnPhoto } from '@/lib/postVisit/postTurn';
 import { STORY_FILTERS } from '@/lib/storyFilters/registry';
 import {
   DEFAULT_SNAP_PHOTO_ASPECT,
@@ -256,15 +259,18 @@ export default function SnapCaptionScreen() {
   const styles = useStyles();
   const router = useRouter();
   const insets = useSafeAreaInsets();
+  const { user, isAuthenticated } = useAuthSession();
   const { width: windowW, height: windowH } = useWindowDimensions();
   const {
     photoUri,
     restaurantId,
+    bookingId,
     filterId,
     capturedAt: capturedAtParam,
   } = useLocalSearchParams<{
     photoUri: string;
     restaurantId?: string;
+    bookingId?: string;
     filterId?: string;
     capturedAt?: string;
   }>();
@@ -274,6 +280,7 @@ export default function SnapCaptionScreen() {
   const [tags, setTags] = useState<string[]>([]);
   const [tagInput, setTagInput] = useState('');
   const [photoAspect, setPhotoAspect] = useState(DEFAULT_SNAP_PHOTO_ASPECT);
+  const [posting, setPosting] = useState(false);
 
   const toggleTag = (tag: string) => {
     setTags((prev) => (prev.includes(tag) ? prev.filter((t) => t !== tag) : [...prev, tag]));
@@ -319,7 +326,7 @@ export default function SnapCaptionScreen() {
     const fallback: Href = restaurantId
       ? {
           pathname: '/(customer)/discover/post-review/camera',
-          params: { restaurantId },
+          params: { restaurantId, ...(bookingId ? { bookingId } : {}) },
         }
       : '/(customer)/discover/post-review';
     safeRouterBack(router, fallback);
@@ -339,35 +346,60 @@ export default function SnapCaptionScreen() {
     }
   }, []);
 
-  const postSnap = () => {
-    if (!restaurantId || !decodedUri || !caption.trim()) return;
-    createSnapPost({
-      user_id: mockCustomer.id,
-      restaurant_id: restaurantId,
-      image: decodedUri,
-      caption: caption.trim(),
-      rating,
-      tags,
-      dish: dish.trim() || undefined,
-      storyFilterId: selectedFilterId ?? undefined,
-      storyFilterCapturedAt: selectedFilterId ? capturedAt : undefined,
-    });
-    router.replace({
-      pathname: '/(customer)/discover/post-review/reward',
-      params: {
-        points: '25',
-        restaurantName,
-        restaurantId,
-        photoUri: encodeURIComponent(decodedUri),
-        rating: String(rating),
-        ...(selectedFilterId
-          ? {
-              filterId: selectedFilterId,
-              capturedAt: String(capturedAt),
-            }
-          : {}),
-      },
-    });
+  const postSnap = async () => {
+    if (!restaurantId || !decodedUri || !caption.trim() || posting) return;
+    setPosting(true);
+    let navigated = false;
+
+    try {
+      const cleanCaption = caption.trim();
+      const userId = isAuthenticated && user?.id ? user.id : mockCustomer.id;
+      createSnapPost({
+        user_id: userId,
+        restaurant_id: restaurantId,
+        booking_id: bookingId,
+        image: decodedUri,
+        caption: cleanCaption,
+        rating,
+        tags,
+        dish: dish.trim() || undefined,
+        storyFilterId: selectedFilterId ?? undefined,
+        storyFilterCapturedAt: selectedFilterId ? capturedAt : undefined,
+      });
+
+      if (isAuthenticated && user?.id && bookingId) {
+        void completePostTurnPhoto({
+          userId: user.id,
+          bookingId,
+          restaurantId,
+          imageUrl: decodedUri,
+          caption: cleanCaption,
+        }).catch(() => undefined);
+      }
+
+      navigated = true;
+      router.replace({
+        pathname: '/(customer)/discover/post-review/reward',
+        params: {
+          points: '25',
+          restaurantName,
+          restaurantId,
+          ...(bookingId ? { bookingId } : {}),
+          photoUri: encodeURIComponent(decodedUri),
+          rating: String(rating),
+          ...(selectedFilterId
+            ? {
+                filterId: selectedFilterId,
+                capturedAt: String(capturedAt),
+              }
+            : {}),
+        },
+      });
+    } catch {
+      Alert.alert('Could not post snap', 'Please try again.');
+    } finally {
+      if (!navigated) setPosting(false);
+    }
   };
 
   return (
@@ -560,9 +592,10 @@ export default function SnapCaptionScreen() {
           ]}
         >
           <Button
-            title="Post"
+            title={posting ? 'Posting...' : 'Post'}
             onPress={postSnap}
-            disabled={!caption.trim() || !restaurantId || !decodedUri}
+            disabled={posting || !caption.trim() || !restaurantId || !decodedUri}
+            loading={posting}
             size="lg"
           />
         </View>

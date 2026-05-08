@@ -8,6 +8,7 @@ import { getSupabase } from '@/lib/supabase/client';
 import { createStyles, spacing, typography, useColors } from '@/lib/theme';
 import { formatCurrency } from '@/lib/utils/formatCurrency';
 import { mockRestaurants } from '@/lib/mock/restaurants';
+import { isDemoModeEnabled } from '@/lib/config/demoMode';
 
 type CheckoutOrder = {
   id: string;
@@ -171,7 +172,7 @@ export default function CenaivaCheckoutScreen() {
       setLoading(true);
       setError(null);
       try {
-        if (orderId?.startsWith('booking-prepay-')) {
+        if (isDemoModeEnabled() && orderId?.startsWith('booking-prepay-')) {
           const restaurantId = orderId.replace('booking-prepay-', '');
           const restaurant = mockRestaurants.find((r) => r.id === restaurantId);
           const preorderFromBooking = num(preorderSubtotal, 0);
