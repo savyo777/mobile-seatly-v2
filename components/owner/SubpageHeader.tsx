@@ -1,8 +1,9 @@
 import React, { useCallback } from 'react';
 import { View, Text, StyleSheet, Pressable } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { Href, useNavigation, useRouter } from 'expo-router';
+import { Href, useLocalSearchParams, useNavigation, useRouter } from 'expo-router';
 import { createStyles, borderRadius, spacing, useColors } from '@/lib/theme';
+import { getOwnerReturnHref } from '@/lib/navigation/ownerReturnTargets';
 
 type RootFallbackTab = 'home' | 'reservations' | 'floor' | 'menu' | 'more';
 
@@ -37,6 +38,8 @@ export function SubpageHeader({
   const styles = useStyles();
   const router = useRouter();
   const navigation = useNavigation();
+  const { returnTo } = useLocalSearchParams<{ returnTo?: string | string[] }>();
+  const returnHref = getOwnerReturnHref(returnTo);
   void fallbackTab;
   void fallbackHref;
 
@@ -45,12 +48,16 @@ export function SubpageHeader({
       onBack();
       return;
     }
+    if (returnHref) {
+      router.replace(returnHref);
+      return;
+    }
     if (navigation.canGoBack()) {
       navigation.goBack();
       return;
     }
     router.back();
-  }, [onBack, navigation, router]);
+  }, [onBack, returnHref, navigation, router]);
 
   if (accentBack) {
     return (

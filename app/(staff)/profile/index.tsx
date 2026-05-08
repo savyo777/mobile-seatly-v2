@@ -14,6 +14,8 @@ import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import { useColors, createStyles, spacing, borderRadius } from '@/lib/theme';
+import { safeOwnerPush } from '@/lib/navigation/safeOwnerNavigation';
+import { withOwnerReturnTarget } from '@/lib/navigation/ownerReturnTargets';
 import { useOwnerTabScrollPadding } from '@/hooks/useOwnerTabScrollPadding';
 import { useMenu } from '@/lib/context/MenuContext';
 import {
@@ -440,7 +442,11 @@ export default function OwnerBusinessScreen() {
 
   const settingsRows: { label: string; value: string; route?: string }[] = [
     { label: 'Payout & billing', value: 'Stripe · ···· 4429', route: '/(staff)/settings' },
-    { label: 'Notifications', value: 'Push + email', route: '/(staff)/notifications' },
+    {
+      label: 'Notifications',
+      value: 'Push + email',
+      route: withOwnerReturnTarget('/(staff)/notifications', 'business'),
+    },
     { label: 'Close restaurant', value: 'Not scheduled' },
     { label: 'Help & support', value: '' },
   ];
@@ -634,7 +640,7 @@ export default function OwnerBusinessScreen() {
                 i > 0 && styles.listRowDivider,
                 pressed && styles.listRowPressed,
               ]}
-              onPress={() => row.route && router.push(row.route as never)}
+              onPress={() => row.route && safeOwnerPush(router, row.route as never)}
               accessibilityRole="button"
             >
               <Text style={styles.settingsLabel}>{row.label}</Text>

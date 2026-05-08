@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { Redirect, Stack, usePathname } from 'expo-router';
 import { ActivityIndicator, View } from 'react-native';
 import type { Href } from 'expo-router';
+import { ShellErrorBoundary } from '@/components/ui/ShellErrorBoundary';
 import { useColors } from '@/lib/theme';
 import { createStackTransitionOptions } from '@/lib/navigation/transitions';
 import { useAuthSession } from '@/lib/auth/AuthContext';
@@ -66,8 +67,10 @@ export default function AuthLayout() {
   }
 
   return (
-    <Stack
-      screenOptions={createStackTransitionOptions(c.bgBase)}
-    />
+    <ShellErrorBoundary fallbackHref="/(auth)/welcome">
+      <Stack
+        screenOptions={createStackTransitionOptions(c.bgBase)}
+      />
+    </ShellErrorBoundary>
   );
 }

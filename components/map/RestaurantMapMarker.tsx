@@ -1,6 +1,7 @@
 import React, { memo } from 'react';
 import { View, Text } from 'react-native';
 import { Marker } from 'react-native-maps';
+import { normalizeRestaurantPriceRange, restaurantPriceLabel } from '@/lib/restaurants/pricing';
 import { createStyles, borderRadius, shadows } from '@/lib/theme';
 
 type Props = {
@@ -25,10 +26,6 @@ const CENAIVA_ANCHOR_Y = (CENAIVA_PIN_STAGE / 2) / CENAIVA_FRAME_HEIGHT;
 
 function safeRating(value: number): number {
   return Number.isFinite(value) ? value : 0;
-}
-
-function safePriceTier(value: number): number {
-  return Math.max(1, Math.min(4, Number.isFinite(value) ? value : 1));
 }
 
 const useStyles = createStyles((c) => ({
@@ -90,7 +87,7 @@ const useStyles = createStyles((c) => ({
     transform: [{ scale: 1.08 }],
   },
   cenaivaPin: {
-    width: 34,
+    minWidth: 38,
     height: 34,
     borderRadius: 17,
     backgroundColor: '#C8A951',
@@ -98,6 +95,7 @@ const useStyles = createStyles((c) => ({
     borderColor: '#0A0A0A',
     alignItems: 'center',
     justifyContent: 'center',
+    paddingHorizontal: 7,
     shadowColor: '#000000',
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.34,
@@ -108,14 +106,15 @@ const useStyles = createStyles((c) => ({
     borderColor: '#FFFFFF',
     backgroundColor: '#D8BA5A',
   },
-  cenaivaPinInner: {
-    width: 10,
-    height: 10,
-    borderRadius: 5,
-    backgroundColor: '#0A0A0A',
+  cenaivaPinPriceText: {
+    color: '#0A0A0A',
+    fontSize: 10,
+    fontWeight: '900',
+    lineHeight: 12,
+    textAlign: 'center',
   },
   cenaivaLabel: {
-    maxWidth: 92,
+    maxWidth: 96,
     minHeight: 16,
     borderRadius: 6,
     borderWidth: 1,
@@ -190,7 +189,8 @@ export function RestaurantMapMarkerContent({
   const styles = useStyles();
   const isCenaiva = variant === 'cenaiva';
   const displayRating = safeRating(rating);
-  const displayPriceTier = safePriceTier(priceTier);
+  const displayPriceTier = normalizeRestaurantPriceRange(priceTier);
+  const displayPriceLabel = restaurantPriceLabel(displayPriceTier);
 
   if (isCenaiva) {
     return (
@@ -198,7 +198,9 @@ export function RestaurantMapMarkerContent({
         <View style={styles.cenaivaPinStage}>
           <View style={[styles.cenaivaGlow, selected && styles.glowSelected]} />
           <View style={[styles.cenaivaPin, selected && styles.cenaivaPinSelected]}>
-            <View style={styles.cenaivaPinInner} />
+            <Text style={styles.cenaivaPinPriceText} numberOfLines={1}>
+              {displayPriceLabel}
+            </Text>
           </View>
         </View>
         <View style={[styles.cenaivaLabel, selected && styles.cenaivaLabelSelected]}>
@@ -221,7 +223,7 @@ export function RestaurantMapMarkerContent({
           <View style={styles.gap} />
           <Text style={[styles.ratingText, selected && styles.ratingTextSelected]}>{displayRating.toFixed(1)}</Text>
           <Text style={[styles.dot, selected && styles.dotSelected]}>•</Text>
-          <Text style={[styles.priceText, selected && styles.priceTextSelected]}>{'$'.repeat(displayPriceTier)}</Text>
+          <Text style={[styles.priceText, selected && styles.priceTextSelected]}>{displayPriceLabel}</Text>
         </View>
       </View>
     </View>
@@ -241,13 +243,13 @@ function RestaurantMapMarkerComponent({
 }: Props) {
   const isCenaiva = variant === 'cenaiva';
   const displayRating = safeRating(rating);
-  const displayPriceTier = safePriceTier(priceTier);
+  const displayPriceLabel = restaurantPriceLabel(priceTier);
 
   if (isCenaiva) {
     return (
       <Marker
         coordinate={{ latitude, longitude }}
-        accessibilityLabel={`${name ?? 'Restaurant'}, ${displayRating.toFixed(1)} rating · ${'$'.repeat(displayPriceTier)}`}
+        accessibilityLabel={`${name ?? 'Restaurant'}, ${displayRating.toFixed(1)} rating · ${displayPriceLabel}`}
         accessibilityHint="Shows restaurant catalog"
         accessibilityRole="button"
         anchor={{ x: 0.5, y: CENAIVA_ANCHOR_Y }}

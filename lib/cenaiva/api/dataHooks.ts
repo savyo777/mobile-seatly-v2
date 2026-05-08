@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { fetchRestaurantsFromSupabase } from '@/lib/supabase/fetchRestaurants';
+import { loadRestaurantsForDiscover } from '@/lib/data/restaurantCatalog';
 import { getSupabase } from '@/lib/supabase/client';
 import { mockRestaurants, type Restaurant } from '@/lib/mock/restaurants';
 
@@ -42,8 +42,8 @@ export function useCenaivaRestaurants() {
     setLoading(true);
     setError(null);
     try {
-      const live = await fetchRestaurantsFromSupabase();
-      setRestaurants(live.length ? live : mockRestaurants);
+      const { list } = await loadRestaurantsForDiscover();
+      setRestaurants(list.length ? list : mockRestaurants);
     } catch (err) {
       setError(String(err));
       setRestaurants(mockRestaurants);

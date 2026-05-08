@@ -1,6 +1,9 @@
 const remove = jest.fn();
 
 module.exports = {
+  Alert: {
+    alert: jest.fn(),
+  },
   AppState: {
     currentState: 'active',
     addEventListener: jest.fn(() => ({ remove })),

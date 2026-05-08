@@ -864,7 +864,7 @@ Core restaurant record. 7 rows in DB (test data).
 
   avg_rating, total_reviews                       numeric/integer — updated by compute-analytics
 
-  price_range                                     integer 1-4 ($ to $$$$)
+  price_range                                     integer 1-3 ($ to $$$)
 
   booking_advance_days                            integer default 30 — how far ahead customers can book
 

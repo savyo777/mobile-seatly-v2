@@ -6,6 +6,11 @@ import { jsonRes } from "../_shared/json-response.ts";
 import { decodeJwtPayload } from "../_shared/jwt.ts";
 import { getAvailability, type AvailabilityResult } from "../_shared/availability.ts";
 import { completeBooking, patchPostBooking } from "../_shared/booking.ts";
+import {
+  deriveRestaurantPriceRangeFromMenuItems,
+  normalizeRestaurantPriceRange,
+  type RestaurantMenuPriceItem,
+} from "../_shared/menu-price-tiers.ts";
 import { localDayOfWeek } from "../_shared/time.ts";
 import {
   buildDeterministicFollowUp,
@@ -318,14 +323,14 @@ const TOOLS: OpenAI.Chat.ChatCompletionTool[] = [
           price_range_max: {
             type: "integer",
             minimum: 1,
-            maximum: 4,
-            description: "Cap on price tier (1=$, 2=$$, 3=$$$, 4=$$$$). Use for budget signals: 'cheap'/'affordable'/'budget' → 2; 'mid-range' → 3; 'fancy'/'upscale'/'splurge' → omit (or set 4 only if user says 'expensive is fine'). 'under $X' for X≤25 → 1; ≤50 → 2; ≤100 → 3.",
+            maximum: 3,
+            description: "Cap on restaurant price tier (1=$, 2=$$, 3=$$$). Stored restaurant price_range is authoritative; when missing, fallback uses median active main/entree menu price (<$22=$, <$55=$$, otherwise $$$). Use budget signals like cheap/affordable/budget → 2.",
           },
           price_range_min: {
             type: "integer",
             minimum: 1,
-            maximum: 4,
-            description: "Floor on price tier. Use only for explicit upscale signals: 'fancy'/'fine dining'/'upscale'/'high-end' → 3; 'super fancy'/'Michelin'/'splurge' → 4.",
+            maximum: 3,
+            description: "Floor on restaurant price tier. Use only for explicit upscale signals: 'fancy'/'fine dining'/'upscale'/'high-end'/'splurge' → 3.",
           },
           min_rating: {
             type: "number",
@@ -1092,7 +1097,7 @@ INTENT CLASSIFICATION — classify every user turn mentally before acting:
 MESSY SPEECH — users will be rushed, emotional, vague, broken-English, or mis-transcribed. Extract intent generously, ask the minimum missing question, and never overload them with every possible preference. "Book dinner" usually needs party size first. "Something nice" usually needs location or time only if not inferable.
 
 RECOMMENDATIONS — search_restaurants is your recommendation engine. ALWAYS call it (with the right structured filters) when the user asks for ideas, suggestions, "what's good", "where should I eat", or any open-ended discovery request. NEVER reply "What would you like to do?" / "Got it!" without first running a search when the user has clearly expressed a preference, budget, occasion, location, event interest, or deal interest. Map intent → filters like this:
-- BUDGET signals ("cheap", "affordable", "budget", "under $20", "not too expensive") → set price_range_max (1 or 2). "fancy"/"upscale"/"fine dining"/"splurge"/"high-end" → set price_range_min=3 (or sort_by=price_desc).
+- BUDGET signals use the restaurant price tier (stored DB price_range is authoritative; when missing, fallback uses median active main/entree price: < $22 is $, < $55 is $$, otherwise $$$). "cheap", "affordable", "budget", "under $20", "not too expensive" → set price_range_max (1 or 2). "fancy"/"upscale"/"fine dining"/"splurge"/"high-end" → set price_range_min=3 (or sort_by=price_desc).
 - PROXIMITY signals ("near me", "closest", "nearest", "nearby", "around here", "walking distance", "nearest spot", "closest place") → near_user=true, sort_by="distance". If the user does NOT name another city, local discovery should still stay nearby by default.
 - DIFFERENT-CITY signals ("in Calgary", "show me Montreal", "out of town") → set city to that city. Combine with other filters as needed.
 - OCCASION signals ("date night", "anniversary", "romantic", "impress my date") → set occasion="date" plus min_rating=4 (and price_range_min=3 if they sound upscale). "birthday"/"family"/"group"/"business" → set occasion accordingly.
@@ -1274,6 +1279,17 @@ type SearchRestaurantRow = {
   price_range?: number | null;
   avg_rating?: number | null;
   distance_km?: number;
+};
+
+type SearchMenuPriceRow = RestaurantMenuPriceItem & {
+  restaurant_id?: string | null;
+  category_id?: string | null;
+};
+
+type SearchMenuCategoryRow = {
+  id?: string | null;
+  restaurant_id?: string | null;
+  name?: string | null;
 };
 
 type DiscoverySortMode = "distance" | "rating" | "price_asc" | "price_desc" | "fit";
@@ -2190,9 +2206,86 @@ function haversineKm(lat1: number, lng1: number, lat2: number, lng2: number): nu
   return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
 }
 
+const MENU_PRICE_CHUNK_SIZE = 80;
 const ACTIVE_RESTAURANTS_CACHE_TTL_MS = 2 * 60 * 1000;
 let activeRestaurantsCache: { rows: SearchRestaurantRow[]; expiresAt: number } | null = null;
 let activeRestaurantsInFlight: Promise<SearchRestaurantRow[]> | null = null;
+
+function chunkStrings(values: string[], size: number): string[][] {
+  const out: string[][] = [];
+  for (let index = 0; index < values.length; index += size) {
+    out.push(values.slice(index, index + size));
+  }
+  return out;
+}
+
+async function fetchMenuCategoryNamesById(restaurantIds: string[]): Promise<Map<string, string>> {
+  const namesById = new Map<string, string>();
+  for (const batch of chunkStrings(restaurantIds, MENU_PRICE_CHUNK_SIZE)) {
+    const { data, error } = await supabaseAdmin
+      .from("menu_categories")
+      .select("id, restaurant_id, name")
+      .in("restaurant_id", batch)
+      .eq("is_active", true);
+    if (error) continue;
+    ((data ?? []) as SearchMenuCategoryRow[]).forEach((row) => {
+      if (row.id && row.name) namesById.set(row.id, row.name);
+    });
+  }
+  return namesById;
+}
+
+async function fetchMenuPriceRowsForRestaurants(restaurantIds: string[]): Promise<SearchMenuPriceRow[]> {
+  const categoryNamesById = await fetchMenuCategoryNamesById(restaurantIds);
+  const rows: SearchMenuPriceRow[] = [];
+  for (const batch of chunkStrings(restaurantIds, MENU_PRICE_CHUNK_SIZE)) {
+    const { data, error } = await supabaseAdmin
+      .from("menu_items")
+      .select("restaurant_id, price, category, category_id, is_active, is_available")
+      .in("restaurant_id", batch)
+      .eq("is_active", true)
+      .eq("is_available", true)
+      .not("category_id", "is", null);
+    if (error) continue;
+    rows.push(
+      ...((data ?? []) as SearchMenuPriceRow[]).map((row) => ({
+        ...row,
+        category: row.category_id ? categoryNamesById.get(row.category_id) ?? null : null,
+      })),
+    );
+  }
+  return rows;
+}
+
+async function withMenuDerivedPriceRanges(rows: SearchRestaurantRow[]): Promise<SearchRestaurantRow[]> {
+  const restaurantIds = rows.map((row) => row.id).filter(Boolean);
+  if (!restaurantIds.length) return rows;
+
+  const menuRows = await fetchMenuPriceRowsForRestaurants(restaurantIds);
+  if (!menuRows.length) {
+    return rows.map((row) => ({
+      ...row,
+      price_range: normalizeRestaurantPriceRange(row.price_range),
+    }));
+  }
+
+  const rowsByRestaurantId = new Map<string, SearchMenuPriceRow[]>();
+  menuRows.forEach((row) => {
+    if (!row.restaurant_id) return;
+    const next = rowsByRestaurantId.get(row.restaurant_id) ?? [];
+    next.push(row);
+    rowsByRestaurantId.set(row.restaurant_id, next);
+  });
+
+  return rows.map((row) => ({
+    ...row,
+    price_range: deriveRestaurantPriceRangeFromMenuItems(
+      rowsByRestaurantId.get(row.id) ?? [],
+      row.price_range,
+      normalizeRestaurantPriceRange(row.price_range),
+    ),
+  }));
+}
 
 async function fetchActiveRestaurants(): Promise<SearchRestaurantRow[]> {
   const now = Date.now();
@@ -2210,7 +2303,7 @@ async function fetchActiveRestaurants(): Promise<SearchRestaurantRow[]> {
       if (activeRestaurantsCache) return activeRestaurantsCache.rows;
       return [];
     }
-    const rows = (data ?? []) as SearchRestaurantRow[];
+    const rows = await withMenuDerivedPriceRanges((data ?? []) as SearchRestaurantRow[]);
     activeRestaurantsCache = { rows, expiresAt: Date.now() + ACTIVE_RESTAURANTS_CACHE_TTL_MS };
     return rows;
   })().finally(() => {
@@ -2265,7 +2358,7 @@ function topRecommendationRows(
     filtered = filtered.filter((row) => restaurantMatchesCuisineTerms(row, cuisineTerms));
   }
   if (priceSensitive) {
-    filtered = filtered.filter((row) => (row.price_range ?? 2) <= 3);
+    filtered = filtered.filter((row) => (row.price_range ?? 2) <= 2);
   }
   if (!filtered.length) {
     if (hasCuisineConstraint) {
@@ -2276,7 +2369,7 @@ function topRecommendationRows(
         return [];
       }
     } else {
-      filtered = priceSensitive ? cityFiltered.filter((row) => (row.price_range ?? 2) <= 3) : cityFiltered;
+      filtered = priceSensitive ? cityFiltered.filter((row) => (row.price_range ?? 2) <= 2) : cityFiltered;
     }
   }
   if (!filtered.length) filtered = rows;
@@ -4625,7 +4718,7 @@ Deno.serve(async (req) => {
                 .from("restaurants")
                 .select("id, name, cuisine_type, city, description, address, lat, lng, slug, price_range, avg_rating")
                 .eq("is_active", true)
-                .limit(60);
+                .limit(120);
               const cuisineTypeInput =
                 typeof toolInput.cuisine_type === "string" && toolInput.cuisine_type.trim()
                   ? toolInput.cuisine_type.trim()
@@ -4635,12 +4728,6 @@ Deno.serve(async (req) => {
                 query = query.ilike("cuisine_type", `%${cuisineTypeInput}%`);
               }
               if (toolInput.city) query = query.ilike("city", `%${toolInput.city}%`);
-              if (typeof toolInput.price_range_max === "number") {
-                query = query.lte("price_range", toolInput.price_range_max);
-              }
-              if (typeof toolInput.price_range_min === "number") {
-                query = query.gte("price_range", toolInput.price_range_min);
-              }
               if (typeof toolInput.min_rating === "number") {
                 query = query.gte("avg_rating", toolInput.min_rating);
               }
@@ -4704,7 +4791,7 @@ Deno.serve(async (req) => {
 
               // Distance + sort post-processing.
               if (!error && data) {
-                let rows = data as SearchRestaurantRow[];
+                let rows = await withMenuDerivedPriceRanges(data as SearchRestaurantRow[]);
                 if (cuisineGroupTerms.length > 1) {
                   rows = rows.filter((row) =>
                     cuisineGroupTerms.some((term) =>
@@ -4713,6 +4800,14 @@ Deno.serve(async (req) => {
                       normalizeSearchText(row.name ?? "").includes(term)
                     )
                   );
+                }
+                if (typeof toolInput.price_range_max === "number") {
+                  const maxPriceRange = normalizeRestaurantPriceRange(toolInput.price_range_max);
+                  rows = rows.filter((row) => (row.price_range ?? 2) <= maxPriceRange);
+                }
+                if (typeof toolInput.price_range_min === "number") {
+                  const minPriceRange = normalizeRestaurantPriceRange(toolInput.price_range_min);
+                  rows = rows.filter((row) => (row.price_range ?? 2) >= minPriceRange);
                 }
 
                 const loc = user_location;

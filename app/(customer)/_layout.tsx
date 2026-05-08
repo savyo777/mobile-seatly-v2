@@ -5,6 +5,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
 import * as Haptics from 'expo-haptics';
 import { AiChatFab } from '@/components/ai/AiChatFab';
+import { ShellErrorBoundary } from '@/components/ui/ShellErrorBoundary';
 import { useColors, createStyles } from '@/lib/theme';
 import { tabTransitionOptions } from '@/lib/navigation/transitions';
 import { useAuthSession } from '@/lib/auth/AuthContext';
@@ -128,61 +129,63 @@ export default function CustomerTabsLayout() {
   }
 
   return (
-    <View style={styles.root}>
-    <Tabs
-      detachInactiveScreens
-      screenOptions={screenOptions}
-    >
-      <Tabs.Screen
-        name="discover"
-        options={{
-          title: t('tabs.discover'),
-          tabBarIcon: ({ color, size }) => <Ionicons name="compass-outline" size={size} color={color} />,
-        }}
-      />
-      <Tabs.Screen
-        name="events"
-        options={{
-          title: 'Events',
-          tabBarIcon: ({ color, size }) => <Ionicons name="ticket-outline" size={size} color={color} />,
-        }}
-      />
-      <Tabs.Screen
-        name="post"
-        options={{
-          title: '',
-          tabBarLabel: () => null,
-          tabBarButton: renderPostButton,
-        }}
-      />
-      <Tabs.Screen
-        name="activity"
-        options={{
-          title: 'Bookings',
-          tabBarIcon: ({ color, size }) => <Ionicons name="calendar-outline" size={size} color={color} />,
-        }}
-      />
-      <Tabs.Screen
-        name="profile"
-        options={{
-          title: t('tabs.profile'),
-          tabBarIcon: ({ color, size }) => <Ionicons name="person-outline" size={size} color={color} />,
-        }}
-      />
-      <Tabs.Screen name="feed" options={{ href: null }} />
-      <Tabs.Screen name="map" options={{ href: null }} />
-      <Tabs.Screen name="index" options={{ href: null }} />
-      <Tabs.Screen name="bookings" options={{ href: null }} />
-      <Tabs.Screen name="orders" options={{ href: null }} />
-      <Tabs.Screen name="checkout/[orderId]" options={{ href: null }} />
-      <Tabs.Screen name="loyalty" options={{ href: null }} />
-      <Tabs.Screen name="ai-chat" options={{ href: null }} />
-      <Tabs.Screen name="notifications" options={{ href: null }} />
-      <Tabs.Screen name="post/camera" options={{ href: null }} />
-      <Tabs.Screen name="post/caption" options={{ href: null }} />
-      <Tabs.Screen name="post/reward" options={{ href: null }} />
-    </Tabs>
-      {!hideTabChrome ? <AiChatFab bottomOffset={100} /> : null}
-    </View>
+    <ShellErrorBoundary fallbackHref="/(customer)/discover">
+      <View style={styles.root}>
+      <Tabs
+        detachInactiveScreens
+        screenOptions={screenOptions}
+      >
+        <Tabs.Screen
+          name="discover"
+          options={{
+            title: t('tabs.discover'),
+            tabBarIcon: ({ color, size }) => <Ionicons name="compass-outline" size={size} color={color} />,
+          }}
+        />
+        <Tabs.Screen
+          name="events"
+          options={{
+            title: 'Events',
+            tabBarIcon: ({ color, size }) => <Ionicons name="ticket-outline" size={size} color={color} />,
+          }}
+        />
+        <Tabs.Screen
+          name="post"
+          options={{
+            title: '',
+            tabBarLabel: () => null,
+            tabBarButton: renderPostButton,
+          }}
+        />
+        <Tabs.Screen
+          name="activity"
+          options={{
+            title: 'Bookings',
+            tabBarIcon: ({ color, size }) => <Ionicons name="calendar-outline" size={size} color={color} />,
+          }}
+        />
+        <Tabs.Screen
+          name="profile"
+          options={{
+            title: t('tabs.profile'),
+            tabBarIcon: ({ color, size }) => <Ionicons name="person-outline" size={size} color={color} />,
+          }}
+        />
+        <Tabs.Screen name="feed" options={{ href: null }} />
+        <Tabs.Screen name="map" options={{ href: null }} />
+        <Tabs.Screen name="index" options={{ href: null }} />
+        <Tabs.Screen name="bookings" options={{ href: null }} />
+        <Tabs.Screen name="orders" options={{ href: null }} />
+        <Tabs.Screen name="checkout/[orderId]" options={{ href: null }} />
+        <Tabs.Screen name="loyalty" options={{ href: null }} />
+        <Tabs.Screen name="ai-chat" options={{ href: null }} />
+        <Tabs.Screen name="notifications" options={{ href: null }} />
+        <Tabs.Screen name="post/camera" options={{ href: null }} />
+        <Tabs.Screen name="post/caption" options={{ href: null }} />
+        <Tabs.Screen name="post/reward" options={{ href: null }} />
+      </Tabs>
+        {!hideTabChrome ? <AiChatFab bottomOffset={100} /> : null}
+      </View>
+    </ShellErrorBoundary>
   );
 }

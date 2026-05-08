@@ -13,8 +13,8 @@ const ACTIONS: {
   href: Href;
 }[] = [
   { key: 'pay', labelKey: 'quickPayments', icon: 'wallet-outline', href: '/(customer)/profile/wallet' },
-  { key: 'saved', labelKey: 'quickSavedPlaces', icon: 'bookmark-outline', href: '/(customer)/profile/saved' },
-  { key: 'rew', labelKey: 'quickRewardsHub', icon: 'gift-outline', href: '/(customer)/profile/rewards' },
+  { key: 'saved', labelKey: 'quickSavedPlaces', icon: 'bookmark-outline', href: '/(customer)/profile/favorites' },
+  { key: 'rew', labelKey: 'quickRewardsHub', icon: 'gift-outline', href: '/(customer)/profile/loyalty' },
   { key: 'hist', labelKey: 'quickHistory', icon: 'time-outline', href: '/(customer)/activity' },
 ];
 

@@ -29,6 +29,7 @@ import type { Restaurant } from '@/lib/mock/restaurants';
 import { mockMapRestaurants } from '@/lib/mock/mapRestaurants';
 import { applyMapFilter, DEFAULT_MAP_CENTER, withDistances } from '@/lib/map/mapFilters';
 import { haversineMeters } from '@/lib/map/geo';
+import { restaurantPriceLabel } from '@/lib/restaurants/pricing';
 import type { CenaivaTtsVoice } from '@/lib/cenaiva/voice/voicePreference';
 import { createStyles, borderRadius, spacing, typography } from '@/lib/theme';
 
@@ -613,11 +614,6 @@ function permissionCopy(status: string) {
   return 'Microphone access is off. Enable it to use Hey Cenaiva.';
 }
 
-function priceText(priceRange: number | null | undefined) {
-  const clamped = Math.max(1, Math.min(4, Math.round(priceRange ?? 2)));
-  return '$'.repeat(clamped);
-}
-
 function distanceText(distanceMeters: number | null | undefined) {
   if (typeof distanceMeters !== 'number' || !Number.isFinite(distanceMeters)) return null;
   if (distanceMeters < 1000) return `${Math.round(distanceMeters)} m`;
@@ -1064,7 +1060,7 @@ export function CenaivaVoiceShell({ onClose }: { onClose?: () => void }) {
                   </View>
                   <View style={styles.catalogMeta}>
                     <Ionicons name="cash-outline" size={13} color="rgba(255,255,255,0.58)" />
-                    <Text style={styles.catalogMetaText}>{priceText(selectedRestaurant.priceRange)}</Text>
+                    <Text style={styles.catalogMetaText}>{restaurantPriceLabel(selectedRestaurant.priceRange)}</Text>
                   </View>
                   {distanceText(selectedRestaurant.distanceMeters) ? (
                     <View style={styles.catalogMeta}>
