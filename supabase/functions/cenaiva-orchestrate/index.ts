@@ -21,6 +21,11 @@ import {
 import {
   mealPeriodForTimeZone,
 } from "./offtopic.ts";
+import {
+  buildNoZeroResultFallbackSpokenText,
+  buildZeroResultFallbackSpokenText,
+  chooseZeroResultFallbackRows,
+} from "./searchFallback.ts";
 
 const openai = new OpenAI({ apiKey: Deno.env.get("OPENAI_API_KEY")! });
 const stripeSecretKey = Deno.env.get("STRIPE_SECRET_KEY") ?? "";
@@ -1152,7 +1157,7 @@ RULES:
 - One question per turn.
 - NEVER ask a generic search/look-up question about something, anything, or something else. If results are visible, name the options. If the user made an in-scope dining request but gave no cuisine/area/vibe, ask for a cuisine, vibe, or area. If the user asked anything unrelated to booking, treat it as a small prompt instead.
 - NEVER end a turn silently after a tool runs. After search_restaurants returns results, your spoken_text MUST mention at least one (and preferably 2-3) restaurant names from the results, then ask which one — even if the user's last reply was short ("yeah", "show me deals"). Generic "what next?" fallback questions are BANNED whenever results are visible — describe what's on the map instead. In Recommendation mode "single", this changes to exactly one named result with one card/marker.
-- When search_restaurants returns ZERO results, say so plainly and offer to relax one filter ("Nothing matches in your price range — want to widen the budget?"). Don't go silent and don't ask generic "what next?" questions.
+- When search_restaurants returns ZERO exact results, say so plainly. If the tool returned a fallback restaurant/card, recommend that named restaurant instead; otherwise offer to relax one filter ("Nothing matches in your price range — want to widen the budget?"). Don't go silent and don't ask generic "what next?" questions.
 - NEVER re-ask for a booking field that is already SET in the BOOKING STATE checklist — read the checklist first every turn. This includes party_size, date, AND time. If party_size + date + time are all SET, do NOT ask "what date and time?" again — proceed to check_availability.
 - If the user's reply is unclear, garbled, or you can't extract the field you asked for (e.g. you asked "what date and time?" and the transcript is "uhh", "what", or unrelated words like "the menu please"), do NOT silently re-ask the same question. Say "Sorry, I didn't catch that — could you say it again?" (or a short variant) and set next_expected_input to the same field you were collecting. Re-asking the original question verbatim feels broken; explicitly acknowledging you missed it does not.
 - NEVER speak as if YOU are the guest (see PERSPECTIVE above).
@@ -1706,11 +1711,13 @@ function buildDiscoveryMemory(opts: {
   recommendationMode: RecommendationMode | null;
   fullRows: SearchRestaurantRow[];
   displayedRows: SearchRestaurantRow[];
+  cuisineHint?: string | null;
+  city?: string | null;
   query?: string | null;
   sortBy?: DiscoverySortMode | null;
   previous?: DiscoveryMemory | null;
 }): DiscoveryMemory {
-  const cuisine = extractCuisineHint(opts.transcript);
+  const cuisine = opts.cuisineHint || extractCuisineHint(opts.transcript);
   const displayedIds = uniqueStrings([
     ...(opts.previous?.displayed_restaurant_ids ?? []),
     ...opts.displayedRows.map((row) => row.id),
@@ -1720,7 +1727,7 @@ function buildDiscoveryMemory(opts: {
     recommendation_mode: opts.recommendationMode ?? opts.previous?.recommendation_mode ?? null,
     cuisine: cuisine ? [cuisine] : opts.previous?.cuisine ?? null,
     cuisine_group: cuisineGroupForHint(cuisine) ?? opts.previous?.cuisine_group ?? null,
-    city: opts.previous?.city ?? null,
+    city: opts.city ?? opts.previous?.city ?? null,
     query: opts.query ?? opts.previous?.query ?? null,
     sort_by: opts.sortBy ?? inferDiscoverySortMode(opts.transcript) ?? opts.previous?.sort_by ?? null,
     full_restaurant_ids: uniqueStrings(opts.fullRows.map((row) => row.id)),
@@ -2169,6 +2176,7 @@ function extractCuisineHint(transcript: string): string | null {
       ],
     },
     { canonical: "mediterranean", terms: ["mediterranean", "mediteranean"] },
+    { canonical: "middle eastern", terms: ["middle eastern", "middle east", "lebanese", "turkish", "persian", "moroccan"] },
     { canonical: "japanese", terms: ["japanese", "japan food", "japan"] },
     { canonical: "steakhouse", terms: ["steakhouse", "steak house", "steak"] },
   ];
@@ -2180,6 +2188,7 @@ function extractCuisineHint(transcript: string): string | null {
   const cuisines = [
     "european", "modern european", "italian", "japanese", "sushi", "thai", "french",
     "egyptian", "mediterranean", "steakhouse", "spanish", "greek", "portuguese",
+    "middle eastern", "lebanese", "turkish", "persian", "moroccan",
     "canadian", "american", "indian", "halal",
   ];
   return cuisines.find((cuisine) => normalized.includes(cuisine)) ?? null;
@@ -4450,6 +4459,7 @@ Deno.serve(async (req) => {
     let lastGuestId: string | null = null;
     let lastSearchIds: string[] = [];
     let lastSearchRows: VisibleRestaurant[] = [];
+    let lastSearchNoExactText: string | null = null;
     let lastOrderId: string | null = (booking_state.order_id as string) ?? null;
     let lastTextReply = "";
     let responseMemory = assistantMemory;
@@ -4865,6 +4875,45 @@ Deno.serve(async (req) => {
                   transcript,
                 ].join(" ");
 
+                const exactCuisineHint = cuisineTypeInput || extractCuisineHint(transcript);
+                let usingZeroResultFallback = false;
+                if (rows.length === 0) {
+                  const activeRows = await fetchActiveRestaurants();
+                  const fallbackRows = chooseZeroResultFallbackRows({
+                    rows: activeRows,
+                    transcript,
+                    query: typeof toolInput.query === "string" ? toolInput.query : null,
+                    requestedCity,
+                    userCity,
+                    userLocation:
+                      loc && typeof loc.lat === "number" && typeof loc.lng === "number"
+                        ? { lat: loc.lat, lng: loc.lng }
+                        : null,
+                    cuisineTerms: cuisineTermsForHint(exactCuisineHint),
+                    priceRangeMin: typeof toolInput.price_range_min === "number"
+                      ? normalizeRestaurantPriceRange(toolInput.price_range_min)
+                      : null,
+                    priceRangeMax: typeof toolInput.price_range_max === "number"
+                      ? normalizeRestaurantPriceRange(toolInput.price_range_max)
+                      : null,
+                    limit: 1,
+                  });
+                  if (fallbackRows.length > 0) {
+                    rows = fallbackRows;
+                    usingZeroResultFallback = true;
+                    lastSearchNoExactText = buildZeroResultFallbackSpokenText({
+                      cuisine: exactCuisineHint,
+                      city: requestedCity,
+                      fallbackName: fallbackRows[0]?.name ?? "",
+                    });
+                  } else {
+                    lastSearchNoExactText = buildNoZeroResultFallbackSpokenText({
+                      cuisine: exactCuisineHint,
+                      city: requestedCity,
+                    });
+                  }
+                }
+
                 if (sortBy === "rating") {
                   rows.sort((a, b) => (b.avg_rating ?? 0) - (a.avg_rating ?? 0));
                 } else if (sortBy === "distance" || (wantsNear && !sortBy)) {
@@ -4897,6 +4946,8 @@ Deno.serve(async (req) => {
                     recommendationMode,
                     fullRows,
                     displayedRows,
+                    cuisineHint: exactCuisineHint,
+                    city: requestedCity || null,
                     query: typeof toolInput.query === "string" ? toolInput.query : null,
                     sortBy: inferDiscoverySortMode(transcript, sortBy),
                     previous: responseMemory?.discovery ?? null,
@@ -4904,6 +4955,10 @@ Deno.serve(async (req) => {
                 );
                 derivedActions.push({ type: "update_map_markers", restaurant_ids: lastSearchIds });
                 derivedActions.push({ type: "show_restaurant_cards", restaurant_ids: lastSearchIds });
+                if (usingZeroResultFallback && lastSearchIds[0]) {
+                  derivedActions.push({ type: "highlight_restaurant", restaurant_id: lastSearchIds[0] });
+                  mapDelta.highlighted_restaurant_id = lastSearchIds[0];
+                }
                 mapDelta.visible = true;
                 mapDelta.marker_restaurant_ids = lastSearchIds;
 
@@ -6189,6 +6244,17 @@ Deno.serve(async (req) => {
           visibleRestaurants: visibleRestaurantRows,
           lastSearchRestaurants: lastSearchRows,
         });
+    }
+
+    if (lastSearchNoExactText) {
+      parsed.spoken_text = lastSearchNoExactText;
+      parsed.intent = "discover_restaurants";
+      parsed.step = "choose_restaurant";
+      parsed.next_expected_input = lastSearchIds.length === 1
+        ? "confirmation"
+        : lastSearchIds.length > 1
+          ? "restaurant"
+          : "search_preference";
     }
 
     if (
