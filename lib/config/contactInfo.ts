@@ -1,7 +1,7 @@
 // Customer/owner contact addresses. Single source of truth so we never ship
 // a divergent privacy or support address. All env-overridable.
 
-const DEFAULT_SUPPORT_EMAIL = 'help@cenaiva.app';
+const DEFAULT_SUPPORT_EMAIL = 'help@cenaiva.com';
 const DEFAULT_PRIVACY_EMAIL = 'privacy@cenaiva.com';
 const DEFAULT_LEGAL_EMAIL = 'legal@cenaiva.com';
 

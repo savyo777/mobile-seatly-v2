@@ -382,7 +382,7 @@ export default function MapScreen() {
               <Text style={styles.restaurantStar} accessible={false}>
                 ★
               </Text>
-              <Text style={styles.restaurantStatText}>{item.avgRating.toFixed(1)}</Text>
+              <Text style={styles.restaurantStatText}>{item.avgRating?.toFixed(1) ?? 'New'}</Text>
               {Number.isFinite(item.distanceMeters) ? (
                 <>
                   <Text style={styles.restaurantDot}>·</Text>

@@ -111,7 +111,7 @@ export function SavedRestaurantCard({ restaurant, onPress }: Props) {
             <Text style={styles.starGlyph} accessible={false}>
               ★
             </Text>
-            <Text style={styles.ratingText}>{restaurant.avgRating.toFixed(1)}</Text>
+            <Text style={styles.ratingText}>{restaurant.avgRating?.toFixed(1) ?? 'New'}</Text>
           </View>
         </View>
       </View>

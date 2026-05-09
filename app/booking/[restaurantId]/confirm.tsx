@@ -405,7 +405,10 @@ export default function ConfirmScreen() {
             <View style={styles.heroOverlay} />
             <View style={styles.heroTextWrap}>
               <Text style={styles.heroName}>{restaurant.name}</Text>
-              <Text style={styles.heroCuisine}>{restaurant.cuisineType} · {'★'} {restaurant.avgRating.toFixed(1)}</Text>
+              <Text style={styles.heroCuisine}>
+                {restaurant.cuisineType}
+                {restaurant.avgRating != null ? ` · ★ ${restaurant.avgRating.toFixed(1)}` : ''}
+              </Text>
             </View>
           </View>
         ) : null}

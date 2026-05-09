@@ -41,19 +41,19 @@ Cheap mechanical fixes that close gaps left by the previous batches. **Start her
 
 Things real users see today that are wrong. Each is small but high leverage.
 
-- [ ] **`lib/supabase/mapRestaurantRow.ts:118` — drop the synthesized `4.5` default rating.** Return `null` and let the UI render "no rating yet" instead of pretending every restaurant is 4.5★.
-- [ ] **`lib/supabase/mapRestaurantRow.ts:21,26–27` — drop the Toronto coordinate fallback.** Return `null` lat/lng for restaurants without coords; map filters out unmappable rows.
-- [ ] **`lib/i18n/locales/en.ts:403` and `fr.ts:403`** — replace "Seatly" with "Cenaiva" in the Settings → Change Password subtitle (`"Update your Seatly password"` and the FR equivalent).
-- [ ] **`lib/i18n/locales/en.ts:600–601`** — gate the demo `scheduleVenue: 'Cenaiva — Downtown'` and `scheduleManagerName: 'Alex Rivera'` strings behind demo mode (or remove from the production bundle).
-- [ ] **Resolve `cenaiva.app` vs `cenaiva.com` split-brain.** Pick one and update:
+- [x] **`lib/supabase/mapRestaurantRow.ts:118` — drop the synthesized `4.5` default rating.** Return `null` and let the UI render "no rating yet" instead of pretending every restaurant is 4.5★.
+- [x] **`lib/supabase/mapRestaurantRow.ts:21,26–27` — drop the Toronto coordinate fallback.** Return `null` lat/lng for restaurants without coords; map filters out unmappable rows.
+- [x] **`lib/i18n/locales/en.ts:403` and `fr.ts:403`** — replace "Seatly" with "Cenaiva" in the Settings → Change Password subtitle (`"Update your Seatly password"` and the FR equivalent).
+- [x] **`lib/i18n/locales/en.ts:600–601`** — gate the demo `scheduleVenue: 'Cenaiva — Downtown'` and `scheduleManagerName: 'Alex Rivera'` strings behind demo mode (or remove from the production bundle).
+- [x] **Resolve `cenaiva.app` vs `cenaiva.com` split-brain.** Pick one and update:
   - `lib/config/contactInfo.ts` (currently `help@cenaiva.app`)
   - `lib/sharing/generateShareCard.ts:6` (currently hardcoded `cenaiva.app`)
   - All places that import `BRAND_DOMAIN` (currently `cenaiva.com`)
   - `app/(staff)/rate-seatly.tsx` filename / route
-- [ ] **`lib/booking/bookingDefaults.ts:9`** — `DEFAULT_TIMEZONE = 'UTC'` contradicts `lib/restaurants/hoursStatus.ts:114/122` and `lib/discover/torontoTime.ts` which default to `'America/Toronto'`. Pick one default and apply consistently.
-- [ ] **`useMobileTranscription.ts:172`** calls `/functions/v1/deepgram-live-token` — that function doesn't exist in `supabase/functions/`. Either deploy it or remove/guard the call. **High risk if Deepgram path is reachable in prod.**
-- [ ] **`app.json` bundle ID mismatch** — iOS uses `com.savyo.cenaiva`, Android uses `com.cenaiva.app`. Pick one (likely `com.cenaiva.app`) and align. Also dedupe the duplicate `CFBundleURLTypes` block at lines 22–33.
-- [ ] **Update `docs/integration/DEEP_LINKING.md`** to match whichever bundle ID wins.
+- [x] **`lib/booking/bookingDefaults.ts:9`** — `DEFAULT_TIMEZONE = 'UTC'` contradicts `lib/restaurants/hoursStatus.ts:114/122` and `lib/discover/torontoTime.ts` which default to `'America/Toronto'`. Pick one default and apply consistently.
+- [x] **`useMobileTranscription.ts:172`** calls `/functions/v1/deepgram-live-token` — that function doesn't exist in `supabase/functions/`. Either deploy it or remove/guard the call. **High risk if Deepgram path is reachable in prod.**
+- [x] **`app.json` bundle ID mismatch** — iOS uses `com.savyo.cenaiva`, Android uses `com.cenaiva.app`. Pick one (likely `com.cenaiva.app`) and align. Also dedupe the duplicate `CFBundleURLTypes` block at lines 22–33.
+- [x] **Update `docs/integration/DEEP_LINKING.md`** to match whichever bundle ID wins.
 
 **Effort:** 2–4 hours. **Risk:** Medium (the bundle-ID change requires rebuild + reinstall test).
 
@@ -261,3 +261,4 @@ Reference for what NOT to redo:
 - `6b0c3f0` — Server hardening (test-mode payment gate, CORS allowlist via env)
 - `6315501` — Mock-data gating for wallet, loyalty, billing-year, analytics, receipts
 - Phase E (this commit) — half-fixes: Stripe API version + confirmation-code generators centralized; CEN- prefix chosen; `register-restaurant-owner` uses `_shared/stripe.ts` + `_shared/cors.ts`; tax/currency/timezone fallbacks unified; Nominatim UA built from `BRAND_DOMAIN`; storage modules use `key()`; `lib/storage/migrate.ts` created and wired into `_layout.tsx`; `addToCalendar` and `ThemeProvider` adopt central constants
+- Phase F (this commit) — visible brand & data integrity: synthesized `4.5★` and Toronto coord defaults dropped (Restaurant.avgRating/lat/lng now nullable, ~30 consumers updated to render "New" / filter unmappable rows); "Seatly" → "Cenaiva" in changePasswordSub; orphaned `scheduleVenue`/`scheduleManagerName` i18n keys removed; `cenaiva.app` consolidated to `cenaiva.com` (support email, share caption); `app/(staff)/rate-seatly.tsx` → `rate-cenaiva.tsx`; iOS bundle id aligned to `com.cenaiva.app` (CFBundleURLTypes deduped); `hoursStatus.ts` defaults to `DEFAULT_TIMEZONE`; Deepgram live-token call gated behind `EXPO_PUBLIC_DEEPGRAM_LIVE_TOKEN`

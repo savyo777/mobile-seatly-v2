@@ -113,7 +113,7 @@ export function RestaurantBrowseCard({ restaurant, width, onPress }: RestaurantB
             <Text style={styles.starGlyph} accessible={false}>
               ★
             </Text>
-            <Text style={styles.rating}>{restaurant.avgRating.toFixed(1)}</Text>
+            <Text style={styles.rating}>{restaurant.avgRating?.toFixed(1) ?? 'New'}</Text>
             <Text style={styles.reviews}>({restaurant.totalReviews})</Text>
           </View>
           <Text style={styles.price}>{restaurantPriceLabel(restaurant.priceRange)}</Text>

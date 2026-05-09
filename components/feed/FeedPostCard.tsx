@@ -370,7 +370,7 @@ export function FeedPostCard({ item }: Props) {
 
           <View style={styles.metaRow}>
             <Ionicons name="star" size={11} color={c.gold} />
-            <Text style={styles.metaGold}>{restaurant?.avgRating.toFixed(1)}</Text>
+            <Text style={styles.metaGold}>{restaurant?.avgRating?.toFixed(1) ?? 'New'}</Text>
             <Text style={styles.metaMuted}>· {restaurant?.totalReviews} reviews</Text>
             <Text style={styles.metaDot}>·</Text>
             <Text style={styles.metaMuted}>{restaurant?.distanceKm.toFixed(1)} km</Text>

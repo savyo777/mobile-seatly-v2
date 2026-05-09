@@ -334,7 +334,9 @@ export function RestaurantMapDetailSheet({
                     ★
                   </Text>
                   <Text style={styles.statText}>
-                    {restaurant.avgRating.toFixed(1)} ({restaurant.totalReviews})
+                    {restaurant.avgRating != null
+                      ? `${restaurant.avgRating.toFixed(1)} (${restaurant.totalReviews})`
+                      : 'New'}
                   </Text>
                 </View>
                 {distLabel ? (

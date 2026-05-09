@@ -49,7 +49,7 @@ export function withDistances(
   const distanceAvailable = options.distanceAvailable ?? true;
   return restaurants.map((r) => ({
     ...r,
-    distanceMeters: distanceAvailable
+    distanceMeters: distanceAvailable && r.lat != null && r.lng != null
       ? haversineMeters(userLat, userLng, r.lat, r.lng)
       : Number.POSITIVE_INFINITY,
   }));
@@ -77,8 +77,8 @@ export function applyMapFilter(
     case 'nearby':
       return [...active].sort((a, b) => a.distanceMeters - b.distanceMeters);
     case 'topRated': {
-      const list = active.filter((r) => r.avgRating >= 4.6 || r.availability === 'Top Rated');
-      return [...list].sort((a, b) => b.avgRating - a.avgRating || a.distanceMeters - b.distanceMeters);
+      const list = active.filter((r) => (r.avgRating ?? 0) >= 4.6 || r.availability === 'Top Rated');
+      return [...list].sort((a, b) => (b.avgRating ?? 0) - (a.avgRating ?? 0) || a.distanceMeters - b.distanceMeters);
     }
     case 'dateNight': {
       const list = active.filter(hasDateNightSignals);

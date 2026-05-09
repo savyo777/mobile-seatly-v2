@@ -603,7 +603,7 @@ export default function DiscoverScreen() {
 
             <DiscoverHorizontalSection
               title="Trending Worldwide"
-              data={baseRestaurants.slice().sort((a, b) => b.avgRating - a.avgRating).slice(0, 8)}
+              data={baseRestaurants.slice().sort((a, b) => (b.avgRating ?? 0) - (a.avgRating ?? 0)).slice(0, 8)}
               onPressCard={openRestaurant}
               onPressSeeAll={() => goCategory('trending')}
             />

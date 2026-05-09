@@ -2,6 +2,7 @@ import type {
   RestaurantHoursJson,
   RestaurantWeekdayKey,
 } from '@/lib/mock/restaurants';
+import { DEFAULT_TIMEZONE } from '@/lib/booking/bookingDefaults';
 
 export type HoursRange = { open: string; close: string };
 
@@ -111,7 +112,7 @@ function zonedWeekdayAndMinute(now: Date, timeZone: string): { dayIndex: number;
 
 export function currentRestaurantWeekdayKey(
   now: Date = new Date(),
-  timeZone = 'America/Toronto',
+  timeZone = DEFAULT_TIMEZONE,
 ): RestaurantWeekdayKey {
   return WEEKDAY_KEYS[zonedWeekdayAndMinute(now, timeZone).dayIndex];
 }
@@ -119,7 +120,7 @@ export function currentRestaurantWeekdayKey(
 export function isRestaurantOpenForHours(
   hoursJson: RestaurantHoursJson | null | undefined,
   now: Date = new Date(),
-  timeZone = 'America/Toronto',
+  timeZone = DEFAULT_TIMEZONE,
 ): boolean {
   if (!hoursJson) return false;
   const { dayIndex, minute } = zonedWeekdayAndMinute(now, timeZone);

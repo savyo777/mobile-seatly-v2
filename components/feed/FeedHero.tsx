@@ -141,7 +141,7 @@ export function FeedHero({ restaurant, onPressCard, onPressReserve }: Props) {
             </View>
             <View style={styles.ratingBadge}>
               <Ionicons name="star" size={10} color={c.bgBase} />
-              <Text style={styles.ratingBadgeText}>{restaurant.avgRating.toFixed(1)}</Text>
+              <Text style={styles.ratingBadgeText}>{restaurant.avgRating?.toFixed(1) ?? 'New'}</Text>
             </View>
           </View>
 

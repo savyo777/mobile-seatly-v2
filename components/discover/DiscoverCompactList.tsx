@@ -140,7 +140,7 @@ export function DiscoverCompactList({ title, data, onPressRow }: Props) {
                   <Text style={styles.starGlyph} accessible={false}>
                     ★
                   </Text>
-                  <Text style={styles.rating}>{item.avgRating.toFixed(1)}</Text>
+                  <Text style={styles.rating}>{item.avgRating?.toFixed(1) ?? 'New'}</Text>
                   <Text style={styles.reviews}>
                     {t('discover.reviewsCount', { count: item.totalReviews })}
                   </Text>

@@ -150,7 +150,7 @@ export function RestaurantDiscoveryMap({
                   <Text style={styles.rowStar} accessible={false}>
                     ★
                   </Text>
-                  <Text style={styles.rowStatText}>{r.avgRating.toFixed(1)}</Text>
+                  <Text style={styles.rowStatText}>{r.avgRating?.toFixed(1) ?? 'New'}</Text>
                   <Text style={styles.dot}>·</Text>
                   <Text style={styles.rowStatText}>{formatDistanceMeters(r.distanceMeters)}</Text>
                 </View>

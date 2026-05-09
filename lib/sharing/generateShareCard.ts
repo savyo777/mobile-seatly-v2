@@ -1,9 +1,10 @@
 import * as Sharing from 'expo-sharing';
+import { BRAND_DOMAIN } from '@/lib/config/legalLinks';
 
 export function buildShareCaption(restaurantName: string, rating?: number): string {
   const stars = rating ? '⭐'.repeat(rating) : '';
   const starLine = stars ? ` ${stars}` : '';
-  return `Just dined at ${restaurantName}${starLine} — booked and discovered through @CenaivaApp 🍽️ Download the app: cenaiva.app`;
+  return `Just dined at ${restaurantName}${starLine} — booked and discovered through @CenaivaApp 🍽️ Download the app: ${BRAND_DOMAIN}`;
 }
 
 export async function shareSnapToSocial(

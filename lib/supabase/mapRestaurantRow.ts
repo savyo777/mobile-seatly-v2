@@ -18,14 +18,20 @@ function num(v: string | number | null | undefined, fallback: number): number {
   return Number.isFinite(n) ? n : fallback;
 }
 
-function readSettingsLatLng(settings: Record<string, unknown> | null | undefined): { lat: number; lng: number } {
-  if (!settings) return { lat: 43.6532, lng: -79.3832 };
+function readSettingsLatLng(settings: Record<string, unknown> | null | undefined): { lat: number | null; lng: number | null } {
+  if (!settings) return { lat: null, lng: null };
   const lat = settings.lat;
   const lng = settings.lng;
   return {
-    lat: typeof lat === 'number' ? lat : 43.6532,
-    lng: typeof lng === 'number' ? lng : -79.3832,
+    lat: typeof lat === 'number' ? lat : null,
+    lng: typeof lng === 'number' ? lng : null,
   };
+}
+
+function numOrNull(v: string | number | null | undefined): number | null {
+  if (v == null) return null;
+  const n = typeof v === 'number' ? v : parseFloat(v);
+  return Number.isFinite(n) ? n : null;
 }
 
 const WEEKDAY_SET = new Set<string>(RESTAURANT_WEEKDAY_KEYS);
@@ -82,8 +88,8 @@ export function mapRestaurantRowToRestaurant(row: RestaurantRow): Restaurant {
   const extended = row as RestaurantRow & { business_name?: string | null };
   const settings = row.settings_json as Record<string, unknown> | undefined;
   const fallbackLatLng = readSettingsLatLng(settings);
-  const lat = num(row.lat, fallbackLatLng.lat);
-  const lng = num(row.lng, fallbackLatLng.lng);
+  const lat = numOrNull(row.lat) ?? fallbackLatLng.lat;
+  const lng = numOrNull(row.lng) ?? fallbackLatLng.lng;
 
   const area =
     (typeof settings?.neighbourhood === 'string' && settings.neighbourhood) ||
@@ -116,7 +122,7 @@ export function mapRestaurantRowToRestaurant(row: RestaurantRow): Restaurant {
     phone: row.phone ?? '',
     coverPhotoUrl: row.hero_image_url?.trim() || row.cover_photo_url?.trim() || DEFAULT_RESTAURANT_COVER,
     logoUrl: row.logo_url?.trim() || '',
-    avgRating: num(row.avg_rating ?? (settings?.avg_rating as number | undefined), 4.5),
+    avgRating: numOrNull(row.avg_rating ?? (settings?.avg_rating as number | undefined)),
     totalReviews: typeof settings?.total_reviews === 'number' ? settings!.total_reviews : 0,
     priceRange,
     distanceKm: typeof settings?.distance_km === 'number' ? settings!.distance_km : 1,

@@ -333,7 +333,7 @@ export default function OwnerTabsLayout() {
         <Tabs.Screen name="invite-team-member" options={{ href: null, tabBarStyle: { display: 'none' } }} />
         <Tabs.Screen name="support" options={{ href: null, tabBarStyle: { display: 'none' } }} />
         <Tabs.Screen name="legal" options={{ href: null, tabBarStyle: { display: 'none' } }} />
-        <Tabs.Screen name="rate-seatly" options={{ href: null, tabBarStyle: { display: 'none' } }} />
+        <Tabs.Screen name="rate-cenaiva" options={{ href: null, tabBarStyle: { display: 'none' } }} />
         <Tabs.Screen name="quiet-hours" options={{ href: null, tabBarStyle: { display: 'none' } }} />
         <Tabs.Screen name="security/change-password" options={{ href: null, tabBarStyle: { display: 'none' } }} />
         <Tabs.Screen name="security/change-email" options={{ href: null, tabBarStyle: { display: 'none' } }} />

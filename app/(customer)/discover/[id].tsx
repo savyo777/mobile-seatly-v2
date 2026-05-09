@@ -654,7 +654,9 @@ export default function RestaurantDetailScreen() {
                 ★
               </Text>
               <Text style={styles.ratingText}>
-                {restaurant.avgRating.toFixed(1)} · {t('discover.reviewsCount', { count: restaurant.totalReviews })}
+                {restaurant.avgRating != null
+                  ? `${restaurant.avgRating.toFixed(1)} · ${t('discover.reviewsCount', { count: restaurant.totalReviews })}`
+                  : t('discover.noRatingYet')}
               </Text>
             </View>
           </View>

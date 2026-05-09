@@ -187,9 +187,9 @@ export default function RateSeatlyScreen() {
   };
 
   return (
-    <OwnerScreen header={<SubpageHeader title="Rate Seatly" accentBack />}>
+    <OwnerScreen header={<SubpageHeader title="Rate Cenaiva" accentBack />}>
       <View style={styles.intro}>
-        <Text style={styles.introTitle}>Rate Seatly</Text>
+        <Text style={styles.introTitle}>Rate Cenaiva</Text>
         <Text style={styles.introText}>
           Tell us how the restaurant side feels and what we should improve next.
         </Text>

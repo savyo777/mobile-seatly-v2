@@ -12,6 +12,12 @@ import { useAuthSession } from '@/lib/auth/AuthContext';
 import { getSupabaseEnv, isSupabaseConfigured } from '@/lib/supabase/env';
 
 const DEEPGRAM_URL = process.env.EXPO_PUBLIC_DEEPGRAM_URL?.trim() || 'https://api.deepgram.com/v1/listen';
+// The `deepgram-live-token` Supabase function is opt-in: if the function
+// hasn't been deployed for this project, the live-streaming path returns 404
+// and we silently fall back to the file-based listen call. Set this flag
+// to "true" only on environments where the function is deployed.
+const DEEPGRAM_LIVE_TOKEN_ENABLED =
+  (process.env.EXPO_PUBLIC_DEEPGRAM_LIVE_TOKEN ?? '').trim().toLowerCase() === 'true';
 const MAX_KEYTERMS = 12;
 const SILENCE_TIMEOUT_MS = 320;
 const NO_SPEECH_TIMEOUT_MS = 3_000;
@@ -167,6 +173,7 @@ export function useMobileTranscription() {
   }, []);
 
   const fetchDeepgramToken = useCallback(async () => {
+    if (!DEEPGRAM_LIVE_TOKEN_ENABLED) return null;
     if (!isSupabaseConfigured() || !session?.access_token) return null;
     const { url, anonKey } = getSupabaseEnv();
     const response = await fetch(`${url}/functions/v1/deepgram-live-token`, {

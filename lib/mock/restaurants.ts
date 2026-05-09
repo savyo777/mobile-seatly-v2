@@ -42,12 +42,12 @@ export interface Restaurant {
   city: string;
   province: string;
   area: string;
-  lat: number;
-  lng: number;
+  lat: number | null;
+  lng: number | null;
   phone: string;
   coverPhotoUrl: string;
   logoUrl: string;
-  avgRating: number;
+  avgRating: number | null;
   totalReviews: number;
   priceRange: RestaurantPriceTier;
   distanceKm: number;

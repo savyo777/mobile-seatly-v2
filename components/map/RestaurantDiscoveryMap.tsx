@@ -5,7 +5,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
 import { RestaurantMapMarkerContent } from '@/components/map/RestaurantMapMarker';
 import { googleDarkMapStyle } from '@/lib/map/darkMapStyle';
-import { haversineMeters } from '@/lib/map/geo';
+import { hasFiniteCoords, haversineMeters } from '@/lib/map/geo';
 import { DEFAULT_MAP_CENTER } from '@/lib/map/mapFilters';
 import { normalizeRestaurantPriceRange, restaurantPriceLabel } from '@/lib/restaurants/pricing';
 import type { RestaurantDiscoveryMapProps } from '@/components/map/restaurantMapTypes';
@@ -43,11 +43,14 @@ function isFiniteCoordinate(latitude: unknown, longitude: unknown): boolean {
   );
 }
 
-function safeRating(value: number): number {
-  return Number.isFinite(value) ? value : 0;
+function safeRating(value: number | null | undefined): number {
+  return value != null && Number.isFinite(value) ? value : 0;
 }
 
-type ClusterableRestaurant = RestaurantDiscoveryMapProps['filteredRestaurants'][number];
+type ClusterableRestaurant = RestaurantDiscoveryMapProps['filteredRestaurants'][number] & {
+  lat: number;
+  lng: number;
+};
 type MarkerCluster = {
   id: string;
   latitude: number;
@@ -245,10 +248,7 @@ export function RestaurantDiscoveryMap({
     [userLocation],
   );
   const safeRestaurants = useMemo(
-    () =>
-      filteredRestaurants.filter((restaurant) =>
-        isFiniteCoordinate(restaurant.lat, restaurant.lng),
-      ),
+    () => filteredRestaurants.filter(hasFiniteCoords),
     [filteredRestaurants],
   );
   const safeRestaurantIdsKey = useMemo(

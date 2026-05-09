@@ -4,7 +4,7 @@ export type AiChatRestaurant = {
   id: string;
   name: string;
   cuisine: string;
-  rating: number;
+  rating: number | null;
   distance: string;
 };
 
@@ -67,7 +67,7 @@ export function pickEventPlan(query: string): EventPlan | null {
     pool = pool.filter((r) => r.priceRange >= 2);
   }
 
-  pool = pool.sort((a, b) => b.avgRating - a.avgRating);
+  pool = pool.sort((a, b) => (b.avgRating ?? 0) - (a.avgRating ?? 0));
   const pick = pool[0] ?? mockRestaurants[0];
 
   return {
@@ -101,7 +101,7 @@ export function pickRestaurantsForQuery(query: string): AiChatRestaurant[] {
   } else if (q.includes('near me') || q.includes('nearby') || q.includes('close')) {
     pool = [...pool].sort((a, b) => a.distanceKm - b.distanceKm);
   } else {
-    pool = [...pool].sort((a, b) => b.avgRating - a.avgRating);
+    pool = [...pool].sort((a, b) => (b.avgRating ?? 0) - (a.avgRating ?? 0));
   }
 
   const seen = new Set<string>();

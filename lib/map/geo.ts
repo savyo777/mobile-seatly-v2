@@ -13,6 +13,24 @@ export function haversineMeters(lat1: number, lon1: number, lat2: number, lon2: 
   return R * c;
 }
 
+/**
+ * Type-narrowing check for whether an object has plottable coordinates.
+ * After `filter(hasFiniteCoords)`, TypeScript knows `lat` and `lng` are
+ * non-null finite numbers — no `!` non-null assertions needed downstream.
+ */
+export function hasFiniteCoords<T extends { lat: number | null; lng: number | null }>(
+  value: T,
+): value is T & { lat: number; lng: number } {
+  return (
+    value.lat != null &&
+    value.lng != null &&
+    Number.isFinite(value.lat) &&
+    Number.isFinite(value.lng) &&
+    Math.abs(value.lat) <= 90 &&
+    Math.abs(value.lng) <= 180
+  );
+}
+
 export function formatDistanceMeters(meters: number): string {
   if (!Number.isFinite(meters) || meters < 0) return '—';
   if (meters < 1000) {

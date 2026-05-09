@@ -169,11 +169,11 @@ export function listFeedPosts(
   if (userLat == null || userLng == null) return all;
 
   const { mockRestaurants } = require('@/lib/mock/restaurants') as typeof import('@/lib/mock/restaurants');
-  const restaurantById = new Map(mockRestaurants.map((r: { id: string; lat: number; lng: number }) => [r.id, r]));
+  const restaurantById = new Map(mockRestaurants.map((r) => [r.id, r] as const));
 
   const inRadius = all.filter((post) => {
     const r = restaurantById.get(post.restaurant_id);
-    if (!r) return false;
+    if (!r || r.lat == null || r.lng == null) return false;
     const distM = haversineMeters(userLat, userLng, r.lat, r.lng);
     return distM <= radiusKm * 1000;
   });

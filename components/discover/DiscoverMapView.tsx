@@ -60,6 +60,8 @@ function withMapDisplayCoordinates(
     : { lat: DEFAULT_MAP_CENTER.latitude, lng: DEFAULT_MAP_CENTER.longitude };
 
   if (
+    restaurant.lat != null &&
+    restaurant.lng != null &&
     isFiniteLatLng(restaurant.lat, restaurant.lng) &&
     haversineMeters(safeAnchor.lat, safeAnchor.lng, restaurant.lat, restaurant.lng) <= MAP_COORDINATE_RADIUS_METERS
   ) {
@@ -71,7 +73,12 @@ function withMapDisplayCoordinates(
     mapFallbackByName.get(normalizeRestaurantKey(restaurant.name)) ??
     (mockMapRestaurants.length ? mockMapRestaurants[index % mockMapRestaurants.length] : null);
 
-  if (!fallbackRestaurant || !isFiniteLatLng(fallbackRestaurant.lat, fallbackRestaurant.lng)) {
+  if (
+    !fallbackRestaurant ||
+    fallbackRestaurant.lat == null ||
+    fallbackRestaurant.lng == null ||
+    !isFiniteLatLng(fallbackRestaurant.lat, fallbackRestaurant.lng)
+  ) {
     return { ...restaurant, lat: safeAnchor.lat, lng: safeAnchor.lng };
   }
 
@@ -333,7 +340,8 @@ export function DiscoverMapView() {
                 <View style={styles.clusterInfo}>
                   <Text style={styles.clusterName} numberOfLines={1}>{restaurant.name}</Text>
                   <Text style={styles.clusterMeta} numberOfLines={1}>
-                    {restaurant.cuisineType} · {restaurant.area} · {restaurant.avgRating.toFixed(1)}
+                    {restaurant.cuisineType} · {restaurant.area}
+                    {restaurant.avgRating != null ? ` · ${restaurant.avgRating.toFixed(1)}` : ''}
                   </Text>
                 </View>
                 <Text style={styles.clusterAction}>Open</Text>

@@ -94,27 +94,36 @@ const discoverMapRestaurantByName = new Map(
   mockMapRestaurants.map((restaurant) => [normalizeRestaurantKey(restaurant.name), restaurant]),
 );
 
+type RestaurantWithCoords = Restaurant & { lat: number; lng: number };
+
 function withDiscoverMapCoordinates(
   restaurant: Restaurant,
   anchor: { lat: number; lng: number },
   index: number,
-): Restaurant {
+): RestaurantWithCoords {
   const safeAnchor = isFiniteLatLng(anchor.lat, anchor.lng)
     ? anchor
     : { lat: DEFAULT_MAP_CENTER.latitude, lng: DEFAULT_MAP_CENTER.longitude };
   if (
+    restaurant.lat != null &&
+    restaurant.lng != null &&
     Number.isFinite(restaurant.lat) &&
     Number.isFinite(restaurant.lng) &&
     haversineMeters(safeAnchor.lat, safeAnchor.lng, restaurant.lat, restaurant.lng) <= CENAIVA_LOCAL_COORDINATE_RADIUS_METERS
   ) {
-    return restaurant;
+    return restaurant as RestaurantWithCoords;
   }
 
   const discoverRestaurant =
     discoverMapRestaurantById.get(restaurant.id) ??
     discoverMapRestaurantByName.get(normalizeRestaurantKey(restaurant.name)) ??
     (mockMapRestaurants.length ? mockMapRestaurants[index % mockMapRestaurants.length] : null);
-  if (!discoverRestaurant || !isFiniteLatLng(discoverRestaurant.lat, discoverRestaurant.lng)) {
+  if (
+    !discoverRestaurant ||
+    discoverRestaurant.lat == null ||
+    discoverRestaurant.lng == null ||
+    !isFiniteLatLng(discoverRestaurant.lat, discoverRestaurant.lng)
+  ) {
     return {
       ...restaurant,
       lat: safeAnchor.lat,
@@ -1056,7 +1065,7 @@ export function CenaivaVoiceShell({ onClose }: { onClose?: () => void }) {
                 <View style={styles.catalogMetaRow}>
                   <View style={styles.catalogMeta}>
                     <Ionicons name="star" size={13} color="#C8A951" />
-                    <Text style={styles.catalogMetaText}>{selectedRestaurant.avgRating.toFixed(1)}</Text>
+                    <Text style={styles.catalogMetaText}>{selectedRestaurant.avgRating?.toFixed(1) ?? 'New'}</Text>
                   </View>
                   <View style={styles.catalogMeta}>
                     <Ionicons name="cash-outline" size={13} color="rgba(255,255,255,0.58)" />

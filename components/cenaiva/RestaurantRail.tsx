@@ -190,7 +190,7 @@ export function RestaurantRail({
               <View style={styles.metaRow}>
                 <View style={styles.rating}>
                   <Ionicons name="star" size={12} color="#C8A951" />
-                  <Text style={styles.ratingText}>{item.avgRating.toFixed(1)}</Text>
+                  <Text style={styles.ratingText}>{item.avgRating?.toFixed(1) ?? 'New'}</Text>
                 </View>
                 <View style={styles.price}>
                   <Ionicons name="cash-outline" size={12} color="rgba(255,255,255,0.58)" />

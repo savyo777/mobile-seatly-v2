@@ -476,7 +476,7 @@ export default function OwnerSettingsScreen() {
       rows: [
         { kind: 'nav', label: 'Support', icon: 'help-circle-outline', route: '/(staff)/support' },
         { kind: 'nav', label: 'Legal', icon: 'shield-outline', route: '/(staff)/legal' },
-        { kind: 'nav', label: 'Rate Seatly', icon: 'heart-outline', route: '/(staff)/rate-seatly' },
+        { kind: 'nav', label: 'Rate Cenaiva', icon: 'heart-outline', route: '/(staff)/rate-cenaiva' },
       ],
     },
     {
