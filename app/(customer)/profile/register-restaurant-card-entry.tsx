@@ -400,7 +400,7 @@ export default function RegisterRestaurantCardEntryScreen() {
                       style={[s.fieldInput, { color: c.textPrimary }]}
                       autoCapitalize="words"
                       autoCorrect={false}
-                      returnKeyType="next"
+                      returnKeyType="done"
                       onSubmitEditing={() => cardNumberRef.current?.focus()}
                       blurOnSubmit={false}
                     />
@@ -424,7 +424,7 @@ export default function RegisterRestaurantCardEntryScreen() {
                       keyboardType="number-pad"
                       inputMode="numeric"
                       maxLength={23}
-                      returnKeyType="next"
+                      returnKeyType="done"
                       onSubmitEditing={() => expiryRef.current?.focus()}
                       blurOnSubmit={false}
                     />
@@ -443,7 +443,7 @@ export default function RegisterRestaurantCardEntryScreen() {
                       keyboardType="number-pad"
                       inputMode="numeric"
                       maxLength={7}
-                      returnKeyType="next"
+                      returnKeyType="done"
                       onSubmitEditing={() => cvcRef.current?.focus()}
                       blurOnSubmit={false}
                     />
