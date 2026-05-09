@@ -1,7 +1,12 @@
 // @ts-nocheck
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 import { buildCorsHeaders } from '../_shared/cors.ts';
-import { stripeGet, stripeRequest } from '../_shared/stripe.ts';
+import {
+  STRIPE_MOBILE_SDK_VERSION,
+  stripeGet,
+  stripeRequest,
+  stripeRequestWithVersion,
+} from '../_shared/stripe.ts';
 
 type RegisterPayload = {
   action?: 'init_payment_sheet' | 'preview_payment_method' | 'finalize_registration';
@@ -96,9 +101,17 @@ Deno.serve(async (req) => {
     }
 
     if (action === 'init_payment_sheet') {
-      const ephemeralKey = await stripeRequest('ephemeral_keys', {
-        customer: customerId,
-      });
+      // Ephemeral keys MUST be created with the API version the mobile
+      // SDK was built against. @stripe/stripe-react-native@0.63 expects
+      // STRIPE_MOBILE_SDK_VERSION (2024-06-20). Sending the orchestrator's
+      // newer `2025-02-24.acacia` here causes the SDK to reject the key
+      // and Stripe to return a 4xx that bubbles up as the user-facing
+      // "Payment setup failed / non-2xx status code" alert.
+      const ephemeralKey = await stripeRequestWithVersion(
+        'ephemeral_keys',
+        { customer: customerId },
+        STRIPE_MOBILE_SDK_VERSION,
+      );
 
       const setupIntent = await stripeRequest('setup_intents', {
         customer: customerId,
@@ -191,8 +204,11 @@ Deno.serve(async (req) => {
       trialEndsAt,
     });
   } catch (error) {
-    return json(500, {
-      error: error instanceof Error ? error.message : 'Unexpected registration error.',
-    });
+    const message = error instanceof Error ? error.message : 'Unexpected registration error.';
+    // Surface in function logs so future failures don't have to be diagnosed
+    // by re-reading the source. The mobile client only sees `error.message`
+    // from the supabase-js wrapper, so this is the easiest backchannel.
+    console.error('register-restaurant-owner failure:', message, error);
+    return json(500, { error: message });
   }
 });
