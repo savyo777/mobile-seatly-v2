@@ -1,9 +1,13 @@
-import React, { useMemo, useState } from 'react';
-import { Alert, Pressable, ScrollView, Text, View } from 'react-native';
+import React, { useEffect, useMemo, useState } from 'react';
+import { ActivityIndicator, Alert, Pressable, ScrollView, Text, View } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
-import { useStripe } from '@stripe/stripe-react-native';
+import {
+  CardField,
+  useConfirmSetupIntent,
+  type CardFieldInput,
+} from '@stripe/stripe-react-native';
 import { Button, ScreenWrapper } from '@/components/ui';
 import { borderRadius, createStyles, spacing, typography, useColors } from '@/lib/theme';
 import {
@@ -72,15 +76,6 @@ const useStyles = createStyles((c) => ({
     lineHeight: 18,
     flex: 1,
   },
-  section: {
-    marginBottom: spacing.lg,
-  },
-  sectionTitle: {
-    ...typography.label,
-    color: c.textMuted,
-    letterSpacing: 1,
-    marginBottom: spacing.sm,
-  },
   summaryCard: {
     borderRadius: borderRadius.xl,
     borderWidth: 1,
@@ -126,34 +121,22 @@ const useStyles = createStyles((c) => ({
     ...typography.bodySmall,
     color: c.textSecondary,
     lineHeight: 18,
+    marginBottom: spacing.md,
   },
-  stripeRow: {
+  cardField: {
+    width: '100%',
+    height: 56,
+    marginBottom: spacing.sm,
+  },
+  initLoader: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: spacing.md,
-    borderRadius: borderRadius.lg,
-    borderWidth: 1,
-    borderColor: c.border,
-    backgroundColor: c.bgElevated,
-    padding: spacing.md,
+    gap: spacing.sm,
+    paddingVertical: spacing.md,
   },
-  stripeIcon: {
-    width: 42,
-    height: 42,
-    borderRadius: borderRadius.md,
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: 'rgba(201,168,76,0.12)',
-  },
-  stripeTitle: {
-    ...typography.body,
-    color: c.textPrimary,
-    fontWeight: '700',
-  },
-  stripeText: {
+  initLoaderText: {
     ...typography.bodySmall,
     color: c.textSecondary,
-    marginTop: 2,
   },
   errorCard: {
     borderRadius: borderRadius.lg,
@@ -190,13 +173,20 @@ const useStyles = createStyles((c) => ({
   },
 }));
 
+type SetupIntentState =
+  | { status: 'loading' }
+  | { status: 'ready'; clientSecret: string; setupIntentId: string }
+  | { status: 'error'; message: string };
+
 export default function RegisterRestaurantCardEntryScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const c = useColors();
   const styles = useStyles();
-  const { initPaymentSheet, presentPaymentSheet } = useStripe();
+  const { confirmSetupIntent } = useConfirmSetupIntent();
   const [saving, setSaving] = useState(false);
+  const [cardComplete, setCardComplete] = useState(false);
+  const [intent, setIntent] = useState<SetupIntentState>({ status: 'loading' });
 
   const params = useLocalSearchParams<{
     businessName?: string;
@@ -205,36 +195,71 @@ export default function RegisterRestaurantCardEntryScreen() {
     paymentError?: string;
   }>();
 
-  const input = useMemo(() => ({
-    businessName: typeof params.businessName === 'string' ? params.businessName : '',
-    address: typeof params.address === 'string' ? params.address : '',
-    ownerPhone: typeof params.ownerPhone === 'string' ? params.ownerPhone : '',
-  }), [params.address, params.businessName, params.ownerPhone]);
+  const input = useMemo(
+    () => ({
+      businessName: typeof params.businessName === 'string' ? params.businessName : '',
+      address: typeof params.address === 'string' ? params.address : '',
+      ownerPhone: typeof params.ownerPhone === 'string' ? params.ownerPhone : '',
+    }),
+    [params.address, params.businessName, params.ownerPhone],
+  );
 
-  const onContinue = () => {
+  // Create the SetupIntent on screen mount so the inline card form is ready
+  // to confirm the moment the user taps Save. Re-runs only when the form
+  // data changes (which won't happen mid-screen).
+  useEffect(() => {
+    let cancelled = false;
+    void (async () => {
+      try {
+        const result = await initRestaurantRegistrationPaymentSheet(input);
+        if (cancelled) return;
+        setIntent({
+          status: 'ready',
+          clientSecret: result.setupIntentClientSecret,
+          setupIntentId: result.setupIntentId,
+        });
+      } catch (error) {
+        if (cancelled) return;
+        setIntent({
+          status: 'error',
+          message: error instanceof Error ? error.message : 'Could not prepare card form.',
+        });
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [input]);
+
+  const onSubmit = () => {
     void (async () => {
       if (saving) return;
+      if (intent.status !== 'ready') {
+        Alert.alert('Card form not ready', 'Please wait a moment, then try again.');
+        return;
+      }
+      if (!cardComplete) {
+        Alert.alert('Card incomplete', 'Please fill in the card number, expiry, CVC, and postal code.');
+        return;
+      }
       setSaving(true);
       try {
-        const paymentSheet = await initRestaurantRegistrationPaymentSheet(input);
-        const initResult = await initPaymentSheet({
-          merchantDisplayName: 'Cenaiva',
-          customerId: paymentSheet.customerId,
-          customerEphemeralKeySecret: paymentSheet.customerEphemeralKeySecret,
-          setupIntentClientSecret: paymentSheet.setupIntentClientSecret,
-          allowsDelayedPaymentMethods: false,
-          returnURL: 'cenaiva://stripe-redirect',
+        const { error: confirmError } = await confirmSetupIntent(intent.clientSecret, {
+          paymentMethodType: 'Card',
+          paymentMethodData: {
+            billingDetails: {
+              name: input.businessName.trim() || undefined,
+              phone: input.ownerPhone.trim() || undefined,
+              address: input.address.trim()
+                ? { line1: input.address.trim() }
+                : undefined,
+            },
+          },
         });
-        if (initResult.error) throw new Error(initResult.error.message);
+        if (confirmError) throw new Error(confirmError.message);
 
-        const presentResult = await presentPaymentSheet();
-        if (presentResult.error) {
-          if (presentResult.error.code === 'Canceled') return;
-          throw new Error(presentResult.error.message);
-        }
-
-        const preview = await getRestaurantPaymentMethodPreview(paymentSheet.setupIntentId);
-        const registered = await finalizeRestaurantRegistration(input, paymentSheet.setupIntentId);
+        const preview = await getRestaurantPaymentMethodPreview(intent.setupIntentId);
+        const registered = await finalizeRestaurantRegistration(input, intent.setupIntentId);
 
         router.replace({
           pathname: '/(customer)/profile/register-restaurant-success',
@@ -248,7 +273,10 @@ export default function RegisterRestaurantCardEntryScreen() {
           },
         });
       } catch (error) {
-        Alert.alert('Payment setup failed', error instanceof Error ? error.message : 'Please try again.');
+        Alert.alert(
+          'Payment setup failed',
+          error instanceof Error ? error.message : 'Please try again.',
+        );
       } finally {
         setSaving(false);
       }
@@ -259,7 +287,10 @@ export default function RegisterRestaurantCardEntryScreen() {
     <ScreenWrapper withKeyboardAvoiding padded>
       <ScrollView
         style={styles.scroll}
-        contentContainerStyle={[styles.scrollContent, { paddingBottom: Math.max(insets.bottom + 76, spacing['3xl']) }]}
+        contentContainerStyle={[
+          styles.scrollContent,
+          { paddingBottom: Math.max(insets.bottom + 76, spacing['3xl']) },
+        ]}
         showsVerticalScrollIndicator={false}
         keyboardShouldPersistTaps="handled"
         keyboardDismissMode="interactive"
@@ -288,7 +319,7 @@ export default function RegisterRestaurantCardEntryScreen() {
         <View style={styles.noteRow}>
           <Ionicons name="lock-closed-outline" size={14} color={c.gold} />
           <Text style={styles.noteText}>
-            Use a Visa, Mastercard, debit Visa, or credit card. The card is saved for billing after the trial.
+            Visa, Mastercard, Debit Visa, or Credit Card. The card is saved for billing after the trial.
           </Text>
         </View>
 
@@ -296,7 +327,7 @@ export default function RegisterRestaurantCardEntryScreen() {
           <Text style={styles.summaryLabel}>Accepted cards</Text>
           <Text style={styles.summaryValue}>Visa, Mastercard, Debit Visa, Credit Card</Text>
           <Text style={styles.summaryText}>
-            Add the card you want on file for Cenaiva billing after the free trial ends.
+            Card details are processed by Stripe. Cenaiva never sees your full card number.
           </Text>
         </View>
 
@@ -307,27 +338,57 @@ export default function RegisterRestaurantCardEntryScreen() {
           </View>
         ) : null}
 
+        {intent.status === 'error' ? (
+          <View style={styles.errorCard}>
+            <Text style={styles.errorTitle}>Could not prepare card form</Text>
+            <Text style={styles.errorText}>{intent.message}</Text>
+          </View>
+        ) : null}
+
         <View style={styles.formCard}>
           <View style={styles.formCardHeader}>
-            <Text style={styles.formCardTitle}>Secure card setup</Text>
+            <Text style={styles.formCardTitle}>Card information</Text>
             <Text style={styles.formCardSub}>
-              Cenaiva uses Stripe to save your billing card. The card details are collected in Stripe's secure form and are not stored on this device.
+              Enter your card number, expiry, CVC, and postal code.
             </Text>
           </View>
 
-          <View style={styles.stripeRow}>
-            <View style={styles.stripeIcon}>
-              <Ionicons name="card-outline" size={20} color={c.gold} />
+          {intent.status === 'loading' ? (
+            <View style={styles.initLoader}>
+              <ActivityIndicator color={c.gold} />
+              <Text style={styles.initLoaderText}>Preparing secure card form…</Text>
             </View>
-            <View style={{ flex: 1 }}>
-              <Text style={styles.stripeTitle}>Open Stripe payment sheet</Text>
-              <Text style={styles.stripeText}>Add or confirm the card used after the free trial.</Text>
-            </View>
-          </View>
+          ) : (
+            <CardField
+              postalCodeEnabled
+              placeholders={{
+                number: '1234 1234 1234 1234',
+                expiration: 'MM/YY',
+                cvc: 'CVC',
+                postalCode: 'Postal code',
+              }}
+              cardStyle={{
+                backgroundColor: c.bgElevated,
+                textColor: c.textPrimary,
+                placeholderColor: c.textMuted,
+                borderColor: c.border,
+                borderWidth: 1,
+                borderRadius: borderRadius.lg,
+                fontSize: 15,
+              }}
+              style={styles.cardField}
+              onCardChange={(card: CardFieldInput.Details) => setCardComplete(Boolean(card.complete))}
+            />
+          )}
         </View>
 
         <View style={styles.footer}>
-          <Button title={saving ? 'Opening secure form...' : 'Add payment method'} onPress={onContinue} size="lg" disabled={saving} />
+          <Button
+            title={saving ? 'Saving…' : 'Save card'}
+            onPress={onSubmit}
+            size="lg"
+            disabled={saving || intent.status !== 'ready' || !cardComplete}
+          />
         </View>
 
         <View style={styles.secureRow}>
