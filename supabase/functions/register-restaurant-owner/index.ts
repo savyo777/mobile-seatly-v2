@@ -21,6 +21,20 @@ const supabaseUrl = Deno.env.get('SUPABASE_URL') ?? '';
 const supabaseAnon = Deno.env.get('SUPABASE_ANON_KEY') ?? '';
 const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '';
 
+function slugify(name: string): string {
+  const base = name
+    .toLowerCase()
+    .trim()
+    .normalize('NFD')
+    .replace(/[̀-ͯ]/g, '')
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '');
+  // Random suffix avoids `slug UNIQUE` collisions when two owners pick
+  // the same business name. Six base36 chars = ~2 billion variants.
+  const suffix = Math.random().toString(36).slice(2, 8);
+  return base ? `${base}-${suffix}` : `restaurant-${suffix}`;
+}
+
 function addCalendarMonths(base: Date, months: number): Date {
   const result = new Date(base.getTime());
   const originalDay = result.getDate();
@@ -157,13 +171,22 @@ Deno.serve(async (req) => {
       ? new Date(subscription.trial_end * 1000).toISOString()
       : new Date(trialEnd * 1000).toISOString();
 
+    // Map the registration payload onto the production `restaurants` table
+    // schema (shared with the web app): the table uses `name`/`phone` rather
+    // than `business_name`/`owner_phone`, requires a unique `slug`, and has
+    // a NOT NULL `has_bar` flag. The Stripe billing fields + owner_user_id +
+    // trial_ends_at were added via the add_owner_registration_columns
+    // migration.
     const { data: inserted, error: insertError } = await adminClient
       .from('restaurants')
       .insert({
         owner_user_id: user.id,
-        business_name: payload.business_name,
+        name: payload.business_name,
+        slug: slugify(payload.business_name),
         address: payload.address,
-        owner_phone: payload.owner_phone,
+        phone: payload.owner_phone,
+        has_bar: false,
+        is_active: true,
         stripe_customer_id: customerId,
         stripe_subscription_id: subscription.id,
         stripe_payment_method_id: paymentMethodId,
