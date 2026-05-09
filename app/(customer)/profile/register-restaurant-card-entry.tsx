@@ -1,211 +1,72 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { ActivityIndicator, Alert, Pressable, ScrollView, Text, View } from 'react-native';
+import {
+  ActivityIndicator,
+  Alert,
+  KeyboardAvoidingView,
+  Platform,
+  Pressable,
+  ScrollView,
+  StatusBar,
+  StyleSheet,
+  Text,
+  TextInput,
+  View,
+} from 'react-native';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import {
   CardForm,
   useConfirmSetupIntent,
   type CardFormView,
 } from '@stripe/stripe-react-native';
-import { Button, ScreenWrapper } from '@/components/ui';
-import { borderRadius, createStyles, spacing, typography, useColors } from '@/lib/theme';
 import {
   finalizeRestaurantRegistration,
   getRestaurantPaymentMethodPreview,
   initRestaurantRegistrationPaymentSheet,
 } from '@/lib/services/restaurantRegistration';
+import { OWNER_TRIAL_MONTHS } from '@/lib/owner/trialPolicy';
 
-const useStyles = createStyles((c) => ({
-  scroll: { flex: 1 },
-  scrollContent: {
-    paddingBottom: spacing['3xl'],
-  },
-  topBar: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    marginBottom: spacing.lg,
-  },
-  backBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.xs,
-  },
-  backText: {
-    ...typography.body,
-    color: c.textSecondary,
-  },
-  topRight: {
-    width: 60,
-  },
-  titleWrap: {
-    marginBottom: spacing.lg,
-    gap: spacing.sm,
-  },
-  eyebrow: {
-    ...typography.label,
-    color: c.gold,
-    letterSpacing: 1.1,
-    fontWeight: '700',
-  },
-  title: {
-    ...typography.h2,
-    color: c.textPrimary,
-  },
-  subtitle: {
-    ...typography.body,
-    color: c.textSecondary,
-    lineHeight: 22,
-  },
-  // Section heading above the card form
-  sectionHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    marginBottom: spacing.sm,
-  },
-  sectionTitle: {
-    ...typography.label,
-    color: c.textMuted,
-    letterSpacing: 1.1,
-    fontWeight: '700',
-  },
-  secureBadge: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-  },
-  secureBadgeText: {
-    ...typography.bodySmall,
-    color: c.textMuted,
-    fontSize: 11,
-  },
-  // The wrapper around the Stripe CardForm. CardForm renders separate
-  // rows for card number, expiry, CVC, and ZIP — we just give it a clean
-  // outer surface and let the native form draw its own row separators.
-  formCard: {
-    borderRadius: borderRadius.xl,
-    backgroundColor: c.bgElevated,
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.08)',
-    overflow: 'hidden',
-    marginBottom: spacing.md,
-  },
-  cardForm: {
-    width: '100%',
-    height: 220,
-  },
-  initLoader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.sm,
-    paddingVertical: spacing['xl'],
-    paddingHorizontal: spacing.md,
-    height: 220,
-    justifyContent: 'center',
-  },
-  initLoaderText: {
-    ...typography.bodySmall,
-    color: c.textSecondary,
-  },
-  // Accepted brands chip row
-  brandsRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    flexWrap: 'wrap',
-    gap: 8,
-    marginBottom: spacing.lg,
-  },
-  brandsLabel: {
-    ...typography.bodySmall,
-    color: c.textMuted,
-    fontSize: 11,
-    marginRight: 4,
-  },
-  brandChip: {
-    paddingHorizontal: 10,
-    paddingVertical: 5,
-    borderRadius: 6,
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.10)',
-    backgroundColor: 'rgba(255,255,255,0.03)',
-  },
-  brandChipText: {
-    color: c.textSecondary,
-    fontSize: 11,
-    fontWeight: '600',
-    letterSpacing: 0.5,
-  },
-  // Error states
-  errorCard: {
-    borderRadius: borderRadius.lg,
-    borderWidth: 1,
-    borderColor: 'rgba(239,68,68,0.25)',
-    backgroundColor: 'rgba(239,68,68,0.08)',
-    padding: spacing.md,
-    marginBottom: spacing.lg,
-    gap: 6,
-  },
-  errorTitle: {
-    ...typography.body,
-    color: c.textPrimary,
-    fontWeight: '700',
-  },
-  errorText: {
-    ...typography.bodySmall,
-    color: c.textSecondary,
-    lineHeight: 18,
-  },
-  // Footer area
-  footer: {
-    marginTop: spacing.sm,
-  },
-  trialRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 6,
-    marginTop: spacing.md,
-  },
-  trialText: {
-    ...typography.bodySmall,
-    color: c.textSecondary,
-    fontSize: 12,
-  },
-  trialHighlight: {
-    color: c.gold,
-    fontWeight: '700',
-  },
-  trustRow: {
-    marginTop: 6,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 6,
-    paddingHorizontal: spacing.md,
-  },
-  trustText: {
-    ...typography.bodySmall,
-    color: c.textMuted,
-    fontSize: 11,
-    textAlign: 'center',
-  },
-}));
+// "Editorial receipt" palette — the design's Variant B (Card Info Redesign).
+const GOLD = '#D4B26A';
+const GOLD_DEEP = '#A6863D';
+const INK = '#0B0B0C';
+const PAPER = '#F5F1E8';
+const INK_60 = 'rgba(11,11,12,0.60)';
+const INK_55 = 'rgba(11,11,12,0.55)';
+const INK_50 = 'rgba(11,11,12,0.50)';
+const INK_35 = 'rgba(11,11,12,0.35)';
+const INK_DASH = 'rgba(11,11,12,0.18)';
+
+const SF =
+  Platform.OS === 'ios' ? 'System' : undefined;
+const SERIF = Platform.OS === 'ios' ? 'Georgia' : 'serif';
+const MONO = Platform.OS === 'ios' ? 'Menlo' : 'monospace';
+
+// Display monthly fee shown after trial. TODO: wire to a real pricing source
+// once Cenaiva owner pricing has a single source of truth.
+const MONTHLY_FEE_LABEL = '$89.00 / mo';
 
 type SetupIntentState =
   | { status: 'loading' }
   | { status: 'ready'; clientSecret: string; setupIntentId: string }
   | { status: 'error'; message: string };
 
-const ACCEPTED_BRANDS = ['Visa', 'Credit Card', 'Debit Visa', 'Mastercard'] as const;
+function formatTrialEnd(date: Date): string {
+  return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+}
+
+function addMonths(d: Date, months: number): Date {
+  const out = new Date(d);
+  out.setMonth(out.getMonth() + months);
+  return out;
+}
 
 export default function RegisterRestaurantCardEntryScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
-  const c = useColors();
-  const styles = useStyles();
   const { confirmSetupIntent } = useConfirmSetupIntent();
+
   const [saving, setSaving] = useState(false);
   const [cardComplete, setCardComplete] = useState(false);
   const [intent, setIntent] = useState<SetupIntentState>({ status: 'loading' });
@@ -226,8 +87,21 @@ export default function RegisterRestaurantCardEntryScreen() {
     [params.address, params.businessName, params.ownerPhone],
   );
 
-  // Create the SetupIntent on mount so the card form is ready to confirm
-  // the moment the user taps Save.
+  // Cardholder name is a regular text field (not PCI-protected). Default to
+  // the business name they entered upstream so the form is one tap to submit
+  // for users who use the business name on their card.
+  const [cardholder, setCardholder] = useState(input.businessName);
+  useEffect(() => {
+    setCardholder(input.businessName);
+  }, [input.businessName]);
+
+  // Trial-end date is informational; the source of truth comes back from
+  // finalizeRestaurantRegistration. Show a local estimate on this screen.
+  const trialEndsLabel = useMemo(
+    () => formatTrialEnd(addMonths(new Date(), OWNER_TRIAL_MONTHS)),
+    [],
+  );
+
   useEffect(() => {
     let cancelled = false;
     void (async () => {
@@ -269,7 +143,7 @@ export default function RegisterRestaurantCardEntryScreen() {
           paymentMethodType: 'Card',
           paymentMethodData: {
             billingDetails: {
-              name: input.businessName.trim() || undefined,
+              name: cardholder.trim() || input.businessName.trim() || undefined,
               phone: input.ownerPhone.trim() || undefined,
               address: input.address.trim()
                 ? { line1: input.address.trim() }
@@ -305,123 +179,421 @@ export default function RegisterRestaurantCardEntryScreen() {
   };
 
   return (
-    <ScreenWrapper withKeyboardAvoiding padded>
-      <ScrollView
-        style={styles.scroll}
-        contentContainerStyle={[
-          styles.scrollContent,
-          { paddingBottom: Math.max(insets.bottom + 76, spacing['3xl']) },
-        ]}
-        showsVerticalScrollIndicator={false}
-        keyboardShouldPersistTaps="handled"
-        keyboardDismissMode="interactive"
+    <SafeAreaView style={s.safe} edges={['top', 'left', 'right']}>
+      <StatusBar barStyle="dark-content" backgroundColor={PAPER} />
+      <KeyboardAvoidingView
+        style={s.flex}
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
       >
-        <View style={styles.topBar}>
-          <Pressable
-            onPress={() => router.back()}
-            style={({ pressed }) => [styles.backBtn, pressed && { opacity: 0.7 }]}
-            hitSlop={12}
-          >
-            <Ionicons name="chevron-back" size={20} color={c.textSecondary} />
-            <Text style={styles.backText}>Back</Text>
-          </Pressable>
-          <Text style={{ color: c.gold, fontWeight: '700', letterSpacing: 4 }}>CENAIVA</Text>
-          <View style={styles.topRight} />
-        </View>
-
-        <View style={styles.titleWrap}>
-          <Text style={styles.eyebrow}>Payment details</Text>
-          <Text style={styles.title}>Enter your card info</Text>
-          <Text style={styles.subtitle}>
-            We'll save it to start your 3-month free trial. You won't be charged today.
-          </Text>
-        </View>
-
-        {typeof params.paymentError === 'string' ? (
-          <View style={styles.errorCard}>
-            <Text style={styles.errorTitle}>Use the card form below</Text>
-            <Text style={styles.errorText}>{params.paymentError}</Text>
+        <ScrollView
+          style={s.flex}
+          contentContainerStyle={[s.scrollContent, { paddingBottom: insets.bottom + 24 }]}
+          keyboardShouldPersistTaps="handled"
+          keyboardDismissMode="interactive"
+          showsVerticalScrollIndicator={false}
+        >
+          {/* Top bar */}
+          <View style={s.topBar}>
+            <Pressable
+              onPress={() => router.back()}
+              style={({ pressed }) => [s.backBtn, pressed && { opacity: 0.6 }]}
+              hitSlop={12}
+            >
+              <Ionicons name="chevron-back" size={16} color={INK} />
+              <Text style={s.backText}>Back</Text>
+            </Pressable>
+            <Text style={s.brandWordmark}>CENAIVA</Text>
+            <View style={{ width: 50 }} />
           </View>
-        ) : null}
 
-        {intent.status === 'error' ? (
-          <View style={styles.errorCard}>
-            <Text style={styles.errorTitle}>Could not prepare card form</Text>
-            <Text style={styles.errorText}>{intent.message}</Text>
+          {/* Header */}
+          <View style={s.headerWrap}>
+            <Text style={s.eyebrow}>Step 03 / Billing</Text>
+            <Text style={s.title}>
+              Your card,{'\n'}
+              <Text style={s.titleItalic}>quietly</Text> on file.
+            </Text>
+            <Text style={s.subtitle}>
+              Three months on us. After that, $89 / month — cancel anytime.
+            </Text>
           </View>
-        ) : null}
 
-        <View style={styles.sectionHeader}>
-          <Text style={styles.sectionTitle}>Card details</Text>
-          <View style={styles.secureBadge}>
-            <Ionicons name="lock-closed" size={11} color={c.textMuted} />
-            <Text style={styles.secureBadgeText}>Encrypted</Text>
-          </View>
-        </View>
-
-        <View style={styles.formCard}>
-          {intent.status === 'loading' ? (
-            <View style={styles.initLoader}>
-              <ActivityIndicator color={c.gold} />
-              <Text style={styles.initLoaderText}>Preparing secure card form…</Text>
+          {/* Receipt card */}
+          <View style={s.receiptOuter}>
+            {/* ticket notches at top */}
+            <View style={s.ticketNotches} pointerEvents="none">
+              {Array.from({ length: 22 }).map((_, i) => (
+                <View key={i} style={s.notchDot} />
+              ))}
             </View>
-          ) : (
-            <CardForm
-              placeholders={{
-                number: 'Card number',
-                expiration: 'MM / YY',
-                cvc: 'CVC',
-                postalCode: 'ZIP',
-              }}
-              cardStyle={{
-                backgroundColor: c.bgElevated,
-                textColor: c.textPrimary,
-                placeholderColor: c.textMuted,
-                borderColor: 'rgba(255,255,255,0.08)',
-                borderWidth: 0,
-                borderRadius: borderRadius.lg,
-                fontSize: 16,
-              }}
-              style={styles.cardForm}
-              onFormComplete={(card: CardFormView.Details) => {
-                setCardComplete(Boolean(card.complete));
-              }}
-            />
-          )}
-        </View>
 
-        <View style={styles.brandsRow}>
-          <Text style={styles.brandsLabel}>We accept</Text>
-          {ACCEPTED_BRANDS.map((brand) => (
-            <View key={brand} style={styles.brandChip}>
-              <Text style={styles.brandChipText}>{brand}</Text>
+            <View style={s.receipt}>
+              <View style={s.receiptHeaderRow}>
+                <Text style={s.receiptEyebrow}>Cenaiva · Restaurant</Text>
+                <Text style={s.receiptNo}>NO. 0001</Text>
+              </View>
+
+              {/* Cardholder — first dashed top border */}
+              <View style={[s.fieldRow, s.fieldRowFirst]}>
+                <Text style={s.fieldLabel}>CARDHOLDER</Text>
+                <TextInput
+                  value={cardholder}
+                  onChangeText={setCardholder}
+                  placeholder="Full name on card"
+                  placeholderTextColor={INK_35}
+                  style={s.fieldInput}
+                  autoCapitalize="words"
+                  autoCorrect={false}
+                  returnKeyType="next"
+                />
+              </View>
+
+              {/* Stripe CardForm — number / expiry / CVC / postal */}
+              <View style={s.cardFormSection}>
+                <Text style={s.fieldLabel}>CARD DETAILS</Text>
+                {intent.status === 'loading' ? (
+                  <View style={s.cardFormLoading}>
+                    <ActivityIndicator color={GOLD_DEEP} />
+                    <Text style={s.cardFormLoadingText}>Preparing secure card form…</Text>
+                  </View>
+                ) : (
+                  <CardForm
+                    placeholders={{
+                      number: '1234 5678 9012 3456',
+                      expiration: 'MM / YY',
+                      cvc: 'CVC',
+                      postalCode: 'Postal / ZIP',
+                    }}
+                    cardStyle={{
+                      backgroundColor: '#FFFFFF',
+                      textColor: INK,
+                      placeholderColor: INK_35,
+                      borderColor: INK_DASH,
+                      borderWidth: 0,
+                      borderRadius: 4,
+                      fontSize: 14,
+                    }}
+                    style={s.cardForm}
+                    onFormComplete={(card: CardFormView.Details) => {
+                      setCardComplete(Boolean(card.complete));
+                    }}
+                  />
+                )}
+              </View>
+
+              {/* Totals */}
+              <View style={s.totals}>
+                <ReceiptRow k="Today's charge" v="$0.00" />
+                <ReceiptRow k="Trial ends" v={trialEndsLabel} />
+                <ReceiptRow k="Then" v={MONTHLY_FEE_LABEL} bold />
+              </View>
             </View>
-          ))}
-        </View>
+          </View>
 
-        <View style={styles.footer}>
-          <Button
-            title={saving ? 'Saving…' : 'Save card & start trial'}
-            onPress={onSubmit}
-            size="lg"
-            disabled={saving || intent.status !== 'ready' || !cardComplete}
-          />
-        </View>
+          {typeof params.paymentError === 'string' ? (
+            <View style={s.errorCard}>
+              <Text style={s.errorTitle}>Use the card form above</Text>
+              <Text style={s.errorText}>{params.paymentError}</Text>
+            </View>
+          ) : null}
 
-        <View style={styles.trialRow}>
-          <Ionicons name="gift-outline" size={12} color={c.gold} />
-          <Text style={styles.trialText}>
-            <Text style={styles.trialHighlight}>3 months free</Text> · Cancel anytime
-          </Text>
-        </View>
+          {intent.status === 'error' ? (
+            <View style={s.errorCard}>
+              <Text style={s.errorTitle}>Could not prepare card form</Text>
+              <Text style={s.errorText}>{intent.message}</Text>
+            </View>
+          ) : null}
 
-        <View style={styles.trustRow}>
-          <Ionicons name="shield-checkmark-outline" size={12} color={c.textMuted} />
-          <Text style={styles.trustText}>
-            Processed by Stripe. Cenaiva never sees your full card number.
-          </Text>
-        </View>
-      </ScrollView>
-    </ScreenWrapper>
+          {/* CTA */}
+          <View style={s.ctaWrap}>
+            <Pressable
+              onPress={onSubmit}
+              disabled={saving || intent.status !== 'ready' || !cardComplete}
+              style={({ pressed }) => [
+                s.cta,
+                (saving || intent.status !== 'ready' || !cardComplete) && s.ctaDisabled,
+                pressed && !saving && intent.status === 'ready' && cardComplete && { opacity: 0.85 },
+              ]}
+            >
+              <Text style={s.ctaLabel}>{saving ? 'SAVING…' : 'SAVE CARD'}</Text>
+            </Pressable>
+
+            <View style={s.trustRow}>
+              <Ionicons name="lock-closed-outline" size={11} color={INK_50} />
+              <Text style={s.trustText}>Stripe-encrypted · PCI DSS</Text>
+            </View>
+          </View>
+        </ScrollView>
+      </KeyboardAvoidingView>
+    </SafeAreaView>
   );
 }
+
+function ReceiptRow({ k, v, bold }: { k: string; v: string; bold?: boolean }) {
+  return (
+    <View style={s.receiptTotalsRow}>
+      <Text style={s.totalsLabel}>{k}</Text>
+      <Text style={[s.totalsValue, bold && s.totalsValueBold]}>{v}</Text>
+    </View>
+  );
+}
+
+const s = StyleSheet.create({
+  flex: { flex: 1 },
+  safe: { flex: 1, backgroundColor: PAPER },
+  scrollContent: {
+    paddingBottom: 32,
+  },
+  // top bar
+  topBar: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 22,
+    paddingTop: 14,
+    paddingBottom: 10,
+  },
+  backBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+  },
+  backText: {
+    fontFamily: SF,
+    fontSize: 14,
+    fontWeight: '500',
+    color: INK,
+  },
+  brandWordmark: {
+    fontFamily: SF,
+    fontSize: 11,
+    fontWeight: '700',
+    letterSpacing: 5,
+    color: GOLD_DEEP,
+    textTransform: 'uppercase',
+  },
+  // header
+  headerWrap: {
+    paddingHorizontal: 24,
+    paddingTop: 12,
+  },
+  eyebrow: {
+    fontFamily: SF,
+    fontSize: 10,
+    fontWeight: '600',
+    letterSpacing: 3.2,
+    textTransform: 'uppercase',
+    color: INK_55,
+  },
+  title: {
+    fontFamily: SERIF,
+    fontSize: 40,
+    lineHeight: 42,
+    fontWeight: '500',
+    letterSpacing: -1,
+    color: INK,
+    marginTop: 12,
+  },
+  titleItalic: {
+    fontStyle: 'italic',
+    color: GOLD_DEEP,
+  },
+  subtitle: {
+    fontFamily: SF,
+    fontSize: 14,
+    lineHeight: 21,
+    color: 'rgba(11,11,12,0.65)',
+    marginTop: 14,
+  },
+  // receipt outer (with ticket notches)
+  receiptOuter: {
+    marginHorizontal: 22,
+    marginTop: 22,
+    position: 'relative',
+  },
+  ticketNotches: {
+    position: 'absolute',
+    top: -6,
+    left: 0,
+    right: 0,
+    flexDirection: 'row',
+    justifyContent: 'center',
+    gap: 4,
+    zIndex: 2,
+  },
+  notchDot: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+    backgroundColor: PAPER,
+  },
+  receipt: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 4,
+    paddingHorizontal: 22,
+    paddingTop: 20,
+    paddingBottom: 16,
+    shadowColor: '#000',
+    shadowOpacity: 0.08,
+    shadowRadius: 32,
+    shadowOffset: { width: 0, height: 12 },
+    elevation: 4,
+  },
+  receiptHeaderRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'baseline',
+    marginBottom: 6,
+  },
+  receiptEyebrow: {
+    fontFamily: SF,
+    fontSize: 10,
+    fontWeight: '600',
+    letterSpacing: 3,
+    color: INK_50,
+    textTransform: 'uppercase',
+  },
+  receiptNo: {
+    fontFamily: MONO,
+    fontSize: 10,
+    color: INK_50,
+  },
+  // dashed-row fields
+  fieldRow: {
+    paddingTop: 12,
+    paddingBottom: 10,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: INK_DASH,
+    borderStyle: 'dashed',
+  },
+  fieldRowFirst: {
+    borderTopWidth: StyleSheet.hairlineWidth,
+    borderTopColor: INK_DASH,
+  },
+  fieldLabel: {
+    fontFamily: SF,
+    fontSize: 9,
+    fontWeight: '700',
+    color: INK_55,
+    letterSpacing: 1.2,
+  },
+  fieldInput: {
+    fontFamily: MONO,
+    fontSize: 14,
+    color: INK,
+    marginTop: 4,
+    padding: 0,
+    minHeight: 20,
+  },
+  // CardForm section
+  cardFormSection: {
+    paddingTop: 12,
+    paddingBottom: 10,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: INK_DASH,
+    borderStyle: 'dashed',
+  },
+  cardForm: {
+    width: '100%',
+    height: Platform.OS === 'ios' ? 220 : 200,
+    marginTop: 6,
+  },
+  cardFormLoading: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    paddingVertical: 24,
+  },
+  cardFormLoadingText: {
+    fontFamily: SF,
+    fontSize: 12,
+    color: INK_55,
+  },
+  // totals
+  totals: {
+    marginTop: 14,
+    paddingTop: 12,
+    borderTopWidth: StyleSheet.hairlineWidth,
+    borderTopColor: INK_DASH,
+    borderStyle: 'dashed',
+  },
+  receiptTotalsRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    paddingVertical: 4,
+  },
+  totalsLabel: {
+    fontFamily: SF,
+    fontSize: 13,
+    color: INK_60,
+  },
+  totalsValue: {
+    fontFamily: MONO,
+    fontSize: 13,
+    color: 'rgba(11,11,12,0.85)',
+  },
+  totalsValueBold: {
+    fontWeight: '700',
+    color: INK,
+  },
+  // error
+  errorCard: {
+    marginHorizontal: 22,
+    marginTop: 16,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: 'rgba(190,18,60,0.30)',
+    backgroundColor: 'rgba(190,18,60,0.06)',
+    padding: 14,
+    gap: 4,
+  },
+  errorTitle: {
+    fontFamily: SF,
+    fontSize: 13,
+    fontWeight: '700',
+    color: INK,
+  },
+  errorText: {
+    fontFamily: SF,
+    fontSize: 12,
+    color: INK_60,
+    lineHeight: 17,
+  },
+  // CTA
+  ctaWrap: {
+    paddingHorizontal: 22,
+    paddingTop: 20,
+  },
+  cta: {
+    height: 52,
+    borderRadius: 4,
+    backgroundColor: INK,
+    borderWidth: 1.5,
+    borderColor: INK,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  ctaDisabled: {
+    opacity: 0.45,
+  },
+  ctaLabel: {
+    fontFamily: SF,
+    fontSize: 15,
+    fontWeight: '600',
+    letterSpacing: 1.5,
+    color: PAPER,
+    textTransform: 'uppercase',
+  },
+  trustRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
+    marginTop: 10,
+  },
+  trustText: {
+    fontFamily: SF,
+    fontSize: 11,
+    color: INK_50,
+  },
+});
