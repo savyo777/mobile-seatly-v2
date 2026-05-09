@@ -17,9 +17,9 @@ import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context'
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import {
-  CardForm,
+  CardField,
   useConfirmSetupIntent,
-  type CardFormView,
+  type CardFieldInput,
 } from '@stripe/stripe-react-native';
 import { useColors } from '@/lib/theme';
 import {
@@ -63,7 +63,7 @@ export default function RegisterRestaurantCardEntryScreen() {
   const [saving, setSaving] = useState(false);
   const [cardComplete, setCardComplete] = useState(false);
   const [intent, setIntent] = useState<SetupIntentState>({ status: 'loading' });
-  const cardFormRef = useRef<CardFormView.Methods | null>(null);
+  const cardFieldRef = useRef<CardFieldInput.Methods | null>(null);
 
   const params = useLocalSearchParams<{
     businessName?: string;
@@ -122,7 +122,7 @@ export default function RegisterRestaurantCardEntryScreen() {
 
   const dismissAllInputs = () => {
     Keyboard.dismiss();
-    cardFormRef.current?.blur?.();
+    cardFieldRef.current?.blur?.();
   };
 
   const onSubmit = () => {
@@ -133,7 +133,7 @@ export default function RegisterRestaurantCardEntryScreen() {
         return;
       }
       if (!cardComplete) {
-        Alert.alert('Card incomplete', 'Please fill in the card number, expiry, CVC, and postal code.');
+        Alert.alert('Card incomplete', 'Please fill in the card number, expiry, and CVC.');
         return;
       }
       setSaving(true);
@@ -283,36 +283,32 @@ export default function RegisterRestaurantCardEntryScreen() {
                       </Text>
                     </View>
                   ) : (
-                    // Stripe's iOS CardForm always renders a country picker
-                    // at the bottom — there's no API to remove it. We clip
-                    // the wrapper so only the number / expiry / CVC / postal
-                    // rows show through. The country defaults to the device
-                    // locale and is sent as billingDetails.address.country
-                    // when needed.
-                    <View style={s.cardFormClip}>
-                      <CardForm
-                        ref={cardFormRef}
-                        placeholders={{
-                          number: '1234 5678 9012 3456',
-                          expiration: 'MM / YY',
-                          cvc: 'CVC',
-                          postalCode: 'Postal / ZIP',
-                        }}
-                        cardStyle={{
-                          backgroundColor: c.bgElevated,
-                          textColor: c.textPrimary,
-                          placeholderColor: c.textMuted,
-                          borderColor: 'rgba(255,255,255,0.08)',
-                          borderWidth: 0,
-                          borderRadius: 4,
-                          fontSize: 14,
-                        }}
-                        style={s.cardForm}
-                        onFormComplete={(card: CardFormView.Details) => {
-                          setCardComplete(Boolean(card.complete));
-                        }}
-                      />
-                    </View>
+                    // CardField (single inline input) is the only Stripe
+                    // RN component that lets us drop both the country
+                    // picker and the postal-code field — CardForm always
+                    // renders both on iOS with no opt-out.
+                    <CardField
+                      ref={cardFieldRef}
+                      postalCodeEnabled={false}
+                      placeholders={{
+                        number: '1234 5678 9012 3456',
+                        expiration: 'MM / YY',
+                        cvc: 'CVC',
+                      }}
+                      cardStyle={{
+                        backgroundColor: c.bgElevated,
+                        textColor: c.textPrimary,
+                        placeholderColor: c.textMuted,
+                        borderColor: 'transparent',
+                        borderWidth: 0,
+                        borderRadius: 4,
+                        fontSize: 15,
+                      }}
+                      style={s.cardField}
+                      onCardChange={(card: CardFieldInput.Details) => {
+                        setCardComplete(Boolean(card.complete));
+                      }}
+                    />
                   )}
                 </View>
 
@@ -533,19 +529,10 @@ const s = StyleSheet.create({
     borderBottomWidth: StyleSheet.hairlineWidth,
     borderStyle: 'dashed',
   },
-  cardForm: {
+  cardField: {
     width: '100%',
-    // Height generous enough for the native form to draw all rows
-    // including the country picker; the wrapper below clips the
-    // country row off the bottom on iOS.
-    height: Platform.OS === 'ios' ? 250 : 200,
-    marginTop: 6,
-  },
-  cardFormClip: {
-    width: '100%',
-    // Trims the iOS country picker (last row) from view.
-    height: Platform.OS === 'ios' ? 175 : 200,
-    overflow: 'hidden',
+    height: 52,
+    marginTop: 8,
   },
   cardFormLoading: {
     flexDirection: 'row',
