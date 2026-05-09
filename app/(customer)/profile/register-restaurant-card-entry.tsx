@@ -1,69 +1,192 @@
-import React, { useEffect, useMemo, useRef, useState } from 'react';
-import {
-  ActivityIndicator,
-  Alert,
-  Keyboard,
-  KeyboardAvoidingView,
-  Platform,
-  Pressable,
-  ScrollView,
-  StatusBar,
-  StyleSheet,
-  Text,
-  TextInput,
-  View,
-} from 'react-native';
-import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
+import React, { useEffect, useMemo, useState } from 'react';
+import { ActivityIndicator, Alert, Pressable, ScrollView, Text, View } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import {
   CardField,
   useConfirmSetupIntent,
   type CardFieldInput,
 } from '@stripe/stripe-react-native';
-import { useColors } from '@/lib/theme';
+import { Button, ScreenWrapper } from '@/components/ui';
+import { borderRadius, createStyles, spacing, typography, useColors } from '@/lib/theme';
 import {
   finalizeRestaurantRegistration,
   getRestaurantPaymentMethodPreview,
   initRestaurantRegistrationPaymentSheet,
 } from '@/lib/services/restaurantRegistration';
-import { OWNER_TRIAL_MONTHS } from '@/lib/owner/trialPolicy';
 
-const SF = Platform.OS === 'ios' ? 'System' : undefined;
-const SERIF = Platform.OS === 'ios' ? 'Georgia' : 'serif';
-const MONO = Platform.OS === 'ios' ? 'Menlo' : 'monospace';
-
-// Display monthly fee shown after trial. Tracked in
-// docs/UNHARDCODE_CHECKLIST.md (Phase K) — wire to a single owner-pricing
-// source once Cenaiva pricing has one.
-const MONTHLY_FEE_LABEL = '$200.00 / mo';
-const MONTHLY_FEE_SHORT = '$200';
+const useStyles = createStyles((c) => ({
+  scroll: { flex: 1 },
+  scrollContent: {
+    paddingBottom: spacing['3xl'],
+  },
+  topBar: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: spacing.lg,
+  },
+  backBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.xs,
+  },
+  backText: {
+    ...typography.body,
+    color: c.textSecondary,
+  },
+  topRight: {
+    width: 60,
+  },
+  titleWrap: {
+    marginBottom: spacing.lg,
+    gap: spacing.sm,
+  },
+  eyebrow: {
+    ...typography.label,
+    color: c.gold,
+    letterSpacing: 1.1,
+    fontWeight: '700',
+  },
+  title: {
+    ...typography.h2,
+    color: c.textPrimary,
+  },
+  subtitle: {
+    ...typography.body,
+    color: c.textSecondary,
+    lineHeight: 22,
+  },
+  noteRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    borderRadius: borderRadius.lg,
+    borderWidth: 1,
+    borderColor: 'rgba(201,168,76,0.18)',
+    backgroundColor: 'rgba(255,255,255,0.03)',
+    marginBottom: spacing.lg,
+  },
+  noteText: {
+    ...typography.bodySmall,
+    color: c.textSecondary,
+    lineHeight: 18,
+    flex: 1,
+  },
+  summaryCard: {
+    borderRadius: borderRadius.xl,
+    borderWidth: 1,
+    borderColor: 'rgba(201,168,76,0.18)',
+    backgroundColor: 'rgba(255,255,255,0.04)',
+    padding: spacing.md,
+    marginBottom: spacing.lg,
+    gap: spacing.xs,
+  },
+  summaryLabel: {
+    ...typography.label,
+    color: c.textMuted,
+    letterSpacing: 1,
+  },
+  summaryValue: {
+    ...typography.body,
+    color: c.textPrimary,
+    fontWeight: '700',
+  },
+  summaryText: {
+    ...typography.bodySmall,
+    color: c.textSecondary,
+    lineHeight: 18,
+  },
+  formCard: {
+    borderRadius: borderRadius.xl,
+    backgroundColor: c.bgSurface,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.08)',
+    padding: spacing.md,
+    marginBottom: spacing.lg,
+  },
+  formCardHeader: {
+    marginBottom: spacing.md,
+    gap: 3,
+  },
+  formCardTitle: {
+    ...typography.body,
+    color: c.textPrimary,
+    fontWeight: '700',
+  },
+  formCardSub: {
+    ...typography.bodySmall,
+    color: c.textSecondary,
+    lineHeight: 18,
+    marginBottom: spacing.md,
+  },
+  cardField: {
+    width: '100%',
+    height: 56,
+    marginBottom: spacing.sm,
+  },
+  initLoader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+    paddingVertical: spacing.md,
+  },
+  initLoaderText: {
+    ...typography.bodySmall,
+    color: c.textSecondary,
+  },
+  errorCard: {
+    borderRadius: borderRadius.lg,
+    borderWidth: 1,
+    borderColor: 'rgba(239,68,68,0.25)',
+    backgroundColor: 'rgba(239,68,68,0.08)',
+    padding: spacing.md,
+    marginBottom: spacing.lg,
+    gap: 6,
+  },
+  errorTitle: {
+    ...typography.body,
+    color: c.textPrimary,
+    fontWeight: '700',
+  },
+  errorText: {
+    ...typography.bodySmall,
+    color: c.textSecondary,
+    lineHeight: 18,
+  },
+  footer: {
+    marginTop: spacing.sm,
+  },
+  secureRow: {
+    marginTop: spacing.sm,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
+  },
+  secureText: {
+    ...typography.bodySmall,
+    color: c.textMuted,
+  },
+}));
 
 type SetupIntentState =
   | { status: 'loading' }
   | { status: 'ready'; clientSecret: string; setupIntentId: string }
   | { status: 'error'; message: string };
 
-function formatTrialEnd(date: Date): string {
-  return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
-}
-
-function addMonths(d: Date, months: number): Date {
-  const out = new Date(d);
-  out.setMonth(out.getMonth() + months);
-  return out;
-}
-
 export default function RegisterRestaurantCardEntryScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const c = useColors();
+  const styles = useStyles();
   const { confirmSetupIntent } = useConfirmSetupIntent();
-
   const [saving, setSaving] = useState(false);
   const [cardComplete, setCardComplete] = useState(false);
   const [intent, setIntent] = useState<SetupIntentState>({ status: 'loading' });
-  const cardFieldRef = useRef<CardFieldInput.Methods | null>(null);
 
   const params = useLocalSearchParams<{
     businessName?: string;
@@ -81,16 +204,9 @@ export default function RegisterRestaurantCardEntryScreen() {
     [params.address, params.businessName, params.ownerPhone],
   );
 
-  const [restaurantName, setRestaurantName] = useState(input.businessName);
-  useEffect(() => {
-    setRestaurantName(input.businessName);
-  }, [input.businessName]);
-
-  const trialEndsLabel = useMemo(
-    () => formatTrialEnd(addMonths(new Date(), OWNER_TRIAL_MONTHS)),
-    [],
-  );
-
+  // Create the SetupIntent on screen mount so the inline card form is ready
+  // to confirm the moment the user taps Save. Re-runs only when the form
+  // data changes (which won't happen mid-screen).
   useEffect(() => {
     let cancelled = false;
     void (async () => {
@@ -118,15 +234,12 @@ export default function RegisterRestaurantCardEntryScreen() {
   const onSubmit = () => {
     void (async () => {
       if (saving) return;
-      Keyboard.dismiss();
-      cardFieldRef.current?.blur?.();
-
       if (intent.status !== 'ready') {
         Alert.alert('Card form not ready', 'Please wait a moment, then try again.');
         return;
       }
       if (!cardComplete) {
-        Alert.alert('Card incomplete', 'Please fill in the card number, expiry, and CVC.');
+        Alert.alert('Card incomplete', 'Please fill in the card number, expiry, CVC, and postal code.');
         return;
       }
       setSaving(true);
@@ -135,7 +248,7 @@ export default function RegisterRestaurantCardEntryScreen() {
           paymentMethodType: 'Card',
           paymentMethodData: {
             billingDetails: {
-              name: restaurantName.trim() || input.businessName.trim() || undefined,
+              name: input.businessName.trim() || undefined,
               phone: input.ownerPhone.trim() || undefined,
               address: input.address.trim()
                 ? { line1: input.address.trim() }
@@ -145,7 +258,7 @@ export default function RegisterRestaurantCardEntryScreen() {
         });
         if (confirmError) throw new Error(confirmError.message);
 
-        const previewResult = await getRestaurantPaymentMethodPreview(intent.setupIntentId);
+        const preview = await getRestaurantPaymentMethodPreview(intent.setupIntentId);
         const registered = await finalizeRestaurantRegistration(input, intent.setupIntentId);
 
         router.replace({
@@ -155,8 +268,8 @@ export default function RegisterRestaurantCardEntryScreen() {
             businessName: input.businessName,
             address: input.address,
             ownerPhone: input.ownerPhone,
-            cardBrand: previewResult.brand,
-            cardLast4: previewResult.last4,
+            cardBrand: preview.brand,
+            cardLast4: preview.last4,
           },
         });
       } catch (error) {
@@ -170,420 +283,119 @@ export default function RegisterRestaurantCardEntryScreen() {
     })();
   };
 
-  const bg = c.bgBase;
-  const surface = c.bgSurface;
-  const dashed = 'rgba(255,255,255,0.10)';
-  const ctaBg = c.gold;
-  const ctaFg = '#1A1408';
-
   return (
-    <SafeAreaView style={[s.safe, { backgroundColor: bg }]} edges={['top', 'left', 'right']}>
-      <StatusBar barStyle="light-content" backgroundColor={bg} />
-      <KeyboardAvoidingView
-        style={s.flex}
-        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-      >
-        <ScrollView
-          style={s.flex}
-          contentContainerStyle={[s.scrollContent, { paddingBottom: insets.bottom + 24 }]}
-          keyboardShouldPersistTaps="handled"
-          keyboardDismissMode="interactive"
-          showsVerticalScrollIndicator={false}
-        >
-          <View style={s.topBar}>
-            <Pressable
-              onPress={() => router.back()}
-              style={({ pressed }) => [s.backBtn, pressed && { opacity: 0.6 }]}
-              hitSlop={12}
-            >
-              <Ionicons name="chevron-back" size={16} color={c.textPrimary} />
-              <Text style={[s.backText, { color: c.textPrimary }]}>Back</Text>
-            </Pressable>
-            <Text style={[s.brandWordmark, { color: c.gold }]}>CENAIVA</Text>
-            <View style={{ width: 50 }} />
-          </View>
-
-          <View style={s.headerWrap}>
-            <Text style={[s.eyebrow, { color: c.textSecondary }]}>Step 03 / Billing</Text>
-            <Text style={[s.title, { color: c.textPrimary }]}>
-              Your card,{'\n'}
-              <Text style={[s.titleItalic, { color: c.gold }]}>quietly</Text> on file.
-            </Text>
-            <Text style={[s.subtitle, { color: c.textSecondary }]}>
-              Three months on us. After that, {MONTHLY_FEE_SHORT} / month — cancel anytime.
-            </Text>
-          </View>
-
-          <View style={s.receiptOuter}>
-            <View style={s.ticketNotches} pointerEvents="none">
-              {Array.from({ length: 22 }).map((_, i) => (
-                <View key={i} style={[s.notchDot, { backgroundColor: bg }]} />
-              ))}
-            </View>
-
-            <View
-              style={[
-                s.receipt,
-                { backgroundColor: surface, borderColor: 'rgba(255,255,255,0.06)' },
-              ]}
-            >
-              <View style={s.receiptHeaderRow}>
-                <Text style={[s.receiptEyebrow, { color: c.textMuted }]}>Cenaiva · Restaurant</Text>
-                <Text style={[s.receiptNo, { color: c.textMuted }]}>NO. 0001</Text>
-              </View>
-
-              <View
-                style={[
-                  s.fieldRow,
-                  s.fieldRowFirst,
-                  { borderTopColor: dashed, borderBottomColor: dashed },
-                ]}
-              >
-                <Text style={[s.fieldLabel, { color: c.textMuted }]}>RESTAURANT NAME</Text>
-                <TextInput
-                  value={restaurantName}
-                  onChangeText={setRestaurantName}
-                  placeholder="Your restaurant's name"
-                  placeholderTextColor={c.textMuted}
-                  style={[s.fieldInput, { color: c.textPrimary }]}
-                  autoCapitalize="words"
-                  autoCorrect={false}
-                  autoComplete="off"
-                  textContentType="none"
-                  spellCheck={false}
-                  importantForAutofill="no"
-                  returnKeyType="done"
-                  onSubmitEditing={() => Keyboard.dismiss()}
-                  blurOnSubmit
-                />
-              </View>
-
-              <View style={[s.fieldRow, { borderBottomColor: dashed }]}>
-                <Text style={[s.fieldLabel, { color: c.textMuted }]}>CARD DETAILS</Text>
-                {intent.status === 'loading' ? (
-                  <View style={s.cardLoadingRow}>
-                    <ActivityIndicator color={c.gold} />
-                    <Text style={[s.cardLoadingText, { color: c.textSecondary }]}>
-                      Preparing secure card form…
-                    </Text>
-                  </View>
-                ) : (
-                  <CardField
-                    ref={cardFieldRef}
-                    postalCodeEnabled={false}
-                    placeholders={{
-                      number: '1234 5678 9012 3456',
-                      expiration: 'MM / YY',
-                      cvc: 'CVC',
-                    }}
-                    cardStyle={{
-                      backgroundColor: c.bgElevated,
-                      textColor: c.textPrimary,
-                      placeholderColor: c.textMuted,
-                      borderColor: 'transparent',
-                      borderWidth: 0,
-                      borderRadius: 4,
-                      fontSize: 15,
-                    }}
-                    style={s.cardField}
-                    onCardChange={(card: CardFieldInput.Details) => {
-                      setCardComplete(Boolean(card.complete));
-                    }}
-                  />
-                )}
-              </View>
-
-              <View style={[s.totals, { borderTopColor: dashed }]}>
-                <ReceiptRow k="Today's charge" v="$0.00" textColors={c} />
-                <ReceiptRow k="Trial ends" v={trialEndsLabel} textColors={c} />
-                <ReceiptRow k="Then" v={MONTHLY_FEE_LABEL} bold textColors={c} />
-              </View>
-            </View>
-          </View>
-
-          {typeof params.paymentError === 'string' ? (
-            <View style={s.errorCard}>
-              <Text style={[s.errorTitle, { color: c.textPrimary }]}>Use the card form above</Text>
-              <Text style={[s.errorText, { color: c.textSecondary }]}>{params.paymentError}</Text>
-            </View>
-          ) : null}
-
-          {intent.status === 'error' ? (
-            <View style={s.errorCard}>
-              <Text style={[s.errorTitle, { color: c.textPrimary }]}>Could not prepare card form</Text>
-              <Text style={[s.errorText, { color: c.textSecondary }]}>{intent.message}</Text>
-            </View>
-          ) : null}
-
-          <View style={s.ctaWrap}>
-            <Pressable
-              onPress={onSubmit}
-              disabled={saving || intent.status !== 'ready' || !cardComplete}
-              style={({ pressed }) => [
-                s.cta,
-                { backgroundColor: ctaBg, borderColor: ctaBg },
-                (saving || intent.status !== 'ready' || !cardComplete) && s.ctaDisabled,
-                pressed && !saving && intent.status === 'ready' && cardComplete && { opacity: 0.85 },
-              ]}
-            >
-              <Text style={[s.ctaLabel, { color: ctaFg }]}>{saving ? 'SAVING…' : 'SAVE CARD'}</Text>
-            </Pressable>
-
-            <View style={s.trustRow}>
-              <Ionicons name="lock-closed-outline" size={11} color={c.textMuted} />
-              <Text style={[s.trustText, { color: c.textMuted }]}>Stripe-encrypted · PCI DSS</Text>
-            </View>
-          </View>
-        </ScrollView>
-      </KeyboardAvoidingView>
-    </SafeAreaView>
-  );
-}
-
-function ReceiptRow({
-  k,
-  v,
-  bold,
-  textColors,
-}: {
-  k: string;
-  v: string;
-  bold?: boolean;
-  textColors: ReturnType<typeof useColors>;
-}) {
-  return (
-    <View style={s.receiptTotalsRow}>
-      <Text style={[s.totalsLabel, { color: textColors.textSecondary }]}>{k}</Text>
-      <Text
-        style={[
-          s.totalsValue,
-          { color: bold ? textColors.textPrimary : textColors.textSecondary },
-          bold && s.totalsValueBold,
+    <ScreenWrapper withKeyboardAvoiding padded>
+      <ScrollView
+        style={styles.scroll}
+        contentContainerStyle={[
+          styles.scrollContent,
+          { paddingBottom: Math.max(insets.bottom + 76, spacing['3xl']) },
         ]}
+        showsVerticalScrollIndicator={false}
+        keyboardShouldPersistTaps="handled"
+        keyboardDismissMode="interactive"
       >
-        {v}
-      </Text>
-    </View>
+        <View style={styles.topBar}>
+          <Pressable
+            onPress={() => router.back()}
+            style={({ pressed }) => [styles.backBtn, pressed && { opacity: 0.7 }]}
+            hitSlop={12}
+          >
+            <Ionicons name="chevron-back" size={20} color={c.textSecondary} />
+            <Text style={styles.backText}>Back</Text>
+          </Pressable>
+          <Text style={{ color: c.gold, fontWeight: '700', letterSpacing: 4 }}>CENAIVA</Text>
+          <View style={styles.topRight} />
+        </View>
+
+        <View style={styles.titleWrap}>
+          <Text style={styles.eyebrow}>Payment details</Text>
+          <Text style={styles.title}>Enter your card info</Text>
+          <Text style={styles.subtitle}>
+            Add a card to continue the restaurant registration and start the 3-month free trial.
+          </Text>
+        </View>
+
+        <View style={styles.noteRow}>
+          <Ionicons name="lock-closed-outline" size={14} color={c.gold} />
+          <Text style={styles.noteText}>
+            Visa, Mastercard, Debit Visa, or Credit Card. The card is saved for billing after the trial.
+          </Text>
+        </View>
+
+        <View style={styles.summaryCard}>
+          <Text style={styles.summaryLabel}>Accepted cards</Text>
+          <Text style={styles.summaryValue}>Visa, Mastercard, Debit Visa, Credit Card</Text>
+          <Text style={styles.summaryText}>
+            Card details are processed by Stripe. Cenaiva never sees your full card number.
+          </Text>
+        </View>
+
+        {typeof params.paymentError === 'string' ? (
+          <View style={styles.errorCard}>
+            <Text style={styles.errorTitle}>Use the card form below</Text>
+            <Text style={styles.errorText}>{params.paymentError}</Text>
+          </View>
+        ) : null}
+
+        {intent.status === 'error' ? (
+          <View style={styles.errorCard}>
+            <Text style={styles.errorTitle}>Could not prepare card form</Text>
+            <Text style={styles.errorText}>{intent.message}</Text>
+          </View>
+        ) : null}
+
+        <View style={styles.formCard}>
+          <View style={styles.formCardHeader}>
+            <Text style={styles.formCardTitle}>Card information</Text>
+            <Text style={styles.formCardSub}>
+              Enter your card number, expiry, CVC, and postal code.
+            </Text>
+          </View>
+
+          {intent.status === 'loading' ? (
+            <View style={styles.initLoader}>
+              <ActivityIndicator color={c.gold} />
+              <Text style={styles.initLoaderText}>Preparing secure card form…</Text>
+            </View>
+          ) : (
+            <CardField
+              postalCodeEnabled
+              placeholders={{
+                number: '1234 1234 1234 1234',
+                expiration: 'MM/YY',
+                cvc: 'CVC',
+                postalCode: 'Postal code',
+              }}
+              cardStyle={{
+                backgroundColor: c.bgElevated,
+                textColor: c.textPrimary,
+                placeholderColor: c.textMuted,
+                borderColor: c.border,
+                borderWidth: 1,
+                borderRadius: borderRadius.lg,
+                fontSize: 15,
+              }}
+              style={styles.cardField}
+              onCardChange={(card: CardFieldInput.Details) => setCardComplete(Boolean(card.complete))}
+            />
+          )}
+        </View>
+
+        <View style={styles.footer}>
+          <Button
+            title={saving ? 'Saving…' : 'Save card'}
+            onPress={onSubmit}
+            size="lg"
+            disabled={saving || intent.status !== 'ready' || !cardComplete}
+          />
+        </View>
+
+        <View style={styles.secureRow}>
+          <Ionicons name="shield-checkmark-outline" size={12} color={c.textMuted} />
+          <Text style={styles.secureText}>This card info is used only for Cenaiva billing.</Text>
+        </View>
+      </ScrollView>
+    </ScreenWrapper>
   );
 }
-
-const s = StyleSheet.create({
-  flex: { flex: 1 },
-  safe: { flex: 1 },
-  scrollContent: {
-    paddingBottom: 32,
-  },
-  topBar: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: 22,
-    paddingTop: 14,
-    paddingBottom: 10,
-  },
-  backBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-  },
-  backText: {
-    fontFamily: SF,
-    fontSize: 14,
-    fontWeight: '500',
-  },
-  brandWordmark: {
-    fontFamily: SF,
-    fontSize: 11,
-    fontWeight: '700',
-    letterSpacing: 5,
-    textTransform: 'uppercase',
-  },
-  headerWrap: {
-    paddingHorizontal: 24,
-    paddingTop: 12,
-  },
-  eyebrow: {
-    fontFamily: SF,
-    fontSize: 10,
-    fontWeight: '600',
-    letterSpacing: 3.2,
-    textTransform: 'uppercase',
-  },
-  title: {
-    fontFamily: SERIF,
-    fontSize: 40,
-    lineHeight: 42,
-    fontWeight: '500',
-    letterSpacing: -1,
-    marginTop: 12,
-  },
-  titleItalic: {
-    fontStyle: 'italic',
-  },
-  subtitle: {
-    fontFamily: SF,
-    fontSize: 14,
-    lineHeight: 21,
-    marginTop: 14,
-  },
-  receiptOuter: {
-    marginHorizontal: 22,
-    marginTop: 22,
-    position: 'relative',
-  },
-  ticketNotches: {
-    position: 'absolute',
-    top: -6,
-    left: 0,
-    right: 0,
-    flexDirection: 'row',
-    justifyContent: 'center',
-    gap: 4,
-    zIndex: 2,
-  },
-  notchDot: {
-    width: 6,
-    height: 6,
-    borderRadius: 3,
-  },
-  receipt: {
-    borderRadius: 4,
-    borderWidth: StyleSheet.hairlineWidth,
-    paddingHorizontal: 22,
-    paddingTop: 20,
-    paddingBottom: 16,
-    shadowColor: '#000',
-    shadowOpacity: 0.4,
-    shadowRadius: 32,
-    shadowOffset: { width: 0, height: 12 },
-    elevation: 6,
-  },
-  receiptHeaderRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'baseline',
-    marginBottom: 6,
-  },
-  receiptEyebrow: {
-    fontFamily: SF,
-    fontSize: 10,
-    fontWeight: '600',
-    letterSpacing: 3,
-    textTransform: 'uppercase',
-  },
-  receiptNo: {
-    fontFamily: MONO,
-    fontSize: 10,
-  },
-  cardLoadingRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 10,
-    paddingVertical: 16,
-  },
-  cardLoadingText: {
-    fontFamily: SF,
-    fontSize: 12,
-  },
-  fieldRow: {
-    paddingTop: 12,
-    paddingBottom: 10,
-    borderBottomWidth: StyleSheet.hairlineWidth,
-    borderStyle: 'dashed',
-  },
-  fieldRowFirst: {
-    borderTopWidth: StyleSheet.hairlineWidth,
-  },
-  fieldLabel: {
-    fontFamily: SF,
-    fontSize: 9,
-    fontWeight: '700',
-    letterSpacing: 1.2,
-  },
-  fieldInput: {
-    fontFamily: MONO,
-    fontSize: 14,
-    marginTop: 4,
-    padding: 0,
-    minHeight: 22,
-  },
-  cardField: {
-    width: '100%',
-    height: 52,
-    marginTop: 8,
-  },
-  totals: {
-    marginTop: 14,
-    paddingTop: 12,
-    borderTopWidth: StyleSheet.hairlineWidth,
-    borderStyle: 'dashed',
-  },
-  receiptTotalsRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    paddingVertical: 4,
-  },
-  totalsLabel: {
-    fontFamily: SF,
-    fontSize: 13,
-  },
-  totalsValue: {
-    fontFamily: MONO,
-    fontSize: 13,
-  },
-  totalsValueBold: {
-    fontWeight: '700',
-  },
-  errorCard: {
-    marginHorizontal: 22,
-    marginTop: 16,
-    borderRadius: 8,
-    borderWidth: 1,
-    borderColor: 'rgba(239,68,68,0.30)',
-    backgroundColor: 'rgba(239,68,68,0.08)',
-    padding: 14,
-    gap: 4,
-  },
-  errorTitle: {
-    fontFamily: SF,
-    fontSize: 13,
-    fontWeight: '700',
-  },
-  errorText: {
-    fontFamily: SF,
-    fontSize: 12,
-    lineHeight: 17,
-  },
-  ctaWrap: {
-    paddingHorizontal: 22,
-    paddingTop: 20,
-  },
-  cta: {
-    height: 52,
-    borderRadius: 4,
-    borderWidth: 1.5,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  ctaDisabled: {
-    opacity: 0.45,
-  },
-  ctaLabel: {
-    fontFamily: SF,
-    fontSize: 15,
-    fontWeight: '700',
-    letterSpacing: 1.5,
-    textTransform: 'uppercase',
-  },
-  trustRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 6,
-    marginTop: 10,
-  },
-  trustText: {
-    fontFamily: SF,
-    fontSize: 11,
-  },
-});
