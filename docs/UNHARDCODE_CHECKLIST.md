@@ -197,6 +197,7 @@ Low-impact tidying. Do these in slack time or roll into related changes.
 - [ ] **`lib/booking/addToCalendar.ts:81`** — extract `'TRIGGER:-PT2H'` into `CALENDAR_REMINDER_HOURS = 2`.
 - [ ] **`lib/booking/publicBookingApi.ts:122/127`** — move demo `floor_capacity: 150` and `'18:00'` slot fallback into `lib/mock/bookingAvailability.ts`. Keeps demo-only values out of the production module.
 - [ ] **`lib/storage/restaurantPaymentMethod.ts:25–32`** — drop the BIN-prefix `inferCardBrand`. Use Stripe's `card.brand` from the saved payment-method object.
+- [ ] **`app/(customer)/profile/register-restaurant-card-entry.tsx`** — `MONTHLY_FEE_LABEL = '$200.00 / mo'` is inlined for the receipt totals. Move to a single owner-pricing source once Cenaiva monthly pricing exists in config.
 - [ ] **`scripts/qa/mobile-click-smoke.mjs`** — read scheme + bundle ID from `app.json` at runtime instead of hardcoding two values.
 - [ ] **Sanitize developer paths** in `docs/hey-cenaiva-mobile-recent-handoff.md`, `docs/hey-cenaiva-latency-optimization-handoff.md`, `__tests__/cenaiva/latencyBudget.test.ts`. Replace `/Users/stevengeorgy/...` and `10.0.0.69` with placeholders.
 - [ ] **`SEATLY-MASTER-BIBLE.mdc:8`** — `Last updated: March 2026` is already past today. Replace with a git-tracked stamp or update.
