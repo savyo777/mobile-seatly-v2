@@ -3,7 +3,19 @@ import { Alert, Image, Pressable, ScrollView, StyleSheet, Text, View } from 'rea
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Button, ScreenWrapper } from '@/components/ui';
 import { useColors, createStyles, borderRadius, spacing, typography } from '@/lib/theme';
-import { createSnapPost, snapRestaurants } from '@/lib/mock/snaps';
+import {
+  createSnapPost as DEMO_createSnapPost,
+  snapRestaurants as DEMO_SNAP_RESTAURANTS,
+} from '@/lib/mock/snaps';
+import { isDemoModeEnabled } from '@/lib/config/demoMode';
+
+const snapRestaurants: typeof DEMO_SNAP_RESTAURANTS = isDemoModeEnabled() ? DEMO_SNAP_RESTAURANTS : [];
+const createSnapPost: typeof DEMO_createSnapPost = (...args) => {
+  if (!isDemoModeEnabled()) {
+    throw new Error('Posting reviews is unavailable until backend snaps are configured.');
+  }
+  return DEMO_createSnapPost(...args);
+};
 import { useCurrentUserId } from '@/lib/auth/currentUserId';
 
 const useStyles = createStyles((c) => ({

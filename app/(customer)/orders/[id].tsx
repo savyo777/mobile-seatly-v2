@@ -5,7 +5,10 @@ import { Ionicons } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Card, Badge, ScreenWrapper } from '@/components/ui';
-import { mockOrders, type Order } from '@/lib/mock/orders';
+import { mockOrders as DEMO_ORDERS, type Order } from '@/lib/mock/orders';
+import { isDemoModeEnabled } from '@/lib/config/demoMode';
+
+const mockOrders: typeof DEMO_ORDERS = isDemoModeEnabled() ? DEMO_ORDERS : [];
 import { formatCurrency } from '@/lib/utils/formatCurrency';
 import { useColors, createStyles, spacing, borderRadius, typography } from '@/lib/theme';
 

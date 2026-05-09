@@ -25,8 +25,13 @@ import {
   type StoryFilterCategory,
   type StoryFilterId,
 } from '@/lib/storyFilters/types';
-import { getSnapRestaurantName } from '@/lib/mock/snaps';
-import { mockRestaurants } from '@/lib/mock/restaurants';
+import { getSnapRestaurantName as DEMO_getSnapRestaurantName } from '@/lib/mock/snaps';
+import { mockRestaurants as DEMO_RESTAURANTS } from '@/lib/mock/restaurants';
+import { isDemoModeEnabled } from '@/lib/config/demoMode';
+
+const getSnapRestaurantName: typeof DEMO_getSnapRestaurantName = (id) =>
+  isDemoModeEnabled() ? DEMO_getSnapRestaurantName(id) : '';
+const mockRestaurants: typeof DEMO_RESTAURANTS = isDemoModeEnabled() ? DEMO_RESTAURANTS : [];
 import { captureStyledSnapToTmpFile } from '@/lib/snapOverlays/captureStyledSnap';
 import {
   DEFAULT_SNAP_PHOTO_ASPECT,

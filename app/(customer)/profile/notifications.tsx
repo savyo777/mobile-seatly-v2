@@ -3,7 +3,12 @@ import { View, Text } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { ProfileStackScreen } from '@/components/profile/ProfileStackScreen';
 import { ToggleRow } from '@/components/profile/ToggleRow';
-import { mockNotificationPrefs } from '@/lib/mock/profileScreens';
+import { mockNotificationPrefs as DEMO_NOTIFICATION_PREFS } from '@/lib/mock/profileScreens';
+import { isDemoModeEnabled } from '@/lib/config/demoMode';
+
+const mockNotificationPrefs: typeof DEMO_NOTIFICATION_PREFS = isDemoModeEnabled()
+  ? DEMO_NOTIFICATION_PREFS
+  : [];
 import { useColors, createStyles, spacing, typography, shadows } from '@/lib/theme';
 
 const useStyles = createStyles((c) => ({

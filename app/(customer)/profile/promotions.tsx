@@ -3,7 +3,10 @@ import { View, StyleSheet } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { ProfileStackScreen } from '@/components/profile/ProfileStackScreen';
 import { PromotionOfferCard } from '@/components/profile/PromotionOfferCard';
-import { mockPromotions } from '@/lib/mock/profileScreens';
+import { mockPromotions as DEMO_PROMOTIONS } from '@/lib/mock/profileScreens';
+import { isDemoModeEnabled } from '@/lib/config/demoMode';
+
+const mockPromotions: typeof DEMO_PROMOTIONS = isDemoModeEnabled() ? DEMO_PROMOTIONS : [];
 
 export default function PromotionsScreen() {
   const { t } = useTranslation();

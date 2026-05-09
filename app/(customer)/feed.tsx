@@ -14,11 +14,24 @@ import { useRouter, Href } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import {
-  listFeedPosts,
-  getRestaurantForPost,
+  listFeedPosts as DEMO_listFeedPosts,
+  getRestaurantForPost as DEMO_getRestaurantForPost,
   type SnapPost,
 } from '@/lib/mock/snaps';
-import { listFollowingPosts, listTrendingPosts } from '@/lib/mock/social';
+import {
+  listFollowingPosts as DEMO_listFollowingPosts,
+  listTrendingPosts as DEMO_listTrendingPosts,
+} from '@/lib/mock/social';
+import { isDemoModeEnabled } from '@/lib/config/demoMode';
+
+const listFeedPosts: typeof DEMO_listFeedPosts = (...args) =>
+  isDemoModeEnabled() ? DEMO_listFeedPosts(...args) : [];
+const getRestaurantForPost: typeof DEMO_getRestaurantForPost = (id) =>
+  isDemoModeEnabled() ? DEMO_getRestaurantForPost(id) : null;
+const listFollowingPosts: typeof DEMO_listFollowingPosts = (userId) =>
+  isDemoModeEnabled() ? DEMO_listFollowingPosts(userId) : [];
+const listTrendingPosts: typeof DEMO_listTrendingPosts = (...args) =>
+  isDemoModeEnabled() ? DEMO_listTrendingPosts(...args) : [];
 import { SnapGrid } from '@/components/snaps/SnapGrid';
 import { FeedHero } from '@/components/feed/FeedHero';
 import { FeedPostCard } from '@/components/feed/FeedPostCard';

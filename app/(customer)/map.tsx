@@ -19,7 +19,10 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { RestaurantDiscoveryMap } from '@/components/map/RestaurantDiscoveryMap';
 import { RestaurantMapDetailSheet } from '@/components/map/RestaurantMapDetailSheet';
 import { useCenaivaAssistant } from '@/lib/cenaiva/CenaivaAssistantProvider';
-import { mockMapRestaurants } from '@/lib/mock/mapRestaurants';
+import { mockMapRestaurants as DEMO_MAP_RESTAURANTS } from '@/lib/mock/mapRestaurants';
+import { isDemoModeEnabled } from '@/lib/config/demoMode';
+
+const mockMapRestaurants: typeof DEMO_MAP_RESTAURANTS = isDemoModeEnabled() ? DEMO_MAP_RESTAURANTS : [];
 import {
   applyMapFilter,
   DEFAULT_MAP_CENTER,

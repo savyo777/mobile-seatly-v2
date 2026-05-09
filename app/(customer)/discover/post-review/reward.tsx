@@ -4,7 +4,10 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Button, ScreenWrapper } from '@/components/ui';
 import { SnapShareSheet } from '@/components/snaps/SnapShareSheet';
 import { createStyles, borderRadius, spacing, typography } from '@/lib/theme';
-import { mockRestaurants } from '@/lib/mock/restaurants';
+import { mockRestaurants as DEMO_RESTAURANTS } from '@/lib/mock/restaurants';
+import { isDemoModeEnabled } from '@/lib/config/demoMode';
+
+const mockRestaurants: typeof DEMO_RESTAURANTS = isDemoModeEnabled() ? DEMO_RESTAURANTS : [];
 import { STORY_FILTERS } from '@/lib/storyFilters/registry';
 import type { StoryFilterId } from '@/lib/storyFilters/types';
 

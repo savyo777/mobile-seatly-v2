@@ -4,8 +4,12 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Input, ScreenWrapper } from '@/components/ui';
 import { useColors, createStyles, borderRadius, spacing, typography } from '@/lib/theme';
 import { safeRouterBack } from '@/lib/navigation/transitions';
-import { snapRestaurants } from '@/lib/mock/snaps';
-import { mockReservations } from '@/lib/mock/reservations';
+import { snapRestaurants as DEMO_SNAP_RESTAURANTS } from '@/lib/mock/snaps';
+import { mockReservations as DEMO_RESERVATIONS } from '@/lib/mock/reservations';
+import { isDemoModeEnabled } from '@/lib/config/demoMode';
+
+const snapRestaurants: typeof DEMO_SNAP_RESTAURANTS = isDemoModeEnabled() ? DEMO_SNAP_RESTAURANTS : [];
+const mockReservations: typeof DEMO_RESERVATIONS = isDemoModeEnabled() ? DEMO_RESERVATIONS : [];
 import { Ionicons } from '@expo/vector-icons';
 
 const useStyles = createStyles((c) => ({

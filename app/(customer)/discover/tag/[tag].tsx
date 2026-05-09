@@ -5,8 +5,14 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
 import { SnapGrid } from '@/components/snaps/SnapGrid';
-import { getRestaurantForPost } from '@/lib/mock/snaps';
-import { listPostsByTag } from '@/lib/mock/social';
+import { getRestaurantForPost as DEMO_getRestaurantForPost } from '@/lib/mock/snaps';
+import { listPostsByTag as DEMO_listPostsByTag } from '@/lib/mock/social';
+import { isDemoModeEnabled } from '@/lib/config/demoMode';
+
+const getRestaurantForPost: typeof DEMO_getRestaurantForPost = (id) =>
+  isDemoModeEnabled() ? DEMO_getRestaurantForPost(id) : null;
+const listPostsByTag: typeof DEMO_listPostsByTag = (tag) =>
+  isDemoModeEnabled() ? DEMO_listPostsByTag(tag) : [];
 import { useColors, createStyles, spacing, typography, borderRadius } from '@/lib/theme';
 
 const useStyles = createStyles((c) => ({

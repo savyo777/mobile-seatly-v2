@@ -7,8 +7,12 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Button, Badge, ScreenWrapper } from '@/components/ui';
 import { StoryFilterFrame } from '@/components/storyFilters/StoryFilterFrame';
 import { useAuthSession } from '@/lib/auth/AuthContext';
-import { mockRestaurants } from '@/lib/mock/restaurants';
-import { mockMenuItems, type MenuItem as MockMenuItem } from '@/lib/mock/menuItems';
+import { mockRestaurants as DEMO_RESTAURANTS } from '@/lib/mock/restaurants';
+import { mockMenuItems as DEMO_MENU_ITEMS, type MenuItem as MockMenuItem } from '@/lib/mock/menuItems';
+import { isDemoModeEnabled } from '@/lib/config/demoMode';
+
+const mockRestaurants: typeof DEMO_RESTAURANTS = isDemoModeEnabled() ? DEMO_RESTAURANTS : [];
+const mockMenuItems: typeof DEMO_MENU_ITEMS = isDemoModeEnabled() ? DEMO_MENU_ITEMS : [];
 import { useMenu } from '@/lib/context/MenuContext';
 import { loadRestaurantsForDiscover } from '@/lib/data/restaurantCatalog';
 import {
@@ -16,7 +20,10 @@ import {
   usePublicMenuItems,
   type MenuItem as PublicMenuItem,
 } from '@/lib/cenaiva/api/dataHooks';
-import { listSnapPostsByRestaurant } from '@/lib/mock/snaps';
+import { listSnapPostsByRestaurant as DEMO_listSnapPostsByRestaurant } from '@/lib/mock/snaps';
+
+const listSnapPostsByRestaurant: typeof DEMO_listSnapPostsByRestaurant = (id) =>
+  isDemoModeEnabled() ? DEMO_listSnapPostsByRestaurant(id) : [];
 import { getLatestCompletedVisitForRestaurant } from '@/lib/postVisit/postTurn';
 import { formatCurrency } from '@/lib/utils/formatCurrency';
 import {

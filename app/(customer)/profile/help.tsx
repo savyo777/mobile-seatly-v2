@@ -6,7 +6,11 @@ import { ChevronGlyph } from '@/components/ui/ChevronGlyph';
 import { ProfileStackScreen } from '@/components/profile/ProfileStackScreen';
 import { ProfileSectionTitle } from '@/components/profile/ProfileSectionTitle';
 import { Card } from '@/components/ui';
-import { mockFaqs, mockHelpTopics } from '@/lib/mock/profileScreens';
+import { mockFaqs as DEMO_FAQS, mockHelpTopics as DEMO_HELP_TOPICS } from '@/lib/mock/profileScreens';
+import { isDemoModeEnabled } from '@/lib/config/demoMode';
+
+const mockFaqs: typeof DEMO_FAQS = isDemoModeEnabled() ? DEMO_FAQS : [];
+const mockHelpTopics: typeof DEMO_HELP_TOPICS = isDemoModeEnabled() ? DEMO_HELP_TOPICS : [];
 import { useColors, createStyles, spacing, typography, borderRadius, shadows } from '@/lib/theme';
 import { SUPPORT_EMAIL } from '@/lib/config/contactInfo';
 

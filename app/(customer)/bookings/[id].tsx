@@ -5,8 +5,16 @@ import { Ionicons } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Button, Card, Badge, ScreenWrapper } from '@/components/ui';
-import { mockReservations, cancelReservationByIdAsync, type Reservation } from '@/lib/mock/reservations';
-import { mockOrders } from '@/lib/mock/orders';
+import {
+  mockReservations as DEMO_RESERVATIONS,
+  cancelReservationByIdAsync,
+  type Reservation,
+} from '@/lib/mock/reservations';
+import { mockOrders as DEMO_ORDERS } from '@/lib/mock/orders';
+import { isDemoModeEnabled } from '@/lib/config/demoMode';
+
+const mockReservations: typeof DEMO_RESERVATIONS = isDemoModeEnabled() ? DEMO_RESERVATIONS : [];
+const mockOrders: typeof DEMO_ORDERS = isDemoModeEnabled() ? DEMO_ORDERS : [];
 import { formatCurrency } from '@/lib/utils/formatCurrency';
 import { useColors, createStyles, spacing, borderRadius, typography } from '@/lib/theme';
 

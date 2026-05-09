@@ -7,7 +7,19 @@ import { ScreenWrapper } from '@/components/ui';
 import { StoryFilterFrame } from '@/components/storyFilters/StoryFilterFrame';
 import { useColors, createStyles, borderRadius, spacing, typography } from '@/lib/theme';
 import { safeRouterBack } from '@/lib/navigation/transitions';
-import { getSnapUser, listSnapPostsByRestaurant, getSnapRestaurantName } from '@/lib/mock/snaps';
+import {
+  getSnapUser as DEMO_getSnapUser,
+  listSnapPostsByRestaurant as DEMO_listSnapPostsByRestaurant,
+  getSnapRestaurantName as DEMO_getSnapRestaurantName,
+} from '@/lib/mock/snaps';
+import { isDemoModeEnabled } from '@/lib/config/demoMode';
+
+const getSnapUser: typeof DEMO_getSnapUser = (id) =>
+  isDemoModeEnabled() ? DEMO_getSnapUser(id) : undefined;
+const listSnapPostsByRestaurant: typeof DEMO_listSnapPostsByRestaurant = (id) =>
+  isDemoModeEnabled() ? DEMO_listSnapPostsByRestaurant(id) : [];
+const getSnapRestaurantName: typeof DEMO_getSnapRestaurantName = (id) =>
+  isDemoModeEnabled() ? DEMO_getSnapRestaurantName(id) : '';
 
 const useStyles = createStyles((c) => ({
   root: {

@@ -18,7 +18,11 @@ import { useFocusEffect, useLocalSearchParams, useNavigation, useRouter } from '
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { StatusBar } from 'expo-status-bar';
 import { useColors, createStyles, borderRadius, spacing, typography } from '@/lib/theme';
-import { getSnapRestaurantName } from '@/lib/mock/snaps';
+import { getSnapRestaurantName as DEMO_getSnapRestaurantName } from '@/lib/mock/snaps';
+import { isDemoModeEnabled } from '@/lib/config/demoMode';
+
+const getSnapRestaurantName: typeof DEMO_getSnapRestaurantName = (id) =>
+  isDemoModeEnabled() ? DEMO_getSnapRestaurantName(id) : '';
 import { openAppPhotoSettings } from '@/lib/device/openAppPhotoSettings';
 import { safeRouterBack } from '@/lib/navigation/transitions';
 

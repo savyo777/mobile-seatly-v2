@@ -4,7 +4,15 @@ import { useTranslation } from 'react-i18next';
 import { Ionicons } from '@expo/vector-icons';
 import { ProfileStackScreen } from '@/components/profile/ProfileStackScreen';
 import { Card, Button, Badge } from '@/components/ui';
-import { mockInviteRecords, REFERRAL_CODE, REFERRAL_THEY_GET, REFERRAL_YOU_GET } from '@/lib/mock/profileScreens';
+import {
+  mockInviteRecords as DEMO_INVITE_RECORDS,
+  REFERRAL_CODE,
+  REFERRAL_THEY_GET,
+  REFERRAL_YOU_GET,
+} from '@/lib/mock/profileScreens';
+import { isDemoModeEnabled } from '@/lib/config/demoMode';
+
+const mockInviteRecords: typeof DEMO_INVITE_RECORDS = isDemoModeEnabled() ? DEMO_INVITE_RECORDS : [];
 import {
   canShareReferral,
   getReferralLimits,

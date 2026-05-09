@@ -5,7 +5,16 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
 import { SnapGrid } from '@/components/snaps/SnapGrid';
-import { listTopTags, listTrendingPosts } from '@/lib/mock/social';
+import {
+  listTopTags as DEMO_listTopTags,
+  listTrendingPosts as DEMO_listTrendingPosts,
+} from '@/lib/mock/social';
+import { isDemoModeEnabled } from '@/lib/config/demoMode';
+
+const listTopTags: typeof DEMO_listTopTags = (...args) =>
+  isDemoModeEnabled() ? DEMO_listTopTags(...args) : [];
+const listTrendingPosts: typeof DEMO_listTrendingPosts = (...args) =>
+  isDemoModeEnabled() ? DEMO_listTrendingPosts(...args) : [];
 import { useColors, createStyles, borderRadius, spacing, typography } from '@/lib/theme';
 
 const useStyles = createStyles((c) => ({

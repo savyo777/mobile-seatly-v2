@@ -24,13 +24,23 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { StoryFilterFrame } from '@/components/storyFilters/StoryFilterFrame';
 import {
-  deleteSnapPost,
-  getRestaurantForPost,
-  getSnapPostById,
-  getSnapUser,
+  deleteSnapPost as DEMO_deleteSnapPost,
+  getRestaurantForPost as DEMO_getRestaurantForPost,
+  getSnapPostById as DEMO_getSnapPostById,
+  getSnapUser as DEMO_getSnapUser,
   timeAgoLabel,
 } from '@/lib/mock/snaps';
 import { mockCustomer } from '@/lib/mock/users';
+import { isDemoModeEnabled } from '@/lib/config/demoMode';
+
+const deleteSnapPost: typeof DEMO_deleteSnapPost = (postId, userId) =>
+  isDemoModeEnabled() ? DEMO_deleteSnapPost(postId, userId) : false;
+const getRestaurantForPost: typeof DEMO_getRestaurantForPost = (id) =>
+  isDemoModeEnabled() ? DEMO_getRestaurantForPost(id) : null;
+const getSnapPostById: typeof DEMO_getSnapPostById = (id) =>
+  isDemoModeEnabled() ? DEMO_getSnapPostById(id) : undefined;
+const getSnapUser: typeof DEMO_getSnapUser = (id) =>
+  isDemoModeEnabled() ? DEMO_getSnapUser(id) : undefined;
 import {
   DEFAULT_SNAP_PHOTO_ASPECT,
   getSnapPreviewLayout,

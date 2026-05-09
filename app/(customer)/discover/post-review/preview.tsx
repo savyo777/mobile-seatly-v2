@@ -6,7 +6,11 @@ import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Button, ScreenWrapper } from '@/components/ui';
 import { useColors, createStyles, borderRadius, spacing, typography } from '@/lib/theme';
-import { getSnapRestaurantName } from '@/lib/mock/snaps';
+import { getSnapRestaurantName as DEMO_getSnapRestaurantName } from '@/lib/mock/snaps';
+import { isDemoModeEnabled } from '@/lib/config/demoMode';
+
+const getSnapRestaurantName: typeof DEMO_getSnapRestaurantName = (id) =>
+  isDemoModeEnabled() ? DEMO_getSnapRestaurantName(id) : '';
 import { safeRouterBack } from '@/lib/navigation/transitions';
 
 const useStyles = createStyles((c) => ({

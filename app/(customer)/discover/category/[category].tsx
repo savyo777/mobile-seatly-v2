@@ -11,7 +11,10 @@ import {
   restaurantsForDiscoverCategory,
   type DiscoverCategorySlug,
 } from '@/lib/discover/discoverCategories';
-import { mockRestaurants, type Restaurant } from '@/lib/mock/restaurants';
+import { mockRestaurants as DEMO_RESTAURANTS, type Restaurant } from '@/lib/mock/restaurants';
+import { isDemoModeEnabled } from '@/lib/config/demoMode';
+
+const mockRestaurants: typeof DEMO_RESTAURANTS = isDemoModeEnabled() ? DEMO_RESTAURANTS : [];
 import { useColors, createStyles, spacing, typography } from '@/lib/theme';
 
 const useStyles = createStyles((c) => ({

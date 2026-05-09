@@ -15,13 +15,21 @@ import { useRouter, Href } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import { useColors, createStyles, spacing, borderRadius } from '@/lib/theme';
 import {
-  listEvents,
-  filterEvents,
-  getRestaurantForEvent,
+  listEvents as DEMO_listEvents,
+  filterEvents as DEMO_filterEvents,
+  getRestaurantForEvent as DEMO_getRestaurantForEvent,
   type DiningEvent,
   type DateFilter,
   type EventType,
 } from '@/lib/mock/events';
+import { isDemoModeEnabled } from '@/lib/config/demoMode';
+
+const listEvents: typeof DEMO_listEvents = (...args) =>
+  isDemoModeEnabled() ? DEMO_listEvents(...args) : [];
+const filterEvents: typeof DEMO_filterEvents = (events, dateFilter, typeFilter) =>
+  isDemoModeEnabled() ? DEMO_filterEvents(events, dateFilter, typeFilter) : [];
+const getRestaurantForEvent: typeof DEMO_getRestaurantForEvent = (id) =>
+  isDemoModeEnabled() ? DEMO_getRestaurantForEvent(id) : undefined;
 import { EventCard } from '@/components/events/EventCard';
 import { EventFilterBar } from '@/components/events/EventFilterBar';
 
