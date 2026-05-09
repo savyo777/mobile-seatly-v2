@@ -14,11 +14,21 @@ export type RestaurantWithDistance = Restaurant & { distanceMeters: number };
 
 const DEMO_MAP_LOCATION_RADIUS_METERS = 100_000;
 
+// Initial map center used when the user denies location permission. Defaults
+// to GTA coordinates (Cenaiva's launch market), but every component reads
+// from EXPO_PUBLIC_DEFAULT_MAP_* so it can be retargeted per build.
+function envNumber(key: string, fallback: number): number {
+  const raw = process.env[key];
+  if (typeof raw !== 'string') return fallback;
+  const parsed = Number(raw.trim());
+  return Number.isFinite(parsed) ? parsed : fallback;
+}
+
 export const DEFAULT_MAP_CENTER = {
-  latitude: 43.51025,
-  longitude: -79.86635,
-  latitudeDelta: 0.022,
-  longitudeDelta: 0.022,
+  latitude: envNumber('EXPO_PUBLIC_DEFAULT_MAP_LAT', 43.51025),
+  longitude: envNumber('EXPO_PUBLIC_DEFAULT_MAP_LON', -79.86635),
+  latitudeDelta: envNumber('EXPO_PUBLIC_DEFAULT_MAP_DELTA', 0.022),
+  longitudeDelta: envNumber('EXPO_PUBLIC_DEFAULT_MAP_DELTA', 0.022),
 };
 
 export function isMapLocationInDemoRegion(lat: number, lng: number): boolean {

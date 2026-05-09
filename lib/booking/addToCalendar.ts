@@ -1,6 +1,7 @@
 import * as FileSystem from 'expo-file-system/legacy';
 import * as Sharing from 'expo-sharing';
 import { Linking, Platform } from 'react-native';
+import { BRAND_DOMAIN } from '@/lib/config/legalLinks';
 
 export type CalendarBooking = {
   reservationId: string;
@@ -62,11 +63,11 @@ export function buildIcsContent(booking: CalendarBooking): string {
   const lines = [
     'BEGIN:VCALENDAR',
     'VERSION:2.0',
-    'PRODID:-//Seatly//Reservation//EN',
+    'PRODID:-//Cenaiva//Reservation//EN',
     'CALSCALE:GREGORIAN',
     'METHOD:PUBLISH',
     'BEGIN:VEVENT',
-    `UID:${booking.reservationId}@seatly.app`,
+    `UID:${booking.reservationId}@${BRAND_DOMAIN}`,
     `DTSTAMP:${toIcsUtc(now)}`,
     `DTSTART:${toIcsUtc(start)}`,
     `DTEND:${toIcsUtc(end)}`,
@@ -129,7 +130,7 @@ export async function addBookingToCalendar(booking: CalendarBooking): Promise<vo
     throw new Error('Device storage is not available for the calendar export.');
   }
 
-  const directory = `${cacheDir}seatly-calendar/`;
+  const directory = `${cacheDir}cenaiva-calendar/`;
   await FileSystem.makeDirectoryAsync(directory, { intermediates: true });
 
   const safeCode = booking.confirmationCode.replace(/[^A-Za-z0-9_-]/g, '') || booking.reservationId;

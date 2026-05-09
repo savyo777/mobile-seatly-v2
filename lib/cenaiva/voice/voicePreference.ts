@@ -1,20 +1,24 @@
-function resolveVoiceId(envValue: string | undefined, fallback: string): string {
+// Cenaiva-branded TTS voice IDs come from build-time env. We previously
+// shipped literal default voice IDs as fallbacks, which meant a missing env
+// would silently use stale ElevenLabs voices forever. Instead, return null
+// when the env is not set — callers already handle the null case (UI hides
+// the voice picker / falls back to the OS TTS).
+//
+// To enable Cenaiva voices, set:
+//   EXPO_PUBLIC_CENAIVA_TTS_VOICE_FEMALE_ID
+//   EXPO_PUBLIC_CENAIVA_TTS_VOICE_MALE_ID
+
+function resolveVoiceId(envValue: string | undefined): string | null {
   const trimmed = envValue?.trim();
-  return trimmed ? trimmed : fallback;
+  return trimmed && trimmed.length > 0 ? trimmed : null;
 }
 
-export const CENAIVA_TTS_VOICE_IDS = {
-  female: resolveVoiceId(
-    process.env.EXPO_PUBLIC_CENAIVA_TTS_VOICE_FEMALE_ID,
-    '8vf2Pg7VZD0Piv8GA8v9',
-  ),
-  male: resolveVoiceId(
-    process.env.EXPO_PUBLIC_CENAIVA_TTS_VOICE_MALE_ID,
-    'f5HLTX707KIM4SzJYzSz',
-  ),
+const CENAIVA_TTS_VOICE_IDS = {
+  female: resolveVoiceId(process.env.EXPO_PUBLIC_CENAIVA_TTS_VOICE_FEMALE_ID),
+  male: resolveVoiceId(process.env.EXPO_PUBLIC_CENAIVA_TTS_VOICE_MALE_ID),
 } as const;
 
-export type CenaivaTtsVoice = keyof typeof CENAIVA_TTS_VOICE_IDS;
+export type CenaivaTtsVoice = 'female' | 'male';
 
 export const CENAIVA_TTS_VOICE_OPTIONS: Array<{
   value: CenaivaTtsVoice;

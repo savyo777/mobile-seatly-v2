@@ -11,7 +11,7 @@ import {
 import { useAuthSession } from '@/lib/auth/AuthContext';
 import { getSupabaseEnv, isSupabaseConfigured } from '@/lib/supabase/env';
 
-const DEEPGRAM_URL = 'https://api.deepgram.com/v1/listen';
+const DEEPGRAM_URL = process.env.EXPO_PUBLIC_DEEPGRAM_URL?.trim() || 'https://api.deepgram.com/v1/listen';
 const MAX_KEYTERMS = 12;
 const SILENCE_TIMEOUT_MS = 320;
 const NO_SPEECH_TIMEOUT_MS = 3_000;
