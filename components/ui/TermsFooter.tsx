@@ -2,9 +2,7 @@ import React from 'react';
 import { Linking, Text, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { createStyles, spacing, typography } from '@/lib/theme';
-
-const TERMS_URL = 'https://cenaiva.com/terms';
-const PRIVACY_URL = 'https://cenaiva.com/privacy';
+import { TERMS_URL, PRIVACY_URL } from '@/lib/config/legalLinks';
 
 export function TermsFooter() {
   const { t } = useTranslation();

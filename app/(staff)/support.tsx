@@ -4,8 +4,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { OwnerScreen } from '@/components/owner/OwnerScreen';
 import { SubpageHeader } from '@/components/owner/SubpageHeader';
 import { borderRadius, createStyles, spacing, typography, useColors } from '@/lib/theme';
-
-const SUPPORT_EMAIL = 'help@cenaiva.app';
+import { SUPPORT_EMAIL } from '@/lib/config/contactInfo';
 const FAQ_ITEMS = [
   {
     q: 'How do I update billing details?',

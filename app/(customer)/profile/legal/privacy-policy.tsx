@@ -1,5 +1,6 @@
 import React from 'react';
 import { LegalScreen } from '@/components/profile/LegalScreen';
+import { PRIVACY_EMAIL } from '@/lib/config/contactInfo';
 
 // TODO: replace with finalized legal copy
 export default function PrivacyPolicyScreen() {
@@ -41,14 +42,14 @@ export default function PrivacyPolicyScreen() {
         {
           heading: 'Your Rights',
           paragraphs: [
-            'You have the right to access, correct, or delete your personal data. Contact privacy@seatly.com with any requests.',
+            `You have the right to access, correct, or delete your personal data. Contact ${PRIVACY_EMAIL} with any requests.`,
             'Users in the EEA and UK also have the right to data portability and to object to processing.',
           ],
         },
         {
           heading: 'Contact',
           paragraphs: [
-            'Privacy questions? Reach us at privacy@seatly.com.',
+            `Privacy questions? Reach us at ${PRIVACY_EMAIL}.`,
             'Last updated: April 2026.',
           ],
         },

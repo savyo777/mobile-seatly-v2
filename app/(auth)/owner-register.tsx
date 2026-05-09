@@ -11,8 +11,7 @@ import { ensureOwnerProfile, signInWithGoogle } from '@/lib/services/oauth';
 import { normalizePhoneToE164, sendPhoneOtp } from '@/lib/services/phoneAuth';
 import { Input, Button, SocialAuthButtons, TermsFooter, Checkbox } from '@/components/ui';
 
-const TERMS_URL = 'https://cenaiva.com/terms';
-const PRIVACY_URL = 'https://cenaiva.com/privacy';
+import { TERMS_URL, PRIVACY_URL } from '@/lib/config/legalLinks';
 
 type PasswordChecks = {
   minLength: boolean;

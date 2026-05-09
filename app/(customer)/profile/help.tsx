@@ -8,6 +8,7 @@ import { ProfileSectionTitle } from '@/components/profile/ProfileSectionTitle';
 import { Card } from '@/components/ui';
 import { mockFaqs, mockHelpTopics } from '@/lib/mock/profileScreens';
 import { useColors, createStyles, spacing, typography, borderRadius, shadows } from '@/lib/theme';
+import { SUPPORT_EMAIL } from '@/lib/config/contactInfo';
 
 if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental) {
   UIManager.setLayoutAnimationEnabledExperimental(true);
@@ -103,8 +104,6 @@ const useStyles = createStyles((c) => ({
   },
 }));
 
-const SUPPORT_EMAIL = 'help@cenaiva.app';
-
 function openSupportEmail(subject: string, body: string) {
   const mailto = `mailto:${SUPPORT_EMAIL}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
   Linking.openURL(mailto).catch(() => {
@@ -173,7 +172,7 @@ export default function HelpScreen() {
           <Ionicons name="mail-outline" size={22} color={c.gold} />
           <View style={styles.flex}>
             <Text style={styles.contactTitle}>Contact support</Text>
-            <Text style={styles.contactSub}>help@cenaiva.app</Text>
+            <Text style={styles.contactSub}>{SUPPORT_EMAIL}</Text>
           </View>
           <ChevronGlyph color={c.textMuted} size={18} />
         </Pressable>

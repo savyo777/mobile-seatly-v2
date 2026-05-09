@@ -16,8 +16,7 @@ import {
   Checkbox,
 } from '@/components/ui';
 
-const TERMS_URL = 'https://cenaiva.com/terms';
-const PRIVACY_URL = 'https://cenaiva.com/privacy';
+import { TERMS_URL, PRIVACY_URL } from '@/lib/config/legalLinks';
 
 type PasswordChecks = {
   minLength: boolean;

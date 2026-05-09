@@ -1,5 +1,6 @@
 import React from 'react';
 import { LegalScreen } from '@/components/profile/LegalScreen';
+import { LICENSES_URL } from '@/lib/config/legalLinks';
 
 // TODO: replace with finalized legal copy / auto-generate from package.json
 export default function LicensesScreen() {
@@ -46,7 +47,7 @@ export default function LicensesScreen() {
         {
           heading: 'Full list',
           paragraphs: [
-            'A complete list of open-source packages used in this app and their full licence texts is available at seatly.com/licenses.',
+            `A complete list of open-source packages used in this app and their full licence texts is available at ${LICENSES_URL.replace(/^https?:\/\//, '')}.`,
           ],
         },
       ]}

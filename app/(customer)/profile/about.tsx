@@ -6,6 +6,8 @@ import { Ionicons } from '@expo/vector-icons';
 import { ProfileStackScreen } from '@/components/profile/ProfileStackScreen';
 import { Card } from '@/components/ui';
 import { useColors, createStyles, spacing, typography, borderRadius, shadows } from '@/lib/theme';
+import { TERMS_URL, PRIVACY_URL, ACK_URL } from '@/lib/config/legalLinks';
+import { LEGAL_EMAIL } from '@/lib/config/contactInfo';
 
 const APP_VERSION = Constants.expoConfig?.version ?? '1.0.0';
 
@@ -99,17 +101,17 @@ export default function AboutScreen() {
         </Text>
       </Card>
 
-      <Pressable style={styles.linkRow} onPress={() => open('https://cenaiva.app/terms')}>
+      <Pressable style={styles.linkRow} onPress={() => open(TERMS_URL)}>
         <Ionicons name="document-text-outline" size={20} color={c.gold} />
         <Text style={styles.linkText}>Terms of service</Text>
         <Ionicons name="open-outline" size={16} color={c.textMuted} />
       </Pressable>
-      <Pressable style={styles.linkRow} onPress={() => open('https://cenaiva.app/privacy')}>
+      <Pressable style={styles.linkRow} onPress={() => open(PRIVACY_URL)}>
         <Ionicons name="shield-checkmark-outline" size={20} color={c.gold} />
         <Text style={styles.linkText}>Privacy policy</Text>
         <Ionicons name="open-outline" size={16} color={c.textMuted} />
       </Pressable>
-      <Pressable style={styles.linkRow} onPress={() => open('https://cenaiva.app/ack')}>
+      <Pressable style={styles.linkRow} onPress={() => open(ACK_URL)}>
         <Ionicons name="heart-outline" size={20} color={c.gold} />
         <Text style={styles.linkText}>Acknowledgements</Text>
         <Ionicons name="open-outline" size={16} color={c.textMuted} />
@@ -117,7 +119,7 @@ export default function AboutScreen() {
 
       <Card style={styles.contactCard}>
         <Text style={styles.contactLabel}>Contact</Text>
-        <Text style={styles.contactEmail}>hello@cenaiva.app</Text>
+        <Text style={styles.contactEmail}>{LEGAL_EMAIL}</Text>
         <Text style={styles.contactHint}>For partnerships and press inquiries</Text>
       </Card>
     </ProfileStackScreen>
