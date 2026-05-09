@@ -20,6 +20,18 @@ const CENAIVA_CLUSTER_RADIUS_METERS = 560;
 const MIN_CLUSTER_RADIUS_METERS = 28;
 const CLUSTER_RADIUS_VISIBLE_SPAN_RATIO = 0.24;
 
+// Guardrails to prevent the user from zooming out so far that the map view
+// becomes degenerate (latitudeDelta near 180 / longitudeDelta near 360).
+// react-native-maps gestures freeze on iOS Apple Maps when the region exits a
+// sane range, so we snap back if onRegionChangeComplete reports anything past
+// these thresholds.
+const MAX_SAFE_LATITUDE_DELTA = 90;
+const MAX_SAFE_LONGITUDE_DELTA = 160;
+const ZOOM_OUT_RESCUE_REGION_DELTA = {
+  latitudeDelta: 60,
+  longitudeDelta: 60,
+};
+
 function isFiniteCoordinate(latitude: unknown, longitude: unknown): boolean {
   return (
     typeof latitude === 'number' &&
@@ -415,6 +427,35 @@ export function RestaurantDiscoveryMap({
     [onMapPress],
   );
 
+  const handleRegionChangeComplete = useCallback((region: Region) => {
+    // If the user pinch-zoomed past a sane range, gestures can become stuck
+    // (a known react-native-maps quirk on Apple Maps). Animate back to a
+    // reasonable view so they can keep panning/zooming.
+    const latDelta = Math.abs(region.latitudeDelta);
+    const lonDelta = Math.abs(region.longitudeDelta);
+    const isOutOfBounds =
+      !Number.isFinite(latDelta) ||
+      !Number.isFinite(lonDelta) ||
+      !Number.isFinite(region.latitude) ||
+      !Number.isFinite(region.longitude) ||
+      latDelta > MAX_SAFE_LATITUDE_DELTA ||
+      lonDelta > MAX_SAFE_LONGITUDE_DELTA;
+
+    if (isOutOfBounds) {
+      const rescueRegion: Region = {
+        latitude: Number.isFinite(region.latitude) ? region.latitude : DEFAULT_MAP_CENTER.latitude,
+        longitude: Number.isFinite(region.longitude) ? region.longitude : DEFAULT_MAP_CENTER.longitude,
+        latitudeDelta: ZOOM_OUT_RESCUE_REGION_DELTA.latitudeDelta,
+        longitudeDelta: ZOOM_OUT_RESCUE_REGION_DELTA.longitudeDelta,
+      };
+      mapRef.current?.animateToRegion(rescueRegion, 240);
+      setCurrentRegion(rescueRegion);
+      return;
+    }
+
+    setCurrentRegion(region);
+  }, []);
+
   const focusCluster = useCallback((cluster: MarkerCluster) => {
     if (cluster.restaurants.length <= 1) {
       const restaurant = cluster.restaurants[0];
@@ -455,7 +496,7 @@ export function RestaurantDiscoveryMap({
         showsUserLocation={showUserLocation}
         showsMyLocationButton={false}
         showsCompass={false}
-        minZoomLevel={3}
+        minZoomLevel={2}
         maxZoomLevel={20}
         scrollEnabled
         zoomEnabled
@@ -464,7 +505,7 @@ export function RestaurantDiscoveryMap({
         pitchEnabled={false}
         toolbarEnabled={false}
         onPress={handleMapPress}
-        onRegionChangeComplete={setCurrentRegion}
+        onRegionChangeComplete={handleRegionChangeComplete}
       >
         {safeUserLocation && !showUserLocation ? (
           <Marker

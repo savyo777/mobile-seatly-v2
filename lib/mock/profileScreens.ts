@@ -184,7 +184,10 @@ export const mockInviteRecords: InviteRecord[] = [
 ];
 
 export const REFERRAL_CODE = 'ALEX-CENAIVA-24';
-export const REFERRAL_YOU_GET = 15;
+// Pricing: symmetric $10 each, capped at $100 lifetime to avoid runaway costs.
+// Daily share rate limit and short per-share cooldown live in
+// `lib/storage/referralLimits.ts`.
+export const REFERRAL_YOU_GET = 10;
 export const REFERRAL_THEY_GET = 10;
 
 export type DietaryPreferenceOption = { id: string; label: string };
