@@ -24,18 +24,10 @@ import {
   type AppShellPreference,
 } from '@/lib/navigation/appShellPreference';
 import { CENAIVA_FOLLOW_URLS } from '@/lib/config/cenaivaSocial';
+import { LOYALTY_TIERS, getLoyaltyTier } from '@/lib/loyalty/tiers';
 
-const TIERS = [
-  { name: 'Bronze',   min: 0,    color: '#CD7F32' },
-  { name: 'Silver',   min: 500,  color: '#A8A8B8' },
-  { name: 'Gold',     min: 1500, color: '#C9A84C' },
-  { name: 'Platinum', min: 3000, color: '#E2E2F0' },
-] as const;
-
-function getTier(pts: number) {
-  const idx = TIERS.findIndex((_, i) => pts < (TIERS[i + 1]?.min ?? Infinity));
-  return TIERS[Math.max(0, idx)];
-}
+const TIERS = LOYALTY_TIERS;
+const getTier = getLoyaltyTier;
 
 type Row =
   | {

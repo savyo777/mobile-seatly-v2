@@ -11,6 +11,7 @@ import {
   DEFAULT_BOOKING_WINDOW_DAYS,
   MAX_ONLINE_PARTY_SIZE,
 } from '@/lib/booking/bookingLimits';
+import { SLOT_DURATION_OPTIONS, NOTICE_OPTIONS } from '@/lib/booking/bookingDefaults';
 import { borderRadius, createStyles, spacing, typography, useColors } from '@/lib/theme';
 
 const useStyles = createStyles((c) => ({
@@ -134,8 +135,7 @@ const useStyles = createStyles((c) => ({
   },
 }));
 
-const SLOT_OPTIONS = [15, 30, 45, 60, 90, 120, 150, 180];
-const NOTICE_OPTIONS = ['No notice', '30 min', '1 hour', '2 hours', '24 hours'];
+const SLOT_OPTIONS = SLOT_DURATION_OPTIONS;
 
 type StepperProps = {
   value: number;

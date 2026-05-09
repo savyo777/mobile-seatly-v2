@@ -7,6 +7,7 @@ import { useTranslation } from 'react-i18next';
 import { Button, Card } from '@/components/ui';
 import { getCachedRestaurantById, loadRestaurantForBooking } from '@/lib/data/restaurantCatalog';
 import { cartSubtotal, parseBookingCartParam } from '@/lib/booking/publicBookingApi';
+import { BOOKING_STEPS_TOTAL } from '@/lib/booking/bookingDefaults';
 import { formatCurrency } from '@/lib/utils/formatCurrency';
 import { useColors, createStyles, borderRadius } from '@/lib/theme';
 
@@ -80,7 +81,7 @@ export default function Step5Review() {
   const [specialRequest, setSpecialRequest] = useState(notes ?? '');
   const [occasion, setOccasion] = useState(initialOccasion || 'None');
   const [restaurant, setRestaurant] = useState(() => getCachedRestaurantById(restaurantId));
-  const BOOKING_STEPS = 6;
+  const BOOKING_STEPS = BOOKING_STEPS_TOTAL;
   const STEP = 4;
   const progress = STEP / BOOKING_STEPS;
 

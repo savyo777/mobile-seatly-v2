@@ -18,28 +18,11 @@ import { useColors, useTheme, createStyles, spacing, borderRadius } from '@/lib/
 import { useAuthSession } from '@/lib/auth/AuthContext';
 import { fetchMyBookingItems, type MyBookingItem } from '@/lib/booking/myReservations';
 import { isDemoModeEnabled } from '@/lib/config/demoMode';
+import { DINER_TIERS, getDinerTier, getNextDinerTier } from '@/lib/loyalty/dinerTiers';
 import { fetchCurrentUserProfile, type AppUserProfile } from '@/lib/services/userProfile';
 import { getStoredCustomerPaymentMethods } from '@/lib/storage/customerPaymentMethods';
 
-const DINER_TIERS = [
-  { name: 'Regular', min: 0 },
-  { name: 'Insider', min: 16 },
-  { name: 'Elite', min: 32 },
-];
-
-function getDinerTier(dinners: number) {
-  for (let i = DINER_TIERS.length - 1; i >= 0; i--) {
-    if (dinners >= DINER_TIERS[i].min) return DINER_TIERS[i];
-  }
-  return DINER_TIERS[0];
-}
-
-function getNextTier(dinners: number) {
-  for (const tier of DINER_TIERS) {
-    if (dinners < tier.min) return tier;
-  }
-  return null;
-}
+const getNextTier = getNextDinerTier;
 
 function initialsFromName(name: string): string {
   return initialsFromDisplayName(name);

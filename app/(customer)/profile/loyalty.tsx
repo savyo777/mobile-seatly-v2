@@ -7,8 +7,13 @@ import { ScreenWrapper, Card, Button, Badge } from '@/components/ui';
 import { useColors, createStyles, spacing, borderRadius, typography, shadows } from '@/lib/theme';
 import { mockLoyaltyTransactions, mockRewards, type LoyaltyReward } from '@/lib/mock/loyalty';
 import { mockCustomer } from '@/lib/mock/users';
+import { LOYALTY_TIERS } from '@/lib/loyalty/tiers';
 
-const GOLD_THRESHOLD = 2000;
+// Threshold for the "Gold" tier comes from the canonical loyalty-tier table
+// in lib/loyalty/tiers.ts. The progress bar on this screen is specifically
+// "progress to Gold" since Gold is the headline tier the marketing screen
+// promotes; if the tier table changes, this constant follows it.
+const GOLD_THRESHOLD = LOYALTY_TIERS.find((t) => t.name === 'Gold')?.min ?? 1500;
 
 function formatActivityDate(iso: string, locale: string): string {
   try {

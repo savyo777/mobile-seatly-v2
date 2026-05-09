@@ -20,6 +20,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import * as ImagePicker from 'expo-image-picker';
 import { useColors, createStyles, spacing, borderRadius } from '@/lib/theme';
+import { PRICE_TIER_OPTIONS } from '@/lib/restaurants/priceTiers';
 import {
   OWNER_BUSINESS_PROFILE,
   OWNER_BUSINESS_HOURS,
@@ -334,7 +335,7 @@ const useStyles = createStyles((c) => ({
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
 
-const PRICE_OPTIONS = ['$', '$$', '$$$'];
+const PRICE_OPTIONS = PRICE_TIER_OPTIONS;
 
 // ── Time helpers ─────────────────────────────────────────────────────────────
 

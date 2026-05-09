@@ -12,6 +12,7 @@ import { sendPasswordResetEmail } from '@/lib/services/accountSecurity';
 import { ensureCustomerProfile, signInWithGoogle } from '@/lib/services/oauth';
 import { normalizePhoneToE164, sendPhoneOtp } from '@/lib/services/phoneAuth';
 import { resolveHomeForSignedInUser } from '@/lib/auth/postSignInRouting';
+import { LOCKOUT_MS, MAX_FAILED_ATTEMPTS } from '@/lib/auth/lockoutPolicy';
 import {
   ScreenWrapper,
   Input,
@@ -123,10 +124,6 @@ const useStyles = createStyles((c) => ({
   footerMuted: { ...typography.body, color: c.textSecondary },
   footerLink: { ...typography.body, color: c.gold, fontWeight: '700' },
 }));
-
-const LOCKOUT_MS = 15 * 60 * 1000;
-
-const MAX_FAILED_ATTEMPTS = 5;
 
 function failuresKey(email: string) {
   return `@seatly/login_failures:${email}`;

@@ -6,6 +6,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTranslation } from 'react-i18next';
 import { Button, Card } from '@/components/ui';
 import { cartSubtotal, parseBookingCartParam } from '@/lib/booking/publicBookingApi';
+import { BOOKING_STEPS_TOTAL } from '@/lib/booking/bookingDefaults';
 import { loadRestaurantForBooking } from '@/lib/data/restaurantCatalog';
 import { getStoredCustomerPaymentMethods, type CustomerPaymentMethod } from '@/lib/storage/customerPaymentMethods';
 import { formatCurrency } from '@/lib/utils/formatCurrency';
@@ -89,7 +90,7 @@ export default function Step6Payment() {
   const [selectedMethod, setSelectedMethod] = useState<PaymentMethod>('pay_at_restaurant');
   const [taxRate, setTaxRate] = useState(0);
   const [defaultCard, setDefaultCard] = useState<CustomerPaymentMethod | null>(null);
-  const BOOKING_STEPS = 6;
+  const BOOKING_STEPS = BOOKING_STEPS_TOTAL;
   const STEP = 5;
   const progress = STEP / BOOKING_STEPS;
 

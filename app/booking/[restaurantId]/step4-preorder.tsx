@@ -19,6 +19,7 @@ import {
 } from '@/lib/booking/publicBookingApi';
 import { formatCurrency } from '@/lib/utils/formatCurrency';
 import { useColors, createStyles, borderRadius } from '@/lib/theme';
+import { BOOKING_STEPS_TOTAL } from '@/lib/booking/bookingDefaults';
 
 interface CartItem {
   menuItemId: string;
@@ -113,7 +114,7 @@ export default function Step4Preorder() {
   const [selectedCategory, setSelectedCategory] = useState('All');
   const { categories: liveCategories } = usePublicMenuCategories(restaurantId);
   const { items: liveMenuItems, loading: liveMenuLoading } = usePublicMenuItems(restaurantId);
-  const BOOKING_STEPS = 6;
+  const BOOKING_STEPS = BOOKING_STEPS_TOTAL;
   const STEP = 3;
   const progress = STEP / BOOKING_STEPS;
 

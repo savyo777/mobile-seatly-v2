@@ -23,8 +23,9 @@ import {
 } from '@/lib/mock/ownerApp';
 import { createStyles, useTheme } from '@/lib/theme';
 import { ownerColorsFromPalette, ownerRadii, ownerSpace, useOwnerColors } from '@/lib/theme/ownerTheme';
+import { DELAYED_TICKET_MINUTES } from '@/lib/owner/kdsThresholds';
 
-const DELAYED_MINS = 12;
+const DELAYED_MINS = DELAYED_TICKET_MINUTES;
 
 function ticketIsDelayed(t: KdsTicket): boolean {
   if (t.status === 'ready') return false;
