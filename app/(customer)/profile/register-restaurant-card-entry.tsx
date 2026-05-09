@@ -16,12 +16,9 @@ import {
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
-import {
-  CardField,
-  useConfirmSetupIntent,
-  type CardFieldInput,
-} from '@stripe/stripe-react-native';
+import { useConfirmSetupIntent } from '@stripe/stripe-react-native';
 import { useColors } from '@/lib/theme';
+import { getStripeEnv } from '@/lib/stripe/env';
 import {
   finalizeRestaurantRegistration,
   getRestaurantPaymentMethodPreview,
@@ -44,6 +41,103 @@ type SetupIntentState =
   | { status: 'ready'; clientSecret: string; setupIntentId: string }
   | { status: 'error'; message: string };
 
+// ─────────────────────────────────────────────────────────────────────────────
+// Card formatting / validation helpers
+// ─────────────────────────────────────────────────────────────────────────────
+
+function formatCardNumber(input: string): string {
+  const digits = input.replace(/\D/g, '').slice(0, 19);
+  const groups = digits.match(/.{1,4}/g);
+  return groups ? groups.join(' ') : '';
+}
+
+function formatExpiry(input: string): string {
+  const digits = input.replace(/\D/g, '').slice(0, 4);
+  if (digits.length <= 2) return digits;
+  return `${digits.slice(0, 2)} / ${digits.slice(2)}`;
+}
+
+function parseExpiry(formatted: string): { month: number; year: number } | null {
+  const digits = formatted.replace(/\D/g, '');
+  if (digits.length !== 4) return null;
+  const month = Number(digits.slice(0, 2));
+  const year = 2000 + Number(digits.slice(2, 4));
+  if (!Number.isFinite(month) || month < 1 || month > 12) return null;
+  if (!Number.isFinite(year)) return null;
+  // Basic past-date guard: card must expire end-of-month >= today.
+  const now = new Date();
+  const lastDayOfExpiryMonth = new Date(year, month, 0);
+  if (lastDayOfExpiryMonth < new Date(now.getFullYear(), now.getMonth(), 1)) return null;
+  return { month, year };
+}
+
+function passesLuhn(rawNumber: string): boolean {
+  const digits = rawNumber.replace(/\D/g, '');
+  if (digits.length < 13) return false;
+  let sum = 0;
+  let alt = false;
+  for (let i = digits.length - 1; i >= 0; i--) {
+    let d = Number(digits[i]);
+    if (alt) {
+      d *= 2;
+      if (d > 9) d -= 9;
+    }
+    sum += d;
+    alt = !alt;
+  }
+  return sum % 10 === 0;
+}
+
+function detectBrand(rawNumber: string): string {
+  const d = rawNumber.replace(/\D/g, '');
+  if (/^4/.test(d)) return 'Visa';
+  if (/^(5[1-5]|2[2-7])/.test(d)) return 'Mastercard';
+  if (/^3[47]/.test(d)) return 'Amex';
+  if (/^6(?:011|5)/.test(d)) return 'Discover';
+  return '';
+}
+
+function expectedCvcLength(rawNumber: string): 3 | 4 {
+  return /^3[47]/.test(rawNumber.replace(/\D/g, '')) ? 4 : 3;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Direct Stripe API call — creates a PaymentMethod from raw card data using
+// the publishable key. This is the same flow Stripe.js uses on web: the card
+// data goes from device → Stripe and never touches our server.
+// ─────────────────────────────────────────────────────────────────────────────
+async function createStripePaymentMethod(args: {
+  publishableKey: string;
+  cardNumber: string;
+  expMonth: number;
+  expYear: number;
+  cvc: string;
+  billingName?: string;
+}): Promise<{ id: string }> {
+  const body = new URLSearchParams();
+  body.append('type', 'card');
+  body.append('card[number]', args.cardNumber.replace(/\D/g, ''));
+  body.append('card[exp_month]', String(args.expMonth));
+  body.append('card[exp_year]', String(args.expYear));
+  body.append('card[cvc]', args.cvc);
+  if (args.billingName?.trim()) body.append('billing_details[name]', args.billingName.trim());
+
+  const response = await fetch('https://api.stripe.com/v1/payment_methods', {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${args.publishableKey}`,
+      'Content-Type': 'application/x-www-form-urlencoded',
+    },
+    body: body.toString(),
+  });
+  const data = await response.json();
+  if (!response.ok) {
+    throw new Error(data?.error?.message || 'Could not validate card. Please check your details.');
+  }
+  if (!data?.id) throw new Error('Stripe did not return a payment method id.');
+  return { id: String(data.id) };
+}
+
 function formatTrialEnd(date: Date): string {
   return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
 }
@@ -61,9 +155,15 @@ export default function RegisterRestaurantCardEntryScreen() {
   const { confirmSetupIntent } = useConfirmSetupIntent();
 
   const [saving, setSaving] = useState(false);
-  const [cardComplete, setCardComplete] = useState(false);
   const [intent, setIntent] = useState<SetupIntentState>({ status: 'loading' });
-  const cardFieldRef = useRef<CardFieldInput.Methods | null>(null);
+
+  const [cardNumber, setCardNumber] = useState('');
+  const [expiry, setExpiry] = useState('');
+  const [cvc, setCvc] = useState('');
+
+  const cardNumberRef = useRef<TextInput>(null);
+  const expiryRef = useRef<TextInput>(null);
+  const cvcRef = useRef<TextInput>(null);
 
   const params = useLocalSearchParams<{
     businessName?: string;
@@ -81,16 +181,11 @@ export default function RegisterRestaurantCardEntryScreen() {
     [params.address, params.businessName, params.ownerPhone],
   );
 
-  // Cardholder is a regular text field (not PCI-protected). Default to the
-  // business name so users with their business name on the card are one tap
-  // away from done.
-  const [cardholder, setCardholder] = useState(input.businessName);
+  const [restaurantName, setRestaurantName] = useState(input.businessName);
   useEffect(() => {
-    setCardholder(input.businessName);
+    setRestaurantName(input.businessName);
   }, [input.businessName]);
 
-  // Trial-end date is informational; the source of truth comes back from
-  // finalizeRestaurantRegistration. Show a local estimate on this screen.
   const trialEndsLabel = useMemo(
     () => formatTrialEnd(addMonths(new Date(), OWNER_TRIAL_MONTHS)),
     [],
@@ -120,30 +215,66 @@ export default function RegisterRestaurantCardEntryScreen() {
     };
   }, [input]);
 
-  const dismissAllInputs = () => {
-    Keyboard.dismiss();
-    cardFieldRef.current?.blur?.();
-  };
+  const brand = detectBrand(cardNumber);
+  const expectedCvc = expectedCvcLength(cardNumber);
+  const parsedExpiry = parseExpiry(expiry);
+  const cardComplete =
+    passesLuhn(cardNumber) &&
+    !!parsedExpiry &&
+    cvc.replace(/\D/g, '').length === expectedCvc;
 
   const onSubmit = () => {
     void (async () => {
       if (saving) return;
+      Keyboard.dismiss();
+
       if (intent.status !== 'ready') {
         Alert.alert('Card form not ready', 'Please wait a moment, then try again.');
         return;
       }
-      if (!cardComplete) {
-        Alert.alert('Card incomplete', 'Please fill in the card number, expiry, and CVC.');
+      if (!passesLuhn(cardNumber)) {
+        Alert.alert('Invalid card number', 'Please double-check the number on your card.');
         return;
       }
+      if (!parsedExpiry) {
+        Alert.alert('Invalid expiry', 'Enter a valid MM / YY in the future.');
+        return;
+      }
+      if (cvc.replace(/\D/g, '').length !== expectedCvc) {
+        Alert.alert('Invalid CVC', `CVC should be ${expectedCvc} digits.`);
+        return;
+      }
+
+      const { publishableKey } = getStripeEnv();
+      if (!publishableKey) {
+        Alert.alert(
+          'Stripe not configured',
+          'EXPO_PUBLIC_STRIPE_PUBLISHABLE_KEY is missing. Please contact support.',
+        );
+        return;
+      }
+
       setSaving(true);
-      dismissAllInputs();
       try {
+        // 1) Create a PaymentMethod directly with Stripe (publishable-key
+        //    request — card data never touches our backend).
+        const pm = await createStripePaymentMethod({
+          publishableKey,
+          cardNumber,
+          expMonth: parsedExpiry.month,
+          expYear: parsedExpiry.year,
+          cvc: cvc.replace(/\D/g, ''),
+          billingName: restaurantName.trim() || input.businessName,
+        });
+
+        // 2) Confirm the SetupIntent server-issued at screen mount, using the
+        //    PaymentMethod we just created.
         const { error: confirmError } = await confirmSetupIntent(intent.clientSecret, {
           paymentMethodType: 'Card',
           paymentMethodData: {
+            paymentMethodId: pm.id,
             billingDetails: {
-              name: cardholder.trim() || input.businessName.trim() || undefined,
+              name: restaurantName.trim() || input.businessName.trim() || undefined,
               phone: input.ownerPhone.trim() || undefined,
               address: input.address.trim()
                 ? { line1: input.address.trim() }
@@ -178,10 +309,6 @@ export default function RegisterRestaurantCardEntryScreen() {
     })();
   };
 
-  // Theme-driven colors. Receipt aesthetic stays the same — paper
-  // surfaces become dark surfaces, ink text becomes white, dashed
-  // dividers become low-alpha white lines, ticket notches become
-  // bgBase-colored cutouts.
   const bg = c.bgBase;
   const surface = c.bgSurface;
   const dashed = 'rgba(255,255,255,0.10)';
@@ -202,160 +329,194 @@ export default function RegisterRestaurantCardEntryScreen() {
           keyboardDismissMode="interactive"
           showsVerticalScrollIndicator={false}
         >
-            {/* Top bar */}
-            <View style={s.topBar}>
-              <Pressable
-                onPress={() => router.back()}
-                style={({ pressed }) => [s.backBtn, pressed && { opacity: 0.6 }]}
-                hitSlop={12}
-              >
-                <Ionicons name="chevron-back" size={16} color={c.textPrimary} />
-                <Text style={[s.backText, { color: c.textPrimary }]}>Back</Text>
-              </Pressable>
-              <Text style={[s.brandWordmark, { color: c.gold }]}>CENAIVA</Text>
-              <View style={{ width: 50 }} />
+          {/* Top bar */}
+          <View style={s.topBar}>
+            <Pressable
+              onPress={() => router.back()}
+              style={({ pressed }) => [s.backBtn, pressed && { opacity: 0.6 }]}
+              hitSlop={12}
+            >
+              <Ionicons name="chevron-back" size={16} color={c.textPrimary} />
+              <Text style={[s.backText, { color: c.textPrimary }]}>Back</Text>
+            </Pressable>
+            <Text style={[s.brandWordmark, { color: c.gold }]}>CENAIVA</Text>
+            <View style={{ width: 50 }} />
+          </View>
+
+          {/* Header */}
+          <View style={s.headerWrap}>
+            <Text style={[s.eyebrow, { color: c.textSecondary }]}>Step 03 / Billing</Text>
+            <Text style={[s.title, { color: c.textPrimary }]}>
+              Your card,{'\n'}
+              <Text style={[s.titleItalic, { color: c.gold }]}>quietly</Text> on file.
+            </Text>
+            <Text style={[s.subtitle, { color: c.textSecondary }]}>
+              Three months on us. After that, {MONTHLY_FEE_SHORT} / month — cancel anytime.
+            </Text>
+          </View>
+
+          {/* Receipt */}
+          <View style={s.receiptOuter}>
+            <View style={s.ticketNotches} pointerEvents="none">
+              {Array.from({ length: 22 }).map((_, i) => (
+                <View key={i} style={[s.notchDot, { backgroundColor: bg }]} />
+              ))}
             </View>
 
-            {/* Header */}
-            <View style={s.headerWrap}>
-              <Text style={[s.eyebrow, { color: c.textSecondary }]}>Step 03 / Billing</Text>
-              <Text style={[s.title, { color: c.textPrimary }]}>
-                Your card,{'\n'}
-                <Text style={[s.titleItalic, { color: c.gold }]}>quietly</Text> on file.
-              </Text>
-              <Text style={[s.subtitle, { color: c.textSecondary }]}>
-                Three months on us. After that, {MONTHLY_FEE_SHORT} / month — cancel anytime.
-              </Text>
-            </View>
-
-            {/* Receipt card */}
-            <View style={s.receiptOuter}>
-              {/* ticket notches at top — same color as the page bg so they
-                  look like cutouts in the receipt */}
-              <View style={s.ticketNotches} pointerEvents="none">
-                {Array.from({ length: 22 }).map((_, i) => (
-                  <View key={i} style={[s.notchDot, { backgroundColor: bg }]} />
-                ))}
+            <View
+              style={[
+                s.receipt,
+                { backgroundColor: surface, borderColor: 'rgba(255,255,255,0.06)' },
+              ]}
+            >
+              <View style={s.receiptHeaderRow}>
+                <Text style={[s.receiptEyebrow, { color: c.textMuted }]}>Cenaiva · Restaurant</Text>
+                <Text style={[s.receiptNo, { color: c.textMuted }]}>NO. 0001</Text>
               </View>
 
-              <View
-                style={[
-                  s.receipt,
-                  { backgroundColor: surface, borderColor: 'rgba(255,255,255,0.06)' },
-                ]}
-              >
-                <View style={s.receiptHeaderRow}>
-                  <Text style={[s.receiptEyebrow, { color: c.textMuted }]}>Cenaiva · Restaurant</Text>
-                  <Text style={[s.receiptNo, { color: c.textMuted }]}>NO. 0001</Text>
+              {intent.status === 'loading' ? (
+                <View style={s.cardLoadingRow}>
+                  <ActivityIndicator color={c.gold} />
+                  <Text style={[s.cardLoadingText, { color: c.textSecondary }]}>
+                    Preparing secure card form…
+                  </Text>
                 </View>
-
-                {/* Cardholder */}
-                <View
-                  style={[
-                    s.fieldRow,
-                    s.fieldRowFirst,
-                    { borderTopColor: dashed, borderBottomColor: dashed },
-                  ]}
-                >
-                  <Text style={[s.fieldLabel, { color: c.textMuted }]}>RESTAURANT NAME</Text>
-                  <TextInput
-                    value={cardholder}
-                    onChangeText={setCardholder}
-                    placeholder="Your restaurant's name"
-                    placeholderTextColor={c.textMuted}
-                    style={[s.fieldInput, { color: c.textPrimary }]}
-                    autoCapitalize="words"
-                    autoCorrect={false}
-                    returnKeyType="done"
-                    onSubmitEditing={() => Keyboard.dismiss()}
-                    blurOnSubmit
-                  />
-                </View>
-
-                {/* Stripe CardForm — number / expiry / CVC / postal */}
-                <View style={[s.cardFormSection, { borderBottomColor: dashed }]}>
-                  <Text style={[s.fieldLabel, { color: c.textMuted }]}>CARD DETAILS</Text>
-                  {intent.status === 'loading' ? (
-                    <View style={s.cardFormLoading}>
-                      <ActivityIndicator color={c.gold} />
-                      <Text style={[s.cardFormLoadingText, { color: c.textSecondary }]}>
-                        Preparing secure card form…
-                      </Text>
-                    </View>
-                  ) : (
-                    // CardField (single inline input) is the only Stripe
-                    // RN component that lets us drop both the country
-                    // picker and the postal-code field — CardForm always
-                    // renders both on iOS with no opt-out.
-                    <CardField
-                      ref={cardFieldRef}
-                      postalCodeEnabled={false}
-                      placeholders={{
-                        number: '1234 5678 9012 3456',
-                        expiration: 'MM / YY',
-                        cvc: 'CVC',
-                      }}
-                      cardStyle={{
-                        backgroundColor: c.bgElevated,
-                        textColor: c.textPrimary,
-                        placeholderColor: c.textMuted,
-                        borderColor: 'transparent',
-                        borderWidth: 0,
-                        borderRadius: 4,
-                        fontSize: 15,
-                      }}
-                      style={s.cardField}
-                      onCardChange={(card: CardFieldInput.Details) => {
-                        setCardComplete(Boolean(card.complete));
-                      }}
+              ) : (
+                <>
+                  {/* Restaurant name */}
+                  <View
+                    style={[
+                      s.fieldRow,
+                      s.fieldRowFirst,
+                      { borderTopColor: dashed, borderBottomColor: dashed },
+                    ]}
+                  >
+                    <Text style={[s.fieldLabel, { color: c.textMuted }]}>RESTAURANT NAME</Text>
+                    <TextInput
+                      value={restaurantName}
+                      onChangeText={setRestaurantName}
+                      placeholder="Your restaurant's name"
+                      placeholderTextColor={c.textMuted}
+                      style={[s.fieldInput, { color: c.textPrimary }]}
+                      autoCapitalize="words"
+                      autoCorrect={false}
+                      returnKeyType="next"
+                      onSubmitEditing={() => cardNumberRef.current?.focus()}
+                      blurOnSubmit={false}
                     />
-                  )}
-                </View>
+                  </View>
 
-                {/* Totals */}
-                <View style={[s.totals, { borderTopColor: dashed }]}>
-                  <ReceiptRow k="Today's charge" v="$0.00" textColors={c} />
-                  <ReceiptRow k="Trial ends" v={trialEndsLabel} textColors={c} />
-                  <ReceiptRow k="Then" v={MONTHLY_FEE_LABEL} bold textColors={c} />
-                </View>
+                  {/* Card number */}
+                  <View style={[s.fieldRow, { borderBottomColor: dashed }]}>
+                    <View style={s.fieldLabelRow}>
+                      <Text style={[s.fieldLabel, { color: c.textMuted }]}>CARD NUMBER</Text>
+                      {brand ? (
+                        <Text style={[s.brandTag, { color: c.gold }]}>{brand}</Text>
+                      ) : null}
+                    </View>
+                    <TextInput
+                      ref={cardNumberRef}
+                      value={cardNumber}
+                      onChangeText={(t) => setCardNumber(formatCardNumber(t))}
+                      placeholder="1234 5678 9012 3456"
+                      placeholderTextColor={c.textMuted}
+                      style={[s.fieldInputMono, { color: c.textPrimary }]}
+                      keyboardType="number-pad"
+                      inputMode="numeric"
+                      autoComplete="cc-number"
+                      textContentType="creditCardNumber"
+                      maxLength={23}
+                      returnKeyType="next"
+                      onSubmitEditing={() => expiryRef.current?.focus()}
+                      blurOnSubmit={false}
+                    />
+                  </View>
+
+                  {/* Expiry */}
+                  <View style={[s.fieldRow, { borderBottomColor: dashed }]}>
+                    <Text style={[s.fieldLabel, { color: c.textMuted }]}>EXPIRY DATE</Text>
+                    <TextInput
+                      ref={expiryRef}
+                      value={expiry}
+                      onChangeText={(t) => setExpiry(formatExpiry(t))}
+                      placeholder="MM / YY"
+                      placeholderTextColor={c.textMuted}
+                      style={[s.fieldInputMono, { color: c.textPrimary }]}
+                      keyboardType="number-pad"
+                      inputMode="numeric"
+                      maxLength={7}
+                      returnKeyType="next"
+                      onSubmitEditing={() => cvcRef.current?.focus()}
+                      blurOnSubmit={false}
+                    />
+                  </View>
+
+                  {/* CVC */}
+                  <View style={[s.fieldRow, { borderBottomColor: dashed }]}>
+                    <Text style={[s.fieldLabel, { color: c.textMuted }]}>CVC</Text>
+                    <TextInput
+                      ref={cvcRef}
+                      value={cvc}
+                      onChangeText={(t) => setCvc(t.replace(/\D/g, '').slice(0, expectedCvc))}
+                      placeholder={expectedCvc === 4 ? '••••' : '•••'}
+                      placeholderTextColor={c.textMuted}
+                      style={[s.fieldInputMono, { color: c.textPrimary }]}
+                      keyboardType="number-pad"
+                      inputMode="numeric"
+                      maxLength={4}
+                      secureTextEntry
+                      returnKeyType="done"
+                      onSubmitEditing={() => Keyboard.dismiss()}
+                      blurOnSubmit
+                    />
+                  </View>
+                </>
+              )}
+
+              {/* Totals */}
+              <View style={[s.totals, { borderTopColor: dashed }]}>
+                <ReceiptRow k="Today's charge" v="$0.00" textColors={c} />
+                <ReceiptRow k="Trial ends" v={trialEndsLabel} textColors={c} />
+                <ReceiptRow k="Then" v={MONTHLY_FEE_LABEL} bold textColors={c} />
               </View>
             </View>
+          </View>
 
-            {typeof params.paymentError === 'string' ? (
-              <View style={s.errorCard}>
-                <Text style={[s.errorTitle, { color: c.textPrimary }]}>Use the card form above</Text>
-                <Text style={[s.errorText, { color: c.textSecondary }]}>{params.paymentError}</Text>
-              </View>
-            ) : null}
-
-            {intent.status === 'error' ? (
-              <View style={s.errorCard}>
-                <Text style={[s.errorTitle, { color: c.textPrimary }]}>Could not prepare card form</Text>
-                <Text style={[s.errorText, { color: c.textSecondary }]}>{intent.message}</Text>
-              </View>
-            ) : null}
-
-            {/* CTA */}
-            <View style={s.ctaWrap}>
-              <Pressable
-                onPress={onSubmit}
-                disabled={saving || intent.status !== 'ready' || !cardComplete}
-                style={({ pressed }) => [
-                  s.cta,
-                  { backgroundColor: ctaBg, borderColor: ctaBg },
-                  (saving || intent.status !== 'ready' || !cardComplete) && s.ctaDisabled,
-                  pressed && !saving && intent.status === 'ready' && cardComplete && { opacity: 0.85 },
-                ]}
-              >
-                <Text style={[s.ctaLabel, { color: ctaFg }]}>{saving ? 'SAVING…' : 'SAVE CARD'}</Text>
-              </Pressable>
-
-              <View style={s.trustRow}>
-                <Ionicons name="lock-closed-outline" size={11} color={c.textMuted} />
-                <Text style={[s.trustText, { color: c.textMuted }]}>Stripe-encrypted · PCI DSS</Text>
-              </View>
+          {typeof params.paymentError === 'string' ? (
+            <View style={s.errorCard}>
+              <Text style={[s.errorTitle, { color: c.textPrimary }]}>Use the card form above</Text>
+              <Text style={[s.errorText, { color: c.textSecondary }]}>{params.paymentError}</Text>
             </View>
-          </ScrollView>
+          ) : null}
+
+          {intent.status === 'error' ? (
+            <View style={s.errorCard}>
+              <Text style={[s.errorTitle, { color: c.textPrimary }]}>Could not prepare card form</Text>
+              <Text style={[s.errorText, { color: c.textSecondary }]}>{intent.message}</Text>
+            </View>
+          ) : null}
+
+          {/* CTA */}
+          <View style={s.ctaWrap}>
+            <Pressable
+              onPress={onSubmit}
+              disabled={saving || intent.status !== 'ready' || !cardComplete}
+              style={({ pressed }) => [
+                s.cta,
+                { backgroundColor: ctaBg, borderColor: ctaBg },
+                (saving || intent.status !== 'ready' || !cardComplete) && s.ctaDisabled,
+                pressed && !saving && intent.status === 'ready' && cardComplete && { opacity: 0.85 },
+              ]}
+            >
+              <Text style={[s.ctaLabel, { color: ctaFg }]}>{saving ? 'SAVING…' : 'SAVE CARD'}</Text>
+            </Pressable>
+
+            <View style={s.trustRow}>
+              <Ionicons name="lock-closed-outline" size={11} color={c.textMuted} />
+              <Text style={[s.trustText, { color: c.textMuted }]}>Stripe-encrypted · PCI DSS</Text>
+            </View>
+          </View>
+        </ScrollView>
       </KeyboardAvoidingView>
     </SafeAreaView>
   );
@@ -394,7 +555,6 @@ const s = StyleSheet.create({
   scrollContent: {
     paddingBottom: 32,
   },
-  // top bar
   topBar: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -420,7 +580,6 @@ const s = StyleSheet.create({
     letterSpacing: 5,
     textTransform: 'uppercase',
   },
-  // header
   headerWrap: {
     paddingHorizontal: 24,
     paddingTop: 12,
@@ -449,7 +608,6 @@ const s = StyleSheet.create({
     lineHeight: 21,
     marginTop: 14,
   },
-  // receipt outer (with ticket notches)
   receiptOuter: {
     marginHorizontal: 22,
     marginTop: 22,
@@ -499,7 +657,16 @@ const s = StyleSheet.create({
     fontFamily: MONO,
     fontSize: 10,
   },
-  // dashed-row fields
+  cardLoadingRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    paddingVertical: 24,
+  },
+  cardLoadingText: {
+    fontFamily: SF,
+    fontSize: 12,
+  },
   fieldRow: {
     paddingTop: 12,
     paddingBottom: 10,
@@ -509,42 +676,39 @@ const s = StyleSheet.create({
   fieldRowFirst: {
     borderTopWidth: StyleSheet.hairlineWidth,
   },
+  fieldLabelRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
   fieldLabel: {
     fontFamily: SF,
     fontSize: 9,
     fontWeight: '700',
     letterSpacing: 1.2,
   },
+  brandTag: {
+    fontFamily: SF,
+    fontSize: 10,
+    fontWeight: '700',
+    letterSpacing: 1.4,
+    textTransform: 'uppercase',
+  },
   fieldInput: {
     fontFamily: MONO,
     fontSize: 14,
     marginTop: 4,
     padding: 0,
-    minHeight: 20,
+    minHeight: 22,
   },
-  // CardForm section
-  cardFormSection: {
-    paddingTop: 12,
-    paddingBottom: 10,
-    borderBottomWidth: StyleSheet.hairlineWidth,
-    borderStyle: 'dashed',
+  fieldInputMono: {
+    fontFamily: MONO,
+    fontSize: 16,
+    marginTop: 6,
+    padding: 0,
+    minHeight: 22,
+    letterSpacing: 1,
   },
-  cardField: {
-    width: '100%',
-    height: 52,
-    marginTop: 8,
-  },
-  cardFormLoading: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 10,
-    paddingVertical: 24,
-  },
-  cardFormLoadingText: {
-    fontFamily: SF,
-    fontSize: 12,
-  },
-  // totals
   totals: {
     marginTop: 14,
     paddingTop: 12,
@@ -567,7 +731,6 @@ const s = StyleSheet.create({
   totalsValueBold: {
     fontWeight: '700',
   },
-  // error
   errorCard: {
     marginHorizontal: 22,
     marginTop: 16,
@@ -588,7 +751,6 @@ const s = StyleSheet.create({
     fontSize: 12,
     lineHeight: 17,
   },
-  // CTA
   ctaWrap: {
     paddingHorizontal: 22,
     paddingTop: 20,
