@@ -12,6 +12,11 @@ import { setAppShellPreference } from '@/lib/navigation/appShellPreference';
 import { withOwnerReturnTarget } from '@/lib/navigation/ownerReturnTargets';
 import { getStoredRestaurantPaymentCards } from '@/lib/storage/restaurantPaymentMethod';
 
+const OWNER_MONTHLY_SUB_DOLLARS = Number(process.env.EXPO_PUBLIC_OWNER_MONTHLY_SUB_DOLLARS) || 0;
+const OWNER_MONTHLY_SUB_LABEL = OWNER_MONTHLY_SUB_DOLLARS > 0
+  ? `$${OWNER_MONTHLY_SUB_DOLLARS} / month`
+  : '';
+
 // ── Types ──────────────────────────────────────────────────────────────────
 
 type RowItem =
@@ -420,7 +425,7 @@ export default function OwnerSettingsScreen() {
         {
           kind: 'nav',
           label: 'Subscription plan',
-          value: '$200 / month',
+          value: OWNER_MONTHLY_SUB_LABEL,
           icon: 'star-outline',
           route: '/(staff)/subscription-plan',
         },

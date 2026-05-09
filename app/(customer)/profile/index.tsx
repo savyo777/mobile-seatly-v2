@@ -21,6 +21,11 @@ import { isDemoModeEnabled } from '@/lib/config/demoMode';
 import { DINER_TIERS, getDinerTier, getNextDinerTier } from '@/lib/loyalty/dinerTiers';
 import { fetchCurrentUserProfile, type AppUserProfile } from '@/lib/services/userProfile';
 import { getStoredCustomerPaymentMethods } from '@/lib/storage/customerPaymentMethods';
+import {
+  SUGGESTED_CUISINES,
+  SUGGESTED_DIETARY,
+  SUGGESTED_VIBES,
+} from '@/lib/constants/preferenceCatalog';
 
 const getNextTier = getNextDinerTier;
 
@@ -51,58 +56,6 @@ function toggleCommaPreference(raw: string, item: string): string {
   }
   return [...items, trimmed].join(', ');
 }
-
-const SUGGESTED_CUISINES = [
-  'Italian',
-  'Japanese',
-  'Mexican',
-  'Korean',
-  'Thai',
-  'French',
-  'Indian',
-  'Mediterranean',
-  'Vietnamese',
-  'Chinese',
-  'Ethiopian',
-  'BBQ',
-  'Seafood',
-  'Steakhouse',
-  'Brunch',
-] as const;
-
-const SUGGESTED_DIETARY = [
-  'Vegetarian',
-  'Vegan',
-  'Gluten-free',
-  'Halal',
-  'Kosher',
-  'Dairy-free',
-  'Nut-free',
-  'Shellfish-free',
-  'Low sodium',
-  'Low carb',
-  'Pescatarian',
-  'No alcohol',
-  'Kid-friendly menu',
-] as const;
-
-const SUGGESTED_VIBES = [
-  'Date night',
-  'Business dinner',
-  'Birthday',
-  'Group dinner',
-  'Counter / bar',
-  'Quiet table',
-  'Patio',
-  'Rooftop',
-  'Live music',
-  "Chef's tasting",
-  'Solo dining',
-  'Late night',
-  'Casual',
-  'Romantic',
-  'Celebration',
-] as const;
 
 const savedRestaurants = isDemoModeEnabled() ? getSavedRestaurants() : [];
 
