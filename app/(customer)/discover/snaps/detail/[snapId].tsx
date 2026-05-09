@@ -37,8 +37,10 @@ import {
 } from '@/lib/storyFilters/previewLayout';
 import { useColors, createStyles, borderRadius, spacing, typography } from '@/lib/theme';
 import { safeRouterBack } from '@/lib/navigation/transitions';
+import { useCurrentUserId } from '@/lib/auth/currentUserId';
 
-const ME = mockCustomer.id;
+// `ME` is now read at render time from the auth context (with a demo-mode
+// fallback to mockCustomer.id). See lib/auth/currentUserId.
 
 const useStyles = createStyles((c) => ({
   root: {
@@ -197,10 +199,11 @@ export default function SnapDetailScreen() {
   const { width: windowW, height: windowH } = useWindowDimensions();
   const { snapId, restaurantId } = useLocalSearchParams<{ snapId: string; restaurantId?: string }>();
 
+  const me = useCurrentUserId();
   const post = snapId ? getSnapPostById(snapId) : undefined;
   const user = post ? getSnapUser(post.user_id) : undefined;
   const restaurant = post ? getRestaurantForPost(post.restaurant_id) : null;
-  const isOwnPost = post?.user_id === ME;
+  const isOwnPost = !!me && post?.user_id === me;
   const [showDeleteSheet, setShowDeleteSheet] = useState(false);
   const [photoAspect, setPhotoAspect] = useState(DEFAULT_SNAP_PHOTO_ASPECT);
 
@@ -227,7 +230,8 @@ export default function SnapDetailScreen() {
           text: 'Delete',
           style: 'destructive',
           onPress: () => {
-            deleteSnapPost(post.id, ME);
+            if (!me) return;
+            deleteSnapPost(post.id, me);
             goBack();
           },
         },

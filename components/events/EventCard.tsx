@@ -17,9 +17,7 @@ import {
   isEventSaved,
   toggleSaveEvent,
 } from '@/lib/mock/events';
-import { mockCustomer } from '@/lib/mock/users';
-
-const ME = mockCustomer.id;
+import { useCurrentUserId } from '@/lib/auth/currentUserId';
 
 const TYPE_LABEL: Record<EventType, string> = {
   event: 'Event',
@@ -183,7 +181,8 @@ export function EventCard({ event, isHero = false }: Props) {
   const c = useColors();
   const styles = useStyles();
   const restaurant = getRestaurantForEvent(event.restaurantId);
-  const [saved, setSaved] = useState(() => isEventSaved(ME, event.id));
+  const me = useCurrentUserId();
+  const [saved, setSaved] = useState(() => (me ? isEventSaved(me, event.id) : false));
 
   const TYPE_COLOR: Record<EventType, string> = {
     event: c.gold,
@@ -196,9 +195,10 @@ export function EventCard({ event, isHero = false }: Props) {
   const cardHeight = isHero ? 320 : 220;
 
   const handleSave = useCallback(() => {
-    toggleSaveEvent(ME, event.id);
+    if (!me) return;
+    toggleSaveEvent(me, event.id);
     setSaved((s) => !s);
-  }, [event.id]);
+  }, [event.id, me]);
 
   const handleBook = useCallback(() => {
     const eventDateKey = event.date.slice(0, 10);

@@ -23,16 +23,14 @@ import { SnapGrid } from '@/components/snaps/SnapGrid';
 import { FeedHero } from '@/components/feed/FeedHero';
 import { FeedPostCard } from '@/components/feed/FeedPostCard';
 import { CollectionsStrip } from '@/components/feed/CollectionsStrip';
-import { mockCustomer } from '@/lib/mock/users';
+import { useCurrentUserId } from '@/lib/auth/currentUserId';
+import { useLocation } from '@/lib/location/useLocation';
 import { useColors, createStyles, spacing, borderRadius } from '@/lib/theme';
 
 type FeedMode = 'local' | 'following' | 'explore';
 type FeedItem = SnapPost | { _type: 'collections' };
 
-const TORONTO_LAT = 43.6532;
-const TORONTO_LNG = -79.3832;
 const LOCAL_RADIUS_KM = 50;
-const ME = mockCustomer.id;
 const COLLECTIONS_EVERY = 5;
 
 const MODE_TABS: { key: FeedMode; label: string; icon: string }[] = [
@@ -178,6 +176,8 @@ export default function FeedScreen() {
   const c = useColors();
   const styles = useStyles();
   const [mode, setMode] = useState<FeedMode>('local');
+  const me = useCurrentUserId();
+  const { lat: nearLat, lng: nearLng } = useLocation();
 
   // Collapsing header animation
   const scrollY = useRef(new Animated.Value(0)).current;
@@ -192,14 +192,16 @@ export default function FeedScreen() {
     extrapolate: 'clamp',
   });
 
-  const rawPosts: SnapPost[] = useMemo(() =>
-    mode === 'following'
-      ? listFollowingPosts(ME)
-      : mode === 'local'
-      ? listFeedPosts(TORONTO_LAT, TORONTO_LNG, LOCAL_RADIUS_KM)
-      : listTrendingPosts(7),
-    [mode],
-  );
+  const rawPosts: SnapPost[] = useMemo(() => {
+    if (mode === 'following') {
+      // No "following" feed for unauthenticated/non-demo users — show trending instead.
+      return me ? listFollowingPosts(me) : listTrendingPosts(7);
+    }
+    if (mode === 'local') {
+      return listFeedPosts(nearLat, nearLng, LOCAL_RADIUS_KM);
+    }
+    return listTrendingPosts(7);
+  }, [mode, me, nearLat, nearLng]);
 
   const feedItems: FeedItem[] = useMemo(() => injectCollections(rawPosts), [rawPosts]);
 

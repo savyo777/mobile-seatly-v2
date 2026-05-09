@@ -25,6 +25,8 @@ import { safeRouterBack } from '@/lib/navigation/transitions';
 import { createSnapPost, getSnapRestaurantName, TAG_POOL } from '@/lib/mock/snaps';
 import { mockRestaurants } from '@/lib/mock/restaurants';
 import { mockCustomer } from '@/lib/mock/users';
+import { useCurrentUserId } from '@/lib/auth/currentUserId';
+import { isDemoModeEnabled } from '@/lib/config/demoMode';
 import { useAuthSession } from '@/lib/auth/AuthContext';
 import { completePostTurnPhoto } from '@/lib/postVisit/postTurn';
 import { STORY_FILTERS } from '@/lib/storyFilters/registry';
@@ -260,6 +262,7 @@ export default function SnapCaptionScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const { user, isAuthenticated } = useAuthSession();
+  const me = useCurrentUserId();
   const { width: windowW, height: windowH } = useWindowDimensions();
   const {
     photoUri,
@@ -353,7 +356,12 @@ export default function SnapCaptionScreen() {
 
     try {
       const cleanCaption = caption.trim();
-      const userId = isAuthenticated && user?.id ? user.id : mockCustomer.id;
+      const userId = me;
+      if (!userId) {
+        // No auth and demo mode is off — refuse to write under a fake id.
+        setPosting(false);
+        return;
+      }
       createSnapPost({
         user_id: userId,
         restaurant_id: restaurantId,

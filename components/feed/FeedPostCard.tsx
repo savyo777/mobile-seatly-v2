@@ -18,10 +18,8 @@ import { Href, useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { getRestaurantForPost, getSnapUser, timeAgoLabel, type SnapPost } from '@/lib/mock/snaps';
 import { isLiked, isSaved, toggleLike, toggleSave } from '@/lib/mock/social';
-import { mockCustomer } from '@/lib/mock/users';
+import { useCurrentUserId } from '@/lib/auth/currentUserId';
 import { useColors, createStyles, spacing, borderRadius } from '@/lib/theme';
-
-const ME = mockCustomer.id;
 
 interface Props {
   item: SnapPost;
@@ -222,20 +220,23 @@ export function FeedPostCard({ item }: Props) {
   const restaurant = getRestaurantForPost(item.restaurant_id);
   const user = getSnapUser(item.user_id);
 
+  const me = useCurrentUserId();
   const [photoOpen, setPhotoOpen] = useState(false);
-  const [liked, setLiked] = useState(() => isLiked(ME, item.id));
-  const [saved, setSaved] = useState(() => isSaved(ME, item.id));
+  const [liked, setLiked] = useState(() => (me ? isLiked(me, item.id) : false));
+  const [saved, setSaved] = useState(() => (me ? isSaved(me, item.id) : false));
   const likeCount = useMemo(() => item.likes + (liked ? 1 : 0), [item.likes, liked]);
 
   const handleLike = useCallback(() => {
+    if (!me) return;
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    setLiked(toggleLike(ME, item.id));
-  }, [item.id]);
+    setLiked(toggleLike(me, item.id));
+  }, [item.id, me]);
 
   const handleSave = useCallback(() => {
+    if (!me) return;
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    setSaved(toggleSave(ME, item.id));
-  }, [item.id]);
+    setSaved(toggleSave(me, item.id));
+  }, [item.id, me]);
 
   const handleComment = useCallback(() => {
     router.push(`/(customer)/discover/snaps/detail/${item.id}` as Href);

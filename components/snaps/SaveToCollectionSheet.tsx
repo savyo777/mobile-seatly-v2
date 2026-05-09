@@ -23,10 +23,8 @@ import {
   type Collection,
 } from '@/lib/mock/collections';
 import { getSnapPostById } from '@/lib/mock/snaps';
-import { mockCustomer } from '@/lib/mock/users';
+import { useCurrentUserId } from '@/lib/auth/currentUserId';
 import { borderRadius, createStyles, spacing, typography, useColors } from '@/lib/theme';
-
-const ME = mockCustomer.id;
 
 type Props = {
   visible: boolean;
@@ -179,37 +177,38 @@ export function SaveToCollectionSheet({ visible, postId, onClose, onSaved }: Pro
   const { t } = useTranslation();
   const styles = useStyles();
   const c = useColors();
+  const me = useCurrentUserId();
   const [creating, setCreating] = useState(false);
   const [newName, setNewName] = useState('');
   const [version, setVersion] = useState(0);
 
   const collections = useMemo<Collection[]>(
-    () => (visible ? listCollections(ME) : []),
-    [visible, version],
+    () => (visible && me ? listCollections(me) : []),
+    [visible, version, me],
   );
 
   const containing = useMemo(() => {
-    if (!postId || !visible) return new Set<string>();
-    return new Set(getCollectionsContainingPost(ME, postId).map((c) => c.id));
-  }, [postId, visible, version]);
+    if (!postId || !visible || !me) return new Set<string>();
+    return new Set(getCollectionsContainingPost(me, postId).map((c) => c.id));
+  }, [postId, visible, version, me]);
 
   const bumpVersion = () => setVersion((v) => v + 1);
 
   const handleToggle = (collectionId: string) => {
-    if (!postId) return;
+    if (!postId || !me) return;
     if (containing.has(collectionId)) {
-      removePostFromCollection(ME, collectionId, postId);
+      removePostFromCollection(me, collectionId, postId);
     } else {
-      addPostToCollection(ME, collectionId, postId);
+      addPostToCollection(me, collectionId, postId);
       onSaved?.();
     }
     bumpVersion();
   };
 
   const handleCreate = () => {
-    if (!newName.trim() || !postId) return;
-    const col = createCollection(ME, newName.trim());
-    addPostToCollection(ME, col.id, postId);
+    if (!newName.trim() || !postId || !me) return;
+    const col = createCollection(me, newName.trim());
+    addPostToCollection(me, col.id, postId);
     setNewName('');
     setCreating(false);
     onSaved?.();

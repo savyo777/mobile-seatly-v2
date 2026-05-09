@@ -4,11 +4,16 @@ import { Href, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { mockReservations, type Reservation } from '@/lib/mock/reservations';
 import { mockCustomer } from '@/lib/mock/users';
+import { isDemoModeEnabled } from '@/lib/config/demoMode';
 import { borderRadius, createStyles, shadows, spacing, typography, useColors } from '@/lib/theme';
 
 const WINDOW_MS = 8 * 60 * 60 * 1000; // 8 hours
 
 function getPostVisitReservation(): Reservation | null {
+  // Mock-only path. Real post-visit detection should query the user's actual
+  // recent reservations from Supabase; until that's wired up, only run in
+  // demo mode.
+  if (!isDemoModeEnabled()) return null;
   const now = Date.now();
   return (
     mockReservations.find((r) => {

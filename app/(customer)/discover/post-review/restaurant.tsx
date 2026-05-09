@@ -1,10 +1,10 @@
 import React, { useMemo, useState } from 'react';
-import { Image, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Alert, Image, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Button, ScreenWrapper } from '@/components/ui';
 import { useColors, createStyles, borderRadius, spacing, typography } from '@/lib/theme';
 import { createSnapPost, snapRestaurants } from '@/lib/mock/snaps';
-import { mockCustomer } from '@/lib/mock/users';
+import { useCurrentUserId } from '@/lib/auth/currentUserId';
 
 const useStyles = createStyles((c) => ({
   root: {
@@ -64,6 +64,7 @@ export default function SnapRestaurantScreen() {
   const c = useColors();
   const styles = useStyles();
   const router = useRouter();
+  const me = useCurrentUserId();
   const { photoUri, caption, restaurantId } = useLocalSearchParams<{
     photoUri: string;
     caption: string;
@@ -85,8 +86,12 @@ export default function SnapRestaurantScreen() {
 
   const submit = () => {
     if (!selectedRestaurantId || !decodedUri) return;
+    if (!me) {
+      Alert.alert('Sign in required', 'Sign in to post a snap.');
+      return;
+    }
     createSnapPost({
-      user_id: mockCustomer.id,
+      user_id: me,
       restaurant_id: selectedRestaurantId,
       image: decodedUri,
       caption: decodedCaption,

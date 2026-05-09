@@ -21,7 +21,8 @@ import {
   type PostTurnRequestType,
 } from '@/lib/postVisit/postTurn';
 
-const ME = mockCustomer.id;
+// Demo mode only — see buildMockNotifications below. Real notifications
+// for the signed-in user come from a Supabase query (gated above).
 
 type AppNotifType =
   | 'booking_confirmed'
@@ -82,7 +83,7 @@ function postTurnNotification(request: PostTurnRequest): AppNotification {
 
 function buildMockNotifications(): AppNotification[] {
   const myReservations = mockReservations
-    .filter((r) => r.guestId === ME)
+    .filter((r) => r.guestId === mockCustomer.id)
     .slice(0, 4);
 
   const notifs: AppNotification[] = [];
