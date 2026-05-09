@@ -400,6 +400,10 @@ export default function RegisterRestaurantCardEntryScreen() {
                       style={[s.fieldInput, { color: c.textPrimary }]}
                       autoCapitalize="words"
                       autoCorrect={false}
+                      autoComplete="off"
+                      textContentType="none"
+                      spellCheck={false}
+                      importantForAutofill="no"
                       returnKeyType="done"
                       onSubmitEditing={() => cardNumberRef.current?.focus()}
                       blurOnSubmit={false}
@@ -423,6 +427,9 @@ export default function RegisterRestaurantCardEntryScreen() {
                       style={[s.fieldInputMono, { color: c.textPrimary }]}
                       keyboardType="number-pad"
                       inputMode="numeric"
+                      autoComplete="off"
+                      textContentType="none"
+                      importantForAutofill="no"
                       maxLength={23}
                       returnKeyType="done"
                       onSubmitEditing={() => expiryRef.current?.focus()}
@@ -442,6 +449,9 @@ export default function RegisterRestaurantCardEntryScreen() {
                       style={[s.fieldInputMono, { color: c.textPrimary }]}
                       keyboardType="number-pad"
                       inputMode="numeric"
+                      autoComplete="off"
+                      textContentType="none"
+                      importantForAutofill="no"
                       maxLength={7}
                       returnKeyType="done"
                       onSubmitEditing={() => cvcRef.current?.focus()}
@@ -461,8 +471,11 @@ export default function RegisterRestaurantCardEntryScreen() {
                       style={[s.fieldInputMono, { color: c.textPrimary }]}
                       keyboardType="number-pad"
                       inputMode="numeric"
+                      autoComplete="off"
+                      textContentType="none"
+                      importantForAutofill="no"
+                      passwordRules=""
                       maxLength={4}
-                      secureTextEntry
                       returnKeyType="done"
                       onSubmitEditing={() => Keyboard.dismiss()}
                       blurOnSubmit
