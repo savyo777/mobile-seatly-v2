@@ -1,10 +1,11 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { key } from '@/lib/storage/keys';
 
 export const REFERRAL_DAILY_SHARE_LIMIT = 10;
 export const REFERRAL_LIFETIME_CREDIT_CAP = 100;
 export const REFERRAL_SHARE_COOLDOWN_SECONDS = 30;
 
-const STORAGE_KEY = 'referral-limits-v1';
+const STORAGE_KEY = key('referral-limits-v1');
 
 type ReferralLimitsState = {
   dayKey: string;

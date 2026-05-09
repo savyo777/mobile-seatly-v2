@@ -1,10 +1,7 @@
 // @ts-nocheck
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
-
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-};
+import { buildCorsHeaders } from '../_shared/cors.ts';
+import { stripeGet, stripeRequest } from '../_shared/stripe.ts';
 
 type RegisterPayload = {
   action?: 'init_payment_sheet' | 'preview_payment_method' | 'finalize_registration';
@@ -16,17 +13,9 @@ type RegisterPayload = {
   setup_intent_id?: string;
 };
 
-const stripeSecretKey = Deno.env.get('STRIPE_SECRET_KEY') ?? '';
 const supabaseUrl = Deno.env.get('SUPABASE_URL') ?? '';
 const supabaseAnon = Deno.env.get('SUPABASE_ANON_KEY') ?? '';
 const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '';
-
-function json(status: number, body: Record<string, unknown>) {
-  return new Response(JSON.stringify(body), {
-    status,
-    headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-  });
-}
 
 function addCalendarMonths(base: Date, months: number): Date {
   const result = new Date(base.getTime());
@@ -40,40 +29,14 @@ function addCalendarMonths(base: Date, months: number): Date {
   return result;
 }
 
-async function stripeRequest(path: string, body: Record<string, string>) {
-  if (!stripeSecretKey) throw new Error('Missing STRIPE_SECRET_KEY.');
-  const form = new URLSearchParams(body);
-  const response = await fetch(`https://api.stripe.com/v1/${path}`, {
-    method: 'POST',
-    headers: {
-      Authorization: `Bearer ${stripeSecretKey}`,
-      'Content-Type': 'application/x-www-form-urlencoded',
-    },
-    body: form.toString(),
-  });
-  const data = await response.json();
-  if (!response.ok) {
-    throw new Error(data?.error?.message ?? 'Stripe request failed.');
-  }
-  return data;
-}
-
-async function stripeGet(path: string) {
-  if (!stripeSecretKey) throw new Error('Missing STRIPE_SECRET_KEY.');
-  const response = await fetch(`https://api.stripe.com/v1/${path}`, {
-    method: 'GET',
-    headers: {
-      Authorization: `Bearer ${stripeSecretKey}`,
-    },
-  });
-  const data = await response.json();
-  if (!response.ok) {
-    throw new Error(data?.error?.message ?? 'Stripe request failed.');
-  }
-  return data;
-}
-
 Deno.serve(async (req) => {
+  const corsHeaders = buildCorsHeaders(req);
+  const json = (status: number, body: Record<string, unknown>) =>
+    new Response(JSON.stringify(body), {
+      status,
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+    });
+
   if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders });
   if (req.method !== 'POST') return json(405, { error: 'Method not allowed.' });
 
@@ -135,18 +98,8 @@ Deno.serve(async (req) => {
     }
 
     if (action === 'init_payment_sheet') {
-      const ephemeralKey = await fetch('https://api.stripe.com/v1/ephemeral_keys', {
-        method: 'POST',
-        headers: {
-          Authorization: `Bearer ${stripeSecretKey}`,
-          'Content-Type': 'application/x-www-form-urlencoded',
-          'Stripe-Version': '2024-06-20',
-        },
-        body: new URLSearchParams({ customer: customerId }).toString(),
-      }).then(async (r) => {
-        const data = await r.json();
-        if (!r.ok) throw new Error(data?.error?.message ?? 'Failed to create ephemeral key.');
-        return data;
+      const ephemeralKey = await stripeRequest('ephemeral_keys', {
+        customer: customerId,
       });
 
       const setupIntent = await stripeRequest('setup_intents', {

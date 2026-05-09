@@ -12,26 +12,26 @@ Tick items off as you land them. Most have file paths so an LLM (or you) can pic
 
 Cheap mechanical fixes that close gaps left by the previous batches. **Start here.** Almost no risk; each is a single-file edit verified by typecheck.
 
-- [ ] **Replace inline Stripe API version with `STRIPE_API_VERSION`** — `supabase/functions/cenaiva-orchestrate/index.ts:5400` still has `apiVersion: "2025-02-24.acacia"` literal. Import from `_shared/stripe.ts`.
-- [ ] **Replace inline confirmation-code generator** — `supabase/functions/cenaiva-orchestrate/index.ts:5292` (`PRE-XXXX`), `lib/cenaiva/api/createPreorderCheckout.ts:99–101` (`CEN-XXXX`), `lib/booking/publicBookingApi.ts:144` (`CNV-NNNNNN`) — all should call `makeConfirmationCode()` from `_shared/confirmation-code.ts`.
-- [ ] **Pick one confirmation prefix** — currently `SEAT-`, `PRE-`, `CEN-`, `CNV-` coexist. Update `_shared/confirmation-code.ts:11` to `CEN-` (or env-driven) and document a one-line parser for legacy `SEAT-` codes.
-- [ ] **Refactor `register-restaurant-owner/index.ts`** to use `_shared/stripe.ts` (`stripeRequest`/`stripeGet`/`STRIPE_API_VERSION`) and `_shared/cors.ts` (`buildCorsHeaders`/`corsHeaders`). Currently it bypasses both — runs on Stripe `2024-06-20` while orchestrate uses `2025-02-24.acacia`.
-- [ ] **Replace remaining `?? 0.13` tax fallbacks** — import `DEFAULT_TAX_RATE_FALLBACK` at:
+- [x] **Replace inline Stripe API version with `STRIPE_API_VERSION`** — `supabase/functions/cenaiva-orchestrate/index.ts:5400` still has `apiVersion: "2025-02-24.acacia"` literal. Import from `_shared/stripe.ts`.
+- [x] **Replace inline confirmation-code generator** — `supabase/functions/cenaiva-orchestrate/index.ts:5292` (`PRE-XXXX`), `lib/cenaiva/api/createPreorderCheckout.ts:99–101` (`CEN-XXXX`), `lib/booking/publicBookingApi.ts:144` (`CNV-NNNNNN`) — all should call `makeConfirmationCode()` from `_shared/confirmation-code.ts`.
+- [x] **Pick one confirmation prefix** — currently `SEAT-`, `PRE-`, `CEN-`, `CNV-` coexist. Update `_shared/confirmation-code.ts:11` to `CEN-` (or env-driven) and document a one-line parser for legacy `SEAT-` codes.
+- [x] **Refactor `register-restaurant-owner/index.ts`** to use `_shared/stripe.ts` (`stripeRequest`/`stripeGet`/`STRIPE_API_VERSION`) and `_shared/cors.ts` (`buildCorsHeaders`/`corsHeaders`). Currently it bypasses both — runs on Stripe `2024-06-20` while orchestrate uses `2025-02-24.acacia`.
+- [x] **Replace remaining `?? 0.13` tax fallbacks** — import `DEFAULT_TAX_RATE_FALLBACK` at:
   - `lib/cenaiva/api/createPreorderCheckout.ts:44`
   - `lib/services/ownerRestaurant.ts:90`
   - `lib/supabase/mapRestaurantRow.ts:128`
-- [ ] **Replace remaining `'CAD'` literals** — import `DEFAULT_CURRENCY` at:
+- [x] **Replace remaining `'CAD'` literals** — import `DEFAULT_CURRENCY` at:
   - `lib/services/ownerRestaurant.ts:89`
   - `lib/supabase/mapRestaurantRow.ts:129`
   - `lib/receipt/getReceiptPayload.ts:99/124`
   - `lib/utils/formatCurrency.ts:1` (also lowercase `'cad'` default)
-- [ ] **Replace `|| "UTC"` in `supabase/functions/create-public-booking/index.ts:279`** with `DEFAULT_TIMEZONE` from `_shared/booking-defaults.ts`.
-- [ ] **Migrate the 5 `lib/storage/*.ts` modules to use `key()`** from `lib/storage/keys.ts`:
+- [x] **Replace `|| "UTC"` in `supabase/functions/create-public-booking/index.ts:279`** with `DEFAULT_TIMEZONE` from `_shared/booking-defaults.ts`.
+- [x] **Migrate the 5 `lib/storage/*.ts` modules to use `key()`** from `lib/storage/keys.ts`:
   - `claimedPromotions.ts`, `customerPaymentMethods.ts`, `referralLimits.ts`, `restaurantBillingAddress.ts`, `restaurantPaymentMethod.ts`. All currently use bare `STORAGE_KEY = '<name>-v1'`.
-- [ ] **Decide on `lib/storage/migrate.ts`** — `lib/storage/keys.ts:2–3` references it but the file doesn't exist. Either create it (so legacy `@seatly/...` keys copy to `@cenaiva/...` on app start) or remove the misleading comment.
-- [ ] **Fix Nominatim User-Agent** — `supabase/functions/cenaiva-orchestrate/index.ts:1006–1009` still says `"Seatly/1.0 (seatly.app)"`. Build from `BRAND_DOMAIN`.
-- [ ] **`lib/booking/addToCalendar.ts:17`** — replace `DEFAULT_DURATION_MINUTES = 90` with import of `DEFAULT_TURN_MINUTES` from `bookingDefaults.ts`.
-- [ ] **`lib/theme/ThemeProvider.tsx:15`** — change `STORAGE_KEY = '@seatly/theme'` to `key('theme')`.
+- [x] **Decide on `lib/storage/migrate.ts`** — `lib/storage/keys.ts:2–3` references it but the file doesn't exist. Either create it (so legacy `@seatly/...` keys copy to `@cenaiva/...` on app start) or remove the misleading comment.
+- [x] **Fix Nominatim User-Agent** — `supabase/functions/cenaiva-orchestrate/index.ts:1006–1009` still says `"Seatly/1.0 (seatly.app)"`. Build from `BRAND_DOMAIN`.
+- [x] **`lib/booking/addToCalendar.ts:17`** — replace `DEFAULT_DURATION_MINUTES = 90` with import of `DEFAULT_TURN_MINUTES` from `bookingDefaults.ts`.
+- [x] **`lib/theme/ThemeProvider.tsx:15`** — change `STORAGE_KEY = '@seatly/theme'` to `key('theme')`.
 
 **Effort:** 1–2 hours. **Risk:** Low. **Deploy:** Edge function changes need `supabase functions deploy`.
 
@@ -260,3 +260,4 @@ Reference for what NOT to redo:
 - `d8313fc` — `$200 / month` literal removed; preference picker lists extracted
 - `6b0c3f0` — Server hardening (test-mode payment gate, CORS allowlist via env)
 - `6315501` — Mock-data gating for wallet, loyalty, billing-year, analytics, receipts
+- Phase E (this commit) — half-fixes: Stripe API version + confirmation-code generators centralized; CEN- prefix chosen; `register-restaurant-owner` uses `_shared/stripe.ts` + `_shared/cors.ts`; tax/currency/timezone fallbacks unified; Nominatim UA built from `BRAND_DOMAIN`; storage modules use `key()`; `lib/storage/migrate.ts` created and wired into `_layout.tsx`; `addToCalendar` and `ThemeProvider` adopt central constants

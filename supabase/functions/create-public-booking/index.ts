@@ -6,7 +6,7 @@ import { getAvailability } from "../_shared/availability.ts";
 import { localBookingParts } from "../_shared/hours.ts";
 import { decodeJwtPayload } from "../_shared/jwt.ts";
 import { supabaseAdmin } from "../_shared/supabase.ts";
-import { DEFAULT_TURN_MINUTES } from "../_shared/booking-defaults.ts";
+import { DEFAULT_TIMEZONE, DEFAULT_TURN_MINUTES } from "../_shared/booking-defaults.ts";
 import { makeConfirmationCode } from "../_shared/confirmation-code.ts";
 
 type PublicBookingCartItem = {
@@ -276,7 +276,7 @@ Deno.serve(async (req) => {
     }
 
     const restaurant = await getRestaurant(restaurantId);
-    const localParts = localBookingParts(dateTime, restaurant.timezone || "UTC");
+    const localParts = localBookingParts(dateTime, restaurant.timezone || DEFAULT_TIMEZONE);
     if (!localParts) return jsonRes({ error: "date_time is not valid for the restaurant timezone" }, 400);
 
     const durationMinutes = await getShiftDuration(shiftId);

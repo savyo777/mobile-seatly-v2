@@ -1,6 +1,7 @@
-// AsyncStorage key namespace. The product is Cenaiva, but most storage keys
-// were originally written under `@seatly/...` and are migrated by
-// `lib/storage/migrate.ts` to `@cenaiva/...` on app start.
+// AsyncStorage key namespace. The product is Cenaiva, but earlier builds
+// wrote storage either bare (`claimed-promotions-v1`) or under the legacy
+// `@seatly/...` prefix. `lib/storage/migrate.ts` copies those values into
+// the `@cenaiva/...` namespace on app start.
 
 export const STORAGE_PREFIX = '@cenaiva';
 export const LEGACY_STORAGE_PREFIX = '@seatly';

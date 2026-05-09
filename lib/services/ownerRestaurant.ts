@@ -1,4 +1,5 @@
 import { getSupabase } from '@/lib/supabase/client';
+import { DEFAULT_CURRENCY, DEFAULT_TAX_RATE_FALLBACK } from '@/lib/booking/bookingDefaults';
 
 export type OwnerRestaurant = {
   id: string;
@@ -86,8 +87,8 @@ export function mapOwnerRestaurantRow(row: Record<string, unknown>): OwnerRestau
     trialEndsAt: stringOrNull(row.trial_ends_at),
     createdAt: stringOrNull(row.created_at),
     timezone: stringOrNull(row.timezone),
-    currency: stringValue(row.currency) || 'CAD',
-    taxRate: numberOrNull(row.tax_rate) ?? 0.13,
+    currency: stringValue(row.currency) || DEFAULT_CURRENCY,
+    taxRate: numberOrNull(row.tax_rate) ?? DEFAULT_TAX_RATE_FALLBACK,
   };
 }
 

@@ -2,6 +2,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { isDemoModeEnabled } from '@/lib/config/demoMode';
 import { fetchCurrentOwnerRestaurant } from '@/lib/services/ownerRestaurant';
 import { getSupabase } from '@/lib/supabase/client';
+import { key } from '@/lib/storage/keys';
 
 export type CardFunding = 'credit' | 'debit' | 'prepaid' | 'unknown';
 
@@ -16,7 +17,7 @@ export type RestaurantPaymentCard = {
   source: 'registration' | 'manual';
 };
 
-const STORAGE_KEY = 'restaurant-payment-cards-v1';
+const STORAGE_KEY = key('restaurant-payment-cards-v1');
 
 function makeId() {
   return `card_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;

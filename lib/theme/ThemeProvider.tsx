@@ -1,6 +1,7 @@
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
 import { Appearance, ColorSchemeName } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { key } from '@/lib/storage/keys';
 import { darkColors, lightColors, type Palette } from './palettes';
 
 export type ThemeMode = 'light' | 'dark' | 'system';
@@ -12,7 +13,7 @@ type ThemeContextValue = {
   setMode: (mode: ThemeMode) => void;
 };
 
-const STORAGE_KEY = '@seatly/theme';
+const STORAGE_KEY = key('theme');
 
 const ThemeContext = createContext<ThemeContextValue>({
   mode: 'system',

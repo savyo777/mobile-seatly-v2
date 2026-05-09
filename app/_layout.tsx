@@ -25,6 +25,7 @@ import {
   installGlobalCrashGuard,
   installRouterCrashGuard,
 } from '@/lib/runtime/installCrashGuards';
+import { runStorageMigrations } from '@/lib/storage/migrate';
 import {
   getRecoveryAuthCodeFromUrl,
   getRecoveryTokenHashFromUrl,
@@ -35,6 +36,7 @@ enableScreens(true);
 enableFreeze(true);
 installGlobalCrashGuard();
 installRouterCrashGuard();
+void runStorageMigrations();
 
 function RecoveryLinkHandler() {
   const router = useRouter();

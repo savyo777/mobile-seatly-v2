@@ -2,6 +2,7 @@ import * as FileSystem from 'expo-file-system/legacy';
 import * as Sharing from 'expo-sharing';
 import { Linking, Platform } from 'react-native';
 import { BRAND_DOMAIN } from '@/lib/config/legalLinks';
+import { DEFAULT_TURN_MINUTES } from '@/lib/booking/bookingDefaults';
 
 export type CalendarBooking = {
   reservationId: string;
@@ -13,8 +14,6 @@ export type CalendarBooking = {
   partySize: number;
   notes?: string | null;
 };
-
-const DEFAULT_DURATION_MINUTES = 90;
 
 function pad(n: number): string {
   return String(n).padStart(2, '0');
@@ -45,7 +44,7 @@ export function buildIcsContent(booking: CalendarBooking): string {
   const start = new Date(booking.startDateTime);
   const duration = booking.durationMinutes && booking.durationMinutes > 0
     ? booking.durationMinutes
-    : DEFAULT_DURATION_MINUTES;
+    : DEFAULT_TURN_MINUTES;
   const end = new Date(start.getTime() + duration * 60_000);
   const now = new Date();
 
@@ -90,7 +89,7 @@ function buildGoogleCalendarUrl(booking: CalendarBooking): string {
   const start = new Date(booking.startDateTime);
   const duration = booking.durationMinutes && booking.durationMinutes > 0
     ? booking.durationMinutes
-    : DEFAULT_DURATION_MINUTES;
+    : DEFAULT_TURN_MINUTES;
   const end = new Date(start.getTime() + duration * 60_000);
 
   const title = `Reservation at ${booking.restaurantName}`;

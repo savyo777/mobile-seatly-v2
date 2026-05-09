@@ -8,6 +8,7 @@ import {
   type RestaurantWeekdayKey,
 } from '@/lib/mock/restaurants';
 import { normalizeRestaurantPriceRange } from '@/lib/restaurants/pricing';
+import { DEFAULT_CURRENCY, DEFAULT_TAX_RATE_FALLBACK } from '@/lib/booking/bookingDefaults';
 
 const DEFAULT_RESTAURANT_COVER = 'https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=1200';
 
@@ -125,7 +126,7 @@ export function mapRestaurantRowToRestaurant(row: RestaurantRow): Restaurant {
     featuredIn: featuredIn.length ? featuredIn : ['recommended'],
     isActive: row.is_active ?? true,
     hoursJson: hoursFromJson(row.hours_json as Record<string, unknown> | null),
-    taxRate: num(row.tax_rate, 0.13),
-    currency: row.currency ?? 'CAD',
+    taxRate: num(row.tax_rate, DEFAULT_TAX_RATE_FALLBACK),
+    currency: row.currency ?? DEFAULT_CURRENCY,
   };
 }

@@ -1,6 +1,7 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { key } from '@/lib/storage/keys';
 
-const STORAGE_KEY = 'claimed-promotions-v1';
+const STORAGE_KEY = key('claimed-promotions-v1');
 
 export type ClaimedPromotion = {
   promoId: string;

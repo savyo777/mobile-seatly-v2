@@ -1,4 +1,6 @@
-export function formatCurrency(amount: number, currency: string = 'cad'): string {
+import { DEFAULT_CURRENCY } from '@/lib/booking/bookingDefaults';
+
+export function formatCurrency(amount: number, currency: string = DEFAULT_CURRENCY): string {
   return new Intl.NumberFormat('en-CA', {
     style: 'currency',
     currency: currency.toUpperCase(),

@@ -1,4 +1,5 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { key } from '@/lib/storage/keys';
 
 export type RestaurantBillingAddress = {
   line1: string;
@@ -9,7 +10,7 @@ export type RestaurantBillingAddress = {
   country: string;
 };
 
-const STORAGE_KEY = 'restaurant-billing-address-v1';
+const STORAGE_KEY = key('restaurant-billing-address-v1');
 
 export const EMPTY_BILLING_ADDRESS: RestaurantBillingAddress = {
   line1: '',

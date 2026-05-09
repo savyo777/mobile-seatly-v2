@@ -29,6 +29,9 @@ import {
 import { haversineKm as sharedHaversineKm } from "../_shared/geo.ts";
 import { UUID_RE as SHARED_UUID_RE } from "../_shared/uuid.ts";
 import { DEFAULT_CURRENCY, DEFAULT_TAX_RATE_FALLBACK } from "../_shared/booking-defaults.ts";
+import { makeConfirmationCode } from "../_shared/confirmation-code.ts";
+import { STRIPE_API_VERSION } from "../_shared/stripe.ts";
+import { USER_AGENT } from "../_shared/brand.ts";
 
 const openai = new OpenAI({ apiKey: Deno.env.get("OPENAI_API_KEY")! });
 const stripeSecretKey = Deno.env.get("STRIPE_SECRET_KEY") ?? "";
@@ -1005,7 +1008,7 @@ async function resolveCity(lat: number, lng: number): Promise<string> {
   try {
     const url = `https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lng}&format=json&zoom=10`;
     const res = await fetch(url, {
-      headers: { "User-Agent": "Seatly/1.0 (seatly.app)" },
+      headers: { "User-Agent": USER_AGENT },
       signal: controller.signal,
     });
     if (!res.ok) return "";
@@ -5289,7 +5292,7 @@ Deno.serve(async (req) => {
               const taxAmount = Math.round(subtotal * taxRate * 100) / 100;
               const total = Math.round((subtotal + taxAmount) * 100) / 100;
 
-              const confirmationCode = `PRE-${Math.random().toString(36).slice(2, 6).toUpperCase()}`;
+              const confirmationCode = makeConfirmationCode();
 
               const { data: order, error: orderErr } = await supabaseAdmin
                 .from("orders")
@@ -5397,7 +5400,7 @@ Deno.serve(async (req) => {
 
                   if (stripeSecretKey) {
                     const { default: Stripe } = await import("npm:stripe@17");
-                    const stripe = new Stripe(stripeSecretKey, { apiVersion: "2025-02-24.acacia" });
+                    const stripe = new Stripe(stripeSecretKey, { apiVersion: STRIPE_API_VERSION });
 
                     const { data: profile } = await supabaseAdmin
                       .from("user_profiles")

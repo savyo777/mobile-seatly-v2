@@ -2,6 +2,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { isDemoModeEnabled } from '@/lib/config/demoMode';
 import { getCurrentUserProfileId } from '@/lib/services/userProfile';
 import { getSupabase } from '@/lib/supabase/client';
+import { key } from '@/lib/storage/keys';
 
 export type CustomerPaymentMethod = {
   id: string;
@@ -12,7 +13,7 @@ export type CustomerPaymentMethod = {
   isDefault: boolean;
 };
 
-const STORAGE_KEY = 'customer-payment-methods-v1';
+const STORAGE_KEY = key('customer-payment-methods-v1');
 
 function makeId() {
   return `customer_card_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;

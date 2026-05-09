@@ -1,5 +1,7 @@
 import type { BookingState, CartItem } from '@cenaiva/assistant';
 import { getSupabase } from '@/lib/supabase/client';
+import { DEFAULT_TAX_RATE_FALLBACK } from '@/lib/booking/bookingDefaults';
+import { makeConfirmationCode } from '@/lib/booking/confirmationCode';
 
 type SupabaseLike = NonNullable<ReturnType<typeof getSupabase>>;
 
@@ -41,7 +43,7 @@ function roundMoney(value: number): number {
 
 export function calculatePreorderTotals(subtotal: number, taxRate: number | string | null | undefined) {
   const parsedTaxRate = typeof taxRate === 'string' ? parseFloat(taxRate) : taxRate;
-  const effectiveTaxRate = Number.isFinite(parsedTaxRate) ? Number(parsedTaxRate) : 0.13;
+  const effectiveTaxRate = Number.isFinite(parsedTaxRate) ? Number(parsedTaxRate) : DEFAULT_TAX_RATE_FALLBACK;
   const taxAmount = roundMoney(subtotal * effectiveTaxRate);
   return {
     subtotal: roundMoney(subtotal),
@@ -96,10 +98,6 @@ export function buildPreorderOrderItemPayloads(orderId: string, cart: CartItem[]
   }));
 }
 
-function createConfirmationCode() {
-  return `CEN-${Math.random().toString(36).slice(2, 6).toUpperCase()}`;
-}
-
 export async function createPreorderCheckoutFromBooking(
   booking: BookingState,
   supabase: SupabaseLike | null = getSupabase(),
@@ -143,7 +141,7 @@ export async function createPreorderCheckoutFromBooking(
     booking,
     guestId: guest.id,
     taxRate: rest.tax_rate,
-    confirmationCode: createConfirmationCode(),
+    confirmationCode: makeConfirmationCode(),
   });
   const { data: order, error: orderError } = await supabase
     .from('orders')

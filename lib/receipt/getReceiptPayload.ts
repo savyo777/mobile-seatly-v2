@@ -1,6 +1,7 @@
 import { mockOrders, type Order, type OrderItem } from '@/lib/mock/orders';
 import { mockReservations, type Reservation } from '@/lib/mock/reservations';
 import { isDemoModeEnabled } from '@/lib/config/demoMode';
+import { DEFAULT_CURRENCY } from '@/lib/booking/bookingDefaults';
 import type { ReceiptActivityKind, ReceiptLineItem, ReceiptPayload } from '@/lib/receipt/receiptTypes';
 
 function mapOrderItem(it: OrderItem): ReceiptLineItem {
@@ -102,7 +103,7 @@ export function getReceiptPayload(kind: ReceiptActivityKind, id: string): Receip
       taxAmount,
       tipAmount,
       totalAmount,
-      currency: 'CAD',
+      currency: DEFAULT_CURRENCY,
       footerNote,
     };
   }

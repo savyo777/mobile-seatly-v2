@@ -3,6 +3,7 @@ import { getSupabaseEnv, isSupabaseConfigured } from '@/lib/supabase/env';
 import { getMockShiftConfig, getMockTimeSlots } from '@/lib/mock/bookingAvailability';
 import { mockRestaurants } from '@/lib/mock/restaurants';
 import { getCachedRestaurantById } from '@/lib/data/restaurantCatalog';
+import { makeConfirmationCode } from '@/lib/booking/confirmationCode';
 
 export type AvailabilitySlot = {
   shift_id: string;
@@ -141,7 +142,7 @@ function demoBookingFor(payload: PublicBookingPayload): PublicBookingResponse | 
   return {
     reservation_id: `demo-res-${suffix}`,
     order_id: payload.cart_items.length ? `demo-order-${suffix}` : null,
-    confirmation_code: `CNV-${suffix}`,
+    confirmation_code: makeConfirmationCode(),
     table_ids: payload.shift_id ? [`demo-table-${payload.restaurant_id}`] : [],
     duration_minutes: null,
     confirmation_delivery: 'skipped',
