@@ -11,7 +11,6 @@ import {
   StyleSheet,
   Text,
   TextInput,
-  TouchableWithoutFeedback,
   View,
 } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -37,7 +36,8 @@ const MONO = Platform.OS === 'ios' ? 'Menlo' : 'monospace';
 // Display monthly fee shown after trial. Tracked in
 // docs/UNHARDCODE_CHECKLIST.md (Phase K) — wire to a single owner-pricing
 // source once Cenaiva pricing has one.
-const MONTHLY_FEE_LABEL = '$89.00 / mo';
+const MONTHLY_FEE_LABEL = '$200.00 / mo';
+const MONTHLY_FEE_SHORT = '$200';
 
 type SetupIntentState =
   | { status: 'loading' }
@@ -195,14 +195,13 @@ export default function RegisterRestaurantCardEntryScreen() {
         style={s.flex}
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
       >
-        <TouchableWithoutFeedback onPress={dismissAllInputs} accessible={false}>
-          <ScrollView
-            style={s.flex}
-            contentContainerStyle={[s.scrollContent, { paddingBottom: insets.bottom + 24 }]}
-            keyboardShouldPersistTaps="handled"
-            keyboardDismissMode="interactive"
-            showsVerticalScrollIndicator={false}
-          >
+        <ScrollView
+          style={s.flex}
+          contentContainerStyle={[s.scrollContent, { paddingBottom: insets.bottom + 24 }]}
+          keyboardShouldPersistTaps="handled"
+          keyboardDismissMode="interactive"
+          showsVerticalScrollIndicator={false}
+        >
             {/* Top bar */}
             <View style={s.topBar}>
               <Pressable
@@ -225,7 +224,7 @@ export default function RegisterRestaurantCardEntryScreen() {
                 <Text style={[s.titleItalic, { color: c.gold }]}>quietly</Text> on file.
               </Text>
               <Text style={[s.subtitle, { color: c.textSecondary }]}>
-                Three months on us. After that, $89 / month — cancel anytime.
+                Three months on us. After that, {MONTHLY_FEE_SHORT} / month — cancel anytime.
               </Text>
             </View>
 
@@ -258,11 +257,11 @@ export default function RegisterRestaurantCardEntryScreen() {
                     { borderTopColor: dashed, borderBottomColor: dashed },
                   ]}
                 >
-                  <Text style={[s.fieldLabel, { color: c.textMuted }]}>CARDHOLDER</Text>
+                  <Text style={[s.fieldLabel, { color: c.textMuted }]}>RESTAURANT NAME</Text>
                   <TextInput
                     value={cardholder}
                     onChangeText={setCardholder}
-                    placeholder="Full name on card"
+                    placeholder="Your restaurant's name"
                     placeholderTextColor={c.textMuted}
                     style={[s.fieldInput, { color: c.textPrimary }]}
                     autoCapitalize="words"
@@ -284,28 +283,36 @@ export default function RegisterRestaurantCardEntryScreen() {
                       </Text>
                     </View>
                   ) : (
-                    <CardForm
-                      ref={cardFormRef}
-                      placeholders={{
-                        number: '1234 5678 9012 3456',
-                        expiration: 'MM / YY',
-                        cvc: 'CVC',
-                        postalCode: 'Postal / ZIP',
-                      }}
-                      cardStyle={{
-                        backgroundColor: c.bgElevated,
-                        textColor: c.textPrimary,
-                        placeholderColor: c.textMuted,
-                        borderColor: 'rgba(255,255,255,0.08)',
-                        borderWidth: 0,
-                        borderRadius: 4,
-                        fontSize: 14,
-                      }}
-                      style={s.cardForm}
-                      onFormComplete={(card: CardFormView.Details) => {
-                        setCardComplete(Boolean(card.complete));
-                      }}
-                    />
+                    // Stripe's iOS CardForm always renders a country picker
+                    // at the bottom — there's no API to remove it. We clip
+                    // the wrapper so only the number / expiry / CVC / postal
+                    // rows show through. The country defaults to the device
+                    // locale and is sent as billingDetails.address.country
+                    // when needed.
+                    <View style={s.cardFormClip}>
+                      <CardForm
+                        ref={cardFormRef}
+                        placeholders={{
+                          number: '1234 5678 9012 3456',
+                          expiration: 'MM / YY',
+                          cvc: 'CVC',
+                          postalCode: 'Postal / ZIP',
+                        }}
+                        cardStyle={{
+                          backgroundColor: c.bgElevated,
+                          textColor: c.textPrimary,
+                          placeholderColor: c.textMuted,
+                          borderColor: 'rgba(255,255,255,0.08)',
+                          borderWidth: 0,
+                          borderRadius: 4,
+                          fontSize: 14,
+                        }}
+                        style={s.cardForm}
+                        onFormComplete={(card: CardFormView.Details) => {
+                          setCardComplete(Boolean(card.complete));
+                        }}
+                      />
+                    </View>
                   )}
                 </View>
 
@@ -353,7 +360,6 @@ export default function RegisterRestaurantCardEntryScreen() {
               </View>
             </View>
           </ScrollView>
-        </TouchableWithoutFeedback>
       </KeyboardAvoidingView>
     </SafeAreaView>
   );
@@ -529,8 +535,17 @@ const s = StyleSheet.create({
   },
   cardForm: {
     width: '100%',
-    height: Platform.OS === 'ios' ? 220 : 200,
+    // Height generous enough for the native form to draw all rows
+    // including the country picker; the wrapper below clips the
+    // country row off the bottom on iOS.
+    height: Platform.OS === 'ios' ? 250 : 200,
     marginTop: 6,
+  },
+  cardFormClip: {
+    width: '100%',
+    // Trims the iOS country picker (last row) from view.
+    height: Platform.OS === 'ios' ? 175 : 200,
+    overflow: 'hidden',
   },
   cardFormLoading: {
     flexDirection: 'row',
