@@ -136,13 +136,17 @@ export default function RegisterRestaurantCardEntryScreen() {
         customerEphemeralKeySecret: intent.ephemeralKeySecret,
         setupIntentClientSecret: intent.clientSecret,
         style: 'alwaysDark',
+        // Stripe requires hex (#RRGGBB or #AARRGGBB) for every color in
+        // the appearance config — rgba() / hsl() / named colors will
+        // reject the entire init call. The two semi-transparent values
+        // below use #AARRGGBB.
         appearance: {
           colors: {
             primary: c.gold,
             background: c.bgBase,
             componentBackground: c.bgSurface,
-            componentBorder: 'rgba(255,255,255,0.10)',
-            componentDivider: 'rgba(255,255,255,0.08)',
+            componentBorder: '#1AFFFFFF',
+            componentDivider: '#14FFFFFF',
             primaryText: c.textPrimary,
             secondaryText: c.textSecondary,
             componentText: c.textPrimary,
@@ -164,7 +168,11 @@ export default function RegisterRestaurantCardEntryScreen() {
       });
       if (cancelled) return;
       if (error) {
-        setSheetInitError(error.message);
+        // Surface the code alongside the message so the user can tell
+        // us what's actually wrong without us having to attach a
+        // debugger.
+        const code = error.code ? `[${error.code}] ` : '';
+        setSheetInitError(`${code}${error.message}`);
         setSheetReady(false);
       } else {
         setSheetInitError(null);
