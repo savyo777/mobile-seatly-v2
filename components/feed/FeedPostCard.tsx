@@ -16,8 +16,32 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import { Href, useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { getRestaurantForPost, getSnapUser, timeAgoLabel, type SnapPost } from '@/lib/mock/snaps';
-import { isLiked, isSaved, toggleLike, toggleSave } from '@/lib/mock/social';
+import {
+  getRestaurantForPost as DEMO_getRestaurantForPost,
+  getSnapUser as DEMO_getSnapUser,
+  timeAgoLabel,
+  type SnapPost,
+} from '@/lib/mock/snaps';
+import {
+  isLiked as DEMO_isLiked,
+  isSaved as DEMO_isSaved,
+  toggleLike as DEMO_toggleLike,
+  toggleSave as DEMO_toggleSave,
+} from '@/lib/mock/social';
+import { isDemoModeEnabled } from '@/lib/config/demoMode';
+
+const getRestaurantForPost: typeof DEMO_getRestaurantForPost = (id) =>
+  isDemoModeEnabled() ? DEMO_getRestaurantForPost(id) : null;
+const getSnapUser: typeof DEMO_getSnapUser = (id) =>
+  isDemoModeEnabled() ? DEMO_getSnapUser(id) : undefined;
+const isLiked: typeof DEMO_isLiked = (...args) =>
+  isDemoModeEnabled() ? DEMO_isLiked(...args) : false;
+const isSaved: typeof DEMO_isSaved = (...args) =>
+  isDemoModeEnabled() ? DEMO_isSaved(...args) : false;
+const toggleLike: typeof DEMO_toggleLike = (...args) =>
+  isDemoModeEnabled() ? DEMO_toggleLike(...args) : false;
+const toggleSave: typeof DEMO_toggleSave = (...args) =>
+  isDemoModeEnabled() ? DEMO_toggleSave(...args) : false;
 import { useCurrentUserId } from '@/lib/auth/currentUserId';
 import { useColors, createStyles, spacing, borderRadius } from '@/lib/theme';
 

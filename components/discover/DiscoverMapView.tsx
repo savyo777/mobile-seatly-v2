@@ -4,7 +4,10 @@ import { useRouter } from 'expo-router';
 import { RestaurantDiscoveryMap } from '@/components/map/RestaurantDiscoveryMap';
 import { RestaurantMapDetailSheet } from '@/components/map/RestaurantMapDetailSheet';
 import type { Restaurant } from '@/lib/mock/restaurants';
-import { mockMapRestaurants } from '@/lib/mock/mapRestaurants';
+import { mockMapRestaurants as DEMO_MAP_RESTAURANTS } from '@/lib/mock/mapRestaurants';
+import { isDemoModeEnabled } from '@/lib/config/demoMode';
+
+const mockMapRestaurants: typeof DEMO_MAP_RESTAURANTS = isDemoModeEnabled() ? DEMO_MAP_RESTAURANTS : [];
 import { loadRestaurantsForDiscover } from '@/lib/data/restaurantCatalog';
 import {
   applyMapFilter,

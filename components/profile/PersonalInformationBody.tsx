@@ -13,7 +13,17 @@ import {
 } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
 import { Ionicons } from '@expo/vector-icons';
-import { mockCustomer } from '@/lib/mock/users';
+import { mockCustomer as DEMO_CUSTOMER } from '@/lib/mock/users';
+import { isDemoModeEnabled } from '@/lib/config/demoMode';
+
+const EMPTY_CUSTOMER: typeof DEMO_CUSTOMER = {
+  ...DEMO_CUSTOMER,
+  fullName: '',
+  email: '',
+  phone: '',
+  avatarUrl: undefined,
+};
+const mockCustomer: typeof DEMO_CUSTOMER = isDemoModeEnabled() ? DEMO_CUSTOMER : EMPTY_CUSTOMER;
 import { useColors, createStyles, spacing, borderRadius, typography } from '@/lib/theme';
 import { openAppPhotoSettings } from '@/lib/device/openAppPhotoSettings';
 

@@ -2,7 +2,19 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import Animated, { useAnimatedStyle, useSharedValue, withSpring } from 'react-native-reanimated';
 import type { RevenuePeriod } from '@/lib/mock/ownerApp';
-import { REVENUE_DATA } from '@/lib/mock/ownerApp';
+import { REVENUE_DATA as DEMO_REVENUE_DATA } from '@/lib/mock/ownerApp';
+import { isDemoModeEnabled } from '@/lib/config/demoMode';
+
+const ZERO_REVENUE = { total: 0, trendPct: 0, series: [] };
+const EMPTY_REVENUE_DATA: typeof DEMO_REVENUE_DATA = {
+  day: ZERO_REVENUE,
+  week: ZERO_REVENUE,
+  '2w': ZERO_REVENUE,
+  month: ZERO_REVENUE,
+  '6m': ZERO_REVENUE,
+  year: ZERO_REVENUE,
+};
+const REVENUE_DATA: typeof DEMO_REVENUE_DATA = isDemoModeEnabled() ? DEMO_REVENUE_DATA : EMPTY_REVENUE_DATA;
 import { formatCurrency } from '@/lib/utils/formatCurrency';
 import { createStyles } from '@/lib/theme';
 import { ownerColorsFromPalette, ownerRadii, ownerSpace, useOwnerColors } from '@/lib/theme/ownerTheme';

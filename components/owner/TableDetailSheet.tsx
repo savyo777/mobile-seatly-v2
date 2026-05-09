@@ -10,7 +10,10 @@ import {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { formatCurrency } from '@/lib/utils/formatCurrency';
 import type { OwnerFloorTable } from '@/lib/mock/ownerApp';
-import { TABLE_AI_SUGGESTION } from '@/lib/mock/ownerApp';
+import { TABLE_AI_SUGGESTION as DEMO_TABLE_AI_SUGGESTION } from '@/lib/mock/ownerApp';
+import { isDemoModeEnabled } from '@/lib/config/demoMode';
+
+const TABLE_AI_SUGGESTION = isDemoModeEnabled() ? DEMO_TABLE_AI_SUGGESTION : '';
 import { createStyles } from '@/lib/theme';
 import { ownerColorsFromPalette, ownerRadii } from '@/lib/theme/ownerTheme';
 

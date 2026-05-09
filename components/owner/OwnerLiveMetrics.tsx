@@ -1,7 +1,16 @@
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { useTranslation } from 'react-i18next';
-import { LIVE_METRICS } from '@/lib/mock/ownerApp';
+import { LIVE_METRICS as DEMO_LIVE_METRICS } from '@/lib/mock/ownerApp';
+import { isDemoModeEnabled } from '@/lib/config/demoMode';
+
+const EMPTY_LIVE_METRICS: typeof DEMO_LIVE_METRICS = {
+  tonightCovers: 0,
+  openTables: 0,
+  activeOrders: 0,
+  noShowRisks: 0,
+};
+const LIVE_METRICS: typeof DEMO_LIVE_METRICS = isDemoModeEnabled() ? DEMO_LIVE_METRICS : EMPTY_LIVE_METRICS;
 import { createStyles } from '@/lib/theme';
 import { ownerColorsFromPalette, ownerSpace } from '@/lib/theme/ownerTheme';
 import { OwnerSectionLabel } from './OwnerSectionLabel';

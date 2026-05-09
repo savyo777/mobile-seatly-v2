@@ -26,7 +26,10 @@ import { filterCenaivaRestaurants } from '@/lib/cenaiva/filterRestaurants';
 import { useAssistantStore } from '@/lib/cenaiva/state/assistantStore';
 import { useCenaivaVoicePreference } from '@/lib/cenaiva/voice/CenaivaVoicePreferenceProvider';
 import type { Restaurant } from '@/lib/mock/restaurants';
-import { mockMapRestaurants } from '@/lib/mock/mapRestaurants';
+import { mockMapRestaurants as DEMO_MAP_RESTAURANTS } from '@/lib/mock/mapRestaurants';
+import { isDemoModeEnabled } from '@/lib/config/demoMode';
+
+const mockMapRestaurants: typeof DEMO_MAP_RESTAURANTS = isDemoModeEnabled() ? DEMO_MAP_RESTAURANTS : [];
 import { applyMapFilter, DEFAULT_MAP_CENTER, withDistances } from '@/lib/map/mapFilters';
 import { haversineMeters } from '@/lib/map/geo';
 import { restaurantPriceLabel } from '@/lib/restaurants/pricing';

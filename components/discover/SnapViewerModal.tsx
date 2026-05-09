@@ -2,7 +2,17 @@ import React from 'react';
 import { Modal, Pressable, StyleSheet, Text, View, Image } from 'react-native';
 import { borderRadius, createStyles, spacing, typography } from '@/lib/theme';
 import type { SnapPost } from '@/lib/mock/snaps';
-import { getSnapUser, getSnapRestaurantName, timeAgoLabel } from '@/lib/mock/snaps';
+import {
+  getSnapUser as DEMO_getSnapUser,
+  getSnapRestaurantName as DEMO_getSnapRestaurantName,
+  timeAgoLabel,
+} from '@/lib/mock/snaps';
+import { isDemoModeEnabled } from '@/lib/config/demoMode';
+
+const getSnapUser: typeof DEMO_getSnapUser = (id) =>
+  isDemoModeEnabled() ? DEMO_getSnapUser(id) : undefined;
+const getSnapRestaurantName: typeof DEMO_getSnapRestaurantName = (id) =>
+  isDemoModeEnabled() ? DEMO_getSnapRestaurantName(id) : '';
 
 type SnapViewerModalProps = {
   visible: boolean;

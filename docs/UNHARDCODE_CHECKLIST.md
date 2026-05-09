@@ -63,7 +63,7 @@ Things real users see today that are wrong. Each is small but high leverage.
 
 The bulk of remaining hardcoded data. ~75 production files import from `lib/mock/*` ungated. Batch D in the previous wave fixed only the worst 5. Approach: gate every consumer behind `isDemoModeEnabled()` and render empty state otherwise.
 
-### Sub-phase G.1 — Customer side
+### Sub-phase G.1 — Customer side ✅
 
 - [ ] `app/(customer)/feed.tsx` — `listFeedPosts`, `listFollowingPosts`, `listTrendingPosts`
 - [ ] `app/(customer)/notifications.tsx` — `mockReservations`, `mockRestaurants`
@@ -83,7 +83,7 @@ The bulk of remaining hardcoded data. ~75 production files import from `lib/mock
 - [ ] `app/(customer)/checkout/[orderId].tsx` — `mockRestaurants`
 - [ ] `app/(customer)/profile/{help,promotions,notifications,invite,index}.tsx` — various
 
-### Sub-phase G.2 — Staff/owner side (highest visibility)
+### Sub-phase G.2 — Staff/owner side (highest visibility) ✅
 
 - [ ] `app/(staff)/home.tsx` — **owner dashboard hero shows fabricated metrics; highest priority**
 - [ ] `app/(staff)/reservations.tsx` — fake "Sarah Chen", "Marcus Liu" reservation list
@@ -105,14 +105,14 @@ The bulk of remaining hardcoded data. ~75 production files import from `lib/mock
 - [ ] `app/(staff)/profile/{edit,index}.tsx` — owner profile
 - [ ] `app/(staff)/business.tsx`, `export.tsx` — business profile / export options
 
-### Sub-phase G.3 — Booking flow
+### Sub-phase G.3 — Booking flow ✅
 
 - [ ] `app/booking/[restaurantId]/step2-time.tsx` — `getEventById`
 - [ ] `app/booking/[restaurantId]/review.tsx` — `getSnapRestaurantName`
 - [ ] `app/booking/[restaurantId]/step4-preorder.tsx` — `mockMenuItems`, `menuCategories`
 - [ ] `app/booking/[restaurantId]/step-prepay-offer.tsx` — `mockRestaurants`
 
-### Sub-phase G.4 — Reusable components
+### Sub-phase G.4 — Reusable components ✅
 
 - [ ] `components/feed/*` (FeedHero, FeedPostCard, CollectionsStrip)
 - [ ] `components/snaps/*` (SnapGrid, SnapShareSheet, SnapPreviewCard, etc.)
@@ -262,3 +262,4 @@ Reference for what NOT to redo:
 - `6315501` — Mock-data gating for wallet, loyalty, billing-year, analytics, receipts
 - Phase E (this commit) — half-fixes: Stripe API version + confirmation-code generators centralized; CEN- prefix chosen; `register-restaurant-owner` uses `_shared/stripe.ts` + `_shared/cors.ts`; tax/currency/timezone fallbacks unified; Nominatim UA built from `BRAND_DOMAIN`; storage modules use `key()`; `lib/storage/migrate.ts` created and wired into `_layout.tsx`; `addToCalendar` and `ThemeProvider` adopt central constants
 - Phase F (this commit) — visible brand & data integrity: synthesized `4.5★` and Toronto coord defaults dropped (Restaurant.avgRating/lat/lng now nullable, ~30 consumers updated to render "New" / filter unmappable rows); "Seatly" → "Cenaiva" in changePasswordSub; orphaned `scheduleVenue`/`scheduleManagerName` i18n keys removed; `cenaiva.app` consolidated to `cenaiva.com` (support email, share caption); `app/(staff)/rate-seatly.tsx` → `rate-cenaiva.tsx`; iOS bundle id aligned to `com.cenaiva.app` (CFBundleURLTypes deduped); `hoursStatus.ts` defaults to `DEFAULT_TIMEZONE`; Deepgram live-token call gated behind `EXPO_PUBLIC_DEEPGRAM_LIVE_TOKEN`
+- Phase G — mock-data sweep, gated every `lib/mock/*` runtime import behind `isDemoModeEnabled()` across G.1 customer (21 files), G.2 staff/owner (20 files; owner-home dashboard now zeros instead of fabricated $4,280 revenue), G.3 booking flow (3 files), G.4 components (13 files). Pattern: `import { mockX as DEMO_X } from ...; const mockX = isDemoModeEnabled() ? DEMO_X : []`. Pure utility functions (`timeAgoLabel`, `getUrgencyCopy`, `shortTagLine`, `getDiscoverBadges`) and type-only imports left unchanged.

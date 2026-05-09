@@ -13,10 +13,18 @@ import { useColors, createStyles, spacing, borderRadius } from '@/lib/theme';
 import {
   type DiningEvent,
   type EventType,
-  getRestaurantForEvent,
-  isEventSaved,
-  toggleSaveEvent,
+  getRestaurantForEvent as DEMO_getRestaurantForEvent,
+  isEventSaved as DEMO_isEventSaved,
+  toggleSaveEvent as DEMO_toggleSaveEvent,
 } from '@/lib/mock/events';
+import { isDemoModeEnabled } from '@/lib/config/demoMode';
+
+const getRestaurantForEvent: typeof DEMO_getRestaurantForEvent = (id) =>
+  isDemoModeEnabled() ? DEMO_getRestaurantForEvent(id) : undefined;
+const isEventSaved: typeof DEMO_isEventSaved = (...args) =>
+  isDemoModeEnabled() ? DEMO_isEventSaved(...args) : false;
+const toggleSaveEvent: typeof DEMO_toggleSaveEvent = (...args) =>
+  isDemoModeEnabled() ? DEMO_toggleSaveEvent(...args) : false;
 import { useCurrentUserId } from '@/lib/auth/currentUserId';
 
 const TYPE_LABEL: Record<EventType, string> = {

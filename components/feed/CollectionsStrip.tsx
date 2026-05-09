@@ -1,7 +1,10 @@
 import React from 'react';
 import { View, Text, ScrollView, StyleSheet, Pressable } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
-import { feedCollections } from '@/lib/mock/feedCollections';
+import { feedCollections as DEMO_feedCollections } from '@/lib/mock/feedCollections';
+import { isDemoModeEnabled } from '@/lib/config/demoMode';
+
+const feedCollections: typeof DEMO_feedCollections = isDemoModeEnabled() ? DEMO_feedCollections : [];
 import { useColors, createStyles, spacing, borderRadius } from '@/lib/theme';
 
 const TILE_W = 148;

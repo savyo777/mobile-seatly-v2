@@ -1,7 +1,11 @@
 import React from 'react';
 import { View, Text } from 'react-native';
 import { useRouter } from 'expo-router';
-import { getSavedRestaurants } from '@/lib/mock/profileScreens';
+import { getSavedRestaurants as DEMO_getSavedRestaurants } from '@/lib/mock/profileScreens';
+import { isDemoModeEnabled } from '@/lib/config/demoMode';
+
+const getSavedRestaurants: typeof DEMO_getSavedRestaurants = () =>
+  isDemoModeEnabled() ? DEMO_getSavedRestaurants() : [];
 import { useColors, createStyles, spacing, typography } from '@/lib/theme';
 import { SavedRestaurantCard } from '@/components/profile/SavedRestaurantCard';
 

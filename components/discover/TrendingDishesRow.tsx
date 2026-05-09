@@ -3,7 +3,11 @@ import { FlatList, Image, Pressable, Text, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { ChevronGlyph } from '@/components/ui/ChevronGlyph';
 import type { TrendingDish } from '@/lib/mock/social';
-import { getRestaurantForPost } from '@/lib/mock/snaps';
+import { getRestaurantForPost as DEMO_getRestaurantForPost } from '@/lib/mock/snaps';
+import { isDemoModeEnabled } from '@/lib/config/demoMode';
+
+const getRestaurantForPost: typeof DEMO_getRestaurantForPost = (id) =>
+  isDemoModeEnabled() ? DEMO_getRestaurantForPost(id) : null;
 import { borderRadius, createStyles, spacing, typography, useColors } from '@/lib/theme';
 
 type Props = {

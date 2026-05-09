@@ -15,14 +15,39 @@ import { Ionicons } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import {
-  addPostToCollection,
-  createCollection,
-  getCollectionsContainingPost,
-  listCollections,
-  removePostFromCollection,
+  addPostToCollection as DEMO_addPostToCollection,
+  createCollection as DEMO_createCollection,
+  getCollectionsContainingPost as DEMO_getCollectionsContainingPost,
+  listCollections as DEMO_listCollections,
+  removePostFromCollection as DEMO_removePostFromCollection,
   type Collection,
 } from '@/lib/mock/collections';
-import { getSnapPostById } from '@/lib/mock/snaps';
+import { getSnapPostById as DEMO_getSnapPostById } from '@/lib/mock/snaps';
+import { isDemoModeEnabled } from '@/lib/config/demoMode';
+
+const listCollections: typeof DEMO_listCollections = (ownerId) =>
+  isDemoModeEnabled() ? DEMO_listCollections(ownerId) : [];
+const getCollectionsContainingPost: typeof DEMO_getCollectionsContainingPost = (ownerId, postId) =>
+  isDemoModeEnabled() ? DEMO_getCollectionsContainingPost(ownerId, postId) : [];
+const getSnapPostById: typeof DEMO_getSnapPostById = (id) =>
+  isDemoModeEnabled() ? DEMO_getSnapPostById(id) : undefined;
+const noopMutator = (action: string) => () => {
+  if (!isDemoModeEnabled()) {
+    throw new Error(`Saved collections are unavailable until backend is configured (${action}).`);
+  }
+};
+const createCollection: typeof DEMO_createCollection = (ownerId, name) => {
+  if (!isDemoModeEnabled()) noopMutator('createCollection')();
+  return DEMO_createCollection(ownerId, name);
+};
+const addPostToCollection: typeof DEMO_addPostToCollection = (ownerId, collectionId, postId) => {
+  if (!isDemoModeEnabled()) noopMutator('addPostToCollection')();
+  DEMO_addPostToCollection(ownerId, collectionId, postId);
+};
+const removePostFromCollection: typeof DEMO_removePostFromCollection = (ownerId, collectionId, postId) => {
+  if (!isDemoModeEnabled()) noopMutator('removePostFromCollection')();
+  DEMO_removePostFromCollection(ownerId, collectionId, postId);
+};
 import { useCurrentUserId } from '@/lib/auth/currentUserId';
 import { borderRadius, createStyles, spacing, typography, useColors } from '@/lib/theme';
 
