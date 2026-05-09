@@ -13,6 +13,7 @@ import {
   REVENUE_DATA,
   type RevenuePeriod,
 } from '@/lib/mock/ownerApp';
+import { isDemoModeEnabled } from '@/lib/config/demoMode';
 import { formatCurrency } from '@/lib/utils/formatCurrency';
 import { useColors, createStyles, spacing, borderRadius } from '@/lib/theme';
 
@@ -311,87 +312,96 @@ export default function OwnerAnalyticsScreen() {
         </View>
       </SectionCard>
 
-      <SectionCard sectionTitle="Revenue breakdown">
-        {(
-          [
-            { label: 'Food', value: formatCurrency(m.revenue * 0.62, 'cad') },
-            { label: 'Drinks', value: formatCurrency(m.revenue * 0.32, 'cad') },
-            { label: 'Tips', value: formatCurrency(m.revenue * 0.12, 'cad') },
-            { label: 'Discounts given', value: `- ${formatCurrency(m.revenue * 0.03, 'cad')}` },
-            { label: 'Deposits', value: formatCurrency(m.revenue * 0.04, 'cad') },
-            { label: 'Gift cards sold', value: formatCurrency(m.revenue * 0.02, 'cad') },
-            { label: 'Event revenue', value: formatCurrency(m.revenue * 0.06, 'cad') },
-            { label: 'Promo uses', value: `${Math.round(m.covers * 0.08)}` },
-          ] as KVRowItem[]
-        ).map((row, i) => (
-          <View key={row.label} style={[styles.kvRow, i > 0 && styles.kvDivider]}>
-            <Text style={styles.kvLabel}>{row.label}</Text>
-            <Text style={[styles.kvValue, row.accent && styles.kvValueGold]}>{row.value}</Text>
-          </View>
-        ))}
-      </SectionCard>
+      {isDemoModeEnabled() ? (
+        <>
+          {/* Revenue / guest-mix / top-dishes / booking-sources are
+              fabricated breakdowns of `m.revenue` and `m.covers`. They're
+              shown in demo mode only to give a feel for the dashboard;
+              real owners will see them once analytics aggregations exist
+              on the backend. */}
+          <SectionCard sectionTitle="Revenue breakdown">
+            {(
+              [
+                { label: 'Food', value: formatCurrency(m.revenue * 0.62, 'cad') },
+                { label: 'Drinks', value: formatCurrency(m.revenue * 0.32, 'cad') },
+                { label: 'Tips', value: formatCurrency(m.revenue * 0.12, 'cad') },
+                { label: 'Discounts given', value: `- ${formatCurrency(m.revenue * 0.03, 'cad')}` },
+                { label: 'Deposits', value: formatCurrency(m.revenue * 0.04, 'cad') },
+                { label: 'Gift cards sold', value: formatCurrency(m.revenue * 0.02, 'cad') },
+                { label: 'Event revenue', value: formatCurrency(m.revenue * 0.06, 'cad') },
+                { label: 'Promo uses', value: `${Math.round(m.covers * 0.08)}` },
+              ] as KVRowItem[]
+            ).map((row, i) => (
+              <View key={row.label} style={[styles.kvRow, i > 0 && styles.kvDivider]}>
+                <Text style={styles.kvLabel}>{row.label}</Text>
+                <Text style={[styles.kvValue, row.accent && styles.kvValueGold]}>{row.value}</Text>
+              </View>
+            ))}
+          </SectionCard>
 
-      <SectionCard sectionTitle="Guest mix">
-        {(
-          [
-            { label: 'New guests', value: String(Math.round(m.covers * 0.28)) },
-            { label: 'Returning guests', value: String(Math.round(m.covers * 0.72)) },
-            { label: 'VIP covers', value: String(Math.round(m.covers * 0.12)) },
-            { label: 'Walk-ins', value: String(Math.round(m.covers * 0.18)) },
-            { label: 'Preorders', value: String(Math.round(m.covers * 0.22)) },
-          ] as KVRowItem[]
-        ).map((row, i) => (
-          <View key={row.label} style={[styles.kvRow, i > 0 && styles.kvDivider]}>
-            <Text style={styles.kvLabel}>{row.label}</Text>
-            <Text style={styles.kvValue}>{row.value}</Text>
-          </View>
-        ))}
-      </SectionCard>
+          <SectionCard sectionTitle="Guest mix">
+            {(
+              [
+                { label: 'New guests', value: String(Math.round(m.covers * 0.28)) },
+                { label: 'Returning guests', value: String(Math.round(m.covers * 0.72)) },
+                { label: 'VIP covers', value: String(Math.round(m.covers * 0.12)) },
+                { label: 'Walk-ins', value: String(Math.round(m.covers * 0.18)) },
+                { label: 'Preorders', value: String(Math.round(m.covers * 0.22)) },
+              ] as KVRowItem[]
+            ).map((row, i) => (
+              <View key={row.label} style={[styles.kvRow, i > 0 && styles.kvDivider]}>
+                <Text style={styles.kvLabel}>{row.label}</Text>
+                <Text style={styles.kvValue}>{row.value}</Text>
+              </View>
+            ))}
+          </SectionCard>
 
-      <SectionCard sectionTitle="Operations">
-        {(
-          [
-            { label: 'Avg table turn', value: '78 min' },
-            { label: 'Labour cost', value: formatCurrency(m.revenue * 0.24, 'cad') },
-            { label: 'Turnover', value: `${m.turnover}x` },
-          ] as KVRowItem[]
-        ).map((row, i) => (
-          <View key={row.label} style={[styles.kvRow, i > 0 && styles.kvDivider]}>
-            <Text style={styles.kvLabel}>{row.label}</Text>
-            <Text style={styles.kvValue}>{row.value}</Text>
-          </View>
-        ))}
-      </SectionCard>
+          <SectionCard sectionTitle="Operations">
+            {(
+              [
+                { label: 'Avg table turn', value: '78 min' },
+                { label: 'Labour cost', value: formatCurrency(m.revenue * 0.24, 'cad') },
+                { label: 'Turnover', value: `${m.turnover}x` },
+              ] as KVRowItem[]
+            ).map((row, i) => (
+              <View key={row.label} style={[styles.kvRow, i > 0 && styles.kvDivider]}>
+                <Text style={styles.kvLabel}>{row.label}</Text>
+                <Text style={styles.kvValue}>{row.value}</Text>
+              </View>
+            ))}
+          </SectionCard>
 
-      <SectionCard sectionTitle="Top dishes">
-        {[
-          { name: 'Tagliatelle al ragù', count: 82, revenue: 2214 },
-          { name: 'Branzino', count: 61, revenue: 2684 },
-          { name: 'Burrata', count: 54, revenue: 864 },
-          { name: 'Negroni', count: 48, revenue: 672 },
-        ].map((d, i) => (
-          <View key={d.name} style={[styles.kvRow, i > 0 && styles.kvDivider]}>
-            <Text style={styles.kvLabel}>
-              {d.name} · {d.count}
-            </Text>
-            <Text style={styles.kvValue}>{formatCurrency(d.revenue, 'cad')}</Text>
-          </View>
-        ))}
-      </SectionCard>
+          <SectionCard sectionTitle="Top dishes">
+            {[
+              { name: 'Tagliatelle al ragù', count: 82, revenue: 2214 },
+              { name: 'Branzino', count: 61, revenue: 2684 },
+              { name: 'Burrata', count: 54, revenue: 864 },
+              { name: 'Negroni', count: 48, revenue: 672 },
+            ].map((d, i) => (
+              <View key={d.name} style={[styles.kvRow, i > 0 && styles.kvDivider]}>
+                <Text style={styles.kvLabel}>
+                  {d.name} · {d.count}
+                </Text>
+                <Text style={styles.kvValue}>{formatCurrency(d.revenue, 'cad')}</Text>
+              </View>
+            ))}
+          </SectionCard>
 
-      <SectionCard sectionTitle="Booking sources">
-        {[
-          { label: 'App', pct: 48 },
-          { label: 'Web', pct: 24 },
-          { label: 'Phone', pct: 16 },
-          { label: 'Walk-in', pct: 12 },
-        ].map((s, i) => (
-          <View key={s.label} style={[styles.kvRow, i > 0 && styles.kvDivider]}>
-            <Text style={styles.kvLabel}>{s.label}</Text>
-            <Text style={styles.kvValue}>{s.pct}%</Text>
-          </View>
-        ))}
-      </SectionCard>
+          <SectionCard sectionTitle="Booking sources">
+            {[
+              { label: 'App', pct: 48 },
+              { label: 'Web', pct: 24 },
+              { label: 'Phone', pct: 16 },
+              { label: 'Walk-in', pct: 12 },
+            ].map((s, i) => (
+              <View key={s.label} style={[styles.kvRow, i > 0 && styles.kvDivider]}>
+                <Text style={styles.kvLabel}>{s.label}</Text>
+                <Text style={styles.kvValue}>{s.pct}%</Text>
+              </View>
+            ))}
+          </SectionCard>
+        </>
+      ) : null}
 
       <SectionCard sectionTitle={t('owner.analyticsInsightsTitle')} marginBottom={spacing['2xl']}>
         {insights.map((row, i) => (

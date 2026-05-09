@@ -1,5 +1,6 @@
 import { mockOrders, type Order, type OrderItem } from '@/lib/mock/orders';
 import { mockReservations, type Reservation } from '@/lib/mock/reservations';
+import { isDemoModeEnabled } from '@/lib/config/demoMode';
 import type { ReceiptActivityKind, ReceiptLineItem, ReceiptPayload } from '@/lib/receipt/receiptTypes';
 
 function mapOrderItem(it: OrderItem): ReceiptLineItem {
@@ -54,6 +55,11 @@ function orderFromReservation(r: Reservation): Order | undefined {
 }
 
 export function getReceiptPayload(kind: ReceiptActivityKind, id: string): ReceiptPayload | null {
+  // Receipts read from mock orders/reservations until a real
+  // /reservations/:id/receipt endpoint exists. In production builds
+  // (demo mode off) we don't synthesize a receipt — the activity screen
+  // shows an empty state for the receipt instead.
+  if (!isDemoModeEnabled()) return null;
   if (kind === 'booking') {
     const r = mockReservations.find((x) => x.id === id);
     if (!r) return null;

@@ -5,9 +5,24 @@ import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { ScreenWrapper, Card, Button, Badge } from '@/components/ui';
 import { useColors, createStyles, spacing, borderRadius, typography, shadows } from '@/lib/theme';
-import { mockLoyaltyTransactions, mockRewards, type LoyaltyReward } from '@/lib/mock/loyalty';
+import {
+  mockLoyaltyTransactions as MOCK_LOYALTY_TRANSACTIONS,
+  mockRewards as MOCK_REWARDS,
+  type LoyaltyReward,
+} from '@/lib/mock/loyalty';
 import { mockCustomer } from '@/lib/mock/users';
+import { isDemoModeEnabled } from '@/lib/config/demoMode';
 import { LOYALTY_TIERS } from '@/lib/loyalty/tiers';
+
+// Real loyalty transactions and reward catalog should come from
+// `loyalty_transactions` / `loyalty_rewards` Supabase tables. Until those
+// are wired up, only render the mock data when demo mode is enabled —
+// otherwise customers would see redeemable rewards that don't exist.
+const demo = isDemoModeEnabled();
+const mockLoyaltyTransactions = demo ? MOCK_LOYALTY_TRANSACTIONS : [];
+const mockRewards = demo ? MOCK_REWARDS : [];
+const loyaltyPointsBalance = demo ? mockCustomer.loyaltyPointsBalance : 0;
+const loyaltyTier = demo ? mockCustomer.loyaltyTier : null;
 
 // Threshold for the "Gold" tier comes from the canonical loyalty-tier table
 // in lib/loyalty/tiers.ts. The progress bar on this screen is specifically
@@ -204,8 +219,8 @@ export default function ProfileLoyaltyScreen() {
     [],
   );
 
-  const progress = Math.min(mockCustomer.loyaltyPointsBalance / GOLD_THRESHOLD, 1);
-  const pointsToGold = Math.max(0, GOLD_THRESHOLD - mockCustomer.loyaltyPointsBalance);
+  const progress = Math.min(loyaltyPointsBalance / GOLD_THRESHOLD, 1);
+  const pointsToGold = Math.max(0, GOLD_THRESHOLD - loyaltyPointsBalance);
   const redeemedTx = useMemo(() => sortedTx.filter((tx) => tx.type === 'redeem'), [sortedTx]);
 
   const renderReward: ListRenderItem<LoyaltyReward> = ({ item }) => (
@@ -229,10 +244,10 @@ export default function ProfileLoyaltyScreen() {
       <Text style={styles.screenTitle}>{t('loyalty.title')}</Text>
       <Card style={styles.balanceCard}>
         <Text style={styles.balanceNumber}>
-          {mockCustomer.loyaltyPointsBalance.toLocaleString()} {t('loyalty.points')}
+          {loyaltyPointsBalance.toLocaleString()} {t('loyalty.points')}
         </Text>
         <View style={styles.tierRow}>
-          <Badge label={mockCustomer.loyaltyTier ?? t('loyalty.tierSilver')} variant="gold" size="md" />
+          <Badge label={loyaltyTier ?? t('loyalty.tierSilver')} variant="gold" size="md" />
         </View>
         <Text style={styles.progressLabel}>
           {t('loyalty.progressToGold')} · {t('loyalty.tierGold')}

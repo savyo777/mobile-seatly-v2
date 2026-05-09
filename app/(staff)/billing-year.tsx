@@ -5,6 +5,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { OwnerScreen } from '@/components/owner/OwnerScreen';
 import { SubpageHeader } from '@/components/owner/SubpageHeader';
 import { borderRadius, createStyles, spacing, typography, useColors } from '@/lib/theme';
+import { isDemoModeEnabled } from '@/lib/config/demoMode';
 
 type YearInvoice = {
   id: string;
@@ -13,8 +14,11 @@ type YearInvoice = {
   total: number;
 };
 
-/** Mock invoices per year. In production this comes from the backend. */
-const INVOICES_BY_YEAR: Record<number, YearInvoice[]> = {
+// Mock invoices per year. The real /owner/billing/cycle endpoint (Stripe
+// invoice list) hasn't been wired up yet, so we render these only when
+// demo mode is on. In production this screen shows an empty state until
+// the endpoint exists — never fabricated history shown to a real owner.
+const DEMO_INVOICES_BY_YEAR: Record<number, YearInvoice[]> = {
   2026: [
     { id: '2026-02', month: 'February', paidOn: '2026-03-01', total: 558.0 },
     { id: '2026-01', month: 'January', paidOn: '2026-02-01', total: 612.5 },
@@ -194,7 +198,7 @@ export default function BillingYearScreen() {
     return Number.isFinite(n) && n > 0 ? n : new Date().getFullYear();
   }, [yearParam]);
 
-  const invoices = INVOICES_BY_YEAR[year] ?? [];
+  const invoices = isDemoModeEnabled() ? (DEMO_INVOICES_BY_YEAR[year] ?? []) : [];
   const total = useMemo(
     () => invoices.reduce((s, inv) => s + inv.total, 0),
     [invoices],

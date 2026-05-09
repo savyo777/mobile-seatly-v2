@@ -7,16 +7,32 @@ import { ChevronGlyph } from '@/components/ui/ChevronGlyph';
 import { ProfileStackScreen } from '@/components/profile/ProfileStackScreen';
 import { ProfileSectionTitle } from '@/components/profile/ProfileSectionTitle';
 import { Card, Badge, Button } from '@/components/ui';
-import { mockPaymentMethods, mockGiftCards, mockWalletCredits } from '@/lib/mock/profileScreens';
+import {
+  mockPaymentMethods as MOCK_PAYMENT_METHODS,
+  mockGiftCards as MOCK_GIFT_CARDS,
+  mockWalletCredits as MOCK_WALLET_CREDITS,
+} from '@/lib/mock/profileScreens';
 import { mockCustomer } from '@/lib/mock/users';
+import { isDemoModeEnabled } from '@/lib/config/demoMode';
 import { formatCurrency } from '@/lib/utils/formatCurrency';
 import { useColors, createStyles, spacing, typography, borderRadius, shadows } from '@/lib/theme';
 
-const MINI_ACTIVITY = [
+// Wallet ledger / credits / gift cards / mini-activity will come from a
+// Supabase-backed wallet endpoint. Until that exists, render mock numbers
+// only when demo mode is enabled and empty values otherwise — never ship
+// fake transaction history to a real customer.
+const DEMO_MINI_ACTIVITY = [
   { id: '1', title: 'Referral bonus applied', sub: 'Mar 12 · Cenaiva Credits', amount: 15 },
   { id: '2', title: 'Nova Ristorante deposit', sub: 'Mar 8 · Card ···· 4821', amount: -40 },
   { id: '3', title: 'Gift card redeemed', sub: 'Feb 22 · Holiday Promo', amount: -25 },
 ];
+
+const demo = isDemoModeEnabled();
+const mockPaymentMethods = demo ? MOCK_PAYMENT_METHODS : [];
+const mockGiftCards = demo ? MOCK_GIFT_CARDS : [];
+const mockWalletCredits = demo ? MOCK_WALLET_CREDITS : [];
+const MINI_ACTIVITY = demo ? DEMO_MINI_ACTIVITY : [];
+const loyaltyPointsBalance = demo ? mockCustomer.loyaltyPointsBalance : 0;
 
 const useStyles = createStyles((c) => ({
   hero: {
@@ -173,7 +189,7 @@ export default function WalletScreen() {
       <Card style={{ ...styles.hero, ...shadows.goldGlow }}>
         <Text style={styles.heroLabel}>Reward balance</Text>
         <Text style={styles.heroPoints}>
-          {mockCustomer.loyaltyPointsBalance.toLocaleString()} pts
+          {loyaltyPointsBalance.toLocaleString()} pts
         </Text>
         <Text style={styles.heroSub}>Tap through to redeem perks and track tier progress</Text>
         <Button title="View rewards" variant="outlined" size="sm" fullWidth onPress={() => router.push('/(customer)/profile/loyalty')} />
