@@ -1,7 +1,8 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import {
   ActivityIndicator,
   Alert,
+  Keyboard,
   KeyboardAvoidingView,
   Platform,
   Pressable,
@@ -10,6 +11,7 @@ import {
   StyleSheet,
   Text,
   TextInput,
+  TouchableWithoutFeedback,
   View,
 } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -20,6 +22,7 @@ import {
   useConfirmSetupIntent,
   type CardFormView,
 } from '@stripe/stripe-react-native';
+import { useColors } from '@/lib/theme';
 import {
   finalizeRestaurantRegistration,
   getRestaurantPaymentMethodPreview,
@@ -27,24 +30,13 @@ import {
 } from '@/lib/services/restaurantRegistration';
 import { OWNER_TRIAL_MONTHS } from '@/lib/owner/trialPolicy';
 
-// "Editorial receipt" palette — the design's Variant B (Card Info Redesign).
-const GOLD = '#D4B26A';
-const GOLD_DEEP = '#A6863D';
-const INK = '#0B0B0C';
-const PAPER = '#F5F1E8';
-const INK_60 = 'rgba(11,11,12,0.60)';
-const INK_55 = 'rgba(11,11,12,0.55)';
-const INK_50 = 'rgba(11,11,12,0.50)';
-const INK_35 = 'rgba(11,11,12,0.35)';
-const INK_DASH = 'rgba(11,11,12,0.18)';
-
-const SF =
-  Platform.OS === 'ios' ? 'System' : undefined;
+const SF = Platform.OS === 'ios' ? 'System' : undefined;
 const SERIF = Platform.OS === 'ios' ? 'Georgia' : 'serif';
 const MONO = Platform.OS === 'ios' ? 'Menlo' : 'monospace';
 
-// Display monthly fee shown after trial. TODO: wire to a real pricing source
-// once Cenaiva owner pricing has a single source of truth.
+// Display monthly fee shown after trial. Tracked in
+// docs/UNHARDCODE_CHECKLIST.md (Phase K) — wire to a single owner-pricing
+// source once Cenaiva pricing has one.
 const MONTHLY_FEE_LABEL = '$89.00 / mo';
 
 type SetupIntentState =
@@ -65,11 +57,13 @@ function addMonths(d: Date, months: number): Date {
 export default function RegisterRestaurantCardEntryScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
+  const c = useColors();
   const { confirmSetupIntent } = useConfirmSetupIntent();
 
   const [saving, setSaving] = useState(false);
   const [cardComplete, setCardComplete] = useState(false);
   const [intent, setIntent] = useState<SetupIntentState>({ status: 'loading' });
+  const cardFormRef = useRef<CardFormView.Methods | null>(null);
 
   const params = useLocalSearchParams<{
     businessName?: string;
@@ -87,9 +81,9 @@ export default function RegisterRestaurantCardEntryScreen() {
     [params.address, params.businessName, params.ownerPhone],
   );
 
-  // Cardholder name is a regular text field (not PCI-protected). Default to
-  // the business name they entered upstream so the form is one tap to submit
-  // for users who use the business name on their card.
+  // Cardholder is a regular text field (not PCI-protected). Default to the
+  // business name so users with their business name on the card are one tap
+  // away from done.
   const [cardholder, setCardholder] = useState(input.businessName);
   useEffect(() => {
     setCardholder(input.businessName);
@@ -126,6 +120,11 @@ export default function RegisterRestaurantCardEntryScreen() {
     };
   }, [input]);
 
+  const dismissAllInputs = () => {
+    Keyboard.dismiss();
+    cardFormRef.current?.blur?.();
+  };
+
   const onSubmit = () => {
     void (async () => {
       if (saving) return;
@@ -138,6 +137,7 @@ export default function RegisterRestaurantCardEntryScreen() {
         return;
       }
       setSaving(true);
+      dismissAllInputs();
       try {
         const { error: confirmError } = await confirmSetupIntent(intent.clientSecret, {
           paymentMethodType: 'Card',
@@ -178,169 +178,217 @@ export default function RegisterRestaurantCardEntryScreen() {
     })();
   };
 
+  // Theme-driven colors. Receipt aesthetic stays the same — paper
+  // surfaces become dark surfaces, ink text becomes white, dashed
+  // dividers become low-alpha white lines, ticket notches become
+  // bgBase-colored cutouts.
+  const bg = c.bgBase;
+  const surface = c.bgSurface;
+  const dashed = 'rgba(255,255,255,0.10)';
+  const ctaBg = c.gold;
+  const ctaFg = '#1A1408';
+
   return (
-    <SafeAreaView style={s.safe} edges={['top', 'left', 'right']}>
-      <StatusBar barStyle="dark-content" backgroundColor={PAPER} />
+    <SafeAreaView style={[s.safe, { backgroundColor: bg }]} edges={['top', 'left', 'right']}>
+      <StatusBar barStyle="light-content" backgroundColor={bg} />
       <KeyboardAvoidingView
         style={s.flex}
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
       >
-        <ScrollView
-          style={s.flex}
-          contentContainerStyle={[s.scrollContent, { paddingBottom: insets.bottom + 24 }]}
-          keyboardShouldPersistTaps="handled"
-          keyboardDismissMode="interactive"
-          showsVerticalScrollIndicator={false}
-        >
-          {/* Top bar */}
-          <View style={s.topBar}>
-            <Pressable
-              onPress={() => router.back()}
-              style={({ pressed }) => [s.backBtn, pressed && { opacity: 0.6 }]}
-              hitSlop={12}
-            >
-              <Ionicons name="chevron-back" size={16} color={INK} />
-              <Text style={s.backText}>Back</Text>
-            </Pressable>
-            <Text style={s.brandWordmark}>CENAIVA</Text>
-            <View style={{ width: 50 }} />
-          </View>
-
-          {/* Header */}
-          <View style={s.headerWrap}>
-            <Text style={s.eyebrow}>Step 03 / Billing</Text>
-            <Text style={s.title}>
-              Your card,{'\n'}
-              <Text style={s.titleItalic}>quietly</Text> on file.
-            </Text>
-            <Text style={s.subtitle}>
-              Three months on us. After that, $89 / month — cancel anytime.
-            </Text>
-          </View>
-
-          {/* Receipt card */}
-          <View style={s.receiptOuter}>
-            {/* ticket notches at top */}
-            <View style={s.ticketNotches} pointerEvents="none">
-              {Array.from({ length: 22 }).map((_, i) => (
-                <View key={i} style={s.notchDot} />
-              ))}
+        <TouchableWithoutFeedback onPress={dismissAllInputs} accessible={false}>
+          <ScrollView
+            style={s.flex}
+            contentContainerStyle={[s.scrollContent, { paddingBottom: insets.bottom + 24 }]}
+            keyboardShouldPersistTaps="handled"
+            keyboardDismissMode="interactive"
+            showsVerticalScrollIndicator={false}
+          >
+            {/* Top bar */}
+            <View style={s.topBar}>
+              <Pressable
+                onPress={() => router.back()}
+                style={({ pressed }) => [s.backBtn, pressed && { opacity: 0.6 }]}
+                hitSlop={12}
+              >
+                <Ionicons name="chevron-back" size={16} color={c.textPrimary} />
+                <Text style={[s.backText, { color: c.textPrimary }]}>Back</Text>
+              </Pressable>
+              <Text style={[s.brandWordmark, { color: c.gold }]}>CENAIVA</Text>
+              <View style={{ width: 50 }} />
             </View>
 
-            <View style={s.receipt}>
-              <View style={s.receiptHeaderRow}>
-                <Text style={s.receiptEyebrow}>Cenaiva · Restaurant</Text>
-                <Text style={s.receiptNo}>NO. 0001</Text>
+            {/* Header */}
+            <View style={s.headerWrap}>
+              <Text style={[s.eyebrow, { color: c.textSecondary }]}>Step 03 / Billing</Text>
+              <Text style={[s.title, { color: c.textPrimary }]}>
+                Your card,{'\n'}
+                <Text style={[s.titleItalic, { color: c.gold }]}>quietly</Text> on file.
+              </Text>
+              <Text style={[s.subtitle, { color: c.textSecondary }]}>
+                Three months on us. After that, $89 / month — cancel anytime.
+              </Text>
+            </View>
+
+            {/* Receipt card */}
+            <View style={s.receiptOuter}>
+              {/* ticket notches at top — same color as the page bg so they
+                  look like cutouts in the receipt */}
+              <View style={s.ticketNotches} pointerEvents="none">
+                {Array.from({ length: 22 }).map((_, i) => (
+                  <View key={i} style={[s.notchDot, { backgroundColor: bg }]} />
+                ))}
               </View>
 
-              {/* Cardholder — first dashed top border */}
-              <View style={[s.fieldRow, s.fieldRowFirst]}>
-                <Text style={s.fieldLabel}>CARDHOLDER</Text>
-                <TextInput
-                  value={cardholder}
-                  onChangeText={setCardholder}
-                  placeholder="Full name on card"
-                  placeholderTextColor={INK_35}
-                  style={s.fieldInput}
-                  autoCapitalize="words"
-                  autoCorrect={false}
-                  returnKeyType="next"
-                />
-              </View>
+              <View
+                style={[
+                  s.receipt,
+                  { backgroundColor: surface, borderColor: 'rgba(255,255,255,0.06)' },
+                ]}
+              >
+                <View style={s.receiptHeaderRow}>
+                  <Text style={[s.receiptEyebrow, { color: c.textMuted }]}>Cenaiva · Restaurant</Text>
+                  <Text style={[s.receiptNo, { color: c.textMuted }]}>NO. 0001</Text>
+                </View>
 
-              {/* Stripe CardForm — number / expiry / CVC / postal */}
-              <View style={s.cardFormSection}>
-                <Text style={s.fieldLabel}>CARD DETAILS</Text>
-                {intent.status === 'loading' ? (
-                  <View style={s.cardFormLoading}>
-                    <ActivityIndicator color={GOLD_DEEP} />
-                    <Text style={s.cardFormLoadingText}>Preparing secure card form…</Text>
-                  </View>
-                ) : (
-                  <CardForm
-                    placeholders={{
-                      number: '1234 5678 9012 3456',
-                      expiration: 'MM / YY',
-                      cvc: 'CVC',
-                      postalCode: 'Postal / ZIP',
-                    }}
-                    cardStyle={{
-                      backgroundColor: '#FFFFFF',
-                      textColor: INK,
-                      placeholderColor: INK_35,
-                      borderColor: INK_DASH,
-                      borderWidth: 0,
-                      borderRadius: 4,
-                      fontSize: 14,
-                    }}
-                    style={s.cardForm}
-                    onFormComplete={(card: CardFormView.Details) => {
-                      setCardComplete(Boolean(card.complete));
-                    }}
+                {/* Cardholder */}
+                <View
+                  style={[
+                    s.fieldRow,
+                    s.fieldRowFirst,
+                    { borderTopColor: dashed, borderBottomColor: dashed },
+                  ]}
+                >
+                  <Text style={[s.fieldLabel, { color: c.textMuted }]}>CARDHOLDER</Text>
+                  <TextInput
+                    value={cardholder}
+                    onChangeText={setCardholder}
+                    placeholder="Full name on card"
+                    placeholderTextColor={c.textMuted}
+                    style={[s.fieldInput, { color: c.textPrimary }]}
+                    autoCapitalize="words"
+                    autoCorrect={false}
+                    returnKeyType="done"
+                    onSubmitEditing={() => Keyboard.dismiss()}
+                    blurOnSubmit
                   />
-                )}
+                </View>
+
+                {/* Stripe CardForm — number / expiry / CVC / postal */}
+                <View style={[s.cardFormSection, { borderBottomColor: dashed }]}>
+                  <Text style={[s.fieldLabel, { color: c.textMuted }]}>CARD DETAILS</Text>
+                  {intent.status === 'loading' ? (
+                    <View style={s.cardFormLoading}>
+                      <ActivityIndicator color={c.gold} />
+                      <Text style={[s.cardFormLoadingText, { color: c.textSecondary }]}>
+                        Preparing secure card form…
+                      </Text>
+                    </View>
+                  ) : (
+                    <CardForm
+                      ref={cardFormRef}
+                      placeholders={{
+                        number: '1234 5678 9012 3456',
+                        expiration: 'MM / YY',
+                        cvc: 'CVC',
+                        postalCode: 'Postal / ZIP',
+                      }}
+                      cardStyle={{
+                        backgroundColor: c.bgElevated,
+                        textColor: c.textPrimary,
+                        placeholderColor: c.textMuted,
+                        borderColor: 'rgba(255,255,255,0.08)',
+                        borderWidth: 0,
+                        borderRadius: 4,
+                        fontSize: 14,
+                      }}
+                      style={s.cardForm}
+                      onFormComplete={(card: CardFormView.Details) => {
+                        setCardComplete(Boolean(card.complete));
+                      }}
+                    />
+                  )}
+                </View>
+
+                {/* Totals */}
+                <View style={[s.totals, { borderTopColor: dashed }]}>
+                  <ReceiptRow k="Today's charge" v="$0.00" textColors={c} />
+                  <ReceiptRow k="Trial ends" v={trialEndsLabel} textColors={c} />
+                  <ReceiptRow k="Then" v={MONTHLY_FEE_LABEL} bold textColors={c} />
+                </View>
               </View>
+            </View>
 
-              {/* Totals */}
-              <View style={s.totals}>
-                <ReceiptRow k="Today's charge" v="$0.00" />
-                <ReceiptRow k="Trial ends" v={trialEndsLabel} />
-                <ReceiptRow k="Then" v={MONTHLY_FEE_LABEL} bold />
+            {typeof params.paymentError === 'string' ? (
+              <View style={s.errorCard}>
+                <Text style={[s.errorTitle, { color: c.textPrimary }]}>Use the card form above</Text>
+                <Text style={[s.errorText, { color: c.textSecondary }]}>{params.paymentError}</Text>
+              </View>
+            ) : null}
+
+            {intent.status === 'error' ? (
+              <View style={s.errorCard}>
+                <Text style={[s.errorTitle, { color: c.textPrimary }]}>Could not prepare card form</Text>
+                <Text style={[s.errorText, { color: c.textSecondary }]}>{intent.message}</Text>
+              </View>
+            ) : null}
+
+            {/* CTA */}
+            <View style={s.ctaWrap}>
+              <Pressable
+                onPress={onSubmit}
+                disabled={saving || intent.status !== 'ready' || !cardComplete}
+                style={({ pressed }) => [
+                  s.cta,
+                  { backgroundColor: ctaBg, borderColor: ctaBg },
+                  (saving || intent.status !== 'ready' || !cardComplete) && s.ctaDisabled,
+                  pressed && !saving && intent.status === 'ready' && cardComplete && { opacity: 0.85 },
+                ]}
+              >
+                <Text style={[s.ctaLabel, { color: ctaFg }]}>{saving ? 'SAVING…' : 'SAVE CARD'}</Text>
+              </Pressable>
+
+              <View style={s.trustRow}>
+                <Ionicons name="lock-closed-outline" size={11} color={c.textMuted} />
+                <Text style={[s.trustText, { color: c.textMuted }]}>Stripe-encrypted · PCI DSS</Text>
               </View>
             </View>
-          </View>
-
-          {typeof params.paymentError === 'string' ? (
-            <View style={s.errorCard}>
-              <Text style={s.errorTitle}>Use the card form above</Text>
-              <Text style={s.errorText}>{params.paymentError}</Text>
-            </View>
-          ) : null}
-
-          {intent.status === 'error' ? (
-            <View style={s.errorCard}>
-              <Text style={s.errorTitle}>Could not prepare card form</Text>
-              <Text style={s.errorText}>{intent.message}</Text>
-            </View>
-          ) : null}
-
-          {/* CTA */}
-          <View style={s.ctaWrap}>
-            <Pressable
-              onPress={onSubmit}
-              disabled={saving || intent.status !== 'ready' || !cardComplete}
-              style={({ pressed }) => [
-                s.cta,
-                (saving || intent.status !== 'ready' || !cardComplete) && s.ctaDisabled,
-                pressed && !saving && intent.status === 'ready' && cardComplete && { opacity: 0.85 },
-              ]}
-            >
-              <Text style={s.ctaLabel}>{saving ? 'SAVING…' : 'SAVE CARD'}</Text>
-            </Pressable>
-
-            <View style={s.trustRow}>
-              <Ionicons name="lock-closed-outline" size={11} color={INK_50} />
-              <Text style={s.trustText}>Stripe-encrypted · PCI DSS</Text>
-            </View>
-          </View>
-        </ScrollView>
+          </ScrollView>
+        </TouchableWithoutFeedback>
       </KeyboardAvoidingView>
     </SafeAreaView>
   );
 }
 
-function ReceiptRow({ k, v, bold }: { k: string; v: string; bold?: boolean }) {
+function ReceiptRow({
+  k,
+  v,
+  bold,
+  textColors,
+}: {
+  k: string;
+  v: string;
+  bold?: boolean;
+  textColors: ReturnType<typeof useColors>;
+}) {
   return (
     <View style={s.receiptTotalsRow}>
-      <Text style={s.totalsLabel}>{k}</Text>
-      <Text style={[s.totalsValue, bold && s.totalsValueBold]}>{v}</Text>
+      <Text style={[s.totalsLabel, { color: textColors.textSecondary }]}>{k}</Text>
+      <Text
+        style={[
+          s.totalsValue,
+          { color: bold ? textColors.textPrimary : textColors.textSecondary },
+          bold && s.totalsValueBold,
+        ]}
+      >
+        {v}
+      </Text>
     </View>
   );
 }
 
 const s = StyleSheet.create({
   flex: { flex: 1 },
-  safe: { flex: 1, backgroundColor: PAPER },
+  safe: { flex: 1 },
   scrollContent: {
     paddingBottom: 32,
   },
@@ -362,14 +410,12 @@ const s = StyleSheet.create({
     fontFamily: SF,
     fontSize: 14,
     fontWeight: '500',
-    color: INK,
   },
   brandWordmark: {
     fontFamily: SF,
     fontSize: 11,
     fontWeight: '700',
     letterSpacing: 5,
-    color: GOLD_DEEP,
     textTransform: 'uppercase',
   },
   // header
@@ -383,7 +429,6 @@ const s = StyleSheet.create({
     fontWeight: '600',
     letterSpacing: 3.2,
     textTransform: 'uppercase',
-    color: INK_55,
   },
   title: {
     fontFamily: SERIF,
@@ -391,18 +436,15 @@ const s = StyleSheet.create({
     lineHeight: 42,
     fontWeight: '500',
     letterSpacing: -1,
-    color: INK,
     marginTop: 12,
   },
   titleItalic: {
     fontStyle: 'italic',
-    color: GOLD_DEEP,
   },
   subtitle: {
     fontFamily: SF,
     fontSize: 14,
     lineHeight: 21,
-    color: 'rgba(11,11,12,0.65)',
     marginTop: 14,
   },
   // receipt outer (with ticket notches)
@@ -425,19 +467,18 @@ const s = StyleSheet.create({
     width: 6,
     height: 6,
     borderRadius: 3,
-    backgroundColor: PAPER,
   },
   receipt: {
-    backgroundColor: '#FFFFFF',
     borderRadius: 4,
+    borderWidth: StyleSheet.hairlineWidth,
     paddingHorizontal: 22,
     paddingTop: 20,
     paddingBottom: 16,
     shadowColor: '#000',
-    shadowOpacity: 0.08,
+    shadowOpacity: 0.4,
     shadowRadius: 32,
     shadowOffset: { width: 0, height: 12 },
-    elevation: 4,
+    elevation: 6,
   },
   receiptHeaderRow: {
     flexDirection: 'row',
@@ -450,37 +491,31 @@ const s = StyleSheet.create({
     fontSize: 10,
     fontWeight: '600',
     letterSpacing: 3,
-    color: INK_50,
     textTransform: 'uppercase',
   },
   receiptNo: {
     fontFamily: MONO,
     fontSize: 10,
-    color: INK_50,
   },
   // dashed-row fields
   fieldRow: {
     paddingTop: 12,
     paddingBottom: 10,
     borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: INK_DASH,
     borderStyle: 'dashed',
   },
   fieldRowFirst: {
     borderTopWidth: StyleSheet.hairlineWidth,
-    borderTopColor: INK_DASH,
   },
   fieldLabel: {
     fontFamily: SF,
     fontSize: 9,
     fontWeight: '700',
-    color: INK_55,
     letterSpacing: 1.2,
   },
   fieldInput: {
     fontFamily: MONO,
     fontSize: 14,
-    color: INK,
     marginTop: 4,
     padding: 0,
     minHeight: 20,
@@ -490,7 +525,6 @@ const s = StyleSheet.create({
     paddingTop: 12,
     paddingBottom: 10,
     borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: INK_DASH,
     borderStyle: 'dashed',
   },
   cardForm: {
@@ -507,14 +541,12 @@ const s = StyleSheet.create({
   cardFormLoadingText: {
     fontFamily: SF,
     fontSize: 12,
-    color: INK_55,
   },
   // totals
   totals: {
     marginTop: 14,
     paddingTop: 12,
     borderTopWidth: StyleSheet.hairlineWidth,
-    borderTopColor: INK_DASH,
     borderStyle: 'dashed',
   },
   receiptTotalsRow: {
@@ -525,16 +557,13 @@ const s = StyleSheet.create({
   totalsLabel: {
     fontFamily: SF,
     fontSize: 13,
-    color: INK_60,
   },
   totalsValue: {
     fontFamily: MONO,
     fontSize: 13,
-    color: 'rgba(11,11,12,0.85)',
   },
   totalsValueBold: {
     fontWeight: '700',
-    color: INK,
   },
   // error
   errorCard: {
@@ -542,8 +571,8 @@ const s = StyleSheet.create({
     marginTop: 16,
     borderRadius: 8,
     borderWidth: 1,
-    borderColor: 'rgba(190,18,60,0.30)',
-    backgroundColor: 'rgba(190,18,60,0.06)',
+    borderColor: 'rgba(239,68,68,0.30)',
+    backgroundColor: 'rgba(239,68,68,0.08)',
     padding: 14,
     gap: 4,
   },
@@ -551,12 +580,10 @@ const s = StyleSheet.create({
     fontFamily: SF,
     fontSize: 13,
     fontWeight: '700',
-    color: INK,
   },
   errorText: {
     fontFamily: SF,
     fontSize: 12,
-    color: INK_60,
     lineHeight: 17,
   },
   // CTA
@@ -567,9 +594,7 @@ const s = StyleSheet.create({
   cta: {
     height: 52,
     borderRadius: 4,
-    backgroundColor: INK,
     borderWidth: 1.5,
-    borderColor: INK,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -579,9 +604,8 @@ const s = StyleSheet.create({
   ctaLabel: {
     fontFamily: SF,
     fontSize: 15,
-    fontWeight: '600',
+    fontWeight: '700',
     letterSpacing: 1.5,
-    color: PAPER,
     textTransform: 'uppercase',
   },
   trustRow: {
@@ -594,6 +618,5 @@ const s = StyleSheet.create({
   trustText: {
     fontFamily: SF,
     fontSize: 11,
-    color: INK_50,
   },
 });
