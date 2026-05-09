@@ -452,8 +452,12 @@ export default function OwnerBusinessScreen() {
   const profileReviewCount = ownerRestaurant?.reviewCount ?? (isDemoModeEnabled() ? OWNER_BUSINESS_PROFILE.reviewCount : null);
   const profileCuisine = ownerRestaurant?.cuisine ?? '';
 
-  const todayBookings = OWNER_RESERVATIONS.length;
-  const thisWeekBookings = 198;
+  // Real bookings stats will come from a /owner/stats/bookings endpoint that
+  // aggregates the `reservations` table. Until that's wired up, derive
+  // demo numbers from OWNER_RESERVATIONS in demo mode and show 0 in prod
+  // rather than the previous hardcoded "198".
+  const todayBookings = isDemoModeEnabled() ? OWNER_RESERVATIONS.length : 0;
+  const thisWeekBookings = isDemoModeEnabled() ? OWNER_RESERVATIONS.length * 6 : 0;
   const avgRating = profileRating ?? 0;
 
   const contactRows: { label: string; value: string }[] = [

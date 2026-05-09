@@ -1,4 +1,3 @@
-import { RECEIPT_GUEST } from '@/lib/mock/receiptGuest';
 import { mockOrders, type Order, type OrderItem } from '@/lib/mock/orders';
 import { mockReservations, type Reservation } from '@/lib/mock/reservations';
 import type { ReceiptActivityKind, ReceiptLineItem, ReceiptPayload } from '@/lib/receipt/receiptTypes';
@@ -91,7 +90,7 @@ export function getReceiptPayload(kind: ReceiptActivityKind, id: string): Receip
       partySize: r.partySize,
       referenceId: r.confirmationCode,
       guestName: r.guestName,
-      guestEmail: RECEIPT_GUEST.email,
+      guestEmail: '',
       items,
       subtotal,
       taxAmount,
@@ -115,8 +114,8 @@ export function getReceiptPayload(kind: ReceiptActivityKind, id: string): Receip
     statusLabel: receiptStatusOrder(o.status),
     partySize,
     referenceId: o.id.toUpperCase(),
-    guestName: res?.guestName ?? RECEIPT_GUEST.name,
-    guestEmail: RECEIPT_GUEST.email,
+    guestName: res?.guestName ?? 'Guest',
+    guestEmail: '',
     items: o.items.map(mapOrderItem),
     subtotal: o.subtotal,
     taxAmount: o.taxAmount,

@@ -13,13 +13,11 @@ type Pin = {
   pin: string; // 4 digits
 };
 
-const INITIAL_PINS: Pin[] = [
-  { id: 'p1', name: 'Mark Henderson', role: 'Owner', pin: '4811' },
-  { id: 'p2', name: 'Lena Park', role: 'Manager', pin: '7204' },
-  { id: 'p3', name: 'Tomás Rivera', role: 'Host', pin: '3057' },
-  { id: 'p4', name: 'Aisha Raghavan', role: 'Server', pin: '9128' },
-  { id: 'p5', name: 'Marco Chen', role: 'Kitchen', pin: '6543' },
-];
+// Staff PINs are owned by the live `staff_pins` table. Until that's wired
+// up, this screen renders with an empty list rather than seeded fake codes
+// — shipping fixed default PINs would be a security hazard if a customer
+// ever interpreted them as real defaults for their restaurant.
+const INITIAL_PINS: Pin[] = [];
 
 function initials(name: string): string {
   const parts = name.split(/\s+/).filter(Boolean);

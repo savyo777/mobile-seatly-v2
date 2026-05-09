@@ -219,12 +219,25 @@ export default function TwoFactorScreen() {
   const [codeInput, setCodeInput] = useState('');
   const [codeError, setCodeError] = useState('');
 
-  const phoneTarget = user?.phone?.trim() || '+1 416 555 0142';
-  const emailTarget = user?.email?.trim() || 'mark@novaristorante.com';
+  const phoneTarget = user?.phone?.trim() ?? '';
+  const emailTarget = user?.email?.trim() ?? '';
+  const phoneAvailable = phoneTarget.length > 0;
+  const emailAvailable = emailTarget.length > 0;
 
   const targetForMethod = (method: Method) => (method === 'sms' ? phoneTarget : emailTarget);
+  const methodAvailable = (method: Method) =>
+    method === 'sms' ? phoneAvailable : emailAvailable;
 
   const sendVerificationCode = (method: Method) => {
+    if (!methodAvailable(method)) {
+      Alert.alert(
+        method === 'sms' ? 'No phone on file' : 'No email on file',
+        method === 'sms'
+          ? 'Add a phone number to your profile before enabling SMS-based two-factor authentication.'
+          : 'Add an email to your profile before enabling email-based two-factor authentication.',
+      );
+      return;
+    }
     const code = String(Math.floor(100000 + Math.random() * 900000));
     setPendingMethod(method);
     setSentCode(code);

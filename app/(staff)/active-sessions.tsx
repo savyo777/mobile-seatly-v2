@@ -126,35 +126,12 @@ const useStyles = createStyles((c) => ({
   },
 }));
 
-const INITIAL_SESSIONS: Session[] = [
-  {
-    id: 's1',
-    device: 'iPhone 15 Pro',
-    os: 'iOS 17.4',
-    location: 'Toronto, ON',
-    lastActive: 'Active now',
-    current: true,
-    icon: 'phone-portrait-outline',
-  },
-  {
-    id: 's2',
-    device: 'MacBook Pro',
-    os: 'Safari · macOS Sonoma',
-    location: 'Toronto, ON',
-    lastActive: '2 hours ago',
-    current: false,
-    icon: 'laptop-outline',
-  },
-  {
-    id: 's3',
-    device: 'iPad',
-    os: 'iPadOS 17',
-    location: 'Toronto, ON',
-    lastActive: 'Yesterday',
-    current: false,
-    icon: 'tablet-portrait-outline',
-  },
-];
+// Sessions list will come from a real backend endpoint that reads from
+// auth.sessions. Until that's wired up, render an empty list — never show
+// fabricated devices on a security screen, since a user clicking "sign out
+// other devices" would otherwise believe the action took effect when it
+// did not.
+const INITIAL_SESSIONS: Session[] = [];
 
 export default function ActiveSessionsScreen() {
   const c = useColors();

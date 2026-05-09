@@ -27,13 +27,11 @@ const ROLE_TONE: Record<
   Kitchen: { bg: 'rgba(245,158,11,0.14)', fg: '#F59E0B', border: 'rgba(245,158,11,0.30)' },
 };
 
-const INITIAL_TEAM: StaffMember[] = [
-  { id: 'm1', name: 'Mark Henderson', role: 'Owner', email: 'mark@novaristorante.com', status: 'active' },
-  { id: 'm2', name: 'Lena Park', role: 'Manager', email: 'lena@novaristorante.com', status: 'active' },
-  { id: 'm3', name: 'Tomás Rivera', role: 'Host', email: 'tomas@novaristorante.com', status: 'active' },
-  { id: 'm4', name: 'Aisha Raghavan', role: 'Server', email: 'aisha@novaristorante.com', status: 'active' },
-  { id: 'm5', name: 'Marco Chen', role: 'Kitchen', email: 'marco@novaristorante.com', status: 'invited' },
-];
+// Real staff list comes from the `staff_members` Supabase table for the
+// current restaurant. Until that's wired up, render an empty list rather
+// than the seeded "Nova Ristorante" team — a real owner should never see
+// fake colleagues on first render.
+const INITIAL_TEAM: StaffMember[] = [];
 
 function initials(name: string): string {
   const parts = name.split(/\s+/).filter(Boolean);
