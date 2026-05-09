@@ -4,9 +4,9 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import {
-  CardField,
+  CardForm,
   useConfirmSetupIntent,
-  type CardFieldInput,
+  type CardFormView,
 } from '@stripe/stripe-react-native';
 import { Button, ScreenWrapper } from '@/components/ui';
 import { borderRadius, createStyles, spacing, typography, useColors } from '@/lib/theme';
@@ -58,165 +58,58 @@ const useStyles = createStyles((c) => ({
     color: c.textSecondary,
     lineHeight: 22,
   },
-  // Live card preview
-  cardPreview: {
-    height: 200,
-    borderRadius: 20,
-    padding: 20,
-    marginBottom: spacing.lg,
-    overflow: 'hidden',
-    backgroundColor: '#0B0B0B',
-    borderWidth: 1,
-    borderColor: 'rgba(201,168,76,0.35)',
-    justifyContent: 'space-between',
-    shadowColor: '#000',
-    shadowOpacity: 0.4,
-    shadowRadius: 18,
-    shadowOffset: { width: 0, height: 8 },
-    elevation: 6,
-  },
-  cardPreviewSheen: {
-    position: 'absolute',
-    top: -60,
-    right: -60,
-    width: 220,
-    height: 220,
-    borderRadius: 220,
-    backgroundColor: 'rgba(201,168,76,0.10)',
-  },
-  cardPreviewSheen2: {
-    position: 'absolute',
-    bottom: -80,
-    left: -40,
-    width: 240,
-    height: 240,
-    borderRadius: 240,
-    backgroundColor: 'rgba(201,168,76,0.05)',
-  },
-  cardTopRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-  },
-  cardWordmark: {
-    color: c.gold,
-    fontWeight: '700',
-    letterSpacing: 3,
-    fontSize: 12,
-  },
-  cardChip: {
-    width: 36,
-    height: 26,
-    borderRadius: 5,
-    backgroundColor: 'rgba(201,168,76,0.18)',
-    borderWidth: 1,
-    borderColor: 'rgba(201,168,76,0.45)',
-    overflow: 'hidden',
-  },
-  cardChipInner: {
-    position: 'absolute',
-    top: 6,
-    left: 4,
-    right: 4,
-    bottom: 6,
-    borderRadius: 3,
-    borderWidth: 1,
-    borderColor: 'rgba(201,168,76,0.55)',
-  },
-  cardNumberRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    gap: 6,
-  },
-  cardNumberGroup: {
-    color: c.textPrimary,
-    fontSize: 18,
-    fontWeight: '600',
-    letterSpacing: 2,
-    fontVariant: ['tabular-nums'],
-  },
-  cardBottomRow: {
-    flexDirection: 'row',
-    alignItems: 'flex-end',
-    justifyContent: 'space-between',
-  },
-  cardMicroLabel: {
-    ...typography.label,
-    color: c.textMuted,
-    fontSize: 9,
-    letterSpacing: 1.2,
-    marginBottom: 3,
-  },
-  cardValue: {
-    color: c.textPrimary,
-    fontSize: 13,
-    fontWeight: '600',
-    letterSpacing: 1,
-    fontVariant: ['tabular-nums'],
-  },
-  cardBrandPill: {
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-    borderRadius: 999,
-    borderWidth: 1,
-    borderColor: 'rgba(201,168,76,0.45)',
-    backgroundColor: 'rgba(201,168,76,0.10)',
-  },
-  cardBrandText: {
-    color: c.gold,
-    fontSize: 10,
-    fontWeight: '700',
-    letterSpacing: 1.2,
-    textTransform: 'uppercase',
-  },
-  // Form card
-  formCard: {
-    borderRadius: borderRadius.xl,
-    backgroundColor: c.bgSurface,
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.08)',
-    paddingHorizontal: spacing.md,
-    paddingTop: spacing.md,
-    paddingBottom: spacing.sm,
-    marginBottom: spacing.md,
-  },
-  formCardHeader: {
+  // Section heading above the card form
+  sectionHeader: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
     marginBottom: spacing.sm,
   },
-  formCardTitle: {
-    ...typography.body,
-    color: c.textPrimary,
+  sectionTitle: {
+    ...typography.label,
+    color: c.textMuted,
+    letterSpacing: 1.1,
     fontWeight: '700',
   },
-  formCardSecure: {
+  secureBadge: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 4,
   },
-  formCardSecureText: {
+  secureBadgeText: {
     ...typography.bodySmall,
     color: c.textMuted,
     fontSize: 11,
   },
-  cardField: {
+  // The wrapper around the Stripe CardForm. CardForm renders separate
+  // rows for card number, expiry, CVC, and ZIP — we just give it a clean
+  // outer surface and let the native form draw its own row separators.
+  formCard: {
+    borderRadius: borderRadius.xl,
+    backgroundColor: c.bgElevated,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.08)',
+    overflow: 'hidden',
+    marginBottom: spacing.md,
+  },
+  cardForm: {
     width: '100%',
-    height: 60,
+    height: 220,
   },
   initLoader: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: spacing.sm,
-    paddingVertical: spacing.md,
+    paddingVertical: spacing['xl'],
+    paddingHorizontal: spacing.md,
+    height: 220,
+    justifyContent: 'center',
   },
   initLoaderText: {
     ...typography.bodySmall,
     color: c.textSecondary,
   },
-  // Brand chips
+  // Accepted brands chip row
   brandsRow: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -244,7 +137,7 @@ const useStyles = createStyles((c) => ({
     fontWeight: '600',
     letterSpacing: 0.5,
   },
-  // Error
+  // Error states
   errorCard: {
     borderRadius: borderRadius.lg,
     borderWidth: 1,
@@ -264,12 +157,28 @@ const useStyles = createStyles((c) => ({
     color: c.textSecondary,
     lineHeight: 18,
   },
-  // Footer
+  // Footer area
   footer: {
     marginTop: spacing.sm,
   },
-  trustRow: {
+  trialRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
     marginTop: spacing.md,
+  },
+  trialText: {
+    ...typography.bodySmall,
+    color: c.textSecondary,
+    fontSize: 12,
+  },
+  trialHighlight: {
+    color: c.gold,
+    fontWeight: '700',
+  },
+  trustRow: {
+    marginTop: 6,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
@@ -282,22 +191,6 @@ const useStyles = createStyles((c) => ({
     fontSize: 11,
     textAlign: 'center',
   },
-  trialRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 6,
-    marginTop: 6,
-  },
-  trialText: {
-    ...typography.bodySmall,
-    color: c.textSecondary,
-    fontSize: 12,
-  },
-  trialHighlight: {
-    color: c.gold,
-    fontWeight: '700',
-  },
 }));
 
 type SetupIntentState =
@@ -305,36 +198,7 @@ type SetupIntentState =
   | { status: 'ready'; clientSecret: string; setupIntentId: string }
   | { status: 'error'; message: string };
 
-type CardPreviewState = {
-  last4: string;
-  expiryMonth: number;
-  expiryYear: number;
-  brand: string;
-};
-
-const ACCEPTED_BRANDS = ['Visa', 'Mastercard', 'Amex', 'Discover'] as const;
-
-function formatPreviewNumber(last4: string): string {
-  const padded = (last4 ?? '').padStart(4, '•');
-  return `••••  ••••  ••••  ${padded}`;
-}
-
-function formatPreviewExpiry(month: number, year: number): string {
-  if (!month && !year) return 'MM / YY';
-  const mm = month ? String(month).padStart(2, '0') : 'MM';
-  const yy = year ? String(year).slice(-2).padStart(2, '0') : 'YY';
-  return `${mm} / ${yy}`;
-}
-
-function brandLabel(brand: string): string {
-  if (!brand || brand.toLowerCase() === 'unknown') return 'Card';
-  // Stripe returns brands like "Visa", "MasterCard", "AmericanExpress"
-  return brand
-    .replace(/([A-Z])/g, ' $1')
-    .trim()
-    .replace('Master Card', 'Mastercard')
-    .replace('American Express', 'Amex');
-}
+const ACCEPTED_BRANDS = ['Visa', 'Credit Card', 'Debit Visa', 'Mastercard'] as const;
 
 export default function RegisterRestaurantCardEntryScreen() {
   const router = useRouter();
@@ -345,12 +209,6 @@ export default function RegisterRestaurantCardEntryScreen() {
   const [saving, setSaving] = useState(false);
   const [cardComplete, setCardComplete] = useState(false);
   const [intent, setIntent] = useState<SetupIntentState>({ status: 'loading' });
-  const [preview, setPreview] = useState<CardPreviewState>({
-    last4: '',
-    expiryMonth: 0,
-    expiryYear: 0,
-    brand: '',
-  });
 
   const params = useLocalSearchParams<{
     businessName?: string;
@@ -368,8 +226,8 @@ export default function RegisterRestaurantCardEntryScreen() {
     [params.address, params.businessName, params.ownerPhone],
   );
 
-  // Create the SetupIntent on screen mount so the inline card form is ready
-  // to confirm the moment the user taps Save.
+  // Create the SetupIntent on mount so the card form is ready to confirm
+  // the moment the user taps Save.
   useEffect(() => {
     let cancelled = false;
     void (async () => {
@@ -446,10 +304,6 @@ export default function RegisterRestaurantCardEntryScreen() {
     })();
   };
 
-  const previewBrand = brandLabel(preview.brand);
-  const previewBusinessName =
-    input.businessName.trim().length > 0 ? input.businessName.trim().toUpperCase() : 'CARDHOLDER NAME';
-
   return (
     <ScreenWrapper withKeyboardAvoiding padded>
       <ScrollView
@@ -483,43 +337,6 @@ export default function RegisterRestaurantCardEntryScreen() {
           </Text>
         </View>
 
-        {/* Live card preview */}
-        <View style={styles.cardPreview}>
-          <View style={styles.cardPreviewSheen} />
-          <View style={styles.cardPreviewSheen2} />
-
-          <View style={styles.cardTopRow}>
-            <Text style={styles.cardWordmark}>CENAIVA</Text>
-            <View style={styles.cardChip}>
-              <View style={styles.cardChipInner} />
-            </View>
-          </View>
-
-          <View style={styles.cardNumberRow}>
-            <Text style={styles.cardNumberGroup}>{formatPreviewNumber(preview.last4)}</Text>
-          </View>
-
-          <View style={styles.cardBottomRow}>
-            <View style={{ flexDirection: 'row', gap: spacing.lg }}>
-              <View>
-                <Text style={styles.cardMicroLabel}>Cardholder</Text>
-                <Text style={styles.cardValue} numberOfLines={1}>
-                  {previewBusinessName}
-                </Text>
-              </View>
-              <View>
-                <Text style={styles.cardMicroLabel}>Expires</Text>
-                <Text style={styles.cardValue}>
-                  {formatPreviewExpiry(preview.expiryMonth, preview.expiryYear)}
-                </Text>
-              </View>
-            </View>
-            <View style={styles.cardBrandPill}>
-              <Text style={styles.cardBrandText}>{previewBrand}</Text>
-            </View>
-          </View>
-        </View>
-
         {typeof params.paymentError === 'string' ? (
           <View style={styles.errorCard}>
             <Text style={styles.errorTitle}>Use the card form below</Text>
@@ -534,24 +351,22 @@ export default function RegisterRestaurantCardEntryScreen() {
           </View>
         ) : null}
 
-        {/* Card form */}
-        <View style={styles.formCard}>
-          <View style={styles.formCardHeader}>
-            <Text style={styles.formCardTitle}>Card details</Text>
-            <View style={styles.formCardSecure}>
-              <Ionicons name="lock-closed" size={11} color={c.textMuted} />
-              <Text style={styles.formCardSecureText}>Encrypted</Text>
-            </View>
+        <View style={styles.sectionHeader}>
+          <Text style={styles.sectionTitle}>Card details</Text>
+          <View style={styles.secureBadge}>
+            <Ionicons name="lock-closed" size={11} color={c.textMuted} />
+            <Text style={styles.secureBadgeText}>Encrypted</Text>
           </View>
+        </View>
 
+        <View style={styles.formCard}>
           {intent.status === 'loading' ? (
             <View style={styles.initLoader}>
               <ActivityIndicator color={c.gold} />
               <Text style={styles.initLoaderText}>Preparing secure card form…</Text>
             </View>
           ) : (
-            <CardField
-              postalCodeEnabled
+            <CardForm
               placeholders={{
                 number: 'Card number',
                 expiration: 'MM / YY',
@@ -562,26 +377,19 @@ export default function RegisterRestaurantCardEntryScreen() {
                 backgroundColor: c.bgElevated,
                 textColor: c.textPrimary,
                 placeholderColor: c.textMuted,
-                borderColor: 'rgba(255,255,255,0.10)',
-                borderWidth: 1,
+                borderColor: 'rgba(255,255,255,0.08)',
+                borderWidth: 0,
                 borderRadius: borderRadius.lg,
                 fontSize: 16,
               }}
-              style={styles.cardField}
-              onCardChange={(card: CardFieldInput.Details) => {
+              style={styles.cardForm}
+              onFormComplete={(card: CardFormView.Details) => {
                 setCardComplete(Boolean(card.complete));
-                setPreview({
-                  last4: card.last4 ?? '',
-                  expiryMonth: card.expiryMonth ?? 0,
-                  expiryYear: card.expiryYear ?? 0,
-                  brand: typeof card.brand === 'string' ? card.brand : '',
-                });
               }}
             />
           )}
         </View>
 
-        {/* Accepted brands */}
         <View style={styles.brandsRow}>
           <Text style={styles.brandsLabel}>We accept</Text>
           {ACCEPTED_BRANDS.map((brand) => (
