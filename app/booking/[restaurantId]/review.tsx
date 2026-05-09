@@ -13,7 +13,11 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { Button, ScreenWrapper } from '@/components/ui';
 import { useAuthSession } from '@/lib/auth/AuthContext';
-import { getSnapRestaurantName } from '@/lib/mock/snaps';
+import { getSnapRestaurantName as DEMO_getSnapRestaurantName } from '@/lib/mock/snaps';
+import { isDemoModeEnabled } from '@/lib/config/demoMode';
+
+const getSnapRestaurantName: typeof DEMO_getSnapRestaurantName = (id) =>
+  isDemoModeEnabled() ? DEMO_getSnapRestaurantName(id) : '';
 import { submitPostTurnReview } from '@/lib/postVisit/postTurn';
 import { borderRadius, createStyles, spacing, typography, useColors } from '@/lib/theme';
 

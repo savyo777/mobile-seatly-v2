@@ -30,7 +30,11 @@ import {
   getCachedRestaurantById,
   loadRestaurantForBooking,
 } from '@/lib/data/restaurantCatalog';
-import { getEventById } from '@/lib/mock/events';
+import { getEventById as DEMO_getEventById } from '@/lib/mock/events';
+import { isDemoModeEnabled } from '@/lib/config/demoMode';
+
+const getEventById: typeof DEMO_getEventById = (id) =>
+  isDemoModeEnabled() ? DEMO_getEventById(id) : undefined;
 import { useColors, createStyles, spacing, borderRadius } from '@/lib/theme';
 import type { DateKey } from '@/lib/booking/availabilityTypes';
 

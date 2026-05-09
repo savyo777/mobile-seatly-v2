@@ -4,7 +4,10 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Button } from '@/components/ui';
-import { mockRestaurants } from '@/lib/mock/restaurants';
+import { mockRestaurants as DEMO_RESTAURANTS } from '@/lib/mock/restaurants';
+import { isDemoModeEnabled } from '@/lib/config/demoMode';
+
+const mockRestaurants: typeof DEMO_RESTAURANTS = isDemoModeEnabled() ? DEMO_RESTAURANTS : [];
 import { parseDateKeyLocal } from '@/lib/booking/dateUtils';
 import { parseBookingCartParam } from '@/lib/booking/publicBookingApi';
 import { formatCurrency } from '@/lib/utils/formatCurrency';
