@@ -5,7 +5,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { Input, Button, ScreenWrapper } from '@/components/ui';
 import { borderRadius, createStyles, spacing, typography, useColors } from '@/lib/theme';
-import { isValidCanadianHst, normalizePhoneWithCountryCode } from '@/lib/services/restaurantRegistration';
+import { normalizePhoneWithCountryCode } from '@/lib/services/restaurantRegistration';
 
 const useStyles = createStyles((c) => ({
   scroll: { flex: 1 },
@@ -99,12 +99,10 @@ export default function RegisterRestaurantFormScreen() {
   const insets = useSafeAreaInsets();
   const c = useColors();
   const styles = useStyles();
-  const [hstNumber, setHstNumber] = useState('');
   const [businessName, setBusinessName] = useState('');
   const [address, setAddress] = useState('');
   const [ownerPhone, setOwnerPhone] = useState('');
   const [errors, setErrors] = useState<{
-    hstNumber?: string;
     businessName?: string;
     address?: string;
     ownerPhone?: string;
@@ -112,33 +110,29 @@ export default function RegisterRestaurantFormScreen() {
 
   const trimmed = useMemo(
     () => ({
-      hstNumber: hstNumber.trim(),
       businessName: businessName.trim(),
       address: address.trim(),
       ownerPhone: ownerPhone.trim(),
     }),
-    [hstNumber, businessName, address, ownerPhone],
+    [businessName, address, ownerPhone],
   );
 
   const validation = useMemo(() => {
-    const hstValid = isValidCanadianHst(trimmed.hstNumber);
     const businessNameValid = trimmed.businessName.length > 0;
     const addressValid = trimmed.address.length > 0;
     const ownerPhoneNormalized = normalizePhoneWithCountryCode(trimmed.ownerPhone);
     const ownerPhoneValid = ownerPhoneNormalized.length > 0;
     return {
-      hstValid,
       businessNameValid,
       addressValid,
       ownerPhoneValid,
       ownerPhoneNormalized,
-      allValid: hstValid && businessNameValid && addressValid && ownerPhoneValid,
+      allValid: businessNameValid && addressValid && ownerPhoneValid,
     };
   }, [trimmed]);
 
   const onContinue = () => {
     const nextErrors: typeof errors = {};
-    if (!validation.hstValid) nextErrors.hstNumber = 'Enter a valid HST (e.g. 123456789RT0001).';
     if (!validation.businessNameValid) nextErrors.businessName = 'Business name is required.';
     if (!validation.addressValid) nextErrors.address = 'Business address is required.';
     if (!validation.ownerPhoneValid) nextErrors.ownerPhone = 'Enter a valid phone number.';
@@ -149,7 +143,6 @@ export default function RegisterRestaurantFormScreen() {
     router.push({
       pathname: '/(customer)/profile/register-restaurant-card-entry',
       params: {
-        hstNumber: trimmed.hstNumber,
         businessName: trimmed.businessName,
         address: trimmed.address,
         ownerPhone: trimmed.ownerPhone,
@@ -213,18 +206,6 @@ export default function RegisterRestaurantFormScreen() {
             }}
             autoCapitalize="words"
             error={errors.businessName}
-          />
-          <Input
-            icon="receipt-outline"
-            label="HST number"
-            placeholder="123456789RT0001"
-            value={hstNumber}
-            onChangeText={(value) => {
-              setHstNumber(value);
-              if (errors.hstNumber) setErrors((prev) => ({ ...prev, hstNumber: undefined }));
-            }}
-            autoCapitalize="characters"
-            error={errors.hstNumber}
           />
           <Input
             icon="location-outline"

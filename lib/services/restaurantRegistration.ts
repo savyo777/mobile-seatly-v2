@@ -1,11 +1,7 @@
 import { getSupabase } from '@/lib/supabase/client';
-import { isValidCanadianHst, normalizeCanadianHst } from '@/lib/validation/canadaTax';
 import { normalizePhoneToE164 } from '@/lib/validation/phone';
 
-export { isValidCanadianHst };
-
 export type RestaurantRegistrationInput = {
-  hstNumber: string;
   businessName: string;
   address: string;
   ownerPhone: string;
@@ -51,6 +47,14 @@ export function normalizePhoneWithCountryCode(value: string): string {
   return normalizePhoneToE164(value) ?? '';
 }
 
+function sanitizeRegistrationInput(input: RestaurantRegistrationInput) {
+  return {
+    business_name: input.businessName.trim(),
+    address: input.address.trim(),
+    owner_phone: normalizePhoneWithCountryCode(input.ownerPhone),
+  };
+}
+
 export async function registerRestaurantOwner(
   input: RestaurantRegistrationInput,
   paymentMethodId: string,
@@ -59,16 +63,10 @@ export async function registerRestaurantOwner(
   if (!supabase) throw new Error('Supabase is not configured.');
 
   const cleaned = {
-    hst_number: normalizeCanadianHst(input.hstNumber),
-    business_name: input.businessName.trim(),
-    address: input.address.trim(),
-    owner_phone: normalizePhoneWithCountryCode(input.ownerPhone),
+    ...sanitizeRegistrationInput(input),
     payment_method_id: paymentMethodId,
   };
 
-  if (!isValidCanadianHst(cleaned.hst_number)) {
-    throw new Error('HST number must follow the format 123456789RT0001.');
-  }
   if (!cleaned.business_name) throw new Error('Business name is required.');
   if (!cleaned.address) throw new Error('Business address is required.');
   if (!cleaned.owner_phone) throw new Error('Owner phone must be a valid phone number with at least 10 digits.');
@@ -87,15 +85,6 @@ export async function registerRestaurantOwner(
   }
 
   return data as RestaurantRegistrationResult;
-}
-
-function sanitizeRegistrationInput(input: RestaurantRegistrationInput) {
-  return {
-    hst_number: normalizeCanadianHst(input.hstNumber),
-    business_name: input.businessName.trim(),
-    address: input.address.trim(),
-    owner_phone: normalizePhoneWithCountryCode(input.ownerPhone),
-  };
 }
 
 export async function initRestaurantRegistrationPaymentSheet(

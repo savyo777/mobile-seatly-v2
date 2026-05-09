@@ -199,7 +199,6 @@ export default function RegisterRestaurantCardEntryScreen() {
   const [saving, setSaving] = useState(false);
 
   const params = useLocalSearchParams<{
-    hstNumber?: string;
     businessName?: string;
     address?: string;
     ownerPhone?: string;
@@ -207,11 +206,10 @@ export default function RegisterRestaurantCardEntryScreen() {
   }>();
 
   const input = useMemo(() => ({
-    hstNumber: typeof params.hstNumber === 'string' ? params.hstNumber : '',
     businessName: typeof params.businessName === 'string' ? params.businessName : '',
     address: typeof params.address === 'string' ? params.address : '',
     ownerPhone: typeof params.ownerPhone === 'string' ? params.ownerPhone : '',
-  }), [params.address, params.businessName, params.hstNumber, params.ownerPhone]);
+  }), [params.address, params.businessName, params.ownerPhone]);
 
   const onContinue = () => {
     void (async () => {
@@ -242,7 +240,6 @@ export default function RegisterRestaurantCardEntryScreen() {
           pathname: '/(customer)/profile/register-restaurant-success',
           params: {
             trialEndsAt: registered.trialEndsAt,
-            hstNumber: input.hstNumber,
             businessName: input.businessName,
             address: input.address,
             ownerPhone: input.ownerPhone,

@@ -5,7 +5,6 @@ import { stripeGet, stripeRequest } from '../_shared/stripe.ts';
 
 type RegisterPayload = {
   action?: 'init_payment_sheet' | 'preview_payment_method' | 'finalize_registration';
-  hst_number: string;
   business_name: string;
   address: string;
   owner_phone: string;
@@ -73,7 +72,7 @@ Deno.serve(async (req) => {
       });
     }
 
-    if (!payload.business_name || !payload.hst_number || !payload.address || !payload.owner_phone) {
+    if (!payload.business_name || !payload.address || !payload.owner_phone) {
       return json(400, { error: 'Missing required fields.' });
     }
 
@@ -92,7 +91,6 @@ Deno.serve(async (req) => {
         name: payload.business_name,
         phone: payload.owner_phone,
         'metadata[supabase_user_id]': user.id,
-        'metadata[hst_number]': payload.hst_number,
       });
       customerId = customer.id;
     }
@@ -151,7 +149,6 @@ Deno.serve(async (req) => {
       .insert({
         owner_user_id: user.id,
         business_name: payload.business_name,
-        hst_number: payload.hst_number,
         address: payload.address,
         owner_phone: payload.owner_phone,
         stripe_customer_id: customerId,
