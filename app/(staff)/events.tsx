@@ -5,7 +5,10 @@ import Animated, { FadeInDown } from 'react-native-reanimated';
 import { OwnerScreen } from '@/components/owner/OwnerScreen';
 import { GlassCard } from '@/components/owner/GlassCard';
 import { SubpageHeader } from '@/components/owner/SubpageHeader';
-import { OWNER_EVENTS } from '@/lib/mock/ownerApp';
+import { OWNER_EVENTS as DEMO_OWNER_EVENTS } from '@/lib/mock/ownerApp';
+import { isDemoModeEnabled } from '@/lib/config/demoMode';
+
+const OWNER_EVENTS: typeof DEMO_OWNER_EVENTS = isDemoModeEnabled() ? DEMO_OWNER_EVENTS : [];
 import { createStyles } from '@/lib/theme';
 import { ownerColorsFromPalette, ownerRadii } from '@/lib/theme/ownerTheme';
 

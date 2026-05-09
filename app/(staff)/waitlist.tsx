@@ -16,12 +16,16 @@ import { BlurView } from 'expo-blur';
 import { OwnerScreen } from '@/components/owner/OwnerScreen';
 import { SubpageHeader } from '@/components/owner/SubpageHeader';
 import {
-  WALKIN_QUEUE,
-  WAITLIST_ENTRIES,
+  WALKIN_QUEUE as DEMO_WALKIN_QUEUE,
+  WAITLIST_ENTRIES as DEMO_WAITLIST_ENTRIES,
   type WalkInQueueItem,
   type WaitlistEntry,
   type WaitlistEntryStatus,
 } from '@/lib/mock/ownerApp';
+import { isDemoModeEnabled } from '@/lib/config/demoMode';
+
+const WALKIN_QUEUE: typeof DEMO_WALKIN_QUEUE = isDemoModeEnabled() ? DEMO_WALKIN_QUEUE : [];
+const WAITLIST_ENTRIES: typeof DEMO_WAITLIST_ENTRIES = isDemoModeEnabled() ? DEMO_WAITLIST_ENTRIES : [];
 import { createStyles, useTheme } from '@/lib/theme';
 import { ownerColorsFromPalette, ownerRadii, ownerSpace, useOwnerColors } from '@/lib/theme/ownerTheme';
 

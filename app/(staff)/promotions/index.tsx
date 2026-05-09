@@ -5,7 +5,10 @@ import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context'
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import { useColors, createStyles, spacing, borderRadius } from '@/lib/theme';
-import { OWNER_PROMOTIONS, type OwnerPromotion } from '@/lib/mock/ownerApp';
+import { OWNER_PROMOTIONS as DEMO_OWNER_PROMOTIONS, type OwnerPromotion } from '@/lib/mock/ownerApp';
+import { isDemoModeEnabled } from '@/lib/config/demoMode';
+
+const OWNER_PROMOTIONS: typeof DEMO_OWNER_PROMOTIONS = isDemoModeEnabled() ? DEMO_OWNER_PROMOTIONS : [];
 
 type Tab = 'active' | 'past';
 

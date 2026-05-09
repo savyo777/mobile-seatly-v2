@@ -13,12 +13,15 @@ import { useRouter } from 'expo-router';
 import { SubpageHeader } from '@/components/owner/SubpageHeader';
 import { useColors, createStyles, spacing, borderRadius } from '@/lib/theme';
 import {
-  OWNER_GUESTS,
+  OWNER_GUESTS as DEMO_OWNER_GUESTS,
   isAtRisk,
   isNewGuest,
   isRegular,
   type OwnerGuest,
 } from '@/lib/mock/guests';
+import { isDemoModeEnabled } from '@/lib/config/demoMode';
+
+const OWNER_GUESTS: typeof DEMO_OWNER_GUESTS = isDemoModeEnabled() ? DEMO_OWNER_GUESTS : [];
 
 type Filter = 'all' | 'vip' | 'risk' | 'new' | 'regular';
 

@@ -12,7 +12,16 @@ import { useTranslation } from 'react-i18next';
 import { OwnerScreen } from '@/components/owner/OwnerScreen';
 import { OwnerHeader } from '@/components/owner/OwnerHeader';
 import { SectionCard } from '@/components/owner/SectionCard';
-import { STAFF_ROSTER, WAITLIST_ENTRIES, OWNER_RESERVATIONS } from '@/lib/mock/ownerApp';
+import {
+  STAFF_ROSTER as DEMO_STAFF_ROSTER,
+  WAITLIST_ENTRIES as DEMO_WAITLIST_ENTRIES,
+  OWNER_RESERVATIONS as DEMO_OWNER_RESERVATIONS,
+} from '@/lib/mock/ownerApp';
+import { isDemoModeEnabled } from '@/lib/config/demoMode';
+
+const STAFF_ROSTER: typeof DEMO_STAFF_ROSTER = isDemoModeEnabled() ? DEMO_STAFF_ROSTER : [];
+const WAITLIST_ENTRIES: typeof DEMO_WAITLIST_ENTRIES = isDemoModeEnabled() ? DEMO_WAITLIST_ENTRIES : [];
+const OWNER_RESERVATIONS: typeof DEMO_OWNER_RESERVATIONS = isDemoModeEnabled() ? DEMO_OWNER_RESERVATIONS : [];
 import { useColors, createStyles, spacing, borderRadius } from '@/lib/theme';
 
 function initials(name: string): string {

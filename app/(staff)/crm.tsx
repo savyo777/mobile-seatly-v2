@@ -22,10 +22,14 @@ import { BlurView } from 'expo-blur';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import {
-  CRM_AI_INSIGHTS,
-  CRM_SPOTLIGHT,
+  CRM_AI_INSIGHTS as DEMO_CRM_AI_INSIGHTS,
+  CRM_SPOTLIGHT as DEMO_CRM_SPOTLIGHT,
   type CrmGuest,
 } from '@/lib/mock/ownerApp';
+import { isDemoModeEnabled } from '@/lib/config/demoMode';
+
+const CRM_AI_INSIGHTS: typeof DEMO_CRM_AI_INSIGHTS = isDemoModeEnabled() ? DEMO_CRM_AI_INSIGHTS : [];
+const CRM_SPOTLIGHT: typeof DEMO_CRM_SPOTLIGHT = isDemoModeEnabled() ? DEMO_CRM_SPOTLIGHT : [];
 import {
   type CrmFilterId,
   type CrmSortId,

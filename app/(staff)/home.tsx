@@ -19,16 +19,40 @@ import { fetchCurrentOwnerRestaurant, type OwnerRestaurant } from '@/lib/service
 import { safeOwnerPush } from '@/lib/navigation/safeOwnerNavigation';
 import { withOwnerReturnTarget } from '@/lib/navigation/ownerReturnTargets';
 import {
-  BOOKING_TREND_WEEK,
-  BOOKINGS_BY_HOUR,
-  BOOKINGS_BY_HOUR_PEAK,
-  BOOKINGS_BY_HOUR_TOTAL,
-  LIVE_METRICS,
-  HOME_ATTENTION_ITEMS,
-  OWNER_FLOOR_TABLES,
-  OWNER_RESERVATIONS,
+  BOOKING_TREND_WEEK as DEMO_BOOKING_TREND_WEEK,
+  BOOKINGS_BY_HOUR as DEMO_BOOKINGS_BY_HOUR,
+  BOOKINGS_BY_HOUR_PEAK as DEMO_BOOKINGS_BY_HOUR_PEAK,
+  BOOKINGS_BY_HOUR_TOTAL as DEMO_BOOKINGS_BY_HOUR_TOTAL,
+  LIVE_METRICS as DEMO_LIVE_METRICS,
+  HOME_ATTENTION_ITEMS as DEMO_HOME_ATTENTION_ITEMS,
+  OWNER_FLOOR_TABLES as DEMO_OWNER_FLOOR_TABLES,
+  OWNER_RESERVATIONS as DEMO_OWNER_RESERVATIONS,
 } from '@/lib/mock/ownerApp';
-import { OWNER_GUESTS } from '@/lib/mock/guests';
+import { OWNER_GUESTS as DEMO_OWNER_GUESTS } from '@/lib/mock/guests';
+import { isDemoModeEnabled } from '@/lib/config/demoMode';
+
+const EMPTY_LIVE_METRICS: typeof DEMO_LIVE_METRICS = {
+  tonightCovers: 0,
+  openTables: 0,
+  activeOrders: 0,
+  noShowRisks: 0,
+};
+const EMPTY_BOOKING_TREND_WEEK: typeof DEMO_BOOKING_TREND_WEEK = {
+  dayLabels: [],
+  counts: [],
+  vsPrevWeekPct: 0,
+};
+const BOOKING_TREND_WEEK: typeof DEMO_BOOKING_TREND_WEEK = isDemoModeEnabled()
+  ? DEMO_BOOKING_TREND_WEEK
+  : EMPTY_BOOKING_TREND_WEEK;
+const BOOKINGS_BY_HOUR: typeof DEMO_BOOKINGS_BY_HOUR = isDemoModeEnabled() ? DEMO_BOOKINGS_BY_HOUR : [];
+const BOOKINGS_BY_HOUR_PEAK = isDemoModeEnabled() ? DEMO_BOOKINGS_BY_HOUR_PEAK : '';
+const BOOKINGS_BY_HOUR_TOTAL = isDemoModeEnabled() ? DEMO_BOOKINGS_BY_HOUR_TOTAL : 0;
+const LIVE_METRICS: typeof DEMO_LIVE_METRICS = isDemoModeEnabled() ? DEMO_LIVE_METRICS : EMPTY_LIVE_METRICS;
+const HOME_ATTENTION_ITEMS: typeof DEMO_HOME_ATTENTION_ITEMS = isDemoModeEnabled() ? DEMO_HOME_ATTENTION_ITEMS : [];
+const OWNER_FLOOR_TABLES: typeof DEMO_OWNER_FLOOR_TABLES = isDemoModeEnabled() ? DEMO_OWNER_FLOOR_TABLES : [];
+const OWNER_RESERVATIONS: typeof DEMO_OWNER_RESERVATIONS = isDemoModeEnabled() ? DEMO_OWNER_RESERVATIONS : [];
+const OWNER_GUESTS: typeof DEMO_OWNER_GUESTS = isDemoModeEnabled() ? DEMO_OWNER_GUESTS : [];
 
 type IoniconName = React.ComponentProps<typeof Ionicons>['name'];
 

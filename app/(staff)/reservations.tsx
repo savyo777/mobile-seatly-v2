@@ -15,10 +15,14 @@ import * as Haptics from 'expo-haptics';
 import { useColors, createStyles, spacing, borderRadius } from '@/lib/theme';
 import { useOwnerTabScrollPadding } from '@/hooks/useOwnerTabScrollPadding';
 import {
-  OWNER_RESERVATIONS,
-  OWNER_FLOOR_TABLES,
+  OWNER_RESERVATIONS as DEMO_OWNER_RESERVATIONS,
+  OWNER_FLOOR_TABLES as DEMO_OWNER_FLOOR_TABLES,
   type OwnerReservationSlot,
 } from '@/lib/mock/ownerApp';
+import { isDemoModeEnabled } from '@/lib/config/demoMode';
+
+const OWNER_RESERVATIONS: typeof DEMO_OWNER_RESERVATIONS = isDemoModeEnabled() ? DEMO_OWNER_RESERVATIONS : [];
+const OWNER_FLOOR_TABLES: typeof DEMO_OWNER_FLOOR_TABLES = isDemoModeEnabled() ? DEMO_OWNER_FLOOR_TABLES : [];
 
 type DateFilter = 'today' | 'tomorrow' | 'week' | 'custom';
 

@@ -15,7 +15,16 @@ import { useTranslation } from 'react-i18next';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { GlassCard } from '@/components/owner/GlassCard';
 import { SubpageHeader } from '@/components/owner/SubpageHeader';
-import { AI_ALERTS, AI_OPPORTUNITIES, AI_SUGGESTIONS } from '@/lib/mock/ownerApp';
+import {
+  AI_ALERTS as DEMO_AI_ALERTS,
+  AI_OPPORTUNITIES as DEMO_AI_OPPORTUNITIES,
+  AI_SUGGESTIONS as DEMO_AI_SUGGESTIONS,
+} from '@/lib/mock/ownerApp';
+import { isDemoModeEnabled } from '@/lib/config/demoMode';
+
+const AI_ALERTS: typeof DEMO_AI_ALERTS = isDemoModeEnabled() ? DEMO_AI_ALERTS : [];
+const AI_OPPORTUNITIES: typeof DEMO_AI_OPPORTUNITIES = isDemoModeEnabled() ? DEMO_AI_OPPORTUNITIES : [];
+const AI_SUGGESTIONS: typeof DEMO_AI_SUGGESTIONS = isDemoModeEnabled() ? DEMO_AI_SUGGESTIONS : [];
 import { createStyles } from '@/lib/theme';
 import { ownerColorsFromPalette, ownerRadii, useOwnerColors } from '@/lib/theme/ownerTheme';
 

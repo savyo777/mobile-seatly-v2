@@ -5,7 +5,10 @@ import { Ionicons } from '@expo/vector-icons';
 import { ScreenWrapper } from '@/components/ui';
 import { SubpageHeader } from '@/components/owner/SubpageHeader';
 import { useColors, createStyles, spacing, borderRadius, typography } from '@/lib/theme';
-import { mockStaffNotifications } from '@/lib/mock/notifications';
+import { mockStaffNotifications as DEMO_STAFF_NOTIFICATIONS } from '@/lib/mock/notifications';
+import { isDemoModeEnabled } from '@/lib/config/demoMode';
+
+const mockStaffNotifications: typeof DEMO_STAFF_NOTIFICATIONS = isDemoModeEnabled() ? DEMO_STAFF_NOTIFICATIONS : [];
 import {
   getStaffNotificationIconName,
   getStaffNotificationTimeLabel,

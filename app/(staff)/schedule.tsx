@@ -12,11 +12,35 @@ import { Ionicons } from '@expo/vector-icons';
 import { useColors, createStyles, spacing, borderRadius } from '@/lib/theme';
 import { useOwnerTabScrollPadding } from '@/hooks/useOwnerTabScrollPadding';
 import {
-  TONIGHT_BRIEFING,
-  TONIGHT_GUESTS,
+  TONIGHT_BRIEFING as DEMO_TONIGHT_BRIEFING,
+  TONIGHT_GUESTS as DEMO_TONIGHT_GUESTS,
   type TonightGuest,
   type TonightBadge,
 } from '@/lib/mock/ownerApp';
+import { isDemoModeEnabled } from '@/lib/config/demoMode';
+
+const EMPTY_TONIGHT_BRIEFING: typeof DEMO_TONIGHT_BRIEFING = {
+  status: 'quiet',
+  statusLabel: '—',
+  headline: '',
+  vsTypical: 0,
+  covers: 0,
+  bookings: 0,
+  busiestWindow: '',
+  busiestCovers: 0,
+  bookedPct: 0,
+  doorsOpen: '',
+  firstResTime: '',
+  firstResParty: 0,
+  runwayMin: 0,
+  totalCapacity: 0,
+  bookedSeats: 0,
+  openSeats: 0,
+};
+const TONIGHT_BRIEFING: typeof DEMO_TONIGHT_BRIEFING = isDemoModeEnabled()
+  ? DEMO_TONIGHT_BRIEFING
+  : EMPTY_TONIGHT_BRIEFING;
+const TONIGHT_GUESTS: typeof DEMO_TONIGHT_GUESTS = isDemoModeEnabled() ? DEMO_TONIGHT_GUESTS : [];
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
 function initials(name: string): string {

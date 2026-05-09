@@ -16,11 +16,15 @@ import { BlurView } from 'expo-blur';
 import { OwnerScreen } from '@/components/owner/OwnerScreen';
 import { SubpageHeader } from '@/components/owner/SubpageHeader';
 import {
-  KDS_TICKETS,
-  LIVE_FEED,
+  KDS_TICKETS as DEMO_KDS_TICKETS,
+  LIVE_FEED as DEMO_LIVE_FEED,
   type KdsTicket,
   type LiveFeedKind,
 } from '@/lib/mock/ownerApp';
+import { isDemoModeEnabled } from '@/lib/config/demoMode';
+
+const KDS_TICKETS: typeof DEMO_KDS_TICKETS = isDemoModeEnabled() ? DEMO_KDS_TICKETS : [];
+const LIVE_FEED: typeof DEMO_LIVE_FEED = isDemoModeEnabled() ? DEMO_LIVE_FEED : [];
 import { createStyles, useTheme } from '@/lib/theme';
 import { ownerColorsFromPalette, ownerRadii, ownerSpace, useOwnerColors } from '@/lib/theme/ownerTheme';
 import { DELAYED_TICKET_MINUTES } from '@/lib/owner/kdsThresholds';

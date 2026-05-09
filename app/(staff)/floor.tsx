@@ -5,7 +5,10 @@ import { OwnerScreen } from '@/components/owner/OwnerScreen';
 import { SubpageHeader } from '@/components/owner/SubpageHeader';
 import { FloorCanvas } from '@/components/owner/FloorCanvas';
 import { TableDetailSheet } from '@/components/owner/TableDetailSheet';
-import { OWNER_FLOOR_TABLES, type OwnerFloorTable } from '@/lib/mock/ownerApp';
+import { OWNER_FLOOR_TABLES as DEMO_OWNER_FLOOR_TABLES, type OwnerFloorTable } from '@/lib/mock/ownerApp';
+import { isDemoModeEnabled } from '@/lib/config/demoMode';
+
+const OWNER_FLOOR_TABLES: typeof DEMO_OWNER_FLOOR_TABLES = isDemoModeEnabled() ? DEMO_OWNER_FLOOR_TABLES : [];
 
 export default function OwnerFloorScreen() {
   const { t } = useTranslation();

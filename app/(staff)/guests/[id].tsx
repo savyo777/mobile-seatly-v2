@@ -6,7 +6,11 @@ import { Ionicons } from '@expo/vector-icons';
 import { StatCard } from '@/components/owner/StatCard';
 import { SectionCard } from '@/components/owner/SectionCard';
 import { useColors, createStyles, spacing, borderRadius } from '@/lib/theme';
-import { findGuest, type OwnerGuest } from '@/lib/mock/guests';
+import { findGuest as DEMO_findGuest, type OwnerGuest } from '@/lib/mock/guests';
+import { isDemoModeEnabled } from '@/lib/config/demoMode';
+
+const findGuest: typeof DEMO_findGuest = (id) =>
+  isDemoModeEnabled() ? DEMO_findGuest(id) : undefined;
 import { formatCurrency } from '@/lib/utils/formatCurrency';
 
 function initials(name: string): string {

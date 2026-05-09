@@ -4,11 +4,15 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useColors, createStyles, spacing, borderRadius } from '@/lib/theme';
 import {
-  OWNER_EVENTS,
-  OWNER_PROMOTIONS,
+  OWNER_EVENTS as DEMO_OWNER_EVENTS,
+  OWNER_PROMOTIONS as DEMO_OWNER_PROMOTIONS,
   type OwnerEventRow,
   type OwnerPromotion,
 } from '@/lib/mock/ownerApp';
+import { isDemoModeEnabled } from '@/lib/config/demoMode';
+
+const OWNER_EVENTS: typeof DEMO_OWNER_EVENTS = isDemoModeEnabled() ? DEMO_OWNER_EVENTS : [];
+const OWNER_PROMOTIONS: typeof DEMO_OWNER_PROMOTIONS = isDemoModeEnabled() ? DEMO_OWNER_PROMOTIONS : [];
 
 const useStyles = createStyles((c) => ({
   root: { flex: 1, backgroundColor: c.bgBase },

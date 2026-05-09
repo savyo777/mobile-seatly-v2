@@ -4,10 +4,15 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useColors, createStyles, spacing, borderRadius } from '@/lib/theme';
 import {
-  STAFF_ROSTER,
-  EXPENSE_LINES,
-  EXPORT_OPTIONS,
+  STAFF_ROSTER as DEMO_STAFF_ROSTER,
+  EXPENSE_LINES as DEMO_EXPENSE_LINES,
+  EXPORT_OPTIONS as DEMO_EXPORT_OPTIONS,
 } from '@/lib/mock/ownerApp';
+import { isDemoModeEnabled } from '@/lib/config/demoMode';
+
+const STAFF_ROSTER: typeof DEMO_STAFF_ROSTER = isDemoModeEnabled() ? DEMO_STAFF_ROSTER : [];
+const EXPENSE_LINES: typeof DEMO_EXPENSE_LINES = isDemoModeEnabled() ? DEMO_EXPENSE_LINES : [];
+const EXPORT_OPTIONS: typeof DEMO_EXPORT_OPTIONS = isDemoModeEnabled() ? DEMO_EXPORT_OPTIONS : [];
 import { formatCurrency } from '@/lib/utils/formatCurrency';
 
 const useStyles = createStyles((c) => ({

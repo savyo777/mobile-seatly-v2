@@ -22,12 +22,36 @@ import * as ImagePicker from 'expo-image-picker';
 import { useColors, createStyles, spacing, borderRadius } from '@/lib/theme';
 import { PRICE_TIER_OPTIONS } from '@/lib/restaurants/priceTiers';
 import {
-  OWNER_BUSINESS_PROFILE,
-  OWNER_BUSINESS_HOURS,
-  OWNER_BUSINESS_INSTAGRAM,
-  OWNER_BUSINESS_PRICE,
+  OWNER_BUSINESS_PROFILE as DEMO_OWNER_BUSINESS_PROFILE,
+  OWNER_BUSINESS_HOURS as DEMO_OWNER_BUSINESS_HOURS,
+  OWNER_BUSINESS_INSTAGRAM as DEMO_OWNER_BUSINESS_INSTAGRAM,
+  OWNER_BUSINESS_PRICE as DEMO_OWNER_BUSINESS_PRICE,
   type BusinessHoursRow,
 } from '@/lib/mock/ownerApp';
+import { isDemoModeEnabled } from '@/lib/config/demoMode';
+
+const EMPTY_OWNER_BUSINESS_PROFILE: typeof DEMO_OWNER_BUSINESS_PROFILE = {
+  name: '',
+  cuisine: '',
+  neighborhood: '',
+  description: '',
+  phone: '',
+  email: '',
+  address: '',
+  website: '',
+  rating: 0,
+  reviewCount: 0,
+  followerCount: 0,
+  coverPhotoSeed: '',
+};
+const OWNER_BUSINESS_PROFILE: typeof DEMO_OWNER_BUSINESS_PROFILE = isDemoModeEnabled()
+  ? DEMO_OWNER_BUSINESS_PROFILE
+  : EMPTY_OWNER_BUSINESS_PROFILE;
+const OWNER_BUSINESS_HOURS: typeof DEMO_OWNER_BUSINESS_HOURS = isDemoModeEnabled()
+  ? DEMO_OWNER_BUSINESS_HOURS
+  : [];
+const OWNER_BUSINESS_INSTAGRAM = isDemoModeEnabled() ? DEMO_OWNER_BUSINESS_INSTAGRAM : '';
+const OWNER_BUSINESS_PRICE = isDemoModeEnabled() ? DEMO_OWNER_BUSINESS_PRICE : '';
 
 // ── Styles ──────────────────────────────────────────────────────────────────
 

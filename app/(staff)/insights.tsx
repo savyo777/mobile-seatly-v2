@@ -4,13 +4,47 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useColors, createStyles, spacing, borderRadius } from '@/lib/theme';
 import {
-  ANALYTICS_METRICS,
-  ANALYTICS_INSIGHTS,
-  CRM_SPOTLIGHT,
-  AI_INSIGHTS_HOME,
-  REVENUE_DATA,
+  ANALYTICS_METRICS as DEMO_ANALYTICS_METRICS,
+  ANALYTICS_INSIGHTS as DEMO_ANALYTICS_INSIGHTS,
+  CRM_SPOTLIGHT as DEMO_CRM_SPOTLIGHT,
+  AI_INSIGHTS_HOME as DEMO_AI_INSIGHTS_HOME,
+  REVENUE_DATA as DEMO_REVENUE_DATA,
   type RevenuePeriod,
 } from '@/lib/mock/ownerApp';
+import { isDemoModeEnabled } from '@/lib/config/demoMode';
+
+const ZERO_METRIC = { revenue: 0, covers: 0, avgSpend: 0, noShowPct: 0, turnover: 0 };
+const ZERO_REVENUE = { total: 0, trendPct: 0, series: [] };
+const EMPTY_ANALYTICS_METRICS: typeof DEMO_ANALYTICS_METRICS = {
+  day: ZERO_METRIC,
+  week: ZERO_METRIC,
+  '2w': ZERO_METRIC,
+  month: ZERO_METRIC,
+  '6m': ZERO_METRIC,
+  year: ZERO_METRIC,
+};
+const EMPTY_REVENUE_DATA: typeof DEMO_REVENUE_DATA = {
+  day: ZERO_REVENUE,
+  week: ZERO_REVENUE,
+  '2w': ZERO_REVENUE,
+  month: ZERO_REVENUE,
+  '6m': ZERO_REVENUE,
+  year: ZERO_REVENUE,
+};
+const EMPTY_ANALYTICS_INSIGHTS: typeof DEMO_ANALYTICS_INSIGHTS = {
+  peakHours: '',
+  deadHours: '',
+  bestDays: '',
+};
+const ANALYTICS_METRICS: typeof DEMO_ANALYTICS_METRICS = isDemoModeEnabled()
+  ? DEMO_ANALYTICS_METRICS
+  : EMPTY_ANALYTICS_METRICS;
+const ANALYTICS_INSIGHTS: typeof DEMO_ANALYTICS_INSIGHTS = isDemoModeEnabled()
+  ? DEMO_ANALYTICS_INSIGHTS
+  : EMPTY_ANALYTICS_INSIGHTS;
+const REVENUE_DATA: typeof DEMO_REVENUE_DATA = isDemoModeEnabled() ? DEMO_REVENUE_DATA : EMPTY_REVENUE_DATA;
+const CRM_SPOTLIGHT: typeof DEMO_CRM_SPOTLIGHT = isDemoModeEnabled() ? DEMO_CRM_SPOTLIGHT : [];
+const AI_INSIGHTS_HOME: typeof DEMO_AI_INSIGHTS_HOME = isDemoModeEnabled() ? DEMO_AI_INSIGHTS_HOME : [];
 import { formatCurrency } from '@/lib/utils/formatCurrency';
 
 const PERIODS: { key: RevenuePeriod; label: string }[] = [
