@@ -18,6 +18,23 @@ export default {
     noResults: 'No results found',
     seeAll: 'See All',
     logout: 'Log Out',
+    fallbackUser: 'User',
+    fallbackNewUser: 'New user',
+    fallbackRestaurant: 'Restaurant',
+  },
+  calendar: {
+    eventTitle: 'Reservation at {{name}}',
+    confirmationCode: 'Confirmation code: {{code}}',
+    partyOf: 'Party of {{count}}',
+    notes: 'Notes: {{text}}',
+    shareDialogTitle: 'Add reservation to your calendar',
+  },
+  bookingNotice: {
+    none: 'No notice',
+    min30: '30 min',
+    hour1: '1 hour',
+    hour2: '2 hours',
+    hour24: '24 hours',
   },
   onboarding: {
     slide1Title: 'Discover Amazing Restaurants',

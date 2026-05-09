@@ -12,13 +12,20 @@ export type RestaurantBillingAddress = {
 
 const STORAGE_KEY = key('restaurant-billing-address-v1');
 
+// Default ISO-3166 country code for owner billing addresses. CA covers the
+// launch market; non-CA builds set EXPO_PUBLIC_DEFAULT_COUNTRY to avoid
+// pre-filling the wrong country in the registration form.
+const DEFAULT_BILLING_COUNTRY = (
+  process.env.EXPO_PUBLIC_DEFAULT_COUNTRY?.trim() || 'CA'
+).toUpperCase();
+
 export const EMPTY_BILLING_ADDRESS: RestaurantBillingAddress = {
   line1: '',
   line2: '',
   city: '',
   region: '',
   postalCode: '',
-  country: 'CA',
+  country: DEFAULT_BILLING_COUNTRY,
 };
 
 export async function getStoredBillingAddress(): Promise<RestaurantBillingAddress> {

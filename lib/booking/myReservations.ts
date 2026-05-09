@@ -1,5 +1,6 @@
 import { getSupabase } from '@/lib/supabase/client';
 import type { Reservation } from '@/lib/mock/reservations';
+import i18n from '@/lib/i18n';
 
 export type MyBookingItem = {
   id: string;
@@ -87,7 +88,7 @@ export async function fetchMyBookingItems(): Promise<MyBookingItem[]> {
     if (!restaurant || !row.reserved_at) return [];
     return [{
       id: row.id,
-      restaurantName: restaurant.name ?? 'Restaurant',
+      restaurantName: restaurant.name ?? i18n.t('common.fallbackRestaurant'),
       restaurantId: restaurant.id,
       coverPhotoUrl: restaurant.hero_image_url || restaurant.cover_photo_url || '',
       whenIso: row.reserved_at,

@@ -26,4 +26,18 @@ export const BOOKING_STEPS_TOTAL = 6;
 
 // Reservation-settings picker options.
 export const SLOT_DURATION_OPTIONS = [15, 30, 45, 60, 90, 120, 150, 180] as const;
-export const NOTICE_OPTIONS = ['No notice', '30 min', '1 hour', '2 hours', '24 hours'] as const;
+
+/**
+ * Minimum-notice picker options. Labels are i18n keys (resolved at render
+ * time) — pairing each minute value with `labelKey` keeps the option list
+ * locale-agnostic.
+ */
+export const NOTICE_OPTIONS = [
+  { minutes: 0, labelKey: 'bookingNotice.none' },
+  { minutes: 30, labelKey: 'bookingNotice.min30' },
+  { minutes: 60, labelKey: 'bookingNotice.hour1' },
+  { minutes: 120, labelKey: 'bookingNotice.hour2' },
+  { minutes: 1440, labelKey: 'bookingNotice.hour24' },
+] as const;
+
+export type NoticeOption = typeof NOTICE_OPTIONS[number];

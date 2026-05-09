@@ -3,6 +3,7 @@ import * as Sharing from 'expo-sharing';
 import { Linking, Platform } from 'react-native';
 import { BRAND_DOMAIN } from '@/lib/config/legalLinks';
 import { DEFAULT_TURN_MINUTES } from '@/lib/booking/bookingDefaults';
+import i18n from '@/lib/i18n';
 
 export type CalendarBooking = {
   reservationId: string;
@@ -48,13 +49,13 @@ export function buildIcsContent(booking: CalendarBooking): string {
   const end = new Date(start.getTime() + duration * 60_000);
   const now = new Date();
 
-  const summary = escapeIcsText(`Reservation at ${booking.restaurantName}`);
+  const summary = escapeIcsText(i18n.t('calendar.eventTitle', { name: booking.restaurantName }));
   const descriptionLines = [
-    `Confirmation code: ${booking.confirmationCode}`,
-    `Party of ${booking.partySize}`,
+    i18n.t('calendar.confirmationCode', { code: booking.confirmationCode }),
+    i18n.t('calendar.partyOf', { count: booking.partySize }),
   ];
   if (booking.notes && booking.notes.trim()) {
-    descriptionLines.push(`Notes: ${booking.notes.trim()}`);
+    descriptionLines.push(i18n.t('calendar.notes', { text: booking.notes.trim() }));
   }
   const description = escapeIcsText(descriptionLines.join('\n'));
   const location = booking.restaurantAddress ? escapeIcsText(booking.restaurantAddress) : '';
@@ -92,11 +93,11 @@ function buildGoogleCalendarUrl(booking: CalendarBooking): string {
     : DEFAULT_TURN_MINUTES;
   const end = new Date(start.getTime() + duration * 60_000);
 
-  const title = `Reservation at ${booking.restaurantName}`;
+  const title = i18n.t('calendar.eventTitle', { name: booking.restaurantName });
   const details = [
-    `Confirmation code: ${booking.confirmationCode}`,
-    `Party of ${booking.partySize}`,
-    booking.notes ? `Notes: ${booking.notes}` : '',
+    i18n.t('calendar.confirmationCode', { code: booking.confirmationCode }),
+    i18n.t('calendar.partyOf', { count: booking.partySize }),
+    booking.notes ? i18n.t('calendar.notes', { text: booking.notes }) : '',
   ]
     .filter(Boolean)
     .join('\n');
@@ -145,7 +146,7 @@ export async function addBookingToCalendar(booking: CalendarBooking): Promise<vo
     await Sharing.shareAsync(fileUri, {
       mimeType: 'text/calendar',
       UTI: 'com.apple.ical.ics',
-      dialogTitle: 'Add reservation to your calendar',
+      dialogTitle: i18n.t('calendar.shareDialogTitle'),
     });
     return;
   }

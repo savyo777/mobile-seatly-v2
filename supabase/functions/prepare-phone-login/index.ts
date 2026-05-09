@@ -3,27 +3,13 @@ import { corsHeaders } from "../_shared/cors.ts";
 import { jsonRes } from "../_shared/json-response.ts";
 import { supabaseAdmin } from "../_shared/supabase.ts";
 import { checkRateLimit, getClientIp } from "../_shared/rateLimit.ts";
+import { normalizePhoneToE164 } from "../_shared/phone.ts";
 
 // Anonymous endpoint, prime SMS-bombing target. Cap each IP to 10 lookups
 // per minute — legit users typically need 1-2 attempts at most; this is
 // 5-10x safety margin over normal use but caps abuse to a slow trickle.
 const RATE_LIMIT_PER_MINUTE = 10;
 const RATE_LIMIT_WINDOW_SECONDS = 60;
-
-function normalizePhoneToE164(input: string): string | null {
-  const raw = input.trim();
-  if (!raw) return null;
-  const digits = raw.replace(/\D/g, "");
-  if (!digits) return null;
-
-  if (raw.startsWith("+")) {
-    if (digits.length < 8 || digits.length > 15) return null;
-    return `+${digits}`;
-  }
-  if (digits.length === 10) return `+1${digits}`;
-  if (digits.length === 11 && digits.startsWith("1")) return `+${digits}`;
-  return null;
-}
 
 function normalizeMetadataPhone(value: unknown): string | null {
   return typeof value === "string" ? normalizePhoneToE164(value) : null;

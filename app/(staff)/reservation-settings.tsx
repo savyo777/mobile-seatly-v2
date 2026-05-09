@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Pressable, StyleSheet, Switch, Text, View } from 'react-native';
 import { useRouter } from 'expo-router';
+import { useTranslation } from 'react-i18next';
 import { Ionicons } from '@expo/vector-icons';
 import { OwnerScreen } from '@/components/owner/OwnerScreen';
 import { SubpageHeader } from '@/components/owner/SubpageHeader';
@@ -198,7 +199,8 @@ export default function ReservationSettingsScreen() {
   const [maxParty, setMaxParty] = useState(10);
   const [advanceDays, setAdvanceDays] = useState(DEFAULT_BOOKING_WINDOW_DAYS);
   const [slotMinutes, setSlotMinutes] = useState<number>(30);
-  const [minNotice, setMinNotice] = useState<string>('1 hour');
+  const { t } = useTranslation();
+  const [minNoticeMinutes, setMinNoticeMinutes] = useState<number>(60);
 
   const [largePartyDeposit, setLargePartyDeposit] = useState(true);
   const [autoConfirm, setAutoConfirm] = useState(true);
@@ -319,15 +321,17 @@ export default function ReservationSettingsScreen() {
             </View>
           </View>
           <View style={styles.chipRow}>
-            {NOTICE_OPTIONS.map((n) => {
-              const active = minNotice === n;
+            {NOTICE_OPTIONS.map((option) => {
+              const active = minNoticeMinutes === option.minutes;
               return (
                 <Pressable
-                  key={n}
-                  onPress={() => setMinNotice(n)}
+                  key={option.labelKey}
+                  onPress={() => setMinNoticeMinutes(option.minutes)}
                   style={[styles.chip, active && styles.chipActive]}
                 >
-                  <Text style={[styles.chipText, active && styles.chipTextActive]}>{n}</Text>
+                  <Text style={[styles.chipText, active && styles.chipTextActive]}>
+                    {t(option.labelKey)}
+                  </Text>
                 </Pressable>
               );
             })}

@@ -1,5 +1,6 @@
 import type { Session, User } from '@supabase/supabase-js';
 import { getSupabase } from '@/lib/supabase/client';
+import { normalizePhoneToE164 as canonicalNormalizePhoneToE164 } from '@/lib/validation/phone';
 
 /**
  * Resolve the phone number we should display for a user, in priority order:
@@ -22,38 +23,8 @@ export function resolveDisplayPhone(user: User | null | undefined): string {
   return '';
 }
 
-/**
- * Normalize user-entered phone to E.164.
- *
- * Rules (strict, US-default app):
- * - If the input starts with `+`, the country-code-included number must be 8–15 digits
- *   (matches E.164 max 15 digits, ITU min ~8 digits with country code).
- * - Otherwise the user must enter exactly a 10-digit US number, or an 11-digit number
- *   starting with `1` (US country code without the `+`). Anything else (e.g. 15 random
- *   digits without a `+`) is rejected to avoid silently fabricating an international
- *   number from raw input.
- */
-export function normalizePhoneToE164(input: string): string | null {
-  const raw = input.trim();
-  if (!raw) return null;
-  const digits = raw.replace(/\D/g, '');
-  if (!digits) return null;
-
-  if (raw.startsWith('+')) {
-    if (digits.length < 8 || digits.length > 15) return null;
-    return `+${digits}`;
-  }
-
-  if (digits.length === 10) {
-    return `+1${digits}`;
-  }
-
-  if (digits.length === 11 && digits.startsWith('1')) {
-    return `+${digits}`;
-  }
-
-  return null;
-}
+/** Re-export of the canonical implementation in `lib/validation/phone.ts`. */
+export const normalizePhoneToE164 = canonicalNormalizePhoneToE164;
 
 export async function sendPhoneOtp(
   phoneE164: string,

@@ -1,9 +1,32 @@
 export type RestaurantPriceTier = 1 | 2 | 3;
 
 const DEFAULT_PRICE_TIER: RestaurantPriceTier = 2;
-const LOW_PRICE_MAX = 22;
-const HIGH_PRICE_MIN = 55;
-const PRICE_LEVEL_CATEGORY_NAMES = new Set(['main', 'mains', 'entree', 'entrees']);
+
+// Price-tier thresholds, env-overridable. Defaults are CAD-tuned for the
+// launch market. The long-term answer is per-restaurant currency thresholds
+// in DB (Phase L item), but env overrides cover near-term market expansion.
+function envNumber(key: string, fallback: number): number {
+  const raw = process.env[key];
+  if (typeof raw !== 'string') return fallback;
+  const parsed = Number(raw.trim());
+  return Number.isFinite(parsed) && parsed > 0 ? parsed : fallback;
+}
+const LOW_PRICE_MAX = envNumber('EXPO_PUBLIC_PRICE_TIER_LOW_MAX', 22);
+const HIGH_PRICE_MIN = envNumber('EXPO_PUBLIC_PRICE_TIER_HIGH_MIN', 55);
+
+// Menu-category names that count as "main course" for median-price math.
+// Includes English and French (Quebec) variants so that pricing inference
+// works on bilingual menus without a backend `is_main_category` flag.
+const PRICE_LEVEL_CATEGORY_NAMES = new Set([
+  'main',
+  'mains',
+  'entree',
+  'entrees',
+  'plat',
+  'plats',
+  'plat principal',
+  'plats principaux',
+]);
 
 export type RestaurantMenuPriceItem = {
   price: unknown;

@@ -1,4 +1,8 @@
 import { getSupabase } from '@/lib/supabase/client';
+import { isValidCanadianHst, normalizeCanadianHst } from '@/lib/validation/canadaTax';
+import { normalizePhoneToE164 } from '@/lib/validation/phone';
+
+export { isValidCanadianHst };
 
 export type RestaurantRegistrationInput = {
   hstNumber: string;
@@ -38,20 +42,13 @@ export function addCalendarMonths(base: Date, months: number): Date {
   return result;
 }
 
-function normalizeHst(value: string): string {
-  return value.trim().toUpperCase().replace(/[^A-Z0-9]/g, '');
-}
-
-export function isValidCanadianHst(value: string): boolean {
-  return /^\d{9}RT\d{4}$/i.test(normalizeHst(value));
-}
-
+/**
+ * Owner registration phone normalization. Wraps the canonical strict
+ * E.164 normalizer from `lib/validation/phone.ts` and adapts the result
+ * type — owner forms expect `''` (empty) on rejection rather than `null`.
+ */
 export function normalizePhoneWithCountryCode(value: string): string {
-  const digits = value.trim().replace(/\D/g, '');
-  if (digits.length < 10) return '';
-  if (digits.length === 10) return `+1${digits}`;
-  if (digits.length <= 15) return `+${digits}`;
-  return '';
+  return normalizePhoneToE164(value) ?? '';
 }
 
 export async function registerRestaurantOwner(
@@ -62,7 +59,7 @@ export async function registerRestaurantOwner(
   if (!supabase) throw new Error('Supabase is not configured.');
 
   const cleaned = {
-    hst_number: normalizeHst(input.hstNumber),
+    hst_number: normalizeCanadianHst(input.hstNumber),
     business_name: input.businessName.trim(),
     address: input.address.trim(),
     owner_phone: normalizePhoneWithCountryCode(input.ownerPhone),
@@ -94,7 +91,7 @@ export async function registerRestaurantOwner(
 
 function sanitizeRegistrationInput(input: RestaurantRegistrationInput) {
   return {
-    hst_number: normalizeHst(input.hstNumber),
+    hst_number: normalizeCanadianHst(input.hstNumber),
     business_name: input.businessName.trim(),
     address: input.address.trim(),
     owner_phone: normalizePhoneWithCountryCode(input.ownerPhone),

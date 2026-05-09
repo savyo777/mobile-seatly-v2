@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useEffect, useMemo, useState } from 'react';
 import type { Session, User } from '@supabase/supabase-js';
 import { AppState } from 'react-native';
+import i18n from '@/lib/i18n';
 import {
   clearPersistedSupabaseSession,
   clearUnusablePersistedSupabaseSession,
@@ -52,7 +53,7 @@ function resolveDefaultProfile(user: User, role: string) {
     (typeof meta.full_name === 'string' && meta.full_name.trim()) ||
     (typeof meta.name === 'string' && meta.name.trim()) ||
     (email ? email.split('@')[0] : '') ||
-    (phone ? phone : 'New user');
+    (phone ? phone : i18n.t('common.fallbackNewUser'));
 
   return {
     auth_user_id: user.id,

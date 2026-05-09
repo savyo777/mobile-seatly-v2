@@ -18,6 +18,23 @@ export default {
     noResults: 'Aucun résultat',
     seeAll: 'Voir tout',
     logout: 'Déconnexion',
+    fallbackUser: 'Utilisateur',
+    fallbackNewUser: 'Nouvel utilisateur',
+    fallbackRestaurant: 'Restaurant',
+  },
+  calendar: {
+    eventTitle: 'Réservation chez {{name}}',
+    confirmationCode: 'Code de confirmation : {{code}}',
+    partyOf: 'Groupe de {{count}}',
+    notes: 'Notes : {{text}}',
+    shareDialogTitle: 'Ajouter la réservation à votre calendrier',
+  },
+  bookingNotice: {
+    none: 'Aucun préavis',
+    min30: '30 min',
+    hour1: '1 heure',
+    hour2: '2 heures',
+    hour24: '24 heures',
   },
   onboarding: {
     slide1Title: 'Découvrez des restaurants incroyables',

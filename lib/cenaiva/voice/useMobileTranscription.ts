@@ -12,6 +12,11 @@ import { useAuthSession } from '@/lib/auth/AuthContext';
 import { getSupabaseEnv, isSupabaseConfigured } from '@/lib/supabase/env';
 
 const DEEPGRAM_URL = process.env.EXPO_PUBLIC_DEEPGRAM_URL?.trim() || 'https://api.deepgram.com/v1/listen';
+// Speech model + language are env-driven so French / multilingual builds
+// can swap them without touching code. Defaults are tuned for English in
+// the launch market.
+const DEEPGRAM_MODEL = process.env.EXPO_PUBLIC_DEEPGRAM_MODEL?.trim() || 'nova-3';
+const DEEPGRAM_LANGUAGE = process.env.EXPO_PUBLIC_DEEPGRAM_LANGUAGE?.trim() || 'en';
 // The `deepgram-live-token` Supabase function is opt-in: if the function
 // hasn't been deployed for this project, the live-streaming path returns 404
 // and we silently fall back to the file-based listen call. Set this flag
@@ -94,8 +99,8 @@ function normalizeKeyterms(hints: string[] = []) {
 
 function buildDeepgramUrl(hints: string[]) {
   const params = new URLSearchParams({
-    model: 'nova-3',
-    language: 'en',
+    model: DEEPGRAM_MODEL,
+    language: DEEPGRAM_LANGUAGE,
     smart_format: 'true',
     punctuate: 'true',
   });

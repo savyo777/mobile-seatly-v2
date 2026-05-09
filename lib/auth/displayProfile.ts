@@ -1,4 +1,5 @@
 import type { User } from '@supabase/supabase-js';
+import i18n from '@/lib/i18n';
 
 type DisplayProfileFallback = {
   fullName?: string;
@@ -24,7 +25,7 @@ function metadataString(user: User | null, key: string): string {
 
 function splitName(fullName: string): { firstName: string; lastName: string } {
   const parts = fullName.trim().split(/\s+/).filter(Boolean);
-  if (parts.length === 0) return { firstName: 'User', lastName: '' };
+  if (parts.length === 0) return { firstName: i18n.t('common.fallbackUser'), lastName: '' };
   if (parts.length === 1) return { firstName: parts[0], lastName: '' };
   return {
     firstName: parts[0],
@@ -51,7 +52,7 @@ export function resolveAuthDisplayProfile(
       .trim() ||
     (fallback.fullName ?? '').trim() ||
     (email ? email.split('@')[0] : '') ||
-    'User';
+    i18n.t('common.fallbackUser');
   const avatarUrl =
     metadataString(user, 'avatar_url') ||
     metadataString(user, 'picture') ||
@@ -74,7 +75,8 @@ export function initialsFromDisplayName(fullName: string): string {
   if (parts.length >= 2) {
     return `${parts[0][0] ?? ''}${parts[parts.length - 1][0] ?? ''}`.toUpperCase();
   }
-  return (parts[0] ?? 'U').slice(0, 2).toUpperCase();
+  const first = parts[0] ?? i18n.t('common.fallbackUser');
+  return first.slice(0, 2).toUpperCase();
 }
 
 export function compactNameLabel(fullName: string): string {
