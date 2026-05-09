@@ -5456,8 +5456,19 @@ Deno.serve(async (req) => {
                         });
                       }
                     }
-                  } else {
-                    // Test mode
+                  } else if (Deno.env.get("CENAIVA_ALLOW_TEST_PAYMENTS") === "1") {
+                    // Test mode — only entered when STRIPE_SECRET_KEY is unset
+                    // AND the operator has explicitly opted in via the
+                    // CENAIVA_ALLOW_TEST_PAYMENTS env flag. In production this
+                    // env must remain unset; otherwise a misconfigured Stripe
+                    // key would silently mint successful payments without
+                    // charging the customer.
+                    const { data: rest } = await supabaseAdmin
+                      .from("restaurants")
+                      .select("currency")
+                      .eq("id", order.restaurant_id)
+                      .single();
+                    const currency = (rest?.currency || DEFAULT_CURRENCY).toLowerCase();
                     const testId = `test_pi_${Math.random().toString(36).slice(2, 12)}`;
                     await supabaseAdmin.from("orders").update({
                       tip_amount: tipAmt, total_amount: total,
@@ -5470,15 +5481,24 @@ Deno.serve(async (req) => {
                       order_id, restaurant_id: order.restaurant_id,
                       user_profile_id: userProfileId,
                       stripe_payment_intent_id: testId,
-                      amount: total, currency: "cad", status: "succeeded", payment_type: "test",
+                      amount: total, currency, status: "succeeded", payment_type: "test",
                     });
 
                     toolResult = JSON.stringify({
                       success: true, total_charged: total, tip_amount: tipAmt,
-                      currency: DEFAULT_CURRENCY, paid_at: paidAt,
+                      currency: rest?.currency || DEFAULT_CURRENCY, paid_at: paidAt,
                       card_brand: savedCard.brand, card_last4: savedCard.last4, mode: "test",
                     });
                     derivedActions.push({ type: "show_payment_success", amount_charged: total });
+                  } else {
+                    // Stripe key missing AND test-payments not explicitly
+                    // enabled — refuse rather than silently fabricating a
+                    // successful payment. Customer should retry once the
+                    // operator restores the Stripe configuration.
+                    toolResult = JSON.stringify({
+                      success: false,
+                      error: "Payment processing is unavailable. Please try again later.",
+                    });
                   }
                 }
               }
