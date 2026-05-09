@@ -2,6 +2,13 @@ import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { corsHeaders } from "../_shared/cors.ts";
 import { jsonRes } from "../_shared/json-response.ts";
 import { supabaseAdmin } from "../_shared/supabase.ts";
+import { checkRateLimit, getClientIp } from "../_shared/rateLimit.ts";
+
+// Anonymous endpoint, prime SMS-bombing target. Cap each IP to 10 lookups
+// per minute — legit users typically need 1-2 attempts at most; this is
+// 5-10x safety margin over normal use but caps abuse to a slow trickle.
+const RATE_LIMIT_PER_MINUTE = 10;
+const RATE_LIMIT_WINDOW_SECONDS = 60;
 
 function normalizePhoneToE164(input: string): string | null {
   const raw = input.trim();
@@ -108,6 +115,29 @@ async function resolveLinkedAuthUserId(phone: string): Promise<{
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
   if (req.method !== "POST") return jsonRes({ error: "Method not allowed." }, 405);
+
+  const verdict = await checkRateLimit({
+    key: `prepare-phone-login:${getClientIp(req)}`,
+    limit: RATE_LIMIT_PER_MINUTE,
+    windowSeconds: RATE_LIMIT_WINDOW_SECONDS,
+  });
+  if (!verdict.allowed) {
+    return new Response(
+      JSON.stringify({
+        linked: false,
+        error: "Too many attempts. Please wait a moment and try again.",
+        code: "rate_limited",
+      }),
+      {
+        status: 429,
+        headers: {
+          ...corsHeaders,
+          "Content-Type": "application/json",
+          "Retry-After": String(verdict.retryAfterSeconds),
+        },
+      },
+    );
+  }
 
   try {
     const body = await req.json().catch(() => ({}));

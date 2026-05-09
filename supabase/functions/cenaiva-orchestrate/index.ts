@@ -1,5 +1,5 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
-import OpenAI from "npm:openai@4";
+import type OpenAI from "npm:openai@4";
 import { corsHeaders } from "../_shared/cors.ts";
 import { supabaseAdmin } from "../_shared/supabase.ts";
 import { jsonRes } from "../_shared/json-response.ts";
@@ -32,20 +32,21 @@ import { DEFAULT_CURRENCY, DEFAULT_TAX_RATE_FALLBACK } from "../_shared/booking-
 import { makeConfirmationCode } from "../_shared/confirmation-code.ts";
 import { STRIPE_API_VERSION } from "../_shared/stripe.ts";
 import { USER_AGENT } from "../_shared/brand.ts";
+import {
+  getOpenAI,
+  ORCHESTRATOR_MODEL,
+  prewarmOpenAI,
+  SMALL_PROMPT_MODEL,
+} from "../_shared/openai.ts";
 
-const openai = new OpenAI({ apiKey: Deno.env.get("OPENAI_API_KEY")! });
 const stripeSecretKey = Deno.env.get("STRIPE_SECRET_KEY") ?? "";
 const LATENCY_DEBUG = Deno.env.get("CENAIVA_LATENCY_DEBUG") === "1";
 const OPENAI_PREWARM = Deno.env.get("CENAIVA_OPENAI_PREWARM") === "1";
-const ORCHESTRATOR_MODEL = Deno.env.get("CENAIVA_ORCHESTRATOR_MODEL") ?? "gpt-4o-mini";
-const SMALL_PROMPT_MODEL = Deno.env.get("CENAIVA_SMALL_PROMPT_MODEL") ?? "gpt-4.1-nano";
 
 // Optional pre-warm. Disabled by default because module-init network work can
 // compete with the first live request in cold starts.
 if (OPENAI_PREWARM) {
-  (async () => {
-    try { await openai.models.list(); } catch { /* noop */ }
-  })();
+  void prewarmOpenAI();
 }
 
 function createLatencyTimer(label: string) {
@@ -4069,7 +4070,7 @@ Deno.serve(async (req) => {
         { role: "user", content: userContentForPersistence },
       ];
       const smallPromptStream = await latency.time("small_prompt_openai_stream_open", () =>
-        openai.chat.completions.create({
+        getOpenAI().chat.completions.create({
           model: SMALL_PROMPT_MODEL,
           temperature: 0.1,
           max_tokens: 35,
@@ -4535,7 +4536,7 @@ Deno.serve(async (req) => {
         chatParams.tool_choice = effectiveToolChoice;
       }
       const llmStream = await latency.time("openai_stream_open", () =>
-        openai.chat.completions.create(chatParams)
+        getOpenAI().chat.completions.create(chatParams)
       );
 
       let accContent = "";

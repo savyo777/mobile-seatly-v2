@@ -6,6 +6,7 @@ import {
   getFlexibleAvailability,
   type FlexibleAvailabilityMode,
 } from "../_shared/availability.ts";
+import { checkAuth } from "../_shared/auth.ts";
 
 type AvailabilityBody = {
   restaurant_id?: unknown;
@@ -105,6 +106,15 @@ Deno.serve(async (req) => {
   }
   if (req.method !== "POST") {
     return jsonRes({ error: "Method not allowed" }, 405);
+  }
+
+  // Internal auth check. Cenaiva availability is an assistant-only endpoint
+  // (the public booking widget hits get-availability instead). Belt-and-
+  // suspenders with verify_jwt=true in supabase/config.toml; this layer
+  // lets us return a clean error shape on token issues.
+  const auth = checkAuth(req);
+  if (!auth.ok) {
+    return jsonRes({ error: "Unauthorized", code: auth.reason }, 401);
   }
 
   try {

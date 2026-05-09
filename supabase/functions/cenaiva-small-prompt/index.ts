@@ -1,5 +1,4 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
-import OpenAI from "npm:openai@4";
 import { corsHeaders } from "../_shared/cors.ts";
 import { jsonRes } from "../_shared/json-response.ts";
 import {
@@ -9,9 +8,14 @@ import {
   DEFAULT_VOICE_SETTINGS,
   DEFAULT_OUTPUT_FORMAT,
 } from "../_shared/elevenlabs.ts";
+import {
+  getOpenAI,
+  SMALL_PROMPT_MAX_TOKENS,
+  SMALL_PROMPT_MODEL,
+  SMALL_PROMPT_TEMPERATURE,
+} from "../_shared/openai.ts";
+import { checkAuth } from "../_shared/auth.ts";
 
-const openai = new OpenAI({ apiKey: Deno.env.get("OPENAI_API_KEY")! });
-const SMALL_PROMPT_MODEL = Deno.env.get("CENAIVA_SMALL_PROMPT_MODEL") ?? "gpt-4.1-nano";
 const DEFAULT_VOICE_ID = Deno.env.get("ELEVENLABS_VOICE_ID") ?? SHARED_DEFAULT_VOICE_ID;
 const TTS_OUTPUT_FORMAT = Deno.env.get("ELEVENLABS_OUTPUT_FORMAT") ?? DEFAULT_OUTPUT_FORMAT;
 
@@ -135,16 +139,22 @@ Deno.serve(async (req) => {
     return jsonRes({ error: "Method not allowed" }, 405);
   }
 
+  // Assistant-only endpoint; reject anonymous callers.
+  const auth = checkAuth(req);
+  if (!auth.ok) {
+    return jsonRes({ error: "Unauthorized", code: auth.reason }, 401);
+  }
+
   try {
     const body = await req.json() as Body;
     const transcript = stringOrNull(body.transcript);
     if (!transcript) return jsonRes({ error: "transcript is required" }, 400);
 
     const missing = nextMissing(body.booking);
-    const response = await openai.chat.completions.create({
+    const response = await getOpenAI().chat.completions.create({
       model: SMALL_PROMPT_MODEL,
-      temperature: 0.1,
-      max_tokens: 45,
+      temperature: SMALL_PROMPT_TEMPERATURE,
+      max_tokens: SMALL_PROMPT_MAX_TOKENS,
       messages: [
         { role: "system", content: buildSystemPrompt(missing.question, body.booking) },
         { role: "user", content: transcript },

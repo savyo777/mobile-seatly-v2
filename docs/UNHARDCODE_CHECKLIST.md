@@ -129,16 +129,18 @@ The bulk of remaining hardcoded data. ~75 production files import from `lib/mock
 
 Server-side hardening that requires coordinated deploy.
 
-- [ ] **Audit each `verify_jwt = false` function in `supabase/config.toml`** and flip to `true` where the function already does its own JWT decode internally:
-  - `cenaiva-orchestrate` (does its own decode)
-  - `cenaiva-availability` (currently NO internal auth check — flip carefully or add one)
-  - `get-availability`, `create-public-booking`, `cenaiva-small-prompt`, `elevenlabs-tts`
-  - Leave `prepare-phone-login` and `register-restaurant-owner` open (account creation flows that need anonymous access).
-- [ ] **Set `ALLOWED_ORIGINS` env on the Supabase project** to remove the `*` CORS fallback in `_shared/cors.ts`. Once set, the wildcard fallback can be deleted.
-- [ ] **Add IP-based rate limiting** to `prepare-phone-login` (and any other anonymous endpoint). Use Deno KV or a similar mechanism — write `_shared/rateLimit.ts`.
-- [ ] **Set `CENAIVA_ALLOW_TEST_PAYMENTS=1` only on dev project**, never on production. Verify by inspecting Supabase secrets after deploy.
-- [ ] **Add `_shared/openai.ts`** — single source for `OPENAI_API_KEY` env, model name, temperature, max_tokens. Currently `cenaiva-orchestrate` and `cenaiva-small-prompt` each instantiate the client independently.
-- [ ] Deploy: `npx supabase functions deploy --project-ref exbjodmnpdiayfzrdyux`.
+- [x] **Audit each `verify_jwt = false` function in `supabase/config.toml`** and flip to `true` where the function already does its own JWT decode internally:
+  - `cenaiva-orchestrate` ✓ flipped (had decode)
+  - `cenaiva-availability` ✓ added internal auth check, then flipped
+  - `cenaiva-small-prompt` ✓ added internal auth check, then flipped
+  - `elevenlabs-tts` ✓ flipped (had decode)
+  - `create-public-booking` and `get-availability` left **open** — public booking widget allows anonymous bookings.
+  - `prepare-phone-login` and `register-restaurant-owner` left open as planned.
+- [ ] **Set `ALLOWED_ORIGINS` env on the Supabase project** to remove the `*` CORS fallback in `_shared/cors.ts`. *(Not set yet — confirmed via `npx supabase secrets list`. Do this before web launch.)*
+- [x] **Add IP-based rate limiting** to `prepare-phone-login` (and any other anonymous endpoint). *(10 reqs/IP/min via `_shared/rateLimit.ts`, Deno-KV-backed, fail-open on KV errors.)*
+- [x] **Set `CENAIVA_ALLOW_TEST_PAYMENTS=1` only on dev project**, never on production. *(Verified via `npx supabase secrets list` — not set on prod.)*
+- [x] **Add `_shared/openai.ts`** — single source for OPENAI_API_KEY env, model name, temperature, max_tokens.
+- [ ] Deploy: `npx supabase functions deploy --project-ref exbjodmnpdiayfzrdyux`. *(User runs after `git pull`.)*
 
 **Effort:** 3–6 hours. **Risk:** High if any anonymous caller breaks; coordinate with web app deploys.
 
@@ -263,3 +265,4 @@ Reference for what NOT to redo:
 - Phase E (this commit) — half-fixes: Stripe API version + confirmation-code generators centralized; CEN- prefix chosen; `register-restaurant-owner` uses `_shared/stripe.ts` + `_shared/cors.ts`; tax/currency/timezone fallbacks unified; Nominatim UA built from `BRAND_DOMAIN`; storage modules use `key()`; `lib/storage/migrate.ts` created and wired into `_layout.tsx`; `addToCalendar` and `ThemeProvider` adopt central constants
 - Phase F (this commit) — visible brand & data integrity: synthesized `4.5★` and Toronto coord defaults dropped (Restaurant.avgRating/lat/lng now nullable, ~30 consumers updated to render "New" / filter unmappable rows); "Seatly" → "Cenaiva" in changePasswordSub; orphaned `scheduleVenue`/`scheduleManagerName` i18n keys removed; `cenaiva.app` consolidated to `cenaiva.com` (support email, share caption); `app/(staff)/rate-seatly.tsx` → `rate-cenaiva.tsx`; iOS bundle id aligned to `com.cenaiva.app` (CFBundleURLTypes deduped); `hoursStatus.ts` defaults to `DEFAULT_TIMEZONE`; Deepgram live-token call gated behind `EXPO_PUBLIC_DEEPGRAM_LIVE_TOKEN`
 - Phase G — mock-data sweep, gated every `lib/mock/*` runtime import behind `isDemoModeEnabled()` across G.1 customer (21 files), G.2 staff/owner (20 files; owner-home dashboard now zeros instead of fabricated $4,280 revenue), G.3 booking flow (3 files), G.4 components (13 files). Pattern: `import { mockX as DEMO_X } from ...; const mockX = isDemoModeEnabled() ? DEMO_X : []`. Pure utility functions (`timeAgoLabel`, `getUrgencyCopy`, `shortTagLine`, `getDiscoverBadges`) and type-only imports left unchanged.
+- Phase H (this commit) — edge-function security: new `_shared/openai.ts` (lazy client + ORCHESTRATOR_MODEL/SMALL_PROMPT_MODEL/temperature/max_tokens) consumed by `cenaiva-orchestrate` and `cenaiva-small-prompt`; new `_shared/rateLimit.ts` (Deno-KV IP bucket, fail-open on KV errors) wired into `prepare-phone-login` at 10 reqs/IP/min; new `_shared/auth.ts` (`checkAuth(req) → 401 helper`) wired into `cenaiva-availability` and `cenaiva-small-prompt`. `verify_jwt = true` flipped for `cenaiva-orchestrate`, `cenaiva-availability`, `cenaiva-small-prompt`, `elevenlabs-tts`. Public booking flow (`get-availability`, `create-public-booking`) and signup endpoints (`prepare-phone-login`, `register-restaurant-owner`) intentionally left open. CORS wildcard removal deferred until `ALLOWED_ORIGINS` env is set on the project.

@@ -1,28 +1,38 @@
 project_id = "exbjodmnpdiayfzrdyux"
 
+# Authenticated-only endpoints. Each function does its own JWT decode
+# internally as a belt-and-suspenders, but Supabase rejects unauthorized
+# callers at the door so we don't burn cold-start cycles on them.
 [functions.cenaiva-orchestrate]
-verify_jwt = false
+verify_jwt = true
 
 [functions.cenaiva-availability]
-verify_jwt = false
+verify_jwt = true
 
+[functions.cenaiva-small-prompt]
+verify_jwt = true
+
+[functions.elevenlabs-tts]
+verify_jwt = true
+
+[functions.delete-account]
+verify_jwt = true
+
+# Anonymous-by-design endpoints. Each one is reachable without a session
+# because the flow it serves runs before sign-in:
+#   - get-availability + create-public-booking power the public booking
+#     widget on restaurant pages.
+#   - prepare-phone-login looks up an account by phone before SMS OTP.
+#     Rate-limited per IP via _shared/rateLimit.ts.
+#   - register-restaurant-owner is the owner sign-up flow.
 [functions.get-availability]
 verify_jwt = false
 
 [functions.create-public-booking]
 verify_jwt = false
 
-[functions.cenaiva-small-prompt]
-verify_jwt = false
-
-[functions.elevenlabs-tts]
+[functions.prepare-phone-login]
 verify_jwt = false
 
 [functions.register-restaurant-owner]
 verify_jwt = false
-
-[functions.prepare-phone-login]
-verify_jwt = false
-
-[functions.delete-account]
-verify_jwt = true
