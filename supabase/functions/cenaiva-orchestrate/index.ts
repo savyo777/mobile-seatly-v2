@@ -26,6 +26,9 @@ import {
   buildZeroResultFallbackSpokenText,
   chooseZeroResultFallbackRows,
 } from "./searchFallback.ts";
+import { haversineKm as sharedHaversineKm } from "../_shared/geo.ts";
+import { UUID_RE as SHARED_UUID_RE } from "../_shared/uuid.ts";
+import { DEFAULT_CURRENCY, DEFAULT_TAX_RATE_FALLBACK } from "../_shared/booking-defaults.ts";
 
 const openai = new OpenAI({ apiKey: Deno.env.get("OPENAI_API_KEY")! });
 const stripeSecretKey = Deno.env.get("STRIPE_SECRET_KEY") ?? "";
@@ -1398,7 +1401,7 @@ type AssistantPayload = {
   assistant_memory?: AssistantMemory | null;
 };
 
-const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+const UUID_RE = SHARED_UUID_RE;
 
 function isAffirmativeText(transcript: string): boolean {
   const isNegative =
@@ -2204,16 +2207,9 @@ function inferDiscoverySortMode(transcript: string, explicit?: unknown): Discove
   return null;
 }
 
-function haversineKm(lat1: number, lng1: number, lat2: number, lng2: number): number {
-  const toRad = (deg: number) => (deg * Math.PI) / 180;
-  const R = 6371;
-  const dLat = toRad(lat2 - lat1);
-  const dLng = toRad(lng2 - lng1);
-  const a =
-    Math.sin(dLat / 2) ** 2 +
-    Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) * Math.sin(dLng / 2) ** 2;
-  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-}
+// Centralized in _shared/geo.ts. Local alias so existing call sites don't
+// need to change.
+const haversineKm = sharedHaversineKm;
 
 const MENU_PRICE_CHUNK_SIZE = 80;
 const ACTIVE_RESTAURANTS_CACHE_TTL_MS = 2 * 60 * 1000;
@@ -4842,20 +4838,10 @@ Deno.serve(async (req) => {
                 if (wantsNear && loc && typeof loc.lat === "number" && typeof loc.lng === "number") {
                   const userLat = loc.lat;
                   const userLng = loc.lng;
-                  const toRad = (deg: number) => (deg * Math.PI) / 180;
-                  const haversineKm = (lat1: number, lng1: number, lat2: number, lng2: number) => {
-                    const R = 6371;
-                    const dLat = toRad(lat2 - lat1);
-                    const dLng = toRad(lng2 - lng1);
-                    const a =
-                      Math.sin(dLat / 2) ** 2 +
-                      Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) * Math.sin(dLng / 2) ** 2;
-                    return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-                  };
                   rows = rows
                     .map((r) => {
                       if (typeof r.lat === "number" && typeof r.lng === "number") {
-                        r.distance_km = haversineKm(userLat, userLng, r.lat, r.lng);
+                        r.distance_km = sharedHaversineKm(userLat, userLng, r.lat, r.lng);
                       }
                       return r;
                     })
@@ -5238,7 +5224,7 @@ Deno.serve(async (req) => {
             const rawItems = stateCart.length ? stateCart : llmItems;
             // Normalise: accept both `qty` and `quantity`, require a valid
             // menu_item_id UUID — drop any row that can't be inserted cleanly.
-            const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+            // Reuses the strict module-level UUID_RE imported from _shared/uuid.
             const items = rawItems
               .map((raw) => {
                 const menu_item_id = String(raw.menu_item_id ?? "");
@@ -5298,7 +5284,7 @@ Deno.serve(async (req) => {
                 .select("tax_rate, currency, slug")
                 .eq("id", restaurant_id)
                 .single();
-              const taxRate = rest?.tax_rate ?? 0.13;
+              const taxRate = rest?.tax_rate ?? DEFAULT_TAX_RATE_FALLBACK;
               const subtotal = items.reduce((sum: number, i: { unit_price: number; quantity: number }) => sum + i.unit_price * i.quantity, 0);
               const taxAmount = Math.round(subtotal * taxRate * 100) / 100;
               const total = Math.round((subtotal + taxAmount) * 100) / 100;
@@ -5365,7 +5351,7 @@ Deno.serve(async (req) => {
                   subtotal: Math.round(subtotal * 100) / 100,
                   tax: taxAmount,
                   total,
-                  currency: rest?.currency || "CAD",
+                  currency: rest?.currency || DEFAULT_CURRENCY,
                   checkout_path: checkoutPath,
                 });
               }
@@ -5427,7 +5413,7 @@ Deno.serve(async (req) => {
                         .select("currency")
                         .eq("id", order.restaurant_id)
                         .single();
-                      const currency = (rest?.currency || "CAD").toLowerCase();
+                      const currency = (rest?.currency || DEFAULT_CURRENCY).toLowerCase();
 
                       try {
                         const paymentIntent = await stripe.paymentIntents.create({
@@ -5456,7 +5442,7 @@ Deno.serve(async (req) => {
 
                         toolResult = JSON.stringify({
                           success: true, total_charged: total, tip_amount: tipAmt,
-                          currency: rest?.currency || "CAD", paid_at: paidAt,
+                          currency: rest?.currency || DEFAULT_CURRENCY, paid_at: paidAt,
                           card_brand: savedCard.brand, card_last4: savedCard.last4, mode: "live",
                         });
                         derivedActions.push({ type: "show_payment_success", amount_charged: total });
@@ -5489,7 +5475,7 @@ Deno.serve(async (req) => {
 
                     toolResult = JSON.stringify({
                       success: true, total_charged: total, tip_amount: tipAmt,
-                      currency: "CAD", paid_at: paidAt,
+                      currency: DEFAULT_CURRENCY, paid_at: paidAt,
                       card_brand: savedCard.brand, card_last4: savedCard.last4, mode: "test",
                     });
                     derivedActions.push({ type: "show_payment_success", amount_charged: total });

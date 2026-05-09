@@ -4,10 +4,16 @@ import { corsHeaders } from "../_shared/cors.ts";
 import { supabaseAdmin } from "../_shared/supabase.ts";
 import { jsonRes } from "../_shared/json-response.ts";
 import { decodeJwtPayload } from "../_shared/jwt.ts";
+import {
+  ELEVENLABS_BASE,
+  DEFAULT_VOICE_ID as SHARED_DEFAULT_VOICE_ID,
+  ELEVENLABS_MODEL,
+  DEFAULT_VOICE_SETTINGS,
+  DEFAULT_OUTPUT_FORMAT,
+} from "../_shared/elevenlabs.ts";
 
-const ELEVENLABS_BASE = "https://api.elevenlabs.io/v1";
-const DEFAULT_VOICE_ID = Deno.env.get("ELEVENLABS_VOICE_ID") ?? "EXAVITQu4vr4xnSDxMaL";
-const OUTPUT_FORMAT = Deno.env.get("ELEVENLABS_OUTPUT_FORMAT") ?? "mp3_44100_128";
+const DEFAULT_VOICE_ID = Deno.env.get("ELEVENLABS_VOICE_ID") ?? SHARED_DEFAULT_VOICE_ID;
+const OUTPUT_FORMAT = Deno.env.get("ELEVENLABS_OUTPUT_FORMAT") ?? DEFAULT_OUTPUT_FORMAT;
 
 // Reuse same pronunciation map as useCenaivaSpeech.ts
 function applyPronunciation(text: string): string {
@@ -67,8 +73,8 @@ Deno.serve(async (req) => {
         },
         body: JSON.stringify({
           text,
-          model_id: "eleven_flash_v2_5",
-          voice_settings: { stability: 0.5, similarity_boost: 0.8, speed: 1.1 },
+          model_id: ELEVENLABS_MODEL,
+          voice_settings: DEFAULT_VOICE_SETTINGS,
         }),
       });
 

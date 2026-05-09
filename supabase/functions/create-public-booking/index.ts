@@ -6,6 +6,8 @@ import { getAvailability } from "../_shared/availability.ts";
 import { localBookingParts } from "../_shared/hours.ts";
 import { decodeJwtPayload } from "../_shared/jwt.ts";
 import { supabaseAdmin } from "../_shared/supabase.ts";
+import { DEFAULT_TURN_MINUTES } from "../_shared/booking-defaults.ts";
+import { makeConfirmationCode } from "../_shared/confirmation-code.ts";
 
 type PublicBookingCartItem = {
   menu_item_id: string | null;
@@ -81,15 +83,6 @@ function parseCartItems(value: unknown): PublicBookingCartItem[] {
   });
 }
 
-function makeConfirmationCode(): string {
-  const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
-  let code = "SEAT-";
-  for (let i = 0; i < 6; i += 1) {
-    code += chars[Math.floor(Math.random() * chars.length)];
-  }
-  return code;
-}
-
 async function getProfileIdFromAuth(req: Request): Promise<string | null> {
   const authHeader = req.headers.get("Authorization") ?? "";
   const token = authHeader.replace(/^Bearer\s+/i, "").trim();
@@ -121,7 +114,7 @@ async function getShiftDuration(shiftId: string): Promise<number> {
     .select("turn_time_minutes")
     .eq("id", shiftId)
     .single();
-  return Number(data?.turn_time_minutes) || 90;
+  return Number(data?.turn_time_minutes) || DEFAULT_TURN_MINUTES;
 }
 
 async function findAvailableTableId(params: {

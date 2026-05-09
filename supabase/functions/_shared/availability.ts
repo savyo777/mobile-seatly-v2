@@ -1,6 +1,17 @@
 import { supabaseAdmin } from "./supabase.ts";
 import { localToUTC, localDayOfWeek } from "./time.ts";
 import { resolveRestaurantHoursForDate } from "./hours.ts";
+import {
+  DEFAULT_TIMEZONE,
+  DEFAULT_TURN_MINUTES,
+  DEFAULT_SLOT_DURATION_MINUTES,
+  DEFAULT_MAX_COVERS,
+  DEFAULT_MAX_PARTY_SIZE,
+  DEFAULT_MIN_PARTY_SIZE,
+  DEFAULT_ADVANCE_BOOKING_DAYS,
+  DEFAULT_SERVICE_START,
+  DEFAULT_SERVICE_END,
+} from "./booking-defaults.ts";
 
 export interface AvailabilitySlot {
   shift_id: string;
@@ -99,7 +110,7 @@ export async function getAvailability(
     .select("timezone, hours_json")
     .eq("id", restaurant_id)
     .single();
-  const timezone = restaurantRow?.timezone || "UTC";
+  const timezone = restaurantRow?.timezone || DEFAULT_TIMEZONE;
 
   const dayOfWeek = localDayOfWeek(dateOnly, timezone);
   const hoursJson =
@@ -162,8 +173,8 @@ export async function getAvailability(
   for (const shift of shifts) {
     // Enforce party size bounds
     if (
-      party_size < (shift.min_party_size ?? 1) ||
-      party_size > (shift.max_party_size ?? 20) ||
+      party_size < (shift.min_party_size ?? DEFAULT_MIN_PARTY_SIZE) ||
+      party_size > (shift.max_party_size ?? DEFAULT_MAX_PARTY_SIZE) ||
       (floorCapacity != null && party_size > floorCapacity)
     ) {
       partySizeRejectedCount += 1;
@@ -171,7 +182,7 @@ export async function getAvailability(
     }
 
     // Enforce advance_booking_days — don't show if booking window hasn't opened
-    const advanceDays = shift.advance_booking_days ?? 30;
+    const advanceDays = shift.advance_booking_days ?? DEFAULT_ADVANCE_BOOKING_DAYS;
     const maxBookingDate = new Date(todayDate.getTime() + advanceDays * 86_400_000);
     if (requestDate > maxBookingDate) continue;
 
@@ -179,11 +190,11 @@ export async function getAvailability(
     const blackouts: string[] = shift.blackout_dates ?? [];
     if (blackouts.includes(dateOnly)) continue;
 
-    const [sH, sM] = (shift.start_time ?? "17:00").split(":").map(Number);
-    const [eH, eM] = (shift.end_time ?? "23:00").split(":").map(Number);
-    const slotMins = shift.slot_duration_minutes ?? 30;
-    const turnMins = shift.turn_time_minutes ?? 90;
-    const shiftMaxCovers = shift.max_covers ?? 100;
+    const [sH, sM] = (shift.start_time ?? DEFAULT_SERVICE_START).split(":").map(Number);
+    const [eH, eM] = (shift.end_time ?? DEFAULT_SERVICE_END).split(":").map(Number);
+    const slotMins = shift.slot_duration_minutes ?? DEFAULT_SLOT_DURATION_MINUTES;
+    const turnMins = shift.turn_time_minutes ?? DEFAULT_TURN_MINUTES;
+    const shiftMaxCovers = shift.max_covers ?? DEFAULT_MAX_COVERS;
     const maxCovers = floorCapacity != null ? Math.min(shiftMaxCovers, floorCapacity) : shiftMaxCovers;
 
     let slotMin = sH * 60 + sM;
@@ -372,7 +383,7 @@ async function getRestaurantTimezone(restaurantId: string): Promise<string> {
     .select("timezone")
     .eq("id", restaurantId)
     .single();
-  return data?.timezone || "UTC";
+  return data?.timezone || DEFAULT_TIMEZONE;
 }
 
 type OptionsForDatesResult = {

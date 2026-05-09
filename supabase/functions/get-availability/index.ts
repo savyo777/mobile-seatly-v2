@@ -5,6 +5,7 @@ import { jsonRes } from "../_shared/json-response.ts";
 import { getAvailability } from "../_shared/availability.ts";
 import { localBookingParts } from "../_shared/hours.ts";
 import { supabaseAdmin } from "../_shared/supabase.ts";
+import { DEFAULT_TURN_MINUTES, DEFAULT_TIMEZONE } from "../_shared/booking-defaults.ts";
 
 type PublicAvailabilitySlot = {
   shift_id: string;
@@ -28,7 +29,7 @@ async function getRestaurantTimezone(restaurantId: string): Promise<string> {
     .select("timezone")
     .eq("id", restaurantId)
     .single();
-  return data?.timezone || "UTC";
+  return data?.timezone || DEFAULT_TIMEZONE;
 }
 
 async function getFloorCapacity(restaurantId: string): Promise<number | null> {
@@ -117,13 +118,13 @@ Deno.serve(async (req) => {
         .in("id", shiftIds)
       : { data: [] };
     const turnMinutesByShift = new Map(
-      (shifts ?? []).map((shift) => [shift.id, Number(shift.turn_time_minutes) || 90]),
+      (shifts ?? []).map((shift) => [shift.id, Number(shift.turn_time_minutes) || DEFAULT_TURN_MINUTES]),
     );
 
     const slots: PublicAvailabilitySlot[] = [];
     let tableBlockedCount = 0;
     for (const slot of availability.slots ?? []) {
-      const durationMinutes = turnMinutesByShift.get(slot.shift_id) ?? 90;
+      const durationMinutes = turnMinutesByShift.get(slot.shift_id) ?? DEFAULT_TURN_MINUTES;
       const localParts = localBookingParts(slot.date_time, timezone);
       if (!localParts) continue;
       const tableId = await findAvailableTableId({

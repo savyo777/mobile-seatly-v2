@@ -2,12 +2,18 @@ import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import OpenAI from "npm:openai@4";
 import { corsHeaders } from "../_shared/cors.ts";
 import { jsonRes } from "../_shared/json-response.ts";
+import {
+  ELEVENLABS_BASE,
+  DEFAULT_VOICE_ID as SHARED_DEFAULT_VOICE_ID,
+  ELEVENLABS_MODEL,
+  DEFAULT_VOICE_SETTINGS,
+  DEFAULT_OUTPUT_FORMAT,
+} from "../_shared/elevenlabs.ts";
 
 const openai = new OpenAI({ apiKey: Deno.env.get("OPENAI_API_KEY")! });
 const SMALL_PROMPT_MODEL = Deno.env.get("CENAIVA_SMALL_PROMPT_MODEL") ?? "gpt-4.1-nano";
-const ELEVENLABS_BASE = "https://api.elevenlabs.io/v1";
-const DEFAULT_VOICE_ID = Deno.env.get("ELEVENLABS_VOICE_ID") ?? "EXAVITQu4vr4xnSDxMaL";
-const TTS_OUTPUT_FORMAT = Deno.env.get("ELEVENLABS_OUTPUT_FORMAT") ?? "mp3_44100_128";
+const DEFAULT_VOICE_ID = Deno.env.get("ELEVENLABS_VOICE_ID") ?? SHARED_DEFAULT_VOICE_ID;
+const TTS_OUTPUT_FORMAT = Deno.env.get("ELEVENLABS_OUTPUT_FORMAT") ?? DEFAULT_OUTPUT_FORMAT;
 
 type Body = {
   transcript?: unknown;
@@ -104,8 +110,8 @@ async function synthesizeSmallPromptAudio(text: string, voiceId: string) {
         },
         body: JSON.stringify({
           text: applyPronunciation(text),
-          model_id: "eleven_flash_v2_5",
-          voice_settings: { stability: 0.5, similarity_boost: 0.8, speed: 1.1 },
+          model_id: ELEVENLABS_MODEL,
+          voice_settings: DEFAULT_VOICE_SETTINGS,
         }),
       },
     );

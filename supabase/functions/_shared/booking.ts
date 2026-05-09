@@ -4,6 +4,12 @@ import {
   localBookingParts,
   resolveRestaurantHoursForDate,
 } from "./hours.ts";
+import {
+  DEFAULT_CURRENCY,
+  DEFAULT_TIMEZONE,
+  DEFAULT_TAX_RATE_FALLBACK,
+} from "./booking-defaults.ts";
+import { makeConfirmationCode } from "./confirmation-code.ts";
 
 export interface BookingItem {
   menu_item_id: string;
@@ -68,7 +74,7 @@ function failureResult(
     subtotal: 0,
     tax: 0,
     total: 0,
-    currency: "CAD",
+    currency: DEFAULT_CURRENCY,
     checkout_url: null,
     error,
   };
@@ -108,7 +114,7 @@ export async function completeBooking(
     return failureResult(order_type, `Restaurant lookup failed: ${restaurantErr.message}`);
   }
 
-  const timezone = restaurantForBooking?.timezone || "UTC";
+  const timezone = restaurantForBooking?.timezone || DEFAULT_TIMEZONE;
   const localParts = localBookingParts(date_time, timezone);
   if (!localParts) {
     return failureResult(order_type, "Invalid reservation date_time.");
@@ -179,7 +185,7 @@ export async function completeBooking(
         subtotal: 0,
         tax: 0,
         total: 0,
-        currency: "CAD",
+        currency: DEFAULT_CURRENCY,
         checkout_url: null,
         error: `Guest creation failed: ${guestErr.message}`,
       };
@@ -189,7 +195,7 @@ export async function completeBooking(
     await supabaseAdmin.from("guests").update(guestFields).eq("id", guestId);
   }
 
-  const confirmationCode = `SEAT-${Math.random().toString(36).slice(2, 6).toUpperCase()}`;
+  const confirmationCode = makeConfirmationCode();
 
   // Create reservation
   let reservationId: string | null = null;
@@ -220,7 +226,7 @@ export async function completeBooking(
       subtotal: 0,
       tax: 0,
       total: 0,
-      currency: "CAD",
+      currency: DEFAULT_CURRENCY,
       checkout_url: null,
       error: `Reservation failed: ${resvErr.message}`,
     };
@@ -234,7 +240,7 @@ export async function completeBooking(
     .eq("id", restaurant_id)
     .single();
 
-  const taxRate = rest?.tax_rate ?? 0.13;
+  const taxRate = rest?.tax_rate ?? DEFAULT_TAX_RATE_FALLBACK;
   const subtotal = items.reduce((s, i) => s + i.unit_price * i.quantity, 0);
   const taxAmount = n2(subtotal * taxRate);
   const total = n2(subtotal + taxAmount);
@@ -276,7 +282,7 @@ export async function completeBooking(
         subtotal: n2(subtotal),
         tax: taxAmount,
         total,
-        currency: rest?.currency ?? "CAD",
+        currency: rest?.currency ?? DEFAULT_CURRENCY,
         checkout_url: null,
         error: `Order creation failed: ${orderErr.message}`,
       };
@@ -308,7 +314,7 @@ export async function completeBooking(
     subtotal: n2(subtotal),
     tax: taxAmount,
     total,
-    currency: rest?.currency ?? "CAD",
+    currency: rest?.currency ?? DEFAULT_CURRENCY,
     checkout_url:
       orderId && rest?.slug ? `/${rest.slug}?order_id=${orderId}&step=checkout` : null,
   };
