@@ -423,8 +423,6 @@ export default function RegisterRestaurantCardEntryScreen() {
                       style={[s.fieldInputMono, { color: c.textPrimary }]}
                       keyboardType="number-pad"
                       inputMode="numeric"
-                      autoComplete="cc-number"
-                      textContentType="creditCardNumber"
                       maxLength={23}
                       returnKeyType="next"
                       onSubmitEditing={() => expiryRef.current?.focus()}
