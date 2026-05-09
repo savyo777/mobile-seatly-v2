@@ -150,15 +150,15 @@ Server-side hardening that requires coordinated deploy.
 
 Three competing color/spacing/radius tables that have already drifted.
 
-- [ ] **Create a single `design-system/tokens.json` (or `lib/theme/tokens.ts`)** with colors, spacing, radius. Treat as the source.
-- [ ] **`tailwind.config.js`** — `require()` the tokens file and derive colors from it. Currently uses `gold: '#C9A84C'` (drifted from `lib/theme/palettes.ts:#C9A24A` and `design-system/MASTER.md:#D4AF37`).
-- [ ] **`lib/theme/palettes.ts`** — import from the tokens file.
-- [ ] **`lib/theme/ownerTheme.ts`** — replace inline rgba mixes (lines 21–32, 79) with a `withAlpha(token, alpha)` helper that takes from the palette.
-- [ ] **Reconcile spacing scales**: `lib/theme/index.ts` (xs:4, sm:8, md:12, lg:16) vs `lib/theme/ownerTheme.ts` (xs:8, sm:12, md:16, lg:24, xl:32) vs Tailwind. Pick the 4pt grid (`lib/theme/index.ts`) and align.
-- [ ] **Reconcile borderRadius scales** the same way.
-- [ ] **`lib/map/darkMapStyle.ts`** — convert to a function `buildGoogleMapStyle(palette)` that returns the array, derived from palette tokens. Restores light-mode map.
-- [ ] **`lib/loyalty/tiers.ts:12–17`** — move tier hex colors (`#CD7F32`, `#A8A8B8`, `#C9A84C`, `#E2E2F0`) into the palette as `tierBronze`, `tierSilver`, `tierGold`, `tierPlatinum` tokens.
-- [ ] **Delete or regenerate `design-system/MASTER.md`** (and its byte-identical duplicate `design-system/seatly-owner/MASTER.md`). They reference Playfair Display SC + Karla fonts the app doesn't load and a third gold value `#D4AF37`.
+- [x] **Create a single `lib/theme/tokens.ts`** with colors, spacing, radius. Treat as the source.
+- [x] **`tailwind.config.js`** — values mirrored from `lib/theme/tokens.ts` with a header comment. (Tailwind classes aren't actually used by any component — kept in sync defensively.)
+- [x] **`lib/theme/palettes.ts`** — re-exports `darkPalette`/`lightPalette` from tokens.
+- [x] **`lib/theme/ownerTheme.ts`** — inline `rgba(…)` mixes replaced with `withAlpha(token, alpha)` helper from `tokens.ts`.
+- [x] **Reconcile spacing scales** — `ownerSpace` now imports from `spacing` in `tokens.ts` (`ownerSpace.xs === spacing.sm`, etc.); preserves current pixel values, eliminates the parallel scale.
+- [x] **Reconcile borderRadius scales** — both `borderRadius` and `ownerRadii` live in `tokens.ts`; owner-side kept at its larger values intentionally (denser-information UI), customer-side kept on its 4pt-grid scale.
+- [x] **`lib/map/darkMapStyle.ts`** — converted to `buildGoogleMapStyle(palette)`; existing `googleDarkMapStyle` export preserved for backward compatibility, plus a new `googleLightMapStyle`.
+- [x] **`lib/loyalty/tiers.ts`** — tier hex colors now read from `loyaltyTierColors` in `tokens.ts`; Gold tier color matches palette gold so badges and chrome stay in step.
+- [x] **Delete or regenerate `design-system/MASTER.md`** — both copies (and the now-empty `design-system/` directory) deleted. They referenced Playfair Display SC + Karla fonts the app doesn't load and a third gold value `#D4AF37`.
 
 **Effort:** 4–6 hours. **Risk:** Medium (visual). Verify in both themes before commit.
 
@@ -266,3 +266,4 @@ Reference for what NOT to redo:
 - Phase F (this commit) — visible brand & data integrity: synthesized `4.5★` and Toronto coord defaults dropped (Restaurant.avgRating/lat/lng now nullable, ~30 consumers updated to render "New" / filter unmappable rows); "Seatly" → "Cenaiva" in changePasswordSub; orphaned `scheduleVenue`/`scheduleManagerName` i18n keys removed; `cenaiva.app` consolidated to `cenaiva.com` (support email, share caption); `app/(staff)/rate-seatly.tsx` → `rate-cenaiva.tsx`; iOS bundle id aligned to `com.cenaiva.app` (CFBundleURLTypes deduped); `hoursStatus.ts` defaults to `DEFAULT_TIMEZONE`; Deepgram live-token call gated behind `EXPO_PUBLIC_DEEPGRAM_LIVE_TOKEN`
 - Phase G — mock-data sweep, gated every `lib/mock/*` runtime import behind `isDemoModeEnabled()` across G.1 customer (21 files), G.2 staff/owner (20 files; owner-home dashboard now zeros instead of fabricated $4,280 revenue), G.3 booking flow (3 files), G.4 components (13 files). Pattern: `import { mockX as DEMO_X } from ...; const mockX = isDemoModeEnabled() ? DEMO_X : []`. Pure utility functions (`timeAgoLabel`, `getUrgencyCopy`, `shortTagLine`, `getDiscoverBadges`) and type-only imports left unchanged.
 - Phase H (this commit) — edge-function security: new `_shared/openai.ts` (lazy client + ORCHESTRATOR_MODEL/SMALL_PROMPT_MODEL/temperature/max_tokens) consumed by `cenaiva-orchestrate` and `cenaiva-small-prompt`; new `_shared/rateLimit.ts` (Deno-KV IP bucket, fail-open on KV errors) wired into `prepare-phone-login` at 10 reqs/IP/min; new `_shared/auth.ts` (`checkAuth(req) → 401 helper`) wired into `cenaiva-availability` and `cenaiva-small-prompt`. `verify_jwt = true` flipped for `cenaiva-orchestrate`, `cenaiva-availability`, `cenaiva-small-prompt`, `elevenlabs-tts`. Public booking flow (`get-availability`, `create-public-booking`) and signup endpoints (`prepare-phone-login`, `register-restaurant-owner`) intentionally left open. CORS wildcard removal deferred until `ALLOWED_ORIGINS` env is set on the project.
+- Phase I (this commit) — design-token unification: new `lib/theme/tokens.ts` is the single source of truth (brand gold, palettes, spacing, owner-side scales, border radius, loyalty tier colors, `withAlpha()` helper). `palettes.ts`, `index.ts`, `ownerTheme.ts`, `tailwind.config.js`, `loyalty/tiers.ts`, `map/darkMapStyle.ts` all import from tokens (or mirror with a header note in the case of Tailwind). `ownerSpace` aliased to subset of `spacing` so owner UI keeps current pixel values. `darkMapStyle.ts` now exports both dark and light styles via `buildGoogleMapStyle(palette)`. Stale `design-system/MASTER.md` (both copies) deleted along with the empty directory.

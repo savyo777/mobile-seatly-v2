@@ -1,3 +1,13 @@
+// Tailwind theme extensions for NativeWind. Note: at the time of writing
+// this app uses zero `className=""` props — every component styles via
+// StyleSheet.create() with the runtime palette from lib/theme. This config
+// exists for any future Tailwind usage, with values mirrored from the
+// canonical design tokens at lib/theme/tokens.ts.
+//
+// If you change brand gold, spacing, or radius here you MUST also update
+// lib/theme/tokens.ts to match. Tailwind doesn't support importing TS at
+// config-load time without ts-node, hence the manual mirror.
+
 /** @type {import('tailwindcss').Config} */
 module.exports = {
   content: [
@@ -8,28 +18,30 @@ module.exports = {
   theme: {
     extend: {
       colors: {
+        // Mirrors brandGold + darkPalette in lib/theme/tokens.ts.
         gold: {
-          DEFAULT: '#C9A84C',
-          light: '#F5E6C8',
-          dark: '#A8873A',
+          DEFAULT: '#C9A24A',
+          light: '#DDD5C4',
+          dark: '#A38630',
         },
-        'bg-base': '#0A0A0A',
-        'bg-surface': '#1A1A1A',
-        'bg-elevated': '#242424',
-        'seatly-border': '#2E2E2E',
+        'bg-base': '#000000',
+        'bg-surface': '#0F0F0F',
+        'bg-elevated': '#161616',
+        'cenaiva-border': 'rgba(255,255,255,0.06)',
         'text-primary': '#FFFFFF',
-        'text-secondary': '#AAAAAA',
-        'text-muted': '#666666',
+        'text-secondary': '#A1A1AA',
+        'text-muted': '#71717A',
         success: '#22C55E',
-        warning: '#F59E0B',
+        warning: '#D4A574',
         danger: '#EF4444',
-        info: '#3B82F6',
+        info: '#71717A',
       },
       borderRadius: {
-        'sm': '6px',
-        'md': '10px',
-        'lg': '14px',
-        'xl': '20px',
+        // Mirrors borderRadius in lib/theme/tokens.ts.
+        sm: '8px',
+        md: '12px',
+        lg: '14px',
+        xl: '18px',
       },
       spacing: {
         '4.5': '18px',

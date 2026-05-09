@@ -1,6 +1,7 @@
 import type { Palette } from '@/lib/theme/palettes';
 import { darkColors, lightColors } from '@/lib/theme/palettes';
 import { useColors } from '@/lib/theme/useColors';
+import { brandGold, ownerRadii, ownerSpace, withAlpha } from '@/lib/theme/tokens';
 
 /**
  * Owner mobile UI tokens — derived from the same `Palette` as the customer app so
@@ -8,28 +9,32 @@ import { useColors } from '@/lib/theme/useColors';
  *
  * Layout conventions:
  * - Hero cover height on Profile: ~120–160pt; diner detail uses ~250pt for guest-facing richness.
- * - Section vertical rhythm: use `spacing` from `@/lib/theme` (8pt grid).
+ * - Section vertical rhythm: use `spacing` from `@/lib/theme` (4pt grid).
  * - One gold accent per viewport: reserve `gold` for primary metric, active filter, or single CTA.
+ *
+ * All rgba mixes are computed via `withAlpha()` from `lib/theme/tokens.ts` so
+ * they track the canonical palette gold automatically.
  */
 export function ownerColorsFromPalette(p: Palette) {
   const isLight = p.bgBase === lightColors.bgBase;
+  const surfaceMix = isLight ? '#0F0E0C' : '#FFFFFF';
   return {
     bg: p.bgBase,
     bgSurface: p.bgSurface,
     bgCard: p.bgSurface,
     bgElevated: p.bgElevated,
-    bgGlass: isLight ? 'rgba(15,14,12,0.06)' : 'rgba(255,255,255,0.035)',
+    bgGlass: withAlpha(surfaceMix, isLight ? 0.06 : 0.035),
     border: p.border,
-    borderStrong: isLight ? 'rgba(0,0,0,0.12)' : 'rgba(255,255,255,0.09)',
+    borderStrong: withAlpha(surfaceMix, isLight ? 0.12 : 0.09),
 
     gold: p.gold,
-    goldMuted: isLight ? 'rgba(168,131,42,0.18)' : 'rgba(201, 162, 74, 0.2)',
-    goldSubtle: isLight ? 'rgba(168,131,42,0.12)' : 'rgba(201,162,74,0.12)',
+    goldMuted: withAlpha(isLight ? brandGold.light : p.gold, isLight ? 0.18 : 0.2),
+    goldSubtle: withAlpha(isLight ? brandGold.light : p.gold, 0.12),
 
     chartPositive: p.success,
     chartNegative: p.danger,
-    chartPositiveMuted: isLight ? 'rgba(22,163,74,0.25)' : 'rgba(34, 197, 94, 0.3)',
-    chartNegativeMuted: isLight ? 'rgba(220,38,38,0.25)' : 'rgba(239, 68, 68, 0.3)',
+    chartPositiveMuted: withAlpha(p.success, isLight ? 0.25 : 0.3),
+    chartNegativeMuted: withAlpha(p.danger, isLight ? 0.25 : 0.3),
 
     success: p.success,
     danger: p.danger,
@@ -53,21 +58,7 @@ export function useOwnerColors() {
 /** Static alias for legacy imports (dark palette only). Prefer `ownerColorsFromPalette(useColors())` in new code. */
 export const ownerColors = ownerColorsFromPalette(darkColors);
 
-export const ownerRadii = {
-  sm: 10,
-  md: 14,
-  xl: 16,
-  '2xl': 20,
-  '3xl': 26,
-} as const;
-
-export const ownerSpace = {
-  xs: 8,
-  sm: 12,
-  md: 16,
-  lg: 24,
-  xl: 32,
-} as const;
+export { ownerRadii, ownerSpace };
 
 /** Extra bottom inset for scroll content above the custom tab bar (center + button). */
 export const OWNER_TAB_SCROLL_BOTTOM_PADDING = 16;

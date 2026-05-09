@@ -3,6 +3,8 @@
 // duplicated across loyalty.tsx (GOLD_THRESHOLD = 2000) and settings.tsx
 // (Gold = 1500), which produced inconsistent tier labels for the same user.
 
+import { loyaltyTierColors } from '@/lib/theme/tokens';
+
 export type LoyaltyTier = {
   name: 'Bronze' | 'Silver' | 'Gold' | 'Platinum';
   min: number;
@@ -10,10 +12,10 @@ export type LoyaltyTier = {
 };
 
 export const LOYALTY_TIERS: readonly LoyaltyTier[] = [
-  { name: 'Bronze',   min: 0,    color: '#CD7F32' },
-  { name: 'Silver',   min: 500,  color: '#A8A8B8' },
-  { name: 'Gold',     min: 1500, color: '#C9A84C' },
-  { name: 'Platinum', min: 3000, color: '#E2E2F0' },
+  { name: 'Bronze',   min: 0,    color: loyaltyTierColors.bronze },
+  { name: 'Silver',   min: 500,  color: loyaltyTierColors.silver },
+  { name: 'Gold',     min: 1500, color: loyaltyTierColors.gold },
+  { name: 'Platinum', min: 3000, color: loyaltyTierColors.platinum },
 ] as const;
 
 export function getLoyaltyTier(points: number): LoyaltyTier {
