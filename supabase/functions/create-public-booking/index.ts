@@ -1,25 +1,32 @@
 // @ts-nocheck
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
-import { corsHeaders } from "../_shared/cors.ts";
-import { jsonRes } from "../_shared/json-response.ts";
-import { getAvailability } from "../_shared/availability.ts";
-import { localBookingParts } from "../_shared/hours.ts";
-import { decodeJwtPayload } from "../_shared/jwt.ts";
-import { supabaseAdmin } from "../_shared/supabase.ts";
-import { DEFAULT_TIMEZONE, DEFAULT_TURN_MINUTES } from "../_shared/booking-defaults.ts";
-import { makeConfirmationCode } from "../_shared/confirmation-code.ts";
+import { createClient } from "npm:@supabase/supabase-js@2";
+import { enforceRateLimit, rateLimitIdentifier, RateLimitError } from "../_shared/rate-limit.ts";
+import { Resend } from "npm:resend@4.0.0";
+import twilio from "npm:twilio@5.0.0";
+import {
+  closureUnavailableMessage,
+  findClosedSpecialDayForDate,
+  localDateForDateTime,
+} from "../_shared/closures.ts";
 
-type PublicBookingCartItem = {
-  menu_item_id: string | null;
-  name: string;
-  quantity: number;
-  unit_price: number;
+const corsHeaders = {
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+  "Access-Control-Allow-Methods": "POST, OPTIONS",
 };
 
-type PublicBookingPayload = {
+type CartItemInput = {
+  menu_item_id?: unknown;
+  name?: unknown;
+  quantity?: unknown;
+  unit_price?: unknown;
+};
+
+type BookingPayload = {
   restaurant_id?: unknown;
-  shift_id?: unknown;
   date_time?: unknown;
+  shift_id?: unknown;
   party_size?: unknown;
   guest_name?: unknown;
   guest_email?: unknown;
@@ -27,7 +34,8 @@ type PublicBookingPayload = {
   allergies?: unknown;
   seating_preference?: unknown;
   occasion?: unknown;
-  cart_items?: unknown;
+  confirmation_code?: unknown;
+  cart_items?: CartItemInput[];
   subtotal?: unknown;
   tax_amount?: unknown;
   tip_amount?: unknown;
@@ -38,408 +46,617 @@ type PublicBookingPayload = {
   payment_method?: unknown;
 };
 
-function asString(value: unknown): string | null {
+function jsonResponse(body: Record<string, unknown>, status = 200): Response {
+  return new Response(JSON.stringify(body), {
+    status,
+    headers: { ...corsHeaders, "Content-Type": "application/json" },
+  });
+}
+
+function asText(value: unknown): string | null {
   return typeof value === "string" && value.trim() ? value.trim() : null;
 }
 
-function asNullableString(value: unknown): string | null {
-  return typeof value === "string" && value.trim() ? value.trim() : null;
+function normalizeEmail(value: string | null): string | null {
+  return value ? value.trim().toLowerCase() : null;
+}
+
+function asUuid(value: unknown): string | null {
+  const text = asText(value);
+  return text && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(text)
+    ? text
+    : null;
 }
 
 function asNumber(value: unknown, fallback = 0): number {
-  if (typeof value === "number" && Number.isFinite(value)) return value;
-  if (typeof value === "string" && value.trim()) {
-    const parsed = Number(value);
-    return Number.isFinite(parsed) ? parsed : fallback;
-  }
-  return fallback;
+  const n = typeof value === "number" ? value : Number(value);
+  return Number.isFinite(n) ? n : fallback;
 }
 
-function money(value: unknown): number {
-  return Math.round(asNumber(value, 0) * 100) / 100;
+function roundMoney(value: unknown): number {
+  return Math.round(asNumber(value) * 100) / 100;
 }
 
-function normalizePaymentMethod(value: unknown): "card" | "split" | "pay_at_restaurant" {
-  if (value === "split") return "split";
-  if (value === "pay_at_restaurant") return "pay_at_restaurant";
-  return "card";
-}
-
-function parseCartItems(value: unknown): PublicBookingCartItem[] {
+function normalizeCartItems(value: unknown): Array<{
+  menu_item_id: string | null;
+  name: string;
+  quantity: number;
+  unit_price: number;
+  line_total: number;
+}> {
   if (!Array.isArray(value)) return [];
-  return value.flatMap((raw) => {
-    if (!raw || typeof raw !== "object") return [];
-    const item = raw as Record<string, unknown>;
-    const name = asString(item.name);
-    const quantity = Math.max(1, Math.floor(asNumber(item.quantity, 0)));
-    const unitPrice = money(item.unit_price);
-    if (!name || quantity < 1 || unitPrice < 0) return [];
+  return value.flatMap((item) => {
+    if (!item || typeof item !== "object") return [];
+    const row = item as CartItemInput;
+    const name = asText(row.name);
+    const quantity = Math.max(1, Math.floor(asNumber(row.quantity, 1)));
+    const unitPrice = roundMoney(row.unit_price);
+    if (!name || unitPrice < 0) return [];
     return [{
-      menu_item_id: asNullableString(item.menu_item_id),
+      menu_item_id: asUuid(row.menu_item_id),
       name,
       quantity,
       unit_price: unitPrice,
+      line_total: roundMoney(unitPrice * quantity),
     }];
   });
 }
 
-async function getProfileIdFromAuth(req: Request): Promise<string | null> {
-  const authHeader = req.headers.get("Authorization") ?? "";
-  const token = authHeader.replace(/^Bearer\s+/i, "").trim();
-  if (!token) return null;
-  const payload = decodeJwtPayload(token);
-  const authUserId = typeof payload?.sub === "string" ? payload.sub : null;
-  if (!authUserId) return null;
-  const { data } = await supabaseAdmin
-    .from("user_profiles")
-    .select("id")
-    .eq("auth_user_id", authUserId)
-    .maybeSingle();
-  return data?.id ?? null;
+function formatReservationDate(date: Date): string {
+  return new Intl.DateTimeFormat("en-CA", {
+    dateStyle: "full",
+    timeStyle: "short",
+    timeZone: "America/Toronto",
+  }).format(date);
 }
 
-async function getRestaurant(restaurantId: string) {
-  const { data, error } = await supabaseAdmin
-    .from("restaurants")
-    .select("id,name,timezone,tax_rate,currency")
-    .eq("id", restaurantId)
-    .single();
-  if (error || !data) throw new Error("Restaurant not found.");
-  return data;
+function normalizeNorthAmericanPhone(phone: string | null): string | null {
+  if (!phone) return null;
+  if (phone.trim().startsWith("+")) return phone.trim();
+  const digits = phone.replace(/\D/g, "");
+  if (digits.length === 10) return `+1${digits}`;
+  if (digits.length === 11 && digits.startsWith("1")) return `+${digits}`;
+  return phone.trim();
 }
 
-async function getShiftDuration(shiftId: string): Promise<number> {
-  const { data } = await supabaseAdmin
-    .from("shifts")
-    .select("turn_time_minutes")
-    .eq("id", shiftId)
-    .single();
-  return Number(data?.turn_time_minutes) || DEFAULT_TURN_MINUTES;
-}
-
-async function findAvailableTableId(params: {
-  restaurantId: string;
-  partySize: number;
-  dateTime: string;
-  durationMinutes: number;
-}): Promise<string | null> {
-  const { data: tables, error: tableError } = await supabaseAdmin
-    .from("tables")
-    .select("id,capacity")
-    .eq("restaurant_id", params.restaurantId)
-    .eq("is_active", true)
-    .gte("capacity", params.partySize)
-    .order("capacity", { ascending: true });
-  if (tableError || !tables?.length) return null;
-
-  const start = new Date(params.dateTime);
-  const end = new Date(start.getTime() + params.durationMinutes * 60_000);
-  const dayStart = new Date(start);
-  dayStart.setUTCHours(0, 0, 0, 0);
-  const dayEnd = new Date(start);
-  dayEnd.setUTCHours(23, 59, 59, 999);
-
-  const { data: reservations } = await supabaseAdmin
-    .from("reservations")
-    .select("table_id,reserved_at")
-    .eq("restaurant_id", params.restaurantId)
-    .in("status", ["pending", "confirmed", "seated"])
-    .not("table_id", "is", null)
-    .gte("reserved_at", dayStart.toISOString())
-    .lte("reserved_at", dayEnd.toISOString());
-
-  const blocked = new Set<string>();
-  for (const reservation of reservations ?? []) {
-    if (!reservation.table_id || !reservation.reserved_at) continue;
-    const reservationStart = new Date(reservation.reserved_at);
-    const reservationEnd = new Date(reservationStart.getTime() + params.durationMinutes * 60_000);
-    if (start < reservationEnd && end > reservationStart) {
-      blocked.add(reservation.table_id);
-    }
-  }
-
-  return tables.find((table) => !blocked.has(table.id))?.id ?? null;
-}
-
-async function hasActiveTables(restaurantId: string): Promise<boolean> {
-  const { count, error } = await supabaseAdmin
-    .from("tables")
-    .select("id", { count: "exact", head: true })
-    .eq("restaurant_id", restaurantId)
-    .eq("is_active", true);
-  if (error) return false;
-  return (count ?? 0) > 0;
-}
-
-async function verifySlot(params: {
-  restaurantId: string;
-  shiftId: string;
-  dateOnly: string;
-  dateTime: string;
-  partySize: number;
-}): Promise<boolean> {
-  const availability = await getAvailability(params.restaurantId, params.dateOnly, params.partySize);
-  const requestedMs = new Date(params.dateTime).getTime();
-  return (availability.slots ?? []).some((slot) =>
-    slot.shift_id === params.shiftId &&
-    Math.abs(new Date(slot.date_time).getTime() - requestedMs) < 1000
-  );
-}
-
-async function findOrCreateGuest(params: {
-  restaurantId: string;
-  userProfileId: string | null;
-  name: string;
-  email: string;
-  phone: string | null;
-  allergies: string | null;
-  seatingPreference: string | null;
-}): Promise<string> {
-  let existingQuery = supabaseAdmin
-    .from("guests")
-    .select("id")
-    .eq("restaurant_id", params.restaurantId);
-
-  if (params.userProfileId) {
-    existingQuery = existingQuery.eq("user_profile_id", params.userProfileId);
-  } else {
-    existingQuery = existingQuery.eq("email", params.email);
-  }
-
-  const { data: existing } = await existingQuery.maybeSingle();
-  const guestFields = {
-    full_name: params.name,
-    email: params.email,
-    phone: params.phone,
-    user_profile_id: params.userProfileId,
-    dietary_restrictions: params.allergies
-      ? params.allergies.split(",").map((value) => value.trim()).filter(Boolean)
-      : [],
-    seating_preference: params.seatingPreference,
-  };
-
-  if (existing?.id) {
-    await supabaseAdmin.from("guests").update(guestFields).eq("id", existing.id);
-    return existing.id;
-  }
-
-  const { data, error } = await supabaseAdmin
-    .from("guests")
-    .insert({ restaurant_id: params.restaurantId, ...guestFields })
-    .select("id")
-    .single();
-  if (error || !data?.id) throw new Error(`Guest creation failed: ${error?.message ?? "unknown_error"}`);
-  return data.id;
-}
-
-async function findDuplicateReservation(params: {
-  restaurantId: string;
-  guestId: string;
-  dateTime: string;
-}) {
-  const { data } = await supabaseAdmin
-    .from("reservations")
-    .select("id,confirmation_code,table_id")
-    .eq("restaurant_id", params.restaurantId)
-    .eq("guest_id", params.guestId)
-    .eq("reserved_at", params.dateTime)
-    .in("status", ["pending", "confirmed", "seated"])
-    .maybeSingle();
-  return data ?? null;
-}
-
-Deno.serve(async (req) => {
-  if (req.method === "OPTIONS") {
-    return new Response("ok", { headers: corsHeaders });
-  }
-  if (req.method !== "POST") {
-    return jsonRes({ error: "Method not allowed" }, 405);
-  }
+Deno.serve(async (req: Request) => {
+  if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
+  if (req.method !== "POST") return jsonResponse({ error: "POST required" }, 405);
 
   try {
-    const body = await req.json() as PublicBookingPayload;
-    const restaurantId = asString(body.restaurant_id);
-    const shiftId = asString(body.shift_id);
-    const dateTime = asString(body.date_time);
-    const guestName = asString(body.guest_name);
-    const guestEmail = asString(body.guest_email);
-    const partySize = Math.max(1, Math.floor(asNumber(body.party_size, 0)));
+    const payload = (await req.json().catch(() => ({}))) as BookingPayload;
+    const restaurantId = asUuid(payload.restaurant_id);
+    const shiftId = asUuid(payload.shift_id);
+    const dateTime = asText(payload.date_time);
+    const guestName = asText(payload.guest_name);
+    const guestEmail = normalizeEmail(asText(payload.guest_email));
+    const guestPhone = asText(payload.guest_phone);
+    const allergies = asText(payload.allergies);
+    const seatingPreference = asText(payload.seating_preference);
+    const occasion = asText(payload.occasion);
+    const confirmationCode =
+      asText(payload.confirmation_code) ?? `SEAT-${Math.random().toString(36).slice(2, 6).toUpperCase()}`;
+    const partySize = Math.max(1, Math.floor(asNumber(payload.party_size, 1)));
 
     if (!restaurantId || !shiftId || !dateTime || !guestName || !guestEmail) {
-      return jsonRes({ error: "restaurant_id, shift_id, date_time, guest_name, and guest_email are required" }, 400);
-    }
-    if (!Number.isFinite(new Date(dateTime).getTime())) {
-      return jsonRes({ error: "date_time must be a valid ISO timestamp" }, 400);
-    }
-    if (partySize < 1) {
-      return jsonRes({ error: "party_size must be at least 1" }, 400);
+      return jsonResponse({ error: "restaurant_id, shift_id, date_time, guest_name, and guest_email are required." }, 400);
     }
 
-    const restaurant = await getRestaurant(restaurantId);
-    const localParts = localBookingParts(dateTime, restaurant.timezone || DEFAULT_TIMEZONE);
-    if (!localParts) return jsonRes({ error: "date_time is not valid for the restaurant timezone" }, 400);
+    const reservedAt = new Date(dateTime);
+    if (Number.isNaN(reservedAt.getTime())) {
+      return jsonResponse({ error: "date_time must be a valid ISO timestamp." }, 400);
+    }
 
-    const durationMinutes = await getShiftDuration(shiftId);
-    const userProfileId = await getProfileIdFromAuth(req);
-    const guestId = await findOrCreateGuest({
-      restaurantId,
-      userProfileId,
-      name: guestName,
-      email: guestEmail,
-      phone: asNullableString(body.guest_phone),
-      allergies: asNullableString(body.allergies),
-      seatingPreference: asNullableString(body.seating_preference),
+    const supabase = createClient(
+      Deno.env.get("SUPABASE_URL")!,
+      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
+      { auth: { autoRefreshToken: false, persistSession: false } },
+    );
+
+    const resendKey = Deno.env.get("RESEND_API_KEY");
+    const resend = resendKey ? new Resend(resendKey) : null;
+    const twilioSid = Deno.env.get("TWILIO_ACCOUNT_SID");
+    const twilioToken = Deno.env.get("TWILIO_AUTH_TOKEN");
+    const twilioFromPhone = Deno.env.get("TWILIO_PHONE_NUMBER");
+    const twilioClient = twilioSid && twilioToken ? twilio(twilioSid, twilioToken) : null;
+
+    let userProfileId: string | null = null;
+    const authorization = req.headers.get("authorization");
+    const token = authorization?.match(/^Bearer\s+(.+)$/i)?.[1] ?? null;
+    if (token) {
+      const { data: authData } = await supabase.auth.getUser(token);
+      const authUserId = authData.user?.id ?? null;
+      if (authUserId) {
+        const { data: profile } = await supabase
+          .from("user_profiles")
+          .select("id")
+          .eq("auth_user_id", authUserId)
+          .maybeSingle();
+        userProfileId = profile?.id ?? null;
+      }
+    }
+
+    try {
+      await enforceRateLimit(supabase, "book", rateLimitIdentifier(req, userProfileId), {
+        limit: 20,
+        windowSeconds: 60,
+      });
+    } catch (e) {
+      if (e instanceof RateLimitError) {
+        return jsonResponse({ error: e.message, unavailable_reason: "rate_limited" }, 429);
+      }
+      throw e;
+    }
+
+    const { data: turnMinutesData, error: turnError } = await supabase.rpc("restaurant_turn_time_minutes", {
+      p_restaurant_id: restaurantId,
+      p_shift_id: shiftId,
     });
+    if (turnError) return jsonResponse({ error: turnError.message }, 400);
+    const turnMinutes = Number.isFinite(Number(turnMinutesData)) ? Number(turnMinutesData) : 90;
 
-    const duplicate = await findDuplicateReservation({ restaurantId, guestId, dateTime });
-    if (duplicate?.id) {
-      return jsonRes({
-        reservation_id: duplicate.id,
-        order_id: null,
-        confirmation_code: duplicate.confirmation_code ?? "",
-        table_ids: duplicate.table_id ? [duplicate.table_id] : [],
-        duration_minutes: durationMinutes,
-        confirmation_delivery: "skipped",
-        confirmation_delivery_channel: null,
+    const { data: shift, error: shiftError } = await supabase
+      .from("shifts")
+      .select("id, restaurant_id, min_party_size, max_party_size, max_covers")
+      .eq("id", shiftId)
+      .eq("restaurant_id", restaurantId)
+      .eq("is_active", true)
+      .single();
+    if (shiftError || !shift) {
+      return jsonResponse({ error: "Shift not found for this restaurant." }, 400);
+    }
+
+    const { data: restaurant } = await supabase
+      .from("restaurants")
+      .select("id, name, slug, timezone, hours_json")
+      .eq("id", restaurantId)
+      .maybeSingle();
+    const restaurantName = typeof restaurant?.name === "string" && restaurant.name.trim()
+      ? restaurant.name.trim()
+      : "the restaurant";
+    const restaurantSlug = typeof restaurant?.slug === "string" && restaurant.slug.trim()
+      ? restaurant.slug.trim()
+      : null;
+    const localBookingDate = localDateForDateTime(reservedAt, restaurant?.timezone || "UTC");
+    const closure = localBookingDate
+      ? findClosedSpecialDayForDate(restaurant?.hours_json, localBookingDate)
+      : null;
+    if (closure) {
+      return jsonResponse(
+        { error: closureUnavailableMessage(closure), unavailable_reason: "closed" },
+        409,
+      );
+    }
+
+    const { data: floorCapacityData, error: floorCapacityError } = await supabase.rpc("restaurant_floor_capacity", {
+      p_restaurant_id: restaurantId,
+    });
+    if (floorCapacityError) return jsonResponse({ error: floorCapacityError.message }, 400);
+    const floorCapacity = Number.isFinite(Number(floorCapacityData)) ? Number(floorCapacityData) : 0;
+    if (partySize > floorCapacity) {
+      return jsonResponse(
+        {
+          error: floorCapacity > 0
+            ? `This restaurant can take parties up to ${floorCapacity}.`
+            : "This restaurant does not have a saved floor plan yet.",
+          floor_capacity: floorCapacity,
+        },
+        409,
+      );
+    }
+
+    const existingByEmail = guestEmail
+      ? await supabase
+        .from("reservations")
+        .select("id, confirmation_code, duration_minutes")
+        .eq("restaurant_id", restaurantId)
+        .eq("reserved_at", reservedAt.toISOString())
+        .eq("party_size", partySize)
+        .eq("guest_email", guestEmail)
+        .in("status", ["pending", "confirmed", "seated"])
+        .order("created_at", { ascending: true })
+        .limit(1)
+        .maybeSingle()
+      : { data: null };
+    const existingByPhone = !existingByEmail.data && guestPhone
+      ? await supabase
+        .from("reservations")
+        .select("id, confirmation_code, duration_minutes")
+        .eq("restaurant_id", restaurantId)
+        .eq("reserved_at", reservedAt.toISOString())
+        .eq("party_size", partySize)
+        .eq("guest_phone", guestPhone)
+        .in("status", ["pending", "confirmed", "seated"])
+        .order("created_at", { ascending: true })
+        .limit(1)
+        .maybeSingle()
+      : { data: null };
+    const existingContactReservation = existingByEmail.data ?? existingByPhone.data;
+    if (existingContactReservation?.id) {
+      const { data: existingOrder } = await supabase
+        .from("orders")
+        .select("id")
+        .eq("reservation_id", existingContactReservation.id)
+        .order("created_at", { ascending: true })
+        .limit(1)
+        .maybeSingle();
+
+      return jsonResponse({
+        reservation_id: existingContactReservation.id,
+        order_id: existingOrder?.id ?? null,
+        confirmation_code:
+          typeof existingContactReservation.confirmation_code === "string" && existingContactReservation.confirmation_code.trim()
+            ? existingContactReservation.confirmation_code
+            : confirmationCode,
+        table_ids: [],
+        duration_minutes: Number(existingContactReservation.duration_minutes ?? turnMinutes),
         reused: true,
       });
     }
 
-    const slotStillAvailable = await verifySlot({
-      restaurantId,
-      shiftId,
-      dateOnly: localParts.dateOnly,
-      dateTime,
-      partySize,
+    const { data: canonicalGuestId, error: canonicalGuestError } = await supabase.rpc("canonical_guest_id", {
+      p_restaurant_id: restaurantId,
+      p_user_profile_id: userProfileId,
+      p_email: guestEmail,
+      p_phone: guestPhone,
     });
-    if (!slotStillAvailable) {
-      return jsonRes({ error: "That time is no longer available. Please choose another slot." }, 409);
-    }
+    if (canonicalGuestError) return jsonResponse({ error: `Guest lookup: ${canonicalGuestError.message}` }, 400);
 
-    const tableId = await findAvailableTableId({
-      restaurantId,
-      partySize,
-      dateTime,
-      durationMinutes,
-    });
-    const restaurantHasTables = tableId ? true : await hasActiveTables(restaurantId);
-    if (!tableId && restaurantHasTables) {
-      return jsonRes({ error: "That time is no longer available. Please choose another slot." }, 409);
-    }
+    let guestId: string | null = typeof canonicalGuestId === "string" ? canonicalGuestId : null;
 
-    const confirmationCode = makeConfirmationCode();
-    const { data: reservation, error: reservationError } = await supabaseAdmin
-      .from("reservations")
-      .insert({
-        restaurant_id: restaurantId,
-        guest_id: guestId,
-        table_id: tableId ?? null,
-        shift_id: shiftId,
-        party_size: partySize,
-        reserved_at: dateTime,
-        status: "confirmed",
-        source: "app",
-        special_request: asNullableString(body.allergies),
-        occasion: asNullableString(body.occasion),
-        confirmation_code: confirmationCode,
-        confirmed_at: new Date().toISOString(),
-      })
-      .select("id")
-      .single();
-    if (reservationError || !reservation?.id) {
-      throw new Error(`Reservation failed: ${reservationError?.message ?? "unknown_error"}`);
-    }
-
-    const cartItems = parseCartItems(body.cart_items);
-    let orderId: string | null = null;
-    if (cartItems.length > 0) {
-      const subtotal = money(body.subtotal);
-      const taxAmount = money(body.tax_amount);
-      const tipAmount = money(body.tip_amount);
-      const totalAmount = money(body.total_amount);
-      const { data: order, error: orderError } = await supabaseAdmin
-        .from("orders")
-        .insert({
-          restaurant_id: restaurantId,
-          reservation_id: reservation.id,
-          guest_id: guestId,
-          is_preorder: true,
-          order_type: "dine_in",
-          status: "pending",
-          subtotal,
-          tax_amount: taxAmount,
-          tip_amount: tipAmount,
-          total_amount: totalAmount,
-          discount_amount: body.discount_amount == null ? null : money(body.discount_amount),
-          discount_reason: asNullableString(body.discount_reason),
-          promotion_id: asNullableString(body.promotion_id),
-          payment_method: normalizePaymentMethod(body.payment_method),
-          confirmation_code: confirmationCode,
-        })
+    const guestFields = {
+      restaurant_id: restaurantId,
+      user_profile_id: userProfileId,
+      full_name: guestName,
+      email: guestEmail,
+      phone: guestPhone,
+      dietary_restrictions: allergies ? allergies.split(",").map((value) => value.trim()).filter(Boolean) : [],
+      seating_preference: seatingPreference,
+    };
+    if (!guestId) {
+      const { data: newGuest, error: guestError } = await supabase
+        .from("guests")
+        .insert(guestFields)
         .select("id")
         .single();
-      if (orderError || !order?.id) {
-        throw new Error(`Order creation failed: ${orderError?.message ?? "unknown_error"}`);
-      }
-      orderId = order.id;
+      if (guestError) return jsonResponse({ error: `Guest: ${guestError.message}` }, 400);
+      guestId = newGuest.id;
+    } else {
+      await supabase.from("guests").update(guestFields).eq("id", guestId);
+    }
 
-      const { error: itemError } = await supabaseAdmin.from("order_items").insert(
-        cartItems.map((item) => ({
-          order_id: orderId,
-          menu_item_id: item.menu_item_id,
-          name: item.name,
-          quantity: item.quantity,
-          unit_price: item.unit_price,
-          line_total: money(item.unit_price * item.quantity),
-          status: "pending",
-        })),
-      );
-      if (itemError) {
-        throw new Error(`Order items failed: ${itemError.message}`);
-      }
+    const { data: existingReservation } = await supabase
+      .from("reservations")
+      .select("id, confirmation_code, duration_minutes")
+      .eq("restaurant_id", restaurantId)
+      .eq("guest_id", guestId)
+      .eq("reserved_at", reservedAt.toISOString())
+      .eq("party_size", partySize)
+      .in("status", ["pending", "confirmed", "seated"])
+      .order("created_at", { ascending: true })
+      .limit(1)
+      .maybeSingle();
 
-      const promotionId = asNullableString(body.promotion_id);
-      if (promotionId) {
-        const { data: promo } = await supabaseAdmin
-          .from("promotions")
-          .select("current_uses")
-          .eq("id", promotionId)
-          .single();
-        if (promo) {
-          await supabaseAdmin
-            .from("promotions")
-            .update({ current_uses: (Number(promo.current_uses) || 0) + 1 })
-            .eq("id", promotionId);
+    if (existingReservation?.id) {
+      const { data: existingOrder } = await supabase
+        .from("orders")
+        .select("id")
+        .eq("reservation_id", existingReservation.id)
+        .order("created_at", { ascending: true })
+        .limit(1)
+        .maybeSingle();
+
+      return jsonResponse({
+        reservation_id: existingReservation.id,
+        order_id: existingOrder?.id ?? null,
+        confirmation_code:
+          typeof existingReservation.confirmation_code === "string" && existingReservation.confirmation_code.trim()
+            ? existingReservation.confirmation_code
+            : confirmationCode,
+        table_ids: [],
+        duration_minutes: Number(existingReservation.duration_minutes ?? turnMinutes),
+        reused: true,
+      });
+    }
+
+    // Diner double-book guard. Blocks a diner from holding two overlapping
+    // reservations whether they're at the same restaurant or different ones.
+    //
+    // Signed-in: only matches by user_profile_id. We trust the authenticated
+    // identity over the phone/email — if a user has multiple profiles sharing
+    // a phone (e.g. test accounts, family members on the same household
+    // number), each profile gets its own booking calendar. The DB's
+    // `reservations_user_no_overlap` exclusion constraint enforces the same
+    // rule at the row level.
+    //
+    // Guest checkout: matches by phone OR email since there's no user_profile
+    // to scope to. Mirrors the `reservations_guest_email_no_overlap` and
+    // `reservations_guest_phone_no_overlap` exclusion constraints.
+    //
+    // The exact-match idempotency check above already returns the existing
+    // reservation when this is a re-submit of the same slot/party, so
+    // reaching this guard means the new request is a genuinely different
+    // booking that overlaps an existing one.
+    {
+      const idClauses: string[] = [];
+      if (userProfileId) {
+        idClauses.push(`user_profile_id.eq.${userProfileId}`);
+      } else {
+        if (guestEmail) idClauses.push(`guest_email.eq.${guestEmail}`);
+        if (guestPhone) idClauses.push(`guest_phone.eq.${guestPhone}`);
+      }
+      if (idClauses.length > 0) {
+        const slotStart = reservedAt;
+        const slotEnd = new Date(slotStart.getTime() + turnMinutes * 60_000);
+        // Pad ±24h to capture timezone edges; we'll do exact overlap math below.
+        const windowStart = new Date(slotStart.getTime() - 24 * 60 * 60_000).toISOString();
+        const windowEnd = new Date(slotStart.getTime() + 24 * 60 * 60_000).toISOString();
+        const { data: otherBookings } = await supabase
+          .from("reservations")
+          .select("id, restaurant_id, reserved_at, duration_minutes")
+          .in("status", ["pending", "confirmed", "seated"])
+          .gte("reserved_at", windowStart)
+          .lte("reserved_at", windowEnd)
+          .or(idClauses.join(","));
+        const overlap = (otherBookings ?? []).find((row) => {
+          const otherStart = new Date(row.reserved_at);
+          const minutes = typeof row.duration_minutes === "number" && row.duration_minutes > 0
+            ? row.duration_minutes
+            : 90;
+          const otherEnd = new Date(otherStart.getTime() + minutes * 60_000);
+          return slotStart < otherEnd && otherStart < slotEnd;
+        });
+        if (overlap) {
+          const sameRestaurant = overlap.restaurant_id === restaurantId;
+          return jsonResponse(
+            {
+              error: sameRestaurant
+                ? "You already have a reservation at this restaurant during that window. Please cancel or modify the existing one first."
+                : "You already have a reservation at this time at another restaurant. Please cancel or modify that booking first.",
+              unavailable_reason: "diner_double_book",
+            },
+            409,
+          );
         }
       }
     }
 
-    return jsonRes({
-      reservation_id: reservation.id,
-      order_id: orderId,
-      confirmation_code: confirmationCode,
-      table_ids: tableId ? [tableId] : [],
-      duration_minutes: durationMinutes,
-      confirmation_delivery: "skipped",
-      confirmation_delivery_channel: null,
-      reused: false,
+    // Atomic booking: cover-cap re-check, table selection, reservation insert,
+    // and reservation_tables insert all happen under a single advisory lock
+    // keyed on (restaurant_id, reserved_at). Two concurrent callers for the
+    // same slot serialize cleanly here. The exclusion constraint on
+    // reservation_tables is the unbreakable backstop if the lock is somehow
+    // bypassed (e.g. direct DB write).
+    const { data: bookingRows, error: bookingError } = await supabase.rpc("book_reservation", {
+      p_restaurant_id: restaurantId,
+      p_shift_id: shiftId,
+      p_reserved_at: reservedAt.toISOString(),
+      p_party_size: partySize,
+      p_turn_minutes: turnMinutes,
+      p_guest_id: guestId,
+      p_user_profile_id: userProfileId,
+      p_confirmation_code: confirmationCode,
+      p_source: "web",
+      p_special_request: allergies,
+      p_dietary_notes: allergies,
+      p_occasion: occasion,
+      p_is_guest_checkout: !userProfileId,
+      p_guest_full_name: guestName,
+      p_guest_email: guestEmail,
+      p_guest_phone: guestPhone,
     });
-  } catch (error) {
-    let message = "booking_failed";
-    if (error instanceof Error && error.message) {
-      message = error.message;
-    } else if (typeof error === "string" && error.trim()) {
-      message = error;
-    } else if (error && typeof error === "object") {
-      const candidate =
-        (error as { message?: unknown }).message ??
-        (error as { error?: unknown }).error ??
-        (error as { detail?: unknown }).detail;
-      if (typeof candidate === "string" && candidate.trim()) {
-        message = candidate;
+
+    if (bookingError) {
+      const code = (bookingError as { code?: string }).code;
+      if (code === "P0001") {
+        return jsonResponse(
+          { error: "This time was just taken. Please pick another slot.", unavailable_reason: "slot_taken" },
+          409,
+        );
+      }
+      if (code === "P0002") {
+        return jsonResponse({ error: "This time no longer has enough cover capacity.", unavailable_reason: "over_cover_cap" }, 409);
+      }
+      if (code === "P0003") {
+        return jsonResponse({ error: "Shift not found for this restaurant." }, 400);
+      }
+      // P0006 raised by book_reservation when the same diner already has an
+      // overlapping active reservation. 23P01 is the partial-exclusion
+      // constraint backstop covering the same condition; map both to the
+      // same diner_double_book response.
+      if (code === "P0006" || code === "23P01") {
+        return jsonResponse(
+          {
+            error: "You already have a reservation at this time. Cancel or modify the existing one before booking again.",
+            unavailable_reason: "diner_double_book",
+          },
+          409,
+        );
+      }
+      if (code === "P0007") {
+        return jsonResponse(
+          {
+            error: "Please provide a name and email or phone to complete your booking.",
+            unavailable_reason: "missing_identifier",
+          },
+          400,
+        );
+      }
+      if (code === "P0008") {
+        return jsonResponse(
+          {
+            error: "This time is past the shift's close. Pick an earlier slot.",
+            unavailable_reason: "past_shift_close",
+          },
+          409,
+        );
+      }
+      return jsonResponse({ error: `Reservation: ${bookingError.message}` }, 400);
+    }
+
+    const bookingRow = Array.isArray(bookingRows) ? bookingRows[0] : bookingRows;
+    if (!bookingRow?.reservation_id) {
+      return jsonResponse({ error: "Booking failed: no reservation returned." }, 500);
+    }
+    const reservationId = bookingRow.reservation_id as string;
+    const savedConfirmationCode =
+      typeof bookingRow.confirmation_code === "string" && bookingRow.confirmation_code.trim()
+        ? bookingRow.confirmation_code
+        : confirmationCode;
+    const assignedTableIds = Array.isArray(bookingRow.table_ids)
+      ? (bookingRow.table_ids as unknown[]).filter((id): id is string => typeof id === "string")
+      : [];
+
+    // Deposit policy: if the party crosses any tier, mark the reservation as
+    // 'pending' until the customer settles the deposit. The trigger on
+    // reservation_deposit_payments flips it to 'confirmed' once every payment
+    // row is 'charged'. STRIPE STUB — replace with real charge once Stripe is wired.
+    let depositAmountCents = 0;
+    {
+      const { data: depositCents, error: depositError } = await supabase.rpc(
+        "compute_deposit_for_party",
+        { p_restaurant_id: restaurantId, p_party_size: partySize },
+      );
+      if (depositError) {
+        console.error("compute_deposit_for_party failed", depositError);
+      } else if (typeof depositCents === "number" && depositCents > 0) {
+        depositAmountCents = depositCents;
+        await supabase
+          .from("reservations")
+          .update({ deposit_amount_cents: depositCents, deposit_status: "pending" })
+          .eq("id", reservationId);
       }
     }
-    console.error("create-public-booking error:", message, error);
-    return jsonRes({ error: message }, 500);
+
+    let orderId: string | null = null;
+    const cartItems = normalizeCartItems(payload.cart_items);
+    if (cartItems.length > 0) {
+      const { data: order, error: orderError } = await supabase
+        .from("orders")
+        .insert({
+          restaurant_id: restaurantId,
+          reservation_id: reservationId,
+          guest_id: guestId,
+          is_preorder: true,
+          order_type: "dine_in",
+          status: "pending",
+          subtotal: roundMoney(payload.subtotal),
+          tax_amount: roundMoney(payload.tax_amount),
+          tip_amount: roundMoney(payload.tip_amount),
+          total_amount: roundMoney(payload.total_amount),
+          discount_amount: roundMoney(payload.discount_amount) > 0 ? roundMoney(payload.discount_amount) : null,
+          discount_reason: asText(payload.discount_reason),
+          promotion_id: asUuid(payload.promotion_id),
+          payment_method: asText(payload.payment_method) ?? "card",
+          confirmation_code: savedConfirmationCode,
+          source: "web",
+        })
+        .select("id")
+        .single();
+      if (orderError) return jsonResponse({ error: `Order: ${orderError.message}` }, 400);
+      orderId = order.id as string;
+
+      const { error: itemsError } = await supabase
+        .from("order_items")
+        .insert(cartItems.map((item) => ({ ...item, order_id: orderId, status: "pending" })));
+      if (itemsError) {
+        await supabase
+          .from("orders")
+          .update({ status: "cancelled" })
+          .eq("id", orderId);
+        return jsonResponse({ error: `Order items: ${itemsError.message}` }, 400);
+      }
+    }
+
+    const promotionId = asUuid(payload.promotion_id);
+    if (promotionId) {
+      const { data: promo } = await supabase
+        .from("promotions")
+        .select("current_uses")
+        .eq("id", promotionId)
+        .eq("restaurant_id", restaurantId)
+        .maybeSingle();
+      if (promo) {
+        await supabase
+          .from("promotions")
+          .update({ current_uses: Number(promo.current_uses ?? 0) + 1 })
+          .eq("id", promotionId);
+      }
+    }
+
+    const reservationDateLabel = formatReservationDate(reservedAt);
+    const confirmationSubject = `Your reservation at ${restaurantName}`;
+    const manageLink = restaurantSlug && savedConfirmationCode
+      ? `https://cenaiva.com/${restaurantSlug}?confirmation=${encodeURIComponent(savedConfirmationCode)}`
+      : null;
+    const confirmationBody =
+      `Hi ${guestName}, your table at ${restaurantName} is booked for ${partySize} ` +
+      `${partySize === 1 ? "guest" : "guests"} on ${reservationDateLabel}. ` +
+      `Confirmation code: ${savedConfirmationCode}.` +
+      (manageLink ? ` Manage: ${manageLink}` : "");
+    let confirmationChannel: "email" | "sms" | null = null;
+    let confirmationStatus: "sent" | "skipped" | "failed" = "skipped";
+
+    const smsToPhone = normalizeNorthAmericanPhone(guestPhone);
+    if (smsToPhone && twilioClient && twilioFromPhone) {
+      try {
+        await twilioClient.messages.create({
+          body: confirmationBody,
+          from: twilioFromPhone,
+          to: smsToPhone,
+        });
+        confirmationChannel = "sms";
+        confirmationStatus = "sent";
+      } catch (err) {
+        console.error("Reservation confirmation SMS failed", err);
+        confirmationChannel = "sms";
+        confirmationStatus = "failed";
+      }
+    }
+
+    if (confirmationStatus !== "sent" && guestEmail && resend) {
+      try {
+        await resend.emails.send({
+          from: Deno.env.get("RESEND_FROM_EMAIL") ?? "Cenaiva <noreply@cenaiva.com>",
+          to: guestEmail,
+          subject: confirmationSubject,
+          text: confirmationBody,
+        });
+        confirmationChannel = "email";
+        confirmationStatus = "sent";
+      } catch (err) {
+        console.error("Reservation confirmation email failed", err);
+        confirmationChannel = "email";
+        confirmationStatus = "failed";
+      }
+    }
+
+    if (confirmationChannel) {
+      await supabase.from("communication_log").insert({
+        guest_id: guestId,
+        restaurant_id: restaurantId,
+        channel: confirmationChannel,
+        type: "reservation_confirmation",
+        subject: confirmationSubject,
+        body: confirmationBody,
+        status: confirmationStatus,
+        sent_at: confirmationStatus === "sent" ? new Date().toISOString() : null,
+        campaign_id: reservationId,
+      });
+    }
+
+    return jsonResponse({
+      reservation_id: reservationId,
+      order_id: orderId,
+      confirmation_code: savedConfirmationCode,
+      table_ids: assignedTableIds,
+      duration_minutes: turnMinutes,
+      confirmation_delivery: confirmationStatus,
+      confirmation_delivery_channel: confirmationChannel,
+      deposit_amount_cents: depositAmountCents,
+      deposit_required: depositAmountCents > 0,
+    });
+  } catch (err) {
+    return jsonResponse({ error: err instanceof Error ? err.message : String(err) }, 500);
   }
 });
