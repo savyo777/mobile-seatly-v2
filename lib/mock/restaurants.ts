@@ -61,6 +61,12 @@ export interface Restaurant {
   taxRate: number;
   currency: string;
   depositTiers?: DepositTier[];
+  cancellationHours?: number | null;
+  noShowFee?: number | null;
+  acceptsWalkins?: boolean | null;
+  hasBar?: boolean | null;
+  bookingAdvanceDays?: number | null;
+  depositPolicyJson?: Record<string, unknown> | null;
 }
 
 const defaultHours: RestaurantHoursJson = {

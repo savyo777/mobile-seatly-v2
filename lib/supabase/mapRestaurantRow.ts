@@ -35,6 +35,21 @@ function numOrNull(v: string | number | null | undefined): number | null {
   return Number.isFinite(n) ? n : null;
 }
 
+function intOrNull(v: string | number | null | undefined): number | null {
+  const n = numOrNull(v);
+  return n == null ? null : Math.trunc(n);
+}
+
+function boolOrNull(v: unknown): boolean | null {
+  if (typeof v === 'boolean') return v;
+  return null;
+}
+
+function objectOrNull(v: unknown): Record<string, unknown> | null {
+  if (!v || typeof v !== 'object' || Array.isArray(v)) return null;
+  return v as Record<string, unknown>;
+}
+
 const WEEKDAY_SET = new Set<string>(RESTAURANT_WEEKDAY_KEYS);
 
 function readSpecialHours(raw: unknown): RestaurantSpecialHours[] {
@@ -124,7 +139,9 @@ export function mapRestaurantRowToRestaurant(row: RestaurantRow): Restaurant {
     coverPhotoUrl: row.hero_image_url?.trim() || row.cover_photo_url?.trim() || DEFAULT_RESTAURANT_COVER,
     logoUrl: row.logo_url?.trim() || '',
     avgRating: numOrNull(row.avg_rating ?? (settings?.avg_rating as number | undefined)),
-    totalReviews: typeof settings?.total_reviews === 'number' ? settings!.total_reviews : 0,
+    totalReviews:
+      intOrNull(row.total_reviews) ??
+      (typeof settings?.total_reviews === 'number' ? settings!.total_reviews : 0),
     priceRange,
     distanceKm: typeof settings?.distance_km === 'number' ? settings!.distance_km : 1,
     availability,
@@ -136,5 +153,11 @@ export function mapRestaurantRowToRestaurant(row: RestaurantRow): Restaurant {
     taxRate: num(row.tax_rate, DEFAULT_TAX_RATE_FALLBACK),
     currency: row.currency ?? DEFAULT_CURRENCY,
     depositTiers: readDepositTiers(row.deposit_tiers),
+    cancellationHours: intOrNull(row.cancellation_hours),
+    noShowFee: numOrNull(row.no_show_fee),
+    acceptsWalkins: boolOrNull(row.accepts_walkins),
+    hasBar: boolOrNull(row.has_bar),
+    bookingAdvanceDays: intOrNull(row.booking_advance_days),
+    depositPolicyJson: objectOrNull(row.deposit_policy_json),
   };
 }

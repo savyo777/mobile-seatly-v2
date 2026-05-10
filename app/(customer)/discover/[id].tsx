@@ -16,10 +16,14 @@ const mockMenuItems: typeof DEMO_MENU_ITEMS = isDemoModeEnabled() ? DEMO_MENU_IT
 import { useMenu } from '@/lib/context/MenuContext';
 import { loadRestaurantsForDiscover } from '@/lib/data/restaurantCatalog';
 import {
-  usePublicMenuCategories,
-  usePublicMenuItems,
-  type MenuItem as PublicMenuItem,
-} from '@/lib/cenaiva/api/dataHooks';
+  fetchRestaurantMenu,
+  type MenuCategory as RealMenuCategory,
+  type MenuItem as RealMenuItem,
+} from '@/lib/menu/getRestaurantMenu';
+import {
+  fetchRestaurantPublicReviews,
+  type RestaurantPublicReviewRow,
+} from '@/lib/reviews/getRestaurantReviews';
 import { listSnapPostsByRestaurant as DEMO_listSnapPostsByRestaurant } from '@/lib/mock/snaps';
 
 const listSnapPostsByRestaurant: typeof DEMO_listSnapPostsByRestaurant = (id) =>
@@ -65,7 +69,7 @@ type DisplayMenuItem = {
 };
 
 function displayMenuItemFromPublic(
-  item: PublicMenuItem,
+  item: RealMenuItem,
   categoryNameById: Map<string, string>,
 ): DisplayMenuItem {
   return {
@@ -93,6 +97,53 @@ function displayMenuItemFromMock(item: MockMenuItem): DisplayMenuItem {
     isAvailable: item.isAvailable,
     sortOrder: item.preparationTimeMinutes,
   };
+}
+
+function summarizeDepositPolicy(
+  policy: Record<string, unknown> | null | undefined,
+  tiers: { min_party_size: number; amount_per_person_cents: number }[] | null | undefined,
+  currency: string,
+): string | null {
+  const tierList = Array.isArray(tiers) ? tiers : [];
+  if (tierList.length) {
+    const smallest = tierList.reduce(
+      (acc, t) => (t.min_party_size < acc.min_party_size ? t : acc),
+      tierList[0],
+    );
+    if (smallest && smallest.min_party_size > 0) {
+      const perPerson = (smallest.amount_per_person_cents ?? 0) / 100;
+      return `Deposit applies for parties of ${smallest.min_party_size}+ (${formatCurrency(perPerson, currency)} per person).`;
+    }
+  }
+  if (policy && typeof policy === 'object') {
+    const minParty =
+      typeof policy.min_party_size === 'number' ? policy.min_party_size : null;
+    const amount =
+      typeof policy.amount_per_person_cents === 'number'
+        ? policy.amount_per_person_cents / 100
+        : typeof policy.amount_per_person === 'number'
+          ? policy.amount_per_person
+          : null;
+    if (minParty != null && amount != null) {
+      return `Deposit applies for parties of ${minParty}+ (${formatCurrency(amount, currency)} per person).`;
+    }
+    if (typeof policy.summary === 'string' && policy.summary.trim()) {
+      return policy.summary.trim();
+    }
+  }
+  return null;
+}
+
+function formatReviewDate(value: string | null | undefined): string {
+  if (!value) return '';
+  const d = new Date(value);
+  if (Number.isNaN(d.getTime())) return '';
+  return d.toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' });
+}
+
+function renderStars(rating: number): string {
+  const filled = Math.max(0, Math.min(5, Math.round(rating)));
+  return '★'.repeat(filled) + '☆'.repeat(5 - filled);
 }
 
 function groupDisplayMenuItems(items: DisplayMenuItem[]) {
@@ -486,6 +537,76 @@ const useStyles = createStyles((c) => ({
     color: c.textSecondary,
     textAlign: 'center',
   },
+  policyChipsRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: spacing.xs,
+    marginTop: spacing.xs,
+  },
+  policyChip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    borderWidth: 1,
+    borderColor: c.border,
+    borderRadius: borderRadius.full,
+    paddingHorizontal: spacing.sm,
+    paddingVertical: 6,
+    backgroundColor: c.bgSurface,
+  },
+  policyChipText: {
+    ...typography.bodySmall,
+    color: c.textSecondary,
+    fontWeight: '500',
+  },
+  policyLine: {
+    ...typography.body,
+    color: c.textSecondary,
+    marginTop: spacing.xs,
+  },
+  depositSummary: {
+    ...typography.body,
+    color: c.textSecondary,
+    marginTop: spacing.xs,
+  },
+  reviewCard: {
+    borderWidth: 1,
+    borderColor: c.border,
+    borderRadius: borderRadius.lg,
+    backgroundColor: c.bgSurface,
+    padding: spacing.md,
+    marginBottom: spacing.sm,
+  },
+  reviewHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 4,
+  },
+  reviewName: {
+    ...typography.body,
+    color: c.textPrimary,
+    fontWeight: '600',
+  },
+  reviewStars: {
+    ...typography.bodySmall,
+    color: c.gold,
+    fontWeight: '700',
+  },
+  reviewDate: {
+    ...typography.bodySmall,
+    color: c.textMuted,
+    marginBottom: 4,
+  },
+  reviewText: {
+    ...typography.body,
+    color: c.textSecondary,
+    lineHeight: 22,
+  },
+  reviewsEmpty: {
+    ...typography.body,
+    color: c.textMuted,
+  },
 }));
 
 export default function RestaurantDetailScreen() {
@@ -542,10 +663,70 @@ export default function RestaurantDetailScreen() {
     };
   }, [isAuthenticated, restaurant?.id, user]);
 
-  const { categories: menuCategories } = usePublicMenuCategories(isPreview ? null : restaurant?.id);
-  const { items: publicMenuItems, loading: menuLoading } = usePublicMenuItems(
-    isPreview ? null : restaurant?.id,
-  );
+  const [menuCategories, setMenuCategories] = useState<RealMenuCategory[]>([]);
+  const [publicMenuItems, setPublicMenuItems] = useState<RealMenuItem[]>([]);
+  const [menuLoading, setMenuLoading] = useState(false);
+  const [reviews, setReviews] = useState<RestaurantPublicReviewRow[]>([]);
+
+  useEffect(() => {
+    const targetId = isPreview ? null : restaurant?.id ?? null;
+    if (!targetId) {
+      setMenuCategories([]);
+      setPublicMenuItems([]);
+      setMenuLoading(false);
+      return;
+    }
+    if (isDemoModeEnabled()) {
+      // Keep demo data for menu via existing mock fallback path below.
+      setMenuCategories([]);
+      setPublicMenuItems([]);
+      setMenuLoading(false);
+      return;
+    }
+    let active = true;
+    setMenuLoading(true);
+    void fetchRestaurantMenu(targetId)
+      .then(({ categories, items }) => {
+        if (!active) return;
+        setMenuCategories(categories);
+        setPublicMenuItems(items);
+      })
+      .catch(() => {
+        if (!active) return;
+        setMenuCategories([]);
+        setPublicMenuItems([]);
+      })
+      .finally(() => {
+        if (active) setMenuLoading(false);
+      });
+    return () => {
+      active = false;
+    };
+  }, [isPreview, restaurant?.id]);
+
+  useEffect(() => {
+    const targetId = isPreview ? null : restaurant?.id ?? null;
+    if (!targetId) {
+      setReviews([]);
+      return;
+    }
+    if (isDemoModeEnabled()) {
+      setReviews([]);
+      return;
+    }
+    let active = true;
+    void fetchRestaurantPublicReviews(targetId, 12)
+      .then((rows) => {
+        if (active) setReviews(rows);
+      })
+      .catch(() => {
+        if (active) setReviews([]);
+      });
+    return () => {
+      active = false;
+    };
+  }, [isPreview, restaurant?.id]);
+
   const categoryNameById = useMemo(
     () => new Map(menuCategories.map((category) => [category.id, category.name])),
     [menuCategories],
@@ -620,6 +801,17 @@ export default function RestaurantDetailScreen() {
 
   const currency = restaurant.currency.toLowerCase();
   const photoThumbWidth = Math.max(1, Math.floor((windowW - spacing.lg * 2 - spacing.sm * 2) / 3));
+
+  const depositSummary = summarizeDepositPolicy(
+    restaurant.depositPolicyJson,
+    restaurant.depositTiers,
+    currency,
+  );
+  const hasPolicyInfo =
+    restaurant.cancellationHours != null ||
+    restaurant.noShowFee != null ||
+    restaurant.acceptsWalkins != null ||
+    restaurant.hasBar != null;
 
   return (
     <View style={styles.root}>
@@ -818,6 +1010,67 @@ export default function RestaurantDetailScreen() {
               </>
             ) : (
               <Text style={styles.menuEmpty}>This restaurant has not published a menu yet.</Text>
+            )}
+          </View>
+
+          {(hasPolicyInfo || depositSummary) ? (
+            <View style={styles.section}>
+              <Text style={styles.sectionHeading}>Policies</Text>
+              {restaurant.cancellationHours != null ? (
+                <Text style={styles.policyLine}>
+                  Cancel at least {restaurant.cancellationHours} {restaurant.cancellationHours === 1 ? 'hour' : 'hours'} ahead to avoid a fee.
+                </Text>
+              ) : null}
+              {restaurant.noShowFee != null && restaurant.noShowFee > 0 ? (
+                <Text style={styles.policyLine}>
+                  No-show fee: {formatCurrency(restaurant.noShowFee, currency)}.
+                </Text>
+              ) : null}
+              {depositSummary ? (
+                <Text style={styles.depositSummary}>{depositSummary}</Text>
+              ) : null}
+              {(restaurant.acceptsWalkins != null || restaurant.hasBar != null) ? (
+                <View style={styles.policyChipsRow}>
+                  {restaurant.acceptsWalkins ? (
+                    <View style={styles.policyChip}>
+                      <Ionicons name="walk-outline" size={14} color={c.gold} />
+                      <Text style={styles.policyChipText}>Walk-ins welcome</Text>
+                    </View>
+                  ) : null}
+                  {restaurant.hasBar ? (
+                    <View style={styles.policyChip}>
+                      <Ionicons name="wine-outline" size={14} color={c.gold} />
+                      <Text style={styles.policyChipText}>Bar seating</Text>
+                    </View>
+                  ) : null}
+                </View>
+              ) : null}
+            </View>
+          ) : null}
+
+          <View style={styles.section}>
+            <Text style={styles.sectionHeading}>Reviews</Text>
+            {reviews.length ? (
+              reviews.map((review) => (
+                <View key={review.id} style={styles.reviewCard}>
+                  <View style={styles.reviewHeader}>
+                    <Text style={styles.reviewName} numberOfLines={1}>
+                      {review.reviewer_name?.trim() || 'Guest'}
+                    </Text>
+                    <Text style={styles.reviewStars} accessible={false}>
+                      {renderStars(review.rating)}
+                    </Text>
+                  </View>
+                  {review.created_at ? (
+                    <Text style={styles.reviewDate}>{formatReviewDate(review.created_at)}</Text>
+                  ) : null}
+                  {review.review_text ? (
+                    <Text style={styles.reviewText}>{review.review_text}</Text>
+                  ) : null}
+                </View>
+              ))
+            ) : (
+              <Text style={styles.reviewsEmpty}>No reviews yet — be the first to share your visit.</Text>
             )}
           </View>
 

@@ -37,6 +37,7 @@ export interface RestaurantRow {
   lng?: string | number | null;
   price_range?: string | number | null;
   avg_rating?: string | number | null;
+  total_reviews?: string | number | null;
   hero_image_url?: string | null;
   phone: string | null;
   email: string | null;
@@ -47,6 +48,12 @@ export interface RestaurantRow {
   currency: string | null;
   tax_rate: string | number | null;
   deposit_tiers?: unknown | null;
+  deposit_policy_json?: Record<string, unknown> | null;
+  cancellation_hours?: string | number | null;
+  no_show_fee?: string | number | null;
+  accepts_walkins?: boolean | null;
+  has_bar?: boolean | null;
+  booking_advance_days?: string | number | null;
   created_at?: string;
 }
 
