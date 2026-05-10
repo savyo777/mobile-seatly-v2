@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { View, Text, ScrollView, Pressable, StyleSheet } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
@@ -9,9 +9,12 @@ import {
   CRM_SPOTLIGHT as DEMO_CRM_SPOTLIGHT,
   AI_INSIGHTS_HOME as DEMO_AI_INSIGHTS_HOME,
   REVENUE_DATA as DEMO_REVENUE_DATA,
+  type CrmGuest,
   type RevenuePeriod,
 } from '@/lib/mock/ownerApp';
 import { isDemoModeEnabled } from '@/lib/config/demoMode';
+import { getSupabase } from '@/lib/supabase/client';
+import { fetchCurrentUserProfile } from '@/lib/services/userProfile';
 
 const ZERO_METRIC = { revenue: 0, covers: 0, avgSpend: 0, noShowPct: 0, turnover: 0 };
 const ZERO_REVENUE = { total: 0, trendPct: 0, series: [] };
@@ -36,15 +39,6 @@ const EMPTY_ANALYTICS_INSIGHTS: typeof DEMO_ANALYTICS_INSIGHTS = {
   deadHours: '',
   bestDays: '',
 };
-const ANALYTICS_METRICS: typeof DEMO_ANALYTICS_METRICS = isDemoModeEnabled()
-  ? DEMO_ANALYTICS_METRICS
-  : EMPTY_ANALYTICS_METRICS;
-const ANALYTICS_INSIGHTS: typeof DEMO_ANALYTICS_INSIGHTS = isDemoModeEnabled()
-  ? DEMO_ANALYTICS_INSIGHTS
-  : EMPTY_ANALYTICS_INSIGHTS;
-const REVENUE_DATA: typeof DEMO_REVENUE_DATA = isDemoModeEnabled() ? DEMO_REVENUE_DATA : EMPTY_REVENUE_DATA;
-const CRM_SPOTLIGHT: typeof DEMO_CRM_SPOTLIGHT = isDemoModeEnabled() ? DEMO_CRM_SPOTLIGHT : [];
-const AI_INSIGHTS_HOME: typeof DEMO_AI_INSIGHTS_HOME = isDemoModeEnabled() ? DEMO_AI_INSIGHTS_HOME : [];
 import { formatCurrency } from '@/lib/utils/formatCurrency';
 
 const PERIODS: { key: RevenuePeriod; label: string }[] = [
@@ -238,11 +232,168 @@ export default function OwnerInsightsScreen() {
   const styles = useStyles();
   const insets = useSafeAreaInsets();
   const [period, setPeriod] = useState<RevenuePeriod>('day');
+  const [analyticsMetrics, setAnalyticsMetrics] = useState<typeof DEMO_ANALYTICS_METRICS>(
+    isDemoModeEnabled() ? DEMO_ANALYTICS_METRICS : EMPTY_ANALYTICS_METRICS,
+  );
+  const [analyticsInsights, setAnalyticsInsights] = useState<typeof DEMO_ANALYTICS_INSIGHTS>(
+    isDemoModeEnabled() ? DEMO_ANALYTICS_INSIGHTS : EMPTY_ANALYTICS_INSIGHTS,
+  );
+  const [revenueData, setRevenueData] = useState<typeof DEMO_REVENUE_DATA>(
+    isDemoModeEnabled() ? DEMO_REVENUE_DATA : EMPTY_REVENUE_DATA,
+  );
+  const [crmSpotlight, setCrmSpotlight] = useState<CrmGuest[]>(
+    isDemoModeEnabled() ? DEMO_CRM_SPOTLIGHT : [],
+  );
+  const [aiInsightsHome, setAiInsightsHome] = useState<typeof DEMO_AI_INSIGHTS_HOME>(
+    isDemoModeEnabled() ? DEMO_AI_INSIGHTS_HOME : [],
+  );
 
-  const metrics = ANALYTICS_METRICS[period];
-  const revData = REVENUE_DATA[period];
+  useEffect(() => {
+    if (isDemoModeEnabled()) return;
+    let active = true;
+    void (async () => {
+      try {
+        const supabase = getSupabase();
+        if (!supabase) return;
+        const profile = await fetchCurrentUserProfile();
+        const restaurantId = profile?.restaurantId;
+        if (!restaurantId) return;
+
+        const today = new Date();
+        const from = new Date(today);
+        from.setDate(today.getDate() - 365);
+
+        const { data: analyticsRows } = await supabase
+          .from('restaurant_analytics')
+          .select('date,total_revenue,total_covers,avg_spend_per_cover,no_show_count')
+          .eq('restaurant_id', restaurantId)
+          .gte('date', from.toISOString().slice(0, 10))
+          .order('date', { ascending: true });
+        if (!active) return;
+
+        const rows = ((analyticsRows ?? []) as Array<Record<string, unknown>>).map((r) => ({
+          date: String(r.date),
+          revenue: Number(r.total_revenue) || 0,
+          covers: Number(r.total_covers) || 0,
+          avgSpend: Number(r.avg_spend_per_cover) || 0,
+          noShows: Number(r.no_show_count) || 0,
+        }));
+
+        const reduce = (slice: typeof rows) => {
+          const revenue = slice.reduce((s, r) => s + r.revenue, 0);
+          const covers = slice.reduce((s, r) => s + r.covers, 0);
+          const avgSpend = covers > 0 ? revenue / covers : 0;
+          const noShows = slice.reduce((s, r) => s + r.noShows, 0);
+          const noShowPct =
+            covers > 0 ? Math.round((noShows / Math.max(1, covers + noShows)) * 1000) / 10 : 0;
+          return { revenue, covers, avgSpend, noShowPct, turnover: 0 };
+        };
+
+        const last1 = rows.slice(-1);
+        const last7 = rows.slice(-7);
+        const last30 = rows.slice(-30);
+        const last365 = rows;
+
+        setAnalyticsMetrics({
+          day: reduce(last1),
+          week: reduce(last7),
+          '2w': reduce(rows.slice(-14)),
+          month: reduce(last30),
+          '6m': reduce(rows.slice(-180)),
+          year: reduce(last365),
+        });
+
+        const totalFor = (s: typeof rows) => s.reduce((acc, r) => acc + r.revenue, 0);
+        const trendFor = (a: typeof rows, b: typeof rows) => {
+          const ta = totalFor(a);
+          const tb = totalFor(b);
+          if (tb <= 0) return 0;
+          return Math.round(((ta - tb) / tb) * 1000) / 10;
+        };
+        const seriesFor = (s: typeof rows) => s.map((r) => r.revenue);
+
+        setRevenueData({
+          day: { total: totalFor(last1), trendPct: trendFor(last1, rows.slice(-2, -1)), series: seriesFor(last1) },
+          week: { total: totalFor(last7), trendPct: trendFor(last7, rows.slice(-14, -7)), series: seriesFor(last7) },
+          '2w': {
+            total: totalFor(rows.slice(-14)),
+            trendPct: trendFor(rows.slice(-14), rows.slice(-28, -14)),
+            series: seriesFor(rows.slice(-14)),
+          },
+          month: { total: totalFor(last30), trendPct: trendFor(last30, rows.slice(-60, -30)), series: seriesFor(last30) },
+          '6m': {
+            total: totalFor(rows.slice(-180)),
+            trendPct: trendFor(rows.slice(-180), rows.slice(-360, -180)),
+            series: seriesFor(rows.slice(-180)),
+          },
+          year: { total: totalFor(last365), trendPct: 0, series: seriesFor(last365) },
+        });
+
+        // Top guests
+        const { data: guestRows } = await supabase
+          .from('guests')
+          .select('id,full_name,total_visits,average_spend_per_visit,is_vip,no_show_risk_score,lifetime_value_score')
+          .eq('restaurant_id', restaurantId)
+          .order('total_visits', { ascending: false })
+          .limit(4);
+        if (!active) return;
+        const spotlight: CrmGuest[] = ((guestRows ?? []) as Array<Record<string, unknown>>).map((row) => ({
+          id: String(row.id ?? ''),
+          name: String(row.full_name ?? 'Guest'),
+          isVIP: Boolean(row.is_vip),
+          totalVisits: Number(row.total_visits ?? 0) || 0,
+          avgSpend: Number(row.average_spend_per_visit ?? 0) || 0,
+          lastVisitDate: '',
+          churnRisk: Number(row.no_show_risk_score ?? 0) || 0,
+          visitFrequency: 0,
+          frequency: `${Number(row.total_visits ?? 0)} visits`,
+          preference: '',
+          preferencesShort: '',
+          aiLine: '',
+          nextBestAction: '',
+          predictedSpendTonight: 0,
+          ltvScore: Number(row.lifetime_value_score ?? 0) || 0,
+          predictedLifetimeValue: 0,
+          hasUpcomingReservation: false,
+          isSeated: false,
+          visitHistory: [],
+          favoriteDishes: [],
+          preferredTable: '',
+          notes: '',
+          noShowNote: '',
+          aiSuggestions: [],
+        }));
+        setCrmSpotlight(spotlight);
+
+        // AI insights
+        const { data: aiRows } = await supabase
+          .from('ai_suggestions')
+          .select('title,summary,rationale')
+          .eq('restaurant_id', restaurantId)
+          .is('applied_at', null)
+          .is('dismissed_at', null)
+          .order('generated_at', { ascending: false })
+          .limit(5);
+        if (!active) return;
+        const aiList = ((aiRows ?? []) as Array<Record<string, unknown>>).map((r) =>
+          String(r.title ?? r.summary ?? r.rationale ?? ''),
+        );
+        if (aiList.length) setAiInsightsHome(aiList);
+      } catch {
+        // swallow
+      }
+    })();
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  const metrics = analyticsMetrics[period];
+  const revData = revenueData[period];
   const max = Math.max(...revData.series, 1);
   const trendUp = revData.trendPct >= 0;
+  // setAnalyticsInsights kept for future wiring (peak/dead/best derivations).
+  void setAnalyticsInsights;
 
   return (
     <View style={styles.root}>
@@ -326,9 +477,9 @@ export default function OwnerInsightsScreen() {
           <Text style={styles.sectionLabel}>Highlights</Text>
           <View style={styles.highlightCard}>
             {[
-              { icon: 'time-outline' as const, text: ANALYTICS_INSIGHTS.peakHours },
-              { icon: 'moon-outline' as const, text: ANALYTICS_INSIGHTS.deadHours },
-              { icon: 'trending-up-outline' as const, text: ANALYTICS_INSIGHTS.bestDays },
+              { icon: 'time-outline' as const, text: analyticsInsights.peakHours },
+              { icon: 'moon-outline' as const, text: analyticsInsights.deadHours },
+              { icon: 'trending-up-outline' as const, text: analyticsInsights.bestDays },
             ].map((item, i) => (
               <View key={i} style={[styles.highlightRow, i > 0 && styles.highlightDivider]}>
                 <Ionicons name={item.icon} size={16} color={c.gold} />
@@ -342,7 +493,7 @@ export default function OwnerInsightsScreen() {
         <View style={styles.sectionPad}>
           <Text style={styles.sectionLabel}>Top guests</Text>
           <View style={styles.crmCard}>
-            {CRM_SPOTLIGHT.slice(0, 4).map((guest, i) => (
+            {crmSpotlight.slice(0, 4).map((guest, i) => (
               <View key={guest.id} style={[styles.crmRow, i > 0 && styles.crmDivider]}>
                 <View style={styles.crmAvatar}>
                   <Text style={styles.crmInitials}>{initials(guest.name)}</Text>
@@ -361,7 +512,7 @@ export default function OwnerInsightsScreen() {
         <View style={styles.sectionPad}>
           <View style={styles.aiCard}>
             <Text style={styles.aiLabel}>AI Insight</Text>
-            <Text style={styles.aiText}>{AI_INSIGHTS_HOME[1]}</Text>
+            <Text style={styles.aiText}>{aiInsightsHome[1] ?? aiInsightsHome[0] ?? ''}</Text>
           </View>
         </View>
       </ScrollView>

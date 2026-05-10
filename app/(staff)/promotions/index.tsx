@@ -1,14 +1,97 @@
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { View, Text, ScrollView, Pressable, StyleSheet, Image } from 'react-native';
 import { useRouter } from 'expo-router';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import { useColors, createStyles, spacing, borderRadius } from '@/lib/theme';
-import { OWNER_PROMOTIONS as DEMO_OWNER_PROMOTIONS, type OwnerPromotion } from '@/lib/mock/ownerApp';
+import {
+  OWNER_PROMOTIONS as DEMO_OWNER_PROMOTIONS,
+  type OwnerPromotion,
+  type PromoStatus,
+  type PromoType,
+} from '@/lib/mock/ownerApp';
 import { isDemoModeEnabled } from '@/lib/config/demoMode';
+import { fetchActivePromotions, type PromotionRow } from '@/lib/promotions/getPromotions';
+import { fetchCurrentUserProfile } from '@/lib/services/userProfile';
 
-const OWNER_PROMOTIONS: typeof DEMO_OWNER_PROMOTIONS = isDemoModeEnabled() ? DEMO_OWNER_PROMOTIONS : [];
+const INITIAL_OWNER_PROMOTIONS: typeof DEMO_OWNER_PROMOTIONS = isDemoModeEnabled()
+  ? DEMO_OWNER_PROMOTIONS
+  : [];
+
+const PROMO_TYPE_MAP: Record<string, PromoType> = {
+  percentage: 'percent_off',
+  percent: 'percent_off',
+  percent_off: 'percent_off',
+  fixed: 'fixed_discount',
+  fixed_discount: 'fixed_discount',
+  bogo: 'free_item',
+  free_item: 'free_item',
+  happy_hour: 'happy_hour',
+  birthday: 'birthday',
+  first_time_guest: 'first_time_guest',
+};
+
+function mapPromoStatus(row: PromotionRow, nowIso: string): PromoStatus {
+  if (!row.is_active) return 'paused';
+  if (row.ends_at && row.ends_at < nowIso) return 'expired';
+  if (row.starts_at && row.starts_at > nowIso) return 'scheduled';
+  return 'live';
+}
+
+function mapPromotionRowToOwnerPromotion(row: PromotionRow): OwnerPromotion {
+  const nowIso = new Date().toISOString();
+  const status = mapPromoStatus(row, nowIso);
+  const type = PROMO_TYPE_MAP[(row.promo_type ?? '').toLowerCase()] ?? 'percent_off';
+  const startsAt = row.starts_at ? new Date(row.starts_at) : null;
+  const endsAt = row.ends_at ? new Date(row.ends_at) : null;
+  const fmtDate = (d: Date | null) => (d ? d.toISOString().slice(0, 10) : '');
+  const fmtTime = (d: Date | null) =>
+    d
+      ? d.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true })
+      : '';
+  const uses = row.current_uses ?? 0;
+  const max = row.max_uses ?? 0;
+  return {
+    id: row.id,
+    name: row.title,
+    type,
+    startDate: fmtDate(startsAt),
+    endDate: fmtDate(endsAt),
+    startTime: fmtTime(startsAt),
+    endTime: fmtTime(endsAt),
+    daysOfWeek: [0, 1, 2, 3, 4, 5, 6],
+    appliesTo: {
+      dineIn: row.applies_to !== 'takeout',
+      takeout: row.applies_to === 'takeout' || row.applies_to === 'all',
+      bar: false,
+      patio: false,
+      menuItems: (row.eligible_item_ids?.length ?? 0) > 0,
+      guestGroups: row.is_private,
+    },
+    autoApply: false,
+    description: row.description ?? '',
+    status,
+    targetAudience: row.is_private ? 'Private · invite-only' : 'All guests',
+    whereApplies: row.applies_to ?? 'Dine-in',
+    analytics: {
+      redemptions: uses,
+      guestsReached: max > 0 ? max : uses,
+      revenueGenerated: 0,
+    },
+    estimatedLiftPct: 0,
+    clicks: max > 0 ? max : uses,
+    newGuests: 0,
+    returningGuests: uses,
+    bestTimeLabel: 'No data yet',
+    scheduleLabel:
+      startsAt && endsAt
+        ? `${startsAt.toLocaleDateString(undefined, { month: 'short', day: 'numeric' })} – ${endsAt.toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}`
+        : undefined,
+    audienceLabel: row.is_private ? 'Private' : 'All guests',
+    coverImage: row.cover_image_url ?? row.media_url ?? undefined,
+  };
+}
 
 type Tab = 'active' | 'past';
 
@@ -405,9 +488,28 @@ export default function PromosScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const [tab, setTab] = useState<Tab>('active');
+  const [promotions, setPromotions] = useState<typeof DEMO_OWNER_PROMOTIONS>(INITIAL_OWNER_PROMOTIONS);
 
-  const activeList = useMemo(() => OWNER_PROMOTIONS.filter(isActive), []);
-  const pastList = useMemo(() => OWNER_PROMOTIONS.filter(isPast), []);
+  useEffect(() => {
+    if (isDemoModeEnabled()) return;
+    let active = true;
+    void (async () => {
+      const profile = await fetchCurrentUserProfile().catch(() => null);
+      const restaurantId = profile?.restaurantId ?? null;
+      if (!restaurantId) return;
+      const rows = await fetchActivePromotions({ restaurantId, includePrivate: true }).catch(
+        () => [] as PromotionRow[],
+      );
+      if (!active) return;
+      setPromotions(rows.map(mapPromotionRowToOwnerPromotion));
+    })();
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  const activeList = useMemo(() => promotions.filter(isActive), [promotions]);
+  const pastList = useMemo(() => promotions.filter(isPast), [promotions]);
   const list = tab === 'active' ? activeList : pastList;
 
   return (

@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { View, Text, Pressable, StyleSheet } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { Ionicons } from '@expo/vector-icons';
@@ -8,14 +8,74 @@ import { StatCard } from '@/components/owner/StatCard';
 import { SectionCard } from '@/components/owner/SectionCard';
 import {
   ANALYTICS_INSIGHTS,
-  ANALYTICS_METRICS,
+  ANALYTICS_METRICS as DEMO_ANALYTICS_METRICS,
   BUSY_HEATMAP,
-  REVENUE_DATA,
+  REVENUE_DATA as DEMO_REVENUE_DATA,
   type RevenuePeriod,
 } from '@/lib/mock/ownerApp';
 import { isDemoModeEnabled } from '@/lib/config/demoMode';
 import { formatCurrency } from '@/lib/utils/formatCurrency';
 import { useColors, createStyles, spacing, borderRadius } from '@/lib/theme';
+import { getSupabase } from '@/lib/supabase/client';
+import { fetchCurrentUserProfile } from '@/lib/services/userProfile';
+
+const ZERO_METRIC = { revenue: 0, covers: 0, avgSpend: 0, noShowPct: 0, turnover: 0 };
+const ZERO_REVENUE = { total: 0, trendPct: 0, series: [] as number[] };
+const EMPTY_ANALYTICS_METRICS: typeof DEMO_ANALYTICS_METRICS = {
+  day: ZERO_METRIC,
+  week: ZERO_METRIC,
+  '2w': ZERO_METRIC,
+  month: ZERO_METRIC,
+  '6m': ZERO_METRIC,
+  year: ZERO_METRIC,
+};
+const EMPTY_REVENUE_DATA: typeof DEMO_REVENUE_DATA = {
+  day: ZERO_REVENUE,
+  week: ZERO_REVENUE,
+  '2w': ZERO_REVENUE,
+  month: ZERO_REVENUE,
+  '6m': ZERO_REVENUE,
+  year: ZERO_REVENUE,
+};
+
+type AnalyticsRow = {
+  date: string;
+  total_revenue: number;
+  total_covers: number;
+  avg_spend_per_cover: number;
+  no_show_count: number;
+};
+
+function avgTurnover(rows: AnalyticsRow[]): number {
+  if (rows.length === 0) return 0;
+  // Not stored directly; approximate via covers/(orders) when present elsewhere.
+  return 0;
+}
+
+function periodFromRange(range: PerfRange, today = new Date()): { from: string; to: string } {
+  const to = new Date(today);
+  const from = new Date(today);
+  if (range === 'today') {
+    // single day
+  } else if (range === '7d') {
+    from.setDate(today.getDate() - 6);
+  } else if (range === '30d') {
+    from.setDate(today.getDate() - 29);
+  } else {
+    // mtd
+    from.setDate(1);
+  }
+  return { from: from.toISOString().slice(0, 10), to: to.toISOString().slice(0, 10) };
+}
+
+function reducePeriod(rows: AnalyticsRow[]) {
+  const revenue = rows.reduce((s, r) => s + (Number(r.total_revenue) || 0), 0);
+  const covers = rows.reduce((s, r) => s + (Number(r.total_covers) || 0), 0);
+  const avgSpend = covers > 0 ? revenue / covers : 0;
+  const totalNoShows = rows.reduce((s, r) => s + (Number(r.no_show_count) || 0), 0);
+  const noShowPct = covers > 0 ? Math.round((totalNoShows / Math.max(1, covers + totalNoShows)) * 1000) / 10 : 0;
+  return { revenue, covers, avgSpend, noShowPct, turnover: avgTurnover(rows) };
+}
 
 type PerfRange = 'today' | '7d' | '30d' | 'mtd';
 
@@ -25,6 +85,11 @@ const RANGE_MAP: Record<PerfRange, RevenuePeriod> = {
   '30d': 'month',
   mtd: 'month',
 };
+
+const ANALYTICS_METRICS_DEFAULT = isDemoModeEnabled()
+  ? DEMO_ANALYTICS_METRICS
+  : EMPTY_ANALYTICS_METRICS;
+const REVENUE_DATA_DEFAULT = isDemoModeEnabled() ? DEMO_REVENUE_DATA : EMPTY_REVENUE_DATA;
 
 const RANGES: { key: PerfRange; label: string }[] = [
   { key: 'today', label: 'Today' },
@@ -211,10 +276,107 @@ export default function OwnerAnalyticsScreen() {
   const c = useColors();
   const styles = useStyles();
   const [range, setRange] = useState<PerfRange>('7d');
+  const [analyticsMetrics, setAnalyticsMetrics] = useState(ANALYTICS_METRICS_DEFAULT);
+  const [revenueData, setRevenueData] = useState(REVENUE_DATA_DEFAULT);
+
+  useEffect(() => {
+    if (isDemoModeEnabled()) return;
+    let active = true;
+    void (async () => {
+      try {
+        const supabase = getSupabase();
+        if (!supabase) return;
+        const profile = await fetchCurrentUserProfile();
+        const restaurantId = profile?.restaurantId;
+        if (!restaurantId) return;
+
+        const today = new Date();
+        const longFrom = new Date(today);
+        longFrom.setDate(today.getDate() - 365);
+
+        const { data } = await supabase
+          .from('restaurant_analytics')
+          .select('date,total_revenue,total_covers,avg_spend_per_cover,no_show_count')
+          .eq('restaurant_id', restaurantId)
+          .gte('date', longFrom.toISOString().slice(0, 10))
+          .order('date', { ascending: true });
+        if (!active) return;
+        const rows = ((data ?? []) as AnalyticsRow[]).map((r) => ({
+          date: String(r.date),
+          total_revenue: Number(r.total_revenue) || 0,
+          total_covers: Number(r.total_covers) || 0,
+          avg_spend_per_cover: Number(r.avg_spend_per_cover) || 0,
+          no_show_count: Number(r.no_show_count) || 0,
+        }));
+
+        const buildRange = (rangeKey: PerfRange) => {
+          const { from, to } = periodFromRange(rangeKey, today);
+          return rows.filter((r) => r.date >= from && r.date <= to);
+        };
+        const todayRows = buildRange('today');
+        const weekRows = buildRange('7d');
+        const monthRows = buildRange('30d');
+        const yearRows = rows; // up to 365 days
+
+        const nextMetrics = {
+          day: reducePeriod(todayRows),
+          week: reducePeriod(weekRows),
+          '2w': reducePeriod(rows.slice(-14)),
+          month: reducePeriod(monthRows),
+          '6m': reducePeriod(rows.slice(-180)),
+          year: reducePeriod(yearRows),
+        };
+        setAnalyticsMetrics(nextMetrics);
+
+        const seriesFor = (slice: AnalyticsRow[]) => slice.map((r) => Number(r.total_revenue) || 0);
+        const totalFor = (slice: AnalyticsRow[]) =>
+          slice.reduce((s, r) => s + (Number(r.total_revenue) || 0), 0);
+        const trendFor = (curr: AnalyticsRow[], prev: AnalyticsRow[]) => {
+          const a = totalFor(curr);
+          const b = totalFor(prev);
+          if (b <= 0) return 0;
+          return Math.round(((a - b) / b) * 1000) / 10;
+        };
+
+        const last7 = rows.slice(-7);
+        const prev7 = rows.slice(-14, -7);
+        const last30 = rows.slice(-30);
+        const prev30 = rows.slice(-60, -30);
+        const last1 = rows.slice(-1);
+        const prev1 = rows.slice(-2, -1);
+
+        setRevenueData({
+          day: { total: totalFor(last1), trendPct: trendFor(last1, prev1), series: seriesFor(last1) },
+          week: { total: totalFor(last7), trendPct: trendFor(last7, prev7), series: seriesFor(last7) },
+          '2w': {
+            total: totalFor(rows.slice(-14)),
+            trendPct: trendFor(rows.slice(-14), rows.slice(-28, -14)),
+            series: seriesFor(rows.slice(-14)),
+          },
+          month: { total: totalFor(last30), trendPct: trendFor(last30, prev30), series: seriesFor(last30) },
+          '6m': {
+            total: totalFor(rows.slice(-180)),
+            trendPct: trendFor(rows.slice(-180), rows.slice(-360, -180)),
+            series: seriesFor(rows.slice(-180)),
+          },
+          year: {
+            total: totalFor(yearRows),
+            trendPct: 0,
+            series: seriesFor(yearRows),
+          },
+        });
+      } catch {
+        // swallow
+      }
+    })();
+    return () => {
+      active = false;
+    };
+  }, []);
 
   const period = RANGE_MAP[range];
-  const m = ANALYTICS_METRICS[period];
-  const series = REVENUE_DATA[period].series;
+  const m = analyticsMetrics[period];
+  const series = revenueData[period].series;
   const maxBar = Math.max(...series, 1);
 
   const heatColors = useMemo(() => {

@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { View, Text, ScrollView, Pressable, StyleSheet, Alert } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useLocalSearchParams, useRouter } from 'expo-router';
@@ -8,6 +8,8 @@ import { SectionCard } from '@/components/owner/SectionCard';
 import { useColors, createStyles, spacing, borderRadius } from '@/lib/theme';
 import { findGuest as DEMO_findGuest, type OwnerGuest } from '@/lib/mock/guests';
 import { isDemoModeEnabled } from '@/lib/config/demoMode';
+import { getSupabase } from '@/lib/supabase/client';
+import { fetchOwnerGuests, hydrateGuestRelations } from './index';
 
 const findGuest: typeof DEMO_findGuest = (id) =>
   isDemoModeEnabled() ? DEMO_findGuest(id) : undefined;
@@ -435,11 +437,54 @@ function TagChips({
 
 export default function GuestDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
-  const guest = findGuest(id ?? '');
+  const demoGuest = findGuest(id ?? '');
+  const [liveGuest, setLiveGuest] = useState<OwnerGuest | null>(null);
   const c = useColors();
   const styles = useStyles();
   const insets = useSafeAreaInsets();
   const router = useRouter();
+
+  useEffect(() => {
+    if (isDemoModeEnabled()) return;
+    if (!id) return;
+    let active = true;
+    void (async () => {
+      try {
+        const supabase = getSupabase();
+        if (!supabase) return;
+        const { data, error } = await supabase
+          .from('guests')
+          .select('*')
+          .eq('id', id)
+          .maybeSingle();
+        if (error || !data) return;
+        // Use the exported `fetchOwnerGuests`'s helper indirectly: we don't have
+        // a single-row mapper exported, so reuse by mapping inline via the
+        // restaurant fetch. To stay surgical, mirror the mapping by fetching one.
+        const row = data as Record<string, unknown>;
+        // Mirror mapping inline (kept in sync with fetchOwnerGuests' mapDbGuestRow).
+        // Avoid duplicating: fetchOwnerGuests filters by restaurant, so call hydrate after
+        // an inline shape mapping.
+        // To minimise duplication, we re-fetch the restaurant's guests and find the one we need.
+        if (row.restaurant_id) {
+          const all = await fetchOwnerGuests(String(row.restaurant_id));
+          const match = all.find((g) => g.id === id);
+          if (match) {
+            const hydrated = await hydrateGuestRelations(match);
+            if (active) setLiveGuest(hydrated);
+            return;
+          }
+        }
+      } catch {
+        // swallow
+      }
+    })();
+    return () => {
+      active = false;
+    };
+  }, [id]);
+
+  const guest = isDemoModeEnabled() ? demoGuest : liveGuest;
 
   if (!guest) {
     return (

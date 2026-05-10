@@ -1,4 +1,4 @@
-import React, { useCallback, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   View,
   Text,
@@ -22,6 +22,8 @@ import {
   type LiveFeedKind,
 } from '@/lib/mock/ownerApp';
 import { isDemoModeEnabled } from '@/lib/config/demoMode';
+import { getSupabase } from '@/lib/supabase/client';
+import { fetchCurrentOwnerRestaurant } from '@/lib/services/ownerRestaurant';
 
 const KDS_TICKETS: typeof DEMO_KDS_TICKETS = isDemoModeEnabled() ? DEMO_KDS_TICKETS : [];
 const LIVE_FEED: typeof DEMO_LIVE_FEED = isDemoModeEnabled() ? DEMO_LIVE_FEED : [];
@@ -95,12 +97,179 @@ function KdsBackdrop({ onPress }: { onPress: () => void }) {
   );
 }
 
+function minutesSince(iso: string | null | undefined): number {
+  if (!iso) return 0;
+  const t = Date.parse(iso);
+  if (!Number.isFinite(t)) return 0;
+  return Math.max(0, Math.floor((Date.now() - t) / 60000));
+}
+
+function orderStatusToKds(s: string | null | undefined): KdsTicket['status'] {
+  switch ((s ?? '').toLowerCase()) {
+    case 'ready':
+    case 'served':
+      return 'ready';
+    case 'in_progress':
+    case 'preparing':
+    case 'cooking':
+      return 'in_progress';
+    default:
+      return 'fired';
+  }
+}
+
+type OrderRowSubset = {
+  id: string;
+  table_id: string | null;
+  status: string | null;
+  created_at: string | null;
+  notes?: string | null;
+};
+
+async function fetchKdsForRestaurant(restaurantId: string): Promise<KdsTicket[]> {
+  const supabase = getSupabase();
+  if (!supabase) return [];
+  const { data: orderRows, error } = await supabase
+    .from('orders')
+    .select('id,table_id,status,created_at,notes')
+    .eq('restaurant_id', restaurantId)
+    .in('status', ['open', 'in_progress', 'fired', 'preparing', 'ready'])
+    .order('created_at', { ascending: true });
+  if (error || !orderRows) return [];
+  const orders = orderRows as OrderRowSubset[];
+  const orderIds = orders.map((o) => o.id);
+  if (!orderIds.length) return [];
+
+  const { data: itemRows } = await supabase
+    .from('order_items')
+    .select('id,order_id,name,quantity,course,status')
+    .in('order_id', orderIds);
+
+  const itemIds = (itemRows ?? []).map((r) => String((r as Record<string, unknown>).id ?? '')).filter(Boolean);
+  let modifierByItem = new Map<string, string[]>();
+  if (itemIds.length) {
+    const { data: modRows } = await supabase
+      .from('order_item_modifiers')
+      .select('order_item_id,modifier_option_id,quantity')
+      .in('order_item_id', itemIds);
+    (modRows ?? []).forEach((row) => {
+      const r = row as Record<string, unknown>;
+      const itemId = String(r.order_item_id ?? '');
+      if (!itemId) return;
+      const list = modifierByItem.get(itemId) ?? [];
+      list.push(String(r.modifier_option_id ?? ''));
+      modifierByItem.set(itemId, list);
+    });
+  }
+
+  const tableLabelById = new Map<string, string>();
+  const tableIds = Array.from(new Set(orders.map((o) => o.table_id).filter((v): v is string => !!v)));
+  if (tableIds.length) {
+    const { data: tableRows } = await supabase
+      .from('tables')
+      .select('id,label,table_number')
+      .in('id', tableIds);
+    (tableRows ?? []).forEach((row) => {
+      const r = row as Record<string, unknown>;
+      const id = String(r.id ?? '');
+      const label =
+        (typeof r.label === 'string' && r.label) ||
+        (typeof r.table_number === 'string' && r.table_number) ||
+        id.slice(0, 4);
+      if (id) tableLabelById.set(id, String(label));
+    });
+  }
+
+  const itemsByOrder = new Map<string, Array<Record<string, unknown>>>();
+  (itemRows ?? []).forEach((row) => {
+    const r = row as Record<string, unknown>;
+    const orderId = String(r.order_id ?? '');
+    if (!orderId) return;
+    const list = itemsByOrder.get(orderId) ?? [];
+    list.push(r);
+    itemsByOrder.set(orderId, list);
+  });
+
+  return orders.map<KdsTicket>((order) => {
+    const items = itemsByOrder.get(order.id) ?? [];
+    const itemsText = items
+      .map((it) => {
+        const qty = typeof it.quantity === 'number' ? it.quantity : Number(it.quantity ?? 1);
+        const name = typeof it.name === 'string' ? it.name : 'Item';
+        const mods = modifierByItem.get(String(it.id ?? '')) ?? [];
+        const modSuffix = mods.length ? ` (+${mods.length})` : '';
+        return `${qty}× ${name}${modSuffix}`;
+      })
+      .join(' · ') || 'No items';
+    const courses = new Set(items.map((it) => typeof it.course === 'string' ? it.course.toLowerCase() : '').filter(Boolean));
+    let station: KdsTicket['station'] = 'Kitchen';
+    if (courses.has('drinks') || courses.has('bar')) station = 'Bar';
+    else if (courses.has('dessert')) station = 'Dessert';
+    return {
+      id: order.id,
+      station,
+      table: order.table_id ? (tableLabelById.get(order.table_id) ?? order.table_id.slice(0, 4)) : '—',
+      items: itemsText,
+      status: orderStatusToKds(order.status),
+      mins: minutesSince(order.created_at),
+    };
+  });
+}
+
 export default function OwnerOrdersKdsScreen() {
   const { t } = useTranslation();
   const ownerColors = useOwnerColors();
   const styles = useStyles();
   const [tickets, setTickets] = useState<KdsTicket[]>(() => [...KDS_TICKETS]);
   const [detail, setDetail] = useState<KdsTicket | null>(null);
+  const [restaurantId, setRestaurantId] = useState<string | null>(null);
+
+  const refresh = useCallback(async (rid: string) => {
+    const rows = await fetchKdsForRestaurant(rid);
+    setTickets(rows);
+  }, []);
+
+  useEffect(() => {
+    if (isDemoModeEnabled()) return;
+    let active = true;
+    void (async () => {
+      try {
+        const owner = await fetchCurrentOwnerRestaurant();
+        if (!active || !owner?.id) return;
+        setRestaurantId(owner.id);
+        await refresh(owner.id);
+      } catch {
+        // silent
+      }
+    })();
+    return () => {
+      active = false;
+    };
+  }, [refresh]);
+
+  useEffect(() => {
+    if (!restaurantId || isDemoModeEnabled()) return;
+    const supabase = getSupabase();
+    if (!supabase) return;
+    const channel = supabase
+      .channel(`orders-kds:${restaurantId}`)
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'orders',
+          filter: `restaurant_id=eq.${restaurantId}`,
+        },
+        () => {
+          void refresh(restaurantId);
+        },
+      )
+      .subscribe();
+    return () => {
+      void supabase.removeChannel(channel);
+    };
+  }, [restaurantId, refresh]);
 
   const metrics = useMemo(() => {
     const active = tickets.filter((x) => x.status === 'in_progress' || x.status === 'fired');
@@ -113,28 +282,44 @@ export default function OwnerOrdersKdsScreen() {
     return { activeCount, avgMins, delayedCount };
   }, [tickets]);
 
+  const persistOrderStatus = useCallback((id: string, status: string) => {
+    if (isDemoModeEnabled()) return;
+    const supabase = getSupabase();
+    if (!supabase) return;
+    void supabase.from('orders').update({ status }).eq('id', id);
+  }, []);
+
   const markReady = useCallback((id: string) => {
     setTickets((prev) =>
       prev.map((x) => (x.id === id ? { ...x, status: 'ready' as const, mins: 0, delayed: false } : x)),
     );
-  }, []);
+    persistOrderStatus(id, 'ready');
+  }, [persistOrderStatus]);
 
   const markFired = useCallback((id: string) => {
     setTickets((prev) =>
       prev.map((x) => (x.id === id ? { ...x, status: 'fired' as const, delayed: false } : x)),
     );
-  }, []);
+    persistOrderStatus(id, 'fired');
+  }, [persistOrderStatus]);
 
   const completeTicket = useCallback((id: string) => {
     setTickets((prev) => prev.filter((x) => x.id !== id));
     setDetail((d) => (d?.id === id ? null : d));
-  }, []);
+    persistOrderStatus(id, 'completed');
+  }, [persistOrderStatus]);
 
   const openMenu = useCallback(() => {
     Alert.alert(t('owner.ordersKdsTitle'), undefined, [
       {
         text: t('owner.kdsMenuRefresh'),
-        onPress: () => setTickets([...KDS_TICKETS]),
+        onPress: () => {
+          if (isDemoModeEnabled()) {
+            setTickets([...KDS_TICKETS]);
+          } else if (restaurantId) {
+            void refresh(restaurantId);
+          }
+        },
       },
       {
         text: t('owner.settingsAccount'),
@@ -142,7 +327,7 @@ export default function OwnerOrdersKdsScreen() {
       },
       { text: t('owner.menuCancel'), style: 'cancel' },
     ]);
-  }, [t]);
+  }, [t, restaurantId, refresh]);
 
   const headerRight = (
     <Pressable

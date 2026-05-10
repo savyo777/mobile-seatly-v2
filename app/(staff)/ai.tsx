@@ -1,4 +1,4 @@
-import React, { useCallback, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import {
   Alert,
   View,
@@ -21,10 +21,8 @@ import {
   AI_SUGGESTIONS as DEMO_AI_SUGGESTIONS,
 } from '@/lib/mock/ownerApp';
 import { isDemoModeEnabled } from '@/lib/config/demoMode';
-
-const AI_ALERTS: typeof DEMO_AI_ALERTS = isDemoModeEnabled() ? DEMO_AI_ALERTS : [];
-const AI_OPPORTUNITIES: typeof DEMO_AI_OPPORTUNITIES = isDemoModeEnabled() ? DEMO_AI_OPPORTUNITIES : [];
-const AI_SUGGESTIONS: typeof DEMO_AI_SUGGESTIONS = isDemoModeEnabled() ? DEMO_AI_SUGGESTIONS : [];
+import { getSupabase } from '@/lib/supabase/client';
+import { fetchCurrentUserProfile } from '@/lib/services/userProfile';
 import { createStyles } from '@/lib/theme';
 import { ownerColorsFromPalette, ownerRadii, useOwnerColors } from '@/lib/theme/ownerTheme';
 
@@ -35,6 +33,83 @@ export default function OwnerAiScreen() {
   const [micActive, setMicActive] = useState(false);
   const ownerColors = useOwnerColors();
   const styles = useStyles();
+  const [aiAlerts, setAiAlerts] = useState<string[]>(
+    isDemoModeEnabled() ? DEMO_AI_ALERTS : [],
+  );
+  const [aiOpportunities, setAiOpportunities] = useState<string[]>(
+    isDemoModeEnabled() ? DEMO_AI_OPPORTUNITIES : [],
+  );
+  const [aiSuggestions, setAiSuggestions] = useState<string[]>(
+    isDemoModeEnabled() ? DEMO_AI_SUGGESTIONS : [],
+  );
+  const [aiMenuSuggestions, setAiMenuSuggestions] = useState<string[]>([]);
+
+  useEffect(() => {
+    if (isDemoModeEnabled()) return;
+    let active = true;
+    void (async () => {
+      try {
+        const supabase = getSupabase();
+        if (!supabase) return;
+        const profile = await fetchCurrentUserProfile();
+        const restaurantId = profile?.restaurantId;
+        if (!restaurantId) return;
+
+        const { data: aiRows } = await supabase
+          .from('ai_suggestions')
+          .select('suggestion_type,title,summary,rationale')
+          .eq('restaurant_id', restaurantId)
+          .is('applied_at', null)
+          .is('dismissed_at', null)
+          .order('generated_at', { ascending: false })
+          .limit(20);
+        if (!active) return;
+        const rows = (aiRows ?? []) as Array<Record<string, unknown>>;
+        const alerts: string[] = [];
+        const opportunities: string[] = [];
+        const suggestions: string[] = [];
+        for (const row of rows) {
+          const text =
+            String(row.title ?? '') +
+            (row.summary ? ` — ${String(row.summary)}` : row.rationale ? ` — ${String(row.rationale)}` : '');
+          const type = String(row.suggestion_type ?? '').toLowerCase();
+          if (type.includes('alert')) alerts.push(text);
+          else if (type.includes('opportunity') || type.includes('revenue')) opportunities.push(text);
+          else suggestions.push(text);
+        }
+        setAiAlerts(alerts);
+        setAiOpportunities(opportunities);
+        setAiSuggestions(suggestions);
+
+        const { data: menuRows } = await supabase
+          .from('ai_menu_suggestions')
+          .select('title,reasoning')
+          .eq('restaurant_id', restaurantId)
+          .order('created_at', { ascending: false })
+          .limit(10);
+        if (!active) return;
+        const menuList = ((menuRows ?? []) as Array<Record<string, unknown>>).map(
+          (r) => String(r.title ?? '') + (r.reasoning ? ` — ${String(r.reasoning)}` : ''),
+        );
+        setAiMenuSuggestions(menuList);
+
+        // Touch ai_conversations to surface latest summary if available.
+        const { data: convoRows } = await supabase
+          .from('ai_conversations')
+          .select('messages')
+          .eq('restaurant_id', restaurantId)
+          .order('updated_at', { ascending: false })
+          .limit(1);
+        if (!active) return;
+        void convoRows; // currently displayed only via mic/chat; placeholder for future surfacing.
+      } catch {
+        // swallow
+      }
+    })();
+    return () => {
+      active = false;
+    };
+  }, []);
 
   const handleMicPress = useCallback(() => {
     setMicActive((prev) => {
@@ -73,25 +148,36 @@ export default function OwnerAiScreen() {
       >
 
         <Text style={styles.sectionLabel}>{t('owner.aiOpportunities')}</Text>
-        {AI_OPPORTUNITIES.map((line, i) => (
-          <GlassCard key={i} style={styles.card}>
+        {aiOpportunities.map((line, i) => (
+          <GlassCard key={`op-${i}`} style={styles.card}>
             <Text style={styles.cardText}>{line}</Text>
           </GlassCard>
         ))}
 
         <Text style={styles.sectionLabel}>{t('owner.aiAlerts')}</Text>
-        {AI_ALERTS.map((line, i) => (
-          <GlassCard key={i} style={[styles.card, styles.alertCard]}>
+        {aiAlerts.map((line, i) => (
+          <GlassCard key={`al-${i}`} style={[styles.card, styles.alertCard]}>
             <Text style={styles.alertText}>{line}</Text>
           </GlassCard>
         ))}
 
         <Text style={styles.sectionLabel}>{t('owner.aiSuggestions')}</Text>
-        {AI_SUGGESTIONS.map((line, i) => (
-          <GlassCard key={i} style={styles.card}>
+        {aiSuggestions.map((line, i) => (
+          <GlassCard key={`sg-${i}`} style={styles.card}>
             <Text style={styles.cardText}>{line}</Text>
           </GlassCard>
         ))}
+
+        {aiMenuSuggestions.length > 0 ? (
+          <>
+            <Text style={styles.sectionLabel}>Menu suggestions</Text>
+            {aiMenuSuggestions.map((line, i) => (
+              <GlassCard key={`mn-${i}`} style={styles.card}>
+                <Text style={styles.cardText}>{line}</Text>
+              </GlassCard>
+            ))}
+          </>
+        ) : null}
 
         <View style={{ height: 20 }} />
       </ScrollView>

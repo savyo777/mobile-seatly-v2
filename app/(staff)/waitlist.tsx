@@ -1,4 +1,4 @@
-import React, { useCallback, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   View,
   Text,
@@ -23,9 +23,60 @@ import {
   type WaitlistEntryStatus,
 } from '@/lib/mock/ownerApp';
 import { isDemoModeEnabled } from '@/lib/config/demoMode';
+import { fetchCurrentUserProfile } from '@/lib/services/userProfile';
+import { getSupabase } from '@/lib/supabase/client';
 
-const WALKIN_QUEUE: typeof DEMO_WALKIN_QUEUE = isDemoModeEnabled() ? DEMO_WALKIN_QUEUE : [];
-const WAITLIST_ENTRIES: typeof DEMO_WAITLIST_ENTRIES = isDemoModeEnabled() ? DEMO_WAITLIST_ENTRIES : [];
+const INITIAL_WALKIN_QUEUE: typeof DEMO_WALKIN_QUEUE = isDemoModeEnabled() ? DEMO_WALKIN_QUEUE : [];
+const INITIAL_WAITLIST_ENTRIES: typeof DEMO_WAITLIST_ENTRIES = isDemoModeEnabled()
+  ? DEMO_WAITLIST_ENTRIES
+  : [];
+
+type WaitlistRow = {
+  id: string;
+  restaurant_id: string;
+  guest_name: string | null;
+  party_size: number | null;
+  joined_at: string | null;
+  estimated_wait_minutes: number | null;
+  status: string | null;
+  remote_join: boolean | null;
+};
+
+function mapWaitlistStatus(status: string | null): WaitlistEntryStatus {
+  const s = (status ?? '').toLowerCase();
+  if (s === 'notified' || s === 'arriving') return 'arriving';
+  if (s === 'late' || s === 'no_show') return 'late';
+  return 'waiting';
+}
+
+function formatQuotedTime(joinedAt: string | null, waitMinutes: number | null): string {
+  const joined = joinedAt ? new Date(joinedAt) : new Date();
+  const wait = waitMinutes ?? 0;
+  const quoted = new Date(joined.getTime() + wait * 60_000);
+  return quoted.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
+}
+
+function mapWaitlistRowToWalkin(row: WaitlistRow): WalkInQueueItem {
+  const joinedMs = row.joined_at ? new Date(row.joined_at).getTime() : Date.now();
+  const ageMins = Math.max(0, Math.round((Date.now() - joinedMs) / 60_000));
+  return {
+    id: row.id,
+    name: row.guest_name ?? 'Walk-in',
+    party: row.party_size ?? 1,
+    waitMins: row.estimated_wait_minutes ?? ageMins,
+  };
+}
+
+function mapWaitlistRowToEntry(row: WaitlistRow): WaitlistEntry {
+  return {
+    id: row.id,
+    name: row.guest_name ?? 'Guest',
+    party: row.party_size ?? 1,
+    quoted: formatQuotedTime(row.joined_at, row.estimated_wait_minutes),
+    status: mapWaitlistStatus(row.status),
+    risk: (row.status ?? '').toLowerCase() === 'late',
+  };
+}
 import { createStyles, useTheme } from '@/lib/theme';
 import { ownerColorsFromPalette, ownerRadii, ownerSpace, useOwnerColors } from '@/lib/theme/ownerTheme';
 
@@ -70,9 +121,35 @@ export default function OwnerWaitlistScreen() {
   const { t } = useTranslation();
   const ownerColors = useOwnerColors();
   const styles = useStyles();
-  const [walkins, setWalkins] = useState<WalkInQueueItem[]>(() => [...WALKIN_QUEUE]);
-  const [waitlist, setWaitlist] = useState<WaitlistEntry[]>(() => [...WAITLIST_ENTRIES]);
+  const [walkins, setWalkins] = useState<WalkInQueueItem[]>(() => [...INITIAL_WALKIN_QUEUE]);
+  const [waitlist, setWaitlist] = useState<WaitlistEntry[]>(() => [...INITIAL_WAITLIST_ENTRIES]);
   const [detail, setDetail] = useState<DetailTarget | null>(null);
+
+  useEffect(() => {
+    if (isDemoModeEnabled()) return;
+    let active = true;
+    void (async () => {
+      const profile = await fetchCurrentUserProfile().catch(() => null);
+      const restaurantId = profile?.restaurantId ?? null;
+      const supabase = getSupabase();
+      if (!restaurantId || !supabase) return;
+      const { data } = await supabase
+        .from('waitlist')
+        .select(
+          'id,restaurant_id,guest_name,party_size,joined_at,estimated_wait_minutes,status,remote_join',
+        )
+        .eq('restaurant_id', restaurantId)
+        .in('status', ['waiting', 'notified', 'arriving', 'late'])
+        .order('joined_at', { ascending: true });
+      if (!active) return;
+      const rows = (data ?? []) as WaitlistRow[];
+      setWalkins(rows.filter((r) => !r.remote_join).map(mapWaitlistRowToWalkin));
+      setWaitlist(rows.filter((r) => r.remote_join).map(mapWaitlistRowToEntry));
+    })();
+    return () => {
+      active = false;
+    };
+  }, []);
 
   const totalWaiting = walkins.length + waitlist.length;
   const walkInCount = walkins.length;
@@ -93,8 +170,8 @@ export default function OwnerWaitlistScreen() {
         {
           text: t('owner.waitlistMenuRefresh'),
           onPress: () => {
-            setWalkins([...WALKIN_QUEUE]);
-            setWaitlist([...WAITLIST_ENTRIES]);
+            setWalkins([...INITIAL_WALKIN_QUEUE]);
+            setWaitlist([...INITIAL_WAITLIST_ENTRIES]);
           },
         },
         { text: t('owner.menuCancel'), style: 'cancel' },

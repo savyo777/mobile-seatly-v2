@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import Animated, { FadeInDown } from 'react-native-reanimated';
@@ -7,12 +7,41 @@ import { GlassCard } from '@/components/owner/GlassCard';
 import { SubpageHeader } from '@/components/owner/SubpageHeader';
 import { OWNER_EVENTS as DEMO_OWNER_EVENTS } from '@/lib/mock/ownerApp';
 import { isDemoModeEnabled } from '@/lib/config/demoMode';
-
-const OWNER_EVENTS: typeof DEMO_OWNER_EVENTS = isDemoModeEnabled() ? DEMO_OWNER_EVENTS : [];
+import { fetchUpcomingEvents, type EventRow } from '@/lib/events/getEvents';
+import { fetchCurrentUserProfile } from '@/lib/services/userProfile';
 import { createStyles } from '@/lib/theme';
 import { ownerColorsFromPalette, ownerRadii } from '@/lib/theme/ownerTheme';
 
-function statusKey(s: (typeof OWNER_EVENTS)[0]['status']) {
+const INITIAL_OWNER_EVENTS: typeof DEMO_OWNER_EVENTS = isDemoModeEnabled() ? DEMO_OWNER_EVENTS : [];
+
+function formatEventDateLabel(row: EventRow): string {
+  if (!row.date) return '';
+  const d = new Date(row.date + (row.start_time ? `T${row.start_time}` : 'T00:00:00'));
+  if (Number.isNaN(d.getTime())) return row.date;
+  return d.toLocaleString(undefined, {
+    weekday: 'short',
+    month: 'short',
+    day: 'numeric',
+    hour: 'numeric',
+    minute: '2-digit',
+  });
+}
+
+function mapEventRowToOwnerEvent(row: EventRow): (typeof DEMO_OWNER_EVENTS)[number] {
+  const sold = row.tickets_sold ?? 0;
+  const capacity = row.capacity ?? 0;
+  const status: (typeof DEMO_OWNER_EVENTS)[number]['status'] =
+    !row.is_active ? 'draft' : capacity > 0 && sold >= capacity ? 'sold_out' : 'live';
+  return {
+    id: row.id,
+    title: row.name,
+    dateLabel: formatEventDateLabel(row),
+    rsvp: sold,
+    status,
+  };
+}
+
+function statusKey(s: (typeof DEMO_OWNER_EVENTS)[0]['status']) {
   if (s === 'live') return 'owner.eventStatusLive';
   if (s === 'sold_out') return 'owner.eventStatusSoldOut';
   return 'owner.eventStatusDraft';
@@ -21,6 +50,25 @@ function statusKey(s: (typeof OWNER_EVENTS)[0]['status']) {
 export default function OwnerEventsScreen() {
   const { t } = useTranslation();
   const styles = useStyles();
+  const [events, setEvents] = useState<typeof DEMO_OWNER_EVENTS>(INITIAL_OWNER_EVENTS);
+
+  useEffect(() => {
+    if (isDemoModeEnabled()) return;
+    let active = true;
+    void (async () => {
+      const profile = await fetchCurrentUserProfile().catch(() => null);
+      const restaurantId = profile?.restaurantId ?? null;
+      if (!restaurantId) return;
+      const rows = await fetchUpcomingEvents({ restaurantId, includePrivate: true }).catch(
+        () => [] as EventRow[],
+      );
+      if (!active) return;
+      setEvents(rows.map(mapEventRowToOwnerEvent));
+    })();
+    return () => {
+      active = false;
+    };
+  }, []);
 
   return (
     <OwnerScreen
@@ -32,7 +80,7 @@ export default function OwnerEventsScreen() {
         />
       }
     >
-      {OWNER_EVENTS.map((ev, i) => (
+      {events.map((ev, i) => (
         <Animated.View key={ev.id} entering={FadeInDown.delay(i * 40)}>
           <GlassCard style={styles.card}>
             <View style={styles.top}>

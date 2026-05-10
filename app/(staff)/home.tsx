@@ -31,6 +31,7 @@ import {
 } from '@/lib/mock/ownerApp';
 import { OWNER_GUESTS as DEMO_OWNER_GUESTS } from '@/lib/mock/guests';
 import { isDemoModeEnabled } from '@/lib/config/demoMode';
+import { getSupabase } from '@/lib/supabase/client';
 
 const EMPTY_LIVE_METRICS: typeof DEMO_LIVE_METRICS = {
   tonightCovers: 0,
@@ -43,17 +44,25 @@ const EMPTY_BOOKING_TREND_WEEK: typeof DEMO_BOOKING_TREND_WEEK = {
   counts: [],
   vsPrevWeekPct: 0,
 };
-const BOOKING_TREND_WEEK: typeof DEMO_BOOKING_TREND_WEEK = isDemoModeEnabled()
-  ? DEMO_BOOKING_TREND_WEEK
-  : EMPTY_BOOKING_TREND_WEEK;
-const BOOKINGS_BY_HOUR: typeof DEMO_BOOKINGS_BY_HOUR = isDemoModeEnabled() ? DEMO_BOOKINGS_BY_HOUR : [];
-const BOOKINGS_BY_HOUR_PEAK = isDemoModeEnabled() ? DEMO_BOOKINGS_BY_HOUR_PEAK : '';
-const BOOKINGS_BY_HOUR_TOTAL = isDemoModeEnabled() ? DEMO_BOOKINGS_BY_HOUR_TOTAL : 0;
-const LIVE_METRICS: typeof DEMO_LIVE_METRICS = isDemoModeEnabled() ? DEMO_LIVE_METRICS : EMPTY_LIVE_METRICS;
-const HOME_ATTENTION_ITEMS: typeof DEMO_HOME_ATTENTION_ITEMS = isDemoModeEnabled() ? DEMO_HOME_ATTENTION_ITEMS : [];
 const OWNER_FLOOR_TABLES: typeof DEMO_OWNER_FLOOR_TABLES = isDemoModeEnabled() ? DEMO_OWNER_FLOOR_TABLES : [];
-const OWNER_RESERVATIONS: typeof DEMO_OWNER_RESERVATIONS = isDemoModeEnabled() ? DEMO_OWNER_RESERVATIONS : [];
 const OWNER_GUESTS: typeof DEMO_OWNER_GUESTS = isDemoModeEnabled() ? DEMO_OWNER_GUESTS : [];
+
+const DAY_LABEL_FORMAT: Intl.DateTimeFormatOptions = { weekday: 'short' };
+
+function formatHourLabel(hour: number): string {
+  if (hour === 0) return '12a';
+  if (hour === 12) return '12p';
+  if (hour < 12) return `${hour}a`;
+  return `${hour - 12}p`;
+}
+
+function classifyHourTier(count: number, peak: number): 'peak' | 'busy' | 'slow' {
+  if (peak <= 0) return 'slow';
+  const ratio = count / peak;
+  if (ratio >= 0.8) return 'peak';
+  if (ratio >= 0.35) return 'busy';
+  return 'slow';
+}
 
 type IoniconName = React.ComponentProps<typeof Ionicons>['name'];
 
@@ -542,18 +551,26 @@ function hourTierStroke(tier: string, gold: string) {
 const LINE_CHART_H = 112;
 const LINE_PAD = { l: 10, r: 10, t: 14, b: 6 };
 
-function BookingsByHourCard() {
+function BookingsByHourCard({
+  bookingsByHour,
+  peakLabel,
+  totalBookings,
+}: {
+  bookingsByHour: typeof DEMO_BOOKINGS_BY_HOUR;
+  peakLabel: string;
+  totalBookings: number;
+}) {
   const c = useColors();
   const styles = useStyles();
   const { width } = useWindowDimensions();
-  const maxCount = Math.max(...BOOKINGS_BY_HOUR.map((b) => b.count), 1);
+  const maxCount = Math.max(...bookingsByHour.map((b) => b.count), 1);
 
   const chartW = Math.max(220, width - spacing.lg * 4);
   const innerW = chartW - LINE_PAD.l - LINE_PAD.r;
   const innerH = LINE_CHART_H - LINE_PAD.t - LINE_PAD.b;
-  const n = BOOKINGS_BY_HOUR.length;
+  const n = bookingsByHour.length;
 
-  const pts = BOOKINGS_BY_HOUR.map((bar, i) => {
+  const pts = bookingsByHour.map((bar, i) => {
     const x = LINE_PAD.l + (n <= 1 ? innerW / 2 : (i / (n - 1)) * innerW);
     const y = LINE_PAD.t + innerH - (bar.count / maxCount) * innerH;
     return { x, y, ...bar };
@@ -571,10 +588,10 @@ function BookingsByHourCard() {
       <View style={styles.hourChartTop}>
         <View>
           <Text style={styles.hourKicker}>BOOKINGS BY HOUR</Text>
-          <Text style={styles.hourTitle}>Peak at {BOOKINGS_BY_HOUR_PEAK}</Text>
+          <Text style={styles.hourTitle}>Peak at {peakLabel || '—'}</Text>
         </View>
         <View>
-          <Text style={styles.hourTotalValue}>{BOOKINGS_BY_HOUR_TOTAL}</Text>
+          <Text style={styles.hourTotalValue}>{totalBookings}</Text>
           <Text style={styles.hourTotalLabel}>bookings</Text>
         </View>
       </View>
@@ -609,7 +626,7 @@ function BookingsByHourCard() {
           ))}
         </Svg>
         <View style={styles.hourAxisRow}>
-          {BOOKINGS_BY_HOUR.map((bar) => (
+          {bookingsByHour.map((bar) => (
             <Text
               key={bar.label}
               style={[styles.hourAxisLabel, bar.tier === 'peak' && styles.hourAxisLabelPeak]}
@@ -692,6 +709,29 @@ export default function OwnerHomeScreen() {
   const router = useRouter();
   const { user } = useAuthSession();
   const [ownerRestaurant, setOwnerRestaurant] = useState<OwnerRestaurant | null>(null);
+  const [shiftBriefing, setShiftBriefing] = useState<string | null>(null);
+  const [liveMetrics, setLiveMetrics] = useState<typeof DEMO_LIVE_METRICS>(
+    isDemoModeEnabled() ? DEMO_LIVE_METRICS : EMPTY_LIVE_METRICS,
+  );
+  const [bookingTrendWeek, setBookingTrendWeek] = useState<typeof DEMO_BOOKING_TREND_WEEK>(
+    isDemoModeEnabled() ? DEMO_BOOKING_TREND_WEEK : EMPTY_BOOKING_TREND_WEEK,
+  );
+  const [bookingsByHour, setBookingsByHour] = useState<typeof DEMO_BOOKINGS_BY_HOUR>(
+    isDemoModeEnabled() ? DEMO_BOOKINGS_BY_HOUR : [],
+  );
+  const [bookingsByHourPeak, setBookingsByHourPeak] = useState<string>(
+    isDemoModeEnabled() ? DEMO_BOOKINGS_BY_HOUR_PEAK : '',
+  );
+  const [bookingsByHourTotal, setBookingsByHourTotal] = useState<number>(
+    isDemoModeEnabled() ? DEMO_BOOKINGS_BY_HOUR_TOTAL : 0,
+  );
+  const [attentionItems, setAttentionItems] = useState<typeof DEMO_HOME_ATTENTION_ITEMS>(
+    isDemoModeEnabled() ? DEMO_HOME_ATTENTION_ITEMS : [],
+  );
+  const [todayReservationCount, setTodayReservationCount] = useState<number>(0);
+  const [ownerReservations, setOwnerReservations] = useState<typeof DEMO_OWNER_RESERVATIONS>(
+    isDemoModeEnabled() ? DEMO_OWNER_RESERVATIONS : [],
+  );
   const displayProfile = useMemo(() => resolveAuthDisplayProfile(user, { fullName: 'Owner' }), [user]);
   const firstName = displayProfile.fullName.split(/\s+/).filter(Boolean)[0] || 'Owner';
 
@@ -699,7 +739,10 @@ export default function OwnerHomeScreen() {
     let active = true;
     void fetchCurrentOwnerRestaurant()
       .then((restaurant) => {
-        if (active) setOwnerRestaurant(restaurant);
+        if (!active) return;
+        setOwnerRestaurant(restaurant);
+        // The OwnerRestaurant mapper doesn't currently expose current_shift_briefing;
+        // re-read it from the row via a thin direct query below in a second effect.
       })
       .catch(() => {
         if (active) setOwnerRestaurant(null);
@@ -709,14 +752,161 @@ export default function OwnerHomeScreen() {
     };
   }, []);
 
+  // Load shift briefing + restaurant_analytics + today's reservations once we know the restaurant id.
+  useEffect(() => {
+    if (isDemoModeEnabled()) return;
+    const restaurantId = ownerRestaurant?.id;
+    if (!restaurantId) return;
+    const supabase = getSupabase();
+    if (!supabase) return;
+    let active = true;
+
+    // Shift briefing text
+    void supabase
+      .from('restaurants')
+      .select('current_shift_briefing')
+      .eq('id', restaurantId)
+      .maybeSingle()
+      .then(({ data }) => {
+        if (!active) return;
+        const briefing = (data?.current_shift_briefing ?? null) as string | null;
+        setShiftBriefing(briefing && briefing.trim() ? briefing : null);
+      });
+
+    // Last 14 days of analytics — current 7 days for the week trend, previous 7 for the vs-last-week pct.
+    const today = new Date();
+    const fourteenDaysAgo = new Date(today);
+    fourteenDaysAgo.setDate(today.getDate() - 13);
+    const fromIso = fourteenDaysAgo.toISOString().slice(0, 10);
+    const todayIso = today.toISOString().slice(0, 10);
+
+    void supabase
+      .from('restaurant_analytics')
+      .select('date,total_covers,no_show_count,cancellation_count')
+      .eq('restaurant_id', restaurantId)
+      .gte('date', fromIso)
+      .lte('date', todayIso)
+      .order('date', { ascending: true })
+      .then(({ data }) => {
+        if (!active) return;
+        const rows = (data ?? []) as Array<{
+          date: string;
+          total_covers: number | null;
+          no_show_count: number | null;
+          cancellation_count: number | null;
+        }>;
+
+        // Build last 7 days vs previous 7 days
+        const byDate = new Map<string, (typeof rows)[number]>();
+        rows.forEach((row) => byDate.set(row.date, row));
+
+        const current: number[] = [];
+        const previous: number[] = [];
+        const dayLabels: string[] = [];
+        for (let i = 6; i >= 0; i--) {
+          const d = new Date(today);
+          d.setDate(today.getDate() - i);
+          const key = d.toISOString().slice(0, 10);
+          const row = byDate.get(key);
+          current.push(row?.total_covers ?? 0);
+          dayLabels.push(d.toLocaleDateString('en-US', DAY_LABEL_FORMAT));
+        }
+        for (let i = 13; i >= 7; i--) {
+          const d = new Date(today);
+          d.setDate(today.getDate() - i);
+          const key = d.toISOString().slice(0, 10);
+          const row = byDate.get(key);
+          previous.push(row?.total_covers ?? 0);
+        }
+        const sum = (arr: number[]) => arr.reduce((a, b) => a + b, 0);
+        const currentTotal = sum(current);
+        const prevTotal = sum(previous);
+        const vsPrevWeekPct =
+          prevTotal > 0 ? Math.round(((currentTotal - prevTotal) / prevTotal) * 100) : 0;
+        setBookingTrendWeek({ dayLabels, counts: current, vsPrevWeekPct });
+
+        // Latest analytics row → tonightCovers + noShowRisks
+        const latest = rows[rows.length - 1];
+        setLiveMetrics((prev) => ({
+          ...prev,
+          tonightCovers: latest?.total_covers ?? 0,
+          noShowRisks: latest?.no_show_count ?? 0,
+        }));
+
+        // Attention items derived from the latest analytics row
+        const items: typeof DEMO_HOME_ATTENTION_ITEMS = [];
+        if (latest && (latest.no_show_count ?? 0) > 0) {
+          items.push({
+            id: 'analytics-no-show',
+            icon: 'warning',
+            title: `${latest.no_show_count} no-show${latest.no_show_count === 1 ? '' : 's'} flagged today`,
+            sub: 'Review at-risk reservations',
+            severity: 'critical',
+          });
+        }
+        if (latest && (latest.cancellation_count ?? 0) > 0) {
+          items.push({
+            id: 'analytics-cancellations',
+            icon: 'time',
+            title: `${latest.cancellation_count} cancellation${latest.cancellation_count === 1 ? '' : 's'} today`,
+            sub: 'Backfill open slots',
+            severity: 'warning',
+          });
+        }
+        setAttentionItems(items);
+      });
+
+    // Today's reservations: count + per-hour breakdown
+    const dayStart = new Date(today);
+    dayStart.setHours(0, 0, 0, 0);
+    const dayEnd = new Date(dayStart);
+    dayEnd.setDate(dayStart.getDate() + 1);
+
+    void supabase
+      .from('reservations')
+      .select('reserved_at,status')
+      .eq('restaurant_id', restaurantId)
+      .gte('reserved_at', dayStart.toISOString())
+      .lt('reserved_at', dayEnd.toISOString())
+      .then(({ data }) => {
+        if (!active) return;
+        const rows = (data ?? []) as Array<{ reserved_at: string; status: string | null }>;
+        setTodayReservationCount(rows.length);
+
+        // Aggregate by hour 16..23 (4 PM – 11 PM service window — same as the demo data)
+        const HOURS = [16, 17, 18, 19, 20, 21, 22, 23];
+        const counts = new Map<number, number>();
+        HOURS.forEach((h) => counts.set(h, 0));
+        rows.forEach((row) => {
+          const d = new Date(row.reserved_at);
+          const h = d.getHours();
+          if (counts.has(h)) counts.set(h, (counts.get(h) ?? 0) + 1);
+        });
+        const peakCount = Math.max(...Array.from(counts.values()), 0);
+        const peakHour = HOURS.find((h) => counts.get(h) === peakCount && peakCount > 0) ?? null;
+        const byHour: typeof DEMO_BOOKINGS_BY_HOUR = HOURS.map((h) => ({
+          label: formatHourLabel(h),
+          count: counts.get(h) ?? 0,
+          tier: classifyHourTier(counts.get(h) ?? 0, peakCount),
+        }));
+        setBookingsByHour(byHour);
+        setBookingsByHourPeak(peakHour != null ? formatHourLabel(peakHour) : '');
+        setBookingsByHourTotal(rows.length);
+      });
+
+    return () => {
+      active = false;
+    };
+  }, [ownerRestaurant?.id]);
+
   const seatedTables = OWNER_FLOOR_TABLES.filter((t) => t.status === 'occupied').length;
   const tablesTotal = OWNER_FLOOR_TABLES.length;
   const hour = new Date().getHours();
   const greeting = greetingFor(hour);
-  const criticalCount = HOME_ATTENTION_ITEMS.filter((a) => a.severity === 'critical').length;
-  const bookingsTonight = OWNER_RESERVATIONS.length;
-  const pendingCount = OWNER_RESERVATIONS.filter((r) => r.status === 'pending').length;
-  const upNext = OWNER_RESERVATIONS.find((r) => r.status !== 'seated') ?? OWNER_RESERVATIONS[0];
+  const criticalCount = attentionItems.filter((a) => a.severity === 'critical').length;
+  const bookingsTonight = isDemoModeEnabled() ? ownerReservations.length : todayReservationCount;
+  const pendingCount = ownerReservations.filter((r) => r.status === 'pending').length;
+  const upNext = ownerReservations.find((r) => r.status !== 'seated') ?? ownerReservations[0];
   const guestProfiles = OWNER_GUESTS.length;
 
   const quickActions: { icon: IoniconName; label: string; sub: string; route: string }[] = [
@@ -777,6 +967,9 @@ export default function OwnerHomeScreen() {
         <View style={styles.heroCard}>
           <Text style={styles.heroKicker}>TONIGHT</Text>
           <Text style={styles.heroTitle}>{bookingsTonight} reservations on deck</Text>
+          {shiftBriefing ? (
+            <Text style={styles.heroSub}>{shiftBriefing}</Text>
+          ) : null}
           <View style={styles.heroStats}>
             <View style={styles.heroStat}>
               <Text style={[styles.statValue, styles.statValueGold]}>{bookingsTonight}</Text>
@@ -784,7 +977,7 @@ export default function OwnerHomeScreen() {
             </View>
             <View style={styles.heroStatDivider} />
             <View style={styles.heroStat}>
-              <Text style={styles.statValue}>{LIVE_METRICS.tonightCovers}</Text>
+              <Text style={styles.statValue}>{liveMetrics.tonightCovers}</Text>
               <Text style={styles.statLabel}>Guests</Text>
             </View>
             <View style={styles.heroStatDivider} />
@@ -838,7 +1031,11 @@ export default function OwnerHomeScreen() {
         )}
 
         {/* ── Bookings by hour ── */}
-        <BookingsByHourCard />
+        <BookingsByHourCard
+          bookingsByHour={bookingsByHour}
+          peakLabel={bookingsByHourPeak}
+          totalBookings={bookingsByHourTotal}
+        />
 
         {/* ── Quick actions ── */}
         <View style={styles.sectionRow}>
@@ -866,9 +1063,9 @@ export default function OwnerHomeScreen() {
 
         {/* ── Week momentum bar chart ── */}
         <WeekMomentumChart
-          counts={BOOKING_TREND_WEEK.counts}
-          labels={BOOKING_TREND_WEEK.dayLabels}
-          trendPct={BOOKING_TREND_WEEK.vsPrevWeekPct}
+          counts={bookingTrendWeek.counts}
+          labels={bookingTrendWeek.dayLabels}
+          trendPct={bookingTrendWeek.vsPrevWeekPct}
         />
       </ScrollView>
     </View>

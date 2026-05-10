@@ -1,4 +1,4 @@
-import React, { useCallback, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   View,
   Text,
@@ -20,9 +20,15 @@ import {
   type OwnerReservationSlot,
 } from '@/lib/mock/ownerApp';
 import { isDemoModeEnabled } from '@/lib/config/demoMode';
-
-const OWNER_RESERVATIONS: typeof DEMO_OWNER_RESERVATIONS = isDemoModeEnabled() ? DEMO_OWNER_RESERVATIONS : [];
-const OWNER_FLOOR_TABLES: typeof DEMO_OWNER_FLOOR_TABLES = isDemoModeEnabled() ? DEMO_OWNER_FLOOR_TABLES : [];
+import { getSupabase } from '@/lib/supabase/client';
+import { fetchCurrentOwnerRestaurant } from '@/lib/services/ownerRestaurant';
+import {
+  checkInGuest,
+  createStaffReservation,
+  seatStaffReservation,
+  updateStaffReservationStatus,
+} from '@/lib/staff/staffServices';
+import { subscribeToAvailability } from '@/lib/realtime/availabilityRegistry';
 
 type DateFilter = 'today' | 'tomorrow' | 'week' | 'custom';
 
@@ -709,6 +715,37 @@ function splitTime(human: string): { clock: string; ap: string } {
   return { clock: m[1], ap: m[2].toUpperCase() };
 }
 
+type ReservationExtras = {
+  noShowRisk: number | null;
+  confirmationCode: string | null;
+  depositStatus: string | null;
+  source: string | null;
+  specialRequest: string | null;
+  assignedTableIds: string[];
+};
+
+function formatTimeOfDay(iso: string): string {
+  try {
+    const d = new Date(iso);
+    return d.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
+  } catch {
+    return iso;
+  }
+}
+
+function statusToSlotStatus(raw: string | null | undefined, riskScore: number | null): OwnerReservationSlot['status'] {
+  switch ((raw ?? '').toLowerCase()) {
+    case 'seated':
+      return 'seated';
+    case 'pending':
+    case 'requested':
+      return 'pending';
+    default:
+      if (riskScore !== null && riskScore > 50) return 'risk';
+      return 'confirmed';
+  }
+}
+
 export default function OwnerReservationsScreen() {
   const c = useColors();
   const styles = useStyles();
@@ -722,18 +759,227 @@ export default function OwnerReservationsScreen() {
     return new Date(d.getFullYear(), d.getMonth(), 1);
   });
   const [selected, setSelected] = useState<OwnerReservationSlot | null>(null);
+  const [restaurantId, setRestaurantId] = useState<string | null>(null);
+  const [reservations, setReservations] = useState<OwnerReservationSlot[]>(
+    isDemoModeEnabled() ? DEMO_OWNER_RESERVATIONS : [],
+  );
+  const [floorTables] = useState<typeof DEMO_OWNER_FLOOR_TABLES>(
+    isDemoModeEnabled() ? DEMO_OWNER_FLOOR_TABLES : [],
+  );
+  const [reservationExtras, setReservationExtras] = useState<Record<string, ReservationExtras>>({});
   // Track local status overrides so Seat / Cancel feel responsive even though
-  // we're working off mock data.
+  // remote updates may take a moment to round-trip.
   const [statusOverrides, setStatusOverrides] = useState<
     Record<string, OwnerReservationSlot['status'] | 'cancelled'>
   >({});
+
+  const loadReservations = useCallback(async (rid: string) => {
+    const supabase = getSupabase();
+    if (!supabase) return;
+    const { data, error } = await supabase
+      .from('reservations')
+      .select(
+        'id,guest_id,party_size,reserved_at,status,special_request,no_show_risk_score,confirmation_code,deposit_status,source,guest_full_name,guests:guests(full_name)',
+      )
+      .eq('restaurant_id', rid)
+      .order('reserved_at', { ascending: true });
+    if (error || !data) return;
+    const reservationIds = data.map((row) => String((row as Record<string, unknown>).id ?? '')).filter(Boolean);
+    let tableAssignments = new Map<string, string[]>();
+    let tableLabelById = new Map<string, string>();
+    if (reservationIds.length) {
+      const { data: rtRows } = await supabase
+        .from('reservation_tables')
+        .select('reservation_id,table_id')
+        .in('reservation_id', reservationIds);
+      const tableIds = new Set<string>();
+      (rtRows ?? []).forEach((row) => {
+        const rrow = row as Record<string, unknown>;
+        const resId = String(rrow.reservation_id ?? '');
+        const tableId = String(rrow.table_id ?? '');
+        if (!resId || !tableId) return;
+        const list = tableAssignments.get(resId) ?? [];
+        list.push(tableId);
+        tableAssignments.set(resId, list);
+        tableIds.add(tableId);
+      });
+      if (tableIds.size) {
+        const { data: tableRows } = await supabase
+          .from('tables')
+          .select('id,label,table_number')
+          .in('id', Array.from(tableIds));
+        (tableRows ?? []).forEach((row) => {
+          const r = row as Record<string, unknown>;
+          const id = String(r.id ?? '');
+          const label = (typeof r.label === 'string' && r.label) ||
+            (typeof r.table_number === 'string' && r.table_number) ||
+            id.slice(0, 4);
+          if (id) tableLabelById.set(id, String(label));
+        });
+      }
+    }
+
+    const slots: OwnerReservationSlot[] = [];
+    const extras: Record<string, ReservationExtras> = {};
+    for (const row of data as Array<Record<string, unknown>>) {
+      const id = String(row.id ?? '');
+      if (!id) continue;
+      const guestObj = Array.isArray(row.guests) ? row.guests[0] : row.guests;
+      const guestName =
+        (guestObj && typeof guestObj === 'object' &&
+          typeof (guestObj as Record<string, unknown>).full_name === 'string'
+          ? ((guestObj as Record<string, unknown>).full_name as string)
+          : null) ||
+        (typeof row.guest_full_name === 'string' ? (row.guest_full_name as string) : null) ||
+        'Guest';
+      const reservedAt = typeof row.reserved_at === 'string' ? row.reserved_at : '';
+      const partySize = typeof row.party_size === 'number' ? row.party_size : Number(row.party_size ?? 0) || 0;
+      const risk = typeof row.no_show_risk_score === 'number' ? row.no_show_risk_score : null;
+      const assignedIds = tableAssignments.get(id) ?? [];
+      const tableLabel = assignedIds.map((tid) => tableLabelById.get(tid) ?? '').filter(Boolean).join(', ') || undefined;
+      slots.push({
+        id,
+        startTime: reservedAt ? formatTimeOfDay(reservedAt) : '—',
+        guestName,
+        partySize,
+        status: statusToSlotStatus(typeof row.status === 'string' ? (row.status as string) : null, risk),
+        table: tableLabel,
+        walkIn: row.source === 'walkin',
+        notes: typeof row.special_request === 'string' ? (row.special_request as string) : undefined,
+        vip: false,
+      });
+      extras[id] = {
+        noShowRisk: risk,
+        confirmationCode: typeof row.confirmation_code === 'string' ? (row.confirmation_code as string) : null,
+        depositStatus: typeof row.deposit_status === 'string' ? (row.deposit_status as string) : null,
+        source: typeof row.source === 'string' ? (row.source as string) : null,
+        specialRequest: typeof row.special_request === 'string' ? (row.special_request as string) : null,
+        assignedTableIds: assignedIds,
+      };
+    }
+    setReservations(slots);
+    setReservationExtras(extras);
+  }, []);
+
+  useEffect(() => {
+    if (isDemoModeEnabled()) return;
+    let active = true;
+    void (async () => {
+      try {
+        const owner = await fetchCurrentOwnerRestaurant();
+        if (!active || !owner?.id) return;
+        setRestaurantId(owner.id);
+        await loadReservations(owner.id);
+      } catch {
+        // silent — leave empty
+      }
+    })();
+    return () => {
+      active = false;
+    };
+  }, [loadReservations]);
+
+  useEffect(() => {
+    if (!restaurantId || isDemoModeEnabled()) return;
+    const unsubscribe = subscribeToAvailability(restaurantId, () => {
+      void loadReservations(restaurantId);
+    });
+    return unsubscribe;
+  }, [restaurantId, loadReservations]);
 
   const handleSeatGuest = useCallback((res: OwnerReservationSlot) => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
     setStatusOverrides((prev) => ({ ...prev, [res.id]: 'seated' }));
     setSelected(null);
+    if (!isDemoModeEnabled()) {
+      const extras = reservationExtras[res.id];
+      const tableId = extras?.assignedTableIds[0];
+      void (async () => {
+        if (tableId) {
+          await seatStaffReservation({ reservationId: res.id, tableId });
+        } else {
+          await updateStaffReservationStatus({ reservationId: res.id, status: 'seated' });
+        }
+        if (restaurantId) await loadReservations(restaurantId);
+      })();
+    }
     Alert.alert('Seated', `${res.guestName} marked as seated.`);
-  }, []);
+  }, [reservationExtras, restaurantId, loadReservations]);
+
+  const handleCheckIn = useCallback((res: OwnerReservationSlot) => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
+    setStatusOverrides((prev) => ({ ...prev, [res.id]: 'confirmed' }));
+    if (!isDemoModeEnabled()) {
+      void (async () => {
+        await checkInGuest({ reservationId: res.id, restaurantId: restaurantId ?? undefined });
+        if (restaurantId) await loadReservations(restaurantId);
+      })();
+    }
+    Alert.alert('Checked in', `${res.guestName} marked as arrived.`);
+  }, [restaurantId, loadReservations]);
+
+  const handleAddReservation = useCallback(() => {
+    Haptics.selectionAsync().catch(() => {});
+    if (!restaurantId) {
+      Alert.alert('Not ready', 'Restaurant not loaded yet.');
+      return;
+    }
+    if (isDemoModeEnabled()) {
+      Alert.alert('Add reservation', 'Demo mode — switch demo off to create real reservations.');
+      return;
+    }
+    Alert.prompt?.(
+      'New reservation',
+      'Guest name?',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Next',
+          onPress: (guestName?: string) => {
+            if (!guestName) return;
+            Alert.prompt?.(
+              'Party size',
+              'Number of guests',
+              (sizeStr?: string) => {
+                const partySize = parseInt(sizeStr ?? '', 10);
+                if (!partySize || partySize < 1) return;
+                const reservedAt = new Date(Date.now() + 60 * 60 * 1000).toISOString();
+                void (async () => {
+                  const res = await createStaffReservation({
+                    restaurantId,
+                    guestName,
+                    partySize,
+                    reservedAt,
+                  });
+                  if (res.error) {
+                    Alert.alert('Could not create', res.error);
+                  } else {
+                    await loadReservations(restaurantId);
+                  }
+                })();
+              },
+              'plain-text',
+              '',
+              'number-pad',
+            );
+          },
+        },
+      ],
+      'plain-text',
+    );
+  }, [restaurantId, loadReservations]);
+
+  const handleNoShow = useCallback((res: OwnerReservationSlot) => {
+    Haptics.selectionAsync().catch(() => {});
+    setStatusOverrides((prev) => ({ ...prev, [res.id]: 'cancelled' }));
+    setSelected(null);
+    if (!isDemoModeEnabled()) {
+      void (async () => {
+        await updateStaffReservationStatus({ reservationId: res.id, status: 'no_show' });
+        if (restaurantId) await loadReservations(restaurantId);
+      })();
+    }
+  }, [restaurantId, loadReservations]);
 
   const handleMessageGuest = useCallback((res: OwnerReservationSlot) => {
     Haptics.selectionAsync().catch(() => {});
@@ -775,23 +1021,29 @@ export default function OwnerReservationsScreen() {
           onPress: () => {
             setStatusOverrides((prev) => ({ ...prev, [res.id]: 'cancelled' }));
             setSelected(null);
+            if (!isDemoModeEnabled()) {
+              void (async () => {
+                await updateStaffReservationStatus({ reservationId: res.id, status: 'cancelled' });
+                if (restaurantId) await loadReservations(restaurantId);
+              })();
+            }
             Alert.alert('Cancelled', `${res.guestName}'s reservation was cancelled.`);
           },
         },
       ],
     );
-  }, []);
+  }, [restaurantId, loadReservations]);
 
   const todayKey = toDateKey(new Date());
 
   const dateFiltered = useMemo(() => {
     const base = (() => {
-      if (dateFilter === 'today' || dateFilter === 'week') return OWNER_RESERVATIONS;
+      if (dateFilter === 'today' || dateFilter === 'week') return reservations;
       if (dateFilter === 'custom') {
         if (customDates.length === 0) return [];
-        return OWNER_RESERVATIONS;
+        return reservations;
       }
-      return OWNER_RESERVATIONS.filter((_, i) => i % 2 === 1);
+      return reservations.filter((_, i) => i % 2 === 1);
     })();
     // Apply local Seat / Cancel overrides from the modal so the list reflects
     // the action immediately. Cancelled reservations drop out of the list.
@@ -801,7 +1053,7 @@ export default function OwnerReservationsScreen() {
       if (override) return [{ ...r, status: override as OwnerReservationSlot['status'] }];
       return [r];
     });
-  }, [dateFilter, customDates, statusOverrides]);
+  }, [dateFilter, customDates, statusOverrides, reservations]);
 
   const filtered = dateFiltered;
 
@@ -817,7 +1069,7 @@ export default function OwnerReservationsScreen() {
     return { total, seated, upcoming, next };
   }, [dateFiltered]);
 
-  const capacity = OWNER_FLOOR_TABLES.length;
+  const capacity = floorTables.length;
 
   const headerSubtitle = useMemo(() => {
     switch (dateFilter) {
@@ -912,7 +1164,29 @@ export default function OwnerReservationsScreen() {
           <View style={styles.kickerDot} />
           <Text style={styles.kickerText}>BOOKINGS · {dayLabel}</Text>
         </View>
-        <Text style={styles.pageTitle}>Bookings</Text>
+        <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+          <Text style={styles.pageTitle}>Bookings</Text>
+          <Pressable
+            onPress={handleAddReservation}
+            accessibilityRole="button"
+            accessibilityLabel="Add reservation"
+            style={({ pressed }) => [
+              {
+                paddingHorizontal: 12,
+                paddingVertical: 8,
+                borderRadius: borderRadius.full,
+                backgroundColor: c.gold,
+                opacity: pressed ? 0.85 : 1,
+                flexDirection: 'row',
+                alignItems: 'center',
+                gap: 4,
+              },
+            ]}
+          >
+            <Ionicons name="add" size={16} color="#000" />
+            <Text style={{ fontSize: 13, fontWeight: '800', color: '#000' }}>Add</Text>
+          </Pressable>
+        </View>
       </View>
 
       <SectionList
@@ -1094,6 +1368,25 @@ export default function OwnerReservationsScreen() {
                         <Text style={styles.guestTagText}>Walk-in</Text>
                       </View>
                     ) : null}
+                    {(() => {
+                      const ex = reservationExtras[row.id];
+                      const risk = ex?.noShowRisk ?? null;
+                      if (risk !== null && risk > 50) {
+                        return (
+                          <View
+                            style={[
+                              styles.guestTag,
+                              { borderColor: `${c.danger}55`, backgroundColor: `${c.danger}1F` },
+                            ]}
+                          >
+                            <Text style={[styles.guestTagText, { color: c.danger }]}>
+                              RISK {risk}
+                            </Text>
+                          </View>
+                        );
+                      }
+                      return null;
+                    })()}
                   </View>
                 </View>
                 <View style={styles.chevronWrap}>
@@ -1189,17 +1482,43 @@ export default function OwnerReservationsScreen() {
                     {selected.startTime} · {selected.partySize} guests
                     {selected.table ? ` · Table ${selected.table}` : ''}
                   </Text>
+                  {(() => {
+                    const ex = reservationExtras[selected.id];
+                    const risk = ex?.noShowRisk ?? null;
+                    if (risk !== null && risk > 50) {
+                      return (
+                        <View style={styles.modalRiskPill}>
+                          <Ionicons name="warning-outline" size={14} color={c.danger} />
+                          <Text style={styles.modalRiskText}>No-show risk · {risk}</Text>
+                        </View>
+                      );
+                    }
+                    return null;
+                  })()}
 
                   <Text style={styles.modalSectionLabel}>Details</Text>
-                  {[
-                    { label: 'Status', value: statusPresentation(selected.status, c).label },
-                    { label: 'Party size', value: `${selected.partySize} people` },
-                    { label: 'Table', value: selected.table ?? 'Not assigned yet' },
-                    {
-                      label: 'How they booked',
-                      value: selected.walkIn ? 'Walk-in / waitlist' : 'Reservation',
-                    },
-                  ].map((r, i) => (
+                  {(() => {
+                    const ex = reservationExtras[selected.id];
+                    const rows = [
+                      { label: 'Status', value: statusPresentation(selected.status, c).label },
+                      { label: 'Party size', value: `${selected.partySize} people` },
+                      { label: 'Table', value: selected.table ?? 'Not assigned yet' },
+                      {
+                        label: 'How they booked',
+                        value: selected.walkIn ? 'Walk-in / waitlist' : 'Reservation',
+                      },
+                    ];
+                    if (ex?.confirmationCode) {
+                      rows.push({ label: 'Code', value: ex.confirmationCode });
+                    }
+                    if (ex?.depositStatus) {
+                      rows.push({ label: 'Deposit', value: ex.depositStatus });
+                    }
+                    if (ex?.source && !selected.walkIn) {
+                      rows.push({ label: 'Source', value: ex.source });
+                    }
+                    return rows;
+                  })().map((r, i) => (
                     <View
                       key={r.label}
                       style={[styles.modalKvRow, i === 0 && styles.modalKvRowFirst]}
@@ -1251,12 +1570,36 @@ export default function OwnerReservationsScreen() {
                         styles.modalActionBtn,
                         pressed && { opacity: 0.7 },
                       ]}
+                      onPress={() => handleCheckIn(selected)}
+                      accessibilityRole="button"
+                      accessibilityLabel={`Check in ${selected.guestName}`}
+                    >
+                      <Ionicons name="enter-outline" size={16} color={c.textPrimary} />
+                      <Text style={styles.modalActionText}>Check in</Text>
+                    </Pressable>
+                    <Pressable
+                      style={({ pressed }) => [
+                        styles.modalActionBtn,
+                        pressed && { opacity: 0.7 },
+                      ]}
                       onPress={() => handleMessageGuest(selected)}
                       accessibilityRole="button"
                       accessibilityLabel={`Message ${selected.guestName}`}
                     >
                       <Ionicons name="chatbubble-outline" size={16} color={c.textPrimary} />
                       <Text style={styles.modalActionText}>Message</Text>
+                    </Pressable>
+                    <Pressable
+                      style={({ pressed }) => [
+                        styles.modalActionBtn,
+                        pressed && { opacity: 0.7 },
+                      ]}
+                      onPress={() => handleNoShow(selected)}
+                      accessibilityRole="button"
+                      accessibilityLabel={`Mark ${selected.guestName} as no-show`}
+                    >
+                      <Ionicons name="alert-circle-outline" size={16} color={c.textPrimary} />
+                      <Text style={styles.modalActionText}>No-show</Text>
                     </Pressable>
                     <Pressable
                       style={({ pressed }) => [

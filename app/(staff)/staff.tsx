@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import {
   View,
   Text,
@@ -18,11 +18,26 @@ import {
   OWNER_RESERVATIONS as DEMO_OWNER_RESERVATIONS,
 } from '@/lib/mock/ownerApp';
 import { isDemoModeEnabled } from '@/lib/config/demoMode';
-
-const STAFF_ROSTER: typeof DEMO_STAFF_ROSTER = isDemoModeEnabled() ? DEMO_STAFF_ROSTER : [];
-const WAITLIST_ENTRIES: typeof DEMO_WAITLIST_ENTRIES = isDemoModeEnabled() ? DEMO_WAITLIST_ENTRIES : [];
-const OWNER_RESERVATIONS: typeof DEMO_OWNER_RESERVATIONS = isDemoModeEnabled() ? DEMO_OWNER_RESERVATIONS : [];
+import { getSupabase } from '@/lib/supabase/client';
+import { fetchCurrentUserProfile } from '@/lib/services/userProfile';
+import {
+  approveStaffAction,
+  getMyStaffInvites,
+} from '@/lib/staff/staffServices';
 import { useColors, createStyles, spacing, borderRadius } from '@/lib/theme';
+
+type ManagerApproval = {
+  id: string;
+  action: string;
+  requestedBy: string;
+  createdAt: string;
+};
+type StaffInvite = {
+  id: string;
+  email: string;
+  role: string;
+  status: string;
+};
 
 function initials(name: string): string {
   const parts = name.split(/\s+/).filter(Boolean);
@@ -223,14 +238,95 @@ export default function OwnerStaffScreen() {
   const c = useColors();
   const styles = useStyles();
   const [approvalOpen, setApprovalOpen] = useState(false);
-
-  const onShift = useMemo(() => STAFF_ROSTER.filter((m) => m.onClock), []);
-  const approvalCount = useMemo(
-    () =>
-      WAITLIST_ENTRIES.filter((e) => e.risk).length +
-      OWNER_RESERVATIONS.filter((r) => r.status === 'pending').length,
-    [],
+  const [staffRoster, setStaffRoster] = useState<typeof DEMO_STAFF_ROSTER>(
+    isDemoModeEnabled() ? DEMO_STAFF_ROSTER : [],
   );
+  const [pendingApprovals, setPendingApprovals] = useState<ManagerApproval[]>([]);
+  const [myInvites, setMyInvites] = useState<StaffInvite[]>([]);
+
+  useEffect(() => {
+    if (isDemoModeEnabled()) return;
+    let active = true;
+    void (async () => {
+      try {
+        const supabase = getSupabase();
+        if (!supabase) return;
+        const profile = await fetchCurrentUserProfile();
+        const restaurantId = profile?.restaurantId;
+        if (!restaurantId) return;
+
+        const { data: roleRows } = await supabase
+          .from('user_restaurant_roles')
+          .select('id,user_id,role,employment_type,user_profiles:user_id(full_name,email,phone)')
+          .eq('restaurant_id', restaurantId);
+        if (!active) return;
+        const roster = ((roleRows ?? []) as Array<Record<string, unknown>>).map((r) => {
+          const profileRef = r.user_profiles as { full_name?: string; email?: string } | null;
+          return {
+            id: String(r.id ?? ''),
+            name: String(profileRef?.full_name ?? profileRef?.email ?? 'Staff'),
+            role: String(r.role ?? 'Staff'),
+            shift: String(r.employment_type ?? ''),
+            onClock: false,
+          };
+        });
+        if (roster.length) setStaffRoster(roster);
+
+        const { data: approvalRows } = await supabase
+          .from('manager_action_approvals')
+          .select('id,action,requested_by,created_at,used_at')
+          .eq('restaurant_id', restaurantId)
+          .is('used_at', null)
+          .order('created_at', { ascending: false });
+        if (!active) return;
+        const approvals = ((approvalRows ?? []) as Array<Record<string, unknown>>).map((row) => ({
+          id: String(row.id ?? ''),
+          action: String(row.action ?? ''),
+          requestedBy: String(row.requested_by ?? ''),
+          createdAt: String(row.created_at ?? ''),
+        }));
+        setPendingApprovals(approvals);
+
+        const invitesRes = await getMyStaffInvites();
+        if (!active) return;
+        const inviteList = (invitesRes.data?.invites ?? []) as Array<Record<string, unknown>>;
+        setMyInvites(
+          inviteList.map((row) => ({
+            id: String(row.id ?? ''),
+            email: String(row.email ?? row.phone ?? ''),
+            role: String(row.role ?? ''),
+            status: String(row.status ?? 'pending'),
+          })),
+        );
+      } catch {
+        // swallow
+      }
+    })();
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  const onShift = useMemo(() => staffRoster.filter((m) => m.onClock), [staffRoster]);
+  const approvalCount = useMemo(() => {
+    if (isDemoModeEnabled()) {
+      return (
+        DEMO_WAITLIST_ENTRIES.filter((e) => e.risk).length +
+        DEMO_OWNER_RESERVATIONS.filter((r) => r.status === 'pending').length
+      );
+    }
+    return pendingApprovals.length;
+  }, [pendingApprovals]);
+
+  const handleApproval = (id: string, decision: 'approve' | 'deny') => {
+    void approveStaffAction({ approvalId: id, decision }).then((res) => {
+      if (res.error) {
+        Alert.alert('Approval failed', res.error);
+        return;
+      }
+      setPendingApprovals((prev) => prev.filter((p) => p.id !== id));
+    });
+  };
 
   return (
     <OwnerScreen contentContainerStyle={{ paddingHorizontal: 0 }}>
@@ -276,8 +372,21 @@ export default function OwnerStaffScreen() {
         </Pressable>
       </SectionCard>
 
+      {myInvites.length > 0 ? (
+        <SectionCard sectionTitle="My pending invites" marginBottom={spacing.md}>
+          {myInvites.map((inv, i) => (
+            <View key={inv.id} style={[styles.rosterRow, i > 0 && styles.rosterDivider]}>
+              <View style={styles.rosterMid}>
+                <Text style={styles.rosterName}>{inv.email}</Text>
+                <Text style={styles.rosterRole}>{inv.role} · {inv.status}</Text>
+              </View>
+            </View>
+          ))}
+        </SectionCard>
+      ) : null}
+
       <SectionCard sectionTitle="Full roster" marginBottom={spacing['2xl']}>
-        {STAFF_ROSTER.map((member, i) => (
+        {staffRoster.map((member, i) => (
           <View key={member.id} style={[styles.rosterRow, i > 0 && styles.rosterDivider]}>
             <View style={styles.rosterAvatar}>
               <Text style={styles.rosterAvatarText}>{initials(member.name)}</Text>
@@ -299,16 +408,42 @@ export default function OwnerStaffScreen() {
         <Pressable style={styles.modalOverlay} onPress={() => setApprovalOpen(false)}>
           <Pressable style={styles.modalSheet} onPress={(e) => e.stopPropagation()}>
             <Text style={styles.modalTitle}>Approval queue</Text>
-            {WAITLIST_ENTRIES.filter((e) => e.risk).map((e) => (
-              <Text key={e.id} style={styles.modalLine}>
-                Waitlist · {e.name} ({e.party}p) — {e.quoted}
-              </Text>
-            ))}
-            {OWNER_RESERVATIONS.filter((r) => r.status === 'pending').map((r) => (
-              <Text key={r.id} style={styles.modalLine}>
-                Booking · {r.guestName} · {r.startTime}
-              </Text>
-            ))}
+            {isDemoModeEnabled() ? (
+              <>
+                {DEMO_WAITLIST_ENTRIES.filter((e) => e.risk).map((e) => (
+                  <Text key={e.id} style={styles.modalLine}>
+                    Waitlist · {e.name} ({e.party}p) — {e.quoted}
+                  </Text>
+                ))}
+                {DEMO_OWNER_RESERVATIONS.filter((r) => r.status === 'pending').map((r) => (
+                  <Text key={r.id} style={styles.modalLine}>
+                    Booking · {r.guestName} · {r.startTime}
+                  </Text>
+                ))}
+              </>
+            ) : pendingApprovals.length === 0 ? (
+              <Text style={styles.modalLine}>No pending approvals.</Text>
+            ) : (
+              pendingApprovals.map((a) => (
+                <View key={a.id} style={{ marginBottom: spacing.sm }}>
+                  <Text style={styles.modalLine}>{a.action}</Text>
+                  <View style={{ flexDirection: 'row', gap: spacing.sm }}>
+                    <Pressable
+                      onPress={() => handleApproval(a.id, 'approve')}
+                      style={{ paddingVertical: 6, paddingHorizontal: 12, backgroundColor: c.gold, borderRadius: 12 }}
+                    >
+                      <Text style={{ color: c.bgBase, fontWeight: '700' }}>Approve</Text>
+                    </Pressable>
+                    <Pressable
+                      onPress={() => handleApproval(a.id, 'deny')}
+                      style={{ paddingVertical: 6, paddingHorizontal: 12, backgroundColor: c.bgElevated, borderRadius: 12 }}
+                    >
+                      <Text style={{ color: c.textPrimary, fontWeight: '700' }}>Deny</Text>
+                    </Pressable>
+                  </View>
+                </View>
+              ))
+            )}
             <Pressable style={styles.modalClose} onPress={() => setApprovalOpen(false)}>
               <Text style={styles.modalCloseText}>Done</Text>
             </Pressable>

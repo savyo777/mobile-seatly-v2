@@ -1,4 +1,4 @@
-import React, { useCallback, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { View, Text, StyleSheet, FlatList, TouchableOpacity, ListRenderItem } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { Ionicons } from '@expo/vector-icons';
@@ -7,14 +7,39 @@ import { SubpageHeader } from '@/components/owner/SubpageHeader';
 import { useColors, createStyles, spacing, borderRadius, typography } from '@/lib/theme';
 import { mockStaffNotifications as DEMO_STAFF_NOTIFICATIONS } from '@/lib/mock/notifications';
 import { isDemoModeEnabled } from '@/lib/config/demoMode';
-
-const mockStaffNotifications: typeof DEMO_STAFF_NOTIFICATIONS = isDemoModeEnabled() ? DEMO_STAFF_NOTIFICATIONS : [];
+import { fetchCurrentUserProfile } from '@/lib/services/userProfile';
+import { getSupabase } from '@/lib/supabase/client';
+import { subscribeToNotifications } from '@/lib/realtime/notificationsRegistry';
 import {
   getStaffNotificationIconName,
   getStaffNotificationTimeLabel,
   normalizeStaffNotifications,
   type NormalizedStaffNotification,
 } from '@/lib/notifications/staffNotifications';
+
+const initialStaffNotifications: typeof DEMO_STAFF_NOTIFICATIONS = isDemoModeEnabled()
+  ? DEMO_STAFF_NOTIFICATIONS
+  : [];
+
+type NotificationRow = {
+  id: string;
+  type: string | null;
+  title: string | null;
+  body: string | null;
+  is_read: boolean | null;
+  created_at: string | null;
+};
+
+function mapNotificationRow(row: NotificationRow): (typeof DEMO_STAFF_NOTIFICATIONS)[number] {
+  return {
+    id: row.id,
+    type: (row.type ?? 'unknown') as (typeof DEMO_STAFF_NOTIFICATIONS)[number]['type'],
+    title: row.title ?? 'Notification',
+    body: row.body ?? '',
+    isRead: row.is_read === true,
+    createdAt: row.created_at ?? '',
+  };
+}
 
 type IoniconName = React.ComponentProps<typeof Ionicons>['name'];
 
@@ -63,13 +88,52 @@ export default function StaffNotificationsScreen() {
   const { t, i18n } = useTranslation();
   const c = useColors();
   const styles = useStyles();
+  const [rawNotifications, setRawNotifications] = useState<typeof DEMO_STAFF_NOTIFICATIONS>(
+    initialStaffNotifications,
+  );
   const notifications = useMemo(
-    () => normalizeStaffNotifications(mockStaffNotifications),
-    [],
+    () => normalizeStaffNotifications(rawNotifications),
+    [rawNotifications],
   );
   const [readIds, setReadIds] = useState<Set<string>>(
     () => new Set(notifications.filter((n) => n.isRead).map((n) => n.id)),
   );
+
+  useEffect(() => {
+    if (isDemoModeEnabled()) return;
+    let active = true;
+    let unsubscribe: (() => void) | null = null;
+
+    const reload = async (userProfileId: string) => {
+      const supabase = getSupabase();
+      if (!supabase) return;
+      const { data } = await supabase
+        .from('notifications')
+        .select('id,type,title,body,is_read,created_at')
+        .eq('user_id', userProfileId)
+        .order('created_at', { ascending: false })
+        .limit(50);
+      if (!active) return;
+      const rows = ((data ?? []) as NotificationRow[]).map(mapNotificationRow);
+      setRawNotifications(rows);
+      setReadIds(new Set(rows.filter((n) => n.isRead).map((n) => n.id)));
+    };
+
+    void (async () => {
+      const profile = await fetchCurrentUserProfile().catch(() => null);
+      const userProfileId = profile?.id ?? null;
+      if (!userProfileId || !active) return;
+      await reload(userProfileId);
+      unsubscribe = subscribeToNotifications(userProfileId, () => {
+        void reload(userProfileId);
+      });
+    })();
+
+    return () => {
+      active = false;
+      if (unsubscribe) unsubscribe();
+    };
+  }, []);
 
   const onPress = useCallback((id: string) => {
     setReadIds((prev) => {

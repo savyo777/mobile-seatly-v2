@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { View, Text, ScrollView, Pressable, StyleSheet } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
@@ -9,11 +9,31 @@ import {
   EXPORT_OPTIONS as DEMO_EXPORT_OPTIONS,
 } from '@/lib/mock/ownerApp';
 import { isDemoModeEnabled } from '@/lib/config/demoMode';
+import { fetchCurrentUserProfile } from '@/lib/services/userProfile';
+import { getSupabase } from '@/lib/supabase/client';
 
 const STAFF_ROSTER: typeof DEMO_STAFF_ROSTER = isDemoModeEnabled() ? DEMO_STAFF_ROSTER : [];
 const EXPENSE_LINES: typeof DEMO_EXPENSE_LINES = isDemoModeEnabled() ? DEMO_EXPENSE_LINES : [];
 const EXPORT_OPTIONS: typeof DEMO_EXPORT_OPTIONS = isDemoModeEnabled() ? DEMO_EXPORT_OPTIONS : [];
 import { formatCurrency } from '@/lib/utils/formatCurrency';
+
+type RestaurantSettings = {
+  id: string;
+  name: string | null;
+  address: string | null;
+  phone: string | null;
+  hours_json: Record<string, unknown> | null;
+  plan: string | null;
+  currency: string | null;
+  timezone: string | null;
+  tax_rate: number | null;
+  trial_ends_at: string | null;
+  stripe_onboarding_complete: boolean | null;
+  billing_card_brand: string | null;
+  billing_card_last4: string | null;
+  billing_card_exp_month: number | null;
+  billing_card_exp_year: number | null;
+};
 
 const useStyles = createStyles((c) => ({
   root: { flex: 1, backgroundColor: c.bgBase },
@@ -29,6 +49,34 @@ const useStyles = createStyles((c) => ({
     color: c.textPrimary,
     letterSpacing: -0.3,
     marginBottom: spacing.sm,
+  },
+
+  // Restaurant settings
+  settingsCard: {
+    backgroundColor: c.bgSurface,
+    borderRadius: borderRadius.xl,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: c.border,
+    overflow: 'hidden',
+    shadowColor: '#000',
+    shadowOpacity: 0.06,
+    shadowRadius: 10,
+    shadowOffset: { width: 0, height: 4 },
+    elevation: 2,
+  },
+  settingsRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+    paddingHorizontal: spacing.md,
+    paddingVertical: 13,
+  },
+  settingsDivider: { borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: c.border },
+  settingsRowText: {
+    flex: 1,
+    fontSize: 13,
+    fontWeight: '600',
+    color: c.textPrimary,
   },
 
   // Staff
@@ -133,8 +181,54 @@ export default function OwnerBusinessScreen() {
   const c = useColors();
   const styles = useStyles();
   const insets = useSafeAreaInsets();
+  const [settings, setSettings] = useState<RestaurantSettings | null>(null);
+
+  useEffect(() => {
+    if (isDemoModeEnabled()) return;
+    let active = true;
+    void (async () => {
+      const profile = await fetchCurrentUserProfile().catch(() => null);
+      const restaurantId = profile?.restaurantId ?? null;
+      const supabase = getSupabase();
+      if (!restaurantId || !supabase) return;
+      const { data } = await supabase
+        .from('restaurants')
+        .select(
+          'id,name,address,phone,hours_json,plan,currency,timezone,tax_rate,trial_ends_at,stripe_onboarding_complete,billing_card_brand,billing_card_last4,billing_card_exp_month,billing_card_exp_year',
+        )
+        .eq('id', restaurantId)
+        .maybeSingle();
+      if (!active) return;
+      setSettings((data ?? null) as RestaurantSettings | null);
+    })();
+    return () => {
+      active = false;
+    };
+  }, []);
 
   const totalExpenses = EXPENSE_LINES.reduce((sum, e) => sum + e.amount, 0);
+  const trialEndsLabel = settings?.trial_ends_at
+    ? new Date(settings.trial_ends_at).toLocaleDateString(undefined, {
+        month: 'short',
+        day: 'numeric',
+        year: 'numeric',
+      })
+    : null;
+  const billingCardLine = settings?.billing_card_last4
+    ? `${(settings.billing_card_brand ?? 'Card').toUpperCase()} •••• ${settings.billing_card_last4}${
+        settings.billing_card_exp_month && settings.billing_card_exp_year
+          ? ` · ${String(settings.billing_card_exp_month).padStart(2, '0')}/${String(
+              settings.billing_card_exp_year,
+            ).slice(-2)}`
+          : ''
+      }`
+    : null;
+  const hoursJsonPreview = settings?.hours_json
+    ? Object.entries(settings.hours_json)
+        .slice(0, 7)
+        .map(([day, val]) => `${day}: ${typeof val === 'string' ? val : JSON.stringify(val)}`)
+        .join('  ·  ')
+    : null;
 
   return (
     <View style={styles.root}>
@@ -147,6 +241,67 @@ export default function OwnerBusinessScreen() {
           <Text style={styles.topSubline}>Operations</Text>
           <Text style={styles.title}>Business</Text>
         </View>
+
+        {/* Restaurant settings (live from `restaurants`) */}
+        {settings ? (
+          <View style={styles.sectionPad}>
+            <Text style={styles.sectionLabel}>{settings.name ?? 'Restaurant'}</Text>
+            <View style={styles.settingsCard}>
+              {settings.address ? (
+                <View style={styles.settingsRow}>
+                  <Ionicons name="location-outline" size={16} color={c.textMuted} />
+                  <Text style={styles.settingsRowText}>{settings.address}</Text>
+                </View>
+              ) : null}
+              {settings.phone ? (
+                <View style={[styles.settingsRow, styles.settingsDivider]}>
+                  <Ionicons name="call-outline" size={16} color={c.textMuted} />
+                  <Text style={styles.settingsRowText}>{settings.phone}</Text>
+                </View>
+              ) : null}
+              {hoursJsonPreview ? (
+                <View style={[styles.settingsRow, styles.settingsDivider]}>
+                  <Ionicons name="time-outline" size={16} color={c.textMuted} />
+                  <Text style={styles.settingsRowText} numberOfLines={2}>
+                    {hoursJsonPreview}
+                  </Text>
+                </View>
+              ) : null}
+              <View style={[styles.settingsRow, styles.settingsDivider]}>
+                <Ionicons name="card-outline" size={16} color={c.textMuted} />
+                <Text style={styles.settingsRowText}>
+                  Plan: {(settings.plan ?? 'free').toUpperCase()}
+                  {trialEndsLabel ? ` · Trial ends ${trialEndsLabel}` : ''}
+                </Text>
+              </View>
+              <View style={[styles.settingsRow, styles.settingsDivider]}>
+                <Ionicons name="cash-outline" size={16} color={c.textMuted} />
+                <Text style={styles.settingsRowText}>
+                  Currency {(settings.currency ?? '—').toUpperCase()}
+                  {' · '}
+                  Tax {settings.tax_rate != null ? `${(settings.tax_rate * 100).toFixed(2)}%` : '—'}
+                  {settings.timezone ? ` · ${settings.timezone}` : ''}
+                </Text>
+              </View>
+              <View style={[styles.settingsRow, styles.settingsDivider]}>
+                <Ionicons
+                  name={settings.stripe_onboarding_complete ? 'checkmark-circle-outline' : 'alert-circle-outline'}
+                  size={16}
+                  color={settings.stripe_onboarding_complete ? '#22C55E' : c.gold}
+                />
+                <Text style={styles.settingsRowText}>
+                  Stripe payouts {settings.stripe_onboarding_complete ? 'connected' : 'pending'}
+                </Text>
+              </View>
+              {billingCardLine ? (
+                <View style={[styles.settingsRow, styles.settingsDivider]}>
+                  <Ionicons name="wallet-outline" size={16} color={c.textMuted} />
+                  <Text style={styles.settingsRowText}>{billingCardLine}</Text>
+                </View>
+              ) : null}
+            </View>
+          </View>
+        ) : null}
 
         {/* Staff on clock */}
         <View style={styles.sectionPad}>

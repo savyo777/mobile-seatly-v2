@@ -1,20 +1,69 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { View, Text, StyleSheet, Pressable, Alert } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 import { OwnerScreen } from '@/components/owner/OwnerScreen';
 import { GlassCard } from '@/components/owner/GlassCard';
 import { SubpageHeader } from '@/components/owner/SubpageHeader';
-import { EXPORT_OPTIONS as DEMO_EXPORT_OPTIONS } from '@/lib/mock/ownerApp';
+import { EXPORT_OPTIONS as DEMO_EXPORT_OPTIONS, type ExportOptionRow } from '@/lib/mock/ownerApp';
 import { isDemoModeEnabled } from '@/lib/config/demoMode';
-
-const EXPORT_OPTIONS: typeof DEMO_EXPORT_OPTIONS = isDemoModeEnabled() ? DEMO_EXPORT_OPTIONS : [];
+import { getSupabase } from '@/lib/supabase/client';
+import { fetchCurrentUserProfile } from '@/lib/services/userProfile';
 import { createStyles } from '@/lib/theme';
 import { ownerColorsFromPalette } from '@/lib/theme/ownerTheme';
+
+function formatDateRange(from?: string | null, to?: string | null): string {
+  if (!from && !to) return '';
+  if (from && to) return `${from} → ${to}`;
+  return from ?? to ?? '';
+}
 
 export default function OwnerExportScreen() {
   const { t } = useTranslation();
   const styles = useStyles();
+  const [exportOptions, setExportOptions] = useState<ExportOptionRow[]>(
+    isDemoModeEnabled() ? DEMO_EXPORT_OPTIONS : [],
+  );
+
+  useEffect(() => {
+    if (isDemoModeEnabled()) return;
+    let active = true;
+    void (async () => {
+      try {
+        const supabase = getSupabase();
+        if (!supabase) return;
+        const profile = await fetchCurrentUserProfile();
+        const restaurantId = profile?.restaurantId;
+        if (!restaurantId) return;
+        const { data } = await supabase
+          .from('accountant_exports')
+          .select('id,status,date_from,date_to,includes,created_at,file_url')
+          .eq('restaurant_id', restaurantId)
+          .order('created_at', { ascending: false })
+          .limit(50);
+        if (!active) return;
+        const rows = ((data ?? []) as Array<Record<string, unknown>>).map((row) => {
+          const includes = Array.isArray(row.includes) ? (row.includes as string[]) : [];
+          const range = formatDateRange(
+            (row.date_from as string | undefined) ?? null,
+            (row.date_to as string | undefined) ?? null,
+          );
+          const subParts = [range, includes.join(' · '), String(row.status ?? '')].filter(Boolean);
+          return {
+            id: String(row.id ?? ''),
+            title: includes[0] ? `Export: ${includes.join(', ')}` : `Export ${String(row.id ?? '').slice(0, 8)}`,
+            subtitle: subParts.join(' · '),
+          } satisfies ExportOptionRow;
+        });
+        setExportOptions(rows);
+      } catch {
+        // swallow
+      }
+    })();
+    return () => {
+      active = false;
+    };
+  }, []);
 
   return (
     <OwnerScreen
@@ -26,7 +75,7 @@ export default function OwnerExportScreen() {
         />
       }
     >
-      {EXPORT_OPTIONS.map((row, i) => (
+      {exportOptions.map((row, i) => (
         <Animated.View key={row.id} entering={FadeInDown.delay(i * 40)}>
           <Pressable
             onPress={() => Alert.alert(row.title, t('owner.exportMock'))}

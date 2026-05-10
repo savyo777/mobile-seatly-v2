@@ -27,9 +27,10 @@ import {
   type CrmGuest,
 } from '@/lib/mock/ownerApp';
 import { isDemoModeEnabled } from '@/lib/config/demoMode';
+import { getSupabase } from '@/lib/supabase/client';
+import { fetchCurrentUserProfile } from '@/lib/services/userProfile';
 
-const CRM_AI_INSIGHTS: typeof DEMO_CRM_AI_INSIGHTS = isDemoModeEnabled() ? DEMO_CRM_AI_INSIGHTS : [];
-const CRM_SPOTLIGHT: typeof DEMO_CRM_SPOTLIGHT = isDemoModeEnabled() ? DEMO_CRM_SPOTLIGHT : [];
+const EMPTY_INSIGHT_PLACEHOLDER = { id: 'empty', headline: '', sub: '' };
 import {
   type CrmFilterId,
   type CrmSortId,
@@ -160,6 +161,12 @@ export default function OwnerCrmScreen() {
   const insets = useSafeAreaInsets();
   const ownerColors = useOwnerColors();
   const styles = useStyles();
+  const [crmSpotlight, setCrmSpotlight] = useState<CrmGuest[]>(
+    isDemoModeEnabled() ? DEMO_CRM_SPOTLIGHT : [],
+  );
+  const [crmInsights, setCrmInsights] = useState<typeof DEMO_CRM_AI_INSIGHTS>(
+    isDemoModeEnabled() ? DEMO_CRM_AI_INSIGHTS : [],
+  );
   const [guestOverrides, setGuestOverrides] = useState<Record<string, Partial<CrmGuest>>>({});
   const [singleFilter, setSingleFilter] = useState<CrmFilterId>('all');
   const [multiMode, setMultiMode] = useState(false);
@@ -177,9 +184,95 @@ export default function OwnerCrmScreen() {
   const swipeRefs = useRef<Map<string, Swipeable | null>>(new Map());
 
   const guests = useMemo(
-    () => CRM_SPOTLIGHT.map((g) => mergeGuest(g, guestOverrides[g.id])),
-    [guestOverrides],
+    () => crmSpotlight.map((g) => mergeGuest(g, guestOverrides[g.id])),
+    [crmSpotlight, guestOverrides],
   );
+
+  useEffect(() => {
+    if (isDemoModeEnabled()) return;
+    let active = true;
+    void (async () => {
+      try {
+        const supabase = getSupabase();
+        if (!supabase) return;
+        const profile = await fetchCurrentUserProfile();
+        const restaurantId = profile?.restaurantId;
+        if (!restaurantId) return;
+
+        const { data: guestRows } = await supabase
+          .from('guests')
+          .select('id,full_name,is_vip,total_visits,average_spend_per_visit,last_visit_at,lifetime_value_score,no_show_risk_score,favourite_dishes,seating_preference,allergies,dietary_restrictions,internal_notes')
+          .eq('restaurant_id', restaurantId)
+          .order('total_visits', { ascending: false })
+          .limit(10);
+
+        if (!active) return;
+        const mapped: CrmGuest[] = ((guestRows ?? []) as Array<Record<string, unknown>>).map((row) => {
+          const lastVisitRaw = (row.last_visit_at as string | null) ?? '';
+          const lastVisit = lastVisitRaw ? lastVisitRaw.slice(0, 10) : '';
+          const totalVisits = Number(row.total_visits ?? 0) || 0;
+          const avgSpend = Number(row.average_spend_per_visit ?? 0) || 0;
+          const ltv = Number(row.lifetime_value_score ?? 0) || 0;
+          const churn = Number(row.no_show_risk_score ?? 0) || 0;
+          const allergies = Array.isArray(row.allergies) ? (row.allergies as string[]) : [];
+          const dietary = Array.isArray(row.dietary_restrictions) ? (row.dietary_restrictions as string[]) : [];
+          const favs = Array.isArray(row.favourite_dishes) ? (row.favourite_dishes as string[]) : [];
+          const prefs: string[] = [];
+          if (row.seating_preference) prefs.push(String(row.seating_preference));
+          if (allergies.length) prefs.push(`No ${allergies.join(', ')}`);
+          if (dietary.length) prefs.push(dietary.join(', '));
+          return {
+            id: String(row.id ?? ''),
+            name: String(row.full_name ?? 'Guest'),
+            isVIP: Boolean(row.is_vip),
+            totalVisits,
+            avgSpend,
+            lastVisitDate: lastVisit,
+            churnRisk: churn,
+            visitFrequency: 0,
+            frequency: totalVisits > 0 ? `${totalVisits} visits` : 'New',
+            preference: prefs.join(' · '),
+            preferencesShort: prefs.join(' · ') || '—',
+            aiLine: '',
+            nextBestAction: '',
+            predictedSpendTonight: 0,
+            ltvScore: ltv,
+            predictedLifetimeValue: 0,
+            hasUpcomingReservation: false,
+            isSeated: false,
+            visitHistory: [],
+            favoriteDishes: favs,
+            preferredTable: String(row.seating_preference ?? ''),
+            notes: String(row.internal_notes ?? ''),
+            noShowNote: '',
+            aiSuggestions: [],
+          };
+        });
+        setCrmSpotlight(mapped);
+
+        const { data: aiRows } = await supabase
+          .from('ai_suggestions')
+          .select('id,title,summary,rationale,generated_at')
+          .eq('restaurant_id', restaurantId)
+          .is('applied_at', null)
+          .is('dismissed_at', null)
+          .order('generated_at', { ascending: false })
+          .limit(10);
+        if (!active) return;
+        const insights = ((aiRows ?? []) as Array<Record<string, unknown>>).map((row) => ({
+          id: String(row.id ?? ''),
+          headline: String(row.title ?? ''),
+          sub: String(row.summary ?? row.rationale ?? ''),
+        }));
+        setCrmInsights(insights);
+      } catch {
+        // swallow; UI shows empty state.
+      }
+    })();
+    return () => {
+      active = false;
+    };
+  }, []);
 
   const filtered = useMemo(() => {
     let list = guests.filter((g) => searchMatchesGuest(g, query));
@@ -196,13 +289,17 @@ export default function OwnerCrmScreen() {
   }, [singleFilter, multiMode, multiFilters, sort, query]);
 
   useEffect(() => {
+    if (crmInsights.length === 0) return;
     const id = setInterval(() => {
-      setInsightIdx((i) => (i + 1) % CRM_AI_INSIGHTS.length);
+      setInsightIdx((i) => (i + 1) % crmInsights.length);
     }, 6000);
     return () => clearInterval(id);
-  }, []);
+  }, [crmInsights.length]);
 
-  const insight = CRM_AI_INSIGHTS[insightIdx % CRM_AI_INSIGHTS.length];
+  const insight =
+    crmInsights.length > 0
+      ? crmInsights[insightIdx % crmInsights.length]
+      : EMPTY_INSIGHT_PLACEHOLDER;
 
   const patchGuest = useCallback((id: string, patch: Partial<CrmGuest>) => {
     setGuestOverrides((prev) => ({
@@ -477,22 +574,30 @@ export default function OwnerCrmScreen() {
         />
       </View>
 
-      <Pressable onPress={() => setInsightIdx((i) => (i + 1) % CRM_AI_INSIGHTS.length)} style={styles.aiStrip}>
-        <View style={styles.aiStripGlow} />
-        <View style={styles.aiStripInner}>
-          <View style={styles.aiStripTop}>
-            <Text style={styles.aiStripHint}>{t('owner.crmAiStripHint')}</Text>
-            <Ionicons name="sparkles" size={16} color={ownerColors.gold} />
+      {crmInsights.length > 0 ? (
+        <Pressable
+          onPress={() => setInsightIdx((i) => (i + 1) % crmInsights.length)}
+          style={styles.aiStrip}
+        >
+          <View style={styles.aiStripGlow} />
+          <View style={styles.aiStripInner}>
+            <View style={styles.aiStripTop}>
+              <Text style={styles.aiStripHint}>{t('owner.crmAiStripHint')}</Text>
+              <Ionicons name="sparkles" size={16} color={ownerColors.gold} />
+            </View>
+            <Text style={styles.aiStripHeadline}>{insight.headline}</Text>
+            <Text style={styles.aiStripSub}>{insight.sub}</Text>
+            <View style={styles.dotRow}>
+              {crmInsights.map((item, i) => (
+                <View
+                  key={item.id}
+                  style={[styles.dot, i === insightIdx % crmInsights.length && styles.dotOn]}
+                />
+              ))}
+            </View>
           </View>
-          <Text style={styles.aiStripHeadline}>{insight.headline}</Text>
-          <Text style={styles.aiStripSub}>{insight.sub}</Text>
-          <View style={styles.dotRow}>
-            {CRM_AI_INSIGHTS.map((item, i) => (
-              <View key={item.id} style={[styles.dot, i === insightIdx % CRM_AI_INSIGHTS.length && styles.dotOn]} />
-            ))}
-          </View>
-        </View>
-      </Pressable>
+        </Pressable>
+      ) : null}
 
       {multiMode ? (
         <View style={styles.multiBanner}>
@@ -719,7 +824,7 @@ export default function OwnerCrmScreen() {
             <Pressable
               onPress={() => {
                 if (noteGuest && noteDraft.trim()) {
-                  const base = CRM_SPOTLIGHT.find((x) => x.id === noteGuest.id);
+                  const base = crmSpotlight.find((x) => x.id === noteGuest.id);
                   if (base) {
                     const prev = mergeGuest(base, guestOverrides[noteGuest.id]);
                     patchGuest(noteGuest.id, { notes: `${prev.notes}\n${noteDraft.trim()}` });
