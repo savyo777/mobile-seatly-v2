@@ -43,3 +43,4 @@ yarn-error.*
 
 # Supabase CLI local link/cache (machine-specific)
 supabase/.temp/
+.claude/
