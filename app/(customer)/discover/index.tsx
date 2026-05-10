@@ -73,7 +73,7 @@ const useStyles = createStyles((c) => ({
   logo: {
     width: 200,
     height: 73,
-    marginLeft: -10,
+    marginLeft: -16,
     marginVertical: -8,
   },
   headerRight: {
