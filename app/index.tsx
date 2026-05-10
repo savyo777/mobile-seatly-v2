@@ -16,8 +16,8 @@ const useStyles = createStyles((c) => ({
     justifyContent: 'center',
   },
   logo: {
-    width: 240,
-    height: 88,
+    height: 140,
+    aspectRatio: 825 / 302,
   },
   tagline: {
     fontSize: 16,

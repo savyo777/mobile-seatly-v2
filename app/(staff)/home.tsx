@@ -163,8 +163,8 @@ const useStyles = createStyles((c) => ({
     borderBottomColor: c.border,
   },
   brandLogo: {
-    width: 110,
-    height: 32,
+    height: 56,
+    aspectRatio: 825 / 302,
   },
   brandBellBtn: {
     padding: 4,
