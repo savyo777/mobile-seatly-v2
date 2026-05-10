@@ -8,7 +8,7 @@ import {
   RefreshControl,
   Image,
 } from 'react-native';
-import { useRouter, Href } from 'expo-router';
+import { useRouter, useFocusEffect, Href } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
@@ -340,11 +340,11 @@ export default function DiscoverScreen() {
   const currentUserId = user?.id ?? '';
   const [baseRestaurants, setBaseRestaurants] = useState<Restaurant[]>(() => (isDemoModeEnabled() ? mockRestaurants : []));
   const [unreadCount, setUnreadCount] = useState(() => (isDemoModeEnabled() ? getUnreadCount(currentUserId) : 0));
-  const [userPrefs, setUserPrefs] = useState<{ cuisines: string[]; dietary: string[]; vibes: string[] }>(
+  const [userPrefs, setUserPrefs] = useState<{ cuisines: string[]; dietary: string[] }>(
     () =>
       isDemoModeEnabled()
-        ? { cuisines: [], dietary: mockCustomer.dietaryRestrictions ?? [], vibes: [] }
-        : { cuisines: [], dietary: [], vibes: [] },
+        ? { cuisines: [], dietary: mockCustomer.dietaryRestrictions ?? [] }
+        : { cuisines: [], dietary: [] },
   );
   const displayProfile = useMemo(
     () => resolveAuthDisplayProfile(user),
@@ -362,24 +362,26 @@ export default function DiscoverScreen() {
   }, []);
 
   // Pull the diner's saved preferences for the "Your preferences" home section.
-  // Demo mode keeps the mock initialiser; production fetches from user_profiles.
-  useEffect(() => {
-    if (isDemoModeEnabled()) return;
-    let cancelled = false;
-    void fetchCurrentUserProfile()
-      .then((profile) => {
-        if (cancelled || !profile) return;
-        setUserPrefs({
-          cuisines: profile.preferredCuisines,
-          dietary: profile.dietaryRestrictions,
-          vibes: profile.diningVibes,
-        });
-      })
-      .catch(() => undefined);
-    return () => {
-      cancelled = true;
-    };
-  }, [user?.id]);
+  // useFocusEffect refetches every time the user tabs back to Discover, so
+  // edits made on Profile show up here without a full app relaunch.
+  useFocusEffect(
+    useCallback(() => {
+      if (isDemoModeEnabled()) return;
+      let cancelled = false;
+      void fetchCurrentUserProfile()
+        .then((profile) => {
+          if (cancelled || !profile) return;
+          setUserPrefs({
+            cuisines: profile.preferredCuisines,
+            dietary: profile.dietaryRestrictions,
+          });
+        })
+        .catch(() => undefined);
+      return () => {
+        cancelled = true;
+      };
+    }, []),
+  );
 
   const filterLabel = (key: FilterKey) => {
     const map: Record<FilterKey, string> = {
@@ -638,7 +640,7 @@ export default function DiscoverScreen() {
         </View>
 
         {searchMode === 'restaurants' ? (() => {
-          const prefChips = [...userPrefs.cuisines, ...userPrefs.dietary, ...userPrefs.vibes].filter(Boolean);
+          const prefChips = [...userPrefs.cuisines, ...userPrefs.dietary].filter(Boolean);
           const hasPrefs = prefChips.length > 0;
           return (
             <View style={styles.prefsSection}>

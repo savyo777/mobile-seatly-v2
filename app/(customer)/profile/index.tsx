@@ -25,11 +25,7 @@ import {
   type AppUserProfile,
 } from '@/lib/services/userProfile';
 import { getStoredCustomerPaymentMethods } from '@/lib/storage/customerPaymentMethods';
-import {
-  SUGGESTED_CUISINES,
-  SUGGESTED_DIETARY,
-  SUGGESTED_VIBES,
-} from '@/lib/constants/preferenceCatalog';
+import { SUGGESTED_CUISINES, SUGGESTED_DIETARY } from '@/lib/constants/preferenceCatalog';
 
 const getNextTier = getNextDinerTier;
 
@@ -620,7 +616,6 @@ export default function ProfileScreen() {
   const initials = initialsFromName(displayProfile.fullName);
   const [cuisinePrefs, setCuisinePrefs] = useState('');
   const [dietaryPrefs, setDietaryPrefs] = useState('');
-  const [vibePrefs, setVibePrefs] = useState('');
   const accountRows = useMemo(
     () => [
       ACCOUNT_ROWS[0],
@@ -633,14 +628,13 @@ export default function ProfileScreen() {
   useEffect(() => {
     setCuisinePrefs(accountProfile?.preferredCuisines.join(', ') ?? '');
     setDietaryPrefs(accountProfile?.dietaryRestrictions.join(', ') ?? '');
-    setVibePrefs(accountProfile?.diningVibes.join(', ') ?? '');
   }, [accountProfile]);
 
   // Persist a dining-preference list to user_profiles whenever a chip toggles.
   // Demo mode is a no-op (no Supabase write); errors are silent so the UI
   // stays responsive — the optimistic local state has already updated.
   const persistPreference = useCallback(
-    (column: 'preferred_cuisines' | 'dietary_restrictions' | 'dining_vibes', next: string) => {
+    (column: 'preferred_cuisines' | 'dietary_restrictions', next: string) => {
       if (isDemoModeEnabled()) return;
       const arr = parsePreferenceInput(next);
       void updateCurrentUserProfile({ [column]: arr.length > 0 ? arr : null }).catch(() => undefined);
@@ -659,13 +653,6 @@ export default function ProfileScreen() {
     (next: string) => {
       setDietaryPrefs(next);
       persistPreference('dietary_restrictions', next);
-    },
-    [persistPreference],
-  );
-  const handleVibePrefsChange = useCallback(
-    (next: string) => {
-      setVibePrefs(next);
-      persistPreference('dining_vibes', next);
     },
     [persistPreference],
   );
@@ -795,11 +782,6 @@ export default function ProfileScreen() {
           <View>
             <Text style={styles.prefsSubTitle}>Dietary</Text>
             <DiningPrefPickRow options={SUGGESTED_DIETARY} value={dietaryPrefs} onChange={handleDietaryPrefsChange} />
-          </View>
-          <View style={styles.prefsDivider} />
-          <View>
-            <Text style={styles.prefsSubTitle}>Vibes</Text>
-            <DiningPrefPickRow options={SUGGESTED_VIBES} value={vibePrefs} onChange={handleVibePrefsChange} />
           </View>
         </View>
 
