@@ -17,6 +17,8 @@ import {
   makeBookingCartParam,
   type PublicBookingCartItem,
 } from '@/lib/booking/publicBookingApi';
+import { previewDepositCents, type DepositTier } from '@/lib/booking/depositTiers';
+import { loadRestaurantForBooking } from '@/lib/data/restaurantCatalog';
 import { formatCurrency } from '@/lib/utils/formatCurrency';
 import { useColors, createStyles, borderRadius } from '@/lib/theme';
 import { BOOKING_STEPS_TOTAL } from '@/lib/booking/bookingDefaults';
@@ -115,6 +117,10 @@ export default function Step4Preorder() {
   const [liveCategories, setLiveCategories] = useState<LiveMenuCategory[]>([]);
   const [liveMenuItems, setLiveMenuItems] = useState<LiveMenuItem[]>([]);
   const [liveMenuLoading, setLiveMenuLoading] = useState(!isDemoModeEnabled());
+  const [depositTiers, setDepositTiers] = useState<DepositTier[] | undefined>(undefined);
+  const partySizeNum = Math.max(1, parseInt(partySize ?? '1', 10) || 1);
+  const depositCents = previewDepositCents(depositTiers, partySizeNum);
+  const hasDeposit = depositCents > 0;
   const BOOKING_STEPS = BOOKING_STEPS_TOTAL;
   const STEP = 3;
   const progress = STEP / BOOKING_STEPS;
@@ -140,6 +146,17 @@ export default function Step4Preorder() {
       .finally(() => {
         if (active) setLiveMenuLoading(false);
       });
+    return () => {
+      active = false;
+    };
+  }, [restaurantId]);
+
+  useEffect(() => {
+    if (!restaurantId) return;
+    let active = true;
+    void loadRestaurantForBooking(restaurantId).then((restaurant) => {
+      if (active) setDepositTiers(restaurant?.depositTiers);
+    });
     return () => {
       active = false;
     };
@@ -245,14 +262,24 @@ export default function Step4Preorder() {
   const postBooking = afterBooking === '1' || afterBooking === 'true';
   const prepayUrl = `/booking/${restaurantId}/step-prepay-offer?${qpBase}&cartTotal=${cartTotal}&cartCount=${cart.length}&cart=${encodedCart}`;
   const reviewUrl = `/booking/${restaurantId}/step5-review?${qpBase}&cartTotal=${cartSubtotal(cartPayload)}&cartCount=${cart.length}&cart=${encodedCart}`;
+  // Deposit-only path: skip the review screen (which is preorder-summary-shaped)
+  // and land directly on the payment screen so the diner sees + agrees to the
+  // deposit before we create the reservation.
+  const paymentUrl = `/booking/${restaurantId}/step6-payment?${qpBase}&cartTotal=0&cart=`;
   const confirmUrl = `/booking/${restaurantId}/step7-confirmation?${qpBase}&cart=`;
+
+  // When the party size hits the restaurant's deposit tier, route through the
+  // payment screen even with no preorder cart so the deposit is visible. If
+  // the party is below every tier (depositCents === 0), skip straight to
+  // confirmation — no payment screen for parties that don't owe anything.
+  const nextUrlWithoutCart = hasDeposit ? paymentUrl : confirmUrl;
 
   const handleSkip = () => {
     if (postBooking) {
       router.dismissAll();
       router.navigate('/(customer)/activity');
     } else {
-      router.push(confirmUrl);
+      router.push(nextUrlWithoutCart);
     }
   };
 
@@ -267,7 +294,7 @@ export default function Step4Preorder() {
       }
       router.push(prepayUrl);
     } else {
-      router.push(cart.length > 0 ? reviewUrl : confirmUrl);
+      router.push(cart.length > 0 ? reviewUrl : nextUrlWithoutCart);
     }
   };
 
