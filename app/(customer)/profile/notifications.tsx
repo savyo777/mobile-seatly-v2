@@ -1,15 +1,19 @@
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { View, Text } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { ProfileStackScreen } from '@/components/profile/ProfileStackScreen';
 import { ToggleRow } from '@/components/profile/ToggleRow';
 import { mockNotificationPrefs as DEMO_NOTIFICATION_PREFS } from '@/lib/mock/profileScreens';
 import { isDemoModeEnabled } from '@/lib/config/demoMode';
-
-const mockNotificationPrefs: typeof DEMO_NOTIFICATION_PREFS = isDemoModeEnabled()
-  ? DEMO_NOTIFICATION_PREFS
-  : [];
+import {
+  fetchUserProfileNotificationPrefs,
+  updateCurrentUserProfile,
+} from '@/lib/services/userProfile';
 import { useColors, createStyles, spacing, typography, shadows } from '@/lib/theme';
+
+// Static catalog of notification rows (labels are UI strings, not data).
+// In production we use the same catalog and persist toggle state to Supabase.
+const NOTIFICATION_PREFS = DEMO_NOTIFICATION_PREFS;
 
 const useStyles = createStyles((c) => ({
   intro: {
@@ -35,15 +39,38 @@ export default function NotificationsScreen() {
   const styles = useStyles();
   const initial = useMemo(() => {
     const o: Record<string, boolean> = {};
-    mockNotificationPrefs.forEach((p) => {
+    NOTIFICATION_PREFS.forEach((p) => {
       o[p.id] = p.defaultOn;
     });
     return o;
   }, []);
   const [prefs, setPrefs] = useState(initial);
 
+  useEffect(() => {
+    if (isDemoModeEnabled()) return;
+    let active = true;
+    void fetchUserProfileNotificationPrefs()
+      .then((remote) => {
+        if (!active) return;
+        if (Object.keys(remote).length === 0) return;
+        setPrefs((prev) => ({ ...prev, ...remote }));
+      })
+      .catch(() => {
+        // Keep defaults on error.
+      });
+    return () => {
+      active = false;
+    };
+  }, []);
+
   const update = (id: string, v: boolean) => {
-    setPrefs((prev) => ({ ...prev, [id]: v }));
+    setPrefs((prev) => {
+      const next = { ...prev, [id]: v };
+      if (!isDemoModeEnabled()) {
+        void updateCurrentUserProfile({ notification_preferences_json: next });
+      }
+      return next;
+    });
   };
 
   return (
@@ -52,14 +79,14 @@ export default function NotificationsScreen() {
         Choose what you want to hear about. You can change these anytime — we will never spam you.
       </Text>
       <View style={styles.group}>
-        {mockNotificationPrefs.map((p, i) => (
+        {NOTIFICATION_PREFS.map((p, i) => (
           <ToggleRow
             key={p.id}
             title={p.title}
             subtitle={p.subtitle}
             value={prefs[p.id] ?? false}
             onValueChange={(v) => update(p.id, v)}
-            isLast={i === mockNotificationPrefs.length - 1}
+            isLast={i === NOTIFICATION_PREFS.length - 1}
           />
         ))}
       </View>

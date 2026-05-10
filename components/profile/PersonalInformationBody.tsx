@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import {
   View,
   Text,
@@ -15,6 +15,7 @@ import * as ImagePicker from 'expo-image-picker';
 import { Ionicons } from '@expo/vector-icons';
 import { mockCustomer as DEMO_CUSTOMER } from '@/lib/mock/users';
 import { isDemoModeEnabled } from '@/lib/config/demoMode';
+import { fetchCurrentUserProfile, updateCurrentUserProfile } from '@/lib/services/userProfile';
 
 const EMPTY_CUSTOMER: typeof DEMO_CUSTOMER = {
   ...DEMO_CUSTOMER,
@@ -39,14 +40,18 @@ type FormState = {
 
 function useForm(initial: FormState) {
   const [values, setValues] = useState(initial);
-  const [original] = useState(initial);
+  const [original, setOriginal] = useState(initial);
   const isDirty = Object.keys(values).some(
     (k) => values[k as keyof FormState] !== original[k as keyof FormState],
   );
   const set = useCallback((field: keyof FormState) => (value: string) => {
     setValues((prev) => ({ ...prev, [field]: value }));
   }, []);
-  return { values, set, isDirty };
+  const reset = useCallback((next: FormState) => {
+    setValues(next);
+    setOriginal(next);
+  }, []);
+  return { values, set, isDirty, reset };
 }
 
 const useStyles = createStyles((c) => ({
@@ -197,17 +202,55 @@ export function PersonalInformationBody() {
   const styles = useStyles();
   const initialAvatarUri = mockCustomer.avatarUrl ?? '';
   const [avatarUri, setAvatarUri] = useState(initialAvatarUri);
-  const { values, set, isDirty } = useForm({
+  const { values, set, isDirty, reset } = useForm({
     displayName: mockCustomer.fullName,
     username: 'alexj',
     bio: 'Chasing great meals across the city.',
     email: mockCustomer.email,
     phone: mockCustomer.phone,
   });
+  const [isSaving, setIsSaving] = useState(false);
 
-  const handleSave = useCallback(() => {
+  useEffect(() => {
+    if (isDemoModeEnabled()) return;
+    let active = true;
+    void fetchCurrentUserProfile()
+      .then((profile) => {
+        if (!active || !profile) return;
+        reset({
+          displayName: profile.fullName,
+          username: 'alexj',
+          bio: 'Chasing great meals across the city.',
+          email: profile.email,
+          phone: profile.phone,
+        });
+        setAvatarUri(profile.avatarUrl ?? '');
+      })
+      .catch(() => {
+        // Silent: keep mock fallbacks visible.
+      });
+    return () => {
+      active = false;
+    };
+  }, [reset]);
+
+  const handleSave = useCallback(async () => {
+    if (isDemoModeEnabled()) {
+      Alert.alert('Saved', 'Your profile has been updated.');
+      return;
+    }
+    setIsSaving(true);
+    const { error } = await updateCurrentUserProfile({
+      full_name: values.displayName.trim() || null,
+      phone: values.phone.trim() || null,
+    });
+    setIsSaving(false);
+    if (error) {
+      Alert.alert('Could not save', 'Please try again in a moment.');
+      return;
+    }
     Alert.alert('Saved', 'Your profile has been updated.');
-  }, []);
+  }, [values.displayName, values.phone]);
 
   const pickPhoto = useCallback(async () => {
     try {
@@ -338,15 +381,15 @@ export function PersonalInformationBody() {
         {/* Save */}
         <Pressable
           onPress={handleSave}
-          disabled={!canSave}
+          disabled={!canSave || isSaving}
           style={({ pressed }) => [
             styles.saveBtn,
-            !canSave && styles.saveBtnDisabled,
-            pressed && canSave && { opacity: 0.8 },
+            (!canSave || isSaving) && styles.saveBtnDisabled,
+            pressed && canSave && !isSaving && { opacity: 0.8 },
           ]}
         >
-          <Text style={[styles.saveBtnText, !canSave && styles.saveBtnTextDisabled]}>
-            Save changes
+          <Text style={[styles.saveBtnText, (!canSave || isSaving) && styles.saveBtnTextDisabled]}>
+            {isSaving ? 'Saving…' : 'Save changes'}
           </Text>
         </Pressable>
       </ScrollView>

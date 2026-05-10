@@ -5,6 +5,8 @@ import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { ProfileStackScreen } from '@/components/profile/ProfileStackScreen';
 import { useColors, createStyles, spacing, borderRadius, typography } from '@/lib/theme';
+import { isDemoModeEnabled } from '@/lib/config/demoMode';
+import { updateCurrentUserProfile } from '@/lib/services/userProfile';
 
 const LANG_KEY = '@seatly/lang';
 
@@ -80,6 +82,9 @@ export default function LanguageScreen() {
     setSelected(code);
     await i18n.changeLanguage(code);
     await AsyncStorage.setItem(LANG_KEY, code);
+    if (!isDemoModeEnabled()) {
+      void updateCurrentUserProfile({ preferred_locale: code, preferred_language: code });
+    }
   };
 
   return (

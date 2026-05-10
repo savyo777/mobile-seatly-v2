@@ -107,3 +107,59 @@ export async function getCurrentUserProfileId(): Promise<string | null> {
   const profile = await fetchCurrentUserProfile();
   return profile?.id || null;
 }
+
+export type UserProfileUpdate = Partial<{
+  full_name: string | null;
+  phone: string | null;
+  avatar_url: string | null;
+  preferred_locale: string | null;
+  preferred_language: string | null;
+  notification_preferences_json: Record<string, unknown> | null;
+  birthday: string | null;
+  dietary_restrictions: string[] | null;
+  allergies: string[] | null;
+  seating_preference: string | null;
+  noise_preference: string | null;
+  car_details_json: Record<string, unknown> | null;
+}>;
+
+export async function updateCurrentUserProfile(
+  patch: UserProfileUpdate,
+): Promise<{ error: string | null }> {
+  const supabase = getSupabase();
+  if (!supabase) return { error: 'supabase_not_configured' };
+
+  const { data: userData } = await supabase.auth.getUser();
+  const authUserId = userData.user?.id;
+  if (!authUserId) return { error: 'not_signed_in' };
+
+  const { error } = await supabase
+    .from('user_profiles')
+    .update(patch)
+    .eq('auth_user_id', authUserId);
+
+  return { error: error?.message ?? null };
+}
+
+export async function fetchUserProfileNotificationPrefs(): Promise<Record<string, boolean>> {
+  const supabase = getSupabase();
+  if (!supabase) return {};
+
+  const { data: userData } = await supabase.auth.getUser();
+  const authUserId = userData.user?.id;
+  if (!authUserId) return {};
+
+  const { data, error } = await supabase
+    .from('user_profiles')
+    .select('notification_preferences_json')
+    .eq('auth_user_id', authUserId)
+    .maybeSingle();
+  if (error) return {};
+
+  const raw = (data?.notification_preferences_json ?? {}) as Record<string, unknown>;
+  const out: Record<string, boolean> = {};
+  for (const [key, value] of Object.entries(raw)) {
+    if (typeof value === 'boolean') out[key] = value;
+  }
+  return out;
+}
