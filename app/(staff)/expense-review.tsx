@@ -13,15 +13,18 @@ import {
 import { Image } from 'expo-image';
 import * as Haptics from 'expo-haptics';
 import { Ionicons } from '@expo/vector-icons';
-import { useFocusEffect, useRouter } from 'expo-router';
+import { useRouter } from 'expo-router';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { OwnerScreen } from '@/components/owner/OwnerScreen';
 import { GlassCard } from '@/components/owner/GlassCard';
 import { AiBadge } from '@/components/owner/AiBadge';
 import { ScanShimmer } from '@/components/owner/ScanShimmer';
+import { MonthCalendar } from '@/components/owner/MonthCalendar';
 import { useExpenses } from '@/lib/context/ExpensesContext';
 import { useCurrentUserId } from '@/lib/auth/currentUserId';
+import { isDemoModeEnabled } from '@/lib/config/demoMode';
+import { getCurrentOwnerRestaurantId } from '@/lib/services/ownerRestaurant';
 import { consumePendingScan, type PendingScan } from '@/lib/expenses/pendingScan';
 import { scanReceipt } from '@/lib/expenses/scanReceipt';
 import { uploadReceiptImage } from '@/lib/expenses/uploadReceiptImage';
@@ -30,7 +33,7 @@ import {
   isExpenseCategoryKey,
   type ExpenseCategoryKey,
 } from '@/lib/owner/expenseCategories';
-import type { ExpenseDraftFieldKey } from '@/lib/expenses/types';
+import type { Expense, ExpenseDraftFieldKey } from '@/lib/expenses/types';
 import { createStyles } from '@/lib/theme';
 import { ownerColorsFromPalette, ownerRadii, ownerSpace, useOwnerColors } from '@/lib/theme/ownerTheme';
 import { brandGold, withAlpha } from '@/lib/theme/tokens';
@@ -58,25 +61,36 @@ function todayISO(): string {
   return new Date().toISOString().slice(0, 10);
 }
 
+function formatHumanDate(iso: string): string {
+  const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(iso);
+  if (!m) return iso;
+  const d = new Date(Number(m[1]), Number(m[2]) - 1, Number(m[3]));
+  if (Number.isNaN(d.getTime())) return iso;
+  return d.toLocaleDateString(undefined, {
+    weekday: 'short',
+    month: 'short',
+    day: 'numeric',
+    year: 'numeric',
+  });
+}
+
 export default function ExpenseReviewScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const ownerColors = useOwnerColors();
   const styles = useStyles();
   const userId = useCurrentUserId();
-  const { ownerRestaurantId, addExpense, patchExpense } = useExpenses();
+  const { ownerRestaurantId, addExpense, addLocalExpense, patchExpense } = useExpenses();
 
   const [scan, setScan] = useState<PendingScan | null>(null);
   const [scanning, setScanning] = useState(true);
   const [extractedFields, setExtractedFields] = useState<Set<ExpenseDraftFieldKey>>(new Set());
   const [saving, setSaving] = useState(false);
+  const [datePickerOpen, setDatePickerOpen] = useState(false);
 
   const [vendor, setVendor] = useState('');
   const [expenseDate, setExpenseDate] = useState(todayISO());
   const [subtotal, setSubtotal] = useState('');
-  const [tax, setTax] = useState('');
-  const [tip, setTip] = useState('');
-  const [total, setTotal] = useState('');
   const [currency, setCurrency] = useState('USD');
   const [category, setCategory] = useState<ExpenseCategoryKey>('other');
   const [paymentMethod, setPaymentMethod] = useState<'card' | 'cash' | 'other' | null>(null);
@@ -107,17 +121,27 @@ export default function ExpenseReviewScreen() {
       const draft = result.draft;
       if (draft.vendor) setVendor(draft.vendor);
       if (draft.expenseDate) setExpenseDate(draft.expenseDate);
-      if (draft.subtotalCents != null) setSubtotal(centsToInputString(draft.subtotalCents));
-      if (draft.taxCents != null) setTax(centsToInputString(draft.taxCents));
-      if (draft.tipCents != null) setTip(centsToInputString(draft.tipCents));
-      if (draft.totalCents != null) setTotal(centsToInputString(draft.totalCents));
+      // Single "Subtotal" field captures the all-in amount. Prefer the AI's
+      // total_cents (the bottom-line on the receipt); fall back to subtotal
+      // if the model only returned the pre-tax number.
+      const headlineCents = draft.totalCents ?? draft.subtotalCents;
+      if (headlineCents != null) setSubtotal(centsToInputString(headlineCents));
       if (draft.currency) setCurrency(draft.currency);
       if (draft.category && isExpenseCategoryKey(draft.category)) setCategory(draft.category);
       if (draft.paymentMethod === 'card' || draft.paymentMethod === 'cash' || draft.paymentMethod === 'other') {
         setPaymentMethod(draft.paymentMethod);
       }
       if (draft.paymentMethodLast4) setPaymentLast4(draft.paymentMethodLast4);
-      setExtractedFields(new Set(result.extractedFields));
+      // Collapse the AI-extraction tracking to match the simplified form.
+      const collapsed = new Set<ExpenseDraftFieldKey>();
+      for (const f of result.extractedFields) {
+        if (f === 'totalCents' || f === 'taxCents' || f === 'tipCents') {
+          collapsed.add('subtotalCents');
+        } else {
+          collapsed.add(f);
+        }
+      }
+      setExtractedFields(collapsed);
       setScanning(false);
     })();
     return () => {
@@ -150,31 +174,77 @@ export default function ExpenseReviewScreen() {
       Alert.alert('Missing vendor', 'Add a vendor name before saving.');
       return;
     }
-    const totalCents = parseCurrencyInput(total);
-    if (totalCents == null || totalCents < 0) {
-      Alert.alert('Missing total', 'Enter the total amount on the receipt.');
-      return;
-    }
-    if (!ownerRestaurantId) {
-      Alert.alert('No restaurant', 'Sign in as a restaurant owner to save expenses.');
-      return;
-    }
-    if (!userId) {
-      Alert.alert('Not signed in', 'Sign in to save this expense.');
+    const amountCents = parseCurrencyInput(subtotal);
+    if (amountCents == null || amountCents < 0) {
+      Alert.alert('Missing amount', 'Enter the subtotal on the receipt.');
       return;
     }
 
     setSaving(true);
     try {
+      // Demo mode: never write to the DB. Synthesize a local expense row
+      // and push it into the context so the list reflects the save.
+      if (isDemoModeEnabled()) {
+        const localId = `local-${Date.now()}-${Math.floor(Math.random() * 1e6)}`;
+        const localExpense: Expense = {
+          id: localId,
+          restaurantId: ownerRestaurantId ?? 'r1',
+          createdByUserId: userId ?? 'u1',
+          createdAt: new Date().toISOString(),
+          vendor: vendor.trim(),
+          expenseDate: expenseDate || todayISO(),
+          subtotalCents: null,
+          taxCents: null,
+          tipCents: null,
+          totalCents: amountCents,
+          currency: currency.trim() || 'USD',
+          category,
+          paymentMethod,
+          paymentMethodLast4: paymentLast4.trim() || null,
+          imagePath: null,
+          notes: notes.trim() || null,
+          aiExtracted: extractedFields.size > 0,
+        };
+        addLocalExpense(localExpense);
+        void Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
+        router.replace('/(staff)/expenses' as never);
+        return;
+      }
+
+      // Real mode: prefer the context's restaurant id, fall back to a
+      // direct lookup so we don't fail just because the context hasn't
+      // hydrated yet.
+      let restaurantId = ownerRestaurantId;
+      if (!restaurantId) {
+        try {
+          restaurantId = await getCurrentOwnerRestaurantId();
+        } catch {
+          restaurantId = null;
+        }
+      }
+      if (!restaurantId) {
+        Alert.alert(
+          'No restaurant linked',
+          'We couldn’t find a restaurant linked to this account. Make sure you finished registering your restaurant.',
+        );
+        setSaving(false);
+        return;
+      }
+      if (!userId) {
+        Alert.alert('Not signed in', 'Sign in to save this expense.');
+        setSaving(false);
+        return;
+      }
+
       const created = await addExpense({
-        restaurantId: ownerRestaurantId,
+        restaurantId,
         createdByUserId: userId,
         vendor: vendor.trim(),
         expenseDate: expenseDate || todayISO(),
-        subtotalCents: parseCurrencyInput(subtotal),
-        taxCents: parseCurrencyInput(tax),
-        tipCents: parseCurrencyInput(tip),
-        totalCents,
+        subtotalCents: null,
+        taxCents: null,
+        tipCents: null,
+        totalCents: amountCents,
         currency: currency.trim() || 'USD',
         category,
         paymentMethod,
@@ -189,7 +259,7 @@ export default function ExpenseReviewScreen() {
         try {
           const path = await uploadReceiptImage({
             uri: scan.uri,
-            restaurantId: ownerRestaurantId,
+            restaurantId,
             expenseId: created.id,
             contentType: scan.mimeType,
           });
@@ -211,14 +281,12 @@ export default function ExpenseReviewScreen() {
   }, [
     saving,
     vendor,
-    total,
+    subtotal,
     ownerRestaurantId,
     userId,
     addExpense,
+    addLocalExpense,
     expenseDate,
-    subtotal,
-    tax,
-    tip,
     currency,
     category,
     paymentMethod,
@@ -262,17 +330,7 @@ export default function ExpenseReviewScreen() {
                 <Text style={styles.subtitle}>Couldn't read the receipt. Fill in the details below.</Text>
               )}
             </View>
-            <Pressable
-              onPress={handleSave}
-              disabled={saving || scanning}
-              style={({ pressed }) => [
-                styles.saveBtn,
-                (saving || scanning) && styles.saveBtnDisabled,
-                pressed && styles.btnPressed,
-              ]}
-            >
-              <Text style={styles.saveBtnText}>{saving ? 'Saving…' : 'Save'}</Text>
-            </Pressable>
+            <View style={styles.headRight} />
           </Animated.View>
 
           <ScrollView keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false}>
@@ -315,79 +373,34 @@ export default function ExpenseReviewScreen() {
             />
 
             {fieldLabel('Date', 'expenseDate')}
+            <Pressable
+              onPress={() => setDatePickerOpen(true)}
+              style={({ pressed }) => [
+                styles.input,
+                styles.dateInput,
+                pressed && { opacity: 0.85 },
+              ]}
+              accessibilityRole="button"
+              accessibilityLabel={`Date: ${formatHumanDate(expenseDate)}`}
+            >
+              <Text style={styles.dateInputText}>
+                {formatHumanDate(expenseDate || todayISO())}
+              </Text>
+              <Ionicons name="calendar-outline" size={18} color={ownerColors.gold} />
+            </Pressable>
+
+            {fieldLabel('Subtotal', 'subtotalCents')}
             <TextInput
-              value={expenseDate}
+              value={subtotal}
               onChangeText={(v) => {
-                setExpenseDate(v);
-                clearExtracted('expenseDate');
+                setSubtotal(v);
+                clearExtracted('subtotalCents');
               }}
-              placeholder="YYYY-MM-DD"
+              placeholder="0.00"
               placeholderTextColor={ownerColors.textMuted}
-              style={styles.input}
-              autoCapitalize="none"
+              style={[styles.input, styles.inputTotal]}
+              keyboardType="decimal-pad"
             />
-
-            <View style={styles.amountsRow}>
-              <View style={styles.amountCol}>
-                {fieldLabel('Subtotal', 'subtotalCents')}
-                <TextInput
-                  value={subtotal}
-                  onChangeText={(v) => {
-                    setSubtotal(v);
-                    clearExtracted('subtotalCents');
-                  }}
-                  placeholder="0.00"
-                  placeholderTextColor={ownerColors.textMuted}
-                  style={styles.input}
-                  keyboardType="decimal-pad"
-                />
-              </View>
-              <View style={styles.amountCol}>
-                {fieldLabel('Tax', 'taxCents')}
-                <TextInput
-                  value={tax}
-                  onChangeText={(v) => {
-                    setTax(v);
-                    clearExtracted('taxCents');
-                  }}
-                  placeholder="0.00"
-                  placeholderTextColor={ownerColors.textMuted}
-                  style={styles.input}
-                  keyboardType="decimal-pad"
-                />
-              </View>
-            </View>
-
-            <View style={styles.amountsRow}>
-              <View style={styles.amountCol}>
-                {fieldLabel('Tip', 'tipCents')}
-                <TextInput
-                  value={tip}
-                  onChangeText={(v) => {
-                    setTip(v);
-                    clearExtracted('tipCents');
-                  }}
-                  placeholder="0.00"
-                  placeholderTextColor={ownerColors.textMuted}
-                  style={styles.input}
-                  keyboardType="decimal-pad"
-                />
-              </View>
-              <View style={styles.amountCol}>
-                {fieldLabel('Total', 'totalCents')}
-                <TextInput
-                  value={total}
-                  onChangeText={(v) => {
-                    setTotal(v);
-                    clearExtracted('totalCents');
-                  }}
-                  placeholder="0.00"
-                  placeholderTextColor={ownerColors.textMuted}
-                  style={[styles.input, styles.inputTotal]}
-                  keyboardType="decimal-pad"
-                />
-              </View>
-            </View>
 
             {fieldLabel('Category', 'category')}
             <ScrollView
@@ -460,10 +473,37 @@ export default function ExpenseReviewScreen() {
               multiline
             />
 
+            <Pressable
+              onPress={handleSave}
+              disabled={saving || scanning}
+              style={({ pressed }) => [
+                styles.bottomSaveBtn,
+                (saving || scanning) && styles.bottomSaveBtnDisabled,
+                pressed && styles.btnPressed,
+              ]}
+              accessibilityRole="button"
+              accessibilityLabel="Save expense"
+            >
+              <Ionicons name="checkmark" size={18} color="#0F0F0F" />
+              <Text style={styles.bottomSaveBtnText}>{saving ? 'Saving…' : 'Save expense'}</Text>
+            </Pressable>
+
             <View style={{ height: ownerSpace.xl + insets.bottom }} />
           </ScrollView>
         </OwnerScreen>
       </KeyboardAvoidingView>
+
+      <MonthCalendar
+        visible={datePickerOpen}
+        value={expenseDate}
+        title="Receipt date"
+        onClose={() => setDatePickerOpen(false)}
+        onConfirm={(iso) => {
+          setExpenseDate(iso);
+          clearExtracted('expenseDate');
+          setDatePickerOpen(false);
+        }}
+      />
     </View>
   );
 }
@@ -501,22 +541,42 @@ const useStyles = createStyles((c) => {
       fontSize: 13,
       marginTop: 2,
     },
-    saveBtn: {
-      paddingHorizontal: 16,
-      paddingVertical: 9,
-      borderRadius: 999,
-      backgroundColor: ownerColors.gold,
-    },
-    saveBtnDisabled: {
-      opacity: 0.55,
-    },
-    saveBtnText: {
-      color: '#0F0F0F',
-      fontWeight: '700',
-      fontSize: 14,
+    headRight: {
+      width: 16,
     },
     btnPressed: {
       opacity: 0.85,
+    },
+    bottomSaveBtn: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'center',
+      gap: 8,
+      paddingHorizontal: 20,
+      paddingVertical: 16,
+      borderRadius: 16,
+      backgroundColor: ownerColors.gold,
+      marginTop: ownerSpace.lg,
+    },
+    bottomSaveBtnDisabled: {
+      opacity: 0.55,
+    },
+    bottomSaveBtnText: {
+      color: '#0F0F0F',
+      fontWeight: '800',
+      fontSize: 16,
+      letterSpacing: -0.2,
+    },
+    dateInput: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      gap: 12,
+    },
+    dateInputText: {
+      color: ownerColors.text,
+      fontSize: 16,
+      fontWeight: '600',
     },
     previewCard: {
       padding: ownerSpace.md,
@@ -601,13 +661,6 @@ const useStyles = createStyles((c) => {
       borderColor: withAlpha(brandGold.dark, 0.4),
       color: ownerColors.gold,
       fontWeight: '700',
-    },
-    amountsRow: {
-      flexDirection: 'row',
-      gap: ownerSpace.sm,
-    },
-    amountCol: {
-      flex: 1,
     },
     catChips: {
       gap: 8,

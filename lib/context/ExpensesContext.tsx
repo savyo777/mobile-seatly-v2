@@ -19,6 +19,9 @@ type ExpensesContextValue = {
   loading: boolean;
   refresh: () => Promise<void>;
   addExpense: (input: CreateExpenseInput) => Promise<Expense | null>;
+  /** Adds an expense to local state only — used for demo-mode saves
+   *  where there is no real restaurant to persist against. */
+  addLocalExpense: (expense: Expense) => void;
   patchExpense: (id: string, patch: UpdateExpensePatch) => Promise<Expense | null>;
   removeExpense: (id: string) => Promise<void>;
 };
@@ -73,6 +76,10 @@ export function ExpensesProvider({ children }: { children: React.ReactNode }) {
     [],
   );
 
+  const addLocalExpense = useCallback<ExpensesContextValue['addLocalExpense']>((expense) => {
+    setExpenses((prev) => [expense, ...prev.filter((e) => e.id !== expense.id)]);
+  }, []);
+
   const patchExpense = useCallback<ExpensesContextValue['patchExpense']>(
     async (id, patch) => {
       const updated = await updateExpense(id, patch);
@@ -100,10 +107,11 @@ export function ExpensesProvider({ children }: { children: React.ReactNode }) {
       loading,
       refresh: reload,
       addExpense,
+      addLocalExpense,
       patchExpense,
       removeExpense,
     }),
-    [ownerRestaurantId, expenses, loading, reload, addExpense, patchExpense, removeExpense],
+    [ownerRestaurantId, expenses, loading, reload, addExpense, addLocalExpense, patchExpense, removeExpense],
   );
 
   return <ExpensesContext.Provider value={value}>{children}</ExpensesContext.Provider>;
