@@ -1,17 +1,17 @@
-import React, { useState, useMemo } from 'react';
+import React, { useEffect, useState, useMemo } from 'react';
 import { View, Text, TouchableOpacity, ScrollView, Image, FlatList, Alert } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTranslation } from 'react-i18next';
 import { Button, Badge } from '@/components/ui';
-import { mockMenuItems, menuCategories } from '@/lib/mock/menuItems';
+import { mockMenuItems } from '@/lib/mock/menuItems';
 import { isDemoModeEnabled } from '@/lib/config/demoMode';
 import {
-  usePublicMenuCategories,
-  usePublicMenuItems,
+  fetchRestaurantMenu,
+  type MenuCategory as LiveMenuCategory,
   type MenuItem as LiveMenuItem,
-} from '@/lib/cenaiva/api/dataHooks';
+} from '@/lib/menu/getRestaurantMenu';
 import {
   cartSubtotal,
   makeBookingCartParam,
@@ -112,11 +112,38 @@ export default function Step4Preorder() {
   const styles = useStyles();
   const [cart, setCart] = useState<CartItem[]>([]);
   const [selectedCategory, setSelectedCategory] = useState('All');
-  const { categories: liveCategories } = usePublicMenuCategories(restaurantId);
-  const { items: liveMenuItems, loading: liveMenuLoading } = usePublicMenuItems(restaurantId);
+  const [liveCategories, setLiveCategories] = useState<LiveMenuCategory[]>([]);
+  const [liveMenuItems, setLiveMenuItems] = useState<LiveMenuItem[]>([]);
+  const [liveMenuLoading, setLiveMenuLoading] = useState(!isDemoModeEnabled());
   const BOOKING_STEPS = BOOKING_STEPS_TOTAL;
   const STEP = 3;
   const progress = STEP / BOOKING_STEPS;
+
+  useEffect(() => {
+    if (isDemoModeEnabled() || !restaurantId) {
+      setLiveMenuLoading(false);
+      return;
+    }
+    let active = true;
+    setLiveMenuLoading(true);
+    void fetchRestaurantMenu(restaurantId)
+      .then((menu) => {
+        if (!active) return;
+        setLiveCategories(menu.categories);
+        setLiveMenuItems(menu.items);
+      })
+      .catch(() => {
+        if (!active) return;
+        setLiveCategories([]);
+        setLiveMenuItems([]);
+      })
+      .finally(() => {
+        if (active) setLiveMenuLoading(false);
+      });
+    return () => {
+      active = false;
+    };
+  }, [restaurantId]);
 
   const liveCategoryNameById = useMemo(
     () => new Map(liveCategories.map((category) => [category.id, category.name])),
@@ -125,7 +152,7 @@ export default function Step4Preorder() {
 
   const items = useMemo(() => {
     const liveItems: DisplayMenuItem[] = liveMenuItems
-      .filter((item) => item.is_available !== false)
+      .filter((item) => item.is_available !== false && item.is_preorderable !== false)
       .map((item: LiveMenuItem) => ({
         id: item.id,
         dbId: item.id,
@@ -136,7 +163,7 @@ export default function Step4Preorder() {
           ? liveCategoryNameById.get(item.category_id) ?? item.category ?? 'Menu'
           : item.category ?? 'Menu',
         photoUrl: item.photo_url,
-        dietaryFlags: [],
+        dietaryFlags: item.dietary_flags ?? [],
       }));
     const fallbackItems: DisplayMenuItem[] = isDemoModeEnabled() ? mockMenuItems
       .filter((m) => m.restaurantId === restaurantId && m.isAvailable)
@@ -157,7 +184,7 @@ export default function Step4Preorder() {
 
   const categories = useMemo(() => {
     const liveCats = liveMenuItems
-      .filter((item) => item.is_available !== false)
+      .filter((item) => item.is_available !== false && item.is_preorderable !== false)
       .map((item) => item.category_id ? liveCategoryNameById.get(item.category_id) ?? item.category ?? 'Menu' : item.category ?? 'Menu');
     const fallbackCats = isDemoModeEnabled() ? mockMenuItems
       .filter((m) => m.restaurantId === restaurantId && m.isAvailable)

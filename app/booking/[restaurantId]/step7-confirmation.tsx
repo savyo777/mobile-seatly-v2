@@ -224,6 +224,23 @@ const useStyles = createStyles((c) => ({
     lineHeight: 18,
     color: c.textPrimary,
   },
+  policySection: {
+    gap: 6,
+    paddingHorizontal: 4,
+  },
+  policyHeading: {
+    fontSize: 11,
+    fontWeight: '700',
+    color: c.textMuted,
+    textTransform: 'uppercase',
+    letterSpacing: 0.8,
+    marginBottom: 4,
+  },
+  policyLine: {
+    fontSize: 13,
+    lineHeight: 18,
+    color: c.textSecondary,
+  },
   skipBtn: { alignItems: 'center', paddingVertical: 4 },
   skipText: {
     fontSize: 14,
@@ -529,6 +546,36 @@ export default function Step7Confirmation() {
                 </Text>
               </View>
             )}
+          </Animated.View>
+        ) : null}
+
+        {/* Cancellation / no-show policy */}
+        {restaurant && (
+          restaurant.cancellationHours != null ||
+          (restaurant.noShowFee != null && restaurant.noShowFee > 0) ||
+          (!confirmation.deposit_required &&
+            ((restaurant.depositTiers && restaurant.depositTiers.length > 0) ||
+              (restaurant.depositPolicyJson && Object.keys(restaurant.depositPolicyJson).length > 0)))
+        ) ? (
+          <Animated.View style={[styles.policySection, { opacity: fadeAnim }]}>
+            <Text style={styles.policyHeading}>Cancellation policy</Text>
+            {restaurant.cancellationHours != null ? (
+              <Text style={styles.policyLine}>
+                Cancel at least {restaurant.cancellationHours} {restaurant.cancellationHours === 1 ? 'hour' : 'hours'} ahead to avoid a fee.
+              </Text>
+            ) : null}
+            {restaurant.noShowFee != null && restaurant.noShowFee > 0 ? (
+              <Text style={styles.policyLine}>
+                No-show fee: {formatCurrency(restaurant.noShowFee)}.
+              </Text>
+            ) : null}
+            {!confirmation.deposit_required &&
+              ((restaurant.depositTiers && restaurant.depositTiers.length > 0) ||
+                (restaurant.depositPolicyJson && Object.keys(restaurant.depositPolicyJson).length > 0)) ? (
+              <Text style={styles.policyLine}>
+                Deposit may be required for larger parties or peak times.
+              </Text>
+            ) : null}
           </Animated.View>
         ) : null}
 

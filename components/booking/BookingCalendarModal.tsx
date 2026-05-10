@@ -21,6 +21,13 @@ type Props = {
    * Otherwise, only dates in the array remain selectable.
    */
   availableDates?: string[] | null;
+  /**
+   * Override the maximum advance booking window (in days) from
+   * `restaurants.booking_advance_days`. When set, the calendar caps the
+   * "next month" navigation at this value. Falls back to the shift config
+   * default when undefined or null.
+   */
+  maxAdvanceDays?: number | null;
   onClose: () => void;
   onSelect: (key: DateKey) => void;
 };
@@ -171,6 +178,7 @@ export function BookingCalendarModal({
   selectedDateKey,
   availabilityVersion = 0,
   availableDates,
+  maxAdvanceDays,
   onClose,
   onSelect,
 }: Props) {
@@ -187,12 +195,16 @@ export function BookingCalendarModal({
     return x;
   }, []);
 
+  const effectiveAdvanceDays =
+    typeof maxAdvanceDays === 'number' && Number.isFinite(maxAdvanceDays) && maxAdvanceDays > 0
+      ? maxAdvanceDays
+      : config.advanceBookingDays;
   const maxBook = useMemo(() => {
     const x = new Date();
     x.setHours(0, 0, 0, 0);
-    x.setDate(x.getDate() + config.advanceBookingDays);
+    x.setDate(x.getDate() + effectiveAdvanceDays);
     return x;
-  }, [config.advanceBookingDays]);
+  }, [effectiveAdvanceDays]);
 
   const initial = parseDateKeyLocal(selectedDateKey);
   const [cursor, setCursor] = useState(() => ({
@@ -291,7 +303,9 @@ export function BookingCalendarModal({
                     const outOfMonth = !c.inMonth;
                     const fullyBookedByRpc =
                       availableDatesSet !== null && c.dateKey != null && !availableDatesSet.has(c.dateKey);
-                    const disabled = !c.selectable || fullyBookedByRpc;
+                    const beyondMaxAdvance =
+                      c.dateKey != null && parseDateKeyLocal(c.dateKey).getTime() > maxBook.getTime();
+                    const disabled = !c.selectable || fullyBookedByRpc || beyondMaxAdvance;
                     const closed = (c.closedDay || fullyBookedByRpc) && c.inMonth;
                     return (
                       <Pressable

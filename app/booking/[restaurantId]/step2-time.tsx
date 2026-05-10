@@ -420,7 +420,11 @@ export default function Step2Time() {
     const start = new Date();
     start.setHours(0, 0, 0, 0);
     const end = new Date(start);
-    end.setDate(end.getDate() + 60);
+    const advanceDays =
+      typeof restaurant?.bookingAdvanceDays === 'number' && restaurant.bookingAdvanceDays > 0
+        ? restaurant.bookingAdvanceDays
+        : 60;
+    end.setDate(end.getDate() + advanceDays);
     const fmt = (d: Date) =>
       `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
     void getAvailableDates({
@@ -434,7 +438,7 @@ export default function Step2Time() {
     return () => {
       cancelled = true;
     };
-  }, [rid, partySize, partySizeError, partySizeInput]);
+  }, [rid, partySize, partySizeError, partySizeInput, restaurant?.bookingAdvanceDays]);
 
   useEffect(() => {
     if (!rid || partySizeError || !partySizeInput) {
@@ -713,6 +717,7 @@ export default function Step2Time() {
         selectedDateKey={dateKey}
         availabilityVersion={restaurantVersion}
         availableDates={availableDates}
+        maxAdvanceDays={restaurant?.bookingAdvanceDays ?? null}
         onClose={() => setCalendarOpen(false)}
         onSelect={(k) => { setDateKey(k); setCalendarOpen(false); }}
       />
