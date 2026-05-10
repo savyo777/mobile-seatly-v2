@@ -18,6 +18,7 @@ import { useAuthSession } from '@/lib/auth/AuthContext';
 import { resolveAuthDisplayProfile } from '@/lib/auth/displayProfile';
 import { deleteAccount, signOutAllDevices } from '@/lib/services/accountSecurity';
 import { fetchCurrentUserProfile, type AppUserProfile } from '@/lib/services/userProfile';
+import { fetchCurrentOwnerRestaurant } from '@/lib/services/ownerRestaurant';
 import {
   getAppShellPreference,
   setAppShellPreference,
@@ -280,7 +281,39 @@ export default function SettingsScreen() {
       cancelled = true;
     };
   }, []);
-  const hasRestaurantSide = isStaffLike || shellPref === 'staff';
+
+  // The DB is the source of truth: if there is a `restaurants` row owned by
+  // this user, they registered (regardless of what the cached role / shell
+  // pref say). This catches the case where the user signs in on a fresh
+  // install or after sign-out cleared AsyncStorage and `user_profiles.role`
+  // hasn't synced yet. Self-heal the shell pref so the next launch is fast.
+  const [hasOwnedRestaurant, setHasOwnedRestaurant] = useState<boolean | null>(null);
+  useEffect(() => {
+    let cancelled = false;
+    if (!user?.id) {
+      setHasOwnedRestaurant(null);
+      return;
+    }
+    void (async () => {
+      try {
+        const restaurant = await fetchCurrentOwnerRestaurant();
+        if (cancelled) return;
+        const owns = Boolean(restaurant?.id);
+        setHasOwnedRestaurant(owns);
+        if (owns) {
+          void setAppShellPreference('staff').catch(() => undefined);
+        }
+      } catch {
+        if (!cancelled) setHasOwnedRestaurant(false);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [user?.id]);
+
+  const hasRestaurantSide =
+    isStaffLike || shellPref === 'staff' || hasOwnedRestaurant === true;
 
   const sections: Section[] = useMemo(() => {
     const restaurantRows: Row[] = hasRestaurantSide
