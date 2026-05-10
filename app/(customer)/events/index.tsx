@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useCallback, useRef } from 'react';
+import React, { useState, useMemo, useCallback, useRef, useEffect } from 'react';
 import {
   View,
   Text,
@@ -16,20 +16,71 @@ import * as Haptics from 'expo-haptics';
 import { useColors, createStyles, spacing, borderRadius } from '@/lib/theme';
 import {
   listEvents as DEMO_listEvents,
-  filterEvents as DEMO_filterEvents,
+  filterEvents,
   getRestaurantForEvent as DEMO_getRestaurantForEvent,
   type DiningEvent,
   type DateFilter,
   type EventType,
 } from '@/lib/mock/events';
 import { isDemoModeEnabled } from '@/lib/config/demoMode';
+import { fetchUpcomingEvents, type EventRow } from '@/lib/events/getEvents';
 
 const listEvents: typeof DEMO_listEvents = (...args) =>
   isDemoModeEnabled() ? DEMO_listEvents(...args) : [];
-const filterEvents: typeof DEMO_filterEvents = (events, dateFilter, typeFilter) =>
-  isDemoModeEnabled() ? DEMO_filterEvents(events, dateFilter, typeFilter) : [];
+// `filterEvents` is a pure function over the array we pass in, safe to use
+// for both real and mock event lists.
 const getRestaurantForEvent: typeof DEMO_getRestaurantForEvent = (id) =>
   isDemoModeEnabled() ? DEMO_getRestaurantForEvent(id) : undefined;
+
+const FALLBACK_EVENT_COVER =
+  'https://images.unsplash.com/photo-1414235077428-338989a2e8c0?w=800&q=80';
+
+function inferEventType(row: EventRow): EventType {
+  const theme = (row.theme ?? '').toLowerCase();
+  if (theme.includes('happy')) return 'happy_hour';
+  if (theme.includes('promo')) return 'promotion';
+  if (theme.includes('tasting') || theme.includes('omakase') || theme.includes('chef')) return 'tasting_menu';
+  return 'event';
+}
+
+function buildEventDateIso(row: EventRow): string {
+  if (row.date && row.start_time) return `${row.date}T${row.start_time}`;
+  if (row.date) return `${row.date}T19:00:00`;
+  return new Date().toISOString();
+}
+
+function buildEventEndsAtIso(row: EventRow): string {
+  const endDate = row.end_date ?? row.date ?? '';
+  if (endDate && row.end_time) return `${endDate}T${row.end_time}`;
+  if (endDate) return `${endDate}T23:00:00`;
+  return buildEventDateIso(row);
+}
+
+function mapEventRowToDining(row: EventRow): DiningEvent {
+  const capacity = typeof row.capacity === 'number' ? row.capacity : null;
+  const sold = typeof row.tickets_sold === 'number' ? row.tickets_sold : 0;
+  const spotsLeft = capacity !== null ? Math.max(0, capacity - sold) : undefined;
+  const tags: string[] = [];
+  if (row.theme) tags.push(row.theme);
+  if (row.dress_code) tags.push(row.dress_code);
+  if (typeof row.min_age === 'number' && row.min_age > 0) tags.push(`${row.min_age}+`);
+  return {
+    id: row.id,
+    restaurantId: row.restaurant_id,
+    title: row.name,
+    description: row.description ?? '',
+    coverImage: row.cover_image_url || row.media_url || FALLBACK_EVENT_COVER,
+    type: inferEventType(row),
+    date: buildEventDateIso(row),
+    endsAt: buildEventEndsAtIso(row),
+    price: typeof row.price_per_person === 'number' && row.price_per_person > 0
+      ? row.price_per_person
+      : undefined,
+    spotsLeft,
+    tags,
+    savedBy: [],
+  };
+}
 import { EventCard } from '@/components/events/EventCard';
 import { EventFilterBar } from '@/components/events/EventFilterBar';
 
@@ -208,7 +259,29 @@ export default function EventsScreen() {
     }).start(() => setSearchOpen(false));
   }, [slideAnim]);
 
-  const allEvents = useMemo(() => listEvents(), []);
+  const [realEvents, setRealEvents] = useState<DiningEvent[]>([]);
+
+  useEffect(() => {
+    if (isDemoModeEnabled()) return;
+    let active = true;
+    void (async () => {
+      try {
+        const rows = await fetchUpcomingEvents({ limit: 50 });
+        if (!active) return;
+        setRealEvents(rows.map(mapEventRowToDining));
+      } catch (err) {
+        console.warn('[events] fetch failed', err);
+      }
+    })();
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  const allEvents = useMemo(
+    () => (isDemoModeEnabled() ? listEvents() : realEvents),
+    [realEvents],
+  );
 
   const events = useMemo(() => {
     const filtered = filterEvents(allEvents, query ? 'all' : dateFilter, query ? 'all' : typeFilter);

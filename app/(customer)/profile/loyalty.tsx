@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { View, Text, StyleSheet, FlatList, ListRenderItem, Pressable } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { useRouter } from 'expo-router';
@@ -9,20 +9,48 @@ import {
   mockLoyaltyTransactions as MOCK_LOYALTY_TRANSACTIONS,
   mockRewards as MOCK_REWARDS,
   type LoyaltyReward,
+  type LoyaltyTransaction,
 } from '@/lib/mock/loyalty';
 import { mockCustomer } from '@/lib/mock/users';
 import { isDemoModeEnabled } from '@/lib/config/demoMode';
 import { LOYALTY_TIERS } from '@/lib/loyalty/tiers';
+import {
+  fetchLoyaltyTransactionsForUser,
+  type LoyaltyTransactionRow,
+} from '@/lib/loyalty/getLoyaltyTransactions';
+import { fetchCurrentUserProfile, getCurrentUserProfileId } from '@/lib/services/userProfile';
 
 // Real loyalty transactions and reward catalog should come from
-// `loyalty_transactions` / `loyalty_rewards` Supabase tables. Until those
-// are wired up, only render the mock data when demo mode is enabled —
-// otherwise customers would see redeemable rewards that don't exist.
+// `loyalty_transactions` / `loyalty_rewards` Supabase tables. Mock fallback
+// only renders when demo mode is enabled.
 const demo = isDemoModeEnabled();
-const mockLoyaltyTransactions = demo ? MOCK_LOYALTY_TRANSACTIONS : [];
+const initialMockLoyaltyTransactions: LoyaltyTransaction[] = demo ? MOCK_LOYALTY_TRANSACTIONS : [];
 const mockRewards = demo ? MOCK_REWARDS : [];
-const loyaltyPointsBalance = demo ? mockCustomer.loyaltyPointsBalance : 0;
-const loyaltyTier = demo ? mockCustomer.loyaltyTier : null;
+const initialPointsBalance = demo ? mockCustomer.loyaltyPointsBalance : 0;
+const initialTier: string | null = demo ? mockCustomer.loyaltyTier ?? null : null;
+
+function tierLabelForBalance(balance: number): string | null {
+  // Pick the highest tier the user has crossed.
+  let label: string | null = null;
+  for (const tier of LOYALTY_TIERS) {
+    if (balance >= tier.min) label = tier.name;
+  }
+  return label;
+}
+
+function mapLoyaltyRowToTransaction(row: LoyaltyTransactionRow): LoyaltyTransaction {
+  const rawType = (row.type ?? '').toLowerCase();
+  const type: LoyaltyTransaction['type'] =
+    rawType === 'redeem' ? 'redeem' : rawType === 'expire' ? 'expire' : 'earn';
+  return {
+    id: row.id,
+    points: row.points,
+    balanceAfter: typeof row.balance_after === 'number' ? row.balance_after : 0,
+    type,
+    description: row.description ?? '',
+    createdAt: row.created_at ?? new Date().toISOString(),
+  };
+}
 
 // Threshold for the "Gold" tier comes from the canonical loyalty-tier table
 // in lib/loyalty/tiers.ts. The progress bar on this screen is specifically
@@ -214,9 +242,46 @@ export default function ProfileLoyaltyScreen() {
   const c = useColors();
   const styles = useStyles();
   const router = useRouter();
+
+  const [loyaltyTransactions, setLoyaltyTransactions] = useState<LoyaltyTransaction[]>(
+    initialMockLoyaltyTransactions,
+  );
+  const [loyaltyPointsBalance, setLoyaltyPointsBalance] = useState<number>(initialPointsBalance);
+  const [loyaltyTier, setLoyaltyTier] = useState<string | null>(initialTier);
+
+  useEffect(() => {
+    if (isDemoModeEnabled()) return;
+    let active = true;
+    void (async () => {
+      try {
+        const profileId = await getCurrentUserProfileId();
+        if (!profileId) return;
+        const [profile, rows] = await Promise.all([
+          fetchCurrentUserProfile(),
+          fetchLoyaltyTransactionsForUser(profileId, { limit: 50 }),
+        ]);
+        if (!active) return;
+        const mapped = rows.map(mapLoyaltyRowToTransaction);
+        setLoyaltyTransactions(mapped);
+        // user_profiles.loyalty_points_balance is the source of truth; fall
+        // back to the most recent balance_after if the profile is unset.
+        const latestBalanceAfter =
+          rows.length > 0 && typeof rows[0].balance_after === 'number' ? rows[0].balance_after : null;
+        const balance = profile?.loyaltyPointsBalance ?? latestBalanceAfter ?? 0;
+        setLoyaltyPointsBalance(balance);
+        setLoyaltyTier(profile?.loyaltyTier ?? tierLabelForBalance(balance));
+      } catch (err) {
+        console.warn('[loyalty] fetch failed', err);
+      }
+    })();
+    return () => {
+      active = false;
+    };
+  }, []);
+
   const sortedTx = useMemo(
-    () => [...mockLoyaltyTransactions].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()),
-    [],
+    () => [...loyaltyTransactions].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()),
+    [loyaltyTransactions],
   );
 
   const progress = Math.min(loyaltyPointsBalance / GOLD_THRESHOLD, 1);
