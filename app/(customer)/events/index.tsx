@@ -24,6 +24,7 @@ import {
 } from '@/lib/mock/events';
 import { isDemoModeEnabled } from '@/lib/config/demoMode';
 import { fetchUpcomingEvents, type EventRow } from '@/lib/events/getEvents';
+import { fetchActivePromotions, type PromotionRow } from '@/lib/promotions/getPromotions';
 
 const listEvents: typeof DEMO_listEvents = (...args) =>
   isDemoModeEnabled() ? DEMO_listEvents(...args) : [];
@@ -54,6 +55,46 @@ function buildEventEndsAtIso(row: EventRow): string {
   if (endDate && row.end_time) return `${endDate}T${row.end_time}`;
   if (endDate) return `${endDate}T23:00:00`;
   return buildEventDateIso(row);
+}
+
+function todayIsoDate(): string {
+  return new Date().toISOString().slice(0, 10);
+}
+
+function formatPromoBadge(row: PromotionRow): string | null {
+  if (row.promo_type === 'bogo') return 'BOGO';
+  if (typeof row.discount_value === 'number' && row.discount_value > 0) {
+    if (row.discount_unit === 'percent') return `${Math.round(row.discount_value)}% off`;
+    if (row.discount_unit === 'amount') return `$${row.discount_value.toFixed(0)} off`;
+    return `${row.discount_value} off`;
+  }
+  return null;
+}
+
+function mapPromotionRowToDining(row: PromotionRow): DiningEvent {
+  const today = todayIsoDate();
+  // Show under "Tonight" while the promo is active (starts in the past or today)
+  const startsAtDate = row.starts_at?.slice(0, 10) ?? today;
+  const dateForFilter = startsAtDate <= today ? today : startsAtDate;
+  const tags: string[] = [];
+  const badge = formatPromoBadge(row);
+  if (badge) tags.push(badge);
+  if (row.promo_code) tags.push(row.promo_code);
+  if (row.applies_to && row.applies_to !== 'all') tags.push(`Applies to ${row.applies_to}`);
+  return {
+    id: `promo:${row.id}`,
+    restaurantId: row.restaurant_id,
+    title: row.title,
+    description: row.description ?? '',
+    coverImage: row.cover_image_url || row.media_url || FALLBACK_EVENT_COVER,
+    type: 'promotion',
+    date: `${dateForFilter}T00:00:00`,
+    endsAt: row.ends_at ?? `${dateForFilter}T23:59:59`,
+    price: undefined,
+    spotsLeft: undefined,
+    tags,
+    savedBy: [],
+  };
 }
 
 function mapEventRowToDining(row: EventRow): DiningEvent {
@@ -266,9 +307,16 @@ export default function EventsScreen() {
     let active = true;
     void (async () => {
       try {
-        const rows = await fetchUpcomingEvents({ limit: 50 });
+        const [eventRows, promoRows] = await Promise.all([
+          fetchUpcomingEvents({ limit: 50 }),
+          fetchActivePromotions({ limit: 50 }),
+        ]);
         if (!active) return;
-        setRealEvents(rows.map(mapEventRowToDining));
+        const merged: DiningEvent[] = [
+          ...eventRows.map(mapEventRowToDining),
+          ...promoRows.map(mapPromotionRowToDining),
+        ];
+        setRealEvents(merged);
       } catch (err) {
         console.warn('[events] fetch failed', err);
       }
