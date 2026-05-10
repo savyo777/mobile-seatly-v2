@@ -423,12 +423,6 @@ export default function CenaivaCheckoutScreen() {
           disabled={paymentComplete}
           onPress={continueToSecurePayment}
         />
-        <Button
-          title="Pay at restaurant"
-          variant="outlined"
-          style={{ marginTop: spacing.sm }}
-          onPress={() => router.replace('/(customer)/activity' as never)}
-        />
       </ScrollView>
     </ScreenWrapper>
   );

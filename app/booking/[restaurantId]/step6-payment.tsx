@@ -13,7 +13,7 @@ import { getStoredCustomerPaymentMethods, type CustomerPaymentMethod } from '@/l
 import { formatCurrency } from '@/lib/utils/formatCurrency';
 import { useColors, createStyles, borderRadius } from '@/lib/theme';
 
-type PaymentMethod = 'card' | 'apple_pay' | 'google_pay' | 'pay_at_restaurant';
+type PaymentMethod = 'card' | 'apple_pay' | 'google_pay';
 
 const useStyles = createStyles((c) => ({
   container: { flex: 1, backgroundColor: c.bgBase },
@@ -88,7 +88,7 @@ export default function Step6Payment() {
   const { t } = useTranslation();
   const c = useColors();
   const styles = useStyles();
-  const [selectedMethod, setSelectedMethod] = useState<PaymentMethod>('pay_at_restaurant');
+  const [selectedMethod, setSelectedMethod] = useState<PaymentMethod>('card');
   const [taxRate, setTaxRate] = useState(0);
   const [depositTiers, setDepositTiers] = useState<DepositTier[] | undefined>(undefined);
   const [defaultCard, setDefaultCard] = useState<CustomerPaymentMethod | null>(null);
@@ -105,7 +105,6 @@ export default function Step6Payment() {
   const depositAmount = depositCents / 100;
   const hasDeposit = depositCents > 0;
   const totalDue = preorderTotal + taxAmount + depositAmount;
-  const payAtRestaurant = selectedMethod === 'pay_at_restaurant';
   const qpBase = [
     `date=${encodeURIComponent(date ?? '')}`,
     `time=${encodeURIComponent(time ?? '')}`,
@@ -119,12 +118,11 @@ export default function Step6Payment() {
     `occasion=${encodeURIComponent(occasion ?? '')}`,
     `seatingPreference=${encodeURIComponent(seatingPreference ?? '')}`,
     `notes=${encodeURIComponent(notes ?? '')}`,
-    `paymentMethod=${payAtRestaurant ? 'pay_at_restaurant' : selectedMethod === 'card' ? 'card' : 'card'}`,
+    `paymentMethod=${selectedMethod}`,
     `cart=${encodeURIComponent(cartParam ?? '')}`,
   ].join('&');
 
   const paymentMethods: { id: PaymentMethod; label: string; subLabel?: string; icon: keyof typeof Ionicons.glyphMap; platform?: string }[] = [
-    { id: 'pay_at_restaurant', label: 'Pay at the restaurant', subLabel: 'Keep the preorder, settle your bill when you dine.', icon: 'storefront-outline' },
     { id: 'card', label: 'Pay now by card', subLabel: 'Securely pay for preorder items now.', icon: 'card-outline' },
     ...(Platform.OS === 'ios' ? [{ id: 'apple_pay' as const, label: 'Apple Pay', icon: 'logo-apple' as const }] : []),
     ...(Platform.OS === 'android' ? [{ id: 'google_pay' as const, label: 'Google Pay', icon: 'logo-google' as const }] : []),
@@ -241,20 +239,14 @@ export default function Step6Payment() {
           </Card>
         )}
 
-        {payAtRestaurant ? (
-          <Text style={styles.payLaterNote}>
-            Your reservation and preorder will be sent to the restaurant. No payment is collected in the app.
-          </Text>
-        ) : (
-          <Text style={styles.secureText}>
-            <Ionicons name="lock-closed" size={12} color={c.textMuted} /> Secured by Stripe. Your payment information is encrypted.
-          </Text>
-        )}
+        <Text style={styles.secureText}>
+          <Ionicons name="lock-closed" size={12} color={c.textMuted} /> Secured by Stripe. Your payment information is encrypted.
+        </Text>
       </ScrollView>
 
       <View style={[styles.footer, { paddingBottom: insets.bottom + 16 }]}>
         <Button
-          title={payAtRestaurant ? 'Confirm booking · Pay at restaurant' : `${t('booking.confirmBooking')} · ${formatCurrency(totalDue)}`}
+          title={`${t('booking.confirmBooking')} · ${formatCurrency(totalDue)}`}
           onPress={() => router.push(`/booking/${restaurantId}/step7-confirmation?${qpBase}`)}
         />
       </View>

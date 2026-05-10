@@ -46,7 +46,7 @@ export type PublicBookingPayload = {
   discount_amount: number | null;
   discount_reason: string | null;
   promotion_id: string | null;
-  payment_method: 'card' | 'split' | 'pay_at_restaurant';
+  payment_method: 'card' | 'split';
 };
 
 export type PublicBookingResponse = {

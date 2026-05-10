@@ -357,11 +357,7 @@ export default function Step7Confirmation() {
           discount_amount: null,
           discount_reason: null,
           promotion_id: null,
-          payment_method: paymentMethod === 'pay_at_restaurant'
-            ? 'pay_at_restaurant'
-            : paymentMethod === 'split'
-              ? 'split'
-              : 'card',
+          payment_method: paymentMethod === 'split' ? 'split' : 'card',
         });
         if (cancelled) return;
         setConfirmation(result);
