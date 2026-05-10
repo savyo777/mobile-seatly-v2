@@ -165,9 +165,8 @@ const useStyles = createStyles((c) => ({
   brandLogo: {
     width: 200,
     height: 73,
-    marginLeft: -18,
-    marginTop: 0,
-    marginBottom: -16,
+    marginLeft: -10,
+    marginVertical: -8,
   },
   brandBellBtn: {
     padding: 4,
