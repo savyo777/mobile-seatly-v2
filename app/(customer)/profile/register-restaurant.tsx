@@ -1,10 +1,13 @@
-import React from 'react';
-import { Pressable, ScrollView, Text, View } from 'react-native';
+import React, { useEffect, useState } from 'react';
+import { ActivityIndicator, Pressable, ScrollView, Text, View } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { Button, ScreenWrapper } from '@/components/ui';
 import { borderRadius, createStyles, spacing, typography, useColors } from '@/lib/theme';
+import { useAuthSession } from '@/lib/auth/AuthContext';
+import { fetchCurrentOwnerRestaurant } from '@/lib/services/ownerRestaurant';
+import { setAppShellPreference } from '@/lib/navigation/appShellPreference';
 
 const useStyles = createStyles((c) => ({
   scroll: { flex: 1 },
@@ -128,6 +131,46 @@ export default function RegisterRestaurantScreen() {
   const insets = useSafeAreaInsets();
   const c = useColors();
   const styles = useStyles();
+  const { user } = useAuthSession();
+
+  // Guard: if this user already owns a restaurant, send them straight to
+  // the staff side instead of forcing a re-registration. This handles
+  // direct navigation, deep links, or back-button cases where the
+  // settings-row gate isn't in play.
+  const [redirecting, setRedirecting] = useState(false);
+  useEffect(() => {
+    let cancelled = false;
+    if (!user?.id) return;
+    void (async () => {
+      try {
+        const existing = await fetchCurrentOwnerRestaurant();
+        if (cancelled) return;
+        if (existing?.id) {
+          setRedirecting(true);
+          await setAppShellPreference('staff');
+          if (!cancelled) router.replace('/(staff)' as never);
+        }
+      } catch {
+        // best-effort — fall through to the registration UI on error
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [user?.id, router]);
+
+  if (redirecting) {
+    return (
+      <ScreenWrapper padded>
+        <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
+          <ActivityIndicator color={c.gold} />
+          <Text style={[typography.bodySmall, { color: c.textMuted, marginTop: spacing.md }]}>
+            Switching to your restaurant…
+          </Text>
+        </View>
+      </ScreenWrapper>
+    );
+  }
 
   return (
     <ScreenWrapper padded>

@@ -312,25 +312,37 @@ export default function SettingsScreen() {
     };
   }, [user?.id]);
 
-  const hasRestaurantSide =
-    isStaffLike || shellPref === 'staff' || hasOwnedRestaurant === true;
+  // Tri-state so we don't briefly show "Register your restaurant" to a
+  // user who actually owns one while the DB lookup is still in flight.
+  // - true     → user has a restaurant side, show "Switch to Restaurant Side"
+  // - false    → no restaurant, show "Register your restaurant"
+  // - 'unknown'→ still loading and no positive signal yet, hide the row
+  const hasRestaurantSide: boolean | 'unknown' =
+    isStaffLike || shellPref === 'staff' || hasOwnedRestaurant === true
+      ? true
+      : hasOwnedRestaurant === null && shellPref === null
+        ? 'unknown'
+        : false;
 
   const sections: Section[] = useMemo(() => {
-    const restaurantRows: Row[] = hasRestaurantSide
-      ? [
-          {
-            kind: 'switchToRestaurant',
-            icon: 'storefront-outline',
-            label: 'Switch to Restaurant Side',
-          },
-        ]
-      : [
-          {
-            kind: 'registerRestaurant',
-            icon: 'storefront-outline',
-            label: 'Register your restaurant',
-          },
-        ];
+    const restaurantRows: Row[] =
+      hasRestaurantSide === true
+        ? [
+            {
+              kind: 'switchToRestaurant',
+              icon: 'storefront-outline',
+              label: 'Switch to Restaurant Side',
+            },
+          ]
+        : hasRestaurantSide === false
+          ? [
+              {
+                kind: 'registerRestaurant',
+                icon: 'storefront-outline',
+                label: 'Register your restaurant',
+              },
+            ]
+          : [];
 
     const core: Section[] = [
     {
@@ -447,13 +459,11 @@ export default function SettingsScreen() {
       ],
       },
     ];
-    return [
-      {
-        title: 'For Restaurant Owners',
-        rows: restaurantRows,
-      },
-      ...core,
-    ];
+    const result: Section[] = [];
+    if (restaurantRows.length > 0) {
+      result.push({ title: 'For Restaurant Owners', rows: restaurantRows });
+    }
+    return [...result, ...core];
   }, [hasRestaurantSide]);
 
   const handleLogout = async () => {
