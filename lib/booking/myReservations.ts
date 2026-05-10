@@ -15,6 +15,8 @@ export type MyBookingItem = {
   confirmationCode: string;
   depositAmountCents: number | null;
   depositStatus: DepositStatus | null;
+  cancellationReason: string | null;
+  preorderOrderId: string | null;
 };
 
 type ReservationRow = {
@@ -26,6 +28,8 @@ type ReservationRow = {
   occasion: string | null;
   deposit_amount_cents: number | null;
   deposit_status: string | null;
+  cancellation_reason: string | null;
+  preorder_order_id: string | null;
   restaurant:
     | {
         id: string;
@@ -88,7 +92,7 @@ export async function fetchMyBookingItems(): Promise<MyBookingItem[]> {
 
   const { data, error } = await supabase
     .from('reservations')
-    .select('id,reserved_at,party_size,status,confirmation_code,occasion,deposit_amount_cents,deposit_status,restaurant:restaurants(id,name,slug,cover_photo_url,cover_image_url)')
+    .select('id,reserved_at,party_size,status,confirmation_code,occasion,deposit_amount_cents,deposit_status,cancellation_reason,preorder_order_id,restaurant:restaurants(id,name,slug,cover_photo_url,cover_image_url)')
     .eq('user_profile_id', profile.id)
     .neq('status', 'no_show')
     .order('reserved_at', { ascending: false });
@@ -109,6 +113,8 @@ export async function fetchMyBookingItems(): Promise<MyBookingItem[]> {
       confirmationCode: row.confirmation_code ?? '',
       depositAmountCents: row.deposit_amount_cents ?? null,
       depositStatus: normalizeDepositStatus(row.deposit_status),
+      cancellationReason: row.cancellation_reason ?? null,
+      preorderOrderId: row.preorder_order_id ?? null,
     }];
   });
 }

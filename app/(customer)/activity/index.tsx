@@ -46,6 +46,8 @@ interface BookingItem {
   confirmationCode: string;
   depositAmountCents?: number | null;
   depositStatus?: DepositStatus | null;
+  cancellationReason?: string | null;
+  preorderOrderId?: string | null;
 }
 
 const OCCASION_ICONS: Record<string, string> = {
@@ -223,6 +225,40 @@ const useStyles = createStyles((c) => ({
     fontWeight: '500',
     color: c.textMuted,
   },
+  codeRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    marginTop: 2,
+  },
+  codeRowText: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: c.textMuted,
+    fontFamily: Platform.select({ ios: 'Menlo', android: 'monospace', default: 'monospace' }),
+    letterSpacing: 0.5,
+  },
+  depositBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+    borderRadius: borderRadius.full,
+    borderWidth: 1,
+    alignSelf: 'flex-start',
+  },
+  depositBadgeText: {
+    fontSize: 10,
+    fontWeight: '700',
+    letterSpacing: 0.4,
+  },
+  cancelReasonText: {
+    fontSize: 12,
+    color: c.textMuted,
+    fontStyle: 'italic',
+    marginTop: 4,
+  },
   dimPrimary: { color: c.textSecondary },
   dimSecondary: { color: c.textMuted },
 
@@ -356,6 +392,8 @@ export default function ActivityScreen() {
           confirmationCode: r.confirmationCode,
           depositAmountCents: null,
           depositStatus: null,
+          cancellationReason: null,
+          preorderOrderId: r.preorderOrderId ?? null,
         }))
         : [],
   [liveItems, liveLoaded, refreshKey]);
@@ -499,6 +537,44 @@ export default function ActivityScreen() {
           <View style={styles.info}>
             <Text style={[styles.dateText, isPast && styles.dimPrimary]}>{primary}  ·  {sub}</Text>
             <Text style={[styles.detailText, isPast && styles.dimSecondary]}>{detailLine}</Text>
+            {item.confirmationCode ? (
+              <View style={styles.codeRow}>
+                <Ionicons name="ticket-outline" size={12} color={c.textMuted} />
+                <Text style={styles.codeRowText}>Code: {item.confirmationCode}</Text>
+              </View>
+            ) : null}
+            {item.depositStatus && item.depositStatus !== 'none' ? (
+              (() => {
+                const depositColor =
+                  item.depositStatus === 'charged'
+                    ? c.success
+                    : item.depositStatus === 'failed'
+                      ? c.danger
+                      : item.depositStatus === 'pending'
+                        ? c.warning
+                        : c.textMuted;
+                const depositLabel =
+                  item.depositStatus === 'charged'
+                    ? 'Deposit paid'
+                    : item.depositStatus === 'failed'
+                      ? 'Deposit failed'
+                      : item.depositStatus === 'pending'
+                        ? 'Deposit pending'
+                        : item.depositStatus === 'waived'
+                          ? 'Deposit waived'
+                          : 'Deposit refunded';
+                return (
+                  <View style={[styles.depositBadge, { borderColor: depositColor + '66', marginTop: 6 }]}>
+                    <Text style={[styles.depositBadgeText, { color: depositColor }]}>{depositLabel}</Text>
+                  </View>
+                );
+              })()
+            ) : null}
+            {item.status === 'cancelled' && item.cancellationReason ? (
+              <Text style={styles.cancelReasonText} numberOfLines={2}>
+                Reason: {item.cancellationReason}
+              </Text>
+            ) : null}
           </View>
 
           {/* Action row */}

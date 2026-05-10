@@ -193,6 +193,27 @@ export default function BookingDetailScreen() {
   const [cancelledLocally, setCancelledLocally] = useState(false);
   const [cancelling, setCancelling] = useState(false);
   const [liveReservation, setLiveReservation] = useState<Reservation | null>(null);
+  const [liveCancellationReason, setLiveCancellationReason] = useState<string | null>(null);
+  const [liveDepositStatus, setLiveDepositStatus] = useState<string | null>(null);
+
+  type PreorderItemRow = {
+    id: string;
+    name: string;
+    quantity: number;
+    unit_price: number;
+    total_price: number;
+  };
+  type PreorderOrder = {
+    id: string;
+    subtotal: number;
+    tax_amount: number;
+    tip_amount: number;
+    total_amount: number;
+    status: string | null;
+    items: PreorderItemRow[];
+  };
+  const [livePreorder, setLivePreorder] = useState<PreorderOrder | null>(null);
+  const [preorderLoadedFor, setPreorderLoadedFor] = useState<string | null>(null);
 
   useEffect(() => {
     if (!id) return;
@@ -203,7 +224,7 @@ export default function BookingDetailScreen() {
     void (async () => {
       const { data } = await supabase
         .from('reservations')
-        .select('id,restaurant_id,reserved_at,party_size,status,confirmation_code,occasion,special_request,preorder_order_id,deposit_amount,table_id,source,guest_full_name,restaurant:restaurants(id,name)')
+        .select('id,restaurant_id,reserved_at,party_size,status,confirmation_code,occasion,special_request,preorder_order_id,deposit_amount,deposit_status,cancellation_reason,table_id,source,guest_full_name,restaurant:restaurants(id,name)')
         .eq('id', id)
         .neq('status', 'no_show')
         .maybeSingle();
@@ -219,6 +240,8 @@ export default function BookingDetailScreen() {
         special_request: string | null;
         preorder_order_id: string | null;
         deposit_amount: number | null;
+        deposit_status: string | null;
+        cancellation_reason: string | null;
         table_id: string | null;
         source: string | null;
         guest_full_name: string | null;
@@ -246,6 +269,8 @@ export default function BookingDetailScreen() {
         preorderOrderId: row.preorder_order_id ?? undefined,
         depositAmount: row.deposit_amount ?? undefined,
       });
+      setLiveCancellationReason(row.cancellation_reason ?? null);
+      setLiveDepositStatus(row.deposit_status ?? null);
     })();
     return () => {
       cancelled = true;
@@ -256,10 +281,68 @@ export default function BookingDetailScreen() {
     () => mockReservations.find((r) => r.id === id) ?? liveReservation ?? undefined,
     [id, cancelledLocally, liveReservation],
   );
-  const preorder = useMemo(
+  const mockPreorder = useMemo(
     () => (reservation?.preorderOrderId ? mockOrders.find((o) => o.id === reservation.preorderOrderId) : undefined),
     [reservation],
   );
+
+  useEffect(() => {
+    const orderId = reservation?.preorderOrderId;
+    if (!orderId) {
+      setLivePreorder(null);
+      return;
+    }
+    if (mockPreorder) return;
+    if (preorderLoadedFor === orderId) return;
+    let cancelled = false;
+    const supabase = getSupabase();
+    if (!supabase) return;
+    void (async () => {
+      const [orderRes, itemsRes] = await Promise.all([
+        supabase
+          .from('orders')
+          .select('id,subtotal,tax_amount,tip_amount,total_amount,status')
+          .eq('id', orderId)
+          .maybeSingle(),
+        supabase
+          .from('order_items')
+          .select('id,name,quantity,unit_price,total_price')
+          .eq('order_id', orderId)
+          .order('created_at', { ascending: true }),
+      ]);
+      if (cancelled) return;
+      if (orderRes.error || !orderRes.data) {
+        setPreorderLoadedFor(orderId);
+        return;
+      }
+      const items = ((itemsRes.data ?? []) as Array<{
+        id: string;
+        name: string | null;
+        quantity: number | null;
+        unit_price: number | null;
+        total_price: number | null;
+      }>).map((line) => ({
+        id: line.id,
+        name: line.name ?? '',
+        quantity: line.quantity ?? 0,
+        unit_price: line.unit_price ?? 0,
+        total_price: line.total_price ?? 0,
+      }));
+      setLivePreorder({
+        id: orderRes.data.id,
+        subtotal: orderRes.data.subtotal ?? 0,
+        tax_amount: orderRes.data.tax_amount ?? 0,
+        tip_amount: orderRes.data.tip_amount ?? 0,
+        total_amount: orderRes.data.total_amount ?? 0,
+        status: orderRes.data.status ?? null,
+        items,
+      });
+      setPreorderLoadedFor(orderId);
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [reservation?.preorderOrderId, mockPreorder, preorderLoadedFor]);
 
   const handleCancel = useCallback(() => {
     if (!reservation) return;
@@ -370,6 +453,33 @@ export default function BookingDetailScreen() {
           <Text style={styles.codeText}>{reservation.confirmationCode}</Text>
         </View>
 
+        {liveDepositStatus && liveDepositStatus !== 'none' ? (
+          <View style={styles.detailRow}>
+            <Ionicons name="card-outline" size={18} color={c.textSecondary} />
+            <Text style={styles.detailValue}>
+              Deposit:{' '}
+              {liveDepositStatus === 'charged'
+                ? 'Paid'
+                : liveDepositStatus === 'pending'
+                  ? 'Pending'
+                  : liveDepositStatus === 'failed'
+                    ? 'Failed'
+                    : liveDepositStatus === 'waived'
+                      ? 'Waived'
+                      : 'Refunded'}
+            </Text>
+          </View>
+        ) : null}
+
+        {reservation.status === 'cancelled' && liveCancellationReason ? (
+          <>
+            <Text style={styles.sectionLabel}>Cancellation reason</Text>
+            <Card padded style={styles.noteCard}>
+              <Text style={styles.noteText}>{liveCancellationReason}</Text>
+            </Card>
+          </>
+        ) : null}
+
         {reservation.specialRequest ? (
           <>
             <Text style={styles.sectionLabel}>{t('bookings.specialRequests')}</Text>
@@ -379,11 +489,11 @@ export default function BookingDetailScreen() {
           </>
         ) : null}
 
-        {preorder ? (
+        {mockPreorder ? (
           <>
             <Text style={styles.sectionLabel}>{t('bookings.preorderSummary')}</Text>
             <Card style={styles.preorderCard}>
-              {preorder.items.map((line) => (
+              {mockPreorder.items.map((line) => (
                 <View key={line.id} style={styles.preorderLine}>
                   <Text style={styles.preorderName}>
                     {line.quantity}× {line.name}
@@ -393,7 +503,29 @@ export default function BookingDetailScreen() {
               ))}
               <View style={styles.preorderTotalRow}>
                 <Text style={styles.preorderTotalLabel}>{t('orders.total')}</Text>
-                <Text style={styles.preorderTotal}>{formatCurrency(preorder.totalAmount, 'cad')}</Text>
+                <Text style={styles.preorderTotal}>{formatCurrency(mockPreorder.totalAmount, 'cad')}</Text>
+              </View>
+            </Card>
+          </>
+        ) : livePreorder ? (
+          <>
+            <Text style={styles.sectionLabel}>{t('bookings.preorderSummary')}</Text>
+            <Card style={styles.preorderCard}>
+              {livePreorder.items.length > 0 ? (
+                livePreorder.items.map((line) => (
+                  <View key={line.id} style={styles.preorderLine}>
+                    <Text style={styles.preorderName}>
+                      {line.quantity}× {line.name}
+                    </Text>
+                    <Text style={styles.preorderPrice}>{formatCurrency(line.total_price, 'cad')}</Text>
+                  </View>
+                ))
+              ) : (
+                <Text style={styles.noteText}>No items.</Text>
+              )}
+              <View style={styles.preorderTotalRow}>
+                <Text style={styles.preorderTotalLabel}>{t('orders.total')}</Text>
+                <Text style={styles.preorderTotal}>{formatCurrency(livePreorder.total_amount, 'cad')}</Text>
               </View>
             </Card>
           </>
