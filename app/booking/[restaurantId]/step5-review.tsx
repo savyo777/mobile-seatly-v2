@@ -7,6 +7,7 @@ import { useTranslation } from 'react-i18next';
 import { Button, Card } from '@/components/ui';
 import { getCachedRestaurantById, loadRestaurantForBooking } from '@/lib/data/restaurantCatalog';
 import { cartSubtotal, parseBookingCartParam } from '@/lib/booking/publicBookingApi';
+import { previewDepositCents } from '@/lib/booking/depositTiers';
 import { BOOKING_STEPS_TOTAL } from '@/lib/booking/bookingDefaults';
 import { formatCurrency } from '@/lib/utils/formatCurrency';
 import { useColors, createStyles, borderRadius } from '@/lib/theme';
@@ -27,6 +28,20 @@ const useStyles = createStyles((c) => ({
   detailRow: { flexDirection: 'row', alignItems: 'center', gap: 12 },
   detailText: { fontSize: 15, color: c.textPrimary },
   preorderRow: { marginTop: 4, paddingTop: 12, borderTopWidth: 1, borderTopColor: c.border },
+  depositPill: {
+    alignSelf: 'flex-start',
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    backgroundColor: 'rgba(201, 168, 76, 0.12)',
+    borderColor: c.gold,
+    borderWidth: 1,
+    borderRadius: 999,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    marginTop: 4,
+  },
+  depositPillText: { fontSize: 13, color: c.gold, fontWeight: '600' },
   sectionTitle: { fontSize: 16, fontWeight: '600', color: c.textPrimary, marginTop: 24, marginBottom: 12 },
   occasionScroll: { marginBottom: 8 },
   occasionRow: { flexDirection: 'row', gap: 8 },
@@ -99,6 +114,8 @@ export default function Step5Review() {
   const parsedDate = date ? new Date(date) : new Date();
   const preorderTotal = cartSubtotal(cart);
   const preorderCount = parseInt(cartCount || '0', 10);
+  const partySizeNum = Math.max(1, parseInt(partySize ?? '1', 10) || 1);
+  const depositCents = previewDepositCents(restaurant?.depositTiers, partySizeNum);
   const qpBase = [
     `date=${encodeURIComponent(date ?? '')}`,
     `time=${encodeURIComponent(time ?? '')}`,
@@ -162,6 +179,14 @@ export default function Step5Review() {
             <View style={[styles.detailRow, styles.preorderRow]}>
               <Ionicons name="restaurant-outline" size={18} color={c.gold} />
               <Text style={styles.detailText}>{preorderCount} pre-order items · {formatCurrency(preorderTotal)}</Text>
+            </View>
+          )}
+          {depositCents > 0 && (
+            <View style={styles.depositPill}>
+              <Ionicons name="lock-closed-outline" size={14} color={c.gold} />
+              <Text style={styles.depositPillText}>
+                Deposit required · {formatCurrency(depositCents / 100)}
+              </Text>
             </View>
           )}
         </Card>

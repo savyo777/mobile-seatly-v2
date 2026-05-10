@@ -6,6 +6,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTranslation } from 'react-i18next';
 import { Button, Card } from '@/components/ui';
 import { cartSubtotal, parseBookingCartParam } from '@/lib/booking/publicBookingApi';
+import { previewDepositCents, type DepositTier } from '@/lib/booking/depositTiers';
 import { BOOKING_STEPS_TOTAL } from '@/lib/booking/bookingDefaults';
 import { loadRestaurantForBooking } from '@/lib/data/restaurantCatalog';
 import { getStoredCustomerPaymentMethods, type CustomerPaymentMethod } from '@/lib/storage/customerPaymentMethods';
@@ -89,6 +90,7 @@ export default function Step6Payment() {
   const styles = useStyles();
   const [selectedMethod, setSelectedMethod] = useState<PaymentMethod>('pay_at_restaurant');
   const [taxRate, setTaxRate] = useState(0);
+  const [depositTiers, setDepositTiers] = useState<DepositTier[] | undefined>(undefined);
   const [defaultCard, setDefaultCard] = useState<CustomerPaymentMethod | null>(null);
   const BOOKING_STEPS = BOOKING_STEPS_TOTAL;
   const STEP = 5;
@@ -98,7 +100,11 @@ export default function Step6Payment() {
   const preorderTotal = cartSubtotal(cart);
   const hasPreorder = preorderTotal > 0;
   const taxAmount = preorderTotal * taxRate;
-  const totalDue = preorderTotal + taxAmount;
+  const partySizeNum = Math.max(1, parseInt(partySize ?? '1', 10) || 1);
+  const depositCents = previewDepositCents(depositTiers, partySizeNum);
+  const depositAmount = depositCents / 100;
+  const hasDeposit = depositCents > 0;
+  const totalDue = preorderTotal + taxAmount + depositAmount;
   const payAtRestaurant = selectedMethod === 'pay_at_restaurant';
   const qpBase = [
     `date=${encodeURIComponent(date ?? '')}`,
@@ -128,7 +134,9 @@ export default function Step6Payment() {
     let active = true;
     void (async () => {
       const restaurant = await loadRestaurantForBooking(restaurantId);
-      if (active) setTaxRate(restaurant?.taxRate ?? 0);
+      if (!active) return;
+      setTaxRate(restaurant?.taxRate ?? 0);
+      setDepositTiers(restaurant?.depositTiers);
     })();
     return () => {
       active = false;
@@ -179,7 +187,13 @@ export default function Step6Payment() {
               </View>
             </>
           )}
-          {!hasPreorder && (
+          {hasDeposit && (
+            <View style={styles.lineItem}>
+              <Text style={styles.lineLabel}>Deposit ({partySizeNum} × {formatCurrency(depositAmount / partySizeNum)})</Text>
+              <Text style={styles.lineValue}>{formatCurrency(depositAmount)}</Text>
+            </View>
+          )}
+          {!hasPreorder && !hasDeposit && (
             <View style={styles.lineItem}>
               <Text style={styles.lineLabel}>Reservation</Text>
               <Text style={styles.lineValue}>No payment due now</Text>

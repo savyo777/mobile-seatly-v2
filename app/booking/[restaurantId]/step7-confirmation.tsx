@@ -21,11 +21,15 @@ import {
 import { parseDateKeyLocal } from '@/lib/booking/dateUtils';
 import {
   cartSubtotal,
+  confirmDepositStub,
   createPublicBooking,
   parseBookingCartParam,
+  prepareDeposit,
   type PublicBookingResponse,
 } from '@/lib/booking/publicBookingApi';
+import { previewDepositCents } from '@/lib/booking/depositTiers';
 import { addBookingToCalendar } from '@/lib/booking/addToCalendar';
+import { formatCurrency } from '@/lib/utils/formatCurrency';
 import { useColors, createStyles, spacing, borderRadius, shadows } from '@/lib/theme';
 import type { DateKey } from '@/lib/booking/availabilityTypes';
 
@@ -198,6 +202,28 @@ const useStyles = createStyles((c) => ({
     textAlign: 'center',
     lineHeight: 20,
   },
+  depositBanner: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: 10,
+    padding: 14,
+    borderRadius: borderRadius.lg,
+    borderWidth: 1,
+  },
+  depositBannerWarning: {
+    backgroundColor: 'rgba(212, 165, 116, 0.10)',
+    borderColor: c.warning,
+  },
+  depositBannerSuccess: {
+    backgroundColor: 'rgba(201, 162, 74, 0.10)',
+    borderColor: c.gold,
+  },
+  depositBannerText: {
+    flex: 1,
+    fontSize: 13,
+    lineHeight: 18,
+    color: c.textPrimary,
+  },
   skipBtn: { alignItems: 'center', paddingVertical: 4 },
   skipText: {
     fontSize: 14,
@@ -249,6 +275,7 @@ export default function Step7Confirmation() {
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [calendarAdding, setCalendarAdding] = useState(false);
   const [calendarAdded, setCalendarAdded] = useState(false);
+  const [depositPendingError, setDepositPendingError] = useState<string | null>(null);
   const guests = parseInt(partySize ?? '2', 10);
   const savedReservationRef = useRef(false);
   const cart = parseBookingCartParam(cartParam);
@@ -293,6 +320,7 @@ export default function Step7Confirmation() {
       setSubmitError(null);
       try {
         const taxAmount = Math.round(preorderSubtotal * currentRestaurant.taxRate * 100) / 100;
+        const previewDepositDollars = previewDepositCents(currentRestaurant.depositTiers, guests) / 100;
         const result = await createPublicBooking({
           restaurant_id: rid,
           shift_id: shiftId,
@@ -308,7 +336,7 @@ export default function Step7Confirmation() {
           subtotal: preorderSubtotal,
           tax_amount: taxAmount,
           tip_amount: 0,
-          total_amount: Math.round((preorderSubtotal + taxAmount) * 100) / 100,
+          total_amount: Math.round((preorderSubtotal + taxAmount + previewDepositDollars) * 100) / 100,
           discount_amount: null,
           discount_reason: null,
           promotion_id: null,
@@ -318,7 +346,34 @@ export default function Step7Confirmation() {
               ? 'split'
               : 'card',
         });
-        if (!cancelled) setConfirmation(result);
+        if (cancelled) return;
+        setConfirmation(result);
+
+        // STRIPE STUB — collect the deposit immediately after the booking
+        // succeeds. On real Stripe, this becomes a confirmPayment call against
+        // the client_secret returned by prepare-deposit.
+        if (result.deposit_required && result.deposit_amount_cents && result.deposit_amount_cents > 0) {
+          try {
+            const { payments } = await prepareDeposit({
+              reservation_id: result.reservation_id,
+              payers: [{
+                email,
+                full_name: name,
+                amount_cents: result.deposit_amount_cents,
+              }],
+            });
+            for (const payment of payments) {
+              if (cancelled) return;
+              await confirmDepositStub({ payment_id: payment.id });
+            }
+          } catch (depositError) {
+            if (cancelled) return;
+            const message = depositError instanceof Error
+              ? depositError.message
+              : 'The deposit could not be charged.';
+            setDepositPendingError(message);
+          }
+        }
       } catch (error) {
         const status = (error as Error & { status?: number }).status;
         const message = error instanceof Error ? error.message : 'Reservation failed.';
@@ -454,6 +509,28 @@ export default function Step7Confirmation() {
             <Text style={styles.codeText}>{confirmation.confirmation_code}</Text>
           </View>
         </Animated.View>
+
+        {/* Deposit banner */}
+        {confirmation.deposit_required && confirmation.deposit_amount_cents ? (
+          <Animated.View style={[{ opacity: fadeAnim }]}>
+            {depositPendingError ? (
+              <View style={[styles.depositBanner, styles.depositBannerWarning]}>
+                <Ionicons name="alert-circle-outline" size={18} color={c.warning} />
+                <Text style={styles.depositBannerText}>
+                  We couldn't charge the {formatCurrency(confirmation.deposit_amount_cents / 100)} deposit yet ({depositPendingError}).
+                  Pay it from My Bookings before your reservation to keep the table.
+                </Text>
+              </View>
+            ) : (
+              <View style={[styles.depositBanner, styles.depositBannerSuccess]}>
+                <Ionicons name="checkmark-circle-outline" size={18} color={c.gold} />
+                <Text style={styles.depositBannerText}>
+                  Deposit of {formatCurrency(confirmation.deposit_amount_cents / 100)} collected.
+                </Text>
+              </View>
+            )}
+          </Animated.View>
+        ) : null}
 
         {/* Confirmation delivery */}
         <Animated.View style={[{ opacity: fadeAnim }]}>
