@@ -108,41 +108,51 @@ export default function ExpenseReviewScreen() {
     setScan(next);
   }, [router]);
 
-  // Once we have the scan, kick off the AI extraction.
+  // Once we have the scan, kick off the AI extraction. The finally block is
+  // critical: scanReceipt can throw or hang (network failure, missing edge
+  // function deploy, etc.), and without an unconditional setScanning(false)
+  // the form would be stuck on the loading shimmer forever.
   useEffect(() => {
     if (!scan) return;
     let cancelled = false;
     (async () => {
-      const result = await scanReceipt({
-        imageBase64: scan.base64,
-        imageMimeType: scan.mimeType,
-      });
-      if (cancelled) return;
-      const draft = result.draft;
-      if (draft.vendor) setVendor(draft.vendor);
-      if (draft.expenseDate) setExpenseDate(draft.expenseDate);
-      // Single "Subtotal" field captures the all-in amount. Prefer the AI's
-      // total_cents (the bottom-line on the receipt); fall back to subtotal
-      // if the model only returned the pre-tax number.
-      const headlineCents = draft.totalCents ?? draft.subtotalCents;
-      if (headlineCents != null) setSubtotal(centsToInputString(headlineCents));
-      if (draft.currency) setCurrency(draft.currency);
-      if (draft.category && isExpenseCategoryKey(draft.category)) setCategory(draft.category);
-      if (draft.paymentMethod === 'card' || draft.paymentMethod === 'cash' || draft.paymentMethod === 'other') {
-        setPaymentMethod(draft.paymentMethod);
-      }
-      if (draft.paymentMethodLast4) setPaymentLast4(draft.paymentMethodLast4);
-      // Collapse the AI-extraction tracking to match the simplified form.
-      const collapsed = new Set<ExpenseDraftFieldKey>();
-      for (const f of result.extractedFields) {
-        if (f === 'totalCents' || f === 'taxCents' || f === 'tipCents') {
-          collapsed.add('subtotalCents');
-        } else {
-          collapsed.add(f);
+      try {
+        const result = await scanReceipt({
+          imageBase64: scan.base64,
+          imageMimeType: scan.mimeType,
+        });
+        if (cancelled) return;
+        const draft = result.draft;
+        if (draft.vendor) setVendor(draft.vendor);
+        if (draft.expenseDate) setExpenseDate(draft.expenseDate);
+        // Single "Subtotal" field captures the all-in amount. Prefer the AI's
+        // total_cents (the bottom-line on the receipt); fall back to subtotal
+        // if the model only returned the pre-tax number.
+        const headlineCents = draft.totalCents ?? draft.subtotalCents;
+        if (headlineCents != null) setSubtotal(centsToInputString(headlineCents));
+        if (draft.currency) setCurrency(draft.currency);
+        if (draft.category && isExpenseCategoryKey(draft.category)) setCategory(draft.category);
+        if (draft.paymentMethod === 'card' || draft.paymentMethod === 'cash' || draft.paymentMethod === 'other') {
+          setPaymentMethod(draft.paymentMethod);
         }
+        if (draft.paymentMethodLast4) setPaymentLast4(draft.paymentMethodLast4);
+        // Collapse the AI-extraction tracking to match the simplified form.
+        const collapsed = new Set<ExpenseDraftFieldKey>();
+        for (const f of result.extractedFields) {
+          if (f === 'totalCents' || f === 'taxCents' || f === 'tipCents') {
+            collapsed.add('subtotalCents');
+          } else {
+            collapsed.add(f);
+          }
+        }
+        setExtractedFields(collapsed);
+      } catch (err) {
+        // scanReceipt failed — surface nothing prefilled, let the owner
+        // type the receipt in manually instead of being stuck.
+        if (__DEV__) console.warn('scanReceipt failed', err);
+      } finally {
+        if (!cancelled) setScanning(false);
       }
-      setExtractedFields(collapsed);
-      setScanning(false);
     })();
     return () => {
       cancelled = true;
