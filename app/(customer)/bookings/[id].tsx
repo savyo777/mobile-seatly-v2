@@ -38,6 +38,11 @@ function isUpcomingReservation(r: Reservation): boolean {
   return new Date(r.reservedAt).getTime() >= Date.now();
 }
 
+function isModifiableReservation(r: Reservation): boolean {
+  return (r.status === 'pending' || r.status === 'confirmed') &&
+    new Date(r.reservedAt).getTime() >= Date.now();
+}
+
 function formatBookingWhen(iso: string, locale: string): { date: string; time: string } {
   const d = new Date(iso);
   return {
@@ -231,6 +236,18 @@ export default function BookingDetailScreen() {
 
   const { date, time } = formatBookingWhen(reservation.reservedAt, i18n.language);
   const showActions = isUpcomingReservation(reservation);
+  const canModify = isModifiableReservation(reservation);
+
+  const handleModify = () => {
+    const d = new Date(reservation.reservedAt);
+    const yyyy = d.getFullYear();
+    const mm = String(d.getMonth() + 1).padStart(2, '0');
+    const dd = String(d.getDate()).padStart(2, '0');
+    const prefillDate = `${yyyy}-${mm}-${dd}`;
+    router.push(
+      `/booking/${reservation.restaurantId}/step2-time?date=${encodeURIComponent(prefillDate)}&mode=modify&reservationId=${encodeURIComponent(reservation.id)}&excludeRid=${encodeURIComponent(reservation.id)}&prefillParty=${reservation.partySize}`,
+    );
+  };
 
   return (
     <ScreenWrapper scrollable={false}>
@@ -322,7 +339,9 @@ export default function BookingDetailScreen() {
 
       {showActions ? (
         <View style={[styles.actions, { paddingBottom: Math.max(insets.bottom, spacing.md) }]}>
-          <Button title={t('bookings.modifyBooking')} onPress={() => {}} variant="outlined" />
+          {canModify ? (
+            <Button title={t('bookings.modifyBooking')} onPress={handleModify} variant="outlined" />
+          ) : null}
           <Button title={t('bookings.cancelBooking')} onPress={handleCancel} variant="danger" disabled={cancelling} />
         </View>
       ) : null}

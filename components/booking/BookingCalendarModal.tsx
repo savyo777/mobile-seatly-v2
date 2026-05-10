@@ -15,6 +15,12 @@ type Props = {
   restaurantId: string;
   selectedDateKey: DateKey;
   availabilityVersion?: number;
+  /**
+   * Result of `restaurant_available_dates` RPC. `null` = unknown/loading
+   * (calendar stays permissive). `[]` = every date is closed (grey out all).
+   * Otherwise, only dates in the array remain selectable.
+   */
+  availableDates?: string[] | null;
   onClose: () => void;
   onSelect: (key: DateKey) => void;
 };
@@ -164,9 +170,14 @@ export function BookingCalendarModal({
   restaurantId,
   selectedDateKey,
   availabilityVersion = 0,
+  availableDates,
   onClose,
   onSelect,
 }: Props) {
+  const availableDatesSet = useMemo(
+    () => (availableDates == null ? null : new Set(availableDates)),
+    [availableDates],
+  );
   const { t } = useTranslation();
   const styles = useStyles();
   const config = useMemo(() => getShiftConfig(restaurantId), [restaurantId]);
@@ -278,13 +289,15 @@ export function BookingCalendarModal({
                     const num = c.dateKey ? parseDateKeyLocal(c.dateKey).getDate() : null;
                     const isSelected = c.dateKey === selectedDateKey;
                     const outOfMonth = !c.inMonth;
-                    const disabled = !c.selectable;
-                    const closed = c.closedDay && c.inMonth;
+                    const fullyBookedByRpc =
+                      availableDatesSet !== null && c.dateKey != null && !availableDatesSet.has(c.dateKey);
+                    const disabled = !c.selectable || fullyBookedByRpc;
+                    const closed = (c.closedDay || fullyBookedByRpc) && c.inMonth;
                     return (
                       <Pressable
                         key={`${c.dateKey ?? 'x'}-${wi}-${di}`}
                         onPress={() => {
-                          if (c.dateKey && c.selectable) {
+                          if (c.dateKey && !disabled) {
                             onSelect(c.dateKey);
                             onClose();
                           }

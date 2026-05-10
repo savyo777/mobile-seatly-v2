@@ -1,4 +1,5 @@
 import { getSupabase } from '@/lib/supabase/client';
+import { cancelReservation as cancelReservationViaEdge } from '@/lib/booking/publicBookingApi';
 
 export interface Reservation {
   id: string;
@@ -217,10 +218,25 @@ export async function cancelReservationByIdAsync(id: string): Promise<{ ok: bool
   const uuidLike =
     /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(id);
   if (supabase && uuidLike) {
-    const { error } = await supabase.from('reservations').update({ status: 'cancelled' }).eq('id', id);
-    if (error) return { ok: false, reason: error.message };
-    return { ok: true };
+    try {
+      await cancelReservationViaEdge({ reservation_id: id });
+      return { ok: true };
+    } catch (error) {
+      const reason = error instanceof Error ? error.message : 'Could not cancel the reservation.';
+      return { ok: false, reason };
+    }
   }
 
   return { ok: false, reason: 'Reservation not found.' };
+}
+
+export function modifyMockReservation(
+  id: string,
+  patch: Partial<Pick<Reservation, 'reservedAt' | 'partySize' | 'specialRequest'>>,
+): boolean {
+  const idx = mockReservations.findIndex((r) => r.id === id);
+  if (idx < 0) return false;
+  mockReservations[idx] = { ...mockReservations[idx], ...patch };
+  mockReservationsVersion += 1;
+  return true;
 }

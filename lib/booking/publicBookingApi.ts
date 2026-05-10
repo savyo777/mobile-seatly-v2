@@ -340,6 +340,257 @@ export async function createPublicBooking(
   return body as PublicBookingResponse;
 }
 
+const AVAILABLE_DATES_TTL_MS = 60_000;
+const availableDatesCache = new Map<string, { expiresAt: number; value: string[] }>();
+
+export async function getAvailableDates(params: {
+  restaurantId: string;
+  partySize: number;
+  startDate: string;
+  endDate: string;
+}): Promise<string[] | null> {
+  const supabase = getSupabase();
+  if (!supabase) return null;
+  const partySize = Math.max(1, Math.floor(params.partySize));
+  const cacheKey = `${params.restaurantId}|${partySize}|${params.startDate}|${params.endDate}`;
+  const cached = availableDatesCache.get(cacheKey);
+  if (cached && cached.expiresAt > Date.now()) return cached.value;
+  try {
+    const { data, error } = await supabase.rpc('restaurant_available_dates', {
+      p_restaurant_id: params.restaurantId,
+      p_party_size: partySize,
+      p_start_date: params.startDate,
+      p_end_date: params.endDate,
+    });
+    if (error || !Array.isArray(data)) return null;
+    const value = (data as unknown[]).filter((item): item is string => typeof item === 'string');
+    availableDatesCache.set(cacheKey, { expiresAt: Date.now() + AVAILABLE_DATES_TTL_MS, value });
+    return value;
+  } catch {
+    return null;
+  }
+}
+
+export type ModifyReservationPayload = {
+  reservation_id: string;
+  date?: string;
+  time?: string;
+  party_size?: number;
+  special_request?: string;
+  confirmation_code?: string;
+};
+
+export type ModifyReservationResponse = {
+  ok: true;
+  reservation_id: string;
+  reserved_at: string;
+  party_size: number;
+  special_request: string | null;
+  table_ids: string[];
+  notification_delivery?: 'sent' | 'failed' | 'skipped';
+  notification_delivery_channel?: 'sms' | 'email' | null;
+};
+
+const MODIFY_REASON_MESSAGES: Record<string, string> = {
+  slot_taken: 'That time was just booked by someone else. Pick another slot.',
+  no_table: 'No table fits your party at that time. Pick another slot.',
+  over_cover_cap: 'That time is fully booked. Pick another slot.',
+  shift_not_found: 'That booking time is no longer available.',
+  not_modifiable: "This reservation can't be modified — contact the restaurant if you need help.",
+  diner_double_book: 'You already have a reservation at this time.',
+  past_shift_close: 'That time is past the shift close. Pick an earlier slot.',
+  rate_limited: 'Too many requests — please wait a minute.',
+  closed: 'The restaurant is closed on that date.',
+  no_floor_capacity: 'This restaurant has no available tables.',
+};
+
+export async function modifyReservation(
+  payload: ModifyReservationPayload,
+): Promise<ModifyReservationResponse> {
+  const { url, anonKey } = assertConfigured();
+  const token = await getAccessToken();
+  if (!token && !payload.confirmation_code) {
+    const error = new Error('Sign in or supply a confirmation code to modify.');
+    (error as Error & { status?: number }).status = 401;
+    throw error;
+  }
+
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), BOOKING_REQUEST_TIMEOUT_MS);
+  let response: Response;
+  try {
+    response = await fetch(`${url}/functions/v1/modify-reservation`, {
+      method: 'POST',
+      signal: controller.signal,
+      headers: {
+        apikey: anonKey,
+        'Content-Type': 'application/json',
+        ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      },
+      body: JSON.stringify(payload),
+    });
+  } catch (error) {
+    if (isAbortError(error)) {
+      throw new Error('Updating is taking longer than expected. Please try again.');
+    }
+    throw error;
+  } finally {
+    clearTimeout(timeout);
+  }
+
+  const body = await response.json().catch(() => ({})) as Partial<ModifyReservationResponse> & {
+    error?: unknown;
+    unavailable_reason?: string;
+  };
+
+  if (!response.ok || body.error) {
+    const reason = body.unavailable_reason;
+    const reasonMessage = reason ? MODIFY_REASON_MESSAGES[reason] : undefined;
+    const fallback =
+      reasonMessage ??
+      (response.status === 401
+        ? 'Sign in to modify this reservation.'
+        : response.status === 404
+          ? 'Reservation not found.'
+          : 'Could not update the reservation.');
+    const error = new Error(coerceErrorMessage(body.error, fallback));
+    (error as Error & { status?: number; unavailable_reason?: string }).status = response.status;
+    if (reason) (error as Error & { unavailable_reason?: string }).unavailable_reason = reason;
+    throw error;
+  }
+
+  if (!body.reservation_id || !body.reserved_at) {
+    throw new Error('Could not update the reservation.');
+  }
+
+  return {
+    ok: true,
+    reservation_id: body.reservation_id,
+    reserved_at: body.reserved_at,
+    party_size: body.party_size ?? payload.party_size ?? 0,
+    special_request: body.special_request ?? null,
+    table_ids: body.table_ids ?? [],
+    notification_delivery: body.notification_delivery,
+    notification_delivery_channel: body.notification_delivery_channel,
+  };
+}
+
+export type ConflictWindow = { start: number; end: number };
+
+export async function fetchActiveReservationWindows(params: {
+  userProfileId: string;
+  excludeReservationId?: string;
+  lookbackHours?: number;
+}): Promise<ConflictWindow[]> {
+  const supabase = getSupabase();
+  if (!supabase) return [];
+  const lookbackMs = (params.lookbackHours ?? 6) * 60 * 60 * 1000;
+  const since = new Date(Date.now() - lookbackMs).toISOString();
+  const { data, error } = await supabase
+    .from('reservations')
+    .select('id, reserved_at, duration_minutes, status')
+    .eq('user_profile_id', params.userProfileId)
+    .gte('reserved_at', since)
+    .in('status', ['pending', 'confirmed', 'seated']);
+  if (error || !data) return [];
+  const exclude = params.excludeReservationId;
+  return data
+    .filter((row) => row.id !== exclude)
+    .map((row) => {
+      const start = new Date(row.reserved_at).getTime();
+      const duration = (row.duration_minutes ?? 90) * 60 * 1000;
+      return { start, end: start + duration };
+    })
+    .filter((window) => Number.isFinite(window.start) && Number.isFinite(window.end));
+}
+
+export function slotConflictsWithWindows(
+  slot: { date_time: string; duration_minutes?: number },
+  windows: ConflictWindow[],
+): boolean {
+  const start = new Date(slot.date_time).getTime();
+  if (!Number.isFinite(start)) return false;
+  const duration = (slot.duration_minutes ?? 90) * 60 * 1000;
+  const end = start + duration;
+  return windows.some((window) => start < window.end && end > window.start);
+}
+
+export type CancelReservationPayload = {
+  reservation_id: string;
+  confirmation_code?: string;
+};
+
+export type CancelReservationResponse = {
+  ok: true;
+  reservation_id: string;
+  status: 'cancelled';
+  notification_delivery?: 'sent' | 'failed' | 'skipped';
+  notification_delivery_channel?: 'sms' | 'email' | null;
+};
+
+export async function cancelReservation(
+  payload: CancelReservationPayload,
+): Promise<CancelReservationResponse> {
+  const { url, anonKey } = assertConfigured();
+  const token = await getAccessToken();
+  if (!token && !payload.confirmation_code) {
+    const error = new Error('Sign in or supply a confirmation code to cancel.');
+    (error as Error & { status?: number }).status = 401;
+    throw error;
+  }
+
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), BOOKING_REQUEST_TIMEOUT_MS);
+  let response: Response;
+  try {
+    response = await fetch(`${url}/functions/v1/cancel-reservation`, {
+      method: 'POST',
+      signal: controller.signal,
+      headers: {
+        apikey: anonKey,
+        'Content-Type': 'application/json',
+        ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      },
+      body: JSON.stringify(payload),
+    });
+  } catch (error) {
+    if (isAbortError(error)) {
+      throw new Error('Cancelling is taking longer than expected. Please try again.');
+    }
+    throw error;
+  } finally {
+    clearTimeout(timeout);
+  }
+
+  const body = await response.json().catch(() => ({})) as Partial<CancelReservationResponse> & {
+    error?: unknown;
+    unavailable_reason?: string;
+  };
+
+  if (!response.ok || body.error) {
+    const fallback =
+      response.status === 401
+        ? 'Sign in to cancel this reservation.'
+        : response.status === 429 || body.unavailable_reason === 'rate_limited'
+          ? 'Too many requests — please wait a minute.'
+          : 'Could not cancel the reservation.';
+    const error = new Error(coerceErrorMessage(body.error, fallback));
+    (error as Error & { status?: number; unavailable_reason?: string }).status = response.status;
+    if (body.unavailable_reason) {
+      (error as Error & { unavailable_reason?: string }).unavailable_reason = body.unavailable_reason;
+    }
+    throw error;
+  }
+
+  return {
+    ok: true,
+    reservation_id: body.reservation_id ?? payload.reservation_id,
+    status: 'cancelled',
+    notification_delivery: body.notification_delivery,
+    notification_delivery_channel: body.notification_delivery_channel,
+  };
+}
+
 export async function fetchBookingProfile(): Promise<BookingProfile | null> {
   const supabase = getSupabase();
   if (!supabase) return null;

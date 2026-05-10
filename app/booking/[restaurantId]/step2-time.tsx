@@ -7,6 +7,7 @@ import {
   ScrollView,
   TextInput,
   ActivityIndicator,
+  Alert,
 } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
@@ -25,7 +26,16 @@ import {
 import {
   getAvailability as getPublicAvailability,
   type AvailabilitySlot,
+  type ConflictWindow,
+  fetchActiveReservationWindows,
+  slotConflictsWithWindows,
+  modifyReservation,
+  getAvailableDates,
 } from '@/lib/booking/publicBookingApi';
+import { getSupabase } from '@/lib/supabase/client';
+import { useAuthSession } from '@/lib/auth/AuthContext';
+import { modifyMockReservation } from '@/lib/mock/reservations';
+import { subscribeToAvailability } from '@/lib/realtime/availabilityRegistry';
 import {
   getCachedRestaurantById,
   loadRestaurantForBooking,
@@ -272,12 +282,30 @@ const useStyles = createStyles((c) => ({
 }));
 
 export default function Step2Time() {
-  const { restaurantId, date, eventId } = useLocalSearchParams<{ restaurantId: string; date: string; eventId?: string }>();
+  const {
+    restaurantId,
+    date,
+    eventId,
+    mode,
+    reservationId,
+    excludeRid,
+    prefillParty,
+  } = useLocalSearchParams<{
+    restaurantId: string;
+    date: string;
+    eventId?: string;
+    mode?: string;
+    reservationId?: string;
+    excludeRid?: string;
+    prefillParty?: string;
+  }>();
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const c = useColors();
   const styles = useStyles();
   const rid = restaurantId ?? '';
+  const isModifyMode = mode === 'modify' && typeof reservationId === 'string' && reservationId.length > 0;
+  const { user } = useAuthSession();
 
   const [dateKey, setDateKey] = useState<DateKey>(() =>
     coerceBookableDateKey(rid, parseBookingDateParam(date)),
@@ -287,8 +315,12 @@ export default function Step2Time() {
     if (!rid) return;
     setDateKey((prev) => coerceBookableDateKey(rid, prev));
   }, [rid]);
-  const [partySize, setPartySize] = useState(2);
-  const [partySizeInput, setPartySizeInput] = useState('2');
+  const initialParty = useMemo(() => {
+    const raw = typeof prefillParty === 'string' ? parseInt(prefillParty, 10) : NaN;
+    return Number.isFinite(raw) && raw >= 1 ? raw : 2;
+  }, [prefillParty]);
+  const [partySize, setPartySize] = useState(initialParty);
+  const [partySizeInput, setPartySizeInput] = useState(String(initialParty));
   const [partySizeError, setPartySizeError] = useState('');
   const [selectedSlotId, setSelectedSlotId] = useState<string | null>(null);
   const [slots, setSlots] = useState<AvailabilitySlot[]>([]);
@@ -299,6 +331,9 @@ export default function Step2Time() {
   const [restaurantVersion, setRestaurantVersion] = useState(0);
   const [restaurant, setRestaurant] = useState(() => getCachedRestaurantById(rid));
   const [restaurantReady, setRestaurantReady] = useState(() => Boolean(getCachedRestaurantById(rid)) || !rid);
+  const [conflictWindows, setConflictWindows] = useState<ConflictWindow[]>([]);
+  const [submitting, setSubmitting] = useState(false);
+  const [availableDates, setAvailableDates] = useState<string[] | null>(null);
   const eventContext = useMemo(
     () => (typeof eventId === 'string' ? getEventById(eventId) : undefined),
     [eventId],
@@ -341,6 +376,65 @@ export default function Step2Time() {
       cancelled = true;
     };
   }, [rid]);
+
+  useEffect(() => {
+    let cancelled = false;
+    const supabase = getSupabase();
+    const authUserId = user?.id;
+    if (!supabase || !authUserId) {
+      setConflictWindows([]);
+      return;
+    }
+    void (async () => {
+      const { data } = await supabase
+        .from('user_profiles')
+        .select('id')
+        .eq('auth_user_id', authUserId)
+        .maybeSingle();
+      const userProfileId = (data as { id?: string } | null)?.id;
+      if (cancelled || !userProfileId) return;
+      const windows = await fetchActiveReservationWindows({
+        userProfileId,
+        excludeReservationId: typeof excludeRid === 'string' ? excludeRid : undefined,
+      });
+      if (!cancelled) setConflictWindows(windows);
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [user?.id, excludeRid]);
+
+  useEffect(() => {
+    if (!rid) return;
+    return subscribeToAvailability(rid, () => {
+      setAvailabilityRefresh((version) => version + 1);
+    });
+  }, [rid]);
+
+  useEffect(() => {
+    if (!rid || partySizeError || !partySizeInput) {
+      setAvailableDates(null);
+      return;
+    }
+    let cancelled = false;
+    const start = new Date();
+    start.setHours(0, 0, 0, 0);
+    const end = new Date(start);
+    end.setDate(end.getDate() + 60);
+    const fmt = (d: Date) =>
+      `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+    void getAvailableDates({
+      restaurantId: rid,
+      partySize,
+      startDate: fmt(start),
+      endDate: fmt(end),
+    }).then((dates) => {
+      if (!cancelled) setAvailableDates(dates);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [rid, partySize, partySizeError, partySizeInput]);
 
   useEffect(() => {
     if (!rid || partySizeError || !partySizeInput) {
@@ -413,11 +507,50 @@ export default function Step2Time() {
 
   const handleNext = useCallback(() => {
     if (!selectedSlot || partySizeError || !partySizeInput) return;
+    if (isModifyMode && reservationId) {
+      const slotDate = new Date(selectedSlot.date_time);
+      const yyyy = slotDate.getFullYear();
+      const mm = String(slotDate.getMonth() + 1).padStart(2, '0');
+      const dd = String(slotDate.getDate()).padStart(2, '0');
+      const hh = String(slotDate.getHours()).padStart(2, '0');
+      const min = String(slotDate.getMinutes()).padStart(2, '0');
+      const uuidLike = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(reservationId);
+      if (!uuidLike) {
+        const ok = modifyMockReservation(reservationId, {
+          reservedAt: slotDate.toISOString(),
+          partySize,
+        });
+        if (ok) {
+          Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+          router.replace(`/(customer)/bookings/${reservationId}`);
+        } else {
+          Alert.alert('Could not update', 'Reservation not found.');
+        }
+        return;
+      }
+      setSubmitting(true);
+      modifyReservation({
+        reservation_id: reservationId,
+        date: `${yyyy}-${mm}-${dd}`,
+        time: `${hh}:${min}`,
+        party_size: partySize,
+      })
+        .then(() => {
+          Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+          router.replace(`/(customer)/bookings/${reservationId}`);
+        })
+        .catch((error) => {
+          const message = error instanceof Error ? error.message : 'Could not update the reservation.';
+          Alert.alert('Could not update', message);
+        })
+        .finally(() => setSubmitting(false));
+      return;
+    }
     const eventQuery = eventContext ? `&eventId=${encodeURIComponent(eventContext.id)}` : '';
     router.push(
       `/booking/${restaurantId}/confirm?date=${encodeURIComponent(dateKey)}&time=${encodeURIComponent(selectedSlot.display_time)}&partySize=${partySize}&shiftId=${encodeURIComponent(selectedSlot.shift_id)}&slotDateTime=${encodeURIComponent(selectedSlot.date_time)}${eventQuery}`,
     );
-  }, [selectedSlot, partySizeError, partySizeInput, eventContext, restaurantId, dateKey, partySize, router]);
+  }, [selectedSlot, partySizeError, partySizeInput, eventContext, restaurantId, dateKey, partySize, router, isModifyMode, reservationId]);
 
   const handleNextDate = useCallback(() => {
     setDateKey(nextBookableDateAfter(rid, dateKey));
@@ -432,7 +565,9 @@ export default function Step2Time() {
         </TouchableOpacity>
         <View style={styles.headerCenter}>
           <Text style={styles.restaurantName} numberOfLines={1}>{restaurant?.name}</Text>
-          <Text style={styles.headerSub}>Select date, time & guests</Text>
+          <Text style={styles.headerSub}>
+            {isModifyMode ? 'Update your reservation' : 'Select date, time & guests'}
+          </Text>
         </View>
         <View style={{ width: 40 }} />
       </View>
@@ -503,23 +638,38 @@ export default function Step2Time() {
           </View>
         ) : slots.length > 0 ? (
           <View style={styles.slotsGrid}>
-            {slots.map((slot) => (
-              <Pressable
-                key={availabilitySlotKey(slot)}
-                onPress={() => handleSelectSlot(slot)}
-                style={[
-                  styles.slotPill,
-                  selectedSlotId === availabilitySlotKey(slot) && styles.slotPillSelected,
-                ]}
-              >
-                <Text style={[
-                  styles.slotText,
-                  selectedSlotId === availabilitySlotKey(slot) && styles.slotTextSelected,
-                ]}>
-                  {slot.display_time}
-                </Text>
-              </Pressable>
-            ))}
+            {slots.map((slot) => {
+              const conflict = slotConflictsWithWindows(slot, conflictWindows);
+              const isSelected = selectedSlotId === availabilitySlotKey(slot);
+              return (
+                <Pressable
+                  key={availabilitySlotKey(slot)}
+                  onPress={() => {
+                    if (conflict) {
+                      Alert.alert(
+                        'Reservation conflict',
+                        'You have another reservation at this time.',
+                      );
+                      return;
+                    }
+                    handleSelectSlot(slot);
+                  }}
+                  style={[
+                    styles.slotPill,
+                    isSelected && styles.slotPillSelected,
+                    conflict && styles.slotPillUnavailable,
+                  ]}
+                >
+                  <Text style={[
+                    styles.slotText,
+                    isSelected && styles.slotTextSelected,
+                    conflict && styles.slotTextUnavailable,
+                  ]}>
+                    {slot.display_time}
+                  </Text>
+                </Pressable>
+              );
+            })}
           </View>
         ) : (
           <View style={styles.noTimesBox}>
@@ -544,9 +694,16 @@ export default function Step2Time() {
           </View>
         ) : null}
         <Button
-          title="Continue"
+          title={isModifyMode ? (submitting ? 'Updating…' : 'Update reservation') : 'Continue'}
           onPress={handleNext}
-          disabled={!restaurantReady || slotsLoading || !selectedSlot || !!partySizeError || !partySizeInput}
+          disabled={
+            !restaurantReady ||
+            slotsLoading ||
+            !selectedSlot ||
+            !!partySizeError ||
+            !partySizeInput ||
+            submitting
+          }
         />
       </View>
 
@@ -555,6 +712,7 @@ export default function Step2Time() {
         restaurantId={rid}
         selectedDateKey={dateKey}
         availabilityVersion={restaurantVersion}
+        availableDates={availableDates}
         onClose={() => setCalendarOpen(false)}
         onSelect={(k) => { setDateKey(k); setCalendarOpen(false); }}
       />
