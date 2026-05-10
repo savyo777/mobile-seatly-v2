@@ -270,7 +270,7 @@ export default function EventsScreen() {
   const insets = useSafeAreaInsets();
   const router = useRouter();
 
-  const [dateFilter, setDateFilter] = useState<DateFilter>('tonight');
+  const [dateFilter, setDateFilter] = useState<DateFilter>('all');
   const [typeFilter, setTypeFilter] = useState<TypeFilterKey>('all');
   const [searchOpen, setSearchOpen] = useState(false);
   const [query, setQuery] = useState('');
@@ -339,7 +339,7 @@ export default function EventsScreen() {
 
   const renderEvent = useCallback(
     ({ item, index }: { item: DiningEvent; index: number }) => (
-      <EventCard event={item} isHero={index === 0 && dateFilter === 'tonight' && !query} />
+      <EventCard event={item} isHero={index === 0 && !query} />
     ),
     [dateFilter, query],
   );
