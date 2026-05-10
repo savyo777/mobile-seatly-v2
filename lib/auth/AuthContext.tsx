@@ -10,6 +10,7 @@ import {
 import { isUnusablePersistedSupabaseAuthError } from '@/lib/supabase/authErrors';
 import { clearAppShellPreference } from '@/lib/navigation/appShellPreference';
 import { resolveIsStaffLike } from '@/lib/auth/roles';
+import { registerPushTokenForCurrentUser } from '@/lib/notifications/pushToken';
 
 type AuthCtx = {
   session: Session | null;
@@ -106,6 +107,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
               void authSupabase.auth.stopAutoRefresh();
             } else if (next) {
               void authSupabase.auth.startAutoRefresh();
+              if (event === 'SIGNED_IN' || event === 'INITIAL_SESSION') {
+                void registerPushTokenForCurrentUser();
+              }
             }
             setSession(next);
             setLoading(false);
