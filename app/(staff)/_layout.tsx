@@ -308,6 +308,9 @@ export default function OwnerTabsLayout() {
         <Tabs.Screen name="index"       options={{ href: null }} />
         <Tabs.Screen name="crm"         options={{ href: null }} />
         <Tabs.Screen name="expenses"    options={{ href: null }} />
+        <Tabs.Screen name="expense-scan"   options={{ href: null, tabBarStyle: { display: 'none' } }} />
+        <Tabs.Screen name="expense-review" options={{ href: null, tabBarStyle: { display: 'none' } }} />
+        <Tabs.Screen name="expense-detail" options={{ href: null, tabBarStyle: { display: 'none' } }} />
         <Tabs.Screen name="events"      options={{ href: null }} />
         <Tabs.Screen name="export"      options={{ href: null }} />
         <Tabs.Screen name="settings"    options={{ href: null, tabBarStyle: { display: 'none' } }} />

@@ -558,6 +558,137 @@ export const EXPENSE_LINES: ExpenseLine[] = [
   { id: 'e3', label: 'Utilities & occupancy', amount: 1840, period: 'This month' },
 ];
 
+// Receipt-scanner v1 demo data. Used by ExpensesContext when demo mode is
+// on (or when a real owner has no expenses yet) so the new expenses screen
+// looks coherent. Mirrors the live `Expense` shape from
+// lib/expenses/types.ts so demo and prod render through the exact same
+// components.
+import type { Expense } from '@/lib/expenses/types';
+
+const today = new Date();
+function offsetISODate(daysAgo: number): string {
+  const d = new Date(today);
+  d.setDate(d.getDate() - daysAgo);
+  return d.toISOString().slice(0, 10);
+}
+
+export const DEMO_EXPENSES: Expense[] = [
+  {
+    id: 'demo-exp-1',
+    restaurantId: 'r1',
+    createdByUserId: 'u1',
+    createdAt: new Date().toISOString(),
+    vendor: 'Sysco Foodservice',
+    expenseDate: offsetISODate(1),
+    subtotalCents: 124230,
+    taxCents: 9938,
+    tipCents: null,
+    totalCents: 134168,
+    currency: 'USD',
+    category: 'food_beverage',
+    paymentMethod: 'card',
+    paymentMethodLast4: '4242',
+    imagePath: null,
+    notes: 'Weekly produce + meat order',
+    aiExtracted: true,
+  },
+  {
+    id: 'demo-exp-2',
+    restaurantId: 'r1',
+    createdByUserId: 'u1',
+    createdAt: new Date().toISOString(),
+    vendor: 'Shell',
+    expenseDate: offsetISODate(2),
+    subtotalCents: 4218,
+    taxCents: 254,
+    tipCents: null,
+    totalCents: 4472,
+    currency: 'USD',
+    category: 'fuel',
+    paymentMethod: 'card',
+    paymentMethodLast4: '4242',
+    imagePath: null,
+    notes: null,
+    aiExtracted: true,
+  },
+  {
+    id: 'demo-exp-3',
+    restaurantId: 'r1',
+    createdByUserId: 'u1',
+    createdAt: new Date().toISOString(),
+    vendor: 'Pacific Wine & Spirits',
+    expenseDate: offsetISODate(4),
+    subtotalCents: 89400,
+    taxCents: 7152,
+    tipCents: null,
+    totalCents: 96552,
+    currency: 'USD',
+    category: 'alcohol',
+    paymentMethod: 'card',
+    paymentMethodLast4: '0019',
+    imagePath: null,
+    notes: null,
+    aiExtracted: true,
+  },
+  {
+    id: 'demo-exp-4',
+    restaurantId: 'r1',
+    createdByUserId: 'u1',
+    createdAt: new Date().toISOString(),
+    vendor: 'Ace Hardware',
+    expenseDate: offsetISODate(7),
+    subtotalCents: 6280,
+    taxCents: 502,
+    tipCents: null,
+    totalCents: 6782,
+    currency: 'USD',
+    category: 'repairs',
+    paymentMethod: 'card',
+    paymentMethodLast4: '4242',
+    imagePath: null,
+    notes: 'Replaced walk-in shelf brackets',
+    aiExtracted: true,
+  },
+  {
+    id: 'demo-exp-5',
+    restaurantId: 'r1',
+    createdByUserId: 'u1',
+    createdAt: new Date().toISOString(),
+    vendor: 'Costco Wholesale',
+    expenseDate: offsetISODate(11),
+    subtotalCents: 24180,
+    taxCents: 1934,
+    tipCents: null,
+    totalCents: 26114,
+    currency: 'USD',
+    category: 'supplies',
+    paymentMethod: 'card',
+    paymentMethodLast4: '4242',
+    imagePath: null,
+    notes: null,
+    aiExtracted: true,
+  },
+  {
+    id: 'demo-exp-6',
+    restaurantId: 'r1',
+    createdByUserId: 'u1',
+    createdAt: new Date().toISOString(),
+    vendor: 'PG&E',
+    expenseDate: offsetISODate(18),
+    subtotalCents: 41200,
+    taxCents: null,
+    tipCents: null,
+    totalCents: 41200,
+    currency: 'USD',
+    category: 'utilities',
+    paymentMethod: 'card',
+    paymentMethodLast4: '4242',
+    imagePath: null,
+    notes: 'Monthly electric',
+    aiExtracted: false,
+  },
+];
+
 export interface OwnerEventRow {
   id: string;
   title: string;

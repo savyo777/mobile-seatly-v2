@@ -11,6 +11,7 @@ import '@/lib/i18n';
 import { AuthProvider } from '@/lib/auth/AuthContext';
 import { ThemeProvider, useColors } from '@/lib/theme';
 import { MenuProvider } from '@/lib/context/MenuContext';
+import { ExpensesProvider } from '@/lib/context/ExpensesContext';
 import { createStackTransitionOptions } from '@/lib/navigation/transitions';
 import { CenaivaAssistantProvider } from '@/lib/cenaiva/CenaivaAssistantProvider';
 import { CenaivaVoicePreferenceProvider } from '@/lib/cenaiva/voice/CenaivaVoicePreferenceProvider';
@@ -162,11 +163,13 @@ export default function RootLayout() {
     <ThemeProvider>
       <AuthProvider>
         <MenuProvider>
-          <CenaivaVoicePreferenceProvider>
-            <CenaivaAssistantProvider>
-              <ThemedRootShell />
-            </CenaivaAssistantProvider>
-          </CenaivaVoicePreferenceProvider>
+          <ExpensesProvider>
+            <CenaivaVoicePreferenceProvider>
+              <CenaivaAssistantProvider>
+                <ThemedRootShell />
+              </CenaivaAssistantProvider>
+            </CenaivaVoicePreferenceProvider>
+          </ExpensesProvider>
         </MenuProvider>
       </AuthProvider>
     </ThemeProvider>
