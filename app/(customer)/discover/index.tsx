@@ -71,8 +71,10 @@ const useStyles = createStyles((c) => ({
     borderBottomColor: c.border,
   },
   logo: {
-    width: 150,
-    height: 55,
+    width: 200,
+    height: 73,
+    marginLeft: -10,
+    marginVertical: -8,
   },
   headerRight: {
     flexDirection: 'row',
