@@ -1,5 +1,6 @@
 import { getSupabase } from '@/lib/supabase/client';
 import type { Reservation } from '@/lib/mock/reservations';
+import type { DepositStatus } from '@/lib/booking/publicBookingApi';
 import i18n from '@/lib/i18n';
 
 export type MyBookingItem = {
@@ -12,6 +13,8 @@ export type MyBookingItem = {
   partySize: number;
   occasion?: string;
   confirmationCode: string;
+  depositAmountCents: number | null;
+  depositStatus: DepositStatus | null;
 };
 
 type ReservationRow = {
@@ -21,6 +24,8 @@ type ReservationRow = {
   status: string | null;
   confirmation_code: string | null;
   occasion: string | null;
+  deposit_amount_cents: number | null;
+  deposit_status: string | null;
   restaurant:
     | {
         id: string;
@@ -38,6 +43,19 @@ type ReservationRow = {
       }>
     | null;
 };
+
+function normalizeDepositStatus(status: string | null): DepositStatus | null {
+  if (
+    status === 'none' ||
+    status === 'pending' ||
+    status === 'charged' ||
+    status === 'waived' ||
+    status === 'failed'
+  ) {
+    return status;
+  }
+  return null;
+}
 
 function normalizeStatus(status: string | null): Reservation['status'] {
   if (
@@ -70,7 +88,7 @@ export async function fetchMyBookingItems(): Promise<MyBookingItem[]> {
 
   const { data, error } = await supabase
     .from('reservations')
-    .select('id,reserved_at,party_size,status,confirmation_code,occasion,restaurant:restaurants(id,name,slug,cover_photo_url,cover_image_url)')
+    .select('id,reserved_at,party_size,status,confirmation_code,occasion,deposit_amount_cents,deposit_status,restaurant:restaurants(id,name,slug,cover_photo_url,cover_image_url)')
     .eq('user_profile_id', profile.id)
     .neq('status', 'no_show')
     .order('reserved_at', { ascending: false });
@@ -89,6 +107,8 @@ export async function fetchMyBookingItems(): Promise<MyBookingItem[]> {
       partySize: row.party_size ?? 1,
       occasion: row.occasion ?? undefined,
       confirmationCode: row.confirmation_code ?? '',
+      depositAmountCents: row.deposit_amount_cents ?? null,
+      depositStatus: normalizeDepositStatus(row.deposit_status),
     }];
   });
 }

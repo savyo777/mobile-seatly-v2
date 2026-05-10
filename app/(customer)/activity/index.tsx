@@ -22,6 +22,13 @@ import {
 } from '@/lib/mock/reservations';
 import { mockRestaurants } from '@/lib/mock/restaurants';
 import { fetchMyBookingItems, type MyBookingItem } from '@/lib/booking/myReservations';
+import {
+  confirmDepositStub,
+  prepareDeposit,
+  type DepositStatus,
+} from '@/lib/booking/publicBookingApi';
+import { getSupabase } from '@/lib/supabase/client';
+import { formatCurrency } from '@/lib/utils/formatCurrency';
 import { isDemoModeEnabled } from '@/lib/config/demoMode';
 import { useColors, createStyles, spacing, borderRadius } from '@/lib/theme';
 
@@ -37,6 +44,8 @@ interface BookingItem {
   partySize: number;
   occasion?: string;
   confirmationCode: string;
+  depositAmountCents?: number | null;
+  depositStatus?: DepositStatus | null;
 }
 
 const OCCASION_ICONS: Record<string, string> = {
@@ -345,6 +354,8 @@ export default function ActivityScreen() {
           partySize: r.partySize,
           occasion: r.occasion,
           confirmationCode: r.confirmationCode,
+          depositAmountCents: null,
+          depositStatus: null,
         }))
         : [],
   [liveItems, liveLoaded, refreshKey]);
@@ -362,6 +373,37 @@ export default function ActivityScreen() {
     () => items.filter(isUpcomingItem).length,
     [items],
   );
+
+  const [payingDepositId, setPayingDepositId] = useState<string | null>(null);
+
+  const payDeposit = useCallback(async (item: BookingItem) => {
+    if (!item.depositAmountCents || item.depositAmountCents <= 0) return;
+    const supabase = getSupabase();
+    if (!supabase) return;
+    setPayingDepositId(item.id);
+    try {
+      const { data: sessionData } = await supabase.auth.getSession();
+      const user = sessionData.session?.user;
+      const { payments } = await prepareDeposit({
+        reservation_id: item.id,
+        payers: [{
+          email: user?.email ?? '',
+          full_name: (user?.user_metadata?.full_name as string | undefined) ?? '',
+          amount_cents: item.depositAmountCents,
+        }],
+      });
+      for (const payment of payments) {
+        await confirmDepositStub({ payment_id: payment.id });
+      }
+      await reloadLiveBookings();
+      void Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Could not charge the deposit.';
+      Alert.alert('Payment failed', message);
+    } finally {
+      setPayingDepositId(null);
+    }
+  }, [reloadLiveBookings]);
 
   const promptCancelBooking = useCallback((item: BookingItem) => {
     Alert.alert(
@@ -426,10 +468,22 @@ export default function ActivityScreen() {
               {/* Top row: confirmed badge (upcoming) or status chip (past/cancelled) */}
               <View style={styles.photoTopRow}>
                 {isUpcomingTab ? (
-                  <View style={styles.confirmedBadge}>
-                    <Ionicons name="checkmark-circle" size={13} color={c.bgBase} />
-                    <Text style={styles.confirmedBadgeText}>Confirmed</Text>
-                  </View>
+                  item.depositStatus === 'pending' ? (
+                    <View style={[styles.chip, { borderColor: c.warning + '66', backgroundColor: 'rgba(0,0,0,0.65)' }]}>
+                      <View style={[styles.chipDot, { backgroundColor: c.warning }]} />
+                      <Text style={[styles.chipText, { color: c.warning }]}>Deposit due</Text>
+                    </View>
+                  ) : item.depositStatus === 'failed' ? (
+                    <View style={[styles.chip, { borderColor: c.danger + '66', backgroundColor: 'rgba(0,0,0,0.65)' }]}>
+                      <View style={[styles.chipDot, { backgroundColor: c.danger }]} />
+                      <Text style={[styles.chipText, { color: c.danger }]}>Payment failed</Text>
+                    </View>
+                  ) : (
+                    <View style={styles.confirmedBadge}>
+                      <Ionicons name="checkmark-circle" size={13} color={c.bgBase} />
+                      <Text style={styles.confirmedBadgeText}>Confirmed</Text>
+                    </View>
+                  )
                 ) : chip ? (
                   <View style={[styles.chip, { borderColor: chip.color + '66' }]}>
                     <View style={[styles.chipDot, { backgroundColor: chip.color }]} />
@@ -470,12 +524,31 @@ export default function ActivityScreen() {
                 >
                   <Text style={styles.cancelBookingText}>Cancel</Text>
                 </Pressable>
-                <Pressable
-                  onPress={() => router.push(`/(customer)/discover/${item.restaurantId}` as Href)}
-                  style={({ pressed }) => [styles.outlineBtn, pressed && { opacity: 0.7 }]}
-                >
-                  <Text style={styles.outlineBtnText}>View restaurant</Text>
-                </Pressable>
+                {(item.depositStatus === 'pending' || item.depositStatus === 'failed') && item.depositAmountCents ? (
+                  <Pressable
+                    disabled={payingDepositId === item.id}
+                    onPress={() => {
+                      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+                      void payDeposit(item);
+                    }}
+                    style={({ pressed }) => [styles.bookAgainBtn, (pressed || payingDepositId === item.id) && { opacity: 0.7 }]}
+                  >
+                    <Text style={styles.bookAgainText}>
+                      {payingDepositId === item.id
+                        ? 'Charging…'
+                        : item.depositStatus === 'failed'
+                          ? `Retry ${formatCurrency(item.depositAmountCents / 100)}`
+                          : `Pay ${formatCurrency(item.depositAmountCents / 100)}`}
+                    </Text>
+                  </Pressable>
+                ) : (
+                  <Pressable
+                    onPress={() => router.push(`/(customer)/discover/${item.restaurantId}` as Href)}
+                    style={({ pressed }) => [styles.outlineBtn, pressed && { opacity: 0.7 }]}
+                  >
+                    <Text style={styles.outlineBtnText}>View restaurant</Text>
+                  </Pressable>
+                )}
               </View>
             ) : isCancelledTab ? (
               <Pressable
@@ -502,7 +575,7 @@ export default function ActivityScreen() {
         </View>
       );
     },
-    [c.bgBase, c.textMuted, pastStatusChip, promptCancelBooking, router, segment, styles],
+    [c.bgBase, c.danger, c.textMuted, c.warning, pastStatusChip, payDeposit, payingDepositId, promptCancelBooking, router, segment, styles],
   );
 
   return (

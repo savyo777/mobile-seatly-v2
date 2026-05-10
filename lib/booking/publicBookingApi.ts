@@ -58,7 +58,22 @@ export type PublicBookingResponse = {
   confirmation_delivery: 'sent' | 'skipped' | 'failed';
   confirmation_delivery_channel: 'email' | 'sms' | null;
   reused?: boolean;
+  deposit_required?: boolean;
+  deposit_amount_cents?: number;
+  deposit_status?: DepositStatus;
   error?: string;
+};
+
+export type DepositStatus = 'none' | 'pending' | 'charged' | 'waived' | 'failed';
+
+export type DepositPayer = {
+  email: string;
+  full_name: string;
+  amount_cents: number;
+};
+
+export type PrepareDepositResponse = {
+  payments: Array<{ id: string; amount_cents: number; email: string | null }>;
 };
 
 export type BookingProfile = {
@@ -386,6 +401,81 @@ export async function createPublicBooking(
   }
 
   return body as PublicBookingResponse;
+}
+
+export async function prepareDeposit(params: {
+  reservation_id: string;
+  payers: DepositPayer[];
+}): Promise<PrepareDepositResponse> {
+  const { url, anonKey } = assertConfigured();
+  const token = await getAccessToken();
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), BOOKING_REQUEST_TIMEOUT_MS);
+  let response: Response;
+  try {
+    response = await fetch(`${url}/functions/v1/prepare-deposit`, {
+      method: 'POST',
+      signal: controller.signal,
+      headers: {
+        apikey: anonKey,
+        'Content-Type': 'application/json',
+        ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      },
+      body: JSON.stringify(params),
+    });
+  } catch (error) {
+    if (isAbortError(error)) {
+      throw new Error('Preparing the deposit is taking longer than expected. Please try again.');
+    }
+    throw error;
+  } finally {
+    clearTimeout(timeout);
+  }
+
+  const body = await response.json().catch(() => ({})) as Partial<PrepareDepositResponse> & { error?: unknown };
+  if (!response.ok || body.error || !Array.isArray(body.payments)) {
+    const error = new Error(coerceErrorMessage(body.error, 'Could not prepare the deposit.'));
+    (error as Error & { status?: number }).status = response.status;
+    throw error;
+  }
+  return { payments: body.payments };
+}
+
+export async function confirmDepositStub(params: {
+  payment_id: string;
+}): Promise<{ ok: true }> {
+  const { url, anonKey } = assertConfigured();
+  const token = await getAccessToken();
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), BOOKING_REQUEST_TIMEOUT_MS);
+  let response: Response;
+  try {
+    response = await fetch(`${url}/functions/v1/confirm-deposit-stub`, {
+      method: 'POST',
+      signal: controller.signal,
+      headers: {
+        apikey: anonKey,
+        'Content-Type': 'application/json',
+        ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      },
+      body: JSON.stringify(params),
+    });
+  } catch (error) {
+    if (isAbortError(error)) {
+      throw new Error('Charging the deposit is taking longer than expected. Please try again.');
+    }
+    throw error;
+  } finally {
+    clearTimeout(timeout);
+  }
+
+  const body = await response.json().catch(() => ({})) as { ok?: boolean; error?: unknown };
+  if (!response.ok || body.error || body.ok !== true) {
+    const error = new Error(coerceErrorMessage(body.error, 'Could not charge the deposit.'));
+    (error as Error & { status?: number }).status = response.status;
+    throw error;
+  }
+  return { ok: true };
 }
 
 const AVAILABLE_DATES_TTL_MS = 60_000;
