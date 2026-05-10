@@ -1,4 +1,4 @@
-import React, { useCallback, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import {
   Pressable,
   ScrollView,
@@ -20,6 +20,8 @@ import {
   type PostTurnRequest,
   type PostTurnRequestType,
 } from '@/lib/postVisit/postTurn';
+import { getSupabase } from '@/lib/supabase/client';
+import { subscribeToNotifications } from '@/lib/realtime/notificationsRegistry';
 
 // Demo mode only — see buildMockNotifications below. Real notifications
 // for the signed-in user come from a Supabase query (gated above).
@@ -154,6 +156,71 @@ function buildMockNotifications(): AppNotification[] {
   });
 
   return notifs;
+}
+
+type SupabaseNotificationRow = {
+  id: string;
+  type: string | null;
+  title: string | null;
+  body: string | null;
+  data: Record<string, unknown> | null;
+  is_read: boolean | null;
+  created_at: string;
+  restaurant_id: string | null;
+};
+
+function mapSupabaseType(type: string | null, data: Record<string, unknown> | null): AppNotifType {
+  if (type === 'booking_confirmed' || type === 'booking_modified') return 'booking_confirmed';
+  if (type === 'booking_cancelled') return 'cancelled';
+  if (type === 'booking_reminder') {
+    const hours = typeof data?.hours_until === 'number' ? data.hours_until : null;
+    return hours != null && hours <= 3 ? 'reminder_2h' : 'reminder_24h';
+  }
+  if (type === 'review_request') return 'review_request';
+  if (type === 'promotion_alert' || type === 'event_alert') return 'waitlist_ready';
+  return 'loyalty_milestone';
+}
+
+function pickString(value: unknown): string | undefined {
+  return typeof value === 'string' && value ? value : undefined;
+}
+
+function mapSupabaseRow(row: SupabaseNotificationRow): AppNotification {
+  const data = row.data ?? {};
+  const reservationId = pickString(data['reservation_id']);
+  return {
+    id: row.id,
+    type: mapSupabaseType(row.type, data),
+    title: row.title ?? '',
+    body: row.body ?? '',
+    timestamp: row.created_at,
+    restaurantId: row.restaurant_id ?? undefined,
+    reservationId,
+    read: row.is_read === true,
+  };
+}
+
+async function fetchSupabaseNotifications(authUserId: string): Promise<{
+  userProfileId: string | null;
+  notifications: AppNotification[];
+}> {
+  const supabase = getSupabase();
+  if (!supabase) return { userProfileId: null, notifications: [] };
+  const { data: profile } = await supabase
+    .from('user_profiles')
+    .select('id')
+    .eq('auth_user_id', authUserId)
+    .maybeSingle();
+  const userProfileId = (profile as { id?: string } | null)?.id ?? null;
+  if (!userProfileId) return { userProfileId: null, notifications: [] };
+  const { data: rows } = await supabase
+    .from('notifications')
+    .select('id, type, title, body, data, is_read, created_at, restaurant_id')
+    .eq('user_id', userProfileId)
+    .order('created_at', { ascending: false })
+    .limit(50);
+  const notifications = ((rows as SupabaseNotificationRow[] | null) ?? []).map(mapSupabaseRow);
+  return { userProfileId, notifications };
 }
 
 function timeAgo(iso: string): string {
@@ -333,6 +400,8 @@ export default function NotificationsScreen() {
   const styles = useStyles();
   const { user, isAuthenticated } = useAuthSession();
   const [allNotifs, setAllNotifs] = useState<AppNotification[]>(() => (isDemoModeEnabled() ? buildMockNotifications() : []));
+  const [userProfileId, setUserProfileId] = useState<string | null>(null);
+  const [refreshTick, setRefreshTick] = useState(0);
 
   const buckets = bucket(allNotifs);
 
@@ -344,17 +413,38 @@ export default function NotificationsScreen() {
           isAuthenticated && user?.id
             ? (await getPostTurnNotifications(user)).map(postTurnNotification)
             : [];
-        const merged = [...postTurn, ...(isDemoModeEnabled() ? buildMockNotifications() : [])].sort(
-          (a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime(),
-        );
+        const supa =
+          isAuthenticated && user?.id
+            ? await fetchSupabaseNotifications(user.id)
+            : { userProfileId: null, notifications: [] };
+        if (!cancelled) setUserProfileId(supa.userProfileId);
+        const merged = [
+          ...supa.notifications,
+          ...postTurn,
+          ...(isDemoModeEnabled() ? buildMockNotifications() : []),
+        ].sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
         if (!cancelled) setAllNotifs(merged);
       };
       void load();
       return () => {
         cancelled = true;
       };
-    }, [isAuthenticated, user]),
+    }, [isAuthenticated, user, refreshTick]),
   );
+
+  useEffect(() => {
+    if (!userProfileId) return;
+    return subscribeToNotifications(userProfileId, () => {
+      setRefreshTick((tick) => tick + 1);
+    });
+  }, [userProfileId]);
+
+  const markSupabaseRead = useCallback((id: string) => {
+    const supabase = getSupabase();
+    if (!supabase) return;
+    void supabase.from('notifications').update({ is_read: true }).eq('id', id);
+    setAllNotifs((prev) => prev.map((item) => (item.id === id ? { ...item, read: true } : item)));
+  }, []);
 
   const handlePress = useCallback(
     (n: AppNotification) => {
@@ -374,11 +464,14 @@ export default function NotificationsScreen() {
         } as Href);
         return;
       }
+      if (!n.postTurnType && !n.read && /^[0-9a-f-]{36}$/i.test(n.id)) {
+        markSupabaseRead(n.id);
+      }
       if (n.reservationId) {
         router.push(`/(customer)/bookings/${n.reservationId}` as Href);
       }
     },
-    [router],
+    [router, markSupabaseRead],
   );
 
   const renderItem = (n: AppNotification) => {
