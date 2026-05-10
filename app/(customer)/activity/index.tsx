@@ -25,7 +25,7 @@ import { fetchMyBookingItems, type MyBookingItem } from '@/lib/booking/myReserva
 import { isDemoModeEnabled } from '@/lib/config/demoMode';
 import { useColors, createStyles, spacing, borderRadius } from '@/lib/theme';
 
-type SegmentKey = 'upcoming' | 'past';
+type SegmentKey = 'upcoming' | 'past' | 'cancelled';
 
 interface BookingItem {
   id: string;
@@ -50,6 +50,13 @@ const OCCASION_ICONS: Record<string, string> = {
 function isUpcomingItem(item: BookingItem): boolean {
   if (['completed', 'cancelled', 'no_show'].includes(item.status)) return false;
   return new Date(item.whenIso).getTime() >= Date.now();
+}
+
+function bucketOf(item: BookingItem): SegmentKey | null {
+  if (item.status === 'no_show') return null;
+  if (item.status === 'cancelled') return 'cancelled';
+  if (isUpcomingItem(item)) return 'upcoming';
+  return 'past';
 }
 
 function formatDateTime(iso: string): { primary: string; sub: string } {
@@ -343,9 +350,7 @@ export default function ActivityScreen() {
   [liveItems, liveLoaded, refreshKey]);
 
   const segmentItems = useMemo(() => {
-    const filtered = items.filter((item) => {
-      return segment === 'upcoming' ? isUpcomingItem(item) : !isUpcomingItem(item);
-    });
+    const filtered = items.filter((item) => bucketOf(item) === segment);
     return filtered.sort((a, b) => {
       const ta = new Date(a.whenIso).getTime();
       const tb = new Date(b.whenIso).getTime();
@@ -386,8 +391,10 @@ export default function ActivityScreen() {
   const renderItem = useCallback(
     ({ item }: { item: BookingItem }) => {
       const isPast = segment === 'past';
+      const isCancelledTab = segment === 'cancelled';
+      const isUpcomingTab = segment === 'upcoming';
       const { primary, sub } = formatDateTime(item.whenIso);
-      const chip = isPast ? pastStatusChip(item.status) : null;
+      const chip = isPast || isCancelledTab ? pastStatusChip(item.status) : null;
       const icon = item.occasion ? OCCASION_ICONS[item.occasion] : null;
       const guestLabel = `${item.partySize} ${item.partySize === 1 ? 'guest' : 'guests'}`;
       const detailLine = [guestLabel, icon ? `${icon} ${item.occasion}` : null].filter(Boolean).join('  ·  ');
@@ -416,9 +423,9 @@ export default function ActivityScreen() {
                 colors={['rgba(0,0,0,0.1)', 'rgba(0,0,0,0.72)']}
                 style={StyleSheet.absoluteFill}
               />
-              {/* Top row: confirmed badge (upcoming) or status chip (past) */}
+              {/* Top row: confirmed badge (upcoming) or status chip (past/cancelled) */}
               <View style={styles.photoTopRow}>
-                {!isPast ? (
+                {isUpcomingTab ? (
                   <View style={styles.confirmedBadge}>
                     <Ionicons name="checkmark-circle" size={13} color={c.bgBase} />
                     <Text style={styles.confirmedBadgeText}>Confirmed</Text>
@@ -452,7 +459,7 @@ export default function ActivityScreen() {
               >
                 <Text style={styles.bookAgainText}>Book Again</Text>
               </Pressable>
-            ) : !isPast ? (
+            ) : isUpcomingTab ? (
               <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, flex: 1 }}>
                 <Pressable
                   onPress={() => {
@@ -470,6 +477,16 @@ export default function ActivityScreen() {
                   <Text style={styles.outlineBtnText}>View restaurant</Text>
                 </Pressable>
               </View>
+            ) : isCancelledTab ? (
+              <Pressable
+                onPress={() => {
+                  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+                  router.push(`/booking/${item.restaurantId}/step2-time` as Href);
+                }}
+                style={({ pressed }) => [styles.bookAgainBtn, pressed && { opacity: 0.8 }]}
+              >
+                <Text style={styles.bookAgainText}>Book Again</Text>
+              </Pressable>
             ) : (
               <View />
             )}
@@ -515,8 +532,9 @@ export default function ActivityScreen() {
 
             {/* Segment */}
             <View style={styles.tabs}>
-              {(['upcoming', 'past'] as SegmentKey[]).map((key) => {
+              {(['upcoming', 'past', 'cancelled'] as SegmentKey[]).map((key) => {
                 const active = segment === key;
+                const label = key === 'upcoming' ? 'Upcoming' : key === 'past' ? 'Past' : 'Cancelled';
                 return (
                   <Pressable
                     key={key}
@@ -524,7 +542,7 @@ export default function ActivityScreen() {
                     style={styles.tab}
                   >
                     <Text style={[styles.tabText, active && styles.tabTextActive]}>
-                      {key === 'upcoming' ? 'Upcoming' : 'Past'}
+                      {label}
                     </Text>
                     {active && <View style={styles.tabUnderline} />}
                   </Pressable>
@@ -537,18 +555,30 @@ export default function ActivityScreen() {
           <View style={styles.empty}>
             <View style={styles.emptyIcon}>
               <Ionicons
-                name={segment === 'upcoming' ? 'calendar-outline' : 'receipt-outline'}
+                name={
+                  segment === 'upcoming'
+                    ? 'calendar-outline'
+                    : segment === 'past'
+                      ? 'receipt-outline'
+                      : 'close-circle-outline'
+                }
                 size={30}
                 color={c.textMuted}
               />
             </View>
             <Text style={styles.emptyTitle}>
-              {segment === 'upcoming' ? 'No upcoming bookings' : 'No past bookings'}
+              {segment === 'upcoming'
+                ? 'No upcoming bookings'
+                : segment === 'past'
+                  ? 'No past bookings'
+                  : 'No cancelled bookings'}
             </Text>
             <Text style={styles.emptyBody}>
               {segment === 'upcoming'
                 ? 'Find a restaurant and reserve a table.'
-                : 'Your dining history will appear here.'}
+                : segment === 'past'
+                  ? 'Your dining history will appear here.'
+                  : 'Reservations you cancel will appear here.'}
             </Text>
             {segment === 'upcoming' && (
               <Pressable
