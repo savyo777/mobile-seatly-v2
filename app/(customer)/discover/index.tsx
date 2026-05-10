@@ -61,14 +61,19 @@ type ViewMode = 'list' | 'map';
 
 const useStyles = createStyles((c) => ({
   stickyHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
     paddingHorizontal: spacing.lg,
     paddingBottom: spacing.sm,
     backgroundColor: c.bgBase,
     borderBottomWidth: StyleSheet.hairlineWidth,
     borderBottomColor: c.border,
+  },
+  stickyHeaderTopRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  stickyHeaderSearchRow: {
+    paddingTop: spacing.xs,
   },
   logo: {
     width: 200,
@@ -439,41 +444,53 @@ export default function DiscoverScreen() {
 
   return (
     <ScreenWrapper scrollable={false} padded={false}>
-      {/* Sticky header: logo + List/Map toggle + bell */}
+      {/* Sticky header: logo + List/Map toggle + bell, plus an always-visible search bar. */}
       <View style={[styles.stickyHeader, { paddingTop: spacing.xs }]}>
-        <Image
-          source={require('../../../assets/cenaiva-logo.png')}
-          style={styles.logo}
-          resizeMode="contain"
-          accessibilityLabel={t('common.appName')}
-        />
-        <View style={styles.headerRight}>
-          <View style={styles.viewToggle}>
+        <View style={styles.stickyHeaderTopRow}>
+          <Image
+            source={require('../../../assets/cenaiva-logo.png')}
+            style={styles.logo}
+            resizeMode="contain"
+            accessibilityLabel={t('common.appName')}
+          />
+          <View style={styles.headerRight}>
+            <View style={styles.viewToggle}>
+              <Pressable
+                onPress={() => setViewMode('list')}
+                style={[styles.toggleBtn, viewMode === 'list' && styles.toggleBtnActive]}
+              >
+                <Text style={[styles.toggleLabel, viewMode === 'list' && styles.toggleLabelActive]}>List</Text>
+              </Pressable>
+              <Pressable
+                onPress={() => setViewMode('map')}
+                style={[styles.toggleBtn, viewMode === 'map' && styles.toggleBtnActive]}
+              >
+                <Text style={[styles.toggleLabel, viewMode === 'map' && styles.toggleLabelActive]}>Map</Text>
+              </Pressable>
+            </View>
             <Pressable
-              onPress={() => setViewMode('list')}
-              style={[styles.toggleBtn, viewMode === 'list' && styles.toggleBtnActive]}
+              onPress={() => {
+                router.push('/(customer)/notifications' as Href);
+                setUnreadCount(0);
+              }}
+              hitSlop={8}
+              style={styles.bellBtn}
             >
-              <Text style={[styles.toggleLabel, viewMode === 'list' && styles.toggleLabelActive]}>List</Text>
-            </Pressable>
-            <Pressable
-              onPress={() => setViewMode('map')}
-              style={[styles.toggleBtn, viewMode === 'map' && styles.toggleBtnActive]}
-            >
-              <Text style={[styles.toggleLabel, viewMode === 'map' && styles.toggleLabelActive]}>Map</Text>
+              <Ionicons name="notifications-outline" size={22} color={c.textPrimary} />
+              {unreadCount > 0 ? <View style={styles.bellDot} /> : null}
             </Pressable>
           </View>
-          <Pressable
-            onPress={() => {
-              router.push('/(customer)/notifications' as Href);
-              setUnreadCount(0);
-            }}
-            hitSlop={8}
-            style={styles.bellBtn}
-          >
-            <Ionicons name="notifications-outline" size={22} color={c.textPrimary} />
-            {unreadCount > 0 ? <View style={styles.bellDot} /> : null}
-          </Pressable>
         </View>
+        {viewMode === 'list' ? (
+          <View style={styles.stickyHeaderSearchRow}>
+            <Input
+              placeholder="Restaurants, cuisines, neighborhoods..."
+              value={query}
+              onChangeText={onSearchChange}
+              icon="search-outline"
+            />
+          </View>
+        ) : null}
       </View>
 
       {viewMode === 'map' ? (
@@ -490,14 +507,6 @@ export default function DiscoverScreen() {
         }
       >
         <View style={styles.headerBlock}>
-          {/* Search bar */}
-          <Input
-            placeholder="Restaurants, cuisines, neighborhoods..."
-            value={query}
-            onChangeText={onSearchChange}
-            icon="search-outline"
-          />
-
           {/* Quick filter chips */}
           <ScrollView
             horizontal
