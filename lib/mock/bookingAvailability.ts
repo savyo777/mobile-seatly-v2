@@ -14,6 +14,7 @@ import {
 } from '@/lib/booking/hoursSchedule';
 import { parseDateKeyLocal, toLocalDateKey } from '@/lib/booking/dateUtils';
 import { getCachedRestaurantById } from '@/lib/data/restaurantCatalog';
+import { isDemoModeEnabled } from '@/lib/config/demoMode';
 
 const DEFAULT_SHIFT: BookingShiftMock = {
   slotDurationMinutes: 15,
@@ -77,6 +78,7 @@ function hash33(s: string) {
 /** Demo blackouts relative to "today" so the UI always shows some blocked days */
 function effectiveBlackouts(config: BookingShiftMock, restaurantId: string): Set<DateKey> {
   const set = new Set(config.blackoutDateKeys);
+  if (!isDemoModeEnabled()) return set;
   const h = hash33(restaurantId);
   set.add(toLocalDateKey(daysFromNow(5 + (h % 4))));
   set.add(toLocalDateKey(daysFromNow(12 + (h % 3))));
