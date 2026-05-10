@@ -26,15 +26,15 @@ type ReservationRow = {
         id: string;
         name: string | null;
         slug: string | null;
-        hero_image_url: string | null;
         cover_photo_url: string | null;
+        cover_image_url: string | null;
       }
     | Array<{
         id: string;
         name: string | null;
         slug: string | null;
-        hero_image_url: string | null;
         cover_photo_url: string | null;
+        cover_image_url: string | null;
       }>
     | null;
 };
@@ -68,18 +68,11 @@ export async function fetchMyBookingItems(): Promise<MyBookingItem[]> {
     .maybeSingle();
   if (!profile?.id) return [];
 
-  const { data: guests, error: guestError } = await supabase
-    .from('guests')
-    .select('id')
-    .eq('user_profile_id', profile.id);
-  if (guestError) throw guestError;
-  const guestIds = (guests ?? []).map((guest) => String(guest.id));
-  if (!guestIds.length) return [];
-
   const { data, error } = await supabase
     .from('reservations')
-    .select('id,reserved_at,party_size,status,confirmation_code,occasion,restaurant:restaurants(id,name,slug,hero_image_url,cover_photo_url)')
-    .in('guest_id', guestIds)
+    .select('id,reserved_at,party_size,status,confirmation_code,occasion,restaurant:restaurants(id,name,slug,cover_photo_url,cover_image_url)')
+    .eq('user_profile_id', profile.id)
+    .neq('status', 'no_show')
     .order('reserved_at', { ascending: false });
   if (error) throw error;
 
@@ -90,7 +83,7 @@ export async function fetchMyBookingItems(): Promise<MyBookingItem[]> {
       id: row.id,
       restaurantName: restaurant.name ?? i18n.t('common.fallbackRestaurant'),
       restaurantId: restaurant.id,
-      coverPhotoUrl: restaurant.hero_image_url || restaurant.cover_photo_url || '',
+      coverPhotoUrl: restaurant.cover_photo_url || restaurant.cover_image_url || '',
       whenIso: row.reserved_at,
       status: normalizeStatus(row.status),
       partySize: row.party_size ?? 1,

@@ -72,8 +72,8 @@ export type BookingProfile = {
 };
 
 const AVAILABILITY_CACHE_TTL_MS = 45_000;
-const AVAILABILITY_REQUEST_TIMEOUT_MS = 1800;
-const BOOKING_REQUEST_TIMEOUT_MS = 6000;
+const AVAILABILITY_REQUEST_TIMEOUT_MS = 8000;
+const BOOKING_REQUEST_TIMEOUT_MS = 12000;
 
 const availabilityCache = new Map<string, { expiresAt: number; value: AvailabilityResponse }>();
 const availabilityInflight = new Map<string, Promise<AvailabilityResponse>>();

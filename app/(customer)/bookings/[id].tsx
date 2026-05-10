@@ -1,4 +1,4 @@
-import React, { useCallback, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { View, Text, StyleSheet, ScrollView, Pressable, Platform, Alert } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
@@ -12,6 +12,7 @@ import {
 } from '@/lib/mock/reservations';
 import { mockOrders as DEMO_ORDERS } from '@/lib/mock/orders';
 import { isDemoModeEnabled } from '@/lib/config/demoMode';
+import { getSupabase } from '@/lib/supabase/client';
 
 const mockReservations: typeof DEMO_RESERVATIONS = isDemoModeEnabled() ? DEMO_RESERVATIONS : [];
 const mockOrders: typeof DEMO_ORDERS = isDemoModeEnabled() ? DEMO_ORDERS : [];
@@ -191,8 +192,70 @@ export default function BookingDetailScreen() {
 
   const [cancelledLocally, setCancelledLocally] = useState(false);
   const [cancelling, setCancelling] = useState(false);
+  const [liveReservation, setLiveReservation] = useState<Reservation | null>(null);
 
-  const reservation = useMemo(() => mockReservations.find((r) => r.id === id), [id, cancelledLocally]);
+  useEffect(() => {
+    if (!id) return;
+    if (mockReservations.find((r) => r.id === id)) return;
+    let cancelled = false;
+    const supabase = getSupabase();
+    if (!supabase) return;
+    void (async () => {
+      const { data } = await supabase
+        .from('reservations')
+        .select('id,restaurant_id,reserved_at,party_size,status,confirmation_code,occasion,special_request,preorder_order_id,deposit_amount,table_id,source,guest_full_name,restaurant:restaurants(id,name)')
+        .eq('id', id)
+        .neq('status', 'no_show')
+        .maybeSingle();
+      if (cancelled || !data) return;
+      const row = data as {
+        id: string;
+        restaurant_id: string;
+        reserved_at: string;
+        party_size: number | null;
+        status: string | null;
+        confirmation_code: string | null;
+        occasion: string | null;
+        special_request: string | null;
+        preorder_order_id: string | null;
+        deposit_amount: number | null;
+        table_id: string | null;
+        source: string | null;
+        guest_full_name: string | null;
+        restaurant: { id: string; name: string | null } | Array<{ id: string; name: string | null }> | null;
+      };
+      const restaurant = Array.isArray(row.restaurant) ? row.restaurant[0] ?? null : row.restaurant;
+      const status = (
+        row.status === 'pending' || row.status === 'confirmed' || row.status === 'seated' ||
+        row.status === 'completed' || row.status === 'cancelled' || row.status === 'no_show'
+      ) ? row.status : 'confirmed';
+      setLiveReservation({
+        id: row.id,
+        restaurantId: row.restaurant_id,
+        restaurantName: restaurant?.name ?? '',
+        guestId: '',
+        tableId: row.table_id ?? undefined,
+        partySize: row.party_size ?? 1,
+        reservedAt: row.reserved_at,
+        status,
+        source: 'app',
+        confirmationCode: row.confirmation_code ?? '',
+        specialRequest: row.special_request ?? undefined,
+        occasion: row.occasion ?? undefined,
+        guestName: row.guest_full_name ?? '',
+        preorderOrderId: row.preorder_order_id ?? undefined,
+        depositAmount: row.deposit_amount ?? undefined,
+      });
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [id]);
+
+  const reservation = useMemo(
+    () => mockReservations.find((r) => r.id === id) ?? liveReservation ?? undefined,
+    [id, cancelledLocally, liveReservation],
+  );
   const preorder = useMemo(
     () => (reservation?.preorderOrderId ? mockOrders.find((o) => o.id === reservation.preorderOrderId) : undefined),
     [reservation],

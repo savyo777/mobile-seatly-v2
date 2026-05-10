@@ -403,7 +403,7 @@ export default function ActivityScreen() {
           ) : null}
 
           <Pressable
-            onPress={() => router.push(`/(customer)/activity/receipt/booking/${item.id}` as Href)}
+            onPress={() => router.push(`/(customer)/bookings/${item.id}` as Href)}
             style={({ pressed }) => [pressed && styles.cardPressed]}
           >
             {/* Photo */}
@@ -474,7 +474,7 @@ export default function ActivityScreen() {
               <View />
             )}
             <Pressable
-              onPress={() => router.push(`/(customer)/activity/receipt/booking/${item.id}` as Href)}
+              onPress={() => router.push(`/(customer)/bookings/${item.id}` as Href)}
               hitSlop={10}
               style={({ pressed }) => [styles.detailsLink, pressed && { opacity: 0.5 }]}
             >
