@@ -74,7 +74,7 @@ const useStyles = createStyles((c) => ({
     width: 200,
     height: 73,
     marginLeft: -28,
-    marginVertical: -8,
+    marginVertical: -18,
   },
   headerRight: {
     flexDirection: 'row',
