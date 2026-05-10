@@ -71,10 +71,8 @@ const useStyles = createStyles((c) => ({
     borderBottomColor: c.border,
   },
   logo: {
-    ...typography.h2,
-    color: c.gold,
-    letterSpacing: 4,
-    fontWeight: '700',
+    width: 110,
+    height: 32,
   },
   headerRight: {
     flexDirection: 'row',
@@ -440,7 +438,12 @@ export default function DiscoverScreen() {
     <ScreenWrapper scrollable={false} padded={false}>
       {/* Sticky header: logo + List/Map toggle + bell */}
       <View style={[styles.stickyHeader, { paddingTop: spacing.xs }]}>
-        <Text style={styles.logo}>{t('common.appName')}</Text>
+        <Image
+          source={require('../../../assets/cenaiva-logo.png')}
+          style={styles.logo}
+          resizeMode="contain"
+          accessibilityLabel={t('common.appName')}
+        />
         <View style={styles.headerRight}>
           <View style={styles.viewToggle}>
             <Pressable

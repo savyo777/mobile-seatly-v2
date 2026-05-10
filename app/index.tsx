@@ -1,5 +1,5 @@
 import React, { useEffect } from 'react';
-import { View, Text, ActivityIndicator } from 'react-native';
+import { View, Text, Image, ActivityIndicator } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useColors, createStyles } from '@/lib/theme';
 import { useAuthSession } from '@/lib/auth/AuthContext';
@@ -16,10 +16,8 @@ const useStyles = createStyles((c) => ({
     justifyContent: 'center',
   },
   logo: {
-    fontSize: 42,
-    fontWeight: '700',
-    color: c.gold,
-    letterSpacing: 6,
+    width: 240,
+    height: 88,
   },
   tagline: {
     fontSize: 16,
@@ -66,7 +64,12 @@ export default function SplashScreen() {
 
   return (
     <View style={styles.container}>
-      <Text style={styles.logo}>CENAIVA</Text>
+      <Image
+        source={require('../assets/cenaiva-logo.png')}
+        style={styles.logo}
+        resizeMode="contain"
+        accessibilityLabel="Cenaiva"
+      />
       <Text style={styles.tagline}>Your table awaits</Text>
       <ActivityIndicator color={c.gold} size="small" style={styles.loader} />
     </View>

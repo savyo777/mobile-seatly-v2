@@ -5,6 +5,7 @@ import {
   ScrollView,
   StyleSheet,
   Pressable,
+  Image,
   useWindowDimensions,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -12,7 +13,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import Svg, { Rect, Polyline, Circle, Path, Defs, LinearGradient, Stop } from 'react-native-svg';
-import { useColors, createStyles, spacing, borderRadius, typography } from '@/lib/theme';
+import { useColors, createStyles, spacing, borderRadius } from '@/lib/theme';
 import { useAuthSession } from '@/lib/auth/AuthContext';
 import { resolveAuthDisplayProfile } from '@/lib/auth/displayProfile';
 import { fetchCurrentOwnerRestaurant, type OwnerRestaurant } from '@/lib/services/ownerRestaurant';
@@ -162,10 +163,8 @@ const useStyles = createStyles((c) => ({
     borderBottomColor: c.border,
   },
   brandLogo: {
-    ...typography.h2,
-    color: c.gold,
-    letterSpacing: 4,
-    fontWeight: '700',
+    width: 110,
+    height: 32,
   },
   brandBellBtn: {
     padding: 4,
@@ -734,7 +733,12 @@ export default function OwnerHomeScreen() {
     <View style={styles.root}>
       {/* ── Sticky brand bar — same treatment as diner Discover ── */}
       <View style={[styles.brandBar, { paddingTop: insets.top + spacing.xs }]}>
-        <Text style={styles.brandLogo}>{t('common.appName')}</Text>
+        <Image
+          source={require('../../assets/cenaiva-logo.png')}
+          style={styles.brandLogo}
+          resizeMode="contain"
+          accessibilityLabel={t('common.appName')}
+        />
         <Pressable
           onPress={() =>
             safeOwnerPush(router, withOwnerReturnTarget('/(staff)/notifications', 'home') as never)
