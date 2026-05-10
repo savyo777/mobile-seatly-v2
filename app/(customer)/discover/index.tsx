@@ -21,7 +21,9 @@ import { resolveAuthDisplayProfile } from '@/lib/auth/displayProfile';
 import type { DiscoverCategorySlug } from '@/lib/discover/discoverCategories';
 import { getTorontoGreetingPeriod } from '@/lib/discover/torontoTime';
 import { loadRestaurantsForDiscover } from '@/lib/data/restaurantCatalog';
+import { fetchCurrentUserProfile } from '@/lib/services/userProfile';
 import { isDemoModeEnabled } from '@/lib/config/demoMode';
+import { mockCustomer } from '@/lib/mock/users';
 import { pickFeaturedRestaurant } from '@/lib/mock/discoverPresentation';
 import { mockRestaurants, type Restaurant } from '@/lib/mock/restaurants';
 import {
@@ -196,6 +198,60 @@ const useStyles = createStyles((c) => ({
     color: c.bgBase,
     fontWeight: '700',
   },
+  prefsSection: {
+    paddingHorizontal: spacing.lg,
+    paddingBottom: spacing.lg,
+    gap: spacing.sm,
+  },
+  prefsHeaderRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  prefsHeader: {
+    ...typography.body,
+    color: c.textPrimary,
+    fontWeight: '700',
+  },
+  prefsEdit: {
+    ...typography.bodySmall,
+    color: c.gold,
+    fontWeight: '600',
+  },
+  prefsChipsRow: {
+    gap: spacing.sm,
+    paddingVertical: spacing.xs,
+  },
+  prefsChip: {
+    borderWidth: 1,
+    borderColor: 'rgba(201,162,74,0.4)',
+    backgroundColor: 'rgba(201,162,74,0.12)',
+    borderRadius: borderRadius.full,
+    paddingHorizontal: spacing.md,
+    paddingVertical: 6,
+  },
+  prefsChipText: {
+    ...typography.bodySmall,
+    color: c.gold,
+    fontWeight: '700',
+  },
+  prefsEmptyCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.md,
+    borderRadius: borderRadius.lg,
+    borderWidth: 1,
+    borderColor: 'rgba(201,162,74,0.3)',
+    backgroundColor: 'rgba(201,162,74,0.08)',
+  },
+  prefsEmptyText: {
+    ...typography.bodySmall,
+    flex: 1,
+    color: c.textPrimary,
+    fontWeight: '600',
+  },
   content: {
     paddingHorizontal: spacing.lg,
     gap: spacing.sm,
@@ -284,6 +340,12 @@ export default function DiscoverScreen() {
   const currentUserId = user?.id ?? '';
   const [baseRestaurants, setBaseRestaurants] = useState<Restaurant[]>(() => (isDemoModeEnabled() ? mockRestaurants : []));
   const [unreadCount, setUnreadCount] = useState(() => (isDemoModeEnabled() ? getUnreadCount(currentUserId) : 0));
+  const [userPrefs, setUserPrefs] = useState<{ cuisines: string[]; dietary: string[]; vibes: string[] }>(
+    () =>
+      isDemoModeEnabled()
+        ? { cuisines: [], dietary: mockCustomer.dietaryRestrictions ?? [], vibes: [] }
+        : { cuisines: [], dietary: [], vibes: [] },
+  );
   const displayProfile = useMemo(
     () => resolveAuthDisplayProfile(user),
     [user],
@@ -298,6 +360,26 @@ export default function DiscoverScreen() {
       cancelled = true;
     };
   }, []);
+
+  // Pull the diner's saved preferences for the "Your preferences" home section.
+  // Demo mode keeps the mock initialiser; production fetches from user_profiles.
+  useEffect(() => {
+    if (isDemoModeEnabled()) return;
+    let cancelled = false;
+    void fetchCurrentUserProfile()
+      .then((profile) => {
+        if (cancelled || !profile) return;
+        setUserPrefs({
+          cuisines: profile.preferredCuisines,
+          dietary: profile.dietaryRestrictions,
+          vibes: profile.diningVibes,
+        });
+      })
+      .catch(() => undefined);
+    return () => {
+      cancelled = true;
+    };
+  }, [user?.id]);
 
   const filterLabel = (key: FilterKey) => {
     const map: Record<FilterKey, string> = {
@@ -554,6 +636,46 @@ export default function DiscoverScreen() {
             })}
           </ScrollView>
         </View>
+
+        {searchMode === 'restaurants' ? (() => {
+          const prefChips = [...userPrefs.cuisines, ...userPrefs.dietary, ...userPrefs.vibes].filter(Boolean);
+          const hasPrefs = prefChips.length > 0;
+          return (
+            <View style={styles.prefsSection}>
+              <View style={styles.prefsHeaderRow}>
+                <Text style={styles.prefsHeader}>{t('discover.sectionYourPreferences')}</Text>
+                <Pressable
+                  hitSlop={8}
+                  onPress={() => router.push('/(customer)/profile' as Href)}
+                >
+                  <Text style={styles.prefsEdit}>{hasPrefs ? 'Edit' : 'Set up'}</Text>
+                </Pressable>
+              </View>
+              {hasPrefs ? (
+                <ScrollView
+                  horizontal
+                  showsHorizontalScrollIndicator={false}
+                  contentContainerStyle={styles.prefsChipsRow}
+                >
+                  {prefChips.map((label) => (
+                    <View key={label} style={styles.prefsChip}>
+                      <Text style={styles.prefsChipText}>{label}</Text>
+                    </View>
+                  ))}
+                </ScrollView>
+              ) : (
+                <Pressable
+                  onPress={() => router.push('/(customer)/profile' as Href)}
+                  style={({ pressed }) => [styles.prefsEmptyCard, pressed && { opacity: 0.85 }]}
+                >
+                  <Ionicons name="sparkles-outline" size={18} color="#C9A24A" />
+                  <Text style={styles.prefsEmptyText}>Set your dining preferences</Text>
+                  <Ionicons name="chevron-forward" size={16} color="#C9A24A" />
+                </Pressable>
+              )}
+            </View>
+          );
+        })() : null}
 
         {searchMode === 'people' ? (
           <PeopleResults users={peopleResults} router={router} currentUserId={currentUserId} />

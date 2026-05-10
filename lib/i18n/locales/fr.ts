@@ -229,6 +229,7 @@ export default {
     sectionAvailableNow: 'Disponible maintenant',
     sectionTaste: 'Selon vos goûts',
     sectionMostSnapped: 'Les plus photographiés cette semaine',
+    sectionYourPreferences: 'Vos préférences',
     sectionTrendingDishes: 'Plats tendance',
     trendingDishCount: '{{count}} publications',
     chipDateNight: 'Soirée en amoureux',

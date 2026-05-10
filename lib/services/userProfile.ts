@@ -118,6 +118,8 @@ export type UserProfileUpdate = Partial<{
   birthday: string | null;
   dietary_restrictions: string[] | null;
   allergies: string[] | null;
+  preferred_cuisines: string[] | null;
+  dining_vibes: string[] | null;
   seating_preference: string | null;
   noise_preference: string | null;
   car_details_json: Record<string, unknown> | null;
