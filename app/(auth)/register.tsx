@@ -300,11 +300,16 @@ export default function RegisterScreen() {
         }
       }
 
-      Alert.alert(
-        'Account created',
-        'If email confirmation is enabled, please verify your email before signing in.',
-      );
-      router.replace(data.session ? '/(customer)' : '/(auth)/login');
+      if (data.session) {
+        // Account created and signed in — no email confirmation needed.
+        router.replace('/(customer)');
+      } else {
+        Alert.alert(
+          'Check your email',
+          'We sent a confirmation link to your email. Verify it, then sign in.',
+        );
+        router.replace('/(auth)/login');
+      }
     } finally {
       setSubmitting(false);
     }
