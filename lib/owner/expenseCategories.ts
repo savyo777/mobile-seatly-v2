@@ -1,22 +1,32 @@
-// Fixed catalog of expense categories shown in the receipt-scanner review
-// screen and the expenses list. The `key` is what gets persisted to
-// `expenses.category`; the `label` is what owners see; the `glyph` is a
-// monochrome unicode mark used in chips to distinguish categories at a
-// glance without relying on color.
+// Fixed catalog of expense categories used by the receipt-scanner review
+// screen and the expenses list. Keys MUST match the
+// `expenses_category_check` constraint on public.expenses; if you add or
+// remove a category here, update the CHECK constraint in the same change.
 //
-// v1 is fixed: no per-restaurant customization. If a restaurant needs a
-// category that isn't here, the receipt should be tagged "Other" and the
-// catalog expanded in a future migration.
+// Receipt scanner v1 surfaces the subset of categories owners are most
+// likely to file from a paper receipt; the rest (sales, preorders,
+// gift_cards, ...) are handled by other parts of the app but still
+// included here so the catalog stays aligned with the DB.
 
 export const EXPENSE_CATEGORIES = [
-  { key: 'food_beverage', label: 'Food & Beverage', glyph: '◐' },
-  { key: 'alcohol',       label: 'Alcohol',         glyph: '◔' },
-  { key: 'fuel',          label: 'Fuel',            glyph: '◇' },
-  { key: 'utilities',     label: 'Utilities',       glyph: '◈' },
-  { key: 'repairs',       label: 'Repairs',         glyph: '◊' },
-  { key: 'supplies',      label: 'Supplies',        glyph: '○' },
-  { key: 'marketing',     label: 'Marketing',       glyph: '◉' },
-  { key: 'other',         label: 'Other',           glyph: '·' },
+  { key: 'food_cost',     label: 'Food cost',     glyph: '◐' },
+  { key: 'food_supplies', label: 'Food supplies', glyph: '◑' },
+  { key: 'beverages',     label: 'Beverages',     glyph: '◔' },
+  { key: 'utilities',     label: 'Utilities',     glyph: '◈' },
+  { key: 'rent',          label: 'Rent',          glyph: '◇' },
+  { key: 'equipment',     label: 'Equipment',     glyph: '◊' },
+  { key: 'marketing',     label: 'Marketing',     glyph: '◉' },
+  { key: 'staff',         label: 'Staff',         glyph: '○' },
+  { key: 'supplies',      label: 'Supplies',      glyph: '◌' },
+  { key: 'maintenance',   label: 'Maintenance',   glyph: '◍' },
+  { key: 'cleaning',      label: 'Cleaning',      glyph: '◎' },
+  { key: 'sales',         label: 'Sales',         glyph: '●' },
+  { key: 'preorders',     label: 'Pre-orders',    glyph: '◐' },
+  { key: 'events',        label: 'Events',        glyph: '◓' },
+  { key: 'catering',      label: 'Catering',      glyph: '◒' },
+  { key: 'delivery',      label: 'Delivery',      glyph: '◫' },
+  { key: 'gift_cards',    label: 'Gift cards',    glyph: '◧' },
+  { key: 'other',         label: 'Other',         glyph: '·' },
 ] as const;
 
 export type ExpenseCategoryKey = typeof EXPENSE_CATEGORIES[number]['key'];

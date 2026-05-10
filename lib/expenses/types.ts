@@ -1,30 +1,42 @@
 import type { ExpenseCategoryKey } from '@/lib/owner/expenseCategories';
 
-// Money is stored as integer cents in the DB. Keep it that way in the
-// app and only format on render (lib/i18n/formatCurrency.ts).
+// Mirrors public.expenses on Supabase. Money is stored as `numeric`
+// (decimal dollars), not integer cents — the existing schema is shared
+// with the web app and uses decimal columns. Keep the app representation
+// the same so we never have to convert.
 export interface Expense {
   id: string;
   restaurantId: string;
-  createdByUserId: string;
+  /** FK to user_profiles.id (NOT auth.users.id). */
+  createdBy: string;
   createdAt: string;
 
-  vendor: string;
-  expenseDate: string;          // ISO date (YYYY-MM-DD)
-  subtotalCents: number | null;
-  taxCents: number | null;
-  tipCents: number | null;
-  totalCents: number;
-  currency: string;             // ISO 4217 (e.g. "USD")
+  vendorName: string | null;
+  description: string | null;
+  expenseDate: string;          // ISO date YYYY-MM-DD
+
+  amount: number;               // pre-tax (or all-in if no breakdown)
+  taxAmount: number | null;
+  totalAmount: number;
+  currency: string;             // lowercase ISO 4217 ('cad' is the DB default)
 
   category: ExpenseCategoryKey;
-  paymentMethod: string | null; // 'card' | 'cash' | 'other' | null
-  paymentMethodLast4: string | null;
+  paymentStatus: PaymentStatus;
+  paidAt: string | null;
+  transactionType: TransactionType;
 
-  imagePath: string | null;
+  receiptUrl: string | null;
+  receiptType: ReceiptType | null;
+
+  aiCategorized: boolean;
+  aiExtractedData: unknown;
+
   notes: string | null;
-
-  aiExtracted: boolean;
 }
+
+export type PaymentStatus = 'paid' | 'due' | 'scheduled' | 'overdue';
+export type TransactionType = 'expense' | 'income';
+export type ReceiptType = 'image' | 'pdf';
 
 // Returned by the scan-receipt edge function. Fields the model couldn't
 // determine come back as null. The client decides what to keep / edit
@@ -32,18 +44,16 @@ export interface Expense {
 export interface ExpenseDraft {
   vendor: string | null;
   expenseDate: string | null;
-  subtotalCents: number | null;
-  taxCents: number | null;
-  tipCents: number | null;
-  totalCents: number | null;
+  /** Pre-tax amount, in decimal dollars. */
+  amount: number | null;
+  /** Tax, in decimal dollars. */
+  taxAmount: number | null;
+  /** All-in receipt total, in decimal dollars. */
+  totalAmount: number | null;
   currency: string | null;
   category: ExpenseCategoryKey | null;
-  paymentMethod: string | null;
-  paymentMethodLast4: string | null;
 }
 
-// Tracks which fields came from the AI vs the human, so the review
-// screen can render the ✨ glyph and fade it on first edit.
 export type ExpenseDraftFieldKey = keyof ExpenseDraft;
 
 export interface ScanReceiptResult {
@@ -54,46 +64,74 @@ export interface ScanReceiptResult {
   extractedFields: ExpenseDraftFieldKey[];
 }
 
-// Database row shape (snake_case) for direct supabase-js typing.
+// Database row shape (snake_case). Matches the live schema exactly.
 export interface ExpenseRow {
   id: string;
   restaurant_id: string;
-  created_by_user_id: string;
-  created_at: string;
-  vendor: string;
+  created_by: string;
+  created_at: string | null;
+  updated_at: string | null;
+  deleted_at: string | null;
+
+  vendor_name: string | null;
+  description: string | null;
   expense_date: string;
-  subtotal_cents: number | null;
-  tax_cents: number | null;
-  tip_cents: number | null;
-  total_cents: number;
-  currency: string;
-  category: string;
-  payment_method: string | null;
-  payment_method_last4: string | null;
-  image_path: string | null;
+  amount: string | number;
+  tax_amount: string | number | null;
+  total_amount: string | number;
+  currency: string | null;
+
+  receipt_url: string | null;
+  receipt_type: string | null;
+
+  ai_categorized: boolean | null;
+  ai_extracted_data: unknown;
+
   notes: string | null;
-  ai_extracted: boolean;
-  ai_raw: unknown;
+  category: string;
+  payment_status: string;
+  paid_at: string | null;
+  recurring_rule_id: string | null;
+  transaction_type: string;
+}
+
+// Postgres `numeric` columns come back from supabase-js as either string
+// or number depending on driver version. Coerce defensively.
+function asNumber(value: string | number | null | undefined, fallback = 0): number {
+  if (value == null) return fallback;
+  if (typeof value === 'number') return Number.isFinite(value) ? value : fallback;
+  const parsed = parseFloat(value);
+  return Number.isFinite(parsed) ? parsed : fallback;
+}
+
+function asNullableNumber(value: string | number | null | undefined): number | null {
+  if (value == null) return null;
+  if (typeof value === 'number') return Number.isFinite(value) ? value : null;
+  const parsed = parseFloat(value);
+  return Number.isFinite(parsed) ? parsed : null;
 }
 
 export function expenseFromRow(row: ExpenseRow): Expense {
   return {
     id: row.id,
     restaurantId: row.restaurant_id,
-    createdByUserId: row.created_by_user_id,
-    createdAt: row.created_at,
-    vendor: row.vendor,
+    createdBy: row.created_by,
+    createdAt: row.created_at ?? new Date().toISOString(),
+    vendorName: row.vendor_name,
+    description: row.description,
     expenseDate: row.expense_date,
-    subtotalCents: row.subtotal_cents,
-    taxCents: row.tax_cents,
-    tipCents: row.tip_cents,
-    totalCents: row.total_cents,
-    currency: row.currency,
+    amount: asNumber(row.amount),
+    taxAmount: asNullableNumber(row.tax_amount),
+    totalAmount: asNumber(row.total_amount),
+    currency: (row.currency ?? 'cad').toLowerCase(),
     category: row.category as ExpenseCategoryKey,
-    paymentMethod: row.payment_method,
-    paymentMethodLast4: row.payment_method_last4,
-    imagePath: row.image_path,
+    paymentStatus: (row.payment_status as PaymentStatus) ?? 'paid',
+    paidAt: row.paid_at,
+    transactionType: (row.transaction_type as TransactionType) ?? 'expense',
+    receiptUrl: row.receipt_url,
+    receiptType: (row.receipt_type as ReceiptType | null) ?? null,
+    aiCategorized: row.ai_categorized ?? false,
+    aiExtractedData: row.ai_extracted_data ?? null,
     notes: row.notes,
-    aiExtracted: row.ai_extracted,
   };
 }

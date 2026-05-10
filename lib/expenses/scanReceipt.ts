@@ -10,39 +10,31 @@ import type {
 const DEMO_DRAFT: ExpenseDraft = {
   vendor: 'Shell',
   expenseDate: new Date().toISOString().slice(0, 10),
-  subtotalCents: 4218,
-  taxCents: 254,
-  tipCents: null,
-  totalCents: 4472,
-  currency: 'USD',
-  category: 'fuel',
-  paymentMethod: 'card',
-  paymentMethodLast4: '4242',
+  amount: 42.18,
+  taxAmount: 2.54,
+  totalAmount: 44.72,
+  currency: 'cad',
+  category: 'delivery',
 };
 
 const DEMO_EXTRACTED: ExpenseDraftFieldKey[] = [
   'vendor',
   'expenseDate',
-  'subtotalCents',
-  'taxCents',
-  'totalCents',
+  'amount',
+  'taxAmount',
+  'totalAmount',
   'currency',
   'category',
-  'paymentMethod',
-  'paymentMethodLast4',
 ];
 
 const EMPTY_DRAFT: ExpenseDraft = {
   vendor: null,
   expenseDate: null,
-  subtotalCents: null,
-  taxCents: null,
-  tipCents: null,
-  totalCents: null,
+  amount: null,
+  taxAmount: null,
+  totalAmount: null,
   currency: null,
   category: null,
-  paymentMethod: null,
-  paymentMethodLast4: null,
 };
 
 export interface ScanReceiptArgs {

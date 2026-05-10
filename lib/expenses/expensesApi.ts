@@ -3,46 +3,54 @@ import {
   expenseFromRow,
   type Expense,
   type ExpenseRow,
+  type PaymentStatus,
+  type ReceiptType,
+  type TransactionType,
 } from '@/lib/expenses/types';
 import type { ExpenseCategoryKey } from '@/lib/owner/expenseCategories';
 
 export interface CreateExpenseInput {
   restaurantId: string;
-  createdByUserId: string;
-  vendor: string;
+  /** user_profiles.id of the row author (NOT auth.users.id). */
+  createdBy: string;
+  vendorName: string | null;
+  description: string | null;
   expenseDate: string;
-  subtotalCents: number | null;
-  taxCents: number | null;
-  tipCents: number | null;
-  totalCents: number;
+  amount: number;
+  taxAmount: number | null;
+  totalAmount: number;
   currency: string;
   category: ExpenseCategoryKey;
-  paymentMethod: string | null;
-  paymentMethodLast4: string | null;
-  imagePath: string | null;
+  paymentStatus?: PaymentStatus;
+  paidAt?: string | null;
+  transactionType?: TransactionType;
+  receiptUrl: string | null;
+  receiptType: ReceiptType | null;
   notes: string | null;
-  aiExtracted: boolean;
-  aiRaw: unknown;
+  aiCategorized: boolean;
+  aiExtractedData: unknown;
 }
 
-function inputToRow(input: CreateExpenseInput): Omit<ExpenseRow, 'id' | 'created_at'> {
+function inputToRow(input: CreateExpenseInput): Record<string, unknown> {
   return {
     restaurant_id: input.restaurantId,
-    created_by_user_id: input.createdByUserId,
-    vendor: input.vendor,
+    created_by: input.createdBy,
+    vendor_name: input.vendorName,
+    description: input.description,
     expense_date: input.expenseDate,
-    subtotal_cents: input.subtotalCents,
-    tax_cents: input.taxCents,
-    tip_cents: input.tipCents,
-    total_cents: input.totalCents,
+    amount: input.amount,
+    tax_amount: input.taxAmount,
+    total_amount: input.totalAmount,
     currency: input.currency,
     category: input.category,
-    payment_method: input.paymentMethod,
-    payment_method_last4: input.paymentMethodLast4,
-    image_path: input.imagePath,
+    payment_status: input.paymentStatus ?? 'paid',
+    paid_at: input.paidAt ?? null,
+    transaction_type: input.transactionType ?? 'expense',
+    receipt_url: input.receiptUrl,
+    receipt_type: input.receiptType,
     notes: input.notes,
-    ai_extracted: input.aiExtracted,
-    ai_raw: input.aiRaw ?? null,
+    ai_categorized: input.aiCategorized,
+    ai_extracted_data: input.aiExtractedData ?? null,
   };
 }
 
@@ -53,6 +61,7 @@ export async function listExpenses(restaurantId: string): Promise<Expense[]> {
     .from('expenses')
     .select('*')
     .eq('restaurant_id', restaurantId)
+    .is('deleted_at', null)
     .order('expense_date', { ascending: false })
     .order('created_at', { ascending: false });
   if (error) throw error;
@@ -86,39 +95,47 @@ export async function createExpense(input: CreateExpenseInput): Promise<Expense 
 export async function deleteExpense(id: string): Promise<void> {
   const supabase = getSupabase();
   if (!supabase) return;
-  const { error } = await supabase.from('expenses').delete().eq('id', id);
+  // Soft-delete to match the schema's deleted_at convention.
+  const { error } = await supabase
+    .from('expenses')
+    .update({ deleted_at: new Date().toISOString() })
+    .eq('id', id);
   if (error) throw error;
 }
 
 export type UpdateExpensePatch = Partial<Pick<
   CreateExpenseInput,
-  | 'vendor'
+  | 'vendorName'
+  | 'description'
   | 'expenseDate'
-  | 'subtotalCents'
-  | 'taxCents'
-  | 'tipCents'
-  | 'totalCents'
+  | 'amount'
+  | 'taxAmount'
+  | 'totalAmount'
   | 'currency'
   | 'category'
-  | 'paymentMethod'
-  | 'paymentMethodLast4'
-  | 'imagePath'
+  | 'paymentStatus'
+  | 'paidAt'
+  | 'transactionType'
+  | 'receiptUrl'
+  | 'receiptType'
   | 'notes'
 >>;
 
 function patchToRow(patch: UpdateExpensePatch): Record<string, unknown> {
   const out: Record<string, unknown> = {};
-  if (patch.vendor !== undefined) out.vendor = patch.vendor;
+  if (patch.vendorName !== undefined) out.vendor_name = patch.vendorName;
+  if (patch.description !== undefined) out.description = patch.description;
   if (patch.expenseDate !== undefined) out.expense_date = patch.expenseDate;
-  if (patch.subtotalCents !== undefined) out.subtotal_cents = patch.subtotalCents;
-  if (patch.taxCents !== undefined) out.tax_cents = patch.taxCents;
-  if (patch.tipCents !== undefined) out.tip_cents = patch.tipCents;
-  if (patch.totalCents !== undefined) out.total_cents = patch.totalCents;
+  if (patch.amount !== undefined) out.amount = patch.amount;
+  if (patch.taxAmount !== undefined) out.tax_amount = patch.taxAmount;
+  if (patch.totalAmount !== undefined) out.total_amount = patch.totalAmount;
   if (patch.currency !== undefined) out.currency = patch.currency;
   if (patch.category !== undefined) out.category = patch.category;
-  if (patch.paymentMethod !== undefined) out.payment_method = patch.paymentMethod;
-  if (patch.paymentMethodLast4 !== undefined) out.payment_method_last4 = patch.paymentMethodLast4;
-  if (patch.imagePath !== undefined) out.image_path = patch.imagePath;
+  if (patch.paymentStatus !== undefined) out.payment_status = patch.paymentStatus;
+  if (patch.paidAt !== undefined) out.paid_at = patch.paidAt;
+  if (patch.transactionType !== undefined) out.transaction_type = patch.transactionType;
+  if (patch.receiptUrl !== undefined) out.receipt_url = patch.receiptUrl;
+  if (patch.receiptType !== undefined) out.receipt_type = patch.receiptType;
   if (patch.notes !== undefined) out.notes = patch.notes;
   return out;
 }
@@ -134,4 +151,24 @@ export async function updateExpense(id: string, patch: UpdateExpensePatch): Prom
     .single();
   if (error) throw error;
   return data ? expenseFromRow(data as ExpenseRow) : null;
+}
+
+/**
+ * Resolves the user_profiles.id for the currently signed-in auth user.
+ * Required because public.expenses.created_by is FK'd to user_profiles.id,
+ * not auth.users.id.
+ */
+export async function getCurrentUserProfileId(): Promise<string | null> {
+  const supabase = getSupabase();
+  if (!supabase) return null;
+  const { data: userData } = await supabase.auth.getUser();
+  const authUserId = userData.user?.id;
+  if (!authUserId) return null;
+  const { data, error } = await supabase
+    .from('user_profiles')
+    .select('id')
+    .eq('auth_user_id', authUserId)
+    .maybeSingle();
+  if (error || !data) return null;
+  return typeof data.id === 'string' ? data.id : null;
 }

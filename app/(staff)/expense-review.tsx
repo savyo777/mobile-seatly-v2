@@ -22,12 +22,12 @@ import { AiBadge } from '@/components/owner/AiBadge';
 import { ScanShimmer } from '@/components/owner/ScanShimmer';
 import { MonthCalendar } from '@/components/owner/MonthCalendar';
 import { useExpenses } from '@/lib/context/ExpensesContext';
-import { useCurrentUserId } from '@/lib/auth/currentUserId';
 import { isDemoModeEnabled } from '@/lib/config/demoMode';
 import { getCurrentOwnerRestaurantId } from '@/lib/services/ownerRestaurant';
 import { consumePendingScan, type PendingScan } from '@/lib/expenses/pendingScan';
 import { scanReceipt } from '@/lib/expenses/scanReceipt';
 import { uploadReceiptImage } from '@/lib/expenses/uploadReceiptImage';
+import { getCurrentUserProfileId } from '@/lib/expenses/expensesApi';
 import {
   EXPENSE_CATEGORIES,
   isExpenseCategoryKey,
@@ -38,23 +38,17 @@ import { createStyles } from '@/lib/theme';
 import { ownerColorsFromPalette, ownerRadii, ownerSpace, useOwnerColors } from '@/lib/theme/ownerTheme';
 import { brandGold, withAlpha } from '@/lib/theme/tokens';
 
-const PAYMENT_METHODS: { key: 'card' | 'cash' | 'other'; label: string }[] = [
-  { key: 'card', label: 'Card' },
-  { key: 'cash', label: 'Cash' },
-  { key: 'other', label: 'Other' },
-];
-
-function centsToInputString(cents: number | null): string {
-  if (cents == null) return '';
-  return (cents / 100).toFixed(2);
+function dollarsToInputString(amount: number | null): string {
+  if (amount == null) return '';
+  return amount.toFixed(2);
 }
 
-function parseCurrencyInput(value: string): number | null {
+function parseDollarsInput(value: string): number | null {
   const cleaned = value.replace(/[^0-9.,-]/g, '').replace(',', '.');
   if (!cleaned) return null;
   const dollars = parseFloat(cleaned);
   if (!Number.isFinite(dollars)) return null;
-  return Math.round(dollars * 100);
+  return Math.round(dollars * 100) / 100;
 }
 
 function todayISO(): string {
@@ -79,7 +73,6 @@ export default function ExpenseReviewScreen() {
   const insets = useSafeAreaInsets();
   const ownerColors = useOwnerColors();
   const styles = useStyles();
-  const userId = useCurrentUserId();
   const { ownerRestaurantId, addExpense, addLocalExpense, patchExpense } = useExpenses();
 
   const [scan, setScan] = useState<PendingScan | null>(null);
@@ -91,10 +84,8 @@ export default function ExpenseReviewScreen() {
   const [vendor, setVendor] = useState('');
   const [expenseDate, setExpenseDate] = useState(todayISO());
   const [subtotal, setSubtotal] = useState('');
-  const [currency, setCurrency] = useState('USD');
+  const [currency, setCurrency] = useState('cad');
   const [category, setCategory] = useState<ExpenseCategoryKey>('other');
-  const [paymentMethod, setPaymentMethod] = useState<'card' | 'cash' | 'other' | null>(null);
-  const [paymentLast4, setPaymentLast4] = useState('');
   const [notes, setNotes] = useState('');
 
   // Pull the captured image once on mount; if there isn't one (deep-link
@@ -126,21 +117,17 @@ export default function ExpenseReviewScreen() {
         if (draft.vendor) setVendor(draft.vendor);
         if (draft.expenseDate) setExpenseDate(draft.expenseDate);
         // Single "Subtotal" field captures the all-in amount. Prefer the AI's
-        // total_cents (the bottom-line on the receipt); fall back to subtotal
+        // totalAmount (the bottom-line on the receipt); fall back to amount
         // if the model only returned the pre-tax number.
-        const headlineCents = draft.totalCents ?? draft.subtotalCents;
-        if (headlineCents != null) setSubtotal(centsToInputString(headlineCents));
-        if (draft.currency) setCurrency(draft.currency);
+        const headlineAmount = draft.totalAmount ?? draft.amount;
+        if (headlineAmount != null) setSubtotal(dollarsToInputString(headlineAmount));
+        if (draft.currency) setCurrency(draft.currency.toLowerCase());
         if (draft.category && isExpenseCategoryKey(draft.category)) setCategory(draft.category);
-        if (draft.paymentMethod === 'card' || draft.paymentMethod === 'cash' || draft.paymentMethod === 'other') {
-          setPaymentMethod(draft.paymentMethod);
-        }
-        if (draft.paymentMethodLast4) setPaymentLast4(draft.paymentMethodLast4);
         // Collapse the AI-extraction tracking to match the simplified form.
         const collapsed = new Set<ExpenseDraftFieldKey>();
         for (const f of result.extractedFields) {
-          if (f === 'totalCents' || f === 'taxCents' || f === 'tipCents') {
-            collapsed.add('subtotalCents');
+          if (f === 'totalAmount' || f === 'taxAmount') {
+            collapsed.add('amount');
           } else {
             collapsed.add(f);
           }
@@ -184,8 +171,8 @@ export default function ExpenseReviewScreen() {
       Alert.alert('Missing vendor', 'Add a vendor name before saving.');
       return;
     }
-    const amountCents = parseCurrencyInput(subtotal);
-    if (amountCents == null || amountCents < 0) {
+    const amount = parseDollarsInput(subtotal);
+    if (amount == null || amount < 0) {
       Alert.alert('Missing amount', 'Enter the subtotal on the receipt.');
       return;
     }
@@ -199,21 +186,24 @@ export default function ExpenseReviewScreen() {
         const localExpense: Expense = {
           id: localId,
           restaurantId: ownerRestaurantId ?? 'r1',
-          createdByUserId: userId ?? 'u1',
+          createdBy: 'u1',
           createdAt: new Date().toISOString(),
-          vendor: vendor.trim(),
+          vendorName: vendor.trim(),
+          description: null,
           expenseDate: expenseDate || todayISO(),
-          subtotalCents: null,
-          taxCents: null,
-          tipCents: null,
-          totalCents: amountCents,
-          currency: currency.trim() || 'USD',
+          amount,
+          taxAmount: null,
+          totalAmount: amount,
+          currency: (currency || 'cad').toLowerCase(),
           category,
-          paymentMethod,
-          paymentMethodLast4: paymentLast4.trim() || null,
-          imagePath: null,
+          paymentStatus: 'paid',
+          paidAt: null,
+          transactionType: 'expense',
+          receiptUrl: null,
+          receiptType: null,
+          aiCategorized: extractedFields.size > 0,
+          aiExtractedData: null,
           notes: notes.trim() || null,
-          aiExtracted: extractedFields.size > 0,
         };
         addLocalExpense(localExpense);
         void Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
@@ -240,29 +230,34 @@ export default function ExpenseReviewScreen() {
         setSaving(false);
         return;
       }
-      if (!userId) {
-        Alert.alert('Not signed in', 'Sign in to save this expense.');
+
+      // public.expenses.created_by FKs to user_profiles.id, NOT auth.users.id.
+      const profileId = await getCurrentUserProfileId();
+      if (!profileId) {
+        Alert.alert('Profile missing', 'We couldn’t resolve your user profile. Sign out and back in, then try again.');
         setSaving(false);
         return;
       }
 
       const created = await addExpense({
         restaurantId,
-        createdByUserId: userId,
-        vendor: vendor.trim(),
+        createdBy: profileId,
+        vendorName: vendor.trim(),
+        description: null,
         expenseDate: expenseDate || todayISO(),
-        subtotalCents: null,
-        taxCents: null,
-        tipCents: null,
-        totalCents: amountCents,
-        currency: currency.trim() || 'USD',
+        amount,
+        taxAmount: null,
+        totalAmount: amount,
+        currency: (currency || 'cad').toLowerCase(),
         category,
-        paymentMethod,
-        paymentMethodLast4: paymentLast4.trim() || null,
-        imagePath: null,
+        paymentStatus: 'paid',
+        paidAt: null,
+        transactionType: 'expense',
+        receiptUrl: null,
+        receiptType: scan ? 'image' : null,
         notes: notes.trim() || null,
-        aiExtracted: extractedFields.size > 0,
-        aiRaw: null,
+        aiCategorized: extractedFields.size > 0,
+        aiExtractedData: null,
       });
 
       if (created && scan) {
@@ -274,7 +269,7 @@ export default function ExpenseReviewScreen() {
             contentType: scan.mimeType,
           });
           if (path) {
-            await patchExpense(created.id, { imagePath: path });
+            await patchExpense(created.id, { receiptUrl: path, receiptType: 'image' });
           }
         } catch {
           // image upload failed — the row is still saved. Owner can
@@ -293,14 +288,11 @@ export default function ExpenseReviewScreen() {
     vendor,
     subtotal,
     ownerRestaurantId,
-    userId,
     addExpense,
     addLocalExpense,
     expenseDate,
     currency,
     category,
-    paymentMethod,
-    paymentLast4,
     notes,
     extractedFields.size,
     scan,
@@ -399,12 +391,12 @@ export default function ExpenseReviewScreen() {
               <Ionicons name="calendar-outline" size={18} color={ownerColors.gold} />
             </Pressable>
 
-            {fieldLabel('Subtotal', 'subtotalCents')}
+            {fieldLabel('Subtotal', 'amount')}
             <TextInput
               value={subtotal}
               onChangeText={(v) => {
                 setSubtotal(v);
-                clearExtracted('subtotalCents');
+                clearExtracted('amount');
               }}
               placeholder="0.00"
               placeholderTextColor={ownerColors.textMuted}
@@ -435,43 +427,6 @@ export default function ExpenseReviewScreen() {
                 );
               })}
             </ScrollView>
-
-            {fieldLabel('Payment method', 'paymentMethod')}
-            <View style={styles.payRow}>
-              {PAYMENT_METHODS.map((p) => {
-                const on = paymentMethod === p.key;
-                return (
-                  <Pressable
-                    key={p.key}
-                    onPress={() => {
-                      setPaymentMethod(p.key);
-                      clearExtracted('paymentMethod');
-                    }}
-                    style={[styles.payChip, on && styles.payChipOn]}
-                  >
-                    <Text style={[styles.payChipText, on && styles.payChipTextOn]}>{p.label}</Text>
-                  </Pressable>
-                );
-              })}
-            </View>
-
-            {paymentMethod === 'card' ? (
-              <>
-                {fieldLabel('Card last 4', 'paymentMethodLast4')}
-                <TextInput
-                  value={paymentLast4}
-                  onChangeText={(v) => {
-                    setPaymentLast4(v.replace(/[^0-9]/g, '').slice(0, 4));
-                    clearExtracted('paymentMethodLast4');
-                  }}
-                  placeholder="1234"
-                  placeholderTextColor={ownerColors.textMuted}
-                  style={styles.input}
-                  keyboardType="number-pad"
-                  maxLength={4}
-                />
-              </>
-            ) : null}
 
             <Text style={styles.fieldLabel}>Notes</Text>
             <TextInput
@@ -705,32 +660,6 @@ const useStyles = createStyles((c) => {
       fontWeight: '600',
     },
     catChipTextOn: {
-      color: ownerColors.text,
-    },
-    payRow: {
-      flexDirection: 'row',
-      gap: 8,
-      marginTop: 6,
-    },
-    payChip: {
-      flex: 1,
-      alignItems: 'center',
-      paddingVertical: 10,
-      borderRadius: ownerRadii.md,
-      borderWidth: StyleSheet.hairlineWidth,
-      borderColor: ownerColors.border,
-      backgroundColor: ownerColors.bgSurface,
-    },
-    payChipOn: {
-      borderColor: withAlpha(brandGold.dark, 0.55),
-      backgroundColor: withAlpha(brandGold.dark, 0.14),
-    },
-    payChipText: {
-      color: ownerColors.textSecondary,
-      fontSize: 13,
-      fontWeight: '600',
-    },
-    payChipTextOn: {
       color: ownerColors.text,
     },
   };

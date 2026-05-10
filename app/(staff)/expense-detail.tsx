@@ -21,11 +21,6 @@ import { createStyles } from '@/lib/theme';
 import { ownerColorsFromPalette, ownerRadii, ownerSpace, useOwnerColors } from '@/lib/theme/ownerTheme';
 import { brandGold, withAlpha } from '@/lib/theme/tokens';
 
-function fromCents(cents: number | null | undefined): number {
-  if (cents == null) return 0;
-  return cents / 100;
-}
-
 export default function ExpenseDetailScreen() {
   const router = useRouter();
   const ownerColors = useOwnerColors();
@@ -41,18 +36,18 @@ export default function ExpenseDetailScreen() {
 
   useEffect(() => {
     let cancelled = false;
-    if (!expense?.imagePath) {
+    if (!expense?.receiptUrl) {
       setSignedUrl(null);
       return;
     }
     (async () => {
-      const url = await getReceiptSignedUrl(expense.imagePath ?? '');
+      const url = await getReceiptSignedUrl(expense.receiptUrl ?? '');
       if (!cancelled) setSignedUrl(url);
     })();
     return () => {
       cancelled = true;
     };
-  }, [expense?.imagePath]);
+  }, [expense?.receiptUrl]);
 
   const handleClose = useCallback(() => {
     router.replace('/(staff)/expenses' as never);
@@ -62,7 +57,7 @@ export default function ExpenseDetailScreen() {
     if (!expense) return;
     Alert.alert(
       'Delete expense',
-      `Delete the expense from ${expense.vendor}? The receipt image will also be removed.`,
+      `Delete the expense from ${expense.vendorName ?? 'this vendor'}? The receipt image will also be removed.`,
       [
         { text: 'Cancel', style: 'cancel' },
         {
@@ -104,7 +99,7 @@ export default function ExpenseDetailScreen() {
             <Ionicons name="chevron-back" size={26} color={ownerColors.gold} />
           </Pressable>
           <View style={styles.headText}>
-            <Text style={styles.title}>{expense.vendor}</Text>
+            <Text style={styles.title}>{expense.vendorName ?? '—'}</Text>
             <Text style={styles.subtitle}>
               {expense.expenseDate} · {getExpenseCategoryLabel(expense.category)}
             </Text>
@@ -122,7 +117,7 @@ export default function ExpenseDetailScreen() {
               <View style={styles.imagePlaceholder}>
                 <Ionicons name="document-outline" size={32} color={ownerColors.textMuted} />
                 <Text style={styles.imagePlaceholderText}>
-                  {expense.imagePath ? 'Loading receipt…' : 'No receipt image attached'}
+                  {expense.receiptUrl ? 'Loading receipt…' : 'No receipt image attached'}
                 </Text>
               </View>
             )}
@@ -131,29 +126,20 @@ export default function ExpenseDetailScreen() {
           <GlassCard variant="secondary" style={styles.totalCard}>
             <Text style={styles.totalLabel}>Total</Text>
             <Text style={styles.totalAmount}>
-              {formatCurrency(fromCents(expense.totalCents), expense.currency)}
+              {formatCurrency(expense.totalAmount, expense.currency)}
             </Text>
-            {expense.aiExtracted ? <Text style={styles.totalAiHint}>✨ AI extracted</Text> : null}
+            {expense.aiCategorized ? <Text style={styles.totalAiHint}>✨ AI extracted</Text> : null}
           </GlassCard>
 
           <View style={styles.detailGrid}>
-            <DetailRow label="Subtotal" value={formatCurrency(fromCents(expense.subtotalCents), expense.currency)} muted={expense.subtotalCents == null} />
-            <DetailRow label="Tax" value={formatCurrency(fromCents(expense.taxCents), expense.currency)} muted={expense.taxCents == null} />
-            {expense.tipCents != null ? (
-              <DetailRow label="Tip" value={formatCurrency(fromCents(expense.tipCents), expense.currency)} />
-            ) : null}
+            <DetailRow label="Subtotal" value={formatCurrency(expense.amount, expense.currency)} />
             <DetailRow
-              label="Payment"
-              value={
-                expense.paymentMethod
-                  ? expense.paymentMethodLast4
-                    ? `${capitalize(expense.paymentMethod)} ···· ${expense.paymentMethodLast4}`
-                    : capitalize(expense.paymentMethod)
-                  : '—'
-              }
-              muted={!expense.paymentMethod}
+              label="Tax"
+              value={expense.taxAmount != null ? formatCurrency(expense.taxAmount, expense.currency) : '—'}
+              muted={expense.taxAmount == null}
             />
-            <DetailRow label="Currency" value={expense.currency} />
+            <DetailRow label="Status" value={capitalize(expense.paymentStatus)} />
+            <DetailRow label="Currency" value={expense.currency.toUpperCase()} />
           </View>
 
           {expense.notes ? (

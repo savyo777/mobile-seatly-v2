@@ -20,18 +20,18 @@ export function ExpenseListRow({ expense, onPress }: Props) {
 
   useEffect(() => {
     let cancelled = false;
-    if (!expense.imagePath) {
+    if (!expense.receiptUrl) {
       setThumbUrl(null);
       return;
     }
     (async () => {
-      const url = await getReceiptSignedUrl(expense.imagePath ?? '', 60 * 30);
+      const url = await getReceiptSignedUrl(expense.receiptUrl ?? '', 60 * 30);
       if (!cancelled) setThumbUrl(url);
     })();
     return () => {
       cancelled = true;
     };
-  }, [expense.imagePath]);
+  }, [expense.receiptUrl]);
 
   const cat = getExpenseCategory(expense.category);
   const label = getExpenseCategoryLabel(expense.category);
@@ -55,7 +55,7 @@ export function ExpenseListRow({ expense, onPress }: Props) {
 
       <View style={styles.middle}>
         <Text style={[styles.vendor, { color: ownerColors.text }]} numberOfLines={1}>
-          {expense.vendor}
+          {expense.vendorName ?? '—'}
         </Text>
         <View style={styles.metaRow}>
           <Text style={[styles.date, { color: ownerColors.textMuted }]}>{expense.expenseDate}</Text>
@@ -76,9 +76,9 @@ export function ExpenseListRow({ expense, onPress }: Props) {
 
       <View style={styles.right}>
         <Text style={[styles.amount, { color: ownerColors.gold }]}>
-          {formatCurrency(expense.totalCents / 100, expense.currency)}
+          {formatCurrency(expense.totalAmount, expense.currency)}
         </Text>
-        {expense.aiExtracted ? (
+        {expense.aiCategorized ? (
           <Text style={[styles.aiHint, { color: ownerColors.gold }]}>✨</Text>
         ) : null}
       </View>

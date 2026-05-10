@@ -17,7 +17,7 @@ type Props = {
 interface CategoryTotal {
   key: ExpenseCategoryKey;
   label: string;
-  cents: number;
+  amount: number;
 }
 
 function startOfMonth(date: Date): Date {
@@ -39,7 +39,7 @@ function inMonth(iso: string, monthStart: Date): boolean {
 export function ExpenseSummaryCard({ expenses }: Props) {
   const ownerColors = useOwnerColors();
 
-  const { thisMonthTotalCents, deltaPercent, currency, topCategories } = useMemo(() => {
+  const { thisMonthTotal, deltaPercent, currency, topCategories } = useMemo(() => {
     const now = new Date();
     const thisMonthStart = startOfMonth(now);
     const prevMonthStart = startOfPrevMonth(now);
@@ -52,36 +52,36 @@ export function ExpenseSummaryCard({ expenses }: Props) {
     for (const exp of expenses) {
       currencyCounts.set(exp.currency, (currencyCounts.get(exp.currency) ?? 0) + 1);
       if (inMonth(exp.expenseDate, thisMonthStart)) {
-        thisMonth += exp.totalCents;
-        byCategory.set(exp.category, (byCategory.get(exp.category) ?? 0) + exp.totalCents);
+        thisMonth += exp.totalAmount;
+        byCategory.set(exp.category, (byCategory.get(exp.category) ?? 0) + exp.totalAmount);
       } else if (inMonth(exp.expenseDate, prevMonthStart)) {
-        prevMonth += exp.totalCents;
+        prevMonth += exp.totalAmount;
       }
     }
 
     const sortedCurrencies = Array.from(currencyCounts.entries()).sort((a, b) => b[1] - a[1]);
-    const dominantCurrency = sortedCurrencies[0]?.[0] ?? 'USD';
+    const dominantCurrency = sortedCurrencies[0]?.[0] ?? 'cad';
 
     const cats: CategoryTotal[] = EXPENSE_CATEGORIES.map((c) => ({
       key: c.key,
       label: c.label,
-      cents: byCategory.get(c.key) ?? 0,
+      amount: byCategory.get(c.key) ?? 0,
     }))
-      .filter((c) => c.cents > 0)
-      .sort((a, b) => b.cents - a.cents)
+      .filter((c) => c.amount > 0)
+      .sort((a, b) => b.amount - a.amount)
       .slice(0, 3);
 
     const delta = prevMonth > 0 ? ((thisMonth - prevMonth) / prevMonth) * 100 : null;
 
     return {
-      thisMonthTotalCents: thisMonth,
+      thisMonthTotal: thisMonth,
       deltaPercent: delta,
       currency: dominantCurrency,
       topCategories: cats,
     };
   }, [expenses]);
 
-  const maxCents = topCategories[0]?.cents ?? 0;
+  const maxAmount = topCategories[0]?.amount ?? 0;
 
   return (
     <GlassCard variant="secondary" style={styles.card}>
@@ -89,7 +89,7 @@ export function ExpenseSummaryCard({ expenses }: Props) {
         <View style={{ flex: 1, minWidth: 0 }}>
           <Text style={[styles.label, { color: ownerColors.textMuted }]}>This month</Text>
           <Text style={[styles.amount, { color: ownerColors.gold }]}>
-            {formatCurrency(thisMonthTotalCents / 100, currency)}
+            {formatCurrency(thisMonthTotal, currency)}
           </Text>
         </View>
         {deltaPercent !== null ? (
@@ -113,7 +113,7 @@ export function ExpenseSummaryCard({ expenses }: Props) {
       {topCategories.length > 0 ? (
         <View style={styles.bars}>
           {topCategories.map((c, i) => {
-            const widthPercent = maxCents > 0 ? (c.cents / maxCents) * 100 : 0;
+            const widthPercent = maxAmount > 0 ? (c.amount / maxAmount) * 100 : 0;
             const tintAlpha = 0.36 - i * 0.08;
             return (
               <View key={c.key} style={styles.barRow}>
@@ -132,7 +132,7 @@ export function ExpenseSummaryCard({ expenses }: Props) {
                   />
                 </View>
                 <Text style={[styles.barAmount, { color: ownerColors.textSecondary }]}>
-                  {formatCurrency(c.cents / 100, currency)}
+                  {formatCurrency(c.amount, currency)}
                 </Text>
               </View>
             );

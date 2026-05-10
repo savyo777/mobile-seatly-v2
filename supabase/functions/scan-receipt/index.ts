@@ -14,14 +14,25 @@ type Body = {
   image_mime_type?: unknown;
 };
 
+// MUST match the public.expenses.category CHECK constraint exactly.
 const EXPENSE_CATEGORY_KEYS = [
-  "food_beverage",
-  "alcohol",
-  "fuel",
+  "food_cost",
+  "food_supplies",
+  "beverages",
   "utilities",
-  "repairs",
-  "supplies",
+  "rent",
+  "equipment",
   "marketing",
+  "staff",
+  "supplies",
+  "maintenance",
+  "cleaning",
+  "sales",
+  "preorders",
+  "events",
+  "catering",
+  "delivery",
+  "gift_cards",
   "other",
 ] as const;
 
@@ -29,23 +40,31 @@ const SYSTEM_PROMPT = `You are a receipt-extraction assistant for a restaurant a
 Your job is to read a single paper-receipt photo and return structured JSON.
 
 Rules:
-- Money fields are integer cents. $12.34 -> 1234. Never include dollar signs or decimals in the output.
+- Money fields are decimal numbers in major currency units. $12.34 -> 12.34. Never include dollar signs.
 - expense_date must be ISO YYYY-MM-DD if visible on the receipt; otherwise null.
-- currency is an ISO 4217 code (USD, CAD, EUR, GBP, ...). Default to USD only if you see a "$" without other context.
-- category MUST be one of: food_beverage, alcohol, fuel, utilities, repairs, supplies, marketing, other. Pick the best match for the vendor.
-  - food_beverage: groceries, produce, meat, fish, bakery, coffee/dairy, bulk food suppliers (Costco for food, Sysco, US Foods, restaurant supply, farmers markets).
-  - alcohol: liquor stores, beer/wine/spirits distributors.
-  - fuel: gas stations (Shell, Chevron, BP, Costco gas, etc.).
-  - utilities: power, gas, water, internet, telecom.
-  - repairs: hardware stores, plumber, electrician, HVAC, equipment service.
-  - supplies: cleaning, paper goods, office supplies, takeout containers, kitchen smallware.
-  - marketing: ads, printing, signage, promotions, PR.
+- currency is a lowercase ISO 4217 code ("usd", "cad", "eur", ...). Default to "cad" only if you cannot determine it.
+- category MUST be one of: food_cost, food_supplies, beverages, utilities, rent, equipment, marketing, staff, supplies, maintenance, cleaning, sales, preorders, events, catering, delivery, gift_cards, other. Pick the best match for the vendor.
+  - food_cost: ingredients used in cooking (produce, meat, fish, dairy, bakery, dry goods).
+  - food_supplies: bulk food-service vendors (Sysco, US Foods, GFS, restaurant-supply houses).
+  - beverages: alcohol, coffee, tea, soft drinks, juice, water service.
+  - utilities: electricity, gas, water, internet, phone, telecom.
+  - rent: monthly rent or lease payments for the premises.
+  - equipment: kitchen equipment, refrigeration, POS hardware, capital purchases.
+  - marketing: ads, printing, signage, promotions, PR, design services.
+  - staff: payroll-adjacent expenses, uniforms, training, recruiting fees.
+  - supplies: cleaning chemicals, paper goods, office supplies, takeout containers, kitchen smallware.
+  - maintenance: hardware stores, plumber, electrician, HVAC service, repairs.
+  - cleaning: contracted cleaning services, laundry, pest control.
+  - sales: rare for paper receipts — sales-tax remittance or merchant fees.
+  - preorders: customer pre-payment refunds or pre-order fulfillment costs.
+  - events: private events, bookings-related costs (decor, rentals, off-site catering staff).
+  - catering: catering supplies, off-premise event ingredients/equipment.
+  - delivery: gas for delivery vehicles, courier/3rd-party delivery fees, vehicle service.
+  - gift_cards: gift-card stock, gift-card processing fees.
   - other: anything that doesn't fit cleanly above.
-- payment_method: 'card' if a card brand or last-4 is visible, 'cash' if explicitly cash, 'other' otherwise. null if unknown.
-- payment_method_last4: only the last 4 digits as a 4-character string, or null.
 - vendor: the merchant's display name as it appears on the receipt (e.g. "Shell #1234", "Sysco Foodservice"). Trim weird artifacts.
 - If you cannot read a field, return null for that field. Do NOT guess.
-- If the image is not a receipt at all, return all nulls except total_cents which should also be null.`;
+- If the image is not a receipt at all, return all nulls.`;
 
 const RECEIPT_SCHEMA = {
   name: "expense_draft",
@@ -55,32 +74,23 @@ const RECEIPT_SCHEMA = {
     required: [
       "vendor",
       "expense_date",
-      "subtotal_cents",
-      "tax_cents",
-      "tip_cents",
-      "total_cents",
+      "amount",
+      "tax_amount",
+      "total_amount",
       "currency",
       "category",
-      "payment_method",
-      "payment_method_last4",
     ],
     properties: {
       vendor: { type: ["string", "null"] },
       expense_date: { type: ["string", "null"] },
-      subtotal_cents: { type: ["integer", "null"] },
-      tax_cents: { type: ["integer", "null"] },
-      tip_cents: { type: ["integer", "null"] },
-      total_cents: { type: ["integer", "null"] },
+      amount: { type: ["number", "null"] },
+      tax_amount: { type: ["number", "null"] },
+      total_amount: { type: ["number", "null"] },
       currency: { type: ["string", "null"] },
       category: {
         type: ["string", "null"],
         enum: [...EXPENSE_CATEGORY_KEYS, null],
       },
-      payment_method: {
-        type: ["string", "null"],
-        enum: ["card", "cash", "other", null],
-      },
-      payment_method_last4: { type: ["string", "null"] },
     },
   },
 } as const;
@@ -88,14 +98,11 @@ const RECEIPT_SCHEMA = {
 interface ReceiptModelOutput {
   vendor: string | null;
   expense_date: string | null;
-  subtotal_cents: number | null;
-  tax_cents: number | null;
-  tip_cents: number | null;
-  total_cents: number | null;
+  amount: number | null;
+  tax_amount: number | null;
+  total_amount: number | null;
   currency: string | null;
   category: string | null;
-  payment_method: string | null;
-  payment_method_last4: string | null;
 }
 
 function jsonResWithCors(req: Request, body: unknown, status = 200): Response {
@@ -150,28 +157,21 @@ Deno.serve(async (req) => {
     const extractedFields: string[] = [];
     if (parsed.vendor !== null) extractedFields.push("vendor");
     if (parsed.expense_date !== null) extractedFields.push("expenseDate");
-    if (parsed.subtotal_cents !== null) extractedFields.push("subtotalCents");
-    if (parsed.tax_cents !== null) extractedFields.push("taxCents");
-    if (parsed.tip_cents !== null) extractedFields.push("tipCents");
-    if (parsed.total_cents !== null) extractedFields.push("totalCents");
+    if (parsed.amount !== null) extractedFields.push("amount");
+    if (parsed.tax_amount !== null) extractedFields.push("taxAmount");
+    if (parsed.total_amount !== null) extractedFields.push("totalAmount");
     if (parsed.currency !== null) extractedFields.push("currency");
     if (parsed.category !== null) extractedFields.push("category");
-    if (parsed.payment_method !== null) extractedFields.push("paymentMethod");
-    if (parsed.payment_method_last4 !== null)
-      extractedFields.push("paymentMethodLast4");
 
     return jsonResWithCors(req, {
       draft: {
         vendor: parsed.vendor,
         expenseDate: parsed.expense_date,
-        subtotalCents: parsed.subtotal_cents,
-        taxCents: parsed.tax_cents,
-        tipCents: parsed.tip_cents,
-        totalCents: parsed.total_cents,
-        currency: parsed.currency,
+        amount: parsed.amount,
+        taxAmount: parsed.tax_amount,
+        totalAmount: parsed.total_amount,
+        currency: parsed.currency ? String(parsed.currency).toLowerCase() : null,
         category: parsed.category,
-        paymentMethod: parsed.payment_method,
-        paymentMethodLast4: parsed.payment_method_last4,
       },
       extractedFields,
       aiRaw: raw,
