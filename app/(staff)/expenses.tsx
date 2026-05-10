@@ -4,7 +4,6 @@ import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 import { OwnerScreen } from '@/components/owner/OwnerScreen';
-import { SubpageHeader } from '@/components/owner/SubpageHeader';
 import { ExpenseSummaryCard } from '@/components/owner/ExpenseSummaryCard';
 import { ExpenseListRow } from '@/components/owner/ExpenseListRow';
 import { useExpenses } from '@/lib/context/ExpensesContext';
@@ -32,11 +31,11 @@ export default function OwnerExpensesScreen() {
   return (
     <OwnerScreen
       header={
-        <SubpageHeader
-          title="Expenses"
-          subtitle="Scan a receipt — Cenaiva extracts the rest."
-          fallbackTab="more"
-        />
+        <View style={styles.tabHeader}>
+          <Text style={styles.tabHeaderKicker}>RECEIPTS</Text>
+          <Text style={styles.tabHeaderTitle}>Expenses</Text>
+          <Text style={styles.tabHeaderSubtitle}>Scan a receipt — Cenaiva extracts the rest.</Text>
+        </View>
       }
     >
       <View style={styles.scanCtaWrap}>
@@ -91,6 +90,28 @@ export default function OwnerExpensesScreen() {
 const useStyles = createStyles((c) => {
   const ownerColors = ownerColorsFromPalette(c);
   return {
+    tabHeader: {
+      paddingBottom: 4,
+    },
+    tabHeaderKicker: {
+      color: ownerColors.gold,
+      fontSize: 11,
+      fontWeight: '800',
+      letterSpacing: 1.4,
+      marginBottom: 4,
+    },
+    tabHeaderTitle: {
+      color: ownerColors.text,
+      fontSize: 28,
+      fontWeight: '800',
+      letterSpacing: -0.5,
+    },
+    tabHeaderSubtitle: {
+      color: ownerColors.textMuted,
+      fontSize: 13,
+      fontWeight: '500',
+      marginTop: 4,
+    },
     scanCtaWrap: {
       marginBottom: 14,
     },

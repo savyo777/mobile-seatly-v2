@@ -47,7 +47,7 @@ const QUICK_ACTIONS: { id: string; icon: IoniconName; label: string; sub: string
   },
 ];
 
-const TAB_ROOTS = ['/home', '/reservations', '/promotions', '/profile'];
+const TAB_ROOTS = ['/home', '/reservations', '/expenses', '/promotions', '/profile'];
 
 const useStyles = createStyles((c) => ({
   root: { flex: 1, backgroundColor: c.bgBase },
@@ -212,6 +212,7 @@ export default function OwnerTabsLayout() {
     if (loading || !isAuthenticated) return undefined;
     const timer = setTimeout(() => {
       router.prefetch('/(staff)/reservations' as never);
+      router.prefetch('/(staff)/expenses' as never);
       router.prefetch('/(staff)/promotions' as never);
       router.prefetch('/(staff)/profile' as never);
     }, 250);
@@ -270,6 +271,16 @@ export default function OwnerTabsLayout() {
           }}
         />
         <Tabs.Screen
+          name="expenses"
+          options={{
+            ...eagerTabOptions,
+            title: 'Receipts',
+            tabBarIcon: ({ color, size }) => (
+              <Ionicons name="receipt-outline" size={size} color={color} />
+            ),
+          }}
+        />
+        <Tabs.Screen
           name="promotions"
           options={{
             ...eagerTabOptions,
@@ -307,7 +318,6 @@ export default function OwnerTabsLayout() {
         <Tabs.Screen name="notifications" options={{ href: null, tabBarStyle: { display: 'none' } }} />
         <Tabs.Screen name="index"       options={{ href: null }} />
         <Tabs.Screen name="crm"         options={{ href: null }} />
-        <Tabs.Screen name="expenses"    options={{ href: null }} />
         <Tabs.Screen name="expense-scan"   options={{ href: null, tabBarStyle: { display: 'none' } }} />
         <Tabs.Screen name="expense-review" options={{ href: null, tabBarStyle: { display: 'none' } }} />
         <Tabs.Screen name="expense-detail" options={{ href: null, tabBarStyle: { display: 'none' } }} />
