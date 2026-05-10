@@ -77,6 +77,41 @@ const BOOKING_REQUEST_TIMEOUT_MS = 12000;
 
 const availabilityCache = new Map<string, { expiresAt: number; value: AvailabilityResponse }>();
 const availabilityInflight = new Map<string, Promise<AvailabilityResponse>>();
+const restaurantTimezoneCache = new Map<string, string | null>();
+
+async function getRestaurantTimezone(restaurantId: string): Promise<string | null> {
+  if (restaurantTimezoneCache.has(restaurantId)) {
+    return restaurantTimezoneCache.get(restaurantId) ?? null;
+  }
+  const supabase = getSupabase();
+  if (!supabase) return null;
+  try {
+    const { data } = await supabase
+      .from('restaurants')
+      .select('timezone')
+      .eq('id', restaurantId)
+      .maybeSingle();
+    const tz = (data as { timezone?: string | null } | null)?.timezone ?? null;
+    restaurantTimezoneCache.set(restaurantId, tz);
+    return tz;
+  } catch {
+    return null;
+  }
+}
+
+function formatSlotDisplayTime(dateTime: string, timezone: string | null): string {
+  try {
+    const formatter = new Intl.DateTimeFormat('en-US', {
+      hour: 'numeric',
+      minute: '2-digit',
+      hour12: true,
+      ...(timezone ? { timeZone: timezone } : {}),
+    });
+    return formatter.format(new Date(dateTime));
+  } catch {
+    return new Date(dateTime).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
+  }
+}
 
 function isDemoRestaurantKey(value: string): boolean {
   const key = value.trim().toLowerCase();
@@ -222,51 +257,64 @@ export async function getAvailability(params: {
   }
 
   const request = (async () => {
-    const { url, anonKey } = assertConfigured();
-    const token = await getAccessToken();
-    const endpoint = new URL(`${url}/functions/v1/get-availability`);
-    endpoint.searchParams.set('restaurant_id', params.restaurantId);
-    endpoint.searchParams.set('date', params.date);
-    endpoint.searchParams.set('party_size', String(partySize));
-
-    const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), AVAILABILITY_REQUEST_TIMEOUT_MS);
-    let response: Response;
-    try {
-      response = await fetch(endpoint.toString(), {
-        signal: controller.signal,
-        headers: {
-          apikey: anonKey,
-          ...(token ? { Authorization: `Bearer ${token}` } : {}),
-        },
-      });
-    } finally {
-      clearTimeout(timeout);
-    }
-
-    const body = await response.json().catch(() => ({})) as {
-      slots?: AvailabilitySlot[];
-      floor_capacity?: number;
-      error?: unknown;
-    };
-
-    if (!response.ok || body.error) {
+    const supabase = getSupabase();
+    if (!supabase) {
       if (demoFallback) return cacheAvailability(cacheKey, demoFallback);
-      throw new Error(coerceErrorMessage(body.error, 'Could not load availability.'));
+      throw new Error('Supabase is not configured.');
     }
 
-    const slots = (body.slots ?? [])
+    const timeoutController = new AbortController();
+    const timeoutId = setTimeout(() => timeoutController.abort(), AVAILABILITY_REQUEST_TIMEOUT_MS);
+
+    let body: {
+      slots?: Array<{
+        shift_id: string;
+        shift_name?: string;
+        date_time: string;
+        table_ids?: string[];
+        duration_minutes?: number;
+      }>;
+      floor_capacity?: number;
+      unavailable_reason?: string | null;
+    } | null;
+    try {
+      const { data, error } = await supabase.rpc('get_available_slots_cached', {
+        p_restaurant_id: params.restaurantId,
+        p_date: params.date,
+        p_party_size: partySize,
+      });
+      if (error) {
+        if (demoFallback) return cacheAvailability(cacheKey, demoFallback);
+        throw new Error(coerceErrorMessage(error.message, 'Could not load availability.'));
+      }
+      body = (data ?? null) as typeof body;
+    } finally {
+      clearTimeout(timeoutId);
+    }
+
+    const timezone = await getRestaurantTimezone(params.restaurantId);
+
+    const rpcSlots = body?.slots ?? [];
+    const slots: AvailabilitySlot[] = rpcSlots
       .filter((slot) => new Date(slot.date_time).getTime() >= Date.now())
-      .sort((a, b) => new Date(a.date_time).getTime() - new Date(b.date_time).getTime());
+      .sort((a, b) => new Date(a.date_time).getTime() - new Date(b.date_time).getTime())
+      .map((slot) => ({
+        shift_id: slot.shift_id,
+        shift_name: slot.shift_name ?? '',
+        date_time: slot.date_time,
+        display_time: formatSlotDisplayTime(slot.date_time, timezone),
+        table_ids: slot.table_ids ?? [],
+        duration_minutes: slot.duration_minutes,
+        floor_capacity: body?.floor_capacity,
+      }));
+
     if (!slots.length && demoFallback?.slots.length) {
       return cacheAvailability(cacheKey, demoFallback);
     }
-    const value = {
+
+    const value: AvailabilityResponse = {
       slots,
-      floorCapacity:
-        body.floor_capacity ??
-        slots.find((slot) => typeof slot.floor_capacity === 'number')?.floor_capacity ??
-        null,
+      floorCapacity: body?.floor_capacity ?? null,
     };
     return cacheAvailability(cacheKey, value);
   })()
