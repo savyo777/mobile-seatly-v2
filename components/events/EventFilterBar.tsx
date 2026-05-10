@@ -6,10 +6,10 @@ import type { DateFilter, EventType } from '@/lib/mock/events';
 type TypeFilterKey = EventType | 'all';
 
 const DATE_CHIPS: { key: DateFilter; label: string }[] = [
+  { key: 'all', label: 'All Dates' },
   { key: 'tonight', label: 'Tonight' },
   { key: 'this_weekend', label: 'This Weekend' },
   { key: 'this_week', label: 'This Week' },
-  { key: 'all', label: 'All Dates' },
 ];
 
 const TYPE_CHIPS: { key: TypeFilterKey; label: string }[] = [
