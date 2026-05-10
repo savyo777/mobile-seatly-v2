@@ -9,6 +9,7 @@ import {
 } from '@/lib/mock/restaurants';
 import { normalizeRestaurantPriceRange } from '@/lib/restaurants/pricing';
 import { DEFAULT_CURRENCY, DEFAULT_TAX_RATE_FALLBACK } from '@/lib/booking/bookingDefaults';
+import { readDepositTiers } from '@/lib/booking/depositTiers';
 
 const DEFAULT_RESTAURANT_COVER = 'https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=1200';
 
@@ -134,5 +135,6 @@ export function mapRestaurantRowToRestaurant(row: RestaurantRow): Restaurant {
     hoursJson: hoursFromJson(row.hours_json as Record<string, unknown> | null),
     taxRate: num(row.tax_rate, DEFAULT_TAX_RATE_FALLBACK),
     currency: row.currency ?? DEFAULT_CURRENCY,
+    depositTiers: readDepositTiers(row.deposit_tiers),
   };
 }

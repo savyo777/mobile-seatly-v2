@@ -46,6 +46,7 @@ export interface RestaurantRow {
   timezone: string | null;
   currency: string | null;
   tax_rate: string | number | null;
+  deposit_tiers?: unknown | null;
   created_at?: string;
 }
 
@@ -63,6 +64,8 @@ export interface ReservationRow {
   special_request: string | null;
   occasion: string | null;
   deposit_amount: string | number | null;
+  deposit_amount_cents?: number | null;
+  deposit_status?: string | null;
   created_at?: string;
 }
 

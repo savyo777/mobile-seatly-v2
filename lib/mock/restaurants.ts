@@ -1,4 +1,5 @@
 import type { RestaurantPriceTier } from '@/lib/restaurants/pricing';
+import type { DepositTier } from '@/lib/booking/depositTiers';
 
 export type DiscoverSectionKey =
   | 'recommended'
@@ -59,6 +60,7 @@ export interface Restaurant {
   hoursJson: RestaurantHoursJson;
   taxRate: number;
   currency: string;
+  depositTiers?: DepositTier[];
 }
 
 const defaultHours: RestaurantHoursJson = {
