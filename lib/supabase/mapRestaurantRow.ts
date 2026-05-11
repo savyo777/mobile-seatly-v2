@@ -128,6 +128,7 @@ export function mapRestaurantRowToRestaurant(row: RestaurantRow): Restaurant {
     name: row.name ?? extended.business_name ?? 'Restaurant',
     slug: row.slug ?? row.id,
     cuisineType: row.cuisine_type ?? '',
+    businessType: row.business_type ?? null,
     description: row.description ?? '',
     address: row.address ?? '',
     city: row.city ?? '',

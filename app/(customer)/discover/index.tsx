@@ -8,7 +8,7 @@ import {
   RefreshControl,
   Image,
 } from 'react-native';
-import { useRouter, Href } from 'expo-router';
+import { useRouter, useFocusEffect, Href } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
@@ -21,6 +21,7 @@ import { resolveAuthDisplayProfile } from '@/lib/auth/displayProfile';
 import type { DiscoverCategorySlug } from '@/lib/discover/discoverCategories';
 import { getTorontoGreetingPeriod } from '@/lib/discover/torontoTime';
 import { loadRestaurantsForDiscover } from '@/lib/data/restaurantCatalog';
+import { fetchCurrentUserProfile } from '@/lib/services/userProfile';
 import { isDemoModeEnabled } from '@/lib/config/demoMode';
 import { pickFeaturedRestaurant } from '@/lib/mock/discoverPresentation';
 import { mockRestaurants, type Restaurant } from '@/lib/mock/restaurants';
@@ -289,6 +290,9 @@ export default function DiscoverScreen() {
   const currentUserId = user?.id ?? '';
   const [baseRestaurants, setBaseRestaurants] = useState<Restaurant[]>(() => (isDemoModeEnabled() ? mockRestaurants : []));
   const [unreadCount, setUnreadCount] = useState(() => (isDemoModeEnabled() ? getUnreadCount(currentUserId) : 0));
+  // The diner's "Places" picks (business_type values) — drives the
+  // "Based on your taste" recommendation section below.
+  const [userPlacesPrefs, setUserPlacesPrefs] = useState<string[]>([]);
   const displayProfile = useMemo(
     () => resolveAuthDisplayProfile(user),
     [user],
@@ -303,6 +307,28 @@ export default function DiscoverScreen() {
       cancelled = true;
     };
   }, []);
+
+  // Refetch the diner's saved "Places" preferences whenever they tab back to
+  // Discover so the "Based on your taste" section reflects edits made on the
+  // Profile screen without needing an app relaunch.
+  useFocusEffect(
+    useCallback(() => {
+      if (isDemoModeEnabled()) {
+        setUserPlacesPrefs([]);
+        return;
+      }
+      let cancelled = false;
+      void fetchCurrentUserProfile()
+        .then((profile) => {
+          if (cancelled || !profile) return;
+          setUserPlacesPrefs(profile.preferredBusinessTypes);
+        })
+        .catch(() => undefined);
+      return () => {
+        cancelled = true;
+      };
+    }, []),
+  );
 
 
   const filterLabel = (key: FilterKey) => {
@@ -391,9 +417,19 @@ export default function DiscoverScreen() {
   }, [withoutFeatured]);
 
   const tasteData = useMemo(() => {
+    // When the diner has saved "Places" picks, intersect them with each
+    // restaurant's business_type. Restaurants with NULL business_type are
+    // skipped from this section until an owner sets one.
+    if (userPlacesPrefs.length > 0) {
+      return withoutFeatured
+        .filter((r) => r.businessType && userPlacesPrefs.includes(r.businessType))
+        .slice(0, 12);
+    }
+    // No picks yet — fall back to the legacy 'recommended' default so the
+    // section never goes empty for new diners.
     const hit = withoutFeatured.filter((r) => r.featuredIn.includes('recommended'));
     return (hit.length ? hit : withoutFeatured).slice(0, 12);
-  }, [withoutFeatured]);
+  }, [withoutFeatured, userPlacesPrefs]);
 
   const mostSnappedData = useMemo(() => {
     const trending = isDemoModeEnabled() ? listTrendingRestaurants(7) : [];

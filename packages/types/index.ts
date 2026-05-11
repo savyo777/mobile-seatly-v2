@@ -28,6 +28,7 @@ export interface RestaurantRow {
   logo_url: string | null;
   cover_photo_url: string | null;
   cuisine_type: string | null;
+  business_type: string | null;
   description: string | null;
   address: string | null;
   city: string | null;

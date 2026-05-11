@@ -18,6 +18,7 @@ export type AppUserProfile = {
   preferredCuisines: string[];
   dietaryRestrictions: string[];
   diningVibes: string[];
+  preferredBusinessTypes: string[];
 };
 
 function stringValue(value: unknown): string {
@@ -83,6 +84,7 @@ function mapProfileRow(row: Record<string, unknown> | null | undefined, user: Us
     preferredCuisines: firstStringArray(row?.preferred_cuisines, row?.favorite_cuisines),
     dietaryRestrictions: stringArray(row?.dietary_restrictions),
     diningVibes: stringArray(row?.dining_vibes),
+    preferredBusinessTypes: stringArray(row?.preferred_business_types),
   };
 }
 
@@ -119,6 +121,7 @@ export type UserProfileUpdate = Partial<{
   dietary_restrictions: string[] | null;
   allergies: string[] | null;
   preferred_cuisines: string[] | null;
+  preferred_business_types: string[] | null;
   seating_preference: string | null;
   noise_preference: string | null;
   car_details_json: Record<string, unknown> | null;

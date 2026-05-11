@@ -38,6 +38,7 @@ export interface Restaurant {
   name: string;
   slug: string;
   cuisineType: string;
+  businessType?: string | null;
   description: string;
   address: string;
   city: string;

@@ -8,6 +8,7 @@ const baseRow: RestaurantRow = {
   logo_url: null,
   cover_photo_url: null,
   cuisine_type: 'Italian',
+  business_type: null,
   description: null,
   address: '123 Main St',
   city: 'Toronto',
