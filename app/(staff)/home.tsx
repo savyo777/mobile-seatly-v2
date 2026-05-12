@@ -731,6 +731,8 @@ export default function OwnerHomeScreen() {
     isDemoModeEnabled() ? DEMO_HOME_ATTENTION_ITEMS : [],
   );
   const [todayReservationCount, setTodayReservationCount] = useState<number>(0);
+  const [todayCoversCount, setTodayCoversCount] = useState<number>(0);
+  const [guestProfilesCount, setGuestProfilesCount] = useState<number>(0);
   const [ownerReservations, setOwnerReservations] = useState<typeof DEMO_OWNER_RESERVATIONS>(
     isDemoModeEnabled() ? DEMO_OWNER_RESERVATIONS : [],
   );
@@ -898,14 +900,20 @@ export default function OwnerHomeScreen() {
 
     void supabase
       .from('reservations')
-      .select('reserved_at,status')
+      .select('reserved_at,status,party_size')
       .in('restaurant_id', restaurantIds)
       .gte('reserved_at', dayStart.toISOString())
       .lt('reserved_at', dayEnd.toISOString())
       .then(({ data }) => {
         if (!active) return;
-        const rows = (data ?? []) as Array<{ reserved_at: string; status: string | null }>;
+        const rows = (data ?? []) as Array<{ reserved_at: string; status: string | null; party_size: number | null }>;
         setTodayReservationCount(rows.length);
+        const COUNTED = new Set(['pending', 'confirmed', 'seated', 'checked_in', 'completed']);
+        const covers = rows.reduce((sum, r) => {
+          if (r.status && !COUNTED.has(r.status)) return sum;
+          return sum + (r.party_size ?? 0);
+        }, 0);
+        setTodayCoversCount(covers);
 
         // Aggregate by hour 16..23 (4 PM – 11 PM service window — same as the demo data)
         const HOURS = [16, 17, 18, 19, 20, 21, 22, 23];
@@ -928,6 +936,16 @@ export default function OwnerHomeScreen() {
         setBookingsByHourTotal(rows.length);
       });
 
+    // Guest profile count for the Quick actions tile.
+    void supabase
+      .from('guests')
+      .select('id', { count: 'exact', head: true })
+      .in('restaurant_id', restaurantIds)
+      .then(({ count }) => {
+        if (!active) return;
+        setGuestProfilesCount(count ?? 0);
+      });
+
     return () => {
       active = false;
     };
@@ -942,7 +960,7 @@ export default function OwnerHomeScreen() {
   const bookingsTonight = isDemoModeEnabled() ? ownerReservations.length : todayReservationCount;
   const pendingCount = ownerReservations.filter((r) => r.status === 'pending').length;
   const upNext = ownerReservations.find((r) => r.status !== 'seated') ?? ownerReservations[0];
-  const guestProfiles = OWNER_GUESTS.length;
+  const guestProfiles = isDemoModeEnabled() ? OWNER_GUESTS.length : guestProfilesCount;
 
   const quickActions: { icon: IoniconName; label: string; sub: string; route: string }[] = [
     { icon: 'calendar-outline', label: 'Reservations', sub: `${bookingsTonight} tonight`, route: '/(staff)/reservations' },
@@ -1018,7 +1036,7 @@ export default function OwnerHomeScreen() {
             </View>
             <View style={styles.heroStatDivider} />
             <View style={styles.heroStat}>
-              <Text style={styles.statValue}>{liveMetrics.tonightCovers}</Text>
+              <Text style={styles.statValue}>{isDemoModeEnabled() ? liveMetrics.tonightCovers : todayCoversCount}</Text>
               <Text style={styles.statLabel}>Guests</Text>
             </View>
             <View style={styles.heroStatDivider} />
