@@ -12,6 +12,7 @@ export interface SaveRestaurantProfileArgs {
   instagram?: string | null;
   coverImageUrl?: string | null;
   logoUrl?: string | null;
+  turnTimeMinutes?: number | null;
 }
 
 function normalize(value: string | null | undefined): string | null {
@@ -43,9 +44,13 @@ export async function saveRestaurantProfile(args: SaveRestaurantProfileArgs): Pr
   if (args.coverImageUrl !== undefined) updates.cover_image_url = args.coverImageUrl;
   if (args.logoUrl !== undefined) updates.logo_url = args.logoUrl;
 
-  // Merge website + instagram into settings_json.businessProfile without
+  // Merge website + instagram + turn time into settings_json without
   // clobbering other sub-keys like legalName, dietaryTags, theme, etc.
-  if (args.website !== undefined || args.instagram !== undefined) {
+  if (
+    args.website !== undefined ||
+    args.instagram !== undefined ||
+    args.turnTimeMinutes !== undefined
+  ) {
     const { data: existing } = await supabase
       .from('restaurants')
       .select('settings_json')
@@ -54,12 +59,17 @@ export async function saveRestaurantProfile(args: SaveRestaurantProfileArgs): Pr
     const settings = (existing?.settings_json && typeof existing.settings_json === 'object'
       ? { ...(existing.settings_json as Record<string, unknown>) }
       : {}) as Record<string, unknown>;
-    const bp = (settings.businessProfile && typeof settings.businessProfile === 'object'
-      ? { ...(settings.businessProfile as Record<string, unknown>) }
-      : {}) as Record<string, unknown>;
-    if (args.website !== undefined) bp.websiteUrl = normalize(args.website);
-    if (args.instagram !== undefined) bp.instagramUrl = normalize(args.instagram);
-    settings.businessProfile = bp;
+    if (args.website !== undefined || args.instagram !== undefined) {
+      const bp = (settings.businessProfile && typeof settings.businessProfile === 'object'
+        ? { ...(settings.businessProfile as Record<string, unknown>) }
+        : {}) as Record<string, unknown>;
+      if (args.website !== undefined) bp.websiteUrl = normalize(args.website);
+      if (args.instagram !== undefined) bp.instagramUrl = normalize(args.instagram);
+      settings.businessProfile = bp;
+    }
+    if (args.turnTimeMinutes !== undefined) {
+      settings.turnTimeMinutes = args.turnTimeMinutes;
+    }
     updates.settings_json = settings;
   }
 

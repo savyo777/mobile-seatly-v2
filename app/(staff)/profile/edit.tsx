@@ -30,6 +30,12 @@ import { isDemoModeEnabled } from '@/lib/config/demoMode';
 import { useOwnerScope } from '@/hooks/useOwnerScope';
 import { uploadRestaurantPhoto } from '@/lib/owner/uploadRestaurantPhoto';
 import { saveRestaurantProfile } from '@/lib/owner/saveRestaurantProfile';
+import {
+  fetchRestaurantShifts,
+  formatDaysOfWeek,
+  formatShiftWindow,
+  type RestaurantShift,
+} from '@/lib/owner/restaurantShifts';
 
 const EMPTY_OWNER_BUSINESS_PROFILE: typeof DEMO_OWNER_BUSINESS_PROFILE = {
   name: '',
@@ -105,7 +111,8 @@ const useStyles = createStyles((c) => ({
 
   // ── Photos ──
   coverWrap: {
-    height: 160,
+    width: '100%',
+    aspectRatio: 16 / 9,
     borderRadius: borderRadius.xl,
     overflow: 'hidden',
     backgroundColor: c.bgSurface,
@@ -129,15 +136,17 @@ const useStyles = createStyles((c) => ({
     color: '#fff',
   },
   logoWrap: {
-    width: 96,
-    height: 96,
-    borderRadius: borderRadius.lg,
+    // Roughly a third of the cover width so the two tiles read as a pair
+    // (wide hero + square mark) instead of one giant and one tiny tile.
+    width: '36%',
+    aspectRatio: 1,
+    borderRadius: borderRadius.xl,
     overflow: 'hidden',
     backgroundColor: c.bgSurface,
     borderWidth: StyleSheet.hairlineWidth,
     borderColor: c.border,
     marginBottom: spacing.sm,
-    alignSelf: 'flex-start',
+    alignSelf: 'center',
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -651,6 +660,18 @@ export default function EditBusinessProfileScreen() {
     setAddress(selectedRestaurant.address ?? '');
     setCoverUri(selectedRestaurant.coverPhotoUrl ?? null);
     setLogoUri(selectedRestaurant.logoUrl ?? null);
+    setTurnTime(
+      selectedRestaurant.turnTimeMinutes != null
+        ? String(selectedRestaurant.turnTimeMinutes)
+        : '',
+    );
+    let active = true;
+    void fetchRestaurantShifts(selectedRestaurant.id).then((rows) => {
+      if (active) setShifts(rows);
+    });
+    return () => {
+      active = false;
+    };
   }, [selectedRestaurant]);
 
   // Photos. `*Uri` holds either a remote URL (loaded from the DB) or a local
@@ -659,6 +680,11 @@ export default function EditBusinessProfileScreen() {
   const [logoUri, setLogoUri] = useState<string | null>(null);
   const [galleryUris, setGalleryUris] = useState<(string | null)[]>([null, null, null]);
   const [saving, setSaving] = useState(false);
+
+  // Live hours (read from the shifts table) and restaurant-level turn time
+  // (settings_json.turnTimeMinutes).
+  const [shifts, setShifts] = useState<RestaurantShift[]>([]);
+  const [turnTime, setTurnTime] = useState<string>('');
 
   // Hours
   const [hours, setHours] = useState<BusinessHoursRow[]>(
@@ -782,6 +808,12 @@ export default function EditBusinessProfileScreen() {
         logoUrl = null;
       }
 
+      const parsedTurn = turnTime.trim() ? Number(turnTime.trim()) : null;
+      const turnTimeMinutes =
+        parsedTurn != null && Number.isFinite(parsedTurn) && parsedTurn > 0
+          ? Math.round(parsedTurn)
+          : null;
+
       await saveRestaurantProfile({
         restaurantId,
         name,
@@ -794,6 +826,7 @@ export default function EditBusinessProfileScreen() {
         instagram,
         coverImageUrl,
         logoUrl,
+        turnTimeMinutes,
       });
 
       Alert.alert('Saved', 'Business profile updated.', [
@@ -867,31 +900,6 @@ export default function EditBusinessProfileScreen() {
         </Pressable>
         <Text style={styles.photoHint}>Square mark used as your avatar in listings and headers.</Text>
 
-        {/* ── Gallery ── */}
-        <SectionHeader title="Gallery" />
-
-        {/* Gallery */}
-        <View style={styles.galleryRow}>
-          {galleryUris.map((uri, i) => (
-            <Pressable
-              key={i}
-              style={styles.gallerySlot}
-              onPress={() => pickGallery(i)}
-              accessibilityRole="button"
-              accessibilityLabel={`Gallery photo ${i + 1}`}
-            >
-              {uri ? (
-                <Image source={{ uri }} style={styles.galleryImage} resizeMode="cover" />
-              ) : (
-                <View style={styles.galleryPlaceholder}>
-                  <Ionicons name="add-circle-outline" size={22} color={c.textMuted} />
-                  <Text style={styles.galleryPlaceholderText}>Photo</Text>
-                </View>
-              )}
-            </Pressable>
-          ))}
-        </View>
-
         {/* ── Basics ── */}
         <SectionHeader title="Basics" />
         <View style={styles.card}>
@@ -937,25 +945,51 @@ export default function EditBusinessProfileScreen() {
           <FieldInput label="Address" value={address} onChangeText={setAddress} divider multiline />
         </View>
 
-        {/* ── Hours ── */}
+        {/* ── Hours (live from shifts table) ── */}
         <SectionHeader title="Hours" />
         <View style={styles.card}>
-          {hours.map((h, i) => (
-            <HoursRowEditor
-              key={h.day}
-              row={h}
-              isOpen={openDays[i]}
-              onToggle={(v) => toggleDay(i, v)}
-              onPickTime={(field) =>
-                openTimePicker(
-                  `${h.label} · ${field === 'open' ? 'Opening' : 'Closing'} time`,
-                  (field === 'open' ? h.open : h.close) ?? '5:00 PM',
-                  (v) => updateHour(i, field, v),
-                )
-              }
-              divider={i > 0}
+          {shifts.length === 0 ? (
+            <View style={styles.fieldRow}>
+              <Text style={styles.fieldLabel}>No shifts configured yet.</Text>
+              <Text style={styles.photoHint}>
+                Add shifts in Business hours to control when guests can book.
+              </Text>
+            </View>
+          ) : (
+            shifts.map((s, i) => (
+              <View
+                key={s.id}
+                style={[styles.fieldRow, i > 0 && styles.fieldDivider]}
+              >
+                <Text style={styles.fieldLabel}>
+                  {(s.displayName || s.name || 'Service').toUpperCase()}
+                  {!s.isActive ? ' · INACTIVE' : ''}
+                </Text>
+                <Text style={styles.input}>
+                  {formatDaysOfWeek(s.daysOfWeek)} · {formatShiftWindow(s.startTime, s.endTime)}
+                </Text>
+                {s.turnTimeMinutes != null ? (
+                  <Text style={styles.photoHint}>{s.turnTimeMinutes} min turn time</Text>
+                ) : null}
+              </View>
+            ))
+          )}
+        </View>
+
+        {/* ── Turn time (restaurant-level default) ── */}
+        <SectionHeader title="Turn time" />
+        <View style={styles.card}>
+          <View style={styles.fieldRow}>
+            <Text style={styles.fieldLabel}>Average minutes per table</Text>
+            <TextInput
+              style={styles.input}
+              value={turnTime}
+              onChangeText={setTurnTime}
+              keyboardType="number-pad"
+              placeholder="e.g. 90"
+              placeholderTextColor={c.textMuted}
             />
-          ))}
+          </View>
         </View>
       </ScrollView>
 

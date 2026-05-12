@@ -30,6 +30,7 @@ export type OwnerRestaurant = {
   timezone: string | null;
   currency: string;
   taxRate: number;
+  turnTimeMinutes: number | null;
 };
 
 function stringValue(value: unknown): string {
@@ -126,6 +127,7 @@ export function mapOwnerRestaurantRow(row: Record<string, unknown>): OwnerRestau
     timezone: stringOrNull(row.timezone),
     currency: stringValue(row.currency) || DEFAULT_CURRENCY,
     taxRate: numberOrNull(row.tax_rate) ?? DEFAULT_TAX_RATE_FALLBACK,
+    turnTimeMinutes: numberOrNull(s.turnTimeMinutes) ?? numberOrNull(s.turn_time_minutes),
   };
 }
 
