@@ -224,9 +224,12 @@ export default function LoginScreen() {
         // best-effort: profile creation can be retried later
       }
     }
-    // Navigation is handled by the root layout's auth effect, which fires
-    // after React commits isAuthenticated = true — eliminating the race
-    // condition that caused auth guards to see the stale false value.
+    // getRoleForSignedInUser takes ~200ms (DB round-trip), which gives React
+    // enough time to commit the isAuthenticated = true update from
+    // onAuthStateChange. The customer/staff layout auth guards use useEffect
+    // (not Redirect), so they fire after commit and see isAuthenticated = true.
+    const dest = role === 'owner' ? '/(staff)/home' : '/(customer)/discover';
+    router.replace(dest as never);
   };
 
   const handleLogin = async () => {

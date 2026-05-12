@@ -9,10 +9,6 @@ import Constants from 'expo-constants';
 import { StripeProvider } from '@stripe/stripe-react-native';
 import '@/lib/i18n';
 import { AuthProvider, useAuthSession } from '@/lib/auth/AuthContext';
-import {
-  getAppShellPreference,
-  getCachedAppShellPreference,
-} from '@/lib/navigation/appShellPreference';
 import { ThemeProvider, useColors } from '@/lib/theme';
 import { MenuProvider } from '@/lib/context/MenuContext';
 import { ExpensesProvider } from '@/lib/context/ExpensesContext';
@@ -141,25 +137,19 @@ function ThemedRootShell() {
     router.replace('/' as never);
   }, [router]);
 
-  // Standard expo-router auth pattern: fires AFTER React commits isAuthenticated = true,
-  // so auth guards in destination layouts always see the updated value.
+  // Fires AFTER React commits isAuthenticated = true (useEffect guarantee), so any
+  // destination layout's auth guard sees the updated value and won't bounce.
+  // Kept synchronous to avoid cancellation races with async preference lookup.
   useEffect(() => {
     if (loading || role === null || !isAuthenticated) return;
     if (segments[0] !== '(auth)') return;
-    // Leave password-reset and phone-OTP flows undisturbed.
     const seg1 = segments[1] as string | undefined;
     if (seg1 === 'reset-password' || seg1 === 'verify-phone-otp') return;
-    let cancelled = false;
-    void (async () => {
-      const pref = getCachedAppShellPreference() ?? (await getAppShellPreference());
-      if (cancelled) return;
-      if (pref === 'staff' && isStaffLike) {
-        router.replace('/(staff)' as never);
-      } else {
-        router.replace('/(customer)/discover' as never);
-      }
-    })();
-    return () => { cancelled = true; };
+    if (isStaffLike) {
+      router.replace('/(staff)' as never);
+    } else {
+      router.replace('/(customer)/discover' as never);
+    }
   }, [loading, isAuthenticated, role, isStaffLike, segments, router]);
 
   return (
