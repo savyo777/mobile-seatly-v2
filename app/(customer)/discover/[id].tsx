@@ -942,7 +942,11 @@ export default function RestaurantDetailScreen() {
               ))}
             </View>
             <Pressable
-              onPress={scrollToMenu}
+              onPress={() => {
+                if (!restaurant?.id) return;
+                const path = `/(customer)/discover/menu/${restaurant.id}${isPreview ? '?preview=1' : ''}`;
+                router.push(path as never);
+              }}
               accessibilityRole="button"
               accessibilityLabel="See the menu"
               style={({ pressed }) => [styles.seeMenuBtn, pressed && { opacity: 0.85 }]}
@@ -989,80 +993,6 @@ export default function RestaurantDetailScreen() {
               <Text style={styles.expandLink}>{hoursExpanded ? 'Hide hours' : 'See all hours'}</Text>
               <Ionicons name={hoursExpanded ? 'chevron-up' : 'chevron-down'} size={13} color={c.gold} />
             </Pressable>
-          </View>
-
-          <View style={styles.section} ref={menuSectionRef} collapsable={false}>
-            <Text style={styles.sectionHeading}>{t('restaurant.menu')}</Text>
-            {menuLoading ? (
-              <View style={styles.menuLoading}>
-                <ActivityIndicator color={c.gold} />
-                <Text style={styles.bodyText}>Loading menu</Text>
-              </View>
-            ) : menuItems.length ? (
-              <>
-                <ScrollView
-                  horizontal
-                  showsHorizontalScrollIndicator={false}
-                  contentContainerStyle={styles.menuTabs}
-                >
-                  {[
-                    { key: MENU_ALL_TAB, label: 'All' },
-                    ...menuCategoryTabs.map((category) => ({ key: category, label: category })),
-                  ].map((tab) => {
-                    const selected = selectedMenuTab === tab.key;
-                    return (
-                      <Pressable
-                        key={tab.key}
-                        accessibilityRole="button"
-                        accessibilityLabel={`Show ${tab.label} menu items`}
-                        onPress={() => setSelectedMenuTab(tab.key)}
-                        style={({ pressed }) => [
-                          styles.menuTab,
-                          selected && styles.menuTabActive,
-                          pressed && { opacity: 0.82 },
-                        ]}
-                      >
-                        <Text style={[styles.menuTabText, selected && styles.menuTabTextActive]}>
-                          {tab.label}
-                        </Text>
-                      </Pressable>
-                    );
-                  })}
-                </ScrollView>
-
-                {Object.entries(visibleGroupedMenuItems).map(([category, items]) => (
-                  <View key={category} style={styles.menuGroup}>
-                    <Text style={styles.menuCategory}>{category}</Text>
-                    {items.map((item) => {
-                      const imageUrl = item.photoUrl?.trim();
-                      return (
-                        <View key={item.id} style={styles.menuItem}>
-                          {imageUrl ? (
-                            <Image source={{ uri: imageUrl }} style={styles.menuPhoto} resizeMode="cover" />
-                          ) : (
-                            <View style={[styles.menuPhoto, styles.menuPhotoPlaceholder]}>
-                              <Ionicons name="restaurant-outline" size={24} color={c.textMuted} />
-                            </View>
-                          )}
-                          <View style={styles.menuBody}>
-                            <Text style={styles.menuName} numberOfLines={2}>{item.name}</Text>
-                            {item.description ? (
-                              <Text style={styles.menuDescription} numberOfLines={3}>{item.description}</Text>
-                            ) : null}
-                            <Text style={styles.menuPrice}>{formatCurrency(item.price, currency)}</Text>
-                            {!item.isAvailable ? (
-                              <Text style={styles.menuUnavailable}>Currently unavailable</Text>
-                            ) : null}
-                          </View>
-                        </View>
-                      );
-                    })}
-                  </View>
-                ))}
-              </>
-            ) : (
-              <Text style={styles.menuEmpty}>This restaurant has not published a menu yet.</Text>
-            )}
           </View>
 
           {(hasPolicyInfo || depositSummary) ? (
