@@ -211,6 +211,11 @@ const useStyles = createStyles((c) => ({
     fontWeight: '600',
     color: c.textMuted,
   },
+  turnRowValue: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+  },
   galleryRow: {
     flexDirection: 'row',
     gap: spacing.sm,
@@ -470,6 +475,25 @@ const HOURS = ['1','2','3','4','5','6','7','8','9','10','11','12'];
 const MINUTES = ['00','15','30','45'];
 const PERIODS = ['AM','PM'];
 
+// Turn time picker: 20..120 in 5-minute steps.
+const TURN_TIME_MIN = 20;
+const TURN_TIME_MAX = 120;
+const TURN_TIME_STEP = 5;
+const TURN_TIME_OPTIONS: string[] = (() => {
+  const out: string[] = [];
+  for (let v = TURN_TIME_MIN; v <= TURN_TIME_MAX; v += TURN_TIME_STEP) out.push(String(v));
+  return out;
+})();
+const DEFAULT_TURN_TIME = '90';
+
+function clampTurnTime(value: string): string {
+  const n = Math.round(Number(value));
+  if (!Number.isFinite(n)) return DEFAULT_TURN_TIME;
+  const stepped = Math.round(n / TURN_TIME_STEP) * TURN_TIME_STEP;
+  const clamped = Math.max(TURN_TIME_MIN, Math.min(TURN_TIME_MAX, stepped));
+  return String(clamped);
+}
+
 function WheelColumn({ items, selected, onSelect }: {
   items: string[];
   selected: string;
@@ -564,6 +588,50 @@ function TimePickerModal({ visible, initial, label, onConfirm, onClose }: {
           <Pressable
             style={({ pressed }) => [styles.pickerDoneBtn, { opacity: pressed ? 0.85 : 1 }]}
             onPress={() => { onConfirm(`${hour}:${minute} ${period}`); onClose(); }}
+          >
+            <Text style={styles.pickerDoneText}>Done</Text>
+          </Pressable>
+        </Pressable>
+      </Pressable>
+    </Modal>
+  );
+}
+
+function TurnTimePickerModal({
+  visible,
+  initial,
+  onConfirm,
+  onClose,
+}: {
+  visible: boolean;
+  initial: string;
+  onConfirm: (value: string) => void;
+  onClose: () => void;
+}) {
+  const styles = useStyles();
+  const initialClamped = clampTurnTime(initial || DEFAULT_TURN_TIME);
+  const [value, setValue] = useState(initialClamped);
+
+  useEffect(() => {
+    if (visible) setValue(clampTurnTime(initial || DEFAULT_TURN_TIME));
+  }, [visible, initial]);
+
+  return (
+    <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
+      <Pressable style={styles.pickerBackdrop} onPress={onClose}>
+        <Pressable onPress={() => {}} style={styles.pickerCard}>
+          <Text style={styles.pickerTitle}>TURN TIME · MINUTES</Text>
+          <View style={styles.pickerColumns}>
+            <View style={styles.pickerColWrap}>
+              <WheelColumn items={TURN_TIME_OPTIONS} selected={value} onSelect={setValue} />
+            </View>
+          </View>
+          <Pressable
+            style={({ pressed }) => [styles.pickerDoneBtn, { opacity: pressed ? 0.85 : 1 }]}
+            onPress={() => {
+              onConfirm(value);
+              onClose();
+            }}
           >
             <Text style={styles.pickerDoneText}>Done</Text>
           </Pressable>
@@ -750,6 +818,7 @@ export default function EditBusinessProfileScreen() {
   // (settings_json.turnTimeMinutes).
   const [shifts, setShifts] = useState<RestaurantShift[]>([]);
   const [turnTime, setTurnTime] = useState<string>('');
+  const [turnTimePickerVisible, setTurnTimePickerVisible] = useState(false);
 
   // Hours
   const [hours, setHours] = useState<BusinessHoursRow[]>(
@@ -1066,18 +1135,25 @@ export default function EditBusinessProfileScreen() {
 
         {/* ── Turn time (restaurant-level default, used by the booking flow) ── */}
         <SectionHeader title="Turn time" />
-        <View style={styles.card}>
-          <FieldInput
-            label="Average minutes per table"
-            value={turnTime}
-            onChangeText={(v) => setTurnTime(v.replace(/[^0-9]/g, ''))}
-            keyboardType="number-pad"
-            placeholder="e.g. 90"
-          />
-        </View>
+        <Pressable
+          style={({ pressed }) => [styles.card, pressed && { opacity: 0.85 }]}
+          onPress={() => setTurnTimePickerVisible(true)}
+          accessibilityRole="button"
+          accessibilityLabel="Edit turn time"
+        >
+          <View style={styles.fieldRow}>
+            <Text style={styles.fieldLabel}>Average minutes per table</Text>
+            <View style={styles.turnRowValue}>
+              <Text style={styles.input}>
+                {turnTime ? `${clampTurnTime(turnTime)} min` : 'Tap to set'}
+              </Text>
+              <Ionicons name="chevron-forward" size={16} color={c.textMuted} />
+            </View>
+          </View>
+        </Pressable>
         <Text style={styles.photoHint}>
-          How long a table is held per reservation. Saved to settings_json.turnTimeMinutes
-          and stamped onto every new shift.
+          How long a table is held per reservation. 20–120 min in 5-minute steps. Saves to
+          settings_json.turnTimeMinutes and stamps every new shift.
         </Text>
       </ScrollView>
 
@@ -1102,6 +1178,13 @@ export default function EditBusinessProfileScreen() {
         label={pickerLabel}
         onConfirm={(v) => pickerCallback.current(v)}
         onClose={() => setPickerVisible(false)}
+      />
+
+      <TurnTimePickerModal
+        visible={turnTimePickerVisible}
+        initial={turnTime || DEFAULT_TURN_TIME}
+        onConfirm={(v) => setTurnTime(v)}
+        onClose={() => setTurnTimePickerVisible(false)}
       />
     </KeyboardAvoidingView>
   );
