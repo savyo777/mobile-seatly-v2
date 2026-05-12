@@ -16,6 +16,7 @@ import Svg, { Rect, Polyline, Circle, Path, Defs, LinearGradient, Stop } from 'r
 import { useColors, createStyles, spacing, borderRadius } from '@/lib/theme';
 import { useAuthSession } from '@/lib/auth/AuthContext';
 import { resolveAuthDisplayProfile } from '@/lib/auth/displayProfile';
+import { fetchCurrentUserProfile } from '@/lib/services/userProfile';
 import { useOwnerScope } from '@/hooks/useOwnerScope';
 import { RestaurantPicker } from '@/components/owner/RestaurantPicker';
 import { safeOwnerPush } from '@/lib/navigation/safeOwnerNavigation';
@@ -734,7 +735,25 @@ export default function OwnerHomeScreen() {
     isDemoModeEnabled() ? DEMO_OWNER_RESERVATIONS : [],
   );
   const displayProfile = useMemo(() => resolveAuthDisplayProfile(user, { fullName: 'Owner' }), [user]);
-  const firstName = displayProfile.fullName.split(/\s+/).filter(Boolean)[0] || 'Owner';
+  const [profileFullName, setProfileFullName] = useState<string>('');
+
+  useEffect(() => {
+    let active = true;
+    void fetchCurrentUserProfile()
+      .then((profile) => {
+        if (!active) return;
+        if (profile?.fullName) setProfileFullName(profile.fullName);
+      })
+      .catch(() => {});
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  // Prefer user_profiles.full_name (where "Mark Habbi" lives) over the auth
+  // metadata fallback, which is often empty for email-based signups.
+  const greetingName = (profileFullName || displayProfile.fullName).trim();
+  const firstName = greetingName.split(/\s+/).filter(Boolean)[0] || 'Owner';
 
   // Load shift briefing + restaurant_analytics + today's reservations once we know the restaurant id(s).
   const restaurantIdsKey = restaurantIds.join('|');
