@@ -62,12 +62,19 @@ const useStyles = createStyles((c) => ({
     width: 68,
     height: 68,
     borderRadius: 18,
-    backgroundColor: `${c.bgBase}CC`,
+    // Fully opaque so the cover photo behind the hero doesn't bleed
+    // through transparent areas of the logo image.
+    backgroundColor: c.bgBase,
     borderWidth: 1.5,
-    borderColor: `${c.gold}55`,
+    borderColor: c.gold,
     alignItems: 'center',
     justifyContent: 'center',
     overflow: 'hidden',
+    shadowColor: '#000',
+    shadowOpacity: 0.35,
+    shadowRadius: 8,
+    shadowOffset: { width: 0, height: 2 },
+    elevation: 4,
   },
   logoImage: { width: '100%', height: '100%' },
   logoLetter: {
