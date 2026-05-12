@@ -654,36 +654,6 @@ export default function OwnerBusinessScreen() {
         </View>
         <Text style={styles.bodyText}>{ownerRestaurant?.description || 'No restaurant description on file yet.'}</Text>
 
-        {/* ── Menu ── */}
-        <View style={styles.sectionRow}>
-          <Text style={styles.sectionTitle}>Menu</Text>
-        </View>
-
-        {/* Summary row */}
-        <View style={styles.menuCard}>
-          <Pressable
-            style={({ pressed }) => [styles.menuActionCard, pressed && styles.menuActionPressed]}
-            onPress={() => router.push('/(staff)/menu-manage' as never)}
-            accessibilityRole="button"
-            accessibilityLabel="Edit menu"
-          >
-            <View style={styles.menuActionIcon}>
-              <Ionicons name="restaurant-outline" size={23} color={c.bgBase} />
-            </View>
-            <View style={styles.menuActionBody}>
-              <Text style={styles.menuActionEyebrow}>Menu manager</Text>
-              <Text style={styles.menuActionTitle}>Edit menu</Text>
-              <Text style={styles.menuActionSub}>
-                {menuItems.length} items · Prices, photos, categories
-              </Text>
-            </View>
-            <View style={styles.menuActionPill}>
-              <Text style={styles.menuActionPillText}>Open</Text>
-              <Ionicons name="chevron-forward" size={15} color={c.gold} />
-            </View>
-          </Pressable>
-        </View>
-
         {/* ── Contact ── */}
         <View style={styles.sectionRow}>
           <Text style={styles.sectionTitle}>Contact</Text>
