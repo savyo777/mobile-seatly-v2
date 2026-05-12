@@ -71,7 +71,10 @@ export function mapOwnerRestaurantRow(row: Record<string, unknown>): OwnerRestau
     website: stringOrNull(row.website) || stringOrNull(s.website),
     cuisine: stringOrNull(row.cuisine_type) || stringOrNull(s.cuisine),
     description: stringOrNull(row.description) || stringOrNull(s.description),
-    coverPhotoUrl: stringOrNull(row.hero_image_url) || stringOrNull(row.cover_photo_url),
+    coverPhotoUrl:
+      stringOrNull(row.cover_image_url) ||
+      stringOrNull(row.cover_photo_url) ||
+      stringOrNull(row.hero_image_url),
     logoUrl: stringOrNull(row.logo_url),
     rating: numberOrNull(row.avg_rating) ?? numberOrNull(s.avg_rating),
     reviewCount: numberOrNull(row.review_count) ?? numberOrNull(s.total_reviews),

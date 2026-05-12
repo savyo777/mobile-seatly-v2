@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { View, Text, ScrollView, Pressable, StyleSheet } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
@@ -10,9 +10,9 @@ import {
   type OwnerPromotion,
 } from '@/lib/mock/ownerApp';
 import { isDemoModeEnabled } from '@/lib/config/demoMode';
-
-const OWNER_EVENTS: typeof DEMO_OWNER_EVENTS = isDemoModeEnabled() ? DEMO_OWNER_EVENTS : [];
-const OWNER_PROMOTIONS: typeof DEMO_OWNER_PROMOTIONS = isDemoModeEnabled() ? DEMO_OWNER_PROMOTIONS : [];
+import { useOwnerScope } from '@/hooks/useOwnerScope';
+import { fetchUpcomingEvents, type EventRow } from '@/lib/events/getEvents';
+import { fetchActivePromotions, type PromotionRow } from '@/lib/promotions/getPromotions';
 
 const useStyles = createStyles((c) => ({
   root: { flex: 1, backgroundColor: c.bgBase },
@@ -127,10 +127,95 @@ function promoStatusColors(status: OwnerPromotion['status']): { bg: string; text
   }
 }
 
+function mapEventRow(row: EventRow): OwnerEventRow {
+  const sold = row.tickets_sold ?? 0;
+  const capacity = row.capacity ?? 0;
+  const status: OwnerEventRow['status'] =
+    !row.is_active ? 'draft' : capacity > 0 && sold >= capacity ? 'sold_out' : 'live';
+  let dateLabel = '';
+  if (row.date) {
+    const d = new Date(row.date + (row.start_time ? `T${row.start_time}` : 'T00:00:00'));
+    if (!Number.isNaN(d.getTime())) {
+      dateLabel = d.toLocaleString(undefined, {
+        weekday: 'short',
+        month: 'short',
+        day: 'numeric',
+        hour: 'numeric',
+        minute: '2-digit',
+      });
+    } else {
+      dateLabel = row.date;
+    }
+  }
+  return { id: row.id, title: row.name, dateLabel, rsvp: sold, status };
+}
+
+function mapPromotionRow(row: PromotionRow): OwnerPromotion {
+  const valueStr = row.discount_value != null
+    ? row.discount_unit === 'percentage' || row.promo_type === 'percentage'
+      ? `${row.discount_value}% off`
+      : `$${row.discount_value} off`
+    : '';
+  return {
+    id: row.id,
+    name: row.title,
+    type: (row.promo_type ?? 'percentage_off') as OwnerPromotion['type'],
+    startDate: row.starts_at ?? '',
+    endDate: row.ends_at ?? '',
+    startTime: '',
+    endTime: '',
+    daysOfWeek: [],
+    appliesTo: { dineIn: true, takeout: false, bar: false, patio: false, menuItems: false, guestGroups: false },
+    autoApply: false,
+    description: row.description ?? valueStr,
+    status: row.is_active ? 'live' : 'expired',
+    targetAudience: '',
+    whereApplies: '',
+    analytics: { redemptions: row.current_uses ?? 0, guestsReached: 0, revenueGenerated: 0 },
+    estimatedLiftPct: 0,
+    offerTag: valueStr,
+    coverImage: row.cover_image_url ?? undefined,
+  };
+}
+
 export default function OwnerPromoteScreen() {
   const c = useColors();
   const styles = useStyles();
   const insets = useSafeAreaInsets();
+  const { restaurantIds } = useOwnerScope();
+  const restaurantIdsKey = restaurantIds.join('|');
+  const [liveEvents, setLiveEvents] = useState<OwnerEventRow[]>(
+    isDemoModeEnabled() ? DEMO_OWNER_EVENTS : [],
+  );
+  const [livePromos, setLivePromos] = useState<OwnerPromotion[]>(
+    isDemoModeEnabled() ? DEMO_OWNER_PROMOTIONS : [],
+  );
+
+  useEffect(() => {
+    if (isDemoModeEnabled()) return;
+    if (restaurantIds.length === 0) {
+      setLiveEvents([]);
+      setLivePromos([]);
+      return;
+    }
+    let active = true;
+    void (async () => {
+      const [evRows, prRows] = await Promise.all([
+        fetchUpcomingEvents({ restaurantIds, includePrivate: true }).catch(() => [] as EventRow[]),
+        fetchActivePromotions({ restaurantIds, includePrivate: true }).catch(() => [] as PromotionRow[]),
+      ]);
+      if (!active) return;
+      setLiveEvents(evRows.map(mapEventRow));
+      setLivePromos(prRows.map(mapPromotionRow));
+    })();
+    return () => {
+      active = false;
+    };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [restaurantIdsKey]);
+
+  const events = isDemoModeEnabled() ? DEMO_OWNER_EVENTS : liveEvents;
+  const promos = isDemoModeEnabled() ? DEMO_OWNER_PROMOTIONS : livePromos;
 
   return (
     <View style={styles.root}>
@@ -154,7 +239,7 @@ export default function OwnerPromoteScreen() {
         <View style={styles.sectionPad}>
           <Text style={styles.sectionLabel}>Events</Text>
           <View style={styles.eventsCard}>
-            {OWNER_EVENTS.map((ev, i) => {
+            {events.map((ev, i) => {
               const sc = eventStatusColors(ev.status);
               return (
                 <View key={ev.id} style={[styles.eventRow, i > 0 && styles.eventDivider]}>
@@ -178,7 +263,7 @@ export default function OwnerPromoteScreen() {
         <View style={styles.sectionPad}>
           <Text style={styles.sectionLabel}>Promotions</Text>
           <View style={styles.promoCard}>
-            {OWNER_PROMOTIONS.map((promo, i) => {
+            {promos.map((promo, i) => {
               const sc = promoStatusColors(promo.status);
               return (
                 <View key={promo.id} style={[styles.promoRow, i > 0 && styles.promoDivider]}>

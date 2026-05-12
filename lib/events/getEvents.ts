@@ -33,6 +33,7 @@ const EVENT_FIELDS =
 
 export async function fetchUpcomingEvents(options: {
   restaurantId?: string;
+  restaurantIds?: string[];
   fromDate?: string;
   includePrivate?: boolean;
   limit?: number;
@@ -49,7 +50,11 @@ export async function fetchUpcomingEvents(options: {
     .or(`end_date.gte.${fromDate},date.gte.${fromDate}`)
     .order('date', { ascending: true, nullsFirst: false });
 
-  if (options.restaurantId) query = query.eq('restaurant_id', options.restaurantId);
+  if (options.restaurantIds && options.restaurantIds.length > 0) {
+    query = query.in('restaurant_id', options.restaurantIds);
+  } else if (options.restaurantId) {
+    query = query.eq('restaurant_id', options.restaurantId);
+  }
   if (!options.includePrivate) query = query.eq('is_private', false);
   if (options.limit && options.limit > 0) query = query.limit(options.limit);
 

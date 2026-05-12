@@ -8,7 +8,7 @@ import { SubpageHeader } from '@/components/owner/SubpageHeader';
 import { OWNER_EVENTS as DEMO_OWNER_EVENTS } from '@/lib/mock/ownerApp';
 import { isDemoModeEnabled } from '@/lib/config/demoMode';
 import { fetchUpcomingEvents, type EventRow } from '@/lib/events/getEvents';
-import { fetchCurrentUserProfile } from '@/lib/services/userProfile';
+import { useOwnerScope } from '@/hooks/useOwnerScope';
 import { createStyles } from '@/lib/theme';
 import { ownerColorsFromPalette, ownerRadii } from '@/lib/theme/ownerTheme';
 
@@ -51,15 +51,18 @@ export default function OwnerEventsScreen() {
   const { t } = useTranslation();
   const styles = useStyles();
   const [events, setEvents] = useState<typeof DEMO_OWNER_EVENTS>(INITIAL_OWNER_EVENTS);
+  const { restaurantIds } = useOwnerScope();
+  const restaurantIdsKey = restaurantIds.join('|');
 
   useEffect(() => {
     if (isDemoModeEnabled()) return;
+    if (restaurantIds.length === 0) {
+      setEvents([]);
+      return;
+    }
     let active = true;
     void (async () => {
-      const profile = await fetchCurrentUserProfile().catch(() => null);
-      const restaurantId = profile?.restaurantId ?? null;
-      if (!restaurantId) return;
-      const rows = await fetchUpcomingEvents({ restaurantId, includePrivate: true }).catch(
+      const rows = await fetchUpcomingEvents({ restaurantIds, includePrivate: true }).catch(
         () => [] as EventRow[],
       );
       if (!active) return;
@@ -68,7 +71,8 @@ export default function OwnerEventsScreen() {
     return () => {
       active = false;
     };
-  }, []);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [restaurantIdsKey]);
 
   return (
     <OwnerScreen

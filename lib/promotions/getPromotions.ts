@@ -41,6 +41,7 @@ const PROMOTION_FIELDS =
 
 export async function fetchActivePromotions(options: {
   restaurantId?: string;
+  restaurantIds?: string[];
   includePrivate?: boolean;
   limit?: number;
 } = {}): Promise<PromotionRow[]> {
@@ -56,7 +57,11 @@ export async function fetchActivePromotions(options: {
     .or(`ends_at.is.null,ends_at.gte.${nowIso}`)
     .order('starts_at', { ascending: true, nullsFirst: true });
 
-  if (options.restaurantId) query = query.eq('restaurant_id', options.restaurantId);
+  if (options.restaurantIds && options.restaurantIds.length > 0) {
+    query = query.in('restaurant_id', options.restaurantIds);
+  } else if (options.restaurantId) {
+    query = query.eq('restaurant_id', options.restaurantId);
+  }
   if (!options.includePrivate) query = query.eq('is_private', false);
   if (options.limit && options.limit > 0) query = query.limit(options.limit);
 

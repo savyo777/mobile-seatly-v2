@@ -13,7 +13,7 @@ import {
 } from '@/lib/mock/ownerApp';
 import { isDemoModeEnabled } from '@/lib/config/demoMode';
 import { fetchActivePromotions, type PromotionRow } from '@/lib/promotions/getPromotions';
-import { fetchCurrentUserProfile } from '@/lib/services/userProfile';
+import { useOwnerScope } from '@/hooks/useOwnerScope';
 
 const INITIAL_OWNER_PROMOTIONS: typeof DEMO_OWNER_PROMOTIONS = isDemoModeEnabled()
   ? DEMO_OWNER_PROMOTIONS
@@ -489,15 +489,18 @@ export default function PromosScreen() {
   const insets = useSafeAreaInsets();
   const [tab, setTab] = useState<Tab>('active');
   const [promotions, setPromotions] = useState<typeof DEMO_OWNER_PROMOTIONS>(INITIAL_OWNER_PROMOTIONS);
+  const { restaurantIds } = useOwnerScope();
+  const restaurantIdsKey = restaurantIds.join('|');
 
   useEffect(() => {
     if (isDemoModeEnabled()) return;
+    if (restaurantIds.length === 0) {
+      setPromotions([]);
+      return;
+    }
     let active = true;
     void (async () => {
-      const profile = await fetchCurrentUserProfile().catch(() => null);
-      const restaurantId = profile?.restaurantId ?? null;
-      if (!restaurantId) return;
-      const rows = await fetchActivePromotions({ restaurantId, includePrivate: true }).catch(
+      const rows = await fetchActivePromotions({ restaurantIds, includePrivate: true }).catch(
         () => [] as PromotionRow[],
       );
       if (!active) return;
@@ -506,7 +509,8 @@ export default function PromosScreen() {
     return () => {
       active = false;
     };
-  }, []);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [restaurantIdsKey]);
 
   const activeList = useMemo(() => promotions.filter(isActive), [promotions]);
   const pastList = useMemo(() => promotions.filter(isPast), [promotions]);
