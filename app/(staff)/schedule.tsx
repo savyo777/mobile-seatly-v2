@@ -1,5 +1,6 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import {
+  ActivityIndicator,
   View,
   Text,
   ScrollView,
@@ -18,6 +19,12 @@ import {
   type TonightBadge,
 } from '@/lib/mock/ownerApp';
 import { isDemoModeEnabled } from '@/lib/config/demoMode';
+import { useOwnerScope } from '@/hooks/useOwnerScope';
+import { RestaurantPicker } from '@/components/owner/RestaurantPicker';
+import {
+  fetchTonightBriefing,
+  fetchTonightGuests,
+} from '@/lib/owner/tonightBriefing';
 
 const EMPTY_TONIGHT_BRIEFING: typeof DEMO_TONIGHT_BRIEFING = {
   status: 'quiet',
@@ -37,10 +44,6 @@ const EMPTY_TONIGHT_BRIEFING: typeof DEMO_TONIGHT_BRIEFING = {
   bookedSeats: 0,
   openSeats: 0,
 };
-const TONIGHT_BRIEFING: typeof DEMO_TONIGHT_BRIEFING = isDemoModeEnabled()
-  ? DEMO_TONIGHT_BRIEFING
-  : EMPTY_TONIGHT_BRIEFING;
-const TONIGHT_GUESTS: typeof DEMO_TONIGHT_GUESTS = isDemoModeEnabled() ? DEMO_TONIGHT_GUESTS : [];
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
 function initials(name: string): string {
@@ -226,6 +229,24 @@ const useStyles = createStyles((c) => ({
   walkLegendItem: { flexDirection: 'row', alignItems: 'center', gap: 5 },
   walkLegendSwatch: { width: 10, height: 10, borderRadius: 2 },
   walkLegendText: { fontSize: 12, fontWeight: '600', color: c.textMuted },
+
+  // Scope picker + empty/loading states
+  pickerWrap: { paddingHorizontal: spacing.lg, paddingBottom: spacing.sm },
+  ctaCard: {
+    marginHorizontal: spacing.lg, marginBottom: spacing.lg,
+    borderRadius: borderRadius.xl, backgroundColor: c.bgSurface,
+    borderWidth: StyleSheet.hairlineWidth, borderColor: c.border,
+    padding: spacing.lg,
+    alignItems: 'center', gap: spacing.md,
+  },
+  ctaText: {
+    fontSize: 14, color: c.textMuted, fontWeight: '500',
+    textAlign: 'center',
+  },
+  loadingWrap: {
+    paddingVertical: spacing.xl,
+    alignItems: 'center',
+  },
 }));
 
 // ── Component ────────────────────────────────────────────────────────────────
@@ -237,7 +258,56 @@ export default function TonightScreen() {
   const { width: screenW } = useWindowDimensions();
   const trackW = screenW - spacing.lg * 2 - spacing.lg * 2; // card margins + padding
 
-  const b = TONIGHT_BRIEFING;
+  const { selectedRestaurantId, isAll } = useOwnerScope();
+  const demo = isDemoModeEnabled();
+
+  const [briefing, setBriefing] = useState<typeof DEMO_TONIGHT_BRIEFING>(
+    demo ? DEMO_TONIGHT_BRIEFING : EMPTY_TONIGHT_BRIEFING,
+  );
+  const [guests, setGuests] = useState<TonightGuest[]>(
+    demo ? DEMO_TONIGHT_GUESTS : [],
+  );
+  const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    // Demo mode: keep the mock seed; do not hit Supabase.
+    if (demo) {
+      setBriefing(DEMO_TONIGHT_BRIEFING);
+      setGuests(DEMO_TONIGHT_GUESTS);
+      return;
+    }
+    // "All restaurants" mode renders a CTA instead of computing a briefing.
+    if (isAll || !selectedRestaurantId) {
+      setBriefing(EMPTY_TONIGHT_BRIEFING);
+      setGuests([]);
+      return;
+    }
+    let active = true;
+    setLoading(true);
+    Promise.all([
+      fetchTonightBriefing(selectedRestaurantId),
+      fetchTonightGuests(selectedRestaurantId),
+    ])
+      .then(([nextBriefing, nextGuests]) => {
+        if (!active) return;
+        setBriefing(nextBriefing ?? EMPTY_TONIGHT_BRIEFING);
+        setGuests(nextGuests);
+      })
+      .catch(() => {
+        if (!active) return;
+        setBriefing(EMPTY_TONIGHT_BRIEFING);
+        setGuests([]);
+      })
+      .finally(() => {
+        if (!active) return;
+        setLoading(false);
+      });
+    return () => {
+      active = false;
+    };
+  }, [demo, isAll, selectedRestaurantId]);
+
+  const b = briefing;
   const runwayFrac = Math.min(1, b.runwayMin / 90); // runway as fraction of 90 min max
 
   function GuestBadge({ badge, partySize }: { badge: TonightBadge; partySize: number }) {
@@ -263,10 +333,34 @@ export default function TonightScreen() {
             <View style={styles.kickerDot} />
             <Text style={styles.kickerText}>TONIGHT · {dayLabel()}</Text>
           </View>
-          <Text style={styles.pageTitle}>{b.headline}</Text>
+          <Text style={styles.pageTitle}>
+            {b.headline || (isAll && !demo ? 'Tonight' : '')}
+          </Text>
           <Text style={styles.pageSub}>Pre-service briefing</Text>
         </View>
 
+        {/* ── Restaurant picker (multi-restaurant owners only) ── */}
+        <View style={styles.pickerWrap}>
+          <RestaurantPicker allowAll={false} size="compact" />
+        </View>
+
+        {isAll && !demo ? (
+          <View style={styles.ctaCard}>
+            <Ionicons name="storefront-outline" size={24} color={c.gold} />
+            <Text style={styles.ctaText}>
+              Pick a restaurant to see tonight&apos;s briefing.
+            </Text>
+          </View>
+        ) : null}
+
+        {loading && !demo ? (
+          <View style={styles.loadingWrap}>
+            <ActivityIndicator color={c.gold} />
+          </View>
+        ) : null}
+
+        {!isAll || demo ? (
+        <>
         {/* ── Status card ── */}
         <View style={styles.statusCard}>
           <View style={styles.statusBadgeRow}>
@@ -332,9 +426,9 @@ export default function TonightScreen() {
         </View>
 
         {/* ── Guests to know ── */}
-        <Text style={styles.sectionLabel}>Guests to know · {TONIGHT_GUESTS.length}</Text>
+        <Text style={styles.sectionLabel}>Guests to know · {guests.length}</Text>
         <View style={styles.guestsCard}>
-          {TONIGHT_GUESTS.map((guest: TonightGuest, index: number) => (
+          {guests.map((guest: TonightGuest, index: number) => (
             <Pressable
               key={guest.id}
               style={({ pressed }) => [
@@ -388,6 +482,8 @@ export default function TonightScreen() {
             </View>
           </View>
         </View>
+        </>
+        ) : null}
       </ScrollView>
     </View>
   );
