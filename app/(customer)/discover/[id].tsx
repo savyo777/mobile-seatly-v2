@@ -669,7 +669,9 @@ export default function RestaurantDetailScreen() {
   const [reviews, setReviews] = useState<RestaurantPublicReviewRow[]>([]);
 
   useEffect(() => {
-    const targetId = isPreview ? null : restaurant?.id ?? null;
+    // Preview should mirror exactly what a real diner sees, so we fetch
+    // the published menu_items rows regardless of preview mode.
+    const targetId = restaurant?.id ?? null;
     if (!targetId) {
       setMenuCategories([]);
       setPublicMenuItems([]);
@@ -702,10 +704,12 @@ export default function RestaurantDetailScreen() {
     return () => {
       active = false;
     };
-  }, [isPreview, restaurant?.id]);
+  }, [restaurant?.id]);
 
   useEffect(() => {
-    const targetId = isPreview ? null : restaurant?.id ?? null;
+    // Preview should mirror the diner view 1:1, so fetch reviews even when
+    // isPreview is true.
+    const targetId = restaurant?.id ?? null;
     if (!targetId) {
       setReviews([]);
       return;
@@ -725,7 +729,7 @@ export default function RestaurantDetailScreen() {
     return () => {
       active = false;
     };
-  }, [isPreview, restaurant?.id]);
+  }, [restaurant?.id]);
 
   const categoryNameById = useMemo(
     () => new Map(menuCategories.map((category) => [category.id, category.name])),
@@ -733,15 +737,20 @@ export default function RestaurantDetailScreen() {
   );
 
   const menuItems = useMemo<DisplayMenuItem[]>(() => {
-    if (isPreview) {
-      return ownerMenuItems
-        .map(displayMenuItemFromMock)
-        .sort((a, b) => a.category.localeCompare(b.category) || a.sortOrder - b.sortOrder || a.name.localeCompare(b.name));
-    }
-
+    // Preview shows the same published menu_items the diner sees, so the
+    // owner can verify their changes after Save instead of looking at a
+    // local draft that may not be persisted.
     if (publicMenuItems.length) {
       return publicMenuItems
         .map((item) => displayMenuItemFromPublic(item, categoryNameById))
+        .sort((a, b) => a.category.localeCompare(b.category) || a.sortOrder - b.sortOrder || a.name.localeCompare(b.name));
+    }
+
+    if (isPreview) {
+      // Demo / unseeded fallback: show the owner's local menu draft so
+      // the preview isn't empty in demo mode.
+      return ownerMenuItems
+        .map(displayMenuItemFromMock)
         .sort((a, b) => a.category.localeCompare(b.category) || a.sortOrder - b.sortOrder || a.name.localeCompare(b.name));
     }
 
