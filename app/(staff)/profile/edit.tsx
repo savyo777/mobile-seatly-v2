@@ -35,6 +35,7 @@ import {
   fetchRestaurantShifts,
   type RestaurantShift,
 } from '@/lib/owner/restaurantShifts';
+import { saveRestaurantHours, time12hToDbString } from '@/lib/owner/saveRestaurantHours';
 
 const EMPTY_OWNER_BUSINESS_PROFILE: typeof DEMO_OWNER_BUSINESS_PROFILE = {
   name: '',
@@ -712,7 +713,26 @@ export default function EditBusinessProfileScreen() {
     );
     let active = true;
     void fetchRestaurantShifts(selectedRestaurant.id).then((rows) => {
-      if (active) setShifts(rows);
+      if (!active) return;
+      setShifts(rows);
+      // Seed the per-day editor from the weekly view.
+      // BusinessHoursRow uses UI day 0=Mon..6=Sun; buildWeeklyHours returns
+      // entries in Mon..Sun order keyed by DB day (0=Sun..6=Sat).
+      const weekly = buildWeeklyHours(rows);
+      const nextHours: BusinessHoursRow[] = weekly.map((w, idx) => {
+        const firstWindow = w.windows[0] ?? '';
+        const [openStr = '', closeStr = ''] = firstWindow.split('–').map((p) => p.trim());
+        const open12 = openStr || null;
+        const close12 = closeStr || null;
+        return {
+          day: idx,
+          label: w.dayLabel,
+          open: open12,
+          close: close12,
+        };
+      });
+      setHours(nextHours);
+      setOpenDays(weekly.map((w) => !w.isClosed));
     });
     return () => {
       active = false;
@@ -874,6 +894,19 @@ export default function EditBusinessProfileScreen() {
         turnTimeMinutes,
       });
 
+      // Sync hours back to the shifts table. UI day index is 0=Mon..6=Sun;
+      // the shifts table uses 0=Sun..6=Sat, so we shift by +1 mod 7.
+      await saveRestaurantHours({
+        restaurantId,
+        turnTimeMinutes,
+        days: hours.map((h, i) => ({
+          dayIndex: (h.day + 1) % 7,
+          isOpen: openDays[i] && Boolean(h.open) && Boolean(h.close),
+          startTime: time12hToDbString(h.open),
+          endTime: time12hToDbString(h.close),
+        })),
+      });
+
       Alert.alert('Saved', 'Business profile updated.', [
         { text: 'OK', onPress: () => router.back() },
       ]);
@@ -1007,31 +1040,28 @@ export default function EditBusinessProfileScreen() {
           <FieldInput label="Address" value={address} onChangeText={setAddress} divider multiline />
         </View>
 
-        {/* ── Hours of operation (live; one row per day, Mon..Sun) ── */}
+        {/* ── Hours of operation (editable; one row per day Mon..Sun) ── */}
         <SectionHeader title="Hours of operation" />
         <View style={styles.card}>
-          {buildWeeklyHours(shifts).map((row, i) => (
-            <View
-              key={row.dayIndex}
-              style={[styles.dayRow, i > 0 && styles.fieldDivider]}
-            >
-              <Text style={styles.dayLabel}>{row.dayLabel}</Text>
-              <View style={styles.dayValueCol}>
-                {row.isClosed ? (
-                  <Text style={styles.dayClosed}>Closed</Text>
-                ) : (
-                  row.windows.map((w) => (
-                    <Text key={w} style={styles.dayHours}>
-                      {w}
-                    </Text>
-                  ))
-                )}
-              </View>
-            </View>
+          {hours.map((h, i) => (
+            <HoursRowEditor
+              key={h.day}
+              row={h}
+              isOpen={openDays[i]}
+              onToggle={(v) => toggleDay(i, v)}
+              onPickTime={(field) =>
+                openTimePicker(
+                  `${h.label} · ${field === 'open' ? 'Opening' : 'Closing'} time`,
+                  (field === 'open' ? h.open : h.close) ?? '5:00 PM',
+                  (v) => updateHour(i, field, v),
+                )
+              }
+              divider={i > 0}
+            />
           ))}
         </View>
         <Text style={styles.photoHint}>
-          Hours come from your shifts. Edit them in Business hours.
+          Tap a day to toggle open/closed. Times save to the shifts table on Save changes.
         </Text>
 
         {/* ── Turn time (restaurant-level default) ── */}
