@@ -293,6 +293,13 @@ export async function getAvailability(params: {
       unavailable_reason?: string | null;
     } | null;
     try {
+      // NOTE (Phase 3a): a client-side port of this RPC lives at
+      // `lib/booking/slotGenerator.ts:generateAvailabilitySlots`. It is NOT
+      // wired here because the customer booking flow runs as the anon role
+      // (or as a non-staff signed-in customer) and RLS on `reservations`
+      // hides other users' bookings, which would silently report taken
+      // slots as available. The helper is safe for staff previews; swap
+      // this call only after verifying byte-identical output to the RPC.
       const { data, error } = await supabase.rpc('get_available_slots_cached', {
         p_restaurant_id: params.restaurantId,
         p_date: params.date,
@@ -494,6 +501,13 @@ export async function getAvailableDates(params: {
   const cached = availableDatesCache.get(cacheKey);
   if (cached && cached.expiresAt > Date.now()) return cached.value;
   try {
+    // NOTE (Phase 3a): a client-side port lives at
+    // `lib/booking/availableDates.ts:findAvailableDates`. It is NOT wired
+    // here for the same RLS reason as `get_available_slots_cached` above —
+    // the underlying slot generator can't see other users' reservations
+    // from a non-staff session, so dates with no truly-free slots would
+    // appear available. Safe for staff previews; do not swap until the
+    // anon-role visibility gap is addressed.
     const { data, error } = await supabase.rpc('restaurant_available_dates', {
       p_restaurant_id: params.restaurantId,
       p_party_size: partySize,
