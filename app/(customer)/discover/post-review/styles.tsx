@@ -17,6 +17,7 @@ import type { ImageLoadEventData } from 'expo-image';
 import { useLocalSearchParams, useRouter, type Href } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { LinearGradient } from 'expo-linear-gradient';
 import { Button, ScreenWrapper } from '@/components/ui';
 import { StoryFilterFrame } from '@/components/storyFilters/StoryFilterFrame';
 import { STORY_FILTERS } from '@/lib/storyFilters/registry';
@@ -38,6 +39,20 @@ import {
   getSnapPreviewLayout,
 } from '@/lib/storyFilters/previewLayout';
 import { useColors, createStyles, borderRadius, spacing, typography } from '@/lib/theme';
+
+const CARD_W = 76;
+const CARD_H = 102;
+const CARD_DESIGN_W = 224;
+const CARD_DESIGN_H = 398;
+const CARD_SCALE = CARD_W / CARD_DESIGN_W;
+
+const CATEGORY_GRADIENT: Record<StoryFilterCategory, [string, string]> = {
+  cute:     ['#fde8ea', '#f4aec0'],
+  playful:  ['#fef6ec', '#f5c29a'],
+  fancy:    ['#fdf8ed', '#e8c464'],
+  food:     ['#fff4e2', '#f5a454'],
+  location: ['#eaf3fc', '#9ab8d8'],
+};
 
 const useStyles = createStyles((c) => ({
   flex: { flex: 1 },
@@ -113,41 +128,107 @@ const useStyles = createStyles((c) => ({
   catChipTextOn: {
     color: c.gold,
   },
-  overlayScroll: {
-    maxHeight: 120,
+  filterCarousel: {
     paddingLeft: spacing.md,
-    paddingBottom: spacing.sm,
+    paddingBottom: spacing.xs,
   },
-  overlayChip: {
-    paddingHorizontal: 12,
-    paddingVertical: 10,
-    borderRadius: borderRadius.md,
-    borderWidth: 1,
-    borderColor: c.border,
-    backgroundColor: c.bgSurface,
-    marginRight: 8,
-    maxWidth: 160,
+  filterCarouselContent: {
+    paddingRight: spacing.md,
+    gap: 10,
+    alignItems: 'flex-start',
   },
-  overlayChipOn: {
+  filterCard: {
+    width: CARD_W,
+    height: CARD_H,
+    borderRadius: 14,
+    overflow: 'hidden',
+    borderWidth: 2,
+    borderColor: 'rgba(255,255,255,0.08)',
+    backgroundColor: '#1a140e',
+    shadowColor: '#c9784a',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.18,
+    shadowRadius: 8,
+    elevation: 3,
+  },
+  filterCardOn: {
     borderColor: c.gold,
-    backgroundColor: 'rgba(201,168,76,0.1)',
+    shadowOpacity: 0.42,
   },
-  overlayChipText: {
-    ...typography.bodySmall,
-    fontWeight: '600',
-    color: c.textSecondary,
+  filterCardOverlay: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    width: CARD_DESIGN_W,
+    height: CARD_DESIGN_H,
+    transform: [{ scale: CARD_SCALE }],
+    transformOrigin: 'top left',
   },
-  overlayChipTextOn: {
-    color: c.gold,
-  },
-  noneChip: {
-    paddingHorizontal: 14,
-    paddingVertical: 10,
-    borderRadius: borderRadius.md,
+  filterCardNone: {
+    position: 'absolute',
+    top: 8,
+    left: 8,
+    right: 8,
+    bottom: 8,
     borderWidth: 1,
     borderStyle: 'dashed',
-    borderColor: c.border,
-    marginRight: 8,
+    borderColor: 'rgba(255,255,255,0.28)',
+    borderRadius: 8,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  filterCardNoneText: {
+    fontSize: 8,
+    letterSpacing: 1.5,
+    textTransform: 'uppercase',
+    color: 'rgba(255,255,255,0.38)',
+    fontWeight: '500',
+  },
+  filterCardBadge: {
+    position: 'absolute',
+    top: 6,
+    right: 6,
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(255,255,255,0.58)',
+    borderRadius: 999,
+    paddingHorizontal: 5,
+    paddingVertical: 2,
+    borderWidth: 0.5,
+    borderColor: 'rgba(255,255,255,0.72)',
+    zIndex: 10,
+  },
+  filterCardBadgeBy: {
+    fontSize: 7.5,
+    fontStyle: 'italic',
+    color: 'rgba(58,40,40,0.82)',
+    letterSpacing: 0.1,
+  },
+  filterCardBadgeLabel: {
+    fontSize: 7.5,
+    fontWeight: '700',
+    color: 'rgba(58,40,40,0.82)',
+    letterSpacing: 0.3,
+  },
+  filterCardName: {
+    marginTop: 5,
+    fontSize: 10.5,
+    fontWeight: '600',
+    color: c.textPrimary,
+    letterSpacing: -0.1,
+    width: CARD_W,
+  },
+  filterCardNameOn: {
+    color: c.gold,
+    fontWeight: '700',
+  },
+  filterCardTag: {
+    fontSize: 8.5,
+    color: c.textMuted,
+    letterSpacing: 0.5,
+    textTransform: 'uppercase',
+    marginTop: 1,
+    width: CARD_W,
   },
   footer: {
     borderTopWidth: StyleSheet.hairlineWidth,
@@ -426,33 +507,63 @@ export default function SnapStylesScreen() {
           <ScrollView
             horizontal
             showsHorizontalScrollIndicator={false}
-            style={styles.overlayScroll}
-            contentContainerStyle={{ paddingRight: spacing.md }}
+            style={styles.filterCarousel}
+            contentContainerStyle={styles.filterCarouselContent}
           >
+            {/* Original — no filter */}
             <Pressable
               onPress={() => setFilterId(null)}
-              style={[styles.noneChip, !filterId && styles.overlayChipOn]}
+              style={({ pressed }) => [pressed && { opacity: 0.82 }]}
             >
-              <Text
-                style={[
-                  styles.overlayChipText,
-                  !filterId && styles.overlayChipTextOn,
-                ]}
-              >
+              <View style={[styles.filterCard, !filterId && styles.filterCardOn]}>
+                <LinearGradient
+                  colors={['#2c2218', '#100c08']}
+                  style={StyleSheet.absoluteFillObject}
+                />
+                <View style={styles.filterCardNone}>
+                  <Text style={styles.filterCardNoneText}>none</Text>
+                </View>
+                <View style={styles.filterCardBadge}>
+                  <Text style={styles.filterCardBadgeBy}>by </Text>
+                  <Text style={styles.filterCardBadgeLabel}>Cenaiva</Text>
+                </View>
+              </View>
+              <Text style={[styles.filterCardName, !filterId && styles.filterCardNameOn]} numberOfLines={1}>
                 Original
               </Text>
             </Pressable>
-            {filterOptions.map((o) => {
-              const on = o.id === filterId;
+
+            {filterOptions.map((entry) => {
+              const on = entry.id === filterId;
+              const gradient = CATEGORY_GRADIENT[entry.category];
               return (
                 <Pressable
-                  key={o.id}
-                  onPress={() => setFilterId(o.id)}
-                  style={[styles.overlayChip, on && styles.overlayChipOn]}
+                  key={entry.id}
+                  onPress={() => setFilterId(on ? null : entry.id)}
+                  style={({ pressed }) => [pressed && { opacity: 0.82 }]}
                 >
-                  <Text style={[styles.overlayChipText, on && styles.overlayChipTextOn]} numberOfLines={2}>
-                    {o.name}
+                  <View style={[styles.filterCard, on && styles.filterCardOn]}>
+                    <LinearGradient
+                      colors={gradient}
+                      start={{ x: 0.5, y: 0 }}
+                      end={{ x: 0.5, y: 1 }}
+                      style={StyleSheet.absoluteFillObject}
+                    />
+                    <View pointerEvents="none" style={styles.filterCardOverlay}>
+                      <entry.Component
+                        width={CARD_DESIGN_W}
+                        height={CARD_DESIGN_H}
+                      />
+                    </View>
+                    <View style={styles.filterCardBadge}>
+                      <Text style={styles.filterCardBadgeBy}>by </Text>
+                      <Text style={styles.filterCardBadgeLabel}>Cenaiva</Text>
+                    </View>
+                  </View>
+                  <Text style={[styles.filterCardName, on && styles.filterCardNameOn]} numberOfLines={2}>
+                    {entry.name}
                   </Text>
+                  <Text style={styles.filterCardTag}>{entry.shortLabel}</Text>
                 </Pressable>
               );
             })}
