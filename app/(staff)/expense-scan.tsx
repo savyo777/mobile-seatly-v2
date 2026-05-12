@@ -7,7 +7,6 @@ import {
   View,
 } from 'react-native';
 import { CameraView, useCameraPermissions } from 'expo-camera';
-import * as ImagePicker from 'expo-image-picker';
 import * as Haptics from 'expo-haptics';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
@@ -49,32 +48,13 @@ export default function ExpenseScanScreen() {
         uri: photo.uri,
         base64: photo.base64,
         mimeType: 'image/jpeg',
+        source: 'camera',
       });
       router.replace('/(staff)/expense-review');
     } catch {
       setCapturing(false);
     }
   }, [capturing, router]);
-
-  const handlePickFromLibrary = useCallback(async () => {
-    const lib = await ImagePicker.requestMediaLibraryPermissionsAsync();
-    if (!lib.granted) return;
-    const result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ImagePicker.MediaTypeOptions.Images,
-      base64: true,
-      quality: 0.7,
-      allowsEditing: false,
-    });
-    if (result.canceled || !result.assets?.[0]) return;
-    const asset = result.assets[0];
-    if (!asset.base64 || !asset.uri) return;
-    setPendingScan({
-      uri: asset.uri,
-      base64: asset.base64,
-      mimeType: asset.mimeType ?? 'image/jpeg',
-    });
-    router.replace('/(staff)/expense-review');
-  }, [router]);
 
   if (!permission) {
     return <View style={styles.root} />;
@@ -130,9 +110,7 @@ export default function ExpenseScanScreen() {
         style={styles.bottomGradient}
       />
       <View style={[styles.bottomBar, { paddingBottom: insets.bottom + 24 }]}>
-        <Pressable style={styles.sideButton} onPress={handlePickFromLibrary} hitSlop={8}>
-          <Ionicons name="images-outline" size={22} color="#fff" />
-        </Pressable>
+        <View style={styles.sideButton} />
 
         <Pressable
           style={styles.shutterRing}

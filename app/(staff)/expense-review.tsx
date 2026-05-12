@@ -13,7 +13,7 @@ import {
 import { Image } from 'expo-image';
 import * as Haptics from 'expo-haptics';
 import { Ionicons } from '@expo/vector-icons';
-import { useRouter } from 'expo-router';
+import { useLocalSearchParams, useRouter } from 'expo-router';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { OwnerScreen } from '@/components/owner/OwnerScreen';
@@ -73,10 +73,14 @@ export default function ExpenseReviewScreen() {
   const insets = useSafeAreaInsets();
   const ownerColors = useOwnerColors();
   const styles = useStyles();
+  const params = useLocalSearchParams<{ mode?: string }>();
+  const isManual = params.mode === 'manual';
   const { ownerRestaurantId, addExpense, addLocalExpense, patchExpense } = useExpenses();
 
   const [scan, setScan] = useState<PendingScan | null>(null);
-  const [scanning, setScanning] = useState(true);
+  // Manual mode skips the AI extraction entirely, so the form starts
+  // editable immediately (no shimmer).
+  const [scanning, setScanning] = useState(!isManual);
   const [extractedFields, setExtractedFields] = useState<Set<ExpenseDraftFieldKey>>(new Set());
   const [saving, setSaving] = useState(false);
   const [datePickerOpen, setDatePickerOpen] = useState(false);
@@ -88,16 +92,18 @@ export default function ExpenseReviewScreen() {
   const [category, setCategory] = useState<ExpenseCategoryKey>('other');
   const [notes, setNotes] = useState('');
 
-  // Pull the captured image once on mount; if there isn't one (deep-link
-  // edge case), bail back to the camera.
+  // Pull the captured image once on mount. For attachment mode (camera /
+  // file) we expect a pending payload; if it's missing we bail back to
+  // the entry point. Manual mode skips this step entirely.
   useEffect(() => {
+    if (isManual) return;
     const next = consumePendingScan();
     if (!next) {
-      router.replace('/(staff)/expense-scan');
+      router.replace('/(staff)/expenses' as never);
       return;
     }
     setScan(next);
-  }, [router]);
+  }, [router, isManual]);
 
   // Once we have the scan, kick off the AI extraction. The finally block is
   // critical: scanReceipt can throw or hang (network failure, missing edge
@@ -165,6 +171,11 @@ export default function ExpenseReviewScreen() {
     router.replace('/(staff)/expense-scan');
   }, [router]);
 
+  // Title/subtitle shown in the header. Manual mode advertises a fresh
+  // form; attachment mode still talks about reading the receipt because
+  // the AI extractor is running underneath.
+  const headerTitle = isManual ? 'New expense' : 'Review receipt';
+
   const handleSave = useCallback(async () => {
     if (saving) return;
     if (!vendor.trim()) {
@@ -173,7 +184,7 @@ export default function ExpenseReviewScreen() {
     }
     const amount = parseDollarsInput(subtotal);
     if (amount == null || amount < 0) {
-      Alert.alert('Missing amount', 'Enter the subtotal on the receipt.');
+      Alert.alert('Missing amount', 'Enter how much the expense was for.');
       return;
     }
 
@@ -321,8 +332,10 @@ export default function ExpenseReviewScreen() {
               <Ionicons name="chevron-back" size={26} color={ownerColors.gold} />
             </Pressable>
             <View style={styles.headText}>
-              <Text style={styles.title}>Review receipt</Text>
-              {scanning ? (
+              <Text style={styles.title}>{headerTitle}</Text>
+              {isManual ? (
+                <Text style={styles.subtitle}>Enter the details below.</Text>
+              ) : scanning ? (
                 <Text style={styles.subtitle}>Reading your receipt…</Text>
               ) : headerCount > 0 ? (
                 <Text style={styles.subtitle}>
@@ -336,30 +349,36 @@ export default function ExpenseReviewScreen() {
           </Animated.View>
 
           <ScrollView keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false}>
-            <GlassCard style={styles.previewCard}>
-              <View style={styles.previewRow}>
-                {previewSource ? (
-                  <View style={styles.previewImageWrap}>
-                    <Image source={previewSource} style={styles.previewImage} contentFit="cover" />
-                    <ScanShimmer active={scanning} />
+            {!isManual ? (
+              <GlassCard style={styles.previewCard}>
+                <View style={styles.previewRow}>
+                  {previewSource ? (
+                    <View style={styles.previewImageWrap}>
+                      <Image source={previewSource} style={styles.previewImage} contentFit="cover" />
+                      <ScanShimmer active={scanning} />
+                    </View>
+                  ) : (
+                    <View style={styles.previewImageWrap} />
+                  )}
+                  <View style={styles.previewMeta}>
+                    <Text style={styles.previewMetaTitle}>
+                      {scan?.source === 'file' ? 'Uploaded' : 'Captured'}
+                    </Text>
+                    <Text style={styles.previewMetaBody}>
+                      {scanning
+                        ? 'Cenaiva AI is extracting receipt details…'
+                        : 'Edit any field below. Save when it looks right.'}
+                    </Text>
+                    {scan?.source === 'file' ? null : (
+                      <Pressable onPress={handleRescan} style={styles.rescanBtn}>
+                        <Ionicons name="camera-outline" size={14} color={ownerColors.gold} />
+                        <Text style={styles.rescanText}>Re-shoot</Text>
+                      </Pressable>
+                    )}
                   </View>
-                ) : (
-                  <View style={styles.previewImageWrap} />
-                )}
-                <View style={styles.previewMeta}>
-                  <Text style={styles.previewMetaTitle}>Captured</Text>
-                  <Text style={styles.previewMetaBody}>
-                    {scanning
-                      ? 'Cenaiva AI is extracting receipt details…'
-                      : 'Edit any field below. Save when it looks right.'}
-                  </Text>
-                  <Pressable onPress={handleRescan} style={styles.rescanBtn}>
-                    <Ionicons name="camera-outline" size={14} color={ownerColors.gold} />
-                    <Text style={styles.rescanText}>Re-shoot</Text>
-                  </Pressable>
                 </View>
-              </View>
-            </GlassCard>
+              </GlassCard>
+            ) : null}
 
             {fieldLabel('Vendor', 'vendor')}
             <TextInput
@@ -391,7 +410,7 @@ export default function ExpenseReviewScreen() {
               <Ionicons name="calendar-outline" size={18} color={ownerColors.gold} />
             </Pressable>
 
-            {fieldLabel('Subtotal', 'amount')}
+            {fieldLabel(isManual ? 'Amount' : 'Subtotal', 'amount')}
             <TextInput
               value={subtotal}
               onChangeText={(v) => {
@@ -461,7 +480,7 @@ export default function ExpenseReviewScreen() {
       <MonthCalendar
         visible={datePickerOpen}
         value={expenseDate}
-        title="Receipt date"
+        title={isManual ? 'Expense date' : 'Receipt date'}
         onClose={() => setDatePickerOpen(false)}
         onConfirm={(iso) => {
           setExpenseDate(iso);
