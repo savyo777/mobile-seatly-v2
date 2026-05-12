@@ -31,9 +31,8 @@ import { useOwnerScope } from '@/hooks/useOwnerScope';
 import { uploadRestaurantPhoto } from '@/lib/owner/uploadRestaurantPhoto';
 import { saveRestaurantProfile } from '@/lib/owner/saveRestaurantProfile';
 import {
+  buildWeeklyHours,
   fetchRestaurantShifts,
-  formatDaysOfWeek,
-  formatShiftWindow,
   type RestaurantShift,
 } from '@/lib/owner/restaurantShifts';
 
@@ -181,6 +180,35 @@ const useStyles = createStyles((c) => ({
     color: c.textMuted,
     marginBottom: spacing.md,
     paddingHorizontal: 2,
+  },
+  dayRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    justifyContent: 'space-between',
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.md,
+    gap: spacing.md,
+  },
+  dayLabel: {
+    fontSize: 14,
+    fontWeight: '700',
+    color: c.textPrimary,
+    minWidth: 92,
+  },
+  dayValueCol: {
+    flex: 1,
+    alignItems: 'flex-end',
+    gap: 2,
+  },
+  dayHours: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: c.textPrimary,
+  },
+  dayClosed: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: c.textMuted,
   },
   galleryRow: {
     flexDirection: 'row',
@@ -979,36 +1007,32 @@ export default function EditBusinessProfileScreen() {
           <FieldInput label="Address" value={address} onChangeText={setAddress} divider multiline />
         </View>
 
-        {/* ── Hours (live from shifts table) ── */}
-        <SectionHeader title="Hours" />
+        {/* ── Hours of operation (live; one row per day, Mon..Sun) ── */}
+        <SectionHeader title="Hours of operation" />
         <View style={styles.card}>
-          {shifts.length === 0 ? (
-            <View style={styles.fieldRow}>
-              <Text style={styles.fieldLabel}>No shifts configured yet.</Text>
-              <Text style={styles.photoHint}>
-                Add shifts in Business hours to control when guests can book.
-              </Text>
-            </View>
-          ) : (
-            shifts.map((s, i) => (
-              <View
-                key={s.id}
-                style={[styles.fieldRow, i > 0 && styles.fieldDivider]}
-              >
-                <Text style={styles.fieldLabel}>
-                  {(s.displayName || s.name || 'Service').toUpperCase()}
-                  {!s.isActive ? ' · INACTIVE' : ''}
-                </Text>
-                <Text style={styles.input}>
-                  {formatDaysOfWeek(s.daysOfWeek)} · {formatShiftWindow(s.startTime, s.endTime)}
-                </Text>
-                {s.turnTimeMinutes != null ? (
-                  <Text style={styles.photoHint}>{s.turnTimeMinutes} min turn time</Text>
-                ) : null}
+          {buildWeeklyHours(shifts).map((row, i) => (
+            <View
+              key={row.dayIndex}
+              style={[styles.dayRow, i > 0 && styles.fieldDivider]}
+            >
+              <Text style={styles.dayLabel}>{row.dayLabel}</Text>
+              <View style={styles.dayValueCol}>
+                {row.isClosed ? (
+                  <Text style={styles.dayClosed}>Closed</Text>
+                ) : (
+                  row.windows.map((w) => (
+                    <Text key={w} style={styles.dayHours}>
+                      {w}
+                    </Text>
+                  ))
+                )}
               </View>
-            ))
-          )}
+            </View>
+          ))}
         </View>
+        <Text style={styles.photoHint}>
+          Hours come from your shifts. Edit them in Business hours.
+        </Text>
 
         {/* ── Turn time (restaurant-level default) ── */}
         <SectionHeader title="Turn time" />

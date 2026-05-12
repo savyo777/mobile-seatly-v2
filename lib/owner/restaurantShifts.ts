@@ -65,6 +65,7 @@ function formatTime(value: string | null): string {
 }
 
 const DAY_SHORT = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+const DAY_LONG = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
 
 /** "Daily" if 7 days, otherwise "Mon · Wed · Fri" style. */
 export function formatDaysOfWeek(days: number[]): string {
@@ -75,4 +76,42 @@ export function formatDaysOfWeek(days: number[]): string {
   if (unique.length === 5 && unique.every((d, i) => d === i + 1)) return 'Mon–Fri';
   if (unique.length === 2 && unique[0] === 0 && unique[1] === 6) return 'Weekends';
   return unique.map((d) => DAY_SHORT[d] ?? '').filter(Boolean).join(' · ');
+}
+
+export interface DailyHoursRow {
+  dayIndex: number; // 0=Sun … 6=Sat
+  dayLabel: string;
+  windows: string[]; // ["5:00 PM – 11:00 PM"] — empty when closed
+  isClosed: boolean;
+}
+
+/**
+ * Transposes the shifts table into a Mon..Sun row list. Each row shows
+ * every active shift that includes that day, in start-time order. Days
+ * with no covering shift are flagged closed.
+ */
+export function buildWeeklyHours(shifts: RestaurantShift[]): DailyHoursRow[] {
+  // UI order: Mon, Tue, Wed, Thu, Fri, Sat, Sun.
+  const order = [1, 2, 3, 4, 5, 6, 0];
+
+  return order.map((dayIndex) => {
+    const matching = shifts
+      .filter((s) => s.isActive && s.daysOfWeek.includes(dayIndex))
+      .sort((a, b) => (a.startTime ?? '').localeCompare(b.startTime ?? ''));
+    const windows: string[] = [];
+    const seen = new Set<string>();
+    for (const s of matching) {
+      const w = formatShiftWindow(s.startTime, s.endTime);
+      if (!w) continue;
+      if (seen.has(w)) continue; // de-dupe duplicate shift rows on the same day
+      seen.add(w);
+      windows.push(w);
+    }
+    return {
+      dayIndex,
+      dayLabel: DAY_LONG[dayIndex] ?? '',
+      windows,
+      isClosed: windows.length === 0,
+    };
+  });
 }
