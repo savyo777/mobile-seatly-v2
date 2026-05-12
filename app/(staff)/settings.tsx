@@ -11,6 +11,10 @@ import { deleteAccount, signOutAllDevices } from '@/lib/services/accountSecurity
 import { setAppShellPreference } from '@/lib/navigation/appShellPreference';
 import { withOwnerReturnTarget } from '@/lib/navigation/ownerReturnTargets';
 import { getStoredRestaurantPaymentCards } from '@/lib/storage/restaurantPaymentMethod';
+import { useOwnerScope } from '@/hooks/useOwnerScope';
+import { readBusinessHours, BUSINESS_HOURS_DAY_KEYS } from '@/lib/owner/businessHoursSettings';
+import { readClosures } from '@/lib/owner/closuresSettings';
+import { fetchStaffRoster } from '@/lib/owner/staffRoster';
 
 const OWNER_MONTHLY_SUB_DOLLARS = Number(process.env.EXPO_PUBLIC_OWNER_MONTHLY_SUB_DOLLARS) || 0;
 const OWNER_MONTHLY_SUB_LABEL = OWNER_MONTHLY_SUB_DOLLARS > 0
@@ -332,6 +336,10 @@ export default function OwnerSettingsScreen() {
   const [soundOn, setSoundOn] = React.useState(true);
   const [emailDigest, setEmailDigest] = React.useState(true);
   const [paymentMethodLabel, setPaymentMethodLabel] = React.useState('No card on file');
+  const [businessHoursLabel, setBusinessHoursLabel] = React.useState('');
+  const [closuresLabel, setClosuresLabel] = React.useState('');
+  const [staffMembersLabel, setStaffMembersLabel] = React.useState('');
+  const { selectedRestaurantId } = useOwnerScope();
 
   useFocusEffect(
     React.useCallback(() => {
@@ -348,6 +356,38 @@ export default function OwnerSettingsScreen() {
         active = false;
       };
     }, []),
+  );
+
+  useFocusEffect(
+    React.useCallback(() => {
+      let active = true;
+      if (!selectedRestaurantId) {
+        setBusinessHoursLabel('');
+        setClosuresLabel('');
+        return () => {
+          active = false;
+        };
+      }
+      void (async () => {
+        const [hours, closures, roster] = await Promise.all([
+          readBusinessHours(selectedRestaurantId),
+          readClosures(selectedRestaurantId),
+          fetchStaffRoster([selectedRestaurantId]),
+        ]);
+        if (!active) return;
+        if (hours) {
+          const openCount = BUSINESS_HOURS_DAY_KEYS.filter((k) => hours[k]?.open).length;
+          setBusinessHoursLabel(openCount === 7 ? 'Mon–Sun' : openCount === 0 ? 'Closed' : `${openCount} days`);
+        } else {
+          setBusinessHoursLabel('');
+        }
+        setClosuresLabel(closures.length === 0 ? '' : `${closures.length} scheduled`);
+        setStaffMembersLabel(roster.length === 0 ? '' : `${roster.length} member${roster.length === 1 ? '' : 's'}`);
+      })();
+      return () => {
+        active = false;
+      };
+    }, [selectedRestaurantId]),
   );
 
   const sections: Section[] = [
@@ -387,7 +427,7 @@ export default function OwnerSettingsScreen() {
         {
           kind: 'nav',
           label: 'Business hours',
-          value: 'Mon–Sun',
+          value: businessHoursLabel,
           icon: 'time-outline',
           route: '/(staff)/business-hours',
         },
@@ -400,7 +440,7 @@ export default function OwnerSettingsScreen() {
         {
           kind: 'nav',
           label: 'Holidays & closures',
-          value: '2 scheduled',
+          value: closuresLabel,
           icon: 'ban-outline',
           route: '/(staff)/closures',
         },
@@ -437,7 +477,7 @@ export default function OwnerSettingsScreen() {
         {
           kind: 'nav',
           label: 'Staff members',
-          value: '5 members',
+          value: staffMembersLabel,
           icon: 'people-outline',
           route: '/(staff)/staff-members',
         },
