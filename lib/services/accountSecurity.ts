@@ -1,4 +1,4 @@
-import { clearPersistedSupabaseSession, getSupabase } from '@/lib/supabase/client';
+import { clearSupabaseStorageOnly, getSupabase } from '@/lib/supabase/client';
 import { normalizePhoneToE164 } from '@/lib/services/phoneAuth';
 
 const RESET_PASSWORD_REDIRECT = 'cenaiva://reset-password';
@@ -164,9 +164,11 @@ export async function deleteAccount(): Promise<void> {
     // best-effort: account is already deleted server-side
   } finally {
     try {
-      await clearPersistedSupabaseSession();
+      // Storage-only clear — do NOT null the client singleton or the
+      // onAuthStateChange subscription breaks, preventing the next login.
+      await clearSupabaseStorageOnly();
     } catch {
-      // best-effort: signOut already attempted local cleanup
+      // best-effort
     }
   }
 }

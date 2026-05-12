@@ -16,7 +16,7 @@ import { OwnerRestaurantProvider } from '@/lib/owner/OwnerRestaurantContext';
 import { createStackTransitionOptions } from '@/lib/navigation/transitions';
 import { CenaivaAssistantProvider } from '@/lib/cenaiva/CenaivaAssistantProvider';
 import { CenaivaVoicePreferenceProvider } from '@/lib/cenaiva/voice/CenaivaVoicePreferenceProvider';
-import { clearPersistedSupabaseSession, getSupabase } from '@/lib/supabase/client';
+import { clearPersistedSupabaseSession, clearSupabaseStorageOnly, getSupabase } from '@/lib/supabase/client';
 import { isUnusablePersistedSupabaseAuthError } from '@/lib/supabase/authErrors';
 import { CookieConsentBanner } from '@/components/cookie-consent/CookieConsentBanner';
 import { KeyboardDoneBar } from '@/components/ui/KeyboardDoneBar';
@@ -52,7 +52,7 @@ function RecoveryLinkHandler() {
       try {
         const clearIfUnusableAuthError = async (error: unknown) => {
           if (isUnusablePersistedSupabaseAuthError(error)) {
-            await clearPersistedSupabaseSession();
+            await clearSupabaseStorageOnly();
           }
         };
 
@@ -97,7 +97,7 @@ function RecoveryLinkHandler() {
           }
         }
       } catch (error) {
-        if (isUnusablePersistedSupabaseAuthError(error)) await clearPersistedSupabaseSession();
+        if (isUnusablePersistedSupabaseAuthError(error)) await clearSupabaseStorageOnly();
       }
     };
 
