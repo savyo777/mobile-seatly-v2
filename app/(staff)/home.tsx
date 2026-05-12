@@ -971,7 +971,8 @@ export default function OwnerHomeScreen() {
       sub: `${guestProfiles} profiles · VIPs & notes`,
       route: '/(staff)/guests',
     },
-    { icon: 'receipt-outline', label: 'Receipts', sub: 'Expenses & scans', route: '/(staff)/expenses' },
+    { icon: 'receipt-outline', label: 'Receipts', sub: 'Expenses & history', route: '/(staff)/expenses' },
+    { icon: 'scan-outline', label: 'Scan receipt', sub: 'Snap to log instantly', route: '/(staff)/expense-scan' },
   ];
 
   return (
