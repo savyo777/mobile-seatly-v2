@@ -1,51 +1,26 @@
-import React, { useState } from 'react';
-import { Pressable, ScrollView, StyleSheet, Switch, Text, View } from 'react-native';
-import { useRouter } from 'expo-router';
+import React, { useEffect, useRef, useState } from 'react';
+import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Switch, Text, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { OwnerScreen } from '@/components/owner/OwnerScreen';
 import { SubpageHeader } from '@/components/owner/SubpageHeader';
+import { RestaurantPicker } from '@/components/owner/RestaurantPicker';
+import { useOwnerScope } from '@/hooks/useOwnerScope';
 import { borderRadius, createStyles, spacing, typography, useColors } from '@/lib/theme';
-
-type RoleId = 'manager' | 'host' | 'server' | 'kitchen';
-
-type Role = {
-  id: RoleId;
-  name: string;
-  blurb: string;
-  count: number;
-};
-
-type Permission = {
-  key: string;
-  label: string;
-  description: string;
-  icon: keyof typeof Ionicons.glyphMap;
-};
-
-const ROLES: Role[] = [
-  { id: 'manager', name: 'Manager', blurb: 'Runs the floor and the back-office.', count: 1 },
-  { id: 'host', name: 'Host', blurb: 'Greets guests and seats tables.', count: 1 },
-  { id: 'server', name: 'Server', blurb: 'Takes orders and runs payments.', count: 1 },
-  { id: 'kitchen', name: 'Kitchen', blurb: 'Sees orders, marks dishes ready.', count: 1 },
-];
-
-const PERMISSIONS: Permission[] = [
-  { key: 'reservations', label: 'View and edit reservations', description: 'See bookings, change times, seat guests.', icon: 'calendar-outline' },
-  { key: 'guests', label: 'Access guest CRM', description: 'View guest profiles, notes, and history.', icon: 'people-outline' },
-  { key: 'menu', label: 'Edit the menu', description: 'Add, hide, or change dishes and prices.', icon: 'restaurant-outline' },
-  { key: 'promos', label: 'Create promotions', description: 'Launch and edit deals or offers.', icon: 'pricetag-outline' },
-  { key: 'payouts', label: 'See payouts & billing', description: 'View revenue, invoices, payment methods.', icon: 'card-outline' },
-  { key: 'staff', label: 'Manage team', description: 'Invite or remove staff members.', icon: 'shield-checkmark-outline' },
-];
-
-const DEFAULT_PERMS: Record<RoleId, Record<string, boolean>> = {
-  manager: { reservations: true, guests: true, menu: true, promos: true, payouts: true, staff: true },
-  host:    { reservations: true, guests: true, menu: false, promos: false, payouts: false, staff: false },
-  server:  { reservations: true, guests: true, menu: false, promos: false, payouts: false, staff: false },
-  kitchen: { reservations: false, guests: false, menu: true, promos: false, payouts: false, staff: false },
-};
+import {
+  DEFAULT_PERMS,
+  PERMISSIONS,
+  ROLES,
+  readRolePermissions,
+  writeRolePermissions,
+  type RoleId,
+  type RolePermissionMatrix,
+} from '@/lib/owner/rolePermissionsSettings';
 
 const useStyles = createStyles((c) => ({
+  pickerRow: {
+    paddingHorizontal: 4,
+    paddingBottom: spacing.md,
+  },
   intro: {
     paddingHorizontal: 4,
     marginBottom: spacing.lg,
@@ -162,28 +137,92 @@ const useStyles = createStyles((c) => ({
     lineHeight: 18,
     flex: 1,
   },
+  pickCta: {
+    padding: spacing.lg,
+    alignItems: 'center',
+  },
+  pickCtaText: {
+    ...typography.body,
+    color: c.textMuted,
+    fontWeight: '500',
+    textAlign: 'center',
+  },
+  loadingRow: {
+    padding: spacing.xl,
+    alignItems: 'center',
+  },
 }));
 
 export default function RolesPermissionsScreen() {
   const c = useColors();
   const styles = useStyles();
-  const router = useRouter();
+  const { selectedRestaurantId, isAll } = useOwnerScope();
 
   const [activeRole, setActiveRole] = useState<RoleId>('manager');
-  const [perms, setPerms] = useState<Record<RoleId, Record<string, boolean>>>(DEFAULT_PERMS);
+  const [perms, setPerms] = useState<RolePermissionMatrix>(DEFAULT_PERMS);
+  const [loading, setLoading] = useState<boolean>(false);
+
+  // Track the latest scope so we can ignore stale fetch results.
+  const fetchSeq = useRef(0);
+
+  useEffect(() => {
+    if (isAll || !selectedRestaurantId) {
+      setPerms(DEFAULT_PERMS);
+      setLoading(false);
+      return;
+    }
+    const seq = ++fetchSeq.current;
+    let cancelled = false;
+    setLoading(true);
+    (async () => {
+      try {
+        const next = await readRolePermissions(selectedRestaurantId);
+        if (cancelled || seq !== fetchSeq.current) return;
+        setPerms(next);
+      } catch {
+        if (cancelled || seq !== fetchSeq.current) return;
+        setPerms(DEFAULT_PERMS);
+      } finally {
+        if (!cancelled && seq === fetchSeq.current) setLoading(false);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [selectedRestaurantId, isAll]);
+
+  const persist = (next: RolePermissionMatrix) => {
+    if (isAll || !selectedRestaurantId) return;
+    // Fire-and-forget: the UI already reflects the change optimistically.
+    writeRolePermissions(selectedRestaurantId, next).catch(() => {
+      /* swallow — a future toast/system can surface failures */
+    });
+  };
 
   const togglePerm = (key: string, next: boolean) => {
-    setPerms((prev) => ({
-      ...prev,
-      [activeRole]: { ...prev[activeRole], [key]: next },
-    }));
+    setPerms((prev) => {
+      const updated: RolePermissionMatrix = {
+        ...prev,
+        [activeRole]: { ...(prev[activeRole] ?? {}), [key]: next },
+      };
+      persist(updated);
+      return updated;
+    });
   };
 
   const resetRole = () => {
-    setPerms((prev) => ({ ...prev, [activeRole]: DEFAULT_PERMS[activeRole] }));
+    setPerms((prev) => {
+      const updated: RolePermissionMatrix = {
+        ...prev,
+        [activeRole]: { ...DEFAULT_PERMS[activeRole] },
+      };
+      persist(updated);
+      return updated;
+    });
   };
 
   const role = ROLES.find((r) => r.id === activeRole)!;
+  const activeRolePerms = perms[activeRole] ?? DEFAULT_PERMS[activeRole] ?? {};
 
   return (
     <OwnerScreen
@@ -194,76 +233,96 @@ export default function RolesPermissionsScreen() {
         />
       }
     >
-      <View style={styles.intro}>
-        <Text style={styles.introTitle}>What each role can do</Text>
-        <Text style={styles.introText}>
-          Pick a role to see and adjust what those team members can access.
-        </Text>
+      <View style={styles.pickerRow}>
+        <RestaurantPicker allowAll={false} size="compact" />
       </View>
 
-      <ScrollView
-        horizontal
-        showsHorizontalScrollIndicator={false}
-        style={styles.rolesScroll}
-        contentContainerStyle={styles.rolesRow}
-      >
-        {ROLES.map((r) => {
-          const active = activeRole === r.id;
-          return (
-            <Pressable
-              key={r.id}
-              onPress={() => setActiveRole(r.id)}
-              style={[styles.roleChip, active && styles.roleChipActive]}
-            >
-              <Text style={[styles.roleChipName, active && styles.roleChipNameActive]}>
-                {r.name}
-              </Text>
-              <Text style={styles.roleChipMeta}>
-                {r.count} {r.count === 1 ? 'member' : 'members'}
-              </Text>
-            </Pressable>
-          );
-        })}
-      </ScrollView>
-
-      <Text style={styles.blurb}>{role.blurb}</Text>
-
-      <View style={styles.card}>
-        {PERMISSIONS.map((p, i) => (
-          <View key={p.key} style={[styles.permRow, i > 0 && styles.rowDivider]}>
-            <View style={styles.permIcon}>
-              <Ionicons name={p.icon} size={18} color={c.gold} />
-            </View>
-            <View style={styles.permText}>
-              <Text style={styles.permTitle}>{p.label}</Text>
-              <Text style={styles.permDesc}>{p.description}</Text>
-            </View>
-            <Switch
-              value={!!perms[activeRole][p.key]}
-              onValueChange={(v) => togglePerm(p.key, v)}
-              trackColor={{ true: c.gold, false: c.border }}
-              thumbColor="#fff"
-            />
+      {isAll ? (
+        <View style={styles.pickCta}>
+          <Text style={styles.pickCtaText}>
+            Pick a restaurant to manage role permissions
+          </Text>
+        </View>
+      ) : (
+        <>
+          <View style={styles.intro}>
+            <Text style={styles.introTitle}>What each role can do</Text>
+            <Text style={styles.introText}>
+              Pick a role to see and adjust what those team members can access.
+            </Text>
           </View>
-        ))}
-      </View>
 
-      <Pressable
-        onPress={resetRole}
-        style={({ pressed }) => [styles.resetRow, pressed && { opacity: 0.6 }]}
-        accessibilityRole="button"
-      >
-        <Ionicons name="refresh-outline" size={14} color={c.gold} />
-        <Text style={styles.resetText}>Reset to default permissions</Text>
-      </Pressable>
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            style={styles.rolesScroll}
+            contentContainerStyle={styles.rolesRow}
+          >
+            {ROLES.map((r) => {
+              const active = activeRole === r.id;
+              return (
+                <Pressable
+                  key={r.id}
+                  onPress={() => setActiveRole(r.id)}
+                  style={[styles.roleChip, active && styles.roleChipActive]}
+                >
+                  <Text style={[styles.roleChipName, active && styles.roleChipNameActive]}>
+                    {r.name}
+                  </Text>
+                  <Text style={styles.roleChipMeta}>
+                    {r.count} {r.count === 1 ? 'member' : 'members'}
+                  </Text>
+                </Pressable>
+              );
+            })}
+          </ScrollView>
 
-      <View style={styles.noteRow}>
-        <Ionicons name="information-circle-outline" size={18} color={c.gold} />
-        <Text style={styles.noteText}>
-          The Owner role always has full access and can't be edited. Changes apply to every team
-          member with this role.
-        </Text>
-      </View>
+          <Text style={styles.blurb}>{role.blurb}</Text>
+
+          {loading ? (
+            <View style={styles.loadingRow}>
+              <ActivityIndicator color={c.gold} />
+            </View>
+          ) : (
+            <View style={styles.card}>
+              {PERMISSIONS.map((p, i) => (
+                <View key={p.key} style={[styles.permRow, i > 0 && styles.rowDivider]}>
+                  <View style={styles.permIcon}>
+                    <Ionicons name={p.icon} size={18} color={c.gold} />
+                  </View>
+                  <View style={styles.permText}>
+                    <Text style={styles.permTitle}>{p.label}</Text>
+                    <Text style={styles.permDesc}>{p.description}</Text>
+                  </View>
+                  <Switch
+                    value={!!activeRolePerms[p.key]}
+                    onValueChange={(v) => togglePerm(p.key, v)}
+                    trackColor={{ true: c.gold, false: c.border }}
+                    thumbColor="#fff"
+                  />
+                </View>
+              ))}
+            </View>
+          )}
+
+          <Pressable
+            onPress={resetRole}
+            style={({ pressed }) => [styles.resetRow, pressed && { opacity: 0.6 }]}
+            accessibilityRole="button"
+          >
+            <Ionicons name="refresh-outline" size={14} color={c.gold} />
+            <Text style={styles.resetText}>Reset to default permissions</Text>
+          </Pressable>
+
+          <View style={styles.noteRow}>
+            <Ionicons name="information-circle-outline" size={18} color={c.gold} />
+            <Text style={styles.noteText}>
+              The Owner role always has full access and can't be edited. Changes apply to every team
+              member with this role.
+            </Text>
+          </View>
+        </>
+      )}
     </OwnerScreen>
   );
 }
