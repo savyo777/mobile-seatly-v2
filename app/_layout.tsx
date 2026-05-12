@@ -1,5 +1,5 @@
 import React, { useEffect } from 'react';
-import { Stack, usePathname, useRouter } from 'expo-router';
+import { Stack, usePathname, useRouter, useSegments } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { enableFreeze, enableScreens } from 'react-native-screens';
@@ -8,7 +8,11 @@ import * as Linking from 'expo-linking';
 import Constants from 'expo-constants';
 import { StripeProvider } from '@stripe/stripe-react-native';
 import '@/lib/i18n';
-import { AuthProvider } from '@/lib/auth/AuthContext';
+import { AuthProvider, useAuthSession } from '@/lib/auth/AuthContext';
+import {
+  getAppShellPreference,
+  getCachedAppShellPreference,
+} from '@/lib/navigation/appShellPreference';
 import { ThemeProvider, useColors } from '@/lib/theme';
 import { MenuProvider } from '@/lib/context/MenuContext';
 import { ExpensesProvider } from '@/lib/context/ExpensesContext';
@@ -131,9 +135,32 @@ function ThemedRootShell() {
   const c = useColors();
   const router = useRouter();
   const pathname = usePathname();
+  const segments = useSegments() as string[];
+  const { loading, isAuthenticated, isStaffLike, role } = useAuthSession();
   const handleGoHome = React.useCallback(() => {
     router.replace('/' as never);
   }, [router]);
+
+  // Standard expo-router auth pattern: fires AFTER React commits isAuthenticated = true,
+  // so auth guards in destination layouts always see the updated value.
+  useEffect(() => {
+    if (loading || role === null || !isAuthenticated) return;
+    if (segments[0] !== '(auth)') return;
+    // Leave password-reset and phone-OTP flows undisturbed.
+    const seg1 = segments[1] as string | undefined;
+    if (seg1 === 'reset-password' || seg1 === 'verify-phone-otp') return;
+    let cancelled = false;
+    void (async () => {
+      const pref = getCachedAppShellPreference() ?? (await getAppShellPreference());
+      if (cancelled) return;
+      if (pref === 'staff' && isStaffLike) {
+        router.replace('/(staff)' as never);
+      } else {
+        router.replace('/(customer)/discover' as never);
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [loading, isAuthenticated, role, isStaffLike, segments, router]);
 
   return (
     <>

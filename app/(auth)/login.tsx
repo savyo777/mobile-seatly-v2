@@ -224,11 +224,9 @@ export default function LoginScreen() {
         // best-effort: profile creation can be retried later
       }
     }
-    // Yield one event-loop tick so React commits isAuthenticated = true before
-    // the destination layout's auth guard runs.
-    await new Promise<void>(resolve => setTimeout(resolve, 0));
-    const dest = role === 'owner' ? '/(staff)/home' : '/(customer)/discover';
-    router.replace(dest as never);
+    // Navigation is handled by the root layout's auth effect, which fires
+    // after React commits isAuthenticated = true — eliminating the race
+    // condition that caused auth guards to see the stale false value.
   };
 
   const handleLogin = async () => {
