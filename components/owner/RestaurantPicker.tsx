@@ -41,9 +41,6 @@ export function RestaurantPicker({
     hasMultiple,
   } = useOwnerScope();
 
-  // Single-restaurant owners have nothing to pick.
-  if (!hasMultiple) return null;
-
   const handleOpen = useCallback(() => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
     setOpen(true);
@@ -59,6 +56,10 @@ export function RestaurantPicker({
     },
     [setSelectedRestaurantId],
   );
+
+  // Single-restaurant owners have nothing to pick. Early return must happen
+  // AFTER every hook above so the hook count is stable across renders.
+  if (!hasMultiple) return null;
 
   const label = isAll
     ? 'All restaurants'
