@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   View,
   Text,
@@ -26,7 +26,13 @@ import {
   OWNER_RESERVATIONS,
 } from '@/lib/mock/ownerApp';
 import { mockRestaurants } from '@/lib/mock/restaurants';
-import { listSnapPostsByRestaurant } from '@/lib/mock/snaps';
+import { listSnapPostsByRestaurant as DEMO_listSnapPostsByRestaurant } from '@/lib/mock/snaps';
+import {
+  fetchRestaurantVisitPhotos,
+  type RestaurantVisitPhoto,
+} from '@/lib/owner/visitPhotos';
+
+type GalleryPhoto = { id: string; image: string };
 
 const useStyles = createStyles((c) => ({
   root: { flex: 1, backgroundColor: c.bgBase },
@@ -425,6 +431,37 @@ export default function OwnerBusinessScreen() {
 
   const { items: menuItems } = useMenu();
 
+  // Restaurant gallery photos for the "Photos" section. In demo mode we
+  // continue to surface the mock snaps; in production we read from the
+  // `visit_photos` table (rows posted by diners against a reservation).
+  const [visitPhotos, setVisitPhotos] = useState<RestaurantVisitPhoto[]>([]);
+  useEffect(() => {
+    if (isDemoModeEnabled()) {
+      setVisitPhotos([]);
+      return;
+    }
+    const restaurantId = ownerRestaurant?.id;
+    if (!restaurantId) {
+      setVisitPhotos([]);
+      return;
+    }
+    let active = true;
+    void fetchRestaurantVisitPhotos(restaurantId, 3).then((rows) => {
+      if (active) setVisitPhotos(rows);
+    });
+    return () => {
+      active = false;
+    };
+  }, [ownerRestaurant?.id]);
+
+  const galleryPhotos: GalleryPhoto[] = isDemoModeEnabled()
+    ? ownerRestaurant?.id
+      ? DEMO_listSnapPostsByRestaurant(ownerRestaurant.id)
+          .slice(0, 3)
+          .map((snap) => ({ id: snap.id, image: snap.image }))
+      : []
+    : visitPhotos.map((photo) => ({ id: photo.id, image: photo.imageUrl }));
+
   const menuByCategory = menuItems.reduce<Record<string, typeof menuItems>>((acc, item) => {
     if (!acc[item.category]) acc[item.category] = [];
     acc[item.category].push(item);
@@ -566,32 +603,28 @@ export default function OwnerBusinessScreen() {
         </View>
 
         {/* ── Photos ── */}
-        {(() => {
-          const snapPhotos = ownerRestaurant?.id ? listSnapPostsByRestaurant(ownerRestaurant.id).slice(0, 3) : [];
-          if (snapPhotos.length === 0) return null;
-          return (
-            <>
-              <View style={styles.sectionRow}>
-                <Text style={styles.sectionTitle}>Photos</Text>
-                <Pressable
-                  onPress={() => ownerRestaurant?.id && router.push(`/(customer)/discover/snaps/${ownerRestaurant.id}` as never)}
-                  accessibilityRole="button"
-                  hitSlop={8}
-                >
-                  <Text style={styles.sectionAction}>See all</Text>
-                </Pressable>
-              </View>
-              <Text style={styles.photoSubtitle}>Real moments from your guests</Text>
-              <View style={styles.photosRow}>
-                {snapPhotos.map((snap) => (
-                  <View key={snap.id} style={styles.photoThumb}>
-                    <Image source={{ uri: snap.image }} style={{ width: '100%', height: '100%' }} resizeMode="cover" />
-                  </View>
-                ))}
-              </View>
-            </>
-          );
-        })()}
+        {galleryPhotos.length > 0 ? (
+          <>
+            <View style={styles.sectionRow}>
+              <Text style={styles.sectionTitle}>Photos</Text>
+              <Pressable
+                onPress={() => ownerRestaurant?.id && router.push(`/(customer)/discover/snaps/${ownerRestaurant.id}` as never)}
+                accessibilityRole="button"
+                hitSlop={8}
+              >
+                <Text style={styles.sectionAction}>See all</Text>
+              </Pressable>
+            </View>
+            <Text style={styles.photoSubtitle}>Real moments from your guests</Text>
+            <View style={styles.photosRow}>
+              {galleryPhotos.map((photo) => (
+                <View key={photo.id} style={styles.photoThumb}>
+                  <Image source={{ uri: photo.image }} style={{ width: '100%', height: '100%' }} resizeMode="cover" />
+                </View>
+              ))}
+            </View>
+          </>
+        ) : null}
 
         {/* ── About ── */}
         <View style={styles.sectionRow}>

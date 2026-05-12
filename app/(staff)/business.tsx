@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, ScrollView, Pressable, StyleSheet } from 'react-native';
+import { View, Text, ScrollView, Pressable, StyleSheet, Image } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useColors, createStyles, spacing, borderRadius } from '@/lib/theme';
@@ -9,13 +9,21 @@ import {
   EXPORT_OPTIONS as DEMO_EXPORT_OPTIONS,
 } from '@/lib/mock/ownerApp';
 import { isDemoModeEnabled } from '@/lib/config/demoMode';
-import { fetchCurrentUserProfile } from '@/lib/services/userProfile';
 import { getSupabase } from '@/lib/supabase/client';
+import { useOwnerScope } from '@/hooks/useOwnerScope';
+import { RestaurantPicker } from '@/components/owner/RestaurantPicker';
+import {
+  fetchRestaurantVisitPhotos,
+  type RestaurantVisitPhoto,
+} from '@/lib/owner/visitPhotos';
+import { listSnapPostsByRestaurant as DEMO_listSnapPostsByRestaurant } from '@/lib/mock/snaps';
 
 const STAFF_ROSTER: typeof DEMO_STAFF_ROSTER = isDemoModeEnabled() ? DEMO_STAFF_ROSTER : [];
 const EXPENSE_LINES: typeof DEMO_EXPENSE_LINES = isDemoModeEnabled() ? DEMO_EXPENSE_LINES : [];
 const EXPORT_OPTIONS: typeof DEMO_EXPORT_OPTIONS = isDemoModeEnabled() ? DEMO_EXPORT_OPTIONS : [];
 import { formatCurrency } from '@/lib/utils/formatCurrency';
+
+type GalleryPhoto = { id: string; image: string };
 
 type RestaurantSettings = {
   id: string;
@@ -171,6 +179,37 @@ const useStyles = createStyles((c) => ({
   exportInfo: { flex: 1 },
   exportTitle: { fontSize: 13, fontWeight: '600', color: c.textPrimary },
   exportSub: { fontSize: 11, color: c.textMuted, marginTop: 1 },
+
+  // Picker
+  pickerWrap: { paddingHorizontal: spacing.lg, paddingBottom: spacing.md },
+
+  // All-mode empty state
+  allEmpty: {
+    paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.xl,
+    alignItems: 'center',
+  },
+  allEmptyText: {
+    color: c.textMuted,
+    fontSize: 14,
+    fontWeight: '500',
+    textAlign: 'center',
+  },
+
+  // Gallery
+  galleryRow: {
+    flexDirection: 'row',
+    gap: spacing.sm,
+  },
+  galleryThumb: {
+    flex: 1,
+    aspectRatio: 1,
+    borderRadius: borderRadius.lg,
+    overflow: 'hidden',
+    backgroundColor: c.bgBase,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: c.border,
+  },
 }));
 
 function initials(name: string): string {
@@ -181,22 +220,28 @@ export default function OwnerBusinessScreen() {
   const c = useColors();
   const styles = useStyles();
   const insets = useSafeAreaInsets();
+  const { selectedRestaurantId, isAll } = useOwnerScope();
   const [settings, setSettings] = useState<RestaurantSettings | null>(null);
+  const [visitPhotos, setVisitPhotos] = useState<RestaurantVisitPhoto[]>([]);
 
+  // Live restaurant settings — keyed off the picked restaurant. In all-mode
+  // we skip the fetch and prompt the owner to pick a location.
   useEffect(() => {
     if (isDemoModeEnabled()) return;
+    if (!selectedRestaurantId) {
+      setSettings(null);
+      return;
+    }
     let active = true;
     void (async () => {
-      const profile = await fetchCurrentUserProfile().catch(() => null);
-      const restaurantId = profile?.restaurantId ?? null;
       const supabase = getSupabase();
-      if (!restaurantId || !supabase) return;
+      if (!supabase) return;
       const { data } = await supabase
         .from('restaurants')
         .select(
           'id,name,address,phone,hours_json,plan,currency,timezone,tax_rate,trial_ends_at,stripe_onboarding_complete,billing_card_brand,billing_card_last4,billing_card_exp_month,billing_card_exp_year',
         )
-        .eq('id', restaurantId)
+        .eq('id', selectedRestaurantId)
         .maybeSingle();
       if (!active) return;
       setSettings((data ?? null) as RestaurantSettings | null);
@@ -204,7 +249,35 @@ export default function OwnerBusinessScreen() {
     return () => {
       active = false;
     };
-  }, []);
+  }, [selectedRestaurantId]);
+
+  // Guest-uploaded photos for the gallery section. Mock data in demo mode,
+  // live `visit_photos` rows otherwise.
+  useEffect(() => {
+    if (!selectedRestaurantId) {
+      setVisitPhotos([]);
+      return;
+    }
+    if (isDemoModeEnabled()) {
+      setVisitPhotos([]);
+      return;
+    }
+    let active = true;
+    void fetchRestaurantVisitPhotos(selectedRestaurantId).then((rows) => {
+      if (active) setVisitPhotos(rows);
+    });
+    return () => {
+      active = false;
+    };
+  }, [selectedRestaurantId]);
+
+  const galleryPhotos: GalleryPhoto[] = isDemoModeEnabled()
+    ? selectedRestaurantId
+      ? DEMO_listSnapPostsByRestaurant(selectedRestaurantId)
+          .slice(0, 6)
+          .map((snap) => ({ id: snap.id, image: snap.image }))
+      : []
+    : visitPhotos.slice(0, 6).map((photo) => ({ id: photo.id, image: photo.imageUrl }));
 
   const totalExpenses = EXPENSE_LINES.reduce((sum, e) => sum + e.amount, 0);
   const trialEndsLabel = settings?.trial_ends_at
@@ -242,8 +315,24 @@ export default function OwnerBusinessScreen() {
           <Text style={styles.title}>Business</Text>
         </View>
 
+        {/* Restaurant picker (compact). Hidden automatically when the
+            current owner has only one location. */}
+        <View style={styles.pickerWrap}>
+          <RestaurantPicker allowAll={false} size="compact" />
+        </View>
+
+        {/* In all-mode there is no single business profile to manage —
+            nudge the owner to pick one. */}
+        {isAll ? (
+          <View style={styles.allEmpty}>
+            <Text style={styles.allEmptyText}>
+              Pick a restaurant to manage business profile.
+            </Text>
+          </View>
+        ) : null}
+
         {/* Restaurant settings (live from `restaurants`) */}
-        {settings ? (
+        {!isAll && settings ? (
           <View style={styles.sectionPad}>
             <Text style={styles.sectionLabel}>{settings.name ?? 'Restaurant'}</Text>
             <View style={styles.settingsCard}>
@@ -299,6 +388,25 @@ export default function OwnerBusinessScreen() {
                   <Text style={styles.settingsRowText}>{billingCardLine}</Text>
                 </View>
               ) : null}
+            </View>
+          </View>
+        ) : null}
+
+        {/* Guest gallery — most recent photos diners attached to a
+            reservation at this restaurant (visit_photos). */}
+        {!isAll && galleryPhotos.length > 0 ? (
+          <View style={styles.sectionPad}>
+            <Text style={styles.sectionLabel}>Guest photos</Text>
+            <View style={styles.galleryRow}>
+              {galleryPhotos.slice(0, 3).map((photo) => (
+                <View key={photo.id} style={styles.galleryThumb}>
+                  <Image
+                    source={{ uri: photo.image }}
+                    style={{ width: '100%', height: '100%' }}
+                    resizeMode="cover"
+                  />
+                </View>
+              ))}
             </View>
           </View>
         ) : null}
