@@ -67,7 +67,9 @@ const useStyles = createStyles((c) => ({
     borderColor: `${c.gold}55`,
     alignItems: 'center',
     justifyContent: 'center',
+    overflow: 'hidden',
   },
+  logoImage: { width: '100%', height: '100%' },
   logoLetter: {
     fontSize: 32,
     fontWeight: '800',
@@ -472,6 +474,9 @@ export default function OwnerBusinessScreen() {
     ownerRestaurant?.coverPhotoUrl ??
     (isDemoModeEnabled() ? mockRestaurants.find((r) => r.id === 'r1')?.coverPhotoUrl : null);
   const profileName = ownerRestaurant?.name ?? (isDemoModeEnabled() ? OWNER_BUSINESS_PROFILE.name : 'Your restaurant');
+  const logoUrl =
+    ownerRestaurant?.logoUrl ??
+    (isDemoModeEnabled() ? mockRestaurants.find((r) => r.id === 'r1')?.logoUrl ?? null : null);
   const profileAddress = ownerRestaurant?.address ?? '';
   const profileRating = ownerRestaurant?.rating ?? (isDemoModeEnabled() ? OWNER_BUSINESS_PROFILE.rating : null);
   const profileReviewCount = ownerRestaurant?.reviewCount ?? (isDemoModeEnabled() ? OWNER_BUSINESS_PROFILE.reviewCount : null);
@@ -533,9 +538,13 @@ export default function OwnerBusinessScreen() {
           <View style={[styles.heroContent, { paddingTop: insets.top + spacing.xs }]}>
             <View style={styles.logoRow}>
               <View style={styles.logoBox}>
-                <Text style={styles.logoLetter}>
-                  {profileName.charAt(0)}
-                </Text>
+                {logoUrl ? (
+                  <Image source={{ uri: logoUrl }} style={styles.logoImage} resizeMode="cover" />
+                ) : (
+                  <Text style={styles.logoLetter}>
+                    {profileName.charAt(0)}
+                  </Text>
+                )}
               </View>
               <View style={styles.heroTextCol}>
                 <Text style={styles.heroKicker}>BUSINESS PROFILE</Text>
