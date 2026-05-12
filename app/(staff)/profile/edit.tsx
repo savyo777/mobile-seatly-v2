@@ -1064,21 +1064,21 @@ export default function EditBusinessProfileScreen() {
           Tap a day to toggle open/closed. Times save to the shifts table on Save changes.
         </Text>
 
-        {/* ── Turn time (restaurant-level default) ── */}
+        {/* ── Turn time (restaurant-level default, used by the booking flow) ── */}
         <SectionHeader title="Turn time" />
         <View style={styles.card}>
-          <View style={styles.fieldRow}>
-            <Text style={styles.fieldLabel}>Average minutes per table</Text>
-            <TextInput
-              style={styles.input}
-              value={turnTime}
-              onChangeText={setTurnTime}
-              keyboardType="number-pad"
-              placeholder="e.g. 90"
-              placeholderTextColor={c.textMuted}
-            />
-          </View>
+          <FieldInput
+            label="Average minutes per table"
+            value={turnTime}
+            onChangeText={(v) => setTurnTime(v.replace(/[^0-9]/g, ''))}
+            keyboardType="number-pad"
+            placeholder="e.g. 90"
+          />
         </View>
+        <Text style={styles.photoHint}>
+          How long a table is held per reservation. Saved to settings_json.turnTimeMinutes
+          and stamped onto every new shift.
+        </Text>
       </ScrollView>
 
       <View style={[styles.bottomBar, { paddingBottom: Math.max(insets.bottom, spacing.md) }]}>
