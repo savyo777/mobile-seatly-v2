@@ -1,5 +1,6 @@
-import React, { useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
+  ActivityIndicator,
   Modal,
   Pressable,
   ScrollView,
@@ -12,6 +13,13 @@ import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { OwnerScreen } from '@/components/owner/OwnerScreen';
 import { SubpageHeader } from '@/components/owner/SubpageHeader';
+import { RestaurantPicker } from '@/components/owner/RestaurantPicker';
+import { useOwnerScope } from '@/hooks/useOwnerScope';
+import {
+  readClosures,
+  writeClosures,
+  type ClosureEntry,
+} from '@/lib/owner/closuresSettings';
 import { borderRadius, createStyles, spacing, typography, useColors } from '@/lib/theme';
 
 type Closure = {
@@ -19,6 +27,21 @@ type Closure = {
   date: string; // ISO yyyy-mm-dd
   reason: string;
 };
+
+function entriesToClosures(entries: ClosureEntry[]): Closure[] {
+  return entries.map((entry) => ({
+    id: `c-${entry.date}`,
+    date: entry.date,
+    reason: entry.reason?.trim() || 'Closed',
+  }));
+}
+
+function closuresToEntries(closures: Closure[]): ClosureEntry[] {
+  return closures.map((c) => ({
+    date: c.date,
+    reason: c.reason || null,
+  }));
+}
 
 function todayKey(): string {
   const d = new Date();
@@ -58,6 +81,48 @@ function buildCalendarGrid(year: number, month: number): (number | null)[][] {
 const DAYS_SHORT = ['S', 'M', 'T', 'W', 'T', 'F', 'S'];
 
 const useStyles = createStyles((c) => ({
+  pickerRow: {
+    marginBottom: spacing.md,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+  },
+  savingPill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: borderRadius.full,
+    backgroundColor: c.bgElevated,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: c.border,
+  },
+  savingText: {
+    ...typography.bodySmall,
+    color: c.textMuted,
+    fontWeight: '600',
+  },
+  scopeCta: {
+    padding: spacing.lg,
+    alignItems: 'center',
+    gap: spacing.sm,
+    borderRadius: borderRadius.xl,
+    backgroundColor: c.bgSurface,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: c.border,
+    marginBottom: spacing.lg,
+  },
+  scopeCtaText: {
+    ...typography.body,
+    color: c.textMuted,
+    textAlign: 'center',
+    fontWeight: '500',
+  },
+  loadingWrap: {
+    paddingVertical: spacing['2xl'],
+    alignItems: 'center',
+  },
   intro: {
     paddingHorizontal: 4,
     marginBottom: spacing.lg,
@@ -314,11 +379,11 @@ export default function ClosuresScreen() {
   const c = useColors();
   const styles = useStyles();
   const router = useRouter();
+  const { selectedRestaurantId, isAll, isLoading: scopeLoading } = useOwnerScope();
 
-  const [closures, setClosures] = useState<Closure[]>([
-    { id: 'c1', date: `${new Date().getFullYear()}-12-25`, reason: 'Christmas Day' },
-    { id: 'c2', date: `${new Date().getFullYear() + 1}-01-01`, reason: 'New Year' },
-  ]);
+  const [closures, setClosures] = useState<Closure[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
 
   const [pickerOpen, setPickerOpen] = useState(false);
   const [calMonth, setCalMonth] = useState(() => {
@@ -327,6 +392,49 @@ export default function ClosuresScreen() {
   });
   const [selectedKey, setSelectedKey] = useState<string | null>(null);
   const [reason, setReason] = useState('');
+
+  // Track the latest hydrated restaurant so out-of-order responses don't
+  // overwrite a newer load.
+  const loadIdRef = useRef(0);
+
+  useEffect(() => {
+    if (isAll || !selectedRestaurantId) {
+      setClosures([]);
+      setIsLoading(false);
+      return;
+    }
+    const myId = ++loadIdRef.current;
+    setIsLoading(true);
+    void readClosures(selectedRestaurantId)
+      .then((entries) => {
+        if (loadIdRef.current !== myId) return;
+        setClosures(entriesToClosures(entries));
+      })
+      .catch(() => {
+        if (loadIdRef.current !== myId) return;
+        setClosures([]);
+      })
+      .finally(() => {
+        if (loadIdRef.current !== myId) return;
+        setIsLoading(false);
+      });
+  }, [selectedRestaurantId, isAll]);
+
+  const persist = useCallback(
+    async (next: Closure[]) => {
+      if (!selectedRestaurantId || isAll) return;
+      setIsSaving(true);
+      try {
+        await writeClosures(selectedRestaurantId, closuresToEntries(next));
+      } catch {
+        // Swallow — UI already reflects the optimistic update. A subsequent
+        // mount will re-read the source of truth.
+      } finally {
+        setIsSaving(false);
+      }
+    },
+    [selectedRestaurantId, isAll],
+  );
 
   const sorted = useMemo(
     () => [...closures].sort((a, b) => a.date.localeCompare(b.date)),
@@ -354,21 +462,27 @@ export default function ClosuresScreen() {
   const saveClosure = () => {
     if (!selectedKey) return;
     const id = `c${Date.now()}`;
-    setClosures((prev) => [
-      ...prev.filter((c) => c.date !== selectedKey),
+    const next = [
+      ...closures.filter((c) => c.date !== selectedKey),
       { id, date: selectedKey, reason: reason.trim() || 'Closed' },
-    ]);
+    ];
+    setClosures(next);
     setPickerOpen(false);
+    void persist(next);
   };
 
   const removeClosure = (id: string) => {
-    setClosures((prev) => prev.filter((c) => c.id !== id));
+    const next = closures.filter((c) => c.id !== id);
+    setClosures(next);
+    void persist(next);
   };
 
   const goPrevMonth = () =>
     setCalMonth((m) => new Date(m.getFullYear(), m.getMonth() - 1, 1));
   const goNextMonth = () =>
     setCalMonth((m) => new Date(m.getFullYear(), m.getMonth() + 1, 1));
+
+  const interactionsDisabled = isSaving || isLoading;
 
   return (
     <OwnerScreen
@@ -379,6 +493,16 @@ export default function ClosuresScreen() {
         />
       }
     >
+      <View style={styles.pickerRow}>
+        <RestaurantPicker allowAll={false} size="compact" />
+        {isSaving ? (
+          <View style={styles.savingPill}>
+            <ActivityIndicator size="small" color={c.gold} />
+            <Text style={styles.savingText}>Saving…</Text>
+          </View>
+        ) : null}
+      </View>
+
       <View style={styles.intro}>
         <Text style={styles.introTitle}>Days you'll be closed</Text>
         <Text style={styles.introText}>
@@ -386,48 +510,72 @@ export default function ClosuresScreen() {
         </Text>
       </View>
 
-      <Pressable
-        onPress={openPicker}
-        style={({ pressed }) => [styles.addBtn, pressed && styles.addBtnPressed]}
-        accessibilityRole="button"
-        accessibilityLabel="Add closure"
-      >
-        <Ionicons name="add" size={18} color={c.gold} />
-        <Text style={styles.addBtnText}>Add a closure</Text>
-      </Pressable>
-
-      {sorted.length === 0 ? (
-        <View style={styles.empty}>
-          <View style={styles.emptyIcon}>
-            <Ionicons name="calendar-outline" size={26} color={c.gold} />
-          </View>
-          <Text style={styles.emptyTitle}>No closures scheduled</Text>
-          <Text style={styles.emptyText}>
-            Tap "Add a closure" to block off a holiday or a day you'll be away.
-          </Text>
+      {isAll ? (
+        <View style={styles.scopeCta}>
+          <Ionicons name="storefront-outline" size={28} color={c.gold} />
+          <Text style={styles.scopeCtaText}>Pick a restaurant to manage closures</Text>
+          <RestaurantPicker allowAll={false} size="full" />
+        </View>
+      ) : isLoading || scopeLoading ? (
+        <View style={styles.loadingWrap}>
+          <ActivityIndicator color={c.gold} />
         </View>
       ) : (
-        <View style={styles.card}>
-          {sorted.map((c, i) => (
-            <View key={c.id} style={[styles.closureRow, i > 0 && styles.rowDivider]}>
-              <View style={styles.closureIcon}>
-                <Ionicons name="ban-outline" size={18} color="#EF4444" />
+        <>
+          <Pressable
+            onPress={openPicker}
+            disabled={interactionsDisabled}
+            style={({ pressed }) => [
+              styles.addBtn,
+              pressed && styles.addBtnPressed,
+              interactionsDisabled && { opacity: 0.6 },
+            ]}
+            accessibilityRole="button"
+            accessibilityLabel="Add closure"
+          >
+            <Ionicons name="add" size={18} color={c.gold} />
+            <Text style={styles.addBtnText}>Add a closure</Text>
+          </Pressable>
+
+          {sorted.length === 0 ? (
+            <View style={styles.empty}>
+              <View style={styles.emptyIcon}>
+                <Ionicons name="calendar-outline" size={26} color={c.gold} />
               </View>
-              <View style={styles.closureText}>
-                <Text style={styles.closureDate}>{formatDate(c.date)}</Text>
-                <Text style={styles.closureReason}>{c.reason}</Text>
-              </View>
-              <Pressable
-                onPress={() => removeClosure(c.id)}
-                style={({ pressed }) => [styles.removeBtn, pressed && { opacity: 0.6 }]}
-                hitSlop={8}
-                accessibilityLabel={`Remove ${formatDate(c.date)}`}
-              >
-                <Ionicons name="trash-outline" size={20} color="#EF4444" />
-              </Pressable>
+              <Text style={styles.emptyTitle}>No closures scheduled</Text>
+              <Text style={styles.emptyText}>
+                Tap "Add a closure" to block off a holiday or a day you'll be away.
+              </Text>
             </View>
-          ))}
-        </View>
+          ) : (
+            <View style={styles.card}>
+              {sorted.map((c, i) => (
+                <View key={c.id} style={[styles.closureRow, i > 0 && styles.rowDivider]}>
+                  <View style={styles.closureIcon}>
+                    <Ionicons name="ban-outline" size={18} color="#EF4444" />
+                  </View>
+                  <View style={styles.closureText}>
+                    <Text style={styles.closureDate}>{formatDate(c.date)}</Text>
+                    <Text style={styles.closureReason}>{c.reason}</Text>
+                  </View>
+                  <Pressable
+                    onPress={() => removeClosure(c.id)}
+                    disabled={interactionsDisabled}
+                    style={({ pressed }) => [
+                      styles.removeBtn,
+                      pressed && { opacity: 0.6 },
+                      interactionsDisabled && { opacity: 0.5 },
+                    ]}
+                    hitSlop={8}
+                    accessibilityLabel={`Remove ${formatDate(c.date)}`}
+                  >
+                    <Ionicons name="trash-outline" size={20} color="#EF4444" />
+                  </Pressable>
+                </View>
+              ))}
+            </View>
+          )}
+        </>
       )}
 
       <View style={styles.noteRow}>
@@ -527,17 +675,17 @@ export default function ClosuresScreen() {
               </Pressable>
               <Pressable
                 onPress={saveClosure}
-                disabled={!selectedKey}
+                disabled={!selectedKey || isSaving}
                 style={({ pressed }) => [
                   styles.modalSave,
-                  !selectedKey && styles.modalSaveDisabled,
-                  pressed && selectedKey && { opacity: 0.85 },
+                  (!selectedKey || isSaving) && styles.modalSaveDisabled,
+                  pressed && selectedKey && !isSaving && { opacity: 0.85 },
                 ]}
               >
                 <Text
                   style={[
                     styles.modalSaveText,
-                    !selectedKey && styles.modalSaveTextDisabled,
+                    (!selectedKey || isSaving) && styles.modalSaveTextDisabled,
                   ]}
                 >
                   Save
