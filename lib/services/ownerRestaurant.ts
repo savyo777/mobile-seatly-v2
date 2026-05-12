@@ -100,10 +100,51 @@ export async function fetchOwnerRestaurants(): Promise<OwnerRestaurant[]> {
   const userId = userData.user?.id;
   if (!userId) return [];
 
+  // Three live owner-linking paths in the shared web schema:
+  //   1. user_profiles.restaurant_id (legacy single-restaurant link the web's
+  //      RLS function current_user_owned_restaurant_ids() reads).
+  //   2. user_restaurant_roles with role='owner' (multi-restaurant link).
+  //   3. restaurants.owner_user_id (added by migration 20260509200000 but not
+  //      backfilled; still queried as a tertiary fallback for new signups).
+  // We collect IDs from all three paths and dedupe before fetching the rows.
+  const idSet = new Set<string>();
+
+  const { data: profileRow } = await supabase
+    .from('user_profiles')
+    .select('id, restaurant_id, role')
+    .eq('auth_user_id', userId)
+    .maybeSingle();
+  const profile = profileRow as { id?: string; restaurant_id?: string | null; role?: string | null } | null;
+  if (profile?.restaurant_id && (profile.role ?? '').toLowerCase().trim() === 'owner') {
+    idSet.add(profile.restaurant_id);
+  }
+
+  if (profile?.id) {
+    const { data: roleRows } = await supabase
+      .from('user_restaurant_roles')
+      .select('restaurant_id, role')
+      .eq('user_id', profile.id);
+    for (const row of (roleRows ?? []) as Array<{ restaurant_id?: string | null; role?: string | null }>) {
+      if (row.restaurant_id && (row.role ?? '').toLowerCase().trim() === 'owner') {
+        idSet.add(row.restaurant_id);
+      }
+    }
+  }
+
+  const { data: ownerColRows } = await supabase
+    .from('restaurants')
+    .select('id')
+    .eq('owner_user_id', userId);
+  for (const row of (ownerColRows ?? []) as Array<{ id?: string | null }>) {
+    if (row.id) idSet.add(row.id);
+  }
+
+  if (idSet.size === 0) return [];
+
   const { data, error } = await supabase
     .from('restaurants')
     .select('*')
-    .eq('owner_user_id', userId)
+    .in('id', Array.from(idSet))
     .order('created_at', { ascending: false });
   if (error) throw error;
   return ((data ?? []) as Array<Record<string, unknown>>).map(mapOwnerRestaurantRow);
