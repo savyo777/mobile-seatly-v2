@@ -215,17 +215,20 @@ export default function LoginScreen() {
     return () => clearInterval(id);
   }, [isLockedOut, lockoutUntilMs]);
 
-  // After a successful sign-in, ensure a profile row exists for brand-new users,
-  // then let (auth)/_layout.tsx drive navigation once isAuthenticated + role are set.
   const routeSignedInSession = async (session: Session) => {
     const role = await getRoleForSignedInUser(session.user.id, session.user);
     if (!role) {
       try {
         await ensureCustomerProfile(session);
       } catch {
-        // best-effort fallback for older accounts with no profile row
+        // best-effort: profile creation can be retried later
       }
     }
+    // Yield one event-loop tick so React commits isAuthenticated = true before
+    // the destination layout's auth guard runs.
+    await new Promise<void>(resolve => setTimeout(resolve, 0));
+    const dest = role === 'owner' ? '/(staff)/home' : '/(customer)/discover';
+    router.replace(dest as never);
   };
 
   const handleLogin = async () => {

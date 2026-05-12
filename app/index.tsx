@@ -48,14 +48,14 @@ export default function SplashScreen() {
       const pref = getCachedAppShellPreference() ?? await getAppShellPreference();
       if (cancelled) return;
       if (pref === 'customer') {
-        router.replace('/(customer)');
+        router.replace('/(customer)/discover');
         return;
       }
       if (pref === 'staff' && isStaffLike) {
         router.replace('/(staff)');
         return;
       }
-      router.replace('/(customer)');
+      router.replace('/(customer)/discover');
     })();
     return () => {
       cancelled = true;

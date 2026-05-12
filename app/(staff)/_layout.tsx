@@ -243,7 +243,7 @@ export default function OwnerTabsLayout() {
       return;
     }
     if (!isStaffLike && shellPref !== 'staff') {
-      router.replace('/(customer)' as never);
+      router.replace('/(customer)/discover' as never);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [loading, isAuthenticated, isStaffLike, shellPref]);

@@ -27,7 +27,7 @@ export default function AuthLayout() {
       if (cachedPref === 'staff' && isStaffLike) {
         router.replace('/(staff)' as never);
       } else {
-        router.replace('/(customer)' as never);
+        router.replace('/(customer)/discover' as never);
       }
       return;
     }
@@ -36,7 +36,7 @@ export default function AuthLayout() {
       if (pref === 'staff' && isStaffLike) {
         router.replace('/(staff)' as never);
       } else {
-        router.replace('/(customer)' as never);
+        router.replace('/(customer)/discover' as never);
       }
     });
     return () => {

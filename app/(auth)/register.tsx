@@ -281,7 +281,7 @@ export default function RegisterScreen() {
             // best-effort
           }
           Alert.alert('Account updated', 'Customer access has been added to your existing account.');
-          router.replace('/(customer)');
+          router.replace('/(customer)/discover' as never);
           return;
         }
         Alert.alert('Sign up failed', error.message);
@@ -302,7 +302,7 @@ export default function RegisterScreen() {
 
       if (data.session) {
         // Account created and signed in — no email confirmation needed.
-        router.replace('/(customer)');
+        router.replace('/(customer)/discover' as never);
       } else {
         Alert.alert(
           'Check your email',
@@ -337,7 +337,7 @@ export default function RegisterScreen() {
       } catch {
         // ignore: profile creation is best-effort and can be retried later
       }
-      router.replace('/(customer)');
+      router.replace('/(customer)/discover' as never);
     } finally {
       setSubmitting(false);
     }
