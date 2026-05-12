@@ -1,6 +1,7 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { key } from '@/lib/storage/keys';
 
-const STORAGE_KEY = '@seatly/app_shell_preference';
+const STORAGE_KEY = key('app_shell_preference');
 
 export type AppShellPreference = 'auto' | 'customer' | 'staff';
 
