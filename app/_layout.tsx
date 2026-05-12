@@ -137,18 +137,23 @@ function ThemedRootShell() {
     router.replace('/' as never);
   }, [router]);
 
-  // Fires AFTER React commits isAuthenticated = true (useEffect guarantee), so any
-  // destination layout's auth guard sees the updated value and won't bounce.
-  // Kept synchronous to avoid cancellation races with async preference lookup.
+  // Single source of truth for all auth-driven navigation.
+  // Runs AFTER React commits state, so destination layouts never see stale values.
   useEffect(() => {
-    if (loading || role === null || !isAuthenticated) return;
-    if (segments[0] !== '(auth)') return;
+    if (loading) return;
+    const seg0 = segments[0] as string | undefined;
     const seg1 = segments[1] as string | undefined;
-    if (seg1 === 'reset-password' || seg1 === 'verify-phone-otp') return;
-    if (isStaffLike) {
-      router.replace('/(staff)' as never);
-    } else {
-      router.replace('/(customer)/discover' as never);
+
+    // Authenticated user on an auth screen → send them into the app.
+    if (isAuthenticated && role !== null && seg0 === '(auth)') {
+      if (seg1 === 'reset-password' || seg1 === 'verify-phone-otp') return;
+      router.replace(isStaffLike ? '/(staff)' as never : '/(customer)/discover' as never);
+      return;
+    }
+
+    // Unauthenticated user on a protected screen → send to auth welcome.
+    if (!isAuthenticated && (seg0 === '(customer)' || seg0 === '(staff)')) {
+      router.replace('/(auth)/welcome' as never);
     }
   }, [loading, isAuthenticated, role, isStaffLike, segments, router]);
 

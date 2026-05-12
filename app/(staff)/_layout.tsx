@@ -237,11 +237,7 @@ export default function OwnerTabsLayout() {
   }, [router]);
 
   useEffect(() => {
-    if (loading) return;
-    if (!isAuthenticated) {
-      router.replace('/(auth)/welcome' as never);
-      return;
-    }
+    if (loading || !isAuthenticated) return;
     if (!isStaffLike && shellPref !== 'staff') {
       router.replace('/(customer)/discover' as never);
     }

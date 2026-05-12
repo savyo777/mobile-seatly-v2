@@ -128,12 +128,6 @@ export default function CustomerTabsLayout() {
     [c.bgBase, router, styles.centerBtn, styles.centerBtnActive, styles.centerBtnWrapper],
   );
 
-  useEffect(() => {
-    if (loading || isAuthenticated) return;
-    router.replace('/(auth)/welcome' as never);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [loading, isAuthenticated]);
-
   if (loading || !isAuthenticated || role === null) {
     return (
       <View style={[styles.root, { alignItems: 'center', justifyContent: 'center' }]}>
