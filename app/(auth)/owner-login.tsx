@@ -120,6 +120,31 @@ const useStyles = createStyles((c) => ({
   },
   footerMuted: { ...typography.body, color: c.textSecondary },
   footerLink: { ...typography.body, color: c.gold, fontWeight: '700' },
+  lockoutBanner: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: spacing.sm,
+    padding: spacing.md,
+    marginBottom: spacing.md,
+    borderRadius: borderRadius.md,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: c.danger,
+    backgroundColor: `${c.danger}1A`,
+  },
+  lockoutTitle: {
+    ...typography.bodySmall,
+    fontWeight: '700',
+    color: c.danger,
+    marginBottom: 2,
+  },
+  lockoutBody: {
+    ...typography.bodySmall,
+    color: c.textPrimary,
+  },
+  lockoutReset: {
+    color: c.gold,
+    fontWeight: '700',
+  },
 }));
 
 function failuresKey(email: string) {
@@ -144,7 +169,9 @@ export default function OwnerLoginScreen() {
   const [lockoutUntilMs, setLockoutUntilMs] = useState<number | null>(null);
 
   const trimmedEmail = email.trim().toLowerCase();
-  const isLockedOut = lockoutUntilMs !== null && Date.now() < lockoutUntilMs;
+  const [nowMs, setNowMs] = useState<number>(Date.now());
+  const isLockedOut = lockoutUntilMs !== null && nowMs < lockoutUntilMs;
+  const lockoutMsRemaining = isLockedOut && lockoutUntilMs !== null ? lockoutUntilMs - nowMs : 0;
 
   useEffect(() => {
     let cancelled = false;
@@ -175,7 +202,9 @@ export default function OwnerLoginScreen() {
   useEffect(() => {
     if (!isLockedOut || lockoutUntilMs === null) return;
     const id = setInterval(() => {
-      if (Date.now() >= lockoutUntilMs) {
+      const now = Date.now();
+      setNowMs(now);
+      if (now >= lockoutUntilMs) {
         setLockoutUntilMs(null);
         clearInterval(id);
       }
@@ -356,6 +385,26 @@ export default function OwnerLoginScreen() {
             <Text style={styles.forgotText}>{t('auth.forgotPassword')}</Text>
           </TouchableOpacity>
         </View>
+
+        {isLockedOut ? (
+          <View style={styles.lockoutBanner}>
+            <Ionicons name="lock-closed" size={18} color={c.danger} />
+            <View style={{ flex: 1 }}>
+              <Text style={styles.lockoutTitle}>{t('auth.lockoutTitle')}</Text>
+              <Text style={styles.lockoutBody}>
+                {lockoutMsRemaining >= 60_000
+                  ? t('auth.lockoutBodyMinutes', { minutes: Math.ceil(lockoutMsRemaining / 60_000) })
+                  : t('auth.lockoutBodySeconds', { seconds: Math.max(1, Math.ceil(lockoutMsRemaining / 1000)) })}{' '}
+                <Text
+                  style={styles.lockoutReset}
+                  onPress={() => router.push('/(auth)/forgot-password')}
+                >
+                  {t('auth.forgotPassword')}
+                </Text>
+              </Text>
+            </View>
+          </View>
+        ) : null}
 
         <Button
           title={t('auth.ownerSignIn')}
