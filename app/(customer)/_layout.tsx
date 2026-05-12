@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useMemo } from 'react';
 import { ActivityIndicator, Pressable, StyleSheet, View } from 'react-native';
-import { Redirect, Tabs, useRouter, usePathname, Href } from 'expo-router';
+import { Tabs, useRouter, usePathname, Href } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
 import * as Haptics from 'expo-haptics';
@@ -128,15 +128,18 @@ export default function CustomerTabsLayout() {
     [c.bgBase, router, styles.centerBtn, styles.centerBtnActive, styles.centerBtnWrapper],
   );
 
-  if (loading || (isAuthenticated && role === null)) {
+  useEffect(() => {
+    if (loading || isAuthenticated) return;
+    router.replace('/(auth)/welcome' as never);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [loading, isAuthenticated]);
+
+  if (loading || !isAuthenticated || role === null) {
     return (
       <View style={[styles.root, { alignItems: 'center', justifyContent: 'center' }]}>
         <ActivityIndicator color={c.gold} />
       </View>
     );
-  }
-  if (!isAuthenticated) {
-    return <Redirect href="/(auth)/welcome" />;
   }
 
   return (

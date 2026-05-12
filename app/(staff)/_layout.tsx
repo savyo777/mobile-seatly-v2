@@ -8,7 +8,7 @@ import {
   TouchableWithoutFeedback,
   ActivityIndicator,
 } from 'react-native';
-import { Redirect, Tabs, useRouter, usePathname } from 'expo-router';
+import { Tabs, useRouter, usePathname } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -236,21 +236,34 @@ export default function OwnerTabsLayout() {
     setTimeout(() => router.push(route as never), 180);
   }, [router]);
 
-  if (loading || (isAuthenticated && role === null)) {
+  useEffect(() => {
+    if (loading) return;
+    if (!isAuthenticated) {
+      router.replace('/(auth)/welcome' as never);
+      return;
+    }
+    if (!isStaffLike && shellPref !== 'staff') {
+      router.replace('/(customer)' as never);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [loading, isAuthenticated, isStaffLike, shellPref]);
+
+  if (loading || !isAuthenticated || role === null) {
     return (
       <View style={[styles.root, { alignItems: 'center', justifyContent: 'center' }]}>
         <ActivityIndicator color={c.gold} />
       </View>
     );
   }
-  if (!isAuthenticated) {
-    return <Redirect href="/(auth)/welcome" />;
-  }
   // Allow the staff shell when the user is staff-like *or* they explicitly
   // chose to be on the restaurant side (e.g. just finished registration).
   // Only redirect them out if they're a pure customer with no staff intent.
   if (!isStaffLike && shellPref !== 'staff') {
-    return <Redirect href="/(customer)" />;
+    return (
+      <View style={[styles.root, { alignItems: 'center', justifyContent: 'center' }]}>
+        <ActivityIndicator color={c.gold} />
+      </View>
+    );
   }
 
   return (
