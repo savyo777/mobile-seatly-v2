@@ -149,6 +149,13 @@ const useStyles = createStyles((c) => ({
     justifyContent: 'center',
     gap: 4,
   },
+  photoHint: {
+    fontSize: 12,
+    fontWeight: '500',
+    color: c.textMuted,
+    marginBottom: spacing.md,
+    paddingHorizontal: 2,
+  },
   galleryRow: {
     flexDirection: 'row',
     gap: spacing.sm,
@@ -820,11 +827,14 @@ export default function EditBusinessProfileScreen() {
         showsVerticalScrollIndicator={false}
         contentContainerStyle={{ paddingHorizontal: spacing.lg, paddingBottom: 120 }}
       >
-        {/* ── Photos ── */}
-        <SectionHeader title="Photos" />
-
-        {/* Cover photo */}
-        <Pressable style={styles.coverWrap} onPress={pickCover} accessibilityRole="button">
+        {/* ── Cover photo ── */}
+        <SectionHeader title="Cover photo" />
+        <Pressable
+          style={styles.coverWrap}
+          onPress={pickCover}
+          accessibilityRole="button"
+          accessibilityLabel={coverUri ? 'Change cover photo' : 'Add cover photo'}
+        >
           {coverUri ? (
             <Image source={{ uri: coverUri }} style={styles.coverImage} resizeMode="cover" />
           ) : null}
@@ -835,19 +845,30 @@ export default function EditBusinessProfileScreen() {
             </Text>
           </View>
         </Pressable>
+        <Text style={styles.photoHint}>Wide hero image shown at the top of your restaurant page.</Text>
 
-        {/* Logo */}
-        <Pressable style={styles.logoWrap} onPress={pickLogo} accessibilityRole="button">
+        {/* ── Logo photo ── */}
+        <SectionHeader title="Logo photo" />
+        <Pressable
+          style={styles.logoWrap}
+          onPress={pickLogo}
+          accessibilityRole="button"
+          accessibilityLabel={logoUri ? 'Change logo photo' : 'Add logo photo'}
+        >
           {logoUri ? (
             <Image source={{ uri: logoUri }} style={styles.logoImage} resizeMode="cover" />
           ) : null}
           <View style={styles.logoOverlay}>
             <Ionicons name="image-outline" size={22} color="#fff" />
             <Text style={styles.coverOverlayText}>
-              {logoUri ? 'Change logo' : 'Add logo'}
+              {logoUri ? 'Change logo photo' : 'Add logo photo'}
             </Text>
           </View>
         </Pressable>
+        <Text style={styles.photoHint}>Square mark used as your avatar in listings and headers.</Text>
+
+        {/* ── Gallery ── */}
+        <SectionHeader title="Gallery" />
 
         {/* Gallery */}
         <View style={styles.galleryRow}>
