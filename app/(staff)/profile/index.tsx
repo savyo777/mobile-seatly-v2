@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React from 'react';
 import {
   View,
   Text,
@@ -19,7 +19,8 @@ import { withOwnerReturnTarget } from '@/lib/navigation/ownerReturnTargets';
 import { useOwnerTabScrollPadding } from '@/hooks/useOwnerTabScrollPadding';
 import { useMenu } from '@/lib/context/MenuContext';
 import { isDemoModeEnabled } from '@/lib/config/demoMode';
-import { fetchCurrentOwnerRestaurant, type OwnerRestaurant } from '@/lib/services/ownerRestaurant';
+import { useOwnerScope } from '@/hooks/useOwnerScope';
+import { RestaurantPicker } from '@/components/owner/RestaurantPicker';
 import {
   OWNER_BUSINESS_PROFILE,
   OWNER_RESERVATIONS,
@@ -419,23 +420,10 @@ export default function OwnerBusinessScreen() {
   const router = useRouter();
   const { width } = useWindowDimensions();
   const heroH = 220 + insets.top;
-  const [ownerRestaurant, setOwnerRestaurant] = useState<OwnerRestaurant | null>(null);
+  const { selectedRestaurant, isAll } = useOwnerScope();
+  const ownerRestaurant = selectedRestaurant;
 
   const { items: menuItems } = useMenu();
-
-  useEffect(() => {
-    let active = true;
-    void fetchCurrentOwnerRestaurant()
-      .then((restaurant) => {
-        if (active) setOwnerRestaurant(restaurant);
-      })
-      .catch(() => {
-        if (active) setOwnerRestaurant(null);
-      });
-    return () => {
-      active = false;
-    };
-  }, []);
 
   const menuByCategory = menuItems.reduce<Record<string, typeof menuItems>>((acc, item) => {
     if (!acc[item.category]) acc[item.category] = [];
@@ -547,6 +535,19 @@ export default function OwnerBusinessScreen() {
             </View>
           </View>
         </View>
+
+        {/* ── Restaurant picker ── */}
+        <View style={{ paddingHorizontal: spacing.lg, paddingTop: spacing.md }}>
+          <RestaurantPicker allowAll={false} size="compact" />
+        </View>
+
+        {isAll ? (
+          <View style={{ padding: spacing.lg, alignItems: 'center' }}>
+            <Text style={{ color: c.textMuted, fontSize: 14, fontWeight: '500', textAlign: 'center' }}>
+              Pick a restaurant to manage its business profile.
+            </Text>
+          </View>
+        ) : null}
 
         {/* ── Stats row ── */}
         <View style={styles.statsRow}>

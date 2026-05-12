@@ -21,7 +21,8 @@ import {
 } from '@/lib/mock/ownerApp';
 import { isDemoModeEnabled } from '@/lib/config/demoMode';
 import { getSupabase } from '@/lib/supabase/client';
-import { fetchCurrentOwnerRestaurant } from '@/lib/services/ownerRestaurant';
+import { useOwnerScope } from '@/hooks/useOwnerScope';
+import { RestaurantPicker } from '@/components/owner/RestaurantPicker';
 import {
   checkInGuest,
   createStaffReservation,
@@ -759,7 +760,9 @@ export default function OwnerReservationsScreen() {
     return new Date(d.getFullYear(), d.getMonth(), 1);
   });
   const [selected, setSelected] = useState<OwnerReservationSlot | null>(null);
-  const [restaurantId, setRestaurantId] = useState<string | null>(null);
+  const { restaurantIds, selectedRestaurantId, isAll } = useOwnerScope();
+  const restaurantId = selectedRestaurantId;
+  const restaurantIdsKey = restaurantIds.join('|');
   const [reservations, setReservations] = useState<OwnerReservationSlot[]>(
     isDemoModeEnabled() ? DEMO_OWNER_RESERVATIONS : [],
   );
@@ -773,15 +776,19 @@ export default function OwnerReservationsScreen() {
     Record<string, OwnerReservationSlot['status'] | 'cancelled'>
   >({});
 
-  const loadReservations = useCallback(async (rid: string) => {
+  const loadReservations = useCallback(async (ids: string[]) => {
     const supabase = getSupabase();
-    if (!supabase) return;
+    if (!supabase || ids.length === 0) {
+      setReservations([]);
+      setReservationExtras({});
+      return;
+    }
     const { data, error } = await supabase
       .from('reservations')
       .select(
         'id,guest_id,party_size,reserved_at,status,special_request,no_show_risk_score,confirmation_code,deposit_status,source,guest_full_name,guests:guests(full_name)',
       )
-      .eq('restaurant_id', rid)
+      .in('restaurant_id', ids)
       .order('reserved_at', { ascending: true });
     if (error || !data) return;
     const reservationIds = data.map((row) => String((row as Record<string, unknown>).id ?? '')).filter(Boolean);
@@ -863,29 +870,36 @@ export default function OwnerReservationsScreen() {
 
   useEffect(() => {
     if (isDemoModeEnabled()) return;
+    if (restaurantIds.length === 0) return;
     let active = true;
     void (async () => {
       try {
-        const owner = await fetchCurrentOwnerRestaurant();
-        if (!active || !owner?.id) return;
-        setRestaurantId(owner.id);
-        await loadReservations(owner.id);
+        await loadReservations(restaurantIds);
       } catch {
         // silent — leave empty
       }
+      if (!active) return;
     })();
     return () => {
       active = false;
     };
-  }, [loadReservations]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [restaurantIdsKey, loadReservations]);
 
   useEffect(() => {
-    if (!restaurantId || isDemoModeEnabled()) return;
-    const unsubscribe = subscribeToAvailability(restaurantId, () => {
-      void loadReservations(restaurantId);
-    });
-    return unsubscribe;
-  }, [restaurantId, loadReservations]);
+    if (restaurantIds.length === 0 || isDemoModeEnabled()) return;
+    const unsubs = restaurantIds.map((rid) =>
+      subscribeToAvailability(rid, () => {
+        void loadReservations(restaurantIds);
+      }),
+    );
+    return () => {
+      unsubs.forEach((unsub) => {
+        if (typeof unsub === 'function') unsub();
+      });
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [restaurantIdsKey, loadReservations]);
 
   const handleSeatGuest = useCallback((res: OwnerReservationSlot) => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
@@ -900,11 +914,12 @@ export default function OwnerReservationsScreen() {
         } else {
           await updateStaffReservationStatus({ reservationId: res.id, status: 'seated' });
         }
-        if (restaurantId) await loadReservations(restaurantId);
+        if (restaurantIds.length) await loadReservations(restaurantIds);
       })();
     }
     Alert.alert('Seated', `${res.guestName} marked as seated.`);
-  }, [reservationExtras, restaurantId, loadReservations]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [reservationExtras, restaurantIdsKey, loadReservations]);
 
   const handleCheckIn = useCallback((res: OwnerReservationSlot) => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
@@ -912,14 +927,22 @@ export default function OwnerReservationsScreen() {
     if (!isDemoModeEnabled()) {
       void (async () => {
         await checkInGuest({ reservationId: res.id, restaurantId: restaurantId ?? undefined });
-        if (restaurantId) await loadReservations(restaurantId);
+        if (restaurantIds.length) await loadReservations(restaurantIds);
       })();
     }
     Alert.alert('Checked in', `${res.guestName} marked as arrived.`);
-  }, [restaurantId, loadReservations]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [restaurantId, restaurantIdsKey, loadReservations]);
 
   const handleAddReservation = useCallback(() => {
     Haptics.selectionAsync().catch(() => {});
+    if (isAll) {
+      Alert.alert(
+        'Pick a restaurant',
+        'Switch out of "All restaurants" mode to add a new reservation to a specific location.',
+      );
+      return;
+    }
     if (!restaurantId) {
       Alert.alert('Not ready', 'Restaurant not loaded yet.');
       return;
@@ -954,7 +977,7 @@ export default function OwnerReservationsScreen() {
                   if (res.error) {
                     Alert.alert('Could not create', res.error);
                   } else {
-                    await loadReservations(restaurantId);
+                    await loadReservations(restaurantIds);
                   }
                 })();
               },
@@ -967,7 +990,8 @@ export default function OwnerReservationsScreen() {
       ],
       'plain-text',
     );
-  }, [restaurantId, loadReservations]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [restaurantId, restaurantIdsKey, loadReservations]);
 
   const handleNoShow = useCallback((res: OwnerReservationSlot) => {
     Haptics.selectionAsync().catch(() => {});
@@ -976,10 +1000,11 @@ export default function OwnerReservationsScreen() {
     if (!isDemoModeEnabled()) {
       void (async () => {
         await updateStaffReservationStatus({ reservationId: res.id, status: 'no_show' });
-        if (restaurantId) await loadReservations(restaurantId);
+        if (restaurantIds.length) await loadReservations(restaurantIds);
       })();
     }
-  }, [restaurantId, loadReservations]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [restaurantIdsKey, loadReservations]);
 
   const handleMessageGuest = useCallback((res: OwnerReservationSlot) => {
     Haptics.selectionAsync().catch(() => {});
@@ -1024,7 +1049,7 @@ export default function OwnerReservationsScreen() {
             if (!isDemoModeEnabled()) {
               void (async () => {
                 await updateStaffReservationStatus({ reservationId: res.id, status: 'cancelled' });
-                if (restaurantId) await loadReservations(restaurantId);
+                if (restaurantIds.length) await loadReservations(restaurantIds);
               })();
             }
             Alert.alert('Cancelled', `${res.guestName}'s reservation was cancelled.`);
@@ -1032,7 +1057,8 @@ export default function OwnerReservationsScreen() {
         },
       ],
     );
-  }, [restaurantId, loadReservations]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [restaurantIdsKey, loadReservations]);
 
   const todayKey = toDateKey(new Date());
 
@@ -1186,6 +1212,9 @@ export default function OwnerReservationsScreen() {
             <Ionicons name="add" size={16} color="#000" />
             <Text style={{ fontSize: 13, fontWeight: '800', color: '#000' }}>Add</Text>
           </Pressable>
+        </View>
+        <View style={{ marginTop: spacing.sm }}>
+          <RestaurantPicker allowAll size="compact" />
         </View>
       </View>
 

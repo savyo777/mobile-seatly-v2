@@ -3,7 +3,8 @@ import { StyleSheet, Text, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { OwnerScreen } from '@/components/owner/OwnerScreen';
 import { SubpageHeader } from '@/components/owner/SubpageHeader';
-import { fetchCurrentOwnerRestaurant } from '@/lib/services/ownerRestaurant';
+import { RestaurantPicker } from '@/components/owner/RestaurantPicker';
+import { useOwnerScope } from '@/hooks/useOwnerScope';
 import { getSupabase } from '@/lib/supabase/client';
 import { borderRadius, createStyles, spacing, typography, useColors } from '@/lib/theme';
 
@@ -266,6 +267,8 @@ const PAST_YEARS: YearSummary[] = [];
 export default function BillingHistoryScreen() {
   const c = useColors();
   const styles = useStyles();
+  const { restaurantIds } = useOwnerScope();
+  const restaurantIdsKey = restaurantIds.join('|');
   const [activity, setActivity] = useState<CycleActivity>({
     bookingCount: 0,
     preOrderCount: 0,
@@ -277,9 +280,9 @@ export default function BillingHistoryScreen() {
   useEffect(() => {
     let active = true;
     void (async () => {
-      const restaurant = await fetchCurrentOwnerRestaurant();
+      if (restaurantIds.length === 0) return;
       const supabase = getSupabase();
-      if (!restaurant?.id || !supabase) return;
+      if (!supabase) return;
       const start = cycleStart().toISOString();
       const end = nextCycleStart().toISOString();
 
@@ -287,13 +290,13 @@ export default function BillingHistoryScreen() {
         supabase
           .from('reservations')
           .select('id', { count: 'exact', head: true })
-          .eq('restaurant_id', restaurant.id)
+          .in('restaurant_id', restaurantIds)
           .gte('reserved_at', start)
           .lt('reserved_at', end),
         supabase
           .from('orders')
           .select('total_amount')
-          .eq('restaurant_id', restaurant.id)
+          .in('restaurant_id', restaurantIds)
           .eq('is_preorder', true)
           .gte('created_at', start)
           .lt('created_at', end),
@@ -313,7 +316,8 @@ export default function BillingHistoryScreen() {
     return () => {
       active = false;
     };
-  }, []);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [restaurantIdsKey]);
 
   const categories = useMemo<Category[]>(() => {
     const bookingTotal = activity.bookingCount * PRICING.perBookingDollars;
@@ -366,6 +370,10 @@ export default function BillingHistoryScreen() {
       <View style={styles.intro}>
         <Text style={styles.introTitle}>Billing history</Text>
         <Text style={styles.introText}>Review current charges and open past invoices by year.</Text>
+      </View>
+
+      <View style={{ marginBottom: spacing.md }}>
+        <RestaurantPicker allowAll size="compact" />
       </View>
 
       <View style={styles.cyclePill}>

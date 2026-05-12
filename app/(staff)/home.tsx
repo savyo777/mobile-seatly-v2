@@ -16,7 +16,8 @@ import Svg, { Rect, Polyline, Circle, Path, Defs, LinearGradient, Stop } from 'r
 import { useColors, createStyles, spacing, borderRadius } from '@/lib/theme';
 import { useAuthSession } from '@/lib/auth/AuthContext';
 import { resolveAuthDisplayProfile } from '@/lib/auth/displayProfile';
-import { fetchCurrentOwnerRestaurant, type OwnerRestaurant } from '@/lib/services/ownerRestaurant';
+import { useOwnerScope } from '@/hooks/useOwnerScope';
+import { RestaurantPicker } from '@/components/owner/RestaurantPicker';
 import { safeOwnerPush } from '@/lib/navigation/safeOwnerNavigation';
 import { withOwnerReturnTarget } from '@/lib/navigation/ownerReturnTargets';
 import {
@@ -708,7 +709,8 @@ export default function OwnerHomeScreen() {
   const insets = useSafeAreaInsets();
   const router = useRouter();
   const { user } = useAuthSession();
-  const [ownerRestaurant, setOwnerRestaurant] = useState<OwnerRestaurant | null>(null);
+  const { selectedRestaurant, restaurantIds, isAll, restaurants } = useOwnerScope();
+  const ownerRestaurant = selectedRestaurant;
   const [shiftBriefing, setShiftBriefing] = useState<string | null>(null);
   const [liveMetrics, setLiveMetrics] = useState<typeof DEMO_LIVE_METRICS>(
     isDemoModeEnabled() ? DEMO_LIVE_METRICS : EMPTY_LIVE_METRICS,
@@ -735,43 +737,30 @@ export default function OwnerHomeScreen() {
   const displayProfile = useMemo(() => resolveAuthDisplayProfile(user, { fullName: 'Owner' }), [user]);
   const firstName = displayProfile.fullName.split(/\s+/).filter(Boolean)[0] || 'Owner';
 
-  useEffect(() => {
-    let active = true;
-    void fetchCurrentOwnerRestaurant()
-      .then((restaurant) => {
-        if (!active) return;
-        setOwnerRestaurant(restaurant);
-        // The OwnerRestaurant mapper doesn't currently expose current_shift_briefing;
-        // re-read it from the row via a thin direct query below in a second effect.
-      })
-      .catch(() => {
-        if (active) setOwnerRestaurant(null);
-      });
-    return () => {
-      active = false;
-    };
-  }, []);
-
-  // Load shift briefing + restaurant_analytics + today's reservations once we know the restaurant id.
+  // Load shift briefing + restaurant_analytics + today's reservations once we know the restaurant id(s).
+  const restaurantIdsKey = restaurantIds.join('|');
   useEffect(() => {
     if (isDemoModeEnabled()) return;
-    const restaurantId = ownerRestaurant?.id;
-    if (!restaurantId) return;
+    if (restaurantIds.length === 0) return;
     const supabase = getSupabase();
     if (!supabase) return;
     let active = true;
 
-    // Shift briefing text
-    void supabase
-      .from('restaurants')
-      .select('current_shift_briefing')
-      .eq('id', restaurantId)
-      .maybeSingle()
-      .then(({ data }) => {
-        if (!active) return;
-        const briefing = (data?.current_shift_briefing ?? null) as string | null;
-        setShiftBriefing(briefing && briefing.trim() ? briefing : null);
-      });
+    // Shift briefing text — only meaningful when scoped to a single restaurant.
+    if (!isAll && restaurantIds.length === 1) {
+      void supabase
+        .from('restaurants')
+        .select('current_shift_briefing')
+        .eq('id', restaurantIds[0])
+        .maybeSingle()
+        .then(({ data }) => {
+          if (!active) return;
+          const briefing = (data?.current_shift_briefing ?? null) as string | null;
+          setShiftBriefing(briefing && briefing.trim() ? briefing : null);
+        });
+    } else {
+      setShiftBriefing(null);
+    }
 
     // Last 14 days of analytics — current 7 days for the week trend, previous 7 for the vs-last-week pct.
     const today = new Date();
@@ -783,18 +772,45 @@ export default function OwnerHomeScreen() {
     void supabase
       .from('restaurant_analytics')
       .select('date,total_covers,no_show_count,cancellation_count')
-      .eq('restaurant_id', restaurantId)
+      .in('restaurant_id', restaurantIds)
       .gte('date', fromIso)
       .lte('date', todayIso)
       .order('date', { ascending: true })
       .then(({ data }) => {
         if (!active) return;
-        const rows = (data ?? []) as Array<{
+        const rawRows = (data ?? []) as Array<{
           date: string;
           total_covers: number | null;
           no_show_count: number | null;
           cancellation_count: number | null;
         }>;
+
+        // When scoped across multiple restaurants, sum the per-day counts so
+        // the chart and aggregate metrics reflect every owned location.
+        const aggregatedByDate = new Map<string, {
+          date: string;
+          total_covers: number;
+          no_show_count: number;
+          cancellation_count: number;
+        }>();
+        rawRows.forEach((row) => {
+          const existing = aggregatedByDate.get(row.date);
+          if (existing) {
+            existing.total_covers += row.total_covers ?? 0;
+            existing.no_show_count += row.no_show_count ?? 0;
+            existing.cancellation_count += row.cancellation_count ?? 0;
+          } else {
+            aggregatedByDate.set(row.date, {
+              date: row.date,
+              total_covers: row.total_covers ?? 0,
+              no_show_count: row.no_show_count ?? 0,
+              cancellation_count: row.cancellation_count ?? 0,
+            });
+          }
+        });
+        const rows = Array.from(aggregatedByDate.values()).sort((a, b) =>
+          a.date.localeCompare(b.date),
+        );
 
         // Build last 7 days vs previous 7 days
         const byDate = new Map<string, (typeof rows)[number]>();
@@ -865,7 +881,7 @@ export default function OwnerHomeScreen() {
     void supabase
       .from('reservations')
       .select('reserved_at,status')
-      .eq('restaurant_id', restaurantId)
+      .in('restaurant_id', restaurantIds)
       .gte('reserved_at', dayStart.toISOString())
       .lt('reserved_at', dayEnd.toISOString())
       .then(({ data }) => {
@@ -897,7 +913,8 @@ export default function OwnerHomeScreen() {
     return () => {
       active = false;
     };
-  }, [ownerRestaurant?.id]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [restaurantIdsKey, isAll]);
 
   const seatedTables = OWNER_FLOOR_TABLES.filter((t) => t.status === 'occupied').length;
   const tablesTotal = OWNER_FLOOR_TABLES.length;
@@ -959,8 +976,14 @@ export default function OwnerHomeScreen() {
           <Text style={styles.greetLine1}>{greeting},</Text>
           <Text style={styles.greetLine2}>{firstName}.</Text>
           <Text style={styles.subline}>
-            {[ownerRestaurant?.name, ownerRestaurant?.address].filter(Boolean).join(' · ') || 'Restaurant dashboard'}
+            {isAll
+              ? `All restaurants · ${restaurants.length} locations`
+              : [ownerRestaurant?.name, ownerRestaurant?.address].filter(Boolean).join(' · ') ||
+                'Restaurant dashboard'}
           </Text>
+          <View style={{ marginTop: spacing.sm }}>
+            <RestaurantPicker allowAll size="compact" />
+          </View>
         </View>
 
         {/* ── Tonight hero ── */}

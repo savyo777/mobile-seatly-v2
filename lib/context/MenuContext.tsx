@@ -1,7 +1,7 @@
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
 import { useAuthSession } from '@/lib/auth/AuthContext';
 import { isDemoModeEnabled } from '@/lib/config/demoMode';
-import { fetchCurrentOwnerRestaurant } from '@/lib/services/ownerRestaurant';
+import { useOwnerScope } from '@/hooks/useOwnerScope';
 import { getSupabase } from '@/lib/supabase/client';
 import { menuCategories, mockMenuItems, type MenuItem } from '@/lib/mock/menuItems';
 
@@ -101,7 +101,10 @@ function categoriesFromItems(items: MenuItem[]): string[] {
 
 export function MenuProvider({ children }: { children: React.ReactNode }) {
   const { user, isStaffLike } = useAuthSession();
-  const [ownerRestaurantId, setOwnerRestaurantId] = useState<string | null>(null);
+  const { selectedRestaurant, isAll } = useOwnerScope();
+  // Menu management is single-restaurant only; in all-mode the provider
+  // behaves as empty and consumer screens render a "pick a restaurant" CTA.
+  const ownerRestaurantId = isAll ? null : selectedRestaurant?.id ?? null;
   const [items, setItems] = useState<MenuItem[]>([]);
   const [photos, setPhotos] = useState<string[]>([]);
   const [categories, setCategories] = useState<string[]>([]);
@@ -111,7 +114,6 @@ export function MenuProvider({ children }: { children: React.ReactNode }) {
 
     async function loadOwnerMenu() {
       if (!user || !isStaffLike) {
-        setOwnerRestaurantId(null);
         setItems([]);
         setPhotos([]);
         setCategories([]);
@@ -119,14 +121,13 @@ export function MenuProvider({ children }: { children: React.ReactNode }) {
       }
 
       try {
-        const restaurant = await fetchCurrentOwnerRestaurant();
+        const restaurant = selectedRestaurant;
         if (cancelled) return;
-        setOwnerRestaurantId(restaurant?.id ?? null);
         setPhotos([restaurant?.coverPhotoUrl, restaurant?.logoUrl].filter((uri): uri is string => Boolean(uri)));
 
         const supabase = getSupabase();
-        if (!supabase || !restaurant?.id) {
-          if (isDemoModeEnabled()) {
+        if (!supabase || !ownerRestaurantId) {
+          if (isDemoModeEnabled() && !isAll) {
             const demoItems = mockMenuItems.filter((item) => item.restaurantId === 'r1');
             setItems(demoItems);
             setCategories(categoriesFromItems(demoItems));
@@ -140,7 +141,7 @@ export function MenuProvider({ children }: { children: React.ReactNode }) {
         const { data, error } = await supabase
           .from('menu_items')
           .select('*')
-          .eq('restaurant_id', restaurant.id)
+          .eq('restaurant_id', ownerRestaurantId)
           .order('category', { ascending: true })
           .order('sort_order', { ascending: true })
           .order('name', { ascending: true });
@@ -151,7 +152,6 @@ export function MenuProvider({ children }: { children: React.ReactNode }) {
         setCategories(categoriesFromItems(next));
       } catch {
         if (!cancelled) {
-          setOwnerRestaurantId(null);
           setItems([]);
           setPhotos([]);
           setCategories([]);
@@ -163,7 +163,7 @@ export function MenuProvider({ children }: { children: React.ReactNode }) {
     return () => {
       cancelled = true;
     };
-  }, [isStaffLike, user?.id]);
+  }, [isStaffLike, user?.id, ownerRestaurantId, isAll, selectedRestaurant]);
 
   useEffect(() => {
     setCategories((prev) => {

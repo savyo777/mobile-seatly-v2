@@ -1,7 +1,7 @@
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
 import { useAuthSession } from '@/lib/auth/AuthContext';
 import { isDemoModeEnabled } from '@/lib/config/demoMode';
-import { fetchCurrentOwnerRestaurant } from '@/lib/services/ownerRestaurant';
+import { useOwnerScope } from '@/hooks/useOwnerScope';
 import {
   createExpense,
   deleteExpense,
@@ -30,24 +30,28 @@ const ExpensesContext = createContext<ExpensesContextValue | null>(null);
 
 export function ExpensesProvider({ children }: { children: React.ReactNode }) {
   const { user, isStaffLike } = useAuthSession();
-  const [ownerRestaurantId, setOwnerRestaurantId] = useState<string | null>(null);
+  const { restaurantIds, selectedRestaurantId } = useOwnerScope();
+  const restaurantIdsKey = restaurantIds.join('|');
   const [expenses, setExpenses] = useState<Expense[]>([]);
   const [loading, setLoading] = useState<boolean>(false);
 
+  // The expense-create / scan flow needs a single restaurant id to attach
+  // new rows to. In all-mode this is null and the calling screen should
+  // prompt the user to pick a specific restaurant.
+  const ownerRestaurantId = selectedRestaurantId;
+
   const reload = useCallback(async () => {
     if (!user || !isStaffLike) {
-      setOwnerRestaurantId(null);
       setExpenses(isDemoModeEnabled() ? DEMO_EXPENSES : []);
       return;
     }
     setLoading(true);
     try {
-      const restaurant = await fetchCurrentOwnerRestaurant();
-      setOwnerRestaurantId(restaurant?.id ?? null);
-      if (!restaurant?.id) {
+      if (restaurantIds.length === 0) {
         setExpenses(isDemoModeEnabled() ? DEMO_EXPENSES : []);
       } else {
-        const rows = await listExpenses(restaurant.id);
+        const rowGroups = await Promise.all(restaurantIds.map((rid) => listExpenses(rid)));
+        const rows = rowGroups.flat();
         if (rows.length === 0 && isDemoModeEnabled()) {
           setExpenses(DEMO_EXPENSES);
         } else {
@@ -59,7 +63,8 @@ export function ExpensesProvider({ children }: { children: React.ReactNode }) {
     } finally {
       setLoading(false);
     }
-  }, [user, isStaffLike]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user, isStaffLike, restaurantIdsKey]);
 
   useEffect(() => {
     void reload();

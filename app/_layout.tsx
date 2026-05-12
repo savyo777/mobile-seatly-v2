@@ -12,6 +12,7 @@ import { AuthProvider } from '@/lib/auth/AuthContext';
 import { ThemeProvider, useColors } from '@/lib/theme';
 import { MenuProvider } from '@/lib/context/MenuContext';
 import { ExpensesProvider } from '@/lib/context/ExpensesContext';
+import { OwnerRestaurantProvider } from '@/lib/owner/OwnerRestaurantContext';
 import { createStackTransitionOptions } from '@/lib/navigation/transitions';
 import { CenaivaAssistantProvider } from '@/lib/cenaiva/CenaivaAssistantProvider';
 import { CenaivaVoicePreferenceProvider } from '@/lib/cenaiva/voice/CenaivaVoicePreferenceProvider';
@@ -162,15 +163,17 @@ export default function RootLayout() {
   const providers = (
     <ThemeProvider>
       <AuthProvider>
-        <MenuProvider>
-          <ExpensesProvider>
-            <CenaivaVoicePreferenceProvider>
-              <CenaivaAssistantProvider>
-                <ThemedRootShell />
-              </CenaivaAssistantProvider>
-            </CenaivaVoicePreferenceProvider>
-          </ExpensesProvider>
-        </MenuProvider>
+        <OwnerRestaurantProvider>
+          <MenuProvider>
+            <ExpensesProvider>
+              <CenaivaVoicePreferenceProvider>
+                <CenaivaAssistantProvider>
+                  <ThemedRootShell />
+                </CenaivaAssistantProvider>
+              </CenaivaVoicePreferenceProvider>
+            </ExpensesProvider>
+          </MenuProvider>
+        </OwnerRestaurantProvider>
       </AuthProvider>
     </ThemeProvider>
   );

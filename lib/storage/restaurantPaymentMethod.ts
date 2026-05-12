@@ -4,6 +4,14 @@ import { fetchCurrentOwnerRestaurant } from '@/lib/services/ownerRestaurant';
 import { getSupabase } from '@/lib/supabase/client';
 import { key } from '@/lib/storage/keys';
 
+// NOTE: this module is plain async (not a React component) and so it cannot
+// consume `useOwnerScope()`. For now every helper resolves the *first* owned
+// restaurant via `fetchCurrentOwnerRestaurant()` — same behavior as before
+// the multi-restaurant scope landed. A future multi-restaurant aware variant
+// should accept an explicit `restaurantId` parameter (or pull it from the
+// caller's `useOwnerScope()` and pass it down). Do NOT refactor the
+// existing callers right now — that's deliberately deferred.
+
 export type CardFunding = 'credit' | 'debit' | 'prepaid' | 'unknown';
 
 export type RestaurantPaymentCard = {

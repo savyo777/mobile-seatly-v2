@@ -23,7 +23,8 @@ import {
 } from '@/lib/mock/ownerApp';
 import { isDemoModeEnabled } from '@/lib/config/demoMode';
 import { getSupabase } from '@/lib/supabase/client';
-import { fetchCurrentOwnerRestaurant } from '@/lib/services/ownerRestaurant';
+import { useOwnerScope } from '@/hooks/useOwnerScope';
+import { RestaurantPicker } from '@/components/owner/RestaurantPicker';
 
 const KDS_TICKETS: typeof DEMO_KDS_TICKETS = isDemoModeEnabled() ? DEMO_KDS_TICKETS : [];
 const LIVE_FEED: typeof DEMO_LIVE_FEED = isDemoModeEnabled() ? DEMO_LIVE_FEED : [];
@@ -126,13 +127,13 @@ type OrderRowSubset = {
   notes?: string | null;
 };
 
-async function fetchKdsForRestaurant(restaurantId: string): Promise<KdsTicket[]> {
+async function fetchKdsForRestaurants(restaurantIds: string[]): Promise<KdsTicket[]> {
   const supabase = getSupabase();
-  if (!supabase) return [];
+  if (!supabase || restaurantIds.length === 0) return [];
   const { data: orderRows, error } = await supabase
     .from('orders')
     .select('id,table_id,status,created_at,notes')
-    .eq('restaurant_id', restaurantId)
+    .in('restaurant_id', restaurantIds)
     .in('status', ['open', 'in_progress', 'fired', 'preparing', 'ready'])
     .order('created_at', { ascending: true });
   if (error || !orderRows) return [];
@@ -220,56 +221,62 @@ export default function OwnerOrdersKdsScreen() {
   const { t } = useTranslation();
   const ownerColors = useOwnerColors();
   const styles = useStyles();
+  const { restaurantIds } = useOwnerScope();
+  const restaurantIdsKey = restaurantIds.join('|');
   const [tickets, setTickets] = useState<KdsTicket[]>(() => [...KDS_TICKETS]);
   const [detail, setDetail] = useState<KdsTicket | null>(null);
-  const [restaurantId, setRestaurantId] = useState<string | null>(null);
 
-  const refresh = useCallback(async (rid: string) => {
-    const rows = await fetchKdsForRestaurant(rid);
+  const refresh = useCallback(async (ids: string[]) => {
+    const rows = await fetchKdsForRestaurants(ids);
     setTickets(rows);
   }, []);
 
   useEffect(() => {
     if (isDemoModeEnabled()) return;
+    if (restaurantIds.length === 0) return;
     let active = true;
     void (async () => {
       try {
-        const owner = await fetchCurrentOwnerRestaurant();
-        if (!active || !owner?.id) return;
-        setRestaurantId(owner.id);
-        await refresh(owner.id);
+        await refresh(restaurantIds);
       } catch {
         // silent
       }
+      if (!active) return;
     })();
     return () => {
       active = false;
     };
-  }, [refresh]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [restaurantIdsKey, refresh]);
 
   useEffect(() => {
-    if (!restaurantId || isDemoModeEnabled()) return;
+    if (restaurantIds.length === 0 || isDemoModeEnabled()) return;
     const supabase = getSupabase();
     if (!supabase) return;
-    const channel = supabase
-      .channel(`orders-kds:${restaurantId}`)
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'orders',
-          filter: `restaurant_id=eq.${restaurantId}`,
-        },
-        () => {
-          void refresh(restaurantId);
-        },
-      )
-      .subscribe();
+    const channels = restaurantIds.map((rid) =>
+      supabase
+        .channel(`orders-kds:${rid}`)
+        .on(
+          'postgres_changes',
+          {
+            event: '*',
+            schema: 'public',
+            table: 'orders',
+            filter: `restaurant_id=eq.${rid}`,
+          },
+          () => {
+            void refresh(restaurantIds);
+          },
+        )
+        .subscribe(),
+    );
     return () => {
-      void supabase.removeChannel(channel);
+      channels.forEach((channel) => {
+        void supabase.removeChannel(channel);
+      });
     };
-  }, [restaurantId, refresh]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [restaurantIdsKey, refresh]);
 
   const metrics = useMemo(() => {
     const active = tickets.filter((x) => x.status === 'in_progress' || x.status === 'fired');
@@ -316,8 +323,8 @@ export default function OwnerOrdersKdsScreen() {
         onPress: () => {
           if (isDemoModeEnabled()) {
             setTickets([...KDS_TICKETS]);
-          } else if (restaurantId) {
-            void refresh(restaurantId);
+          } else if (restaurantIds.length > 0) {
+            void refresh(restaurantIds);
           }
         },
       },
@@ -327,7 +334,8 @@ export default function OwnerOrdersKdsScreen() {
       },
       { text: t('owner.menuCancel'), style: 'cancel' },
     ]);
-  }, [t, restaurantId, refresh]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [t, restaurantIdsKey, refresh]);
 
   const headerRight = (
     <Pressable
@@ -374,6 +382,9 @@ export default function OwnerOrdersKdsScreen() {
         />
       }
     >
+      <View style={{ marginBottom: ownerSpace.sm }}>
+        <RestaurantPicker allowAll size="compact" />
+      </View>
       <View style={styles.summaryRow}>
         <Text style={styles.summaryText}>{t('owner.kdsSummaryActive', { count: metrics.activeCount })}</Text>
         <Text style={styles.summarySep}>·</Text>

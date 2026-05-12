@@ -92,23 +92,26 @@ export function mapOwnerRestaurantRow(row: Record<string, unknown>): OwnerRestau
   };
 }
 
-export async function fetchCurrentOwnerRestaurant(): Promise<OwnerRestaurant | null> {
+export async function fetchOwnerRestaurants(): Promise<OwnerRestaurant[]> {
   const supabase = getSupabase();
-  if (!supabase) return null;
+  if (!supabase) return [];
 
   const { data: userData } = await supabase.auth.getUser();
   const userId = userData.user?.id;
-  if (!userId) return null;
+  if (!userId) return [];
 
   const { data, error } = await supabase
     .from('restaurants')
     .select('*')
     .eq('owner_user_id', userId)
-    .order('created_at', { ascending: false })
-    .limit(1)
-    .maybeSingle();
+    .order('created_at', { ascending: false });
   if (error) throw error;
-  return data ? mapOwnerRestaurantRow(data as Record<string, unknown>) : null;
+  return ((data ?? []) as Array<Record<string, unknown>>).map(mapOwnerRestaurantRow);
+}
+
+export async function fetchCurrentOwnerRestaurant(): Promise<OwnerRestaurant | null> {
+  const restaurants = await fetchOwnerRestaurants();
+  return restaurants[0] ?? null;
 }
 
 export async function getCurrentOwnerRestaurantId(): Promise<string | null> {

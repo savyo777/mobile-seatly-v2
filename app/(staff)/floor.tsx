@@ -5,11 +5,12 @@ import { OwnerScreen } from '@/components/owner/OwnerScreen';
 import { SubpageHeader } from '@/components/owner/SubpageHeader';
 import { FloorCanvas } from '@/components/owner/FloorCanvas';
 import { TableDetailSheet } from '@/components/owner/TableDetailSheet';
+import { RestaurantPicker } from '@/components/owner/RestaurantPicker';
 import { OWNER_FLOOR_TABLES as DEMO_OWNER_FLOOR_TABLES, type OwnerFloorTable } from '@/lib/mock/ownerApp';
 import type { Table } from '@/lib/mock/tables';
 import { isDemoModeEnabled } from '@/lib/config/demoMode';
 import { getSupabase } from '@/lib/supabase/client';
-import { fetchCurrentOwnerRestaurant } from '@/lib/services/ownerRestaurant';
+import { useOwnerScope } from '@/hooks/useOwnerScope';
 import {
   fetchRestaurantFloorCapacity,
   updateTableServiceStatus,
@@ -57,9 +58,10 @@ function rowToFloorTable(row: Record<string, unknown>): OwnerFloorTable {
 export default function OwnerFloorScreen() {
   const { t } = useTranslation();
   const c = useColors();
+  const { selectedRestaurantId, isAll } = useOwnerScope();
+  const restaurantId = selectedRestaurantId;
   const [selected, setSelected] = useState<OwnerFloorTable | null>(null);
   const [sheetOpen, setSheetOpen] = useState(false);
-  const [restaurantId, setRestaurantId] = useState<string | null>(null);
   const [floorTables, setFloorTables] = useState<OwnerFloorTable[]>(
     isDemoModeEnabled() ? DEMO_OWNER_FLOOR_TABLES : [],
   );
@@ -78,15 +80,17 @@ export default function OwnerFloorScreen() {
 
   useEffect(() => {
     if (isDemoModeEnabled()) return;
+    if (!restaurantId || isAll) {
+      setFloorTables([]);
+      setCapacity(null);
+      return;
+    }
     let active = true;
     void (async () => {
       try {
-        const owner = await fetchCurrentOwnerRestaurant();
-        if (!active || !owner?.id) return;
-        setRestaurantId(owner.id);
-        await loadTables(owner.id);
+        await loadTables(restaurantId);
         try {
-          const cap = await fetchRestaurantFloorCapacity(owner.id);
+          const cap = await fetchRestaurantFloorCapacity(restaurantId);
           if (!active) return;
           const capNum =
             cap.data && typeof cap.data === 'object' && 'capacity' in cap.data
@@ -105,7 +109,7 @@ export default function OwnerFloorScreen() {
     return () => {
       active = false;
     };
-  }, [loadTables]);
+  }, [loadTables, restaurantId, isAll]);
 
   const onTablePress = (table: OwnerFloorTable) => {
     setSelected(table);
@@ -142,24 +146,37 @@ export default function OwnerFloorScreen() {
         <SubpageHeader
           title={t('owner.floorLive')}
           subtitle={
-            tablesCount
-              ? `${tablesCount} tables · ${seatedCapacity} seats`
-              : 'No tables configured'
+            isAll
+              ? 'Pick a restaurant to view its floor plan'
+              : tablesCount
+                ? `${tablesCount} tables · ${seatedCapacity} seats`
+                : 'No tables configured'
           }
           fallbackTab="home"
         />
       }
     >
-      {tablesCount === 0 ? (
+      <View style={{ paddingHorizontal: spacing.lg, paddingTop: spacing.sm, paddingBottom: spacing.sm }}>
+        <RestaurantPicker allowAll={false} size="compact" />
+      </View>
+      {isAll ? (
+        <View style={{ padding: spacing.lg, alignItems: 'center' }}>
+          <Text style={{ color: c.textMuted, fontSize: 14, fontWeight: '500', textAlign: 'center' }}>
+            Pick a restaurant to manage its floor plan.
+          </Text>
+        </View>
+      ) : tablesCount === 0 ? (
         <View style={{ padding: spacing.lg, alignItems: 'center' }}>
           <Text style={{ color: c.textMuted, fontSize: 14, fontWeight: '500' }}>
             No floor plan yet — add tables in business settings.
           </Text>
         </View>
       ) : null}
-      <View style={styles.flex}>
-        <FloorCanvas tables={floorTables} onTablePress={onTablePress} />
-      </View>
+      {!isAll ? (
+        <View style={styles.flex}>
+          <FloorCanvas tables={floorTables} onTablePress={onTablePress} />
+        </View>
+      ) : null}
       <TableDetailSheet
         visible={sheetOpen}
         table={selected}
