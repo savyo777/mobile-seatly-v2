@@ -5,6 +5,7 @@
 export const RECEIPTS_BUCKET = 'receipts';
 export const RESTAURANT_LOGOS_BUCKET = 'restaurant-logos';
 export const COVER_PHOTOS_BUCKET = 'cover-photos';
+export const EVENT_MEDIA_BUCKET = 'event-media';
 
 // Path convention for the receipts bucket:
 //   `{restaurant_id}/{expense_id}.jpg`
@@ -21,4 +22,12 @@ export function restaurantLogoPath(restaurantId: string): string {
 }
 export function restaurantCoverPath(restaurantId: string): string {
   return `${restaurantId}/cover-${Date.now()}.jpg`;
+}
+
+export function eventMediaPath(
+  restaurantId: string,
+  kind: 'event' | 'promo',
+  ext: string,
+): string {
+  return `${restaurantId}/${kind}-${Date.now()}.${ext}`;
 }

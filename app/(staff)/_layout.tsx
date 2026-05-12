@@ -41,9 +41,16 @@ const QUICK_ACTIONS: { id: string; icon: IoniconName; label: string; sub: string
   {
     id: 'promo',
     icon: 'pricetag-outline',
-    label: 'Post Promotion',
-    sub: 'Launch a new deal or offer',
+    label: 'Post promotion',
+    sub: 'Discount, BOGO, happy hour, code',
     route: '/(staff)/promotions/new',
+  },
+  {
+    id: 'event',
+    icon: 'sparkles-outline',
+    label: 'Post event',
+    sub: 'Tasting menu, party, ticketed night',
+    route: '/(staff)/events/new',
   },
 ];
 
@@ -321,7 +328,7 @@ export default function OwnerTabsLayout() {
         <Tabs.Screen name="expense-scan"   options={{ href: null, tabBarStyle: { display: 'none' } }} />
         <Tabs.Screen name="expense-review" options={{ href: null, tabBarStyle: { display: 'none' } }} />
         <Tabs.Screen name="expense-detail" options={{ href: null, tabBarStyle: { display: 'none' } }} />
-        <Tabs.Screen name="events"      options={{ href: null }} />
+        <Tabs.Screen name="events"      options={{ href: null, tabBarStyle: { display: 'none' } }} />
         <Tabs.Screen name="export"      options={{ href: null }} />
         <Tabs.Screen name="settings"    options={{ href: null, tabBarStyle: { display: 'none' } }} />
         <Tabs.Screen name="personal-details" options={{ href: null, tabBarStyle: { display: 'none' } }} />
