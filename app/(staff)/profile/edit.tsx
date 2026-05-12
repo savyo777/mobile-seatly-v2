@@ -83,6 +83,23 @@ const useStyles = createStyles((c) => ({
     alignItems: 'center',
     justifyContent: 'center',
   },
+  topSave: {
+    minWidth: 56,
+    height: 38,
+    paddingHorizontal: spacing.md,
+    borderRadius: borderRadius.full,
+    backgroundColor: c.gold,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  topSavePressed: { opacity: 0.7 },
+  topSaveText: {
+    fontSize: 14,
+    fontWeight: '800',
+    color: c.bgBase,
+    letterSpacing: -0.1,
+  },
+  topSaveTextDisabled: { opacity: 0.85 },
   topTitle: {
     fontSize: 16,
     fontWeight: '700',
@@ -848,11 +865,28 @@ export default function EditBusinessProfileScreen() {
 
       {/* Top bar */}
       <View style={styles.topBar}>
-        <Pressable style={styles.iconBtn} onPress={() => router.back()} accessibilityLabel="Back">
+        <Pressable
+          style={styles.iconBtn}
+          onPress={() => router.back()}
+          accessibilityLabel="Back"
+          accessibilityRole="button"
+          hitSlop={8}
+        >
           <Ionicons name="chevron-back" size={20} color={c.textPrimary} />
         </Pressable>
         <Text style={styles.topTitle}>Edit profile</Text>
-        <View style={{ width: 38 }} />
+        <Pressable
+          onPress={save}
+          disabled={saving}
+          accessibilityRole="button"
+          accessibilityLabel="Save changes"
+          hitSlop={8}
+          style={({ pressed }) => [styles.topSave, (pressed || saving) && styles.topSavePressed]}
+        >
+          <Text style={[styles.topSaveText, saving && styles.topSaveTextDisabled]}>
+            {saving ? 'Saving…' : 'Save'}
+          </Text>
+        </Pressable>
       </View>
 
       <ScrollView
@@ -996,10 +1030,15 @@ export default function EditBusinessProfileScreen() {
       <View style={[styles.bottomBar, { paddingBottom: Math.max(insets.bottom, spacing.md) }]}>
         <Pressable
           onPress={save}
-          style={({ pressed }) => [styles.saveBtn, { opacity: pressed ? 0.85 : 1 }]}
+          disabled={saving}
+          style={({ pressed }) => [
+            styles.saveBtn,
+            { opacity: saving ? 0.7 : pressed ? 0.85 : 1 },
+          ]}
           accessibilityRole="button"
+          accessibilityLabel="Save changes"
         >
-          <Text style={styles.saveBtnText}>Save changes</Text>
+          <Text style={styles.saveBtnText}>{saving ? 'Saving…' : 'Save changes'}</Text>
         </Pressable>
       </View>
 
