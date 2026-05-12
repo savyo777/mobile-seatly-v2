@@ -1,7 +1,6 @@
-import React, { useEffect, useState } from 'react';
-import { Redirect, Stack, usePathname } from 'expo-router';
+import React, { useEffect, useRef } from 'react';
+import { Stack, usePathname, useRouter } from 'expo-router';
 import { ActivityIndicator, View } from 'react-native';
-import type { Href } from 'expo-router';
 import { ShellErrorBoundary } from '@/components/ui/ShellErrorBoundary';
 import { useColors } from '@/lib/theme';
 import { createStackTransitionOptions } from '@/lib/navigation/transitions';
@@ -14,46 +13,47 @@ import {
 export default function AuthLayout() {
   const c = useColors();
   const pathname = usePathname();
+  const router = useRouter();
   const { loading, isAuthenticated, isStaffLike, role } = useAuthSession();
-  const [authRedirectHref, setAuthRedirectHref] = useState<Href | null>(null);
   const isResetPasswordRoute = pathname === '/(auth)/reset-password';
   const isPhoneOtpRoute = pathname.includes('verify-phone-otp');
+  const redirectingRef = useRef(false);
 
   useEffect(() => {
     if (loading || !isAuthenticated || isResetPasswordRoute || isPhoneOtpRoute || role === null) {
-      setAuthRedirectHref(null);
+      redirectingRef.current = false;
       return;
     }
+    if (redirectingRef.current) return;
+    redirectingRef.current = true;
+
     let cancelled = false;
+    const navigate = (href: string) => {
+      if (!cancelled) router.replace(href as never);
+    };
+
     const cachedPref = getCachedAppShellPreference();
     if (cachedPref) {
-      if (cachedPref === 'customer') {
-        setAuthRedirectHref('/(customer)');
-        return;
-      }
       if (cachedPref === 'staff' && isStaffLike) {
-        setAuthRedirectHref('/(staff)');
-        return;
+        navigate('/(staff)');
+      } else {
+        navigate('/(customer)');
       }
-      setAuthRedirectHref('/(customer)');
       return;
     }
+
     void getAppShellPreference().then((pref) => {
-      if (cancelled) return;
-      if (pref === 'customer') {
-        setAuthRedirectHref('/(customer)');
-        return;
-      }
       if (pref === 'staff' && isStaffLike) {
-        setAuthRedirectHref('/(staff)');
-        return;
+        navigate('/(staff)');
+      } else {
+        navigate('/(customer)');
       }
-      setAuthRedirectHref('/(customer)');
     });
+
     return () => {
       cancelled = true;
     };
-  }, [loading, isAuthenticated, isStaffLike, role, isResetPasswordRoute, isPhoneOtpRoute]);
+  }, [loading, isAuthenticated, isStaffLike, role, isResetPasswordRoute, isPhoneOtpRoute, router]);
 
   if (loading) {
     return (
@@ -62,24 +62,13 @@ export default function AuthLayout() {
       </View>
     );
   }
-  // Prevent role-mismatch flashes (e.g. owner briefly landing in customer stack)
-  // while role is still resolving right after authentication.
-  if (isAuthenticated && role === null && !isResetPasswordRoute && !isPhoneOtpRoute) {
+
+  if (isAuthenticated && !isResetPasswordRoute && !isPhoneOtpRoute) {
     return (
       <View style={{ flex: 1, backgroundColor: c.bgBase, alignItems: 'center', justifyContent: 'center' }}>
         <ActivityIndicator color={c.gold} />
       </View>
     );
-  }
-  if (isAuthenticated && !isResetPasswordRoute && !isPhoneOtpRoute) {
-    if (!authRedirectHref) {
-      return (
-        <View style={{ flex: 1, backgroundColor: c.bgBase, alignItems: 'center', justifyContent: 'center' }}>
-          <ActivityIndicator color={c.gold} />
-        </View>
-      );
-    }
-    return <Redirect href={authRedirectHref} />;
   }
 
   return (
