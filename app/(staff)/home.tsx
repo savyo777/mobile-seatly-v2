@@ -434,16 +434,15 @@ const useStyles = createStyles((c) => ({
     marginBottom: spacing.lg,
   },
   actionTile: {
-    width: '47.5%',
-    flexGrow: 1,
-    minWidth: '45%',
+    // 2 columns: each tile is just under half the available width so the
+    // `gap` between columns fits without wrapping to a single column.
+    width: '48.5%',
+    aspectRatio: 1,
     borderRadius: borderRadius.xl,
     backgroundColor: c.bgSurface,
     borderWidth: StyleSheet.hairlineWidth,
     borderColor: c.border,
     padding: spacing.md,
-    paddingBottom: 18,
-    minHeight: 120,
     justifyContent: 'space-between',
   },
   actionTilePressed: { backgroundColor: c.bgElevated },
