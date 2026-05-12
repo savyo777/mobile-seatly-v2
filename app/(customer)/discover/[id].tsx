@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { ActivityIndicator, View, Text, StyleSheet, ScrollView, Image, Pressable, Linking, useWindowDimensions } from 'react-native';
 import { Image as ExpoImage } from 'expo-image';
 import { useLocalSearchParams, useRouter } from 'expo-router';
@@ -312,6 +312,24 @@ const useStyles = createStyles((c) => ({
     color: c.textSecondary,
     fontWeight: '500',
   },
+  seeMenuBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    alignSelf: 'flex-start',
+    marginTop: spacing.md,
+    paddingHorizontal: spacing.md,
+    paddingVertical: 10,
+    borderRadius: borderRadius.full,
+    backgroundColor: c.gold,
+  },
+  seeMenuBtnText: {
+    fontSize: 14,
+    fontWeight: '800',
+    color: c.bgBase,
+    letterSpacing: -0.1,
+  },
 
   // Hours
   hoursHeader: {
@@ -613,6 +631,19 @@ export default function RestaurantDetailScreen() {
   const [aboutExpanded, setAboutExpanded] = useState(false);
   const [hoursExpanded, setHoursExpanded] = useState(false);
   const [selectedMenuTab, setSelectedMenuTab] = useState(MENU_ALL_TAB);
+  const scrollViewRef = useRef<ScrollView>(null);
+  const menuSectionRef = useRef<View>(null);
+  const scrollToMenu = () => {
+    if (!scrollViewRef.current || !menuSectionRef.current) return;
+    menuSectionRef.current.measureLayout(
+      // @ts-expect-error — ScrollView's underlying node is a valid target.
+      scrollViewRef.current,
+      (_x, y) => {
+        scrollViewRef.current?.scrollTo({ y: Math.max(0, y - 12), animated: true });
+      },
+      () => {},
+    );
+  };
   const { id, preview } = useLocalSearchParams<{ id: string; preview?: string }>();
   const restaurantId = Array.isArray(id) ? id[0] : id;
   const isPreview = preview === '1';
@@ -836,6 +867,7 @@ export default function RestaurantDetailScreen() {
         </Pressable>
       )}
       <ScrollView
+        ref={scrollViewRef}
         showsVerticalScrollIndicator={false}
         contentContainerStyle={[styles.scrollContent, { paddingBottom: insets.bottom + 160, paddingTop: isPreview ? 44 : 0 }]}
       >
@@ -908,6 +940,16 @@ export default function RestaurantDetailScreen() {
                 </View>
               ))}
             </View>
+            <Pressable
+              onPress={scrollToMenu}
+              accessibilityRole="button"
+              accessibilityLabel="See the menu"
+              style={({ pressed }) => [styles.seeMenuBtn, pressed && { opacity: 0.85 }]}
+            >
+              <Ionicons name="restaurant-outline" size={16} color={c.bgBase} />
+              <Text style={styles.seeMenuBtnText}>See menu</Text>
+              <Ionicons name="chevron-forward" size={14} color={c.bgBase} />
+            </Pressable>
           </View>
 
           {/* Hours — open/closed status + collapsible full week */}
@@ -948,7 +990,7 @@ export default function RestaurantDetailScreen() {
             </Pressable>
           </View>
 
-          <View style={styles.section}>
+          <View style={styles.section} ref={menuSectionRef} collapsable={false}>
             <Text style={styles.sectionHeading}>{t('restaurant.menu')}</Text>
             {menuLoading ? (
               <View style={styles.menuLoading}>
