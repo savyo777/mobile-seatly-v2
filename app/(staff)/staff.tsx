@@ -12,6 +12,7 @@ import { useTranslation } from 'react-i18next';
 import { OwnerScreen } from '@/components/owner/OwnerScreen';
 import { OwnerHeader } from '@/components/owner/OwnerHeader';
 import { SectionCard } from '@/components/owner/SectionCard';
+import { RestaurantPicker } from '@/components/owner/RestaurantPicker';
 import {
   STAFF_ROSTER as DEMO_STAFF_ROSTER,
   WAITLIST_ENTRIES as DEMO_WAITLIST_ENTRIES,
@@ -24,6 +25,11 @@ import {
   approveStaffAction,
   getMyStaffInvites,
 } from '@/lib/staff/staffServices';
+import {
+  fetchStaffRoster,
+  type StaffRosterEntry,
+} from '@/lib/owner/staffRoster';
+import { useOwnerScope } from '@/hooks/useOwnerScope';
 import { useColors, createStyles, spacing, borderRadius } from '@/lib/theme';
 
 type ManagerApproval = {
@@ -173,6 +179,42 @@ const useStyles = createStyles((c) => ({
     color: c.textMuted,
     fontWeight: '500',
   },
+  pickerRow: {
+    paddingHorizontal: spacing.lg,
+    paddingBottom: spacing.md,
+  },
+  restaurantPill: {
+    alignSelf: 'flex-start',
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+    borderRadius: borderRadius.full,
+    backgroundColor: c.bgElevated,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: c.border,
+    marginTop: 2,
+  },
+  restaurantPillText: {
+    fontSize: 10,
+    fontWeight: '700',
+    color: c.textMuted,
+    letterSpacing: 0.2,
+  },
+  emptyState: {
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.lg,
+    alignItems: 'center',
+    gap: 6,
+  },
+  emptyStateTitle: {
+    fontSize: 14,
+    fontWeight: '700',
+    color: c.textPrimary,
+  },
+  emptyStateSub: {
+    fontSize: 12,
+    color: c.textMuted,
+    textAlign: 'center',
+  },
   shiftPill: {
     paddingHorizontal: 10,
     paddingVertical: 5,
@@ -233,19 +275,46 @@ const useStyles = createStyles((c) => ({
   },
 }));
 
+const DEMO_ROSTER_AS_ENTRIES: StaffRosterEntry[] = DEMO_STAFF_ROSTER.map((m) => ({
+  id: m.id,
+  name: m.name,
+  role: m.role,
+  restaurantId: '',
+  shift: m.shift,
+  onClock: m.onClock,
+}));
+
 export default function OwnerStaffScreen() {
   const { t } = useTranslation();
   const c = useColors();
   const styles = useStyles();
+  const demo = isDemoModeEnabled();
+  const { restaurantIds, isAll, restaurants } = useOwnerScope();
   const [approvalOpen, setApprovalOpen] = useState(false);
-  const [staffRoster, setStaffRoster] = useState<typeof DEMO_STAFF_ROSTER>(
-    isDemoModeEnabled() ? DEMO_STAFF_ROSTER : [],
-  );
+  const [liveRoster, setLiveRoster] = useState<StaffRosterEntry[]>([]);
   const [pendingApprovals, setPendingApprovals] = useState<ManagerApproval[]>([]);
   const [myInvites, setMyInvites] = useState<StaffInvite[]>([]);
 
+  // Roster: demo data when demo mode is on, real query otherwise.
+  // Refetches whenever the active scope changes so "All restaurants" /
+  // single-pick swaps stay in sync.
   useEffect(() => {
-    if (isDemoModeEnabled()) return;
+    if (demo) return;
+    let active = true;
+    void (async () => {
+      const roster = await fetchStaffRoster(restaurantIds);
+      if (!active) return;
+      setLiveRoster(roster);
+    })();
+    return () => {
+      active = false;
+    };
+  }, [demo, restaurantIds]);
+
+  // Approvals + invites remain scoped to the owner's primary restaurant for
+  // now — the manager_action_approvals query isn't part of Phase 2.
+  useEffect(() => {
+    if (demo) return;
     let active = true;
     void (async () => {
       try {
@@ -254,23 +323,6 @@ export default function OwnerStaffScreen() {
         const profile = await fetchCurrentUserProfile();
         const restaurantId = profile?.restaurantId;
         if (!restaurantId) return;
-
-        const { data: roleRows } = await supabase
-          .from('user_restaurant_roles')
-          .select('id,user_id,role,employment_type,user_profiles:user_id(full_name,email,phone)')
-          .eq('restaurant_id', restaurantId);
-        if (!active) return;
-        const roster = ((roleRows ?? []) as Array<Record<string, unknown>>).map((r) => {
-          const profileRef = r.user_profiles as { full_name?: string; email?: string } | null;
-          return {
-            id: String(r.id ?? ''),
-            name: String(profileRef?.full_name ?? profileRef?.email ?? 'Staff'),
-            role: String(r.role ?? 'Staff'),
-            shift: String(r.employment_type ?? ''),
-            onClock: false,
-          };
-        });
-        if (roster.length) setStaffRoster(roster);
 
         const { data: approvalRows } = await supabase
           .from('manager_action_approvals')
@@ -305,18 +357,25 @@ export default function OwnerStaffScreen() {
     return () => {
       active = false;
     };
-  }, []);
+  }, [demo]);
+
+  const staffRoster: StaffRosterEntry[] = demo ? DEMO_ROSTER_AS_ENTRIES : liveRoster;
+  const restaurantNameById = useMemo(() => {
+    const map = new Map<string, string>();
+    restaurants.forEach((r) => map.set(r.id, r.name));
+    return map;
+  }, [restaurants]);
 
   const onShift = useMemo(() => staffRoster.filter((m) => m.onClock), [staffRoster]);
   const approvalCount = useMemo(() => {
-    if (isDemoModeEnabled()) {
+    if (demo) {
       return (
         DEMO_WAITLIST_ENTRIES.filter((e) => e.risk).length +
         DEMO_OWNER_RESERVATIONS.filter((r) => r.status === 'pending').length
       );
     }
     return pendingApprovals.length;
-  }, [pendingApprovals]);
+  }, [demo, pendingApprovals]);
 
   const handleApproval = (id: string, decision: 'approve' | 'deny') => {
     void approveStaffAction({ approvalId: id, decision }).then((res) => {
@@ -331,6 +390,10 @@ export default function OwnerStaffScreen() {
   return (
     <OwnerScreen contentContainerStyle={{ paddingHorizontal: 0 }}>
       <OwnerHeader title={t('owner.staffTitle')} subtitle="Nova Ristorante · Roster" />
+
+      <View style={styles.pickerRow}>
+        <RestaurantPicker allowAll={true} size="compact" />
+      </View>
 
       <ScrollView
         horizontal
@@ -386,29 +449,53 @@ export default function OwnerStaffScreen() {
       ) : null}
 
       <SectionCard sectionTitle="Full roster" marginBottom={spacing['2xl']}>
-        {staffRoster.map((member, i) => (
-          <View key={member.id} style={[styles.rosterRow, i > 0 && styles.rosterDivider]}>
-            <View style={styles.rosterAvatar}>
-              <Text style={styles.rosterAvatarText}>{initials(member.name)}</Text>
-            </View>
-            <View style={styles.rosterMid}>
-              <Text style={styles.rosterName}>{member.name}</Text>
-              <Text style={styles.rosterRole}>{member.role}</Text>
-            </View>
-            <View style={[styles.shiftPill, member.onClock ? styles.shiftPillOn : styles.shiftPillOff]}>
-              <Text style={styles.shiftPillText}>
-                {member.onClock ? t('owner.staffOnClock') : t('owner.staffOff')}
-              </Text>
-            </View>
+        {staffRoster.length === 0 ? (
+          <View style={styles.emptyState}>
+            <Text style={styles.emptyStateTitle}>No staff yet</Text>
+            <Text style={styles.emptyStateSub}>
+              {isAll
+                ? 'Assign roles to your team to see them here.'
+                : 'Invite teammates and assign roles to see them here.'}
+            </Text>
           </View>
-        ))}
+        ) : (
+          staffRoster.map((member, i) => {
+            const restaurantName =
+              isAll && member.restaurantId
+                ? restaurantNameById.get(member.restaurantId)
+                : null;
+            return (
+              <View key={member.id} style={[styles.rosterRow, i > 0 && styles.rosterDivider]}>
+                <View style={styles.rosterAvatar}>
+                  <Text style={styles.rosterAvatarText}>{initials(member.name)}</Text>
+                </View>
+                <View style={styles.rosterMid}>
+                  <Text style={styles.rosterName}>{member.name}</Text>
+                  <Text style={styles.rosterRole}>{member.role}</Text>
+                  {restaurantName ? (
+                    <View style={styles.restaurantPill}>
+                      <Text style={styles.restaurantPillText} numberOfLines={1}>
+                        {restaurantName.toUpperCase()}
+                      </Text>
+                    </View>
+                  ) : null}
+                </View>
+                <View style={[styles.shiftPill, member.onClock ? styles.shiftPillOn : styles.shiftPillOff]}>
+                  <Text style={styles.shiftPillText}>
+                    {member.onClock ? t('owner.staffOnClock') : t('owner.staffOff')}
+                  </Text>
+                </View>
+              </View>
+            );
+          })
+        )}
       </SectionCard>
 
       <Modal visible={approvalOpen} transparent animationType="slide">
         <Pressable style={styles.modalOverlay} onPress={() => setApprovalOpen(false)}>
           <Pressable style={styles.modalSheet} onPress={(e) => e.stopPropagation()}>
             <Text style={styles.modalTitle}>Approval queue</Text>
-            {isDemoModeEnabled() ? (
+            {demo ? (
               <>
                 {DEMO_WAITLIST_ENTRIES.filter((e) => e.risk).map((e) => (
                   <Text key={e.id} style={styles.modalLine}>
