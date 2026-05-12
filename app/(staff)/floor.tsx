@@ -11,10 +11,8 @@ import type { Table } from '@/lib/mock/tables';
 import { isDemoModeEnabled } from '@/lib/config/demoMode';
 import { getSupabase } from '@/lib/supabase/client';
 import { useOwnerScope } from '@/hooks/useOwnerScope';
-import {
-  fetchRestaurantFloorCapacity,
-  updateTableServiceStatus,
-} from '@/lib/staff/staffServices';
+import { updateTableServiceStatus } from '@/lib/staff/staffServices';
+import { fetchFloorCapacity } from '@/lib/owner/floorCapacity';
 import { useColors, spacing } from '@/lib/theme';
 
 function num(v: unknown, fallback = 0): number {
@@ -90,17 +88,11 @@ export default function OwnerFloorScreen() {
       try {
         await loadTables(restaurantId);
         try {
-          const cap = await fetchRestaurantFloorCapacity(restaurantId);
+          const cap = await fetchFloorCapacity(restaurantId);
           if (!active) return;
-          const capNum =
-            cap.data && typeof cap.data === 'object' && 'capacity' in cap.data
-              ? num((cap.data as { capacity: unknown }).capacity, 0)
-              : typeof cap.data === 'number'
-                ? cap.data
-                : null;
-          setCapacity(capNum);
+          setCapacity(cap);
         } catch {
-          // ignore — RPC may not exist; fall back to count
+          // ignore — fall back to client-side sum of loaded tables
         }
       } catch {
         // silent

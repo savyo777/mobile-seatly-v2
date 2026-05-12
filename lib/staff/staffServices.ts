@@ -118,6 +118,12 @@ export function updateTableServiceStatus(args: {
   });
 }
 
+/**
+ * @deprecated Mobile callers should use `fetchFloorCapacity` from
+ * `@/lib/owner/floorCapacity`, which sums `tables.capacity` on-device. The
+ * server-side RPC is still used by `supabase/functions/create-public-booking`,
+ * so the wrapper remains exported for parity.
+ */
 export function fetchRestaurantFloorCapacity(restaurantId: string) {
   return callRpc<{ capacity: number }>('restaurant_floor_capacity', {
     p_restaurant_id: restaurantId,
