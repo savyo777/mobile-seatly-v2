@@ -20,16 +20,16 @@ import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import * as ImagePicker from 'expo-image-picker';
 import { useColors, createStyles, spacing, borderRadius } from '@/lib/theme';
-import { PRICE_TIER_OPTIONS } from '@/lib/restaurants/priceTiers';
 import {
   OWNER_BUSINESS_PROFILE as DEMO_OWNER_BUSINESS_PROFILE,
   OWNER_BUSINESS_HOURS as DEMO_OWNER_BUSINESS_HOURS,
   OWNER_BUSINESS_INSTAGRAM as DEMO_OWNER_BUSINESS_INSTAGRAM,
-  OWNER_BUSINESS_PRICE as DEMO_OWNER_BUSINESS_PRICE,
   type BusinessHoursRow,
 } from '@/lib/mock/ownerApp';
 import { isDemoModeEnabled } from '@/lib/config/demoMode';
 import { useOwnerScope } from '@/hooks/useOwnerScope';
+import { uploadRestaurantPhoto } from '@/lib/owner/uploadRestaurantPhoto';
+import { saveRestaurantProfile } from '@/lib/owner/saveRestaurantProfile';
 
 const EMPTY_OWNER_BUSINESS_PROFILE: typeof DEMO_OWNER_BUSINESS_PROFILE = {
   name: '',
@@ -52,7 +52,6 @@ const OWNER_BUSINESS_HOURS: typeof DEMO_OWNER_BUSINESS_HOURS = isDemoModeEnabled
   ? DEMO_OWNER_BUSINESS_HOURS
   : [];
 const OWNER_BUSINESS_INSTAGRAM = isDemoModeEnabled() ? DEMO_OWNER_BUSINESS_INSTAGRAM : '';
-const OWNER_BUSINESS_PRICE = isDemoModeEnabled() ? DEMO_OWNER_BUSINESS_PRICE : '';
 
 // ── Styles ──────────────────────────────────────────────────────────────────
 
@@ -128,6 +127,27 @@ const useStyles = createStyles((c) => ({
     fontSize: 13,
     fontWeight: '700',
     color: '#fff',
+  },
+  logoWrap: {
+    width: 96,
+    height: 96,
+    borderRadius: borderRadius.lg,
+    overflow: 'hidden',
+    backgroundColor: c.bgSurface,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: c.border,
+    marginBottom: spacing.sm,
+    alignSelf: 'flex-start',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  logoImage: { width: '100%', height: '100%' },
+  logoOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: 'rgba(0,0,0,0.38)',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 4,
   },
   galleryRow: {
     flexDirection: 'row',
@@ -360,7 +380,6 @@ const useStyles = createStyles((c) => ({
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
 
-const PRICE_OPTIONS = PRICE_TIER_OPTIONS;
 
 // ── Time helpers ─────────────────────────────────────────────────────────────
 
@@ -606,7 +625,6 @@ export default function EditBusinessProfileScreen() {
   const [neighborhood, setNeighborhood] = useState(p.neighborhood);
   const [description, setDescription] = useState(p.description);
   const [instagram, setInstagram] = useState(OWNER_BUSINESS_INSTAGRAM);
-  const [price, setPrice] = useState(OWNER_BUSINESS_PRICE);
 
   // Contact
   const [phone, setPhone] = useState(p.phone);
@@ -620,16 +638,20 @@ export default function EditBusinessProfileScreen() {
     setCuisine(selectedRestaurant.cuisine ?? '');
     setDescription(selectedRestaurant.description ?? '');
     setInstagram(selectedRestaurant.instagram ?? '');
-    setPrice(selectedRestaurant.priceRange ?? '');
     setPhone(selectedRestaurant.phone ?? '');
     setEmail(selectedRestaurant.email ?? '');
     setWebsite(selectedRestaurant.website ?? '');
     setAddress(selectedRestaurant.address ?? '');
+    setCoverUri(selectedRestaurant.coverPhotoUrl ?? null);
+    setLogoUri(selectedRestaurant.logoUrl ?? null);
   }, [selectedRestaurant]);
 
-  // Photos
+  // Photos. `*Uri` holds either a remote URL (loaded from the DB) or a local
+  // file:// URI from the picker that still needs to be uploaded on save.
   const [coverUri, setCoverUri] = useState<string | null>(null);
+  const [logoUri, setLogoUri] = useState<string | null>(null);
   const [galleryUris, setGalleryUris] = useState<(string | null)[]>([null, null, null]);
+  const [saving, setSaving] = useState(false);
 
   // Hours
   const [hours, setHours] = useState<BusinessHoursRow[]>(
@@ -647,6 +669,16 @@ export default function EditBusinessProfileScreen() {
       quality: 0.9,
     });
     if (!result.canceled) setCoverUri(result.assets[0].uri);
+  };
+
+  const pickLogo = async () => {
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ['images'],
+      allowsEditing: true,
+      aspect: [1, 1],
+      quality: 0.9,
+    });
+    if (!result.canceled) setLogoUri(result.assets[0].uri);
   };
 
   const pickGallery = async (index: number) => {
@@ -711,10 +743,60 @@ export default function EditBusinessProfileScreen() {
     }
   };
 
-  const save = () => {
-    Alert.alert('Saved', 'Business profile updated.', [
-      { text: 'OK', onPress: () => router.back() },
-    ]);
+  const save = async () => {
+    if (saving) return;
+    const restaurantId = selectedRestaurant?.id;
+    if (!restaurantId) {
+      Alert.alert('No restaurant selected', 'Pick a restaurant before saving.');
+      return;
+    }
+    setSaving(true);
+    try {
+      // Upload photos first (only when the user picked a new local file).
+      // Already-remote URLs are left as-is.
+      let coverImageUrl: string | null | undefined = undefined;
+      let logoUrl: string | null | undefined = undefined;
+      if (coverUri && coverUri.startsWith('file:')) {
+        coverImageUrl = await uploadRestaurantPhoto({
+          uri: coverUri,
+          restaurantId,
+          kind: 'cover',
+        });
+      } else if (coverUri === null && selectedRestaurant?.coverPhotoUrl) {
+        coverImageUrl = null; // user cleared the photo
+      }
+      if (logoUri && logoUri.startsWith('file:')) {
+        logoUrl = await uploadRestaurantPhoto({
+          uri: logoUri,
+          restaurantId,
+          kind: 'logo',
+        });
+      } else if (logoUri === null && selectedRestaurant?.logoUrl) {
+        logoUrl = null;
+      }
+
+      await saveRestaurantProfile({
+        restaurantId,
+        name,
+        cuisine,
+        description,
+        phone,
+        email,
+        address,
+        website,
+        instagram,
+        coverImageUrl,
+        logoUrl,
+      });
+
+      Alert.alert('Saved', 'Business profile updated.', [
+        { text: 'OK', onPress: () => router.back() },
+      ]);
+    } catch (err) {
+      Alert.alert('Save failed', err instanceof Error ? err.message : 'Try again in a moment.');
+    } finally {
+      setSaving(false);
+    }
   };
 
   return (
@@ -754,6 +836,19 @@ export default function EditBusinessProfileScreen() {
           </View>
         </Pressable>
 
+        {/* Logo */}
+        <Pressable style={styles.logoWrap} onPress={pickLogo} accessibilityRole="button">
+          {logoUri ? (
+            <Image source={{ uri: logoUri }} style={styles.logoImage} resizeMode="cover" />
+          ) : null}
+          <View style={styles.logoOverlay}>
+            <Ionicons name="image-outline" size={22} color="#fff" />
+            <Text style={styles.coverOverlayText}>
+              {logoUri ? 'Change logo' : 'Add logo'}
+            </Text>
+          </View>
+        </Pressable>
+
         {/* Gallery */}
         <View style={styles.galleryRow}>
           {galleryUris.map((uri, i) => (
@@ -789,24 +884,6 @@ export default function EditBusinessProfileScreen() {
             divider
             multiline
           />
-          <View style={[styles.fieldRow, styles.fieldDivider]}>
-            <Text style={styles.fieldLabel}>Price range</Text>
-            <View style={styles.priceRow}>
-              {PRICE_OPTIONS.map((opt) => (
-                <Pressable
-                  key={opt}
-                  style={[styles.priceChip, price === opt && styles.priceChipActive]}
-                  onPress={() => setPrice(opt)}
-                  accessibilityRole="button"
-                  accessibilityLabel={opt}
-                >
-                  <Text style={[styles.priceChipText, price === opt && styles.priceChipTextActive]}>
-                    {opt}
-                  </Text>
-                </Pressable>
-              ))}
-            </View>
-          </View>
           <FieldInput
             label="Instagram"
             value={instagram}

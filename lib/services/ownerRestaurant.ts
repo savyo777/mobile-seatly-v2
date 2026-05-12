@@ -55,6 +55,11 @@ function settings(row: Record<string, unknown>): Record<string, unknown> {
   return raw && typeof raw === 'object' && !Array.isArray(raw) ? raw as Record<string, unknown> : {};
 }
 
+function businessProfile(s: Record<string, unknown>): Record<string, unknown> {
+  const raw = s.businessProfile;
+  return raw && typeof raw === 'object' && !Array.isArray(raw) ? raw as Record<string, unknown> : {};
+}
+
 // price_range is stored on the live DB as an integer 1..4. Some legacy callers
 // also accept a "$".."$$$$" string. Normalize to the dollar-sign string used
 // throughout the UI.
@@ -76,6 +81,7 @@ function priceRangeToString(value: unknown): string | null {
 
 export function mapOwnerRestaurantRow(row: Record<string, unknown>): OwnerRestaurant {
   const s = settings(row);
+  const bp = businessProfile(s);
   const name = stringValue(row.name) || stringValue(row.business_name) || 'Your restaurant';
   const expMonth = numberOrNull(row.billing_card_exp_month);
   const expYear = numberOrNull(row.billing_card_exp_year);
@@ -87,7 +93,13 @@ export function mapOwnerRestaurantRow(row: Record<string, unknown>): OwnerRestau
     city: stringOrNull(row.city),
     phone: stringOrNull(row.phone) || stringOrNull(row.owner_phone),
     email: stringOrNull(row.email),
-    website: stringOrNull(row.website) || stringOrNull(s.website),
+    // Live schema stores social handles under settings_json.businessProfile.*
+    // (websiteUrl, instagramUrl, facebookUrl). Fall back to the legacy flat
+    // keys so older rows keep working.
+    website:
+      stringOrNull(row.website) ||
+      stringOrNull(bp.websiteUrl) ||
+      stringOrNull(s.website),
     cuisine: stringOrNull(row.cuisine_type) || stringOrNull(s.cuisine),
     description: stringOrNull(row.description) || stringOrNull(s.description),
     coverPhotoUrl:
@@ -98,7 +110,10 @@ export function mapOwnerRestaurantRow(row: Record<string, unknown>): OwnerRestau
     rating: numberOrNull(row.avg_rating) ?? numberOrNull(s.avg_rating),
     reviewCount: numberOrNull(row.review_count) ?? numberOrNull(s.total_reviews),
     priceRange: priceRangeToString(row.price_range) ?? priceRangeToString(s.price_range),
-    instagram: stringOrNull(row.instagram) || stringOrNull(s.instagram),
+    instagram:
+      stringOrNull(row.instagram) ||
+      stringOrNull(bp.instagramUrl) ||
+      stringOrNull(s.instagram),
     stripeCustomerId: stringOrNull(row.stripe_customer_id),
     stripeSubscriptionId: stringOrNull(row.stripe_subscription_id),
     stripePaymentMethodId: stringOrNull(row.stripe_payment_method_id),

@@ -3,10 +3,22 @@
 // supabase/migrations/.
 
 export const RECEIPTS_BUCKET = 'receipts';
+export const RESTAURANT_LOGOS_BUCKET = 'restaurant-logos';
+export const COVER_PHOTOS_BUCKET = 'cover-photos';
 
 // Path convention for the receipts bucket:
 //   `{restaurant_id}/{expense_id}.jpg`
 // The first segment is what the storage RLS policies key off of.
 export function receiptObjectPath(restaurantId: string, expenseId: string): string {
   return `${restaurantId}/${expenseId}.jpg`;
+}
+
+// Restaurant-asset paths use `{restaurant_id}/{filename}` so storage RLS can
+// scope by the first segment. Filename is timestamped so the resulting
+// public URL busts caches on update.
+export function restaurantLogoPath(restaurantId: string): string {
+  return `${restaurantId}/logo-${Date.now()}.jpg`;
+}
+export function restaurantCoverPath(restaurantId: string): string {
+  return `${restaurantId}/cover-${Date.now()}.jpg`;
 }
