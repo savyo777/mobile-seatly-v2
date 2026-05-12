@@ -16,6 +16,13 @@ export function getSupabaseAuthStorageKey(): string | null {
   }
 }
 
+/**
+ * Clears the persisted Supabase session from AsyncStorage AND resets the
+ * client singleton. Use only when you need a completely fresh client (e.g.
+ * after detecting a corrupt persisted session at startup). Do NOT call this
+ * during a normal sign-out — it destroys the onAuthStateChange subscription
+ * that AuthProvider registered on the original client, breaking subsequent logins.
+ */
 export async function clearPersistedSupabaseSession(): Promise<void> {
   const storageKey = getSupabaseAuthStorageKey();
   if (!storageKey) return;
@@ -25,6 +32,23 @@ export async function clearPersistedSupabaseSession(): Promise<void> {
     `${storageKey}-user`,
   ]);
   client = null;
+}
+
+/**
+ * Clears only the AsyncStorage keys for the Supabase session.
+ * Unlike clearPersistedSupabaseSession, this does NOT null the client
+ * singleton, so the onAuthStateChange subscription set up by AuthProvider
+ * remains intact and subsequent logins work correctly.
+ * Use this for normal sign-out flows.
+ */
+export async function clearSupabaseStorageOnly(): Promise<void> {
+  const storageKey = getSupabaseAuthStorageKey();
+  if (!storageKey) return;
+  await AsyncStorage.multiRemove([
+    storageKey,
+    `${storageKey}-code-verifier`,
+    `${storageKey}-user`,
+  ]);
 }
 
 export async function clearUnusablePersistedSupabaseSession(): Promise<boolean> {

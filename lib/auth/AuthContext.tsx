@@ -4,6 +4,7 @@ import { AppState } from 'react-native';
 import i18n from '@/lib/i18n';
 import {
   clearPersistedSupabaseSession,
+  clearSupabaseStorageOnly,
   clearUnusablePersistedSupabaseSession,
   getSupabase,
 } from '@/lib/supabase/client';
@@ -220,14 +221,20 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       await supabase.auth.stopAutoRefresh();
       const { error } = await supabase.auth.signOut({ scope: 'local' });
       if (error && isUnusablePersistedSupabaseAuthError(error)) {
-        await clearPersistedSupabaseSession();
+        // Corrupt session — clear storage only. Do NOT null the client so
+        // the onAuthStateChange subscription registered at startup stays alive.
+        await clearSupabaseStorageOnly();
       }
     } catch (error) {
       if (isUnusablePersistedSupabaseAuthError(error)) {
-        await clearPersistedSupabaseSession();
+        await clearSupabaseStorageOnly();
       }
     } finally {
-      await clearPersistedSupabaseSession();
+      // supabase.auth.signOut already wiped AsyncStorage; this is belt-and-suspenders.
+      // Use storage-only clear — nulling the client (clearPersistedSupabaseSession)
+      // would destroy AuthProvider's onAuthStateChange subscription and break
+      // every subsequent login until the app is restarted.
+      await clearSupabaseStorageOnly();
       await clearAppShellPreference();
       setSession(null);
       setRole(null);
