@@ -11,7 +11,7 @@ import { getSupabase } from '@/lib/supabase/client';
 import { sendPasswordResetEmail } from '@/lib/services/accountSecurity';
 import { ensureCustomerProfile, signInWithGoogle } from '@/lib/services/oauth';
 import { normalizePhoneToE164, sendPhoneOtp } from '@/lib/services/phoneAuth';
-import { resolveHomeForSignedInUser } from '@/lib/auth/postSignInRouting';
+import { getRoleForSignedInUser } from '@/lib/auth/postSignInRouting';
 import { LOCKOUT_MS, MAX_FAILED_ATTEMPTS } from '@/lib/auth/lockoutPolicy';
 import {
   ScreenWrapper,
@@ -215,8 +215,10 @@ export default function LoginScreen() {
     return () => clearInterval(id);
   }, [isLockedOut, lockoutUntilMs]);
 
+  // After a successful sign-in, ensure a profile row exists for brand-new users,
+  // then let (auth)/_layout.tsx drive navigation once isAuthenticated + role are set.
   const routeSignedInSession = async (session: Session) => {
-    const { href, role } = await resolveHomeForSignedInUser(session.user.id, session.user);
+    const role = await getRoleForSignedInUser(session.user.id, session.user);
     if (!role) {
       try {
         await ensureCustomerProfile(session);
@@ -224,7 +226,6 @@ export default function LoginScreen() {
         // best-effort fallback for older accounts with no profile row
       }
     }
-    router.replace(href);
   };
 
   const handleLogin = async () => {
