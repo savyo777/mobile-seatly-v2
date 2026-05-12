@@ -55,6 +55,25 @@ function settings(row: Record<string, unknown>): Record<string, unknown> {
   return raw && typeof raw === 'object' && !Array.isArray(raw) ? raw as Record<string, unknown> : {};
 }
 
+// price_range is stored on the live DB as an integer 1..4. Some legacy callers
+// also accept a "$".."$$$$" string. Normalize to the dollar-sign string used
+// throughout the UI.
+function priceRangeToString(value: unknown): string | null {
+  if (typeof value === 'number' && Number.isFinite(value)) {
+    const tier = Math.max(1, Math.min(4, Math.round(value)));
+    return '$'.repeat(tier);
+  }
+  if (typeof value === 'string') {
+    const trimmed = value.trim();
+    if (/^\$+$/.test(trimmed)) return trimmed.slice(0, 4);
+    const parsed = Number(trimmed);
+    if (Number.isFinite(parsed) && parsed > 0) {
+      return '$'.repeat(Math.max(1, Math.min(4, Math.round(parsed))));
+    }
+  }
+  return null;
+}
+
 export function mapOwnerRestaurantRow(row: Record<string, unknown>): OwnerRestaurant {
   const s = settings(row);
   const name = stringValue(row.name) || stringValue(row.business_name) || 'Your restaurant';
@@ -78,7 +97,7 @@ export function mapOwnerRestaurantRow(row: Record<string, unknown>): OwnerRestau
     logoUrl: stringOrNull(row.logo_url),
     rating: numberOrNull(row.avg_rating) ?? numberOrNull(s.avg_rating),
     reviewCount: numberOrNull(row.review_count) ?? numberOrNull(s.total_reviews),
-    priceRange: stringOrNull(row.price_range) || stringOrNull(s.price_range),
+    priceRange: priceRangeToString(row.price_range) ?? priceRangeToString(s.price_range),
     instagram: stringOrNull(row.instagram) || stringOrNull(s.instagram),
     stripeCustomerId: stringOrNull(row.stripe_customer_id),
     stripeSubscriptionId: stringOrNull(row.stripe_subscription_id),

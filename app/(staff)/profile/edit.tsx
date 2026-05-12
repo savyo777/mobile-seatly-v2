@@ -29,6 +29,7 @@ import {
   type BusinessHoursRow,
 } from '@/lib/mock/ownerApp';
 import { isDemoModeEnabled } from '@/lib/config/demoMode';
+import { useOwnerScope } from '@/hooks/useOwnerScope';
 
 const EMPTY_OWNER_BUSINESS_PROFILE: typeof DEMO_OWNER_BUSINESS_PROFILE = {
   name: '',
@@ -597,8 +598,9 @@ export default function EditBusinessProfileScreen() {
   const router = useRouter();
 
   const p = OWNER_BUSINESS_PROFILE;
+  const { selectedRestaurant } = useOwnerScope();
 
-  // Basics
+  // Basics — seed from the selected real restaurant when not in demo mode.
   const [name, setName] = useState(p.name);
   const [cuisine, setCuisine] = useState(p.cuisine);
   const [neighborhood, setNeighborhood] = useState(p.neighborhood);
@@ -611,6 +613,19 @@ export default function EditBusinessProfileScreen() {
   const [email, setEmail] = useState(p.email);
   const [website, setWebsite] = useState(p.website);
   const [address, setAddress] = useState(p.address);
+
+  useEffect(() => {
+    if (isDemoModeEnabled() || !selectedRestaurant) return;
+    setName(selectedRestaurant.name ?? '');
+    setCuisine(selectedRestaurant.cuisine ?? '');
+    setDescription(selectedRestaurant.description ?? '');
+    setInstagram(selectedRestaurant.instagram ?? '');
+    setPrice(selectedRestaurant.priceRange ?? '');
+    setPhone(selectedRestaurant.phone ?? '');
+    setEmail(selectedRestaurant.email ?? '');
+    setWebsite(selectedRestaurant.website ?? '');
+    setAddress(selectedRestaurant.address ?? '');
+  }, [selectedRestaurant]);
 
   // Photos
   const [coverUri, setCoverUri] = useState<string | null>(null);
