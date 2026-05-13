@@ -262,8 +262,8 @@ export default function SnapStylesScreen() {
   const hasImage = decodedUri.length > 0;
 
   const continueBottom = insets.bottom + 2;
-  const carouselBottom = insets.bottom + 40;
-  const pillBottom = carouselBottom + RING_SIZE + 10;
+  const carouselBottom = insets.bottom + 30;
+  const pillBottom = carouselBottom + RING_SIZE + 6;
 
   // 9:16 card sized to fit between top + bottom chrome, centred on screen.
   const TOP_CHROME = 64;
@@ -604,8 +604,8 @@ const styles = StyleSheet.create({
     position: 'absolute',
     right: 16,
     paddingHorizontal: 18,
-    paddingVertical: 8,
-    borderRadius: 22,
+    paddingVertical: 6,
+    borderRadius: 20,
     backgroundColor: '#c9a84c',
     flexDirection: 'row',
     alignItems: 'center',
@@ -626,8 +626,8 @@ const styles = StyleSheet.create({
     position: 'absolute',
     left: 16,
     paddingHorizontal: 16,
-    paddingVertical: 8,
-    borderRadius: 22,
+    paddingVertical: 6,
+    borderRadius: 20,
     backgroundColor: 'rgba(0,0,0,0.55)',
     borderWidth: 1,
     borderColor: 'rgba(255,255,255,0.18)',
