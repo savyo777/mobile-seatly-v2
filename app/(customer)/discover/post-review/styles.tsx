@@ -261,7 +261,7 @@ export default function SnapStylesScreen() {
 
   const hasImage = decodedUri.length > 0;
 
-  const continueBottom = insets.bottom + 2;
+  const continueBottom = 0;
   const carouselBottom = insets.bottom + 30;
   const pillBottom = carouselBottom + RING_SIZE + 6;
 
