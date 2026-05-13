@@ -262,12 +262,16 @@ export default function SnapStylesScreen() {
   const hasImage = decodedUri.length > 0;
 
   const continueBottom = 0;
-  const carouselBottom = 44;
-  const pillBottom = carouselBottom + RING_SIZE + 6;
+  // Filter-name pill now sits BELOW the carousel (between carousel + Retake/Next pills).
+  const pillBottom = 44;
+  const carouselBottom = pillBottom + 28 + 8; // pill height (~28) + 8px gap
 
   // 9:16 card sized to fit between top + bottom chrome, centred on screen.
   const TOP_CHROME = 64;
-  const BOTTOM_CHROME = RING_SIZE + 10 + 28 + 6 + 32 + 6;
+  // Reserve more space below the card so it shrinks slightly.
+  // Stack from screen bottom: Retake/Next pills (~36) + gap (8) + filter-name pill (28) + gap (8)
+  //   + carousel (RING_SIZE) + top breathing room (16).
+  const BOTTOM_CHROME = 36 + 8 + 28 + 8 + RING_SIZE + 16;
   const SIDE_GUTTER = 12;
   const availTop = insets.top + TOP_CHROME;
   const availBottom = insets.bottom + BOTTOM_CHROME;
