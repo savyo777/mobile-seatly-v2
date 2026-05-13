@@ -1,61 +1,88 @@
-import React, { useCallback, useMemo, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   ActivityIndicator,
   Alert,
+  Animated,
+  FlatList,
   Pressable,
-  ScrollView,
   StyleSheet,
   Text,
   View,
   useWindowDimensions,
+  type NativeScrollEvent,
+  type NativeSyntheticEvent,
 } from 'react-native';
 // expo-image honours EXIF rotation correctly on both iOS and Android, so a
 // portrait shot stays portrait — react-native's <Image> sometimes ignores
 // EXIF, which is what made captures appear horizontal here.
 import { Image } from 'expo-image';
-import type { ImageLoadEventData } from 'expo-image';
 import { useLocalSearchParams, useRouter, type Href } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
 import { StatusBar } from 'expo-status-bar';
-import { Button } from '@/components/ui';
 import { StoryFilterFrame } from '@/components/storyFilters/StoryFilterFrame';
 import { STORY_FILTERS } from '@/lib/storyFilters/registry';
 import {
-  STORY_CATEGORIES,
+  type StoryFilterCategory,
+  type StoryFilterEntry,
   type StoryFilterId,
 } from '@/lib/storyFilters/types';
 import { getSnapRestaurantName as DEMO_getSnapRestaurantName } from '@/lib/mock/snaps';
 import { mockRestaurants as DEMO_RESTAURANTS } from '@/lib/mock/restaurants';
 import { isDemoModeEnabled } from '@/lib/config/demoMode';
+import { captureStyledSnapToTmpFile } from '@/lib/snapOverlays/captureStyledSnap';
 
 const getSnapRestaurantName: typeof DEMO_getSnapRestaurantName = (id) =>
   isDemoModeEnabled() ? DEMO_getSnapRestaurantName(id) : '';
 const mockRestaurants: typeof DEMO_RESTAURANTS = isDemoModeEnabled() ? DEMO_RESTAURANTS : [];
-import { captureStyledSnapToTmpFile } from '@/lib/snapOverlays/captureStyledSnap';
 
-// Circular filter thumbnail dimensions
-const THUMB_D = 58;
-const THUMB_SCALE = THUMB_D / 224;
-const THUMB_DESIGN_W = 224;
-const THUMB_DESIGN_H = 398;
-
-const CATEGORY_GRADIENT: Record<string, [string, string]> = {
-  cute:     ['#fde8ea', '#f4aec0'],
-  playful:  ['#fef6ec', '#f5c29a'],
-  fancy:    ['#fdf8ed', '#e8c464'],
-  food:     ['#fff4e2', '#f5a454'],
-  location: ['#eaf3fc', '#9ab8d8'],
+const CATEGORY_LABEL: Record<StoryFilterCategory, string> = {
+  cute: 'Cute',
+  playful: 'Playful',
+  fancy: 'Fancy',
+  food: 'Food',
+  location: 'Location',
 };
 
+// Snapchat-style carousel layout
+const CHIP_SIZE = 56;
+const CHIP_GAP = 12;
+const CHIP_STRIDE = CHIP_SIZE + CHIP_GAP;
+const RING_SIZE = CHIP_SIZE + 10;
+
+// Filter components are designed against a 224 × 398 frame.
+const FRAME_REF_W = 224;
+const FRAME_REF_H = 398;
+const CHIP_FILTER_SCALE = CHIP_SIZE / FRAME_REF_W;
+
 const FRAME_STYLE = { borderRadius: 0 };
+
+type FilterItem =
+  | { kind: 'original'; id: '__none__'; categoryId: null }
+  | {
+      kind: 'filter';
+      id: StoryFilterId;
+      categoryId: StoryFilterCategory;
+      entry: StoryFilterEntry;
+    };
+
+const FILTER_ITEMS: FilterItem[] = [
+  { kind: 'original', id: '__none__', categoryId: null },
+  ...STORY_FILTERS.map<FilterItem>((f) => ({
+    kind: 'filter',
+    id: f.id,
+    categoryId: f.category,
+    entry: f,
+  })),
+];
 
 export default function SnapStylesScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const { width: windowW, height: windowH } = useWindowDimensions();
   const captureRefView = useRef<View>(null);
+  const listRef = useRef<FlatList<FilterItem>>(null);
 
   const {
     restaurantId,
@@ -104,19 +131,62 @@ export default function SnapStylesScreen() {
   const selectedRestaurantCity = restaurant?.city ?? 'Toronto';
   const selectedRestaurantArea = restaurant?.area ?? selectedRestaurantCity;
 
-  const [filterId, setFilterId] = useState<StoryFilterId | null>(null);
+  const [centeredIndex, setCenteredIndex] = useState(0);
   const [busy, setBusy] = useState(false);
 
-  const selectedFilter = filterId ? STORY_FILTERS.find((f) => f.id === filterId) : null;
+  const centeredItem = FILTER_ITEMS[centeredIndex] ?? FILTER_ITEMS[0];
+  const filterId: StoryFilterId | null =
+    centeredItem.kind === 'filter' ? centeredItem.id : null;
+  const currentCategoryLabel =
+    centeredItem.kind === 'original'
+      ? 'Original'
+      : CATEGORY_LABEL[centeredItem.categoryId];
 
-  const filtersByCategory = useMemo(
-    () =>
-      STORY_CATEGORIES.map((cat) => ({
-        cat,
-        filters: STORY_FILTERS.filter((f) => f.category === cat.id),
-      })),
+  // Carousel padding so first/last chip can sit at the centre line.
+  const carouselSidePad = Math.max(0, (windowW - CHIP_STRIDE) / 2);
+
+  // Category label cross-fade — fires only when the category id changes,
+  // not on every chip-to-chip move within the same category.
+  const labelOpacity = useRef(new Animated.Value(1)).current;
+  const lastCategoryRef = useRef<StoryFilterCategory | 'original' | undefined>(
+    undefined,
+  );
+  useEffect(() => {
+    const key: StoryFilterCategory | 'original' =
+      centeredItem.kind === 'original' ? 'original' : centeredItem.categoryId;
+    if (lastCategoryRef.current === undefined) {
+      lastCategoryRef.current = key;
+      return;
+    }
+    if (lastCategoryRef.current !== key) {
+      lastCategoryRef.current = key;
+      labelOpacity.setValue(0);
+      Animated.timing(labelOpacity, {
+        toValue: 1,
+        duration: 180,
+        useNativeDriver: true,
+      }).start();
+    }
+  }, [centeredItem, labelOpacity]);
+
+  const handleScroll = useCallback(
+    (e: NativeSyntheticEvent<NativeScrollEvent>) => {
+      const x = e.nativeEvent.contentOffset.x;
+      const i = Math.max(
+        0,
+        Math.min(FILTER_ITEMS.length - 1, Math.round(x / CHIP_STRIDE)),
+      );
+      setCenteredIndex((prev) => (prev === i ? prev : i));
+    },
     [],
   );
+
+  const onChipPress = useCallback((index: number) => {
+    listRef.current?.scrollToOffset({
+      offset: index * CHIP_STRIDE,
+      animated: true,
+    });
+  }, []);
 
   const goDetails = useCallback(
     async (finalUri: string, preservedFilterId?: StoryFilterId | null) => {
@@ -191,9 +261,75 @@ export default function SnapStylesScreen() {
   }, [decodedUri, restaurantId, filterId, goDetails, returningToReward, goReward]);
 
   const hasImage = decodedUri.length > 0;
-  const CONTINUE_BOTTOM = insets.bottom + 16;
-  const STRIP_BOTTOM = insets.bottom + 82;
-  const STRIP_TOP = insets.top + 64;
+
+  const continueBottom = insets.bottom + 16;
+  const carouselBottom = insets.bottom + 64;
+  const labelBottom = carouselBottom + RING_SIZE + 14;
+
+  const getItemLayout = useCallback(
+    (_: ArrayLike<FilterItem> | null | undefined, index: number) => ({
+      length: CHIP_STRIDE,
+      offset: CHIP_STRIDE * index,
+      index,
+    }),
+    [],
+  );
+
+  const renderChip = useCallback(
+    ({ item, index }: { item: FilterItem; index: number }) => (
+      <Pressable
+        onPress={() => onChipPress(index)}
+        hitSlop={6}
+        style={({ pressed }) => [
+          styles.chipSlot,
+          pressed && { opacity: 0.72 },
+        ]}
+      >
+        <View style={styles.chipCircle}>
+          {hasImage ? (
+            <Image
+              source={{ uri: decodedUri }}
+              style={StyleSheet.absoluteFillObject}
+              contentFit="cover"
+              contentPosition="bottom"
+            />
+          ) : (
+            <View style={[StyleSheet.absoluteFillObject, styles.chipPlaceholder]} />
+          )}
+          {item.kind === 'filter' && (
+            <View pointerEvents="none" style={styles.chipFilterOverlay}>
+              <item.entry.Component
+                width={FRAME_REF_W}
+                height={FRAME_REF_H}
+                capturedAt={capturedAt}
+                restaurantName={selectedRestaurantName}
+                city={selectedRestaurantCity}
+                area={selectedRestaurantArea}
+              />
+            </View>
+          )}
+          {item.kind === 'original' && (
+            <View pointerEvents="none" style={styles.chipNoneBadge}>
+              <Ionicons
+                name="ban-outline"
+                size={20}
+                color="rgba(255,255,255,0.88)"
+              />
+            </View>
+          )}
+        </View>
+      </Pressable>
+    ),
+    [
+      onChipPress,
+      hasImage,
+      decodedUri,
+      capturedAt,
+      selectedRestaurantName,
+      selectedRestaurantCity,
+      selectedRestaurantArea,
+    ],
+  );
 
   return (
     <View style={styles.root}>
@@ -225,21 +361,21 @@ export default function SnapStylesScreen() {
         />
       </View>
 
-      {/* ── Top scrim for readability ── */}
+      {/* ── Top scrim ── */}
       <LinearGradient
         colors={['rgba(0,0,0,0.52)', 'transparent']}
         style={styles.topGradient}
         pointerEvents="none"
       />
 
-      {/* ── Bottom scrim for readability ── */}
+      {/* ── Bottom scrim ── */}
       <LinearGradient
-        colors={['transparent', 'rgba(0,0,0,0.75)']}
+        colors={['transparent', 'rgba(0,0,0,0.7)']}
         style={styles.bottomGradient}
         pointerEvents="none"
       />
 
-      {/* ── Back button (top-left, overlaid) ── */}
+      {/* ── Back button ── */}
       <Pressable
         onPress={() => router.back()}
         hitSlop={12}
@@ -250,86 +386,65 @@ export default function SnapStylesScreen() {
         <Ionicons name="chevron-back" size={22} color="#fff" />
       </Pressable>
 
-      {/* ── Screen title (top-center, overlaid) ── */}
+      {/* ── Screen title ── */}
       <Text style={[styles.title, { top: insets.top + 14 }]} numberOfLines={1}>
         {returningToReward ? 'Filters for sharing' : 'Style your snap'}
       </Text>
 
-      {/* ── Snapchat-style vertical filter strip (right side, overlaid) ── */}
-      <ScrollView
-        style={[styles.filterStrip, { top: STRIP_TOP, bottom: STRIP_BOTTOM }]}
-        showsVerticalScrollIndicator={false}
-        contentContainerStyle={styles.filterStripContent}
+      {/* ── Centered category label above carousel ── */}
+      <Animated.Text
+        style={[styles.categoryLabel, { bottom: labelBottom, opacity: labelOpacity }]}
+        numberOfLines={1}
       >
-        {/* Original — no filter */}
-        <Pressable
-          onPress={() => setFilterId(null)}
-          style={({ pressed }) => [styles.thumbHit, pressed && styles.thumbHitPressed]}
-        >
-          <View style={[styles.thumbCircle, !filterId && styles.thumbCircleOn]}>
-            <LinearGradient
-              colors={['#2c2218', '#100c08']}
-              style={StyleSheet.absoluteFillObject}
-            />
-            <Text style={styles.thumbNoneText}>none</Text>
-          </View>
-          <Text style={[styles.thumbLabel, !filterId && styles.thumbLabelOn]} numberOfLines={1}>
-            Original
-          </Text>
-        </Pressable>
+        {currentCategoryLabel}
+      </Animated.Text>
 
-        {/* All filters grouped by category with section labels */}
-        {filtersByCategory.map(({ cat, filters }) => (
-          <React.Fragment key={cat.id}>
-            <View style={styles.catDivider} />
-            <Text style={styles.catLabel}>{cat.title}</Text>
-            {filters.map((entry) => {
-              const on = entry.id === filterId;
-              const gradient = CATEGORY_GRADIENT[entry.category];
-              return (
-                <Pressable
-                  key={entry.id}
-                  onPress={() => setFilterId(on ? null : entry.id)}
-                  style={({ pressed }) => [styles.thumbHit, pressed && styles.thumbHitPressed]}
-                >
-                  <View style={[styles.thumbCircle, on && styles.thumbCircleOn]}>
-                    <LinearGradient
-                      colors={gradient}
-                      start={{ x: 0.5, y: 0 }}
-                      end={{ x: 0.5, y: 1 }}
-                      style={StyleSheet.absoluteFillObject}
-                    />
-                    <View pointerEvents="none" style={styles.thumbOverlay}>
-                      <entry.Component width={THUMB_DESIGN_W} height={THUMB_DESIGN_H} />
-                    </View>
-                  </View>
-                  <Text style={[styles.thumbLabel, on && styles.thumbLabelOn]} numberOfLines={2}>
-                    {entry.name}
-                  </Text>
-                </Pressable>
-              );
-            })}
-          </React.Fragment>
-        ))}
-      </ScrollView>
+      {/* ── Snapchat-style horizontal filter carousel ── */}
+      <View
+        style={[styles.carouselWrap, { bottom: carouselBottom }]}
+        pointerEvents="box-none"
+      >
+        {/* White selection ring pinned to centre of the screen */}
+        <View pointerEvents="none" style={styles.centerRing} />
 
-      {/* ── Selected filter name (above Continue button) ── */}
-      {selectedFilter && (
-        <View style={[styles.filterNameWrap, { bottom: CONTINUE_BOTTOM + 52 }]}>
-          <Text style={styles.filterNameText}>{selectedFilter.name}</Text>
-        </View>
-      )}
-
-      {/* ── Continue button (bottom, overlaid) ── */}
-      <View style={[styles.continueWrap, { bottom: CONTINUE_BOTTOM }]}>
-        <Button
-          title={returningToReward ? 'Apply & return to share' : 'Continue'}
-          onPress={() => void handleContinue()}
-          disabled={!hasImage || !restaurantId || busy}
-          loading={busy}
-          size="lg"
+        <FlatList
+          ref={listRef}
+          data={FILTER_ITEMS}
+          horizontal
+          keyExtractor={(it) => it.id}
+          renderItem={renderChip}
+          getItemLayout={getItemLayout}
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={{ paddingHorizontal: carouselSidePad }}
+          snapToInterval={CHIP_STRIDE}
+          decelerationRate="fast"
+          onScroll={handleScroll}
+          scrollEventThrottle={16}
+          bounces={false}
+          initialNumToRender={9}
+          windowSize={5}
+          removeClippedSubviews={false}
         />
       </View>
+
+      {/* ── Continue pill (bottom-right, Snapchat yellow) ── */}
+      <Pressable
+        onPress={() => void handleContinue()}
+        disabled={!hasImage || !restaurantId || busy}
+        style={({ pressed }) => [
+          styles.continuePill,
+          { bottom: continueBottom },
+          (!hasImage || !restaurantId || busy) && styles.continuePillDisabled,
+          pressed && styles.continuePillPressed,
+        ]}
+        accessibilityRole="button"
+        accessibilityLabel={returningToReward ? 'Apply' : 'Continue'}
+      >
+        <Text style={styles.continuePillText}>
+          {returningToReward ? 'Apply' : 'Continue'}
+        </Text>
+        <Ionicons name="arrow-forward" size={16} color="#000" />
+      </Pressable>
 
       {/* ── Busy capture overlay ── */}
       {busy && (
@@ -358,7 +473,7 @@ const styles = StyleSheet.create({
     bottom: 0,
     left: 0,
     right: 0,
-    height: 200,
+    height: 220,
   },
   backBtn: {
     position: 'absolute',
@@ -383,113 +498,103 @@ const styles = StyleSheet.create({
     textShadowOffset: { width: 0, height: 1 },
     textShadowRadius: 3,
   },
-  // Right vertical filter strip — floats over the photo
-  filterStrip: {
+  categoryLabel: {
     position: 'absolute',
-    right: 6,
-    width: 72,
-  },
-  filterStripContent: {
-    alignItems: 'center',
-    paddingBottom: 8,
-    gap: 2,
-  },
-  catDivider: {
-    width: 32,
-    height: StyleSheet.hairlineWidth,
-    backgroundColor: 'rgba(255,255,255,0.25)',
-    marginTop: 8,
-    marginBottom: 4,
-  },
-  catLabel: {
-    fontSize: 7,
-    fontWeight: '700',
-    letterSpacing: 0.8,
-    textTransform: 'uppercase',
-    color: 'rgba(255,255,255,0.6)',
-    marginBottom: 4,
-    textShadowColor: 'rgba(0,0,0,0.6)',
-    textShadowOffset: { width: 0, height: 1 },
-    textShadowRadius: 2,
-  },
-  thumbHit: {
-    alignItems: 'center',
-    paddingVertical: 3,
-  },
-  thumbHitPressed: {
-    opacity: 0.72,
-  },
-  thumbCircle: {
-    width: THUMB_D,
-    height: THUMB_D,
-    borderRadius: THUMB_D / 2,
-    overflow: 'hidden',
-    borderWidth: 2.5,
-    borderColor: 'rgba(255,255,255,0.35)',
-    alignItems: 'center',
-    justifyContent: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.45,
-    shadowRadius: 4,
-    elevation: 5,
-  },
-  thumbCircleOn: {
-    borderColor: '#c9a84c',
-    shadowColor: '#c9a84c',
-    shadowOpacity: 0.7,
-    shadowRadius: 6,
-  },
-  thumbOverlay: {
-    position: 'absolute',
-    top: 0,
     left: 0,
-    width: THUMB_DESIGN_W,
-    height: THUMB_DESIGN_H,
-    transform: [{ scale: THUMB_SCALE }],
-    transformOrigin: 'top left',
-  },
-  thumbNoneText: {
-    fontSize: 7,
-    letterSpacing: 1.4,
-    textTransform: 'uppercase',
-    color: 'rgba(255,255,255,0.55)',
-    fontWeight: '600',
-  },
-  thumbLabel: {
-    marginTop: 3,
-    fontSize: 7.5,
-    fontWeight: '600',
-    color: 'rgba(255,255,255,0.75)',
+    right: 0,
     textAlign: 'center',
-    width: 64,
-    textShadowColor: 'rgba(0,0,0,0.55)',
-    textShadowOffset: { width: 0, height: 1 },
-    textShadowRadius: 2,
-  },
-  thumbLabelOn: {
-    color: '#c9a84c',
-    fontWeight: '700',
-  },
-  filterNameWrap: {
-    position: 'absolute',
-    left: 16,
-    right: 86,
-    alignItems: 'center',
-  },
-  filterNameText: {
     fontSize: 13,
     fontWeight: '700',
     color: '#fff',
-    textShadowColor: 'rgba(0,0,0,0.65)',
+    textTransform: 'uppercase',
+    letterSpacing: 1.4,
+    textShadowColor: 'rgba(0,0,0,0.7)',
     textShadowOffset: { width: 0, height: 1 },
     textShadowRadius: 4,
-    letterSpacing: 0.2,
   },
-  continueWrap: {
+  carouselWrap: {
     position: 'absolute',
-    left: 16,
+    left: 0,
+    right: 0,
+    height: RING_SIZE,
+    justifyContent: 'center',
+  },
+  centerRing: {
+    position: 'absolute',
+    alignSelf: 'center',
+    width: RING_SIZE,
+    height: RING_SIZE,
+    borderRadius: RING_SIZE / 2,
+    borderWidth: 2,
+    borderColor: '#fff',
+    shadowColor: '#fff',
+    shadowOpacity: 0.45,
+    shadowRadius: 6,
+    shadowOffset: { width: 0, height: 0 },
+  },
+  chipSlot: {
+    width: CHIP_STRIDE,
+    height: RING_SIZE,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  chipCircle: {
+    width: CHIP_SIZE,
+    height: CHIP_SIZE,
+    borderRadius: CHIP_SIZE / 2,
+    overflow: 'hidden',
+    backgroundColor: '#111',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.5,
+    shadowRadius: 4,
+    elevation: 5,
+  },
+  chipPlaceholder: {
+    backgroundColor: '#1a1410',
+  },
+  chipFilterOverlay: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    width: FRAME_REF_W,
+    height: FRAME_REF_H,
+    transform: [{ scale: CHIP_FILTER_SCALE }],
+    transformOrigin: 'top left',
+  },
+  chipNoneBadge: {
+    ...StyleSheet.absoluteFillObject,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: 'rgba(0,0,0,0.28)',
+  },
+  continuePill: {
+    position: 'absolute',
     right: 16,
+    paddingHorizontal: 18,
+    paddingVertical: 10,
+    borderRadius: 24,
+    backgroundColor: '#FEDD00',
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.35,
+    shadowRadius: 5,
+    elevation: 6,
+  },
+  continuePillDisabled: {
+    opacity: 0.5,
+  },
+  continuePillPressed: {
+    opacity: 0.85,
+  },
+  continuePillText: {
+    color: '#000',
+    fontWeight: '700',
+    fontSize: 14,
+    letterSpacing: 0.2,
   },
   busyOverlay: {
     alignItems: 'center',
