@@ -49,7 +49,7 @@ const FRAME_REF_W = 224;
 const FRAME_REF_H = 398;
 const CHIP_FILTER_SCALE = CHIP_SIZE / FRAME_REF_W;
 
-const FRAME_STYLE = { borderRadius: 0 };
+const FRAME_STYLE = { borderRadius: 0, backgroundColor: '#000' };
 
 type FilterItem =
   | { kind: 'original'; id: '__none__'; categoryId: null }
@@ -262,8 +262,8 @@ export default function SnapStylesScreen() {
 
   const hasImage = decodedUri.length > 0;
 
-  const continueBottom = insets.bottom + 16;
-  const carouselBottom = insets.bottom + 64;
+  const continueBottom = insets.bottom + 8;
+  const carouselBottom = insets.bottom + 52;
   const pillBottom = carouselBottom + RING_SIZE + 16;
 
   const getItemLayout = useCallback(
@@ -354,14 +354,6 @@ export default function SnapStylesScreen() {
         collapsable={false}
         style={[StyleSheet.absoluteFillObject, { width: windowW, height: windowH }]}
       >
-        {hasImage && (
-          <Image
-            source={{ uri: decodedUri }}
-            style={StyleSheet.absoluteFillObject}
-            contentFit="cover"
-            contentPosition="bottom"
-          />
-        )}
         <StoryFilterFrame
           filterId={filterId}
           width={windowW}
@@ -370,6 +362,16 @@ export default function SnapStylesScreen() {
           restaurantName={selectedRestaurantName}
           city={selectedRestaurantCity}
           area={selectedRestaurantArea}
+          mediaSlot={
+            hasImage ? (
+              <Image
+                source={{ uri: decodedUri }}
+                style={StyleSheet.absoluteFill}
+                contentFit="cover"
+                contentPosition="center"
+              />
+            ) : null
+          }
           containerStyle={FRAME_STYLE}
         />
       </View>
@@ -458,7 +460,7 @@ export default function SnapStylesScreen() {
         <Text style={styles.continuePillText}>
           {returningToReward ? 'Apply' : 'Continue'}
         </Text>
-        <Ionicons name="arrow-forward" size={16} color="#000" />
+        <Ionicons name="arrow-forward" size={16} color="#1a1410" />
       </Pressable>
 
       {/* ── Busy capture overlay ── */}
@@ -543,7 +545,12 @@ const styles = StyleSheet.create({
     height: RING_SIZE,
     borderRadius: RING_SIZE / 2,
     borderWidth: 2,
-    borderColor: '#fff',
+    borderColor: '#c9a84c',
+    shadowColor: '#c9a84c',
+    shadowOpacity: 0.5,
+    shadowRadius: 5,
+    shadowOffset: { width: 0, height: 0 },
+    elevation: 3,
   },
   chipSlot: {
     width: CHIP_STRIDE,
@@ -587,7 +594,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 18,
     paddingVertical: 10,
     borderRadius: 24,
-    backgroundColor: '#FEDD00',
+    backgroundColor: '#c9a84c',
     flexDirection: 'row',
     alignItems: 'center',
     gap: 6,
@@ -604,7 +611,7 @@ const styles = StyleSheet.create({
     opacity: 0.85,
   },
   continuePillText: {
-    color: '#000',
+    color: '#1a1410',
     fontWeight: '700',
     fontSize: 14,
     letterSpacing: 0.2,
