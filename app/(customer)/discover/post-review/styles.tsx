@@ -19,7 +19,6 @@ import { Image } from 'expo-image';
 import { useLocalSearchParams, useRouter, type Href } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { LinearGradient } from 'expo-linear-gradient';
 import { StatusBar } from 'expo-status-bar';
 import { StoryFilterFrame } from '@/components/storyFilters/StoryFilterFrame';
 import { STORY_FILTERS } from '@/lib/storyFilters/registry';
@@ -49,7 +48,7 @@ const FRAME_REF_W = 224;
 const FRAME_REF_H = 398;
 const CHIP_FILTER_SCALE = CHIP_SIZE / FRAME_REF_W;
 
-const FRAME_STYLE = { borderRadius: 0, backgroundColor: '#000' };
+const CARD_FRAME_STYLE = { borderRadius: 20, backgroundColor: '#000' };
 
 type FilterItem =
   | { kind: 'original'; id: '__none__'; categoryId: null }
@@ -266,6 +265,19 @@ export default function SnapStylesScreen() {
   const carouselBottom = insets.bottom + 52;
   const pillBottom = carouselBottom + RING_SIZE + 16;
 
+  // 9:16 card sized to fit between top + bottom chrome, centred on screen.
+  const TOP_CHROME = 64;
+  const BOTTOM_CHROME = RING_SIZE + 16 + 28 + 12 + 36 + 16;
+  const SIDE_GUTTER = 12;
+  const availTop = insets.top + TOP_CHROME;
+  const availBottom = insets.bottom + BOTTOM_CHROME;
+  const availH = Math.max(0, windowH - availTop - availBottom);
+  const availW = Math.max(0, windowW - SIDE_GUTTER * 2);
+  const cardW = Math.floor(Math.min(availW, (availH * 9) / 16));
+  const cardH = Math.floor((cardW * 16) / 9);
+  const cardLeft = Math.floor((windowW - cardW) / 2);
+  const cardTop = Math.floor(availTop + (availH - cardH) / 2);
+
   const getItemLayout = useCallback(
     (_: ArrayLike<FilterItem> | null | undefined, index: number) => ({
       length: CHIP_STRIDE,
@@ -348,16 +360,25 @@ export default function SnapStylesScreen() {
     <View style={styles.root}>
       <StatusBar style="light" />
 
-      {/* ── CAPTURE TARGET: full-screen photo + filter overlay ── */}
+      {/* ── CAPTURE TARGET: 9:16 styled-snap card ── */}
       <View
         ref={captureRefView}
         collapsable={false}
-        style={[StyleSheet.absoluteFillObject, { width: windowW, height: windowH }]}
+        style={{
+          position: 'absolute',
+          left: cardLeft,
+          top: cardTop,
+          width: cardW,
+          height: cardH,
+          borderRadius: 20,
+          overflow: 'hidden',
+          backgroundColor: '#000',
+        }}
       >
         <StoryFilterFrame
           filterId={filterId}
-          width={windowW}
-          height={windowH}
+          width={cardW}
+          height={cardH}
           capturedAt={capturedAt}
           restaurantName={selectedRestaurantName}
           city={selectedRestaurantCity}
@@ -372,23 +393,9 @@ export default function SnapStylesScreen() {
               />
             ) : null
           }
-          containerStyle={FRAME_STYLE}
+          containerStyle={CARD_FRAME_STYLE}
         />
       </View>
-
-      {/* ── Top scrim ── */}
-      <LinearGradient
-        colors={['rgba(0,0,0,0.52)', 'transparent']}
-        style={styles.topGradient}
-        pointerEvents="none"
-      />
-
-      {/* ── Bottom scrim ── */}
-      <LinearGradient
-        colors={['transparent', 'rgba(0,0,0,0.7)']}
-        style={styles.bottomGradient}
-        pointerEvents="none"
-      />
 
       {/* ── Back button ── */}
       <Pressable
@@ -477,20 +484,6 @@ const styles = StyleSheet.create({
   root: {
     flex: 1,
     backgroundColor: '#000',
-  },
-  topGradient: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    height: 120,
-  },
-  bottomGradient: {
-    position: 'absolute',
-    bottom: 0,
-    left: 0,
-    right: 0,
-    height: 220,
   },
   backBtn: {
     position: 'absolute',
