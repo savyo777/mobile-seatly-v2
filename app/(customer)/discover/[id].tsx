@@ -25,9 +25,9 @@ import {
   type RestaurantPublicReviewRow,
 } from '@/lib/reviews/getRestaurantReviews';
 import { listSnapPostsByRestaurant as DEMO_listSnapPostsByRestaurant } from '@/lib/mock/snaps';
-
-const listSnapPostsByRestaurant: typeof DEMO_listSnapPostsByRestaurant = (id) =>
-  isDemoModeEnabled() ? DEMO_listSnapPostsByRestaurant(id) : [];
+import { listVisitPhotosByRestaurant, type VisitPhotoRow } from '@/lib/snaps/visitPhotosApi';
+import type { StoryFilterId } from '@/lib/storyFilters/types';
+import { STORY_FILTERS } from '@/lib/storyFilters/registry';
 import { getLatestCompletedVisitForRestaurant } from '@/lib/postVisit/postTurn';
 import { formatCurrency } from '@/lib/utils/formatCurrency';
 import {
@@ -699,6 +699,7 @@ export default function RestaurantDetailScreen() {
   const [publicMenuItems, setPublicMenuItems] = useState<RealMenuItem[]>([]);
   const [menuLoading, setMenuLoading] = useState(false);
   const [reviews, setReviews] = useState<RestaurantPublicReviewRow[]>([]);
+  const [visitPhotoStrip, setVisitPhotoStrip] = useState<VisitPhotoRow[]>([]);
 
   useEffect(() => {
     // Preview should mirror exactly what a real diner sees, so we fetch
@@ -814,6 +815,15 @@ export default function RestaurantDetailScreen() {
       setSelectedMenuTab(MENU_ALL_TAB);
     }
   }, [menuCategoryTabs, selectedMenuTab]);
+
+  useEffect(() => {
+    if (isDemoModeEnabled() || !restaurant?.id) return;
+    let cancelled = false;
+    listVisitPhotosByRestaurant(restaurant.id, 3)
+      .then((rows) => { if (!cancelled) setVisitPhotoStrip(rows); })
+      .catch(() => {});
+    return () => { cancelled = true; };
+  }, [restaurant?.id]);
 
   const todayKey = currentRestaurantWeekdayKey();
   const todayHours = restaurant?.hoursJson[todayKey];
@@ -1057,14 +1067,16 @@ export default function RestaurantDetailScreen() {
           </View>
 
           {(() => {
-            const allSnapPhotos = listSnapPostsByRestaurant(restaurant.id);
-            const snapPhotos = allSnapPhotos.slice(0, 3);
-            const isEmpty = snapPhotos.length === 0;
+            const demoPhotos = isDemoModeEnabled()
+              ? DEMO_listSnapPostsByRestaurant(restaurant.id).slice(0, 3)
+              : [];
+            const isEmpty = isDemoModeEnabled()
+              ? demoPhotos.length === 0
+              : visitPhotoStrip.length === 0;
             return (
               <View style={{ marginTop: spacing.xl }}>
                 <View style={styles.photoSectionHeader}>
                   <Text style={styles.sectionHeading}>Photos</Text>
-                  {/* Hide "See all" when empty — there's nothing to navigate to. */}
                   {!isEmpty ? (
                     <Pressable
                       hitSlop={8}
@@ -1102,9 +1114,9 @@ export default function RestaurantDetailScreen() {
                       </Text>
                     </View>
                   )
-                ) : (
+                ) : isDemoModeEnabled() ? (
                   <View style={styles.photoStrip}>
-                    {snapPhotos.map((snap) => (
+                    {demoPhotos.map((snap) => (
                       <Pressable
                         key={snap.id}
                         style={styles.photoThumb}
@@ -1138,6 +1150,48 @@ export default function RestaurantDetailScreen() {
                         )}
                       </Pressable>
                     ))}
+                  </View>
+                ) : (
+                  <View style={styles.photoStrip}>
+                    {visitPhotoStrip.map((photo) => {
+                      const validFilter = STORY_FILTERS.some((f) => f.id === photo.story_filter_id)
+                        ? (photo.story_filter_id as StoryFilterId)
+                        : undefined;
+                      return (
+                        <Pressable
+                          key={photo.id}
+                          style={styles.photoThumb}
+                          onPress={() => router.push(`/(customer)/discover/snaps/${restaurant.id}`)}
+                        >
+                          {validFilter ? (
+                            <StoryFilterFrame
+                              filterId={validFilter}
+                              width={photoThumbWidth}
+                              height={90}
+                              capturedAt={photo.story_filter_captured_at ?? undefined}
+                              restaurantName={restaurant.name}
+                              city={restaurant.city}
+                              area={restaurant.area}
+                              mediaSlot={
+                                <ExpoImage
+                                  source={{ uri: photo.image_url }}
+                                  style={{ width: '100%', height: '100%' }}
+                                  contentFit="cover"
+                                  contentPosition="bottom"
+                                />
+                              }
+                            />
+                          ) : (
+                            <ExpoImage
+                              source={{ uri: photo.image_url }}
+                              style={{ width: '100%', height: '100%' }}
+                              contentFit="cover"
+                              contentPosition="bottom"
+                            />
+                          )}
+                        </Pressable>
+                      );
+                    })}
                   </View>
                 )}
               </View>

@@ -435,27 +435,29 @@ export async function completePostTurnPhoto(params: {
   imageUrl: string;
   caption?: string;
 }): Promise<void> {
-  if (!params.bookingId) return;
-
   const completedAt = new Date().toISOString();
-  const requests = await loadLocalRequests(params.userId);
-  const next = requests.map((request) =>
-    request.bookingId === params.bookingId && request.type === 'photo'
-      ? {
-          ...request,
-          status: 'completed' as const,
-          completedAt,
-          dismissedAt: undefined,
-        }
-      : request,
-  );
-  await saveLocalRequests(params.userId, next);
+
+  if (params.bookingId) {
+    const requests = await loadLocalRequests(params.userId);
+    const next = requests.map((request) =>
+      request.bookingId === params.bookingId && request.type === 'photo'
+        ? {
+            ...request,
+            status: 'completed' as const,
+            completedAt,
+            dismissedAt: undefined,
+          }
+        : request,
+    );
+    await saveLocalRequests(params.userId, next);
+    void upsertRemoteRequests(next.filter((request) => request.bookingId === params.bookingId && request.type === 'photo'));
+  }
 
   const supabase = getSupabase();
   if (supabase) {
     try {
       await supabase.from('visit_photos').insert({
-        booking_id: params.bookingId,
+        booking_id: params.bookingId ?? null,
         user_id: params.userId,
         restaurant_id: params.restaurantId,
         image_url: params.imageUrl,
@@ -463,11 +465,9 @@ export async function completePostTurnPhoto(params: {
         created_at: completedAt,
       });
     } catch {
-      // Snap storage still tracks the booking_id locally.
+      // Local completion still prevents duplicate prompts on this device.
     }
   }
-
-  void upsertRemoteRequests(next.filter((request) => request.bookingId === params.bookingId && request.type === 'photo'));
 }
 
 export async function getLatestCompletedVisitForRestaurant(

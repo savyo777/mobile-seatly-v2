@@ -28,7 +28,8 @@ import { mockCustomer } from '@/lib/mock/users';
 import { useCurrentUserId } from '@/lib/auth/currentUserId';
 import { isDemoModeEnabled } from '@/lib/config/demoMode';
 import { useAuthSession } from '@/lib/auth/AuthContext';
-import { completePostTurnPhoto } from '@/lib/postVisit/postTurn';
+import { uploadSnapPhoto } from '@/lib/snaps/uploadSnapPhoto';
+import { insertVisitPhoto } from '@/lib/snaps/visitPhotosApi';
 import { STORY_FILTERS } from '@/lib/storyFilters/registry';
 import {
   DEFAULT_SNAP_PHOTO_ASPECT,
@@ -358,10 +359,11 @@ export default function SnapCaptionScreen() {
       const cleanCaption = caption.trim();
       const userId = me;
       if (!userId) {
-        // No auth and demo mode is off — refuse to write under a fake id.
         setPosting(false);
         return;
       }
+
+      // Keep the in-memory snap so the reward/share sheet renders immediately.
       createSnapPost({
         user_id: userId,
         restaurant_id: restaurantId,
@@ -375,14 +377,34 @@ export default function SnapCaptionScreen() {
         storyFilterCapturedAt: selectedFilterId ? capturedAt : undefined,
       });
 
-      if (isAuthenticated && user?.id && bookingId) {
-        void completePostTurnPhoto({
-          userId: user.id,
-          bookingId,
-          restaurantId,
-          imageUrl: decodedUri,
-          caption: cleanCaption,
-        }).catch(() => undefined);
+      // Persist to Supabase whenever the user is authenticated, regardless of
+      // whether a bookingId is present (covers the past-restaurants carousel flow).
+      if (isAuthenticated && user?.id) {
+        const photoId = crypto.randomUUID();
+        void (async () => {
+          try {
+            const publicUrl = await uploadSnapPhoto({
+              uri: decodedUri,
+              userId: user.id,
+              photoId,
+            });
+            if (publicUrl) {
+              await insertVisitPhoto({
+                userId: user.id,
+                restaurantId,
+                imageUrl: publicUrl,
+                caption: cleanCaption,
+                bookingId: bookingId ?? null,
+                storyFilterId: selectedFilterId ?? null,
+                storyFilterCapturedAt: selectedFilterId ? capturedAt : null,
+                rating,
+                tags,
+              });
+            }
+          } catch {
+            // Fire-and-forget: UI already navigated away; don't alert the user.
+          }
+        })();
       }
 
       navigated = true;

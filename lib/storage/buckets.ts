@@ -3,6 +3,14 @@
 // supabase/migrations/.
 
 export const RECEIPTS_BUCKET = 'receipts';
+export const VISIT_PHOTOS_BUCKET = 'visit-photos';
+
+// Path convention for the visit-photos bucket:
+//   `{user_id}/{photo_id}.jpg`
+// First segment is the auth user id so storage RLS can scope writes per user.
+export function visitPhotoObjectPath(userId: string, photoId: string): string {
+  return `${userId}/${photoId}.jpg`;
+}
 export const RESTAURANT_LOGOS_BUCKET = 'restaurant-logos';
 export const COVER_PHOTOS_BUCKET = 'cover-photos';
 export const EVENT_MEDIA_BUCKET = 'event-media';
