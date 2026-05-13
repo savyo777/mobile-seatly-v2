@@ -37,19 +37,12 @@ const getSnapRestaurantName: typeof DEMO_getSnapRestaurantName = (id) =>
   isDemoModeEnabled() ? DEMO_getSnapRestaurantName(id) : '';
 const mockRestaurants: typeof DEMO_RESTAURANTS = isDemoModeEnabled() ? DEMO_RESTAURANTS : [];
 
-const CATEGORY_LABEL: Record<StoryFilterCategory, string> = {
-  cute: 'Cute',
-  playful: 'Playful',
-  fancy: 'Fancy',
-  food: 'Food',
-  location: 'Location',
-};
-
-// Snapchat-style carousel layout
-const CHIP_SIZE = 56;
-const CHIP_GAP = 12;
+// iOS-Camera-style carousel layout: small side chips, big centred chip.
+const CHIP_SIZE = 52;
+const SIDE_SCALE = 26 / 52;
+const CHIP_GAP = 14;
 const CHIP_STRIDE = CHIP_SIZE + CHIP_GAP;
-const RING_SIZE = CHIP_SIZE + 10;
+const RING_SIZE = CHIP_SIZE + 8;
 
 // Filter components are designed against a 224 × 398 frame.
 const FRAME_REF_W = 224;
@@ -137,39 +130,37 @@ export default function SnapStylesScreen() {
   const centeredItem = FILTER_ITEMS[centeredIndex] ?? FILTER_ITEMS[0];
   const filterId: StoryFilterId | null =
     centeredItem.kind === 'filter' ? centeredItem.id : null;
-  const currentCategoryLabel =
+  const currentFilterPillText =
     centeredItem.kind === 'original'
-      ? 'Original'
-      : CATEGORY_LABEL[centeredItem.categoryId];
+      ? 'ORIGINAL'
+      : centeredItem.entry.name.toUpperCase();
 
   // Carousel padding so first/last chip can sit at the centre line.
   const carouselSidePad = Math.max(0, (windowW - CHIP_STRIDE) / 2);
 
-  // Category label cross-fade — fires only when the category id changes,
-  // not on every chip-to-chip move within the same category.
-  const labelOpacity = useRef(new Animated.Value(1)).current;
-  const lastCategoryRef = useRef<StoryFilterCategory | 'original' | undefined>(
-    undefined,
-  );
+  // Native-driven scroll position drives each chip's scale interpolation.
+  const scrollX = useRef(new Animated.Value(0)).current;
+
+  // Pill cross-fade fires on filter-id change (matches iOS Camera).
+  const pillOpacity = useRef(new Animated.Value(1)).current;
+  const lastFilterIdRef = useRef<StoryFilterId | null | 'init'>('init');
   useEffect(() => {
-    const key: StoryFilterCategory | 'original' =
-      centeredItem.kind === 'original' ? 'original' : centeredItem.categoryId;
-    if (lastCategoryRef.current === undefined) {
-      lastCategoryRef.current = key;
+    if (lastFilterIdRef.current === 'init') {
+      lastFilterIdRef.current = filterId;
       return;
     }
-    if (lastCategoryRef.current !== key) {
-      lastCategoryRef.current = key;
-      labelOpacity.setValue(0);
-      Animated.timing(labelOpacity, {
+    if (lastFilterIdRef.current !== filterId) {
+      lastFilterIdRef.current = filterId;
+      pillOpacity.setValue(0);
+      Animated.timing(pillOpacity, {
         toValue: 1,
         duration: 180,
         useNativeDriver: true,
       }).start();
     }
-  }, [centeredItem, labelOpacity]);
+  }, [filterId, pillOpacity]);
 
-  const handleScroll = useCallback(
+  const handleScrollListener = useCallback(
     (e: NativeSyntheticEvent<NativeScrollEvent>) => {
       const x = e.nativeEvent.contentOffset.x;
       const i = Math.max(
@@ -179,6 +170,15 @@ export default function SnapStylesScreen() {
       setCenteredIndex((prev) => (prev === i ? prev : i));
     },
     [],
+  );
+
+  const onScroll = useMemo(
+    () =>
+      Animated.event(
+        [{ nativeEvent: { contentOffset: { x: scrollX } } }],
+        { useNativeDriver: true, listener: handleScrollListener },
+      ),
+    [scrollX, handleScrollListener],
   );
 
   const onChipPress = useCallback((index: number) => {
@@ -264,7 +264,7 @@ export default function SnapStylesScreen() {
 
   const continueBottom = insets.bottom + 16;
   const carouselBottom = insets.bottom + 64;
-  const labelBottom = carouselBottom + RING_SIZE + 14;
+  const pillBottom = carouselBottom + RING_SIZE + 16;
 
   const getItemLayout = useCallback(
     (_: ArrayLike<FilterItem> | null | undefined, index: number) => ({
@@ -276,51 +276,64 @@ export default function SnapStylesScreen() {
   );
 
   const renderChip = useCallback(
-    ({ item, index }: { item: FilterItem; index: number }) => (
-      <Pressable
-        onPress={() => onChipPress(index)}
-        hitSlop={6}
-        style={({ pressed }) => [
-          styles.chipSlot,
-          pressed && { opacity: 0.72 },
-        ]}
-      >
-        <View style={styles.chipCircle}>
-          {hasImage ? (
-            <Image
-              source={{ uri: decodedUri }}
-              style={StyleSheet.absoluteFillObject}
-              contentFit="cover"
-              contentPosition="bottom"
-            />
-          ) : (
-            <View style={[StyleSheet.absoluteFillObject, styles.chipPlaceholder]} />
-          )}
-          {item.kind === 'filter' && (
-            <View pointerEvents="none" style={styles.chipFilterOverlay}>
-              <item.entry.Component
-                width={FRAME_REF_W}
-                height={FRAME_REF_H}
-                capturedAt={capturedAt}
-                restaurantName={selectedRestaurantName}
-                city={selectedRestaurantCity}
-                area={selectedRestaurantArea}
+    ({ item, index }: { item: FilterItem; index: number }) => {
+      const inputRange = [
+        (index - 1) * CHIP_STRIDE,
+        index * CHIP_STRIDE,
+        (index + 1) * CHIP_STRIDE,
+      ];
+      const scale = scrollX.interpolate({
+        inputRange,
+        outputRange: [SIDE_SCALE, 1, SIDE_SCALE],
+        extrapolate: 'clamp',
+      });
+      return (
+        <Pressable
+          onPress={() => onChipPress(index)}
+          hitSlop={6}
+          style={({ pressed }) => [
+            styles.chipSlot,
+            pressed && { opacity: 0.72 },
+          ]}
+        >
+          <Animated.View style={[styles.chipCircle, { transform: [{ scale }] }]}>
+            {hasImage ? (
+              <Image
+                source={{ uri: decodedUri }}
+                style={StyleSheet.absoluteFillObject}
+                contentFit="cover"
+                contentPosition="bottom"
               />
-            </View>
-          )}
-          {item.kind === 'original' && (
-            <View pointerEvents="none" style={styles.chipNoneBadge}>
-              <Ionicons
-                name="ban-outline"
-                size={20}
-                color="rgba(255,255,255,0.88)"
-              />
-            </View>
-          )}
-        </View>
-      </Pressable>
-    ),
+            ) : (
+              <View style={[StyleSheet.absoluteFillObject, styles.chipPlaceholder]} />
+            )}
+            {item.kind === 'filter' && (
+              <View pointerEvents="none" style={styles.chipFilterOverlay}>
+                <item.entry.Component
+                  width={FRAME_REF_W}
+                  height={FRAME_REF_H}
+                  capturedAt={capturedAt}
+                  restaurantName={selectedRestaurantName}
+                  city={selectedRestaurantCity}
+                  area={selectedRestaurantArea}
+                />
+              </View>
+            )}
+            {item.kind === 'original' && (
+              <View pointerEvents="none" style={styles.chipNoneBadge}>
+                <Ionicons
+                  name="ban-outline"
+                  size={20}
+                  color="rgba(255,255,255,0.88)"
+                />
+              </View>
+            )}
+          </Animated.View>
+        </Pressable>
+      );
+    },
     [
+      scrollX,
       onChipPress,
       hasImage,
       decodedUri,
@@ -391,15 +404,17 @@ export default function SnapStylesScreen() {
         {returningToReward ? 'Filters for sharing' : 'Style your snap'}
       </Text>
 
-      {/* ── Centered category label above carousel ── */}
-      <Animated.Text
-        style={[styles.categoryLabel, { bottom: labelBottom, opacity: labelOpacity }]}
-        numberOfLines={1}
+      {/* ── Centered filter pill (iOS-Camera style) above carousel ── */}
+      <Animated.View
+        style={[styles.filterPill, { bottom: pillBottom, opacity: pillOpacity }]}
+        pointerEvents="none"
       >
-        {currentCategoryLabel}
-      </Animated.Text>
+        <Text style={styles.filterPillText} numberOfLines={1}>
+          {currentFilterPillText}
+        </Text>
+      </Animated.View>
 
-      {/* ── Snapchat-style horizontal filter carousel ── */}
+      {/* ── Horizontal filter carousel (snap-to-centre, native scale) ── */}
       <View
         style={[styles.carouselWrap, { bottom: carouselBottom }]}
         pointerEvents="box-none"
@@ -407,7 +422,7 @@ export default function SnapStylesScreen() {
         {/* White selection ring pinned to centre of the screen */}
         <View pointerEvents="none" style={styles.centerRing} />
 
-        <FlatList
+        <Animated.FlatList
           ref={listRef}
           data={FILTER_ITEMS}
           horizontal
@@ -418,7 +433,7 @@ export default function SnapStylesScreen() {
           contentContainerStyle={{ paddingHorizontal: carouselSidePad }}
           snapToInterval={CHIP_STRIDE}
           decelerationRate="fast"
-          onScroll={handleScroll}
+          onScroll={onScroll}
           scrollEventThrottle={16}
           bounces={false}
           initialNumToRender={9}
@@ -498,19 +513,21 @@ const styles = StyleSheet.create({
     textShadowOffset: { width: 0, height: 1 },
     textShadowRadius: 3,
   },
-  categoryLabel: {
+  filterPill: {
     position: 'absolute',
-    left: 0,
-    right: 0,
-    textAlign: 'center',
-    fontSize: 13,
-    fontWeight: '700',
+    alignSelf: 'center',
+    backgroundColor: 'rgba(0,0,0,0.65)',
+    paddingHorizontal: 12,
+    paddingVertical: 5,
+    borderRadius: 12,
+    maxWidth: '70%',
+  },
+  filterPillText: {
     color: '#fff',
-    textTransform: 'uppercase',
-    letterSpacing: 1.4,
-    textShadowColor: 'rgba(0,0,0,0.7)',
-    textShadowOffset: { width: 0, height: 1 },
-    textShadowRadius: 4,
+    fontSize: 12,
+    fontWeight: '700',
+    letterSpacing: 1.2,
+    textAlign: 'center',
   },
   carouselWrap: {
     position: 'absolute',
@@ -527,10 +544,6 @@ const styles = StyleSheet.create({
     borderRadius: RING_SIZE / 2,
     borderWidth: 2,
     borderColor: '#fff',
-    shadowColor: '#fff',
-    shadowOpacity: 0.45,
-    shadowRadius: 6,
-    shadowOffset: { width: 0, height: 0 },
   },
   chipSlot: {
     width: CHIP_STRIDE,
