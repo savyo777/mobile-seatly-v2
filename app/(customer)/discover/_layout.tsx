@@ -12,7 +12,6 @@ export default function DiscoverStackLayout() {
       <Stack.Screen name="index" />
       <Stack.Screen name="post-review/index" />
       <Stack.Screen name="post-review/camera" />
-      <Stack.Screen name="post-review/preview" />
       <Stack.Screen name="post-review/styles" />
       <Stack.Screen name="post-review/connect" />
       <Stack.Screen name="post-review/details" />

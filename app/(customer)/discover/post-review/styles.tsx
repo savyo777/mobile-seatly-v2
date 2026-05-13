@@ -462,13 +462,32 @@ export default function SnapStylesScreen() {
           pressed && styles.continuePillPressed,
         ]}
         accessibilityRole="button"
-        accessibilityLabel={returningToReward ? 'Apply' : 'Continue'}
+        accessibilityLabel={returningToReward ? 'Apply' : 'Next'}
       >
         <Text style={styles.continuePillText}>
-          {returningToReward ? 'Apply' : 'Continue'}
+          {returningToReward ? 'Apply' : 'Next'}
         </Text>
         <Ionicons name="arrow-forward" size={16} color="#1a1410" />
       </Pressable>
+
+      {/* ── Retake pill (bottom-left, paired with Next) ── */}
+      {!returningToReward && (
+        <Pressable
+          onPress={() => router.back()}
+          disabled={busy}
+          style={({ pressed }) => [
+            styles.retakePill,
+            { bottom: continueBottom },
+            busy && styles.continuePillDisabled,
+            pressed && styles.continuePillPressed,
+          ]}
+          accessibilityRole="button"
+          accessibilityLabel="Retake"
+        >
+          <Ionicons name="camera-reverse-outline" size={16} color="#fff" />
+          <Text style={styles.retakePillText}>Retake</Text>
+        </Pressable>
+      )}
 
       {/* ── Busy capture overlay ── */}
       {busy && (
@@ -602,6 +621,25 @@ const styles = StyleSheet.create({
   },
   continuePillPressed: {
     opacity: 0.85,
+  },
+  retakePill: {
+    position: 'absolute',
+    left: 16,
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    borderRadius: 24,
+    backgroundColor: 'rgba(0,0,0,0.55)',
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.18)',
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+  },
+  retakePillText: {
+    color: '#fff',
+    fontWeight: '600',
+    fontSize: 14,
+    letterSpacing: 0.2,
   },
   continuePillText: {
     color: '#1a1410',

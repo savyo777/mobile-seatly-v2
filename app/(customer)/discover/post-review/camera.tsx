@@ -9,7 +9,6 @@ import {
   Text,
   View,
 } from 'react-native';
-import { Image } from 'expo-image';
 import { CameraView, CameraType, FlashMode, useCameraPermissions } from 'expo-camera';
 import * as ImagePicker from 'expo-image-picker';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -190,30 +189,6 @@ const useStyles = createStyles((c) => ({
     transform: [{ scale: 0.92 }],
     opacity: 0.92,
   },
-  editRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: spacing.xl,
-  },
-  editLink: {
-    paddingVertical: 12,
-    paddingHorizontal: 16,
-  },
-  editLinkText: {
-    ...typography.body,
-    color: 'rgba(255,255,255,0.6)',
-    fontWeight: '600',
-  },
-  editPrimary: {
-    paddingVertical: 12,
-    paddingHorizontal: 16,
-  },
-  editPrimaryText: {
-    ...typography.body,
-    color: '#DDD5C4',
-    fontWeight: '700',
-  },
   cameraFallback: {
     ...StyleSheet.absoluteFillObject,
     alignItems: 'center',
@@ -295,9 +270,6 @@ export default function ReviewCameraScreen() {
   const [cameraReady, setCameraReady] = useState(false);
   const [cameraUnavailable, setCameraUnavailable] = useState(false);
   const [capturing, setCapturing] = useState(false);
-  const [selectedImageUri, setSelectedImageUri] = useState<string | null>(null);
-  const [selectedSource, setSelectedSource] = useState<'camera' | 'gallery' | null>(null);
-  const [selectedCapturedAt, setSelectedCapturedAt] = useState<number | null>(null);
 
   const cameraRef = useRef<CameraView | null>(null);
   const shutterOpacity = useRef(new Animated.Value(0)).current;
@@ -305,7 +277,6 @@ export default function ReviewCameraScreen() {
   const galleryOpeningRef = useRef(false);
   const [captureFill, setCaptureFill] = useState(false);
 
-  const isEditMode = !!selectedImageUri;
   const restaurantName = useMemo(
     () => (restaurantId ? getSnapRestaurantName(restaurantId) : 'Restaurant'),
     [restaurantId],
@@ -315,6 +286,17 @@ export default function ReviewCameraScreen() {
     [cameraFacing, flash],
   );
   const canUseCamera = Boolean(permission?.granted) && !cameraUnavailable;
+
+  const goNext = useCallback(
+    (uri: string, capturedAtMs: number) => {
+      const encodedUri = encodeURIComponent(uri);
+      const bookingQuery = bookingId ? `&bookingId=${encodeURIComponent(String(bookingId))}` : '';
+      router.push(
+        `/(customer)/discover/post-review/styles?photoUri=${encodedUri}&restaurantId=${restaurantId}&capturedAt=${capturedAtMs}${bookingQuery}`,
+      );
+    },
+    [bookingId, restaurantId, router],
+  );
 
   const TAB_BAR_STYLE = {
     backgroundColor: c.bgSurface,
@@ -341,11 +323,9 @@ export default function ReviewCameraScreen() {
           const pending = await ImagePicker.getPendingResultAsync();
           if (!alive || !pending || 'code' in pending) return;
           if (pending.canceled) return;
-          const uri = pending.assets?.[0]?.uri;
-          if (uri) {
-            setSelectedImageUri(uri);
-            setSelectedSource('gallery');
-            setSelectedCapturedAt(readExifTimestamp(pending.assets?.[0]?.exif) ?? Date.now());
+          const asset = pending.assets?.[0];
+          if (asset?.uri) {
+            goNext(asset.uri, readExifTimestamp(asset.exif) ?? Date.now());
           }
         } catch {
           // Android may surface edge cases; ignore
@@ -354,7 +334,7 @@ export default function ReviewCameraScreen() {
       return () => {
         alive = false;
       };
-    }, []),
+    }, [goNext]),
   );
 
   useEffect(() => {
@@ -391,16 +371,14 @@ export default function ReviewCameraScreen() {
       });
       if (result.canceled || !result.assets?.[0]?.uri) return;
       const asset = result.assets[0];
-      setSelectedImageUri(asset.uri);
-      setSelectedSource('gallery');
-      setSelectedCapturedAt(readExifTimestamp(asset.exif) ?? Date.now());
+      goNext(asset.uri, readExifTimestamp(asset.exif) ?? Date.now());
     } catch {
       Alert.alert(
         'Could not open photos',
         'Something went wrong opening your photo library. Please try again.',
       );
     }
-  }, []);
+  }, [goNext]);
 
   const openGallery = useCallback(async () => {
     if (galleryOpeningRef.current) return;
@@ -474,33 +452,13 @@ export default function ReviewCameraScreen() {
         exif: true,
       });
       if (!photo?.uri) return;
-      setSelectedImageUri(photo.uri);
-      setSelectedSource('camera');
-      setSelectedCapturedAt(readExifTimestamp(photo.exif) ?? capturedAt);
+      goNext(photo.uri, readExifTimestamp(photo.exif) ?? capturedAt);
     } finally {
       setCapturing(false);
     }
   };
 
-  const goNext = () => {
-    if (!selectedImageUri) return;
-    const encodedUri = encodeURIComponent(selectedImageUri);
-    const capturedAt = selectedCapturedAt ?? Date.now();
-    const bookingQuery = bookingId ? `&bookingId=${encodeURIComponent(String(bookingId))}` : '';
-    // Skip the standalone preview screen — go straight to the filter picker.
-    // Filters + captioning happen there; preview was a redundant step.
-    router.push(
-      `/(customer)/discover/post-review/styles?photoUri=${encodedUri}&restaurantId=${restaurantId}&capturedAt=${capturedAt}${bookingQuery}`,
-    );
-  };
-
   const goBack = () => {
-    if (isEditMode) {
-      setSelectedImageUri(null);
-      setSelectedSource(null);
-      setSelectedCapturedAt(null);
-      return;
-    }
     safeRouterBack(router, '/(customer)/discover/post-review');
   };
 
@@ -508,9 +466,7 @@ export default function ReviewCameraScreen() {
     <View style={styles.root}>
       <StatusBar style="light" />
 
-      {isEditMode ? (
-        <Image source={{ uri: selectedImageUri! }} style={styles.cameraFill} contentFit="contain" />
-      ) : canUseCamera ? (
+      {canUseCamera ? (
         <CameraView
           ref={cameraRef}
           pointerEvents="none"
@@ -582,77 +538,64 @@ export default function ReviewCameraScreen() {
           <Text style={styles.topTitle} numberOfLines={1}>
             Posting to {restaurantName}
           </Text>
-          {isEditMode ? <View style={styles.topIconHit} /> : (
-            <Pressable
-              onPress={() => {
-                if (!canUseCamera || cameraFacing !== 'back') return;
-                setFlash((f) => (f === 'off' ? 'on' : 'off'));
-              }}
-              hitSlop={12}
-              style={[styles.topIconHit, (!canUseCamera || cameraFacing !== 'back') && { opacity: 0.35 }]}
-              accessibilityRole="button"
-              accessibilityLabel={flash === 'on' ? 'Flash on' : 'Flash off'}
-              accessibilityState={{ disabled: !canUseCamera || cameraFacing !== 'back' }}
-            >
-              <Ionicons
-                name={flash === 'on' ? 'flash' : 'flash-off'}
-                size={26}
-                color="#fff"
-              />
-            </Pressable>
-          )}
+          <Pressable
+            onPress={() => {
+              if (!canUseCamera || cameraFacing !== 'back') return;
+              setFlash((f) => (f === 'off' ? 'on' : 'off'));
+            }}
+            hitSlop={12}
+            style={[styles.topIconHit, (!canUseCamera || cameraFacing !== 'back') && { opacity: 0.35 }]}
+            accessibilityRole="button"
+            accessibilityLabel={flash === 'on' ? 'Flash on' : 'Flash off'}
+            accessibilityState={{ disabled: !canUseCamera || cameraFacing !== 'back' }}
+          >
+            <Ionicons
+              name={flash === 'on' ? 'flash' : 'flash-off'}
+              size={26}
+              color="#fff"
+            />
+          </Pressable>
         </View>
 
         <View
           pointerEvents="auto"
           style={[styles.bottomUi, { paddingBottom: insets.bottom + 20 }]}
         >
-          {!isEditMode ? (
-            <View style={styles.captureRow}>
-              <Pressable
-                onPress={() => void openGallery()}
-                hitSlop={{ top: 16, bottom: 16, left: 16, right: 16 }}
-                style={({ pressed }) => [styles.galleryBtn, pressed && { opacity: 0.86 }]}
-                accessibilityRole="button"
-                accessibilityLabel="Choose from photo library"
-              >
-                <Ionicons name="images-outline" size={24} color="#fff" />
-              </Pressable>
+          <View style={styles.captureRow}>
+            <Pressable
+              onPress={() => void openGallery()}
+              hitSlop={{ top: 16, bottom: 16, left: 16, right: 16 }}
+              style={({ pressed }) => [styles.galleryBtn, pressed && { opacity: 0.86 }]}
+              accessibilityRole="button"
+              accessibilityLabel="Choose from photo library"
+            >
+              <Ionicons name="images-outline" size={24} color="#fff" />
+            </Pressable>
 
-              <Pressable
-                onPress={canUseCamera ? capturePhoto : () => void openGallery()}
-                onPressIn={onCapturePressIn}
-                onPressOut={onCapturePressOut}
-                disabled={canUseCamera && (!cameraReady || capturing)}
-                style={styles.captureHit}
-              >
-                <Animated.View style={[styles.captureRing, { transform: [{ scale: pressScale }] }]}>
-                  <View style={styles.captureOuterRing}>
-                    <View style={[styles.captureInner, captureFill && styles.captureInnerActive]}>
-                      {capturing ? <ActivityIndicator color="rgba(0,0,0,0.45)" size="small" /> : null}
-                    </View>
+            <Pressable
+              onPress={canUseCamera ? capturePhoto : () => void openGallery()}
+              onPressIn={onCapturePressIn}
+              onPressOut={onCapturePressOut}
+              disabled={canUseCamera && (!cameraReady || capturing)}
+              style={styles.captureHit}
+            >
+              <Animated.View style={[styles.captureRing, { transform: [{ scale: pressScale }] }]}>
+                <View style={styles.captureOuterRing}>
+                  <View style={[styles.captureInner, captureFill && styles.captureInnerActive]}>
+                    {capturing ? <ActivityIndicator color="rgba(0,0,0,0.45)" size="small" /> : null}
                   </View>
-                </Animated.View>
-              </Pressable>
+                </View>
+              </Animated.View>
+            </Pressable>
 
-              <GlassCircle
-                onPress={() => {
-                  setCameraFacing((prev) => (prev === 'back' ? 'front' : 'back'));
-                }}
-              >
-                <Ionicons name="camera-reverse-outline" size={22} color="#fff" />
-              </GlassCircle>
-            </View>
-          ) : (
-            <View style={styles.editRow}>
-              <Pressable onPress={() => setSelectedImageUri(null)} style={styles.editLink}>
-                <Text style={styles.editLinkText}>Retake</Text>
-              </Pressable>
-              <Pressable onPress={goNext} style={styles.editPrimary}>
-                <Text style={styles.editPrimaryText}>Next</Text>
-              </Pressable>
-            </View>
-          )}
+            <GlassCircle
+              onPress={() => {
+                setCameraFacing((prev) => (prev === 'back' ? 'front' : 'back'));
+              }}
+            >
+              <Ionicons name="camera-reverse-outline" size={22} color="#fff" />
+            </GlassCircle>
+          </View>
         </View>
       </View>
     </View>
