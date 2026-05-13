@@ -48,7 +48,7 @@ const FRAME_REF_W = 224;
 const FRAME_REF_H = 398;
 const CHIP_FILTER_SCALE = CHIP_SIZE / FRAME_REF_W;
 
-const CARD_FRAME_STYLE = { borderRadius: 0, backgroundColor: '#000' };
+const TRANSPARENT_FRAME_STYLE = { borderRadius: 0, backgroundColor: 'transparent' };
 
 type FilterItem =
   | { kind: 'original'; id: '__none__'; categoryId: null }
@@ -266,6 +266,12 @@ export default function SnapStylesScreen() {
   const pillBottom = 44;
   const carouselBottom = pillBottom + 28 + 8; // pill height (~28) + 8px gap
 
+  // Safe band where filter corner decorations are guaranteed visible —
+  // between the title bar at the top and the carousel/pills stack at bottom.
+  const filterTop = insets.top + 56;
+  const filterBottom = carouselBottom + RING_SIZE + 12; // top edge of carousel + breathing room
+  const filterAreaH = Math.max(120, windowH - filterTop - filterBottom);
+
   const getItemLayout = useCallback(
     (_: ArrayLike<FilterItem> | null | undefined, index: number) => ({
       length: CHIP_STRIDE,
@@ -348,32 +354,42 @@ export default function SnapStylesScreen() {
     <View style={styles.root}>
       <StatusBar style="light" />
 
-      {/* ── CAPTURE TARGET: full-screen styled snap (Snapchat-style) ── */}
+      {/* ── CAPTURE TARGET: photo full-screen, filter overlay in a safe band ── */}
       <View
         ref={captureRefView}
         collapsable={false}
         style={[StyleSheet.absoluteFillObject, { width: windowW, height: windowH }]}
       >
-        <StoryFilterFrame
-          filterId={filterId}
-          width={windowW}
-          height={windowH}
-          capturedAt={capturedAt}
-          restaurantName={selectedRestaurantName}
-          city={selectedRestaurantCity}
-          area={selectedRestaurantArea}
-          mediaSlot={
-            hasImage ? (
-              <Image
-                source={{ uri: decodedUri }}
-                style={StyleSheet.absoluteFill}
-                contentFit="cover"
-                contentPosition="center"
-              />
-            ) : null
-          }
-          containerStyle={CARD_FRAME_STYLE}
-        />
+        {hasImage && (
+          <Image
+            source={{ uri: decodedUri }}
+            style={StyleSheet.absoluteFillObject}
+            contentFit="cover"
+            contentPosition="center"
+          />
+        )}
+        <View
+          pointerEvents="box-none"
+          style={{
+            position: 'absolute',
+            left: 0,
+            top: filterTop,
+            width: windowW,
+            height: filterAreaH,
+          }}
+        >
+          <StoryFilterFrame
+            filterId={filterId}
+            width={windowW}
+            height={filterAreaH}
+            capturedAt={capturedAt}
+            restaurantName={selectedRestaurantName}
+            city={selectedRestaurantCity}
+            area={selectedRestaurantArea}
+            mediaSlot={<View />}
+            containerStyle={TRANSPARENT_FRAME_STYLE}
+          />
+        </View>
       </View>
 
       {/* ── Back button ── */}
