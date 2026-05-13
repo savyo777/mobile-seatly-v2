@@ -7,7 +7,6 @@ import {
   StyleSheet,
   Text,
   View,
-  useWindowDimensions,
 } from 'react-native';
 // expo-image honours EXIF rotation correctly on both iOS and Android, so a
 // portrait shot stays portrait — react-native's <Image> sometimes ignores
@@ -23,7 +22,6 @@ import { StoryFilterFrame } from '@/components/storyFilters/StoryFilterFrame';
 import { STORY_FILTERS } from '@/lib/storyFilters/registry';
 import {
   STORY_CATEGORIES,
-  type StoryFilterCategory,
   type StoryFilterId,
 } from '@/lib/storyFilters/types';
 import { getSnapRestaurantName as DEMO_getSnapRestaurantName } from '@/lib/mock/snaps';
@@ -40,13 +38,15 @@ import {
 } from '@/lib/storyFilters/previewLayout';
 import { useColors, createStyles, borderRadius, spacing, typography } from '@/lib/theme';
 
-const CARD_W = 76;
-const CARD_H = 102;
-const CARD_DESIGN_W = 224;
-const CARD_DESIGN_H = 398;
-const CARD_SCALE = CARD_W / CARD_DESIGN_W;
+// Right-side filter strip dimensions
+const STRIP_W = 82;
+const THUMB_W = 62;
+const THUMB_H = 86;
+const THUMB_DESIGN_W = 224;
+const THUMB_DESIGN_H = 398;
+const THUMB_SCALE = THUMB_W / THUMB_DESIGN_W;
 
-const CATEGORY_GRADIENT: Record<StoryFilterCategory, [string, string]> = {
+const CATEGORY_GRADIENT: Record<string, [string, string]> = {
   cute:     ['#fde8ea', '#f4aec0'],
   playful:  ['#fef6ec', '#f5c29a'],
   fancy:    ['#fdf8ed', '#e8c464'],
@@ -81,16 +81,22 @@ const useStyles = createStyles((c) => ({
     textAlign: 'center',
   },
   headerSpacer: { width: 40 },
-  previewOuter: {
-    paddingHorizontal: spacing.lg,
-    marginBottom: spacing.sm,
+  // Main content: photo left + filter strip right
+  contentRow: {
+    flex: 1,
+    flexDirection: 'row',
+  },
+  photoCol: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
   },
   previewWrap: {
-    alignSelf: 'center',
     position: 'relative',
   },
   captureBox: {
-    alignSelf: 'center',
     overflow: 'hidden',
     borderRadius: borderRadius.xl,
     backgroundColor: '#0c0a08',
@@ -101,70 +107,72 @@ const useStyles = createStyles((c) => ({
     height: '100%',
     backgroundColor: 'transparent',
   },
-  catScroll: {
-    maxHeight: 40,
-    marginBottom: spacing.sm,
-    paddingHorizontal: spacing.md,
-    gap: 8,
-  },
-  catChip: {
-    paddingHorizontal: 14,
-    paddingVertical: 8,
+  filterNameBadge: {
+    marginTop: spacing.xs,
+    alignSelf: 'center',
+    paddingHorizontal: 12,
+    paddingVertical: 4,
     borderRadius: borderRadius.full,
+    backgroundColor: 'rgba(201,168,76,0.15)',
     borderWidth: 1,
-    borderColor: c.border,
-    backgroundColor: c.bgSurface,
-    marginRight: 8,
+    borderColor: 'rgba(201,168,76,0.3)',
   },
-  catChipOn: {
-    borderColor: c.gold,
-    backgroundColor: 'rgba(201,168,76,0.12)',
-  },
-  catChipText: {
-    ...typography.bodySmall,
-    fontWeight: '700',
-    color: c.textMuted,
-  },
-  catChipTextOn: {
+  filterNameText: {
+    fontSize: 11,
+    fontWeight: '600',
     color: c.gold,
+    letterSpacing: 0.3,
   },
-  filterCarousel: {
-    paddingLeft: spacing.md,
-    paddingBottom: spacing.xs,
+  // Snapchat-style vertical filter strip on the right
+  filterStrip: {
+    width: STRIP_W,
+    borderLeftWidth: StyleSheet.hairlineWidth,
+    borderLeftColor: c.border,
   },
-  filterCarouselContent: {
-    paddingRight: spacing.md,
-    gap: 10,
-    alignItems: 'flex-start',
+  filterStripContent: {
+    paddingVertical: spacing.sm,
+    gap: 6,
+    alignItems: 'center',
   },
-  filterCard: {
-    width: CARD_W,
-    height: CARD_H,
-    borderRadius: 14,
+  catLabel: {
+    fontSize: 7,
+    fontWeight: '700',
+    letterSpacing: 1.2,
+    textTransform: 'uppercase',
+    color: c.textMuted,
+    alignSelf: 'flex-start',
+    marginTop: 6,
+    marginBottom: 2,
+    marginLeft: (STRIP_W - THUMB_W) / 2,
+  },
+  thumbCard: {
+    width: THUMB_W,
+    height: THUMB_H,
+    borderRadius: 12,
     overflow: 'hidden',
     borderWidth: 2,
     borderColor: 'rgba(255,255,255,0.08)',
     backgroundColor: '#1a140e',
     shadowColor: '#c9784a',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.18,
-    shadowRadius: 8,
-    elevation: 3,
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.15,
+    shadowRadius: 6,
+    elevation: 2,
   },
-  filterCardOn: {
+  thumbCardOn: {
     borderColor: c.gold,
-    shadowOpacity: 0.42,
+    shadowOpacity: 0.38,
   },
-  filterCardOverlay: {
+  thumbOverlay: {
     position: 'absolute',
     top: 0,
     left: 0,
-    width: CARD_DESIGN_W,
-    height: CARD_DESIGN_H,
-    transform: [{ scale: CARD_SCALE }],
+    width: THUMB_DESIGN_W,
+    height: THUMB_DESIGN_H,
+    transform: [{ scale: THUMB_SCALE }],
     transformOrigin: 'top left',
   },
-  filterCardNone: {
+  thumbNone: {
     position: 'absolute',
     top: 8,
     left: 8,
@@ -177,58 +185,25 @@ const useStyles = createStyles((c) => ({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  filterCardNoneText: {
-    fontSize: 8,
+  thumbNoneText: {
+    fontSize: 7,
     letterSpacing: 1.5,
     textTransform: 'uppercase',
     color: 'rgba(255,255,255,0.38)',
     fontWeight: '500',
   },
-  filterCardBadge: {
-    position: 'absolute',
-    top: 6,
-    right: 6,
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: 'rgba(255,255,255,0.58)',
-    borderRadius: 999,
-    paddingHorizontal: 5,
-    paddingVertical: 2,
-    borderWidth: 0.5,
-    borderColor: 'rgba(255,255,255,0.72)',
-    zIndex: 10,
-  },
-  filterCardBadgeBy: {
-    fontSize: 7.5,
-    fontStyle: 'italic',
-    color: 'rgba(58,40,40,0.82)',
-    letterSpacing: 0.1,
-  },
-  filterCardBadgeLabel: {
-    fontSize: 7.5,
-    fontWeight: '700',
-    color: 'rgba(58,40,40,0.82)',
-    letterSpacing: 0.3,
-  },
-  filterCardName: {
-    marginTop: 5,
-    fontSize: 10.5,
+  thumbLabel: {
+    marginTop: 3,
+    fontSize: 8,
     fontWeight: '600',
-    color: c.textPrimary,
+    color: c.textMuted,
     letterSpacing: -0.1,
-    width: CARD_W,
+    textAlign: 'center',
+    width: THUMB_W,
   },
-  filterCardNameOn: {
+  thumbLabelOn: {
     color: c.gold,
     fontWeight: '700',
-  },
-  filterCardTag: {
-    fontSize: 8.5,
-    color: c.textMuted,
-    letterSpacing: 0.5,
-    textTransform: 'uppercase',
-    marginTop: 1,
-    width: CARD_W,
   },
   footer: {
     borderTopWidth: StyleSheet.hairlineWidth,
@@ -244,7 +219,6 @@ export default function SnapStylesScreen() {
   const styles = useStyles();
   const router = useRouter();
   const insets = useSafeAreaInsets();
-  const { width: windowW, height: windowH } = useWindowDimensions();
   const captureRefView = useRef<View>(null);
 
   const {
@@ -261,7 +235,6 @@ export default function SnapStylesScreen() {
     bookingId?: string;
     capturedAt?: string;
     partySize?: string;
-    /** When `reward`, Continue returns to post-reward share screen instead of caption. */
     returnTo?: string;
     points?: string;
     restaurantName?: string;
@@ -295,31 +268,26 @@ export default function SnapStylesScreen() {
   const selectedRestaurantCity = restaurant?.city ?? 'Toronto';
   const selectedRestaurantArea = restaurant?.area ?? selectedRestaurantCity;
 
-  const [categoryId, setCategoryId] = useState<StoryFilterCategory>('cute');
   const [filterId, setFilterId] = useState<StoryFilterId | null>(null);
   const [photoAspect, setPhotoAspect] = useState(DEFAULT_SNAP_PHOTO_ASPECT);
   const [busy, setBusy] = useState(false);
+  const [photoDims, setPhotoDims] = useState({ width: 0, height: 0 });
 
-  const previewLayout = getSnapPreviewLayout({
-    photoAspect,
-    maxWidth: windowW - spacing.lg * 2,
-    maxHeight: Math.min(420, Math.max(320, windowH - insets.top - insets.bottom - 280)),
-  });
-  const previewW = previewLayout.width;
-  const previewH = previewLayout.height;
-
-  const categoryOptions = STORY_CATEGORIES;
-  const filterOptions = useMemo(
-    () => STORY_FILTERS.filter((filter) => filter.category === categoryId),
-    [categoryId],
-  );
+  const previewLayout = useMemo(() => {
+    if (photoDims.width === 0 || photoDims.height === 0) return { width: 0, height: 0 };
+    return getSnapPreviewLayout({
+      photoAspect,
+      maxWidth: photoDims.width - spacing.md * 2,
+      maxHeight: photoDims.height - spacing.sm * 2,
+    });
+  }, [photoAspect, photoDims]);
 
   const handlePhotoLoad = useCallback((event: ImageLoadEventData) => {
     const { width, height } = event.source ?? {};
-    if (width > 0 && height > 0) {
-      setPhotoAspect(width / height);
-    }
+    if (width > 0 && height > 0) setPhotoAspect(width / height);
   }, []);
+
+  const selectedFilter = filterId ? STORY_FILTERS.find((f) => f.id === filterId) : null;
 
   const goDetails = useCallback(
     async (finalUri: string, preservedFilterId?: StoryFilterId | null) => {
@@ -331,10 +299,7 @@ export default function SnapStylesScreen() {
           restaurantId,
           ...(bookingId ? { bookingId } : {}),
           ...(preservedFilterId
-            ? {
-                filterId: preservedFilterId,
-                capturedAt: String(capturedAt),
-              }
+            ? { filterId: preservedFilterId, capturedAt: String(capturedAt) }
             : {}),
         },
       };
@@ -355,10 +320,7 @@ export default function SnapStylesScreen() {
           photoUri: encodeURIComponent(finalUri),
           ...(bookingId ? { bookingId } : {}),
           ...(preservedFilterId
-            ? {
-                filterId: preservedFilterId,
-                capturedAt: String(capturedAt),
-              }
+            ? { filterId: preservedFilterId, capturedAt: String(capturedAt) }
             : {}),
         },
       });
@@ -371,7 +333,6 @@ export default function SnapStylesScreen() {
       Alert.alert('Missing photo', 'Go back and choose a photo first.');
       return;
     }
-
     const finish = async (finalUri: string, preservedFilterId?: StoryFilterId | null) => {
       if (returningToReward) {
         goReward(finalUri, preservedFilterId);
@@ -379,12 +340,10 @@ export default function SnapStylesScreen() {
       }
       await goDetails(finalUri, preservedFilterId);
     };
-
     if (!filterId) {
       await finish(decodedUri);
       return;
     }
-
     try {
       setBusy(true);
       await new Promise<void>((r) => requestAnimationFrame(() => r()));
@@ -400,16 +359,19 @@ export default function SnapStylesScreen() {
     } finally {
       setBusy(false);
     }
-  }, [
-    decodedUri,
-    restaurantId,
-    filterId,
-    goDetails,
-    returningToReward,
-    goReward,
-  ]);
+  }, [decodedUri, restaurantId, filterId, goDetails, returningToReward, goReward]);
 
   const hasImage = decodedUri.length > 0;
+
+  // All filters grouped by category for the right strip section headers
+  const filtersByCategory = useMemo(
+    () =>
+      STORY_CATEGORIES.map((cat) => ({
+        cat,
+        filters: STORY_FILTERS.filter((f) => f.category === cat.id),
+      })),
+    [],
+  );
 
   return (
     <ScreenWrapper scrollable={false} padded={false}>
@@ -429,146 +391,134 @@ export default function SnapStylesScreen() {
           <View style={styles.headerSpacer} />
         </View>
 
-        <ScrollView
-          style={styles.flex}
-          contentContainerStyle={{ paddingBottom: spacing.md }}
-          keyboardShouldPersistTaps="handled"
-          showsVerticalScrollIndicator={false}
-        >
-          <View style={styles.previewOuter}>
-            <View style={[styles.previewWrap, { width: previewW, height: previewH }]}>
-              <View
-                ref={captureRefView}
-                collapsable={false}
-                style={[styles.captureBox, { width: previewW, height: previewH }]}
-              >
-                <StoryFilterFrame
-                  filterId={filterId}
-                  width={previewW}
-                  height={previewH}
-                  capturedAt={capturedAt}
-                  restaurantName={selectedRestaurantName}
-                  city={selectedRestaurantCity}
-                  area={selectedRestaurantArea}
-                  mediaSlot={
-                    hasImage ? (
-                      <Image
-                        source={{ uri: decodedUri }}
-                        style={styles.captureImage}
-                        contentFit="cover"
-                        contentPosition="bottom"
-                        onLoad={handlePhotoLoad}
-                      />
-                    ) : undefined
-                  }
-                />
-              </View>
-              {busy ? (
+        {/* Main content: photo (left) + Snapchat-style vertical filter strip (right) */}
+        <View style={styles.contentRow}>
+          {/* Photo preview — fills remaining width */}
+          <View
+            style={styles.photoCol}
+            onLayout={(e) =>
+              setPhotoDims({
+                width: e.nativeEvent.layout.width,
+                height: e.nativeEvent.layout.height,
+              })
+            }
+          >
+            {previewLayout.width > 0 && (
+              <>
                 <View
-                  pointerEvents="none"
-                  style={[
-                    StyleSheet.absoluteFillObject,
-                    {
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      backgroundColor: 'rgba(0,0,0,0.35)',
-                      borderRadius: borderRadius.xl,
-                    },
-                  ]}
+                  style={[styles.previewWrap, { width: previewLayout.width, height: previewLayout.height }]}
                 >
-                  <ActivityIndicator color={c.gold} size="large" />
+                  <View
+                    ref={captureRefView}
+                    collapsable={false}
+                    style={[styles.captureBox, { width: previewLayout.width, height: previewLayout.height }]}
+                  >
+                    <StoryFilterFrame
+                      filterId={filterId}
+                      width={previewLayout.width}
+                      height={previewLayout.height}
+                      capturedAt={capturedAt}
+                      restaurantName={selectedRestaurantName}
+                      city={selectedRestaurantCity}
+                      area={selectedRestaurantArea}
+                      mediaSlot={
+                        hasImage ? (
+                          <Image
+                            source={{ uri: decodedUri }}
+                            style={styles.captureImage}
+                            contentFit="cover"
+                            contentPosition="bottom"
+                            onLoad={handlePhotoLoad}
+                          />
+                        ) : undefined
+                      }
+                    />
+                  </View>
+                  {busy && (
+                    <View
+                      pointerEvents="none"
+                      style={[
+                        StyleSheet.absoluteFillObject,
+                        {
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          backgroundColor: 'rgba(0,0,0,0.35)',
+                          borderRadius: borderRadius.xl,
+                        },
+                      ]}
+                    >
+                      <ActivityIndicator color={c.gold} size="large" />
+                    </View>
+                  )}
                 </View>
-              ) : null}
-            </View>
+                {selectedFilter && (
+                  <View style={styles.filterNameBadge}>
+                    <Text style={styles.filterNameText}>{selectedFilter.name}</Text>
+                  </View>
+                )}
+              </>
+            )}
           </View>
 
+          {/* Snapchat-style right vertical filter strip */}
           <ScrollView
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            style={styles.catScroll}
-            contentContainerStyle={{ alignItems: 'center', paddingRight: spacing.md }}
-          >
-            {categoryOptions.map((cat) => {
-              const on = cat.id === categoryId;
-              return (
-                <Pressable
-                  key={cat.id}
-                  onPress={() => {
-                    setCategoryId(cat.id);
-                  }}
-                  style={[styles.catChip, on && styles.catChipOn]}
-                >
-                  <Text style={[styles.catChipText, on && styles.catChipTextOn]}>{cat.title}</Text>
-                </Pressable>
-              );
-            })}
-          </ScrollView>
-
-          <ScrollView
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            style={styles.filterCarousel}
-            contentContainerStyle={styles.filterCarouselContent}
+            style={styles.filterStrip}
+            showsVerticalScrollIndicator={false}
+            contentContainerStyle={styles.filterStripContent}
           >
             {/* Original — no filter */}
             <Pressable
               onPress={() => setFilterId(null)}
               style={({ pressed }) => [pressed && { opacity: 0.82 }]}
             >
-              <View style={[styles.filterCard, !filterId && styles.filterCardOn]}>
+              <View style={[styles.thumbCard, !filterId && styles.thumbCardOn]}>
                 <LinearGradient
                   colors={['#2c2218', '#100c08']}
                   style={StyleSheet.absoluteFillObject}
                 />
-                <View style={styles.filterCardNone}>
-                  <Text style={styles.filterCardNoneText}>none</Text>
-                </View>
-                <View style={styles.filterCardBadge}>
-                  <Text style={styles.filterCardBadgeBy}>by </Text>
-                  <Text style={styles.filterCardBadgeLabel}>Cenaiva</Text>
+                <View style={styles.thumbNone}>
+                  <Text style={styles.thumbNoneText}>none</Text>
                 </View>
               </View>
-              <Text style={[styles.filterCardName, !filterId && styles.filterCardNameOn]} numberOfLines={1}>
+              <Text style={[styles.thumbLabel, !filterId && styles.thumbLabelOn]} numberOfLines={1}>
                 Original
               </Text>
             </Pressable>
 
-            {filterOptions.map((entry) => {
-              const on = entry.id === filterId;
-              const gradient = CATEGORY_GRADIENT[entry.category];
-              return (
-                <Pressable
-                  key={entry.id}
-                  onPress={() => setFilterId(on ? null : entry.id)}
-                  style={({ pressed }) => [pressed && { opacity: 0.82 }]}
-                >
-                  <View style={[styles.filterCard, on && styles.filterCardOn]}>
-                    <LinearGradient
-                      colors={gradient}
-                      start={{ x: 0.5, y: 0 }}
-                      end={{ x: 0.5, y: 1 }}
-                      style={StyleSheet.absoluteFillObject}
-                    />
-                    <View pointerEvents="none" style={styles.filterCardOverlay}>
-                      <entry.Component
-                        width={CARD_DESIGN_W}
-                        height={CARD_DESIGN_H}
-                      />
-                    </View>
-                    <View style={styles.filterCardBadge}>
-                      <Text style={styles.filterCardBadgeBy}>by </Text>
-                      <Text style={styles.filterCardBadgeLabel}>Cenaiva</Text>
-                    </View>
-                  </View>
-                  <Text style={[styles.filterCardName, on && styles.filterCardNameOn]} numberOfLines={2}>
-                    {entry.name}
-                  </Text>
-                  <Text style={styles.filterCardTag}>{entry.shortLabel}</Text>
-                </Pressable>
-              );
-            })}
+            {/* All filters, grouped by category with section labels */}
+            {filtersByCategory.map(({ cat, filters }) => (
+              <React.Fragment key={cat.id}>
+                <Text style={styles.catLabel}>{cat.num}</Text>
+                {filters.map((entry) => {
+                  const on = entry.id === filterId;
+                  const gradient = CATEGORY_GRADIENT[entry.category];
+                  return (
+                    <Pressable
+                      key={entry.id}
+                      onPress={() => setFilterId(on ? null : entry.id)}
+                      style={({ pressed }) => [pressed && { opacity: 0.82 }]}
+                    >
+                      <View style={[styles.thumbCard, on && styles.thumbCardOn]}>
+                        <LinearGradient
+                          colors={gradient}
+                          start={{ x: 0.5, y: 0 }}
+                          end={{ x: 0.5, y: 1 }}
+                          style={StyleSheet.absoluteFillObject}
+                        />
+                        <View pointerEvents="none" style={styles.thumbOverlay}>
+                          <entry.Component width={THUMB_DESIGN_W} height={THUMB_DESIGN_H} />
+                        </View>
+                      </View>
+                      <Text style={[styles.thumbLabel, on && styles.thumbLabelOn]} numberOfLines={2}>
+                        {entry.name}
+                      </Text>
+                    </Pressable>
+                  );
+                })}
+              </React.Fragment>
+            ))}
           </ScrollView>
-        </ScrollView>
+        </View>
 
         <View
           style={[
