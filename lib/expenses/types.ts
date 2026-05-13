@@ -37,6 +37,7 @@ export interface Expense {
 export type PaymentStatus = 'paid' | 'due' | 'scheduled' | 'overdue';
 export type TransactionType = 'expense' | 'income';
 export type ReceiptType = 'image' | 'pdf';
+export type ExpenseFrequency = 'one_time' | 'weekly' | 'bi_weekly' | 'monthly' | 'quarterly' | 'yearly';
 
 // Returned by the scan-receipt edge function. Fields the model couldn't
 // determine come back as null. The client decides what to keep / edit

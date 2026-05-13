@@ -10,7 +10,7 @@ import { CameraView, useCameraPermissions } from 'expo-camera';
 import * as Haptics from 'expo-haptics';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
-import { useRouter } from 'expo-router';
+import { useFocusEffect, useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { StatusBar } from 'expo-status-bar';
 import { CornerBrackets } from '@/components/owner/CornerBrackets';
@@ -24,6 +24,15 @@ export default function ExpenseScanScreen() {
   const [permission, requestPermission] = useCameraPermissions();
   const [capturing, setCapturing] = useState(false);
 
+  // This screen can stay mounted while Expo Router moves between hidden
+  // staff routes. A successful capture navigates away before local state
+  // resets, so reset the shutter each time the scanner becomes active.
+  useFocusEffect(
+    useCallback(() => {
+      setCapturing(false);
+    }, []),
+  );
+
   const handleClose = useCallback(() => {
     router.back();
   }, [router]);
@@ -34,7 +43,10 @@ export default function ExpenseScanScreen() {
     void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
     try {
       const camera = cameraRef.current;
-      if (!camera) return;
+      if (!camera) {
+        setCapturing(false);
+        return;
+      }
       const photo = await camera.takePictureAsync({
         base64: true,
         quality: 0.7,

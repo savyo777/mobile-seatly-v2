@@ -1,10 +1,13 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   Alert,
+  KeyboardAvoidingView,
+  Platform,
   Pressable,
   ScrollView,
   StyleSheet,
   Text,
+  TextInput,
   View,
 } from 'react-native';
 import { Image } from 'expo-image';
@@ -13,21 +16,89 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 import { OwnerScreen } from '@/components/owner/OwnerScreen';
 import { GlassCard } from '@/components/owner/GlassCard';
+import { MonthCalendar } from '@/components/owner/MonthCalendar';
 import { useExpenses } from '@/lib/context/ExpensesContext';
 import { getReceiptSignedUrl } from '@/lib/expenses/uploadReceiptImage';
-import { getExpenseCategoryLabel } from '@/lib/owner/expenseCategories';
+import {
+  EXPENSE_CATEGORIES,
+  getExpenseCategoryLabel,
+  type ExpenseCategoryKey,
+} from '@/lib/owner/expenseCategories';
+import type { Expense, PaymentStatus, TransactionType } from '@/lib/expenses/types';
 import { formatCurrency } from '@/lib/utils/formatCurrency';
 import { createStyles } from '@/lib/theme';
 import { ownerColorsFromPalette, ownerRadii, ownerSpace, useOwnerColors } from '@/lib/theme/ownerTheme';
 import { brandGold, withAlpha } from '@/lib/theme/tokens';
+
+const TRANSACTION_TYPES: Array<{ value: TransactionType; label: string }> = [
+  { value: 'expense', label: 'Expense' },
+  { value: 'income', label: 'Income' },
+];
+
+const PAYMENT_STATUSES: Array<{ value: PaymentStatus; label: string }> = [
+  { value: 'paid', label: 'Paid' },
+  { value: 'due', label: 'Due' },
+  { value: 'scheduled', label: 'Scheduled' },
+  { value: 'overdue', label: 'Overdue' },
+];
+
+function dollarsToInputString(amount: number | null | undefined): string {
+  if (amount == null) return '';
+  return amount.toFixed(2);
+}
+
+function parseDollarsInput(value: string): number | null {
+  const cleaned = value.replace(/[^0-9.,-]/g, '').replace(',', '.');
+  if (!cleaned) return null;
+  const dollars = parseFloat(cleaned);
+  if (!Number.isFinite(dollars)) return null;
+  return Math.round(dollars * 100) / 100;
+}
+
+function isDirectImageUri(value: string): boolean {
+  return /^(file|content|data|https?):/i.test(value);
+}
+
+function formatHumanDate(iso: string): string {
+  const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(iso);
+  if (!m) return iso;
+  const d = new Date(Number(m[1]), Number(m[2]) - 1, Number(m[3]));
+  if (Number.isNaN(d.getTime())) return iso;
+  return d.toLocaleDateString(undefined, {
+    weekday: 'short',
+    month: 'short',
+    day: 'numeric',
+    year: 'numeric',
+  });
+}
+
+function statusLabel(status: PaymentStatus, type: TransactionType): string {
+  if (type === 'income') {
+    if (status === 'due') return 'Expected';
+    if (status === 'paid') return 'Received';
+  }
+  return PAYMENT_STATUSES.find((option) => option.value === status)?.label ?? 'Paid';
+}
 
 export default function ExpenseDetailScreen() {
   const router = useRouter();
   const ownerColors = useOwnerColors();
   const styles = useStyles();
   const { id } = useLocalSearchParams<{ id?: string }>();
-  const { expenses, removeExpense } = useExpenses();
+  const { expenses, removeExpense, patchExpense, addLocalExpense } = useExpenses();
   const [signedUrl, setSignedUrl] = useState<string | null>(null);
+  const [editing, setEditing] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [datePickerOpen, setDatePickerOpen] = useState(false);
+  const [transactionType, setTransactionType] = useState<TransactionType>('expense');
+  const [vendor, setVendor] = useState('');
+  const [description, setDescription] = useState('');
+  const [expenseDate, setExpenseDate] = useState('');
+  const [amount, setAmount] = useState('');
+  const [taxAmount, setTaxAmount] = useState('');
+  const [category, setCategory] = useState<ExpenseCategoryKey>('other');
+  const [paymentStatus, setPaymentStatus] = useState<PaymentStatus>('paid');
+  const [notes, setNotes] = useState('');
 
   const expense = useMemo(
     () => (id ? expenses.find((e) => e.id === id) ?? null : null),
@@ -40,6 +111,10 @@ export default function ExpenseDetailScreen() {
       setSignedUrl(null);
       return;
     }
+    if (isDirectImageUri(expense.receiptUrl)) {
+      setSignedUrl(expense.receiptUrl);
+      return;
+    }
     (async () => {
       const url = await getReceiptSignedUrl(expense.receiptUrl ?? '');
       if (!cancelled) setSignedUrl(url);
@@ -48,6 +123,19 @@ export default function ExpenseDetailScreen() {
       cancelled = true;
     };
   }, [expense?.receiptUrl]);
+
+  useEffect(() => {
+    if (!expense) return;
+    setTransactionType(expense.transactionType);
+    setVendor(expense.vendorName ?? '');
+    setDescription(expense.description ?? '');
+    setExpenseDate(expense.expenseDate);
+    setAmount(dollarsToInputString(expense.amount));
+    setTaxAmount(dollarsToInputString(expense.taxAmount ?? 0));
+    setCategory(expense.category);
+    setPaymentStatus(expense.paymentStatus);
+    setNotes(expense.notes ?? '');
+  }, [expense]);
 
   const handleClose = useCallback(() => {
     router.replace('/(staff)/expenses' as never);
@@ -72,6 +160,98 @@ export default function ExpenseDetailScreen() {
     );
   }, [expense, removeExpense, router]);
 
+  const handleCancelEdit = useCallback(() => {
+    if (!expense) return;
+    setTransactionType(expense.transactionType);
+    setVendor(expense.vendorName ?? '');
+    setDescription(expense.description ?? '');
+    setExpenseDate(expense.expenseDate);
+    setAmount(dollarsToInputString(expense.amount));
+    setTaxAmount(dollarsToInputString(expense.taxAmount ?? 0));
+    setCategory(expense.category);
+    setPaymentStatus(expense.paymentStatus);
+    setNotes(expense.notes ?? '');
+    setEditing(false);
+  }, [expense]);
+
+  const handleSaveEdit = useCallback(async () => {
+    if (!expense || saving) return;
+    if (!vendor.trim()) {
+      Alert.alert(
+        transactionType === 'income' ? 'Missing source' : 'Missing vendor',
+        transactionType === 'income' ? 'Add a source before saving.' : 'Add a vendor before saving.',
+      );
+      return;
+    }
+    const parsedAmount = parseDollarsInput(amount);
+    const parsedTax = parseDollarsInput(taxAmount) ?? 0;
+    if (parsedAmount == null || parsedAmount < 0) {
+      Alert.alert('Missing amount', 'Enter how much the entry was for.');
+      return;
+    }
+    if (parsedTax < 0) {
+      Alert.alert('Invalid tax', 'Tax must be zero or more.');
+      return;
+    }
+    const totalAmount = Math.round((parsedAmount + parsedTax) * 100) / 100;
+    const paidAt = paymentStatus === 'paid' ? (expense.paidAt ?? new Date().toISOString()) : null;
+
+    setSaving(true);
+    try {
+      const patch = {
+        vendorName: vendor.trim(),
+        description: description.trim() || null,
+        expenseDate,
+        amount: parsedAmount,
+        taxAmount: parsedTax,
+        totalAmount,
+        category,
+        paymentStatus,
+        paidAt,
+        transactionType,
+        notes: notes.trim() || null,
+      };
+      if (expense.id.startsWith('local-')) {
+        const updated: Expense = {
+          ...expense,
+          vendorName: patch.vendorName,
+          description: patch.description,
+          expenseDate: patch.expenseDate,
+          amount: patch.amount,
+          taxAmount: patch.taxAmount,
+          totalAmount: patch.totalAmount,
+          category: patch.category,
+          paymentStatus: patch.paymentStatus,
+          paidAt: patch.paidAt,
+          transactionType: patch.transactionType,
+          notes: patch.notes,
+        };
+        addLocalExpense(updated);
+      } else {
+        await patchExpense(expense.id, patch);
+      }
+      setEditing(false);
+    } catch (err) {
+      Alert.alert('Couldn’t save changes', String((err as Error)?.message ?? err));
+    } finally {
+      setSaving(false);
+    }
+  }, [
+    expense,
+    saving,
+    vendor,
+    transactionType,
+    amount,
+    taxAmount,
+    paymentStatus,
+    description,
+    expenseDate,
+    category,
+    notes,
+    addLocalExpense,
+    patchExpense,
+  ]);
+
   if (!expense) {
     return (
       <View style={styles.screen}>
@@ -93,23 +273,35 @@ export default function ExpenseDetailScreen() {
 
   return (
     <View style={styles.screen}>
+      <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={styles.flex}>
       <OwnerScreen contentContainerStyle={styles.scrollPad}>
         <Animated.View entering={FadeInDown.duration(220)} style={styles.headRow}>
           <Pressable onPress={handleClose} hitSlop={10} style={styles.backBtn}>
             <Ionicons name="chevron-back" size={26} color={ownerColors.gold} />
           </Pressable>
           <View style={styles.headText}>
-            <Text style={styles.title}>{expense.vendorName ?? '—'}</Text>
+            <Text style={styles.title}>{editing ? 'Edit entry' : expense.vendorName ?? '—'}</Text>
             <Text style={styles.subtitle}>
-              {expense.expenseDate} · {getExpenseCategoryLabel(expense.category)}
+              {editing ? 'Fix AI extraction or manual entry mistakes.' : `${expense.expenseDate} · ${getExpenseCategoryLabel(expense.category)}`}
             </Text>
           </View>
-          <Pressable onPress={handleDelete} hitSlop={10} style={styles.deleteBtn}>
-            <Ionicons name="trash-outline" size={20} color={ownerColors.danger} />
-          </Pressable>
+          {editing ? (
+            <Pressable onPress={handleCancelEdit} hitSlop={10} style={styles.deleteBtn}>
+              <Ionicons name="close" size={21} color={ownerColors.textMuted} />
+            </Pressable>
+          ) : (
+            <View style={styles.headerActions}>
+              <Pressable onPress={() => setEditing(true)} hitSlop={10} style={styles.iconBtn}>
+                <Ionicons name="create-outline" size={20} color={ownerColors.gold} />
+              </Pressable>
+              <Pressable onPress={handleDelete} hitSlop={10} style={styles.iconBtn}>
+                <Ionicons name="trash-outline" size={20} color={ownerColors.danger} />
+              </Pressable>
+            </View>
+          )}
         </Animated.View>
 
-        <ScrollView showsVerticalScrollIndicator={false}>
+        <ScrollView showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
           <GlassCard variant="primary" style={styles.imageCard}>
             {signedUrl ? (
               <Image source={{ uri: signedUrl }} style={styles.image} contentFit="contain" />
@@ -122,6 +314,34 @@ export default function ExpenseDetailScreen() {
               </View>
             )}
           </GlassCard>
+
+          {editing ? (
+            <EditForm
+              transactionType={transactionType}
+              setTransactionType={setTransactionType}
+              vendor={vendor}
+              setVendor={setVendor}
+              description={description}
+              setDescription={setDescription}
+              expenseDate={expenseDate}
+              openDatePicker={() => setDatePickerOpen(true)}
+              amount={amount}
+              setAmount={setAmount}
+              taxAmount={taxAmount}
+              setTaxAmount={setTaxAmount}
+              category={category}
+              setCategory={setCategory}
+              paymentStatus={paymentStatus}
+              setPaymentStatus={setPaymentStatus}
+              notes={notes}
+              setNotes={setNotes}
+              currency={expense.currency}
+              saving={saving}
+              onCancel={handleCancelEdit}
+              onSave={handleSaveEdit}
+            />
+          ) : (
+            <>
 
           <GlassCard variant="secondary" style={styles.totalCard}>
             <Text style={styles.totalLabel}>Total</Text>
@@ -148,11 +368,228 @@ export default function ExpenseDetailScreen() {
               <Text style={styles.notesBody}>{expense.notes}</Text>
             </GlassCard>
           ) : null}
+            </>
+          )}
 
           <View style={{ height: ownerSpace.xl }} />
         </ScrollView>
       </OwnerScreen>
+      </KeyboardAvoidingView>
+      <MonthCalendar
+        visible={datePickerOpen}
+        value={expenseDate}
+        title="Entry date"
+        onClose={() => setDatePickerOpen(false)}
+        onConfirm={(iso) => {
+          setExpenseDate(iso);
+          setDatePickerOpen(false);
+        }}
+      />
     </View>
+  );
+}
+
+function EditForm({
+  transactionType,
+  setTransactionType,
+  vendor,
+  setVendor,
+  description,
+  setDescription,
+  expenseDate,
+  openDatePicker,
+  amount,
+  setAmount,
+  taxAmount,
+  setTaxAmount,
+  category,
+  setCategory,
+  paymentStatus,
+  setPaymentStatus,
+  notes,
+  setNotes,
+  currency,
+  saving,
+  onCancel,
+  onSave,
+}: {
+  transactionType: TransactionType;
+  setTransactionType: (value: TransactionType) => void;
+  vendor: string;
+  setVendor: (value: string) => void;
+  description: string;
+  setDescription: (value: string) => void;
+  expenseDate: string;
+  openDatePicker: () => void;
+  amount: string;
+  setAmount: (value: string) => void;
+  taxAmount: string;
+  setTaxAmount: (value: string) => void;
+  category: ExpenseCategoryKey;
+  setCategory: (value: ExpenseCategoryKey) => void;
+  paymentStatus: PaymentStatus;
+  setPaymentStatus: (value: PaymentStatus) => void;
+  notes: string;
+  setNotes: (value: string) => void;
+  currency: string;
+  saving: boolean;
+  onCancel: () => void;
+  onSave: () => void;
+}) {
+  const ownerColors = useOwnerColors();
+  const styles = useStyles();
+  const total = Math.round(((parseDollarsInput(amount) ?? 0) + (parseDollarsInput(taxAmount) ?? 0)) * 100) / 100;
+  const categories = EXPENSE_CATEGORIES.filter((c) => (
+    transactionType === 'income'
+      ? ['sales', 'preorders', 'events', 'catering', 'delivery', 'gift_cards', 'other'].includes(c.key)
+      : !['sales', 'preorders', 'events', 'catering', 'delivery', 'gift_cards'].includes(c.key)
+  ));
+
+  return (
+    <View>
+      <Text style={styles.fieldLabel}>Type</Text>
+      <ChipRow
+        options={TRANSACTION_TYPES}
+        value={transactionType}
+        onChange={setTransactionType}
+      />
+
+      <Text style={styles.fieldLabel}>{transactionType === 'income' ? 'Source' : 'Vendor'}</Text>
+      <TextInput
+        value={vendor}
+        onChangeText={setVendor}
+        placeholder={transactionType === 'income' ? 'DoorDash, event tickets, catering client' : 'Toronto Hydro'}
+        placeholderTextColor={ownerColors.textMuted}
+        style={styles.input}
+      />
+
+      <Text style={styles.fieldLabel}>Category</Text>
+      <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.catChips}>
+        {categories.map((c) => {
+          const on = c.key === category;
+          return (
+            <Pressable
+              key={c.key}
+              onPress={() => setCategory(c.key)}
+              style={[styles.catChip, on && styles.catChipOn]}
+            >
+              <Text style={[styles.catGlyph, on && styles.catGlyphOn]}>{c.glyph}</Text>
+              <Text style={[styles.catChipText, on && styles.catChipTextOn]}>{c.label}</Text>
+            </Pressable>
+          );
+        })}
+      </ScrollView>
+
+      <Text style={styles.fieldLabel}>Description</Text>
+      <TextInput
+        value={description}
+        onChangeText={setDescription}
+        placeholder={transactionType === 'income' ? 'Weekend pre-orders, private event deposit...' : 'May rent, weekly produce, annual insurance...'}
+        placeholderTextColor={ownerColors.textMuted}
+        style={styles.input}
+      />
+
+      <View style={styles.amountGrid}>
+        <View style={styles.amountInputWrap}>
+          <Text style={styles.fieldLabel}>Amount</Text>
+          <TextInput
+            value={amount}
+            onChangeText={setAmount}
+            placeholder="0.00"
+            placeholderTextColor={ownerColors.textMuted}
+            style={[styles.input, styles.inputTotal]}
+            keyboardType="decimal-pad"
+          />
+        </View>
+        <View style={styles.amountInputWrap}>
+          <Text style={styles.fieldLabel}>Tax</Text>
+          <TextInput
+            value={taxAmount}
+            onChangeText={setTaxAmount}
+            placeholder="0.00"
+            placeholderTextColor={ownerColors.textMuted}
+            style={styles.input}
+            keyboardType="decimal-pad"
+          />
+        </View>
+      </View>
+
+      <GlassCard style={styles.totalPreviewCard}>
+        <Text style={styles.totalLabel}>Total</Text>
+        <Text style={styles.totalAmount}>{formatCurrency(total, currency)}</Text>
+      </GlassCard>
+
+      <Text style={styles.fieldLabel}>Date</Text>
+      <Pressable onPress={openDatePicker} style={styles.dateInputButton}>
+        <Text style={styles.dateInputText}>{formatHumanDate(expenseDate)}</Text>
+        <Ionicons name="calendar-outline" size={18} color={ownerColors.gold} />
+      </Pressable>
+
+      <Text style={styles.fieldLabel}>Status</Text>
+      <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.catChips}>
+        {PAYMENT_STATUSES.map((option) => {
+          const on = option.value === paymentStatus;
+          return (
+            <Pressable
+              key={option.value}
+              onPress={() => setPaymentStatus(option.value)}
+              style={[styles.catChip, on && styles.catChipOn]}
+            >
+              <Text style={[styles.catChipText, on && styles.catChipTextOn]}>
+                {statusLabel(option.value, transactionType)}
+              </Text>
+            </Pressable>
+          );
+        })}
+      </ScrollView>
+
+      <Text style={styles.fieldLabel}>Notes</Text>
+      <TextInput
+        value={notes}
+        onChangeText={setNotes}
+        placeholder="Internal notes for your team or accountant."
+        placeholderTextColor={ownerColors.textMuted}
+        style={[styles.input, styles.inputMultiline]}
+        multiline
+      />
+
+      <View style={styles.editActions}>
+        <Pressable style={styles.cancelEditBtn} onPress={onCancel} disabled={saving}>
+          <Text style={styles.cancelEditText}>Cancel</Text>
+        </Pressable>
+        <Pressable style={[styles.saveEditBtn, saving && styles.saveEditBtnDisabled]} onPress={onSave} disabled={saving}>
+          <Text style={styles.saveEditText}>{saving ? 'Saving…' : 'Save changes'}</Text>
+        </Pressable>
+      </View>
+    </View>
+  );
+}
+
+function ChipRow<T extends string>({
+  options,
+  value,
+  onChange,
+}: {
+  options: Array<{ value: T; label: string }>;
+  value: T;
+  onChange: (value: T) => void;
+}) {
+  const styles = useStyles();
+  return (
+    <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.catChips}>
+      {options.map((option) => {
+        const on = option.value === value;
+        return (
+          <Pressable
+            key={option.value}
+            onPress={() => onChange(option.value)}
+            style={[styles.catChip, on && styles.catChipOn]}
+          >
+            <Text style={[styles.catChipText, on && styles.catChipTextOn]}>{option.label}</Text>
+          </Pressable>
+        );
+      })}
+    </ScrollView>
   );
 }
 
@@ -203,6 +640,7 @@ const useStyles = createStyles((c) => {
   const ownerColors = ownerColorsFromPalette(c);
   return {
     screen: { flex: 1 },
+    flex: { flex: 1 },
     scrollPad: { paddingTop: 2, paddingBottom: ownerSpace.xl },
     headRow: {
       flexDirection: 'row',
@@ -232,6 +670,17 @@ const useStyles = createStyles((c) => {
       marginTop: 2,
     },
     deleteBtn: {
+      width: 36,
+      height: 36,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    headerActions: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 4,
+    },
+    iconBtn: {
       width: 36,
       height: 36,
       alignItems: 'center',
@@ -290,6 +739,138 @@ const useStyles = createStyles((c) => {
     detailGrid: {
       paddingHorizontal: 4,
       marginBottom: ownerSpace.md,
+    },
+    fieldLabel: {
+      color: ownerColors.text,
+      fontSize: 13,
+      fontWeight: '600',
+      letterSpacing: 0.3,
+      textTransform: 'uppercase',
+      marginTop: ownerSpace.md,
+    },
+    input: {
+      marginTop: 6,
+      backgroundColor: ownerColors.bgSurface,
+      borderRadius: ownerRadii.md,
+      paddingHorizontal: 14,
+      paddingVertical: 12,
+      color: ownerColors.text,
+      fontSize: 16,
+      borderWidth: StyleSheet.hairlineWidth,
+      borderColor: ownerColors.border,
+    },
+    inputMultiline: {
+      minHeight: 72,
+      textAlignVertical: 'top',
+    },
+    inputTotal: {
+      borderColor: withAlpha(brandGold.dark, 0.4),
+      color: ownerColors.gold,
+      fontWeight: '700',
+    },
+    catChips: {
+      gap: 8,
+      paddingTop: 6,
+      paddingBottom: 4,
+    },
+    catChip: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 6,
+      paddingHorizontal: 12,
+      paddingVertical: 8,
+      borderRadius: 999,
+      borderWidth: StyleSheet.hairlineWidth,
+      borderColor: ownerColors.border,
+      backgroundColor: ownerColors.bgSurface,
+    },
+    catChipOn: {
+      borderColor: withAlpha(brandGold.dark, 0.55),
+      backgroundColor: withAlpha(brandGold.dark, 0.14),
+    },
+    catGlyph: {
+      color: ownerColors.textMuted,
+      fontSize: 13,
+    },
+    catGlyphOn: {
+      color: ownerColors.gold,
+    },
+    catChipText: {
+      color: ownerColors.textSecondary,
+      fontSize: 13,
+      fontWeight: '600',
+    },
+    catChipTextOn: {
+      color: ownerColors.text,
+    },
+    amountGrid: {
+      flexDirection: 'row',
+      alignItems: 'flex-end',
+      gap: ownerSpace.sm,
+    },
+    amountInputWrap: {
+      flex: 1,
+      minWidth: 0,
+    },
+    totalPreviewCard: {
+      marginTop: ownerSpace.sm,
+      padding: ownerSpace.md,
+      backgroundColor: withAlpha(brandGold.dark, 0.08),
+      borderColor: withAlpha(brandGold.dark, 0.22),
+    },
+    dateInputButton: {
+      marginTop: 6,
+      backgroundColor: ownerColors.bgSurface,
+      borderRadius: ownerRadii.md,
+      paddingHorizontal: 14,
+      paddingVertical: 12,
+      borderWidth: StyleSheet.hairlineWidth,
+      borderColor: ownerColors.border,
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      gap: 12,
+    },
+    dateInputText: {
+      color: ownerColors.text,
+      fontSize: 16,
+      fontWeight: '600',
+    },
+    editActions: {
+      flexDirection: 'row',
+      gap: ownerSpace.sm,
+      marginTop: ownerSpace.lg,
+    },
+    cancelEditBtn: {
+      flex: 1,
+      alignItems: 'center',
+      justifyContent: 'center',
+      paddingVertical: 14,
+      borderRadius: ownerRadii.md,
+      borderWidth: StyleSheet.hairlineWidth,
+      borderColor: ownerColors.border,
+      backgroundColor: ownerColors.bgSurface,
+    },
+    cancelEditText: {
+      color: ownerColors.text,
+      fontSize: 15,
+      fontWeight: '700',
+    },
+    saveEditBtn: {
+      flex: 1,
+      alignItems: 'center',
+      justifyContent: 'center',
+      paddingVertical: 14,
+      borderRadius: ownerRadii.md,
+      backgroundColor: ownerColors.gold,
+    },
+    saveEditBtnDisabled: {
+      opacity: 0.55,
+    },
+    saveEditText: {
+      color: '#0F0F0F',
+      fontSize: 15,
+      fontWeight: '800',
     },
     notesCard: {
       padding: ownerSpace.md,

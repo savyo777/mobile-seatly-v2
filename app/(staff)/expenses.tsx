@@ -2,7 +2,6 @@ import React, { useCallback, useState } from 'react';
 import { Modal, Pressable, StyleSheet, Text, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
-import * as DocumentPicker from 'expo-document-picker';
 import { File as FsFile } from 'expo-file-system';
 import * as Haptics from 'expo-haptics';
 import Animated, { FadeInDown } from 'react-native-reanimated';
@@ -15,12 +14,6 @@ import { setPendingScan } from '@/lib/expenses/pendingScan';
 import { createStyles } from '@/lib/theme';
 import { ownerColorsFromPalette, ownerSpace, useOwnerColors } from '@/lib/theme/ownerTheme';
 import { brandGold, withAlpha } from '@/lib/theme/tokens';
-
-// MIME types accepted by the file picker. Receipts come in as images
-// scanned from the iOS Files app (Scan Documents, AirDrop'd photos,
-// downloaded e-receipt screenshots). PDF extraction is not wired into
-// the AI path yet, so the picker is restricted to images for now.
-const ACCEPTED_IMAGE_MIME = ['image/jpeg', 'image/png', 'image/webp', 'image/heic', 'image/heif'];
 
 function mimeFromName(name: string | null | undefined): string {
   const lower = (name ?? '').toLowerCase();
@@ -64,27 +57,21 @@ export default function OwnerExpensesScreen() {
     if (loadingFile) return;
     setLoadingFile(true);
     try {
-      const result = await DocumentPicker.getDocumentAsync({
-        type: ACCEPTED_IMAGE_MIME,
-        copyToCacheDirectory: true,
-        multiple: false,
-      });
-      if (result.canceled || !result.assets?.[0]) return;
-      const asset = result.assets[0];
-      const mime = (asset.mimeType && asset.mimeType.startsWith('image/'))
-        ? asset.mimeType
-        : mimeFromName(asset.name);
+      const picked = await FsFile.pickFileAsync(undefined, 'image/*');
+      const asset = Array.isArray(picked) ? picked[0] : picked;
+      if (!asset) return;
+      const mime = mimeFromName(asset.name);
       // expo-file-system on SDK 55 uses the object-oriented `File` API.
       // `base64()` reads the file contents and returns a base64 string,
       // which is what the scan-receipt edge function expects.
-      const base64 = await new FsFile(asset.uri).base64();
+      const base64 = await asset.base64();
       if (!base64) return;
       setPendingScan({
         uri: asset.uri,
         base64,
         mimeType: mime,
         source: 'file',
-        fileName: asset.name ?? null,
+        fileName: asset.name,
       });
       setPickerOpen(false);
       router.push('/(staff)/expense-review');

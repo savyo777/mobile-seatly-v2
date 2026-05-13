@@ -2,6 +2,7 @@ import { getSupabase } from '@/lib/supabase/client';
 import {
   expenseFromRow,
   type Expense,
+  type ExpenseFrequency,
   type ExpenseRow,
   type PaymentStatus,
   type ReceiptType,
@@ -29,9 +30,73 @@ export interface CreateExpenseInput {
   notes: string | null;
   aiCategorized: boolean;
   aiExtractedData: unknown;
+  frequency?: ExpenseFrequency;
+  recurringEndDate?: string | null;
 }
 
-function inputToRow(input: CreateExpenseInput): Record<string, unknown> {
+function addMonths(date: Date, months: number): Date {
+  const next = new Date(date);
+  next.setMonth(next.getMonth() + months);
+  return next;
+}
+
+function nextDueDate(startDate: string, frequency: ExpenseFrequency): string {
+  const start = new Date(`${startDate}T12:00:00`);
+  if (Number.isNaN(start.getTime())) return startDate;
+
+  switch (frequency) {
+    case 'weekly':
+      start.setDate(start.getDate() + 7);
+      break;
+    case 'bi_weekly':
+      start.setDate(start.getDate() + 14);
+      break;
+    case 'monthly':
+      return addMonths(start, 1).toISOString().slice(0, 10);
+    case 'quarterly':
+      return addMonths(start, 3).toISOString().slice(0, 10);
+    case 'yearly':
+      start.setFullYear(start.getFullYear() + 1);
+      break;
+    case 'one_time':
+      return startDate;
+  }
+
+  return start.toISOString().slice(0, 10);
+}
+
+async function createRecurringExpenseRule(input: CreateExpenseInput): Promise<string | null> {
+  const frequency = input.frequency ?? 'one_time';
+  if (frequency === 'one_time') return null;
+
+  const supabase = getSupabase();
+  if (!supabase) return null;
+  const { data, error } = await supabase
+    .from('recurring_expense_rules')
+    .insert({
+      restaurant_id: input.restaurantId,
+      transaction_type: input.transactionType ?? 'expense',
+      vendor_name: input.vendorName ?? '',
+      category: input.category,
+      description: input.description,
+      amount: input.amount,
+      tax_amount: input.taxAmount ?? 0,
+      total_amount: input.totalAmount,
+      currency: input.currency,
+      frequency,
+      interval_count: 1,
+      start_date: input.expenseDate,
+      next_due_date: nextDueDate(input.expenseDate, frequency),
+      end_date: input.recurringEndDate || null,
+      is_active: true,
+    })
+    .select('id')
+    .single();
+  if (error) throw error;
+  return typeof data?.id === 'string' ? data.id : null;
+}
+
+function inputToRow(input: CreateExpenseInput, recurringRuleId: string | null): Record<string, unknown> {
   return {
     restaurant_id: input.restaurantId,
     created_by: input.createdBy,
@@ -46,6 +111,7 @@ function inputToRow(input: CreateExpenseInput): Record<string, unknown> {
     payment_status: input.paymentStatus ?? 'paid',
     paid_at: input.paidAt ?? null,
     transaction_type: input.transactionType ?? 'expense',
+    recurring_rule_id: recurringRuleId,
     receipt_url: input.receiptUrl,
     receipt_type: input.receiptType,
     notes: input.notes,
@@ -83,12 +149,18 @@ export async function getExpense(id: string): Promise<Expense | null> {
 export async function createExpense(input: CreateExpenseInput): Promise<Expense | null> {
   const supabase = getSupabase();
   if (!supabase) return null;
+  const recurringRuleId = await createRecurringExpenseRule(input);
   const { data, error } = await supabase
     .from('expenses')
-    .insert(inputToRow(input))
+    .insert(inputToRow(input, recurringRuleId))
     .select('*')
     .single();
-  if (error) throw error;
+  if (error) {
+    if (recurringRuleId) {
+      await supabase.from('recurring_expense_rules').delete().eq('id', recurringRuleId);
+    }
+    throw error;
+  }
   return data ? expenseFromRow(data as ExpenseRow) : null;
 }
 

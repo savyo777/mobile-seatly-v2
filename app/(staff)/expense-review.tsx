@@ -33,10 +33,62 @@ import {
   isExpenseCategoryKey,
   type ExpenseCategoryKey,
 } from '@/lib/owner/expenseCategories';
-import type { Expense, ExpenseDraftFieldKey } from '@/lib/expenses/types';
+import type {
+  Expense,
+  ExpenseDraftFieldKey,
+  ExpenseFrequency,
+  PaymentStatus,
+  TransactionType,
+} from '@/lib/expenses/types';
 import { createStyles } from '@/lib/theme';
 import { ownerColorsFromPalette, ownerRadii, ownerSpace, useOwnerColors } from '@/lib/theme/ownerTheme';
 import { brandGold, withAlpha } from '@/lib/theme/tokens';
+
+const TRANSACTION_TYPE_OPTIONS: Array<{ value: TransactionType; label: string }> = [
+  { value: 'expense', label: 'Expense' },
+  { value: 'income', label: 'Income' },
+];
+
+const WEB_EXPENSE_CATEGORY_KEYS: ExpenseCategoryKey[] = [
+  'food_cost',
+  'food_supplies',
+  'beverages',
+  'utilities',
+  'rent',
+  'equipment',
+  'marketing',
+  'staff',
+  'supplies',
+  'maintenance',
+  'cleaning',
+  'other',
+];
+
+const WEB_INCOME_CATEGORY_KEYS: ExpenseCategoryKey[] = [
+  'sales',
+  'preorders',
+  'events',
+  'catering',
+  'delivery',
+  'gift_cards',
+  'other',
+];
+
+const STATUS_OPTIONS: Array<{ value: PaymentStatus; label: string }> = [
+  { value: 'paid', label: 'Paid' },
+  { value: 'due', label: 'Due' },
+  { value: 'scheduled', label: 'Scheduled' },
+  { value: 'overdue', label: 'Overdue' },
+];
+
+const FREQUENCY_OPTIONS: Array<{ value: ExpenseFrequency; label: string }> = [
+  { value: 'one_time', label: 'One-time' },
+  { value: 'weekly', label: 'Weekly' },
+  { value: 'bi_weekly', label: 'Bi-weekly' },
+  { value: 'monthly', label: 'Monthly' },
+  { value: 'quarterly', label: 'Quarterly' },
+  { value: 'yearly', label: 'Yearly' },
+];
 
 function dollarsToInputString(amount: number | null): string {
   if (amount == null) return '';
@@ -49,6 +101,29 @@ function parseDollarsInput(value: string): number | null {
   const dollars = parseFloat(cleaned);
   if (!Number.isFinite(dollars)) return null;
   return Math.round(dollars * 100) / 100;
+}
+
+function statusLabel(status: PaymentStatus, type: TransactionType): string {
+  if (type === 'income') {
+    switch (status) {
+      case 'due':
+        return 'Expected';
+      case 'scheduled':
+        return 'Scheduled';
+      case 'overdue':
+        return 'Overdue';
+      default:
+        return 'Received';
+    }
+  }
+  return STATUS_OPTIONS.find((option) => option.value === status)?.label ?? 'Paid';
+}
+
+function formatCurrencyPreview(amount: number, currency: string): string {
+  return new Intl.NumberFormat(undefined, {
+    style: 'currency',
+    currency: (currency || 'cad').toUpperCase(),
+  }).format(amount);
 }
 
 function todayISO(): string {
@@ -83,13 +158,19 @@ export default function ExpenseReviewScreen() {
   const [scanning, setScanning] = useState(!isManual);
   const [extractedFields, setExtractedFields] = useState<Set<ExpenseDraftFieldKey>>(new Set());
   const [saving, setSaving] = useState(false);
-  const [datePickerOpen, setDatePickerOpen] = useState(false);
+  const [datePickerTarget, setDatePickerTarget] = useState<'expenseDate' | 'recurringEndDate' | null>(null);
 
+  const [transactionType, setTransactionType] = useState<TransactionType>('expense');
   const [vendor, setVendor] = useState('');
+  const [description, setDescription] = useState('');
   const [expenseDate, setExpenseDate] = useState(todayISO());
-  const [subtotal, setSubtotal] = useState('');
+  const [subtotal, setSubtotal] = useState(isManual ? '0' : '');
+  const [taxAmount, setTaxAmount] = useState('0');
   const [currency, setCurrency] = useState('cad');
-  const [category, setCategory] = useState<ExpenseCategoryKey>('other');
+  const [category, setCategory] = useState<ExpenseCategoryKey>('food_cost');
+  const [paymentStatus, setPaymentStatus] = useState<PaymentStatus>('paid');
+  const [frequency, setFrequency] = useState<ExpenseFrequency>('one_time');
+  const [recurringEndDate, setRecurringEndDate] = useState('');
   const [notes, setNotes] = useState('');
 
   // Pull the captured image once on mount. For attachment mode (camera /
@@ -162,6 +243,26 @@ export default function ExpenseReviewScreen() {
   }, []);
 
   const headerCount = extractedFields.size;
+  const activeCategoryKeys = useMemo(
+    () => transactionType === 'income'
+      ? WEB_INCOME_CATEGORY_KEYS
+      : (isManual ? WEB_EXPENSE_CATEGORY_KEYS : EXPENSE_CATEGORIES.map((c) => c.key)),
+    [isManual, transactionType],
+  );
+  const activeCategories = useMemo(
+    () => activeCategoryKeys
+      .map((key) => EXPENSE_CATEGORIES.find((c) => c.key === key))
+      .filter((c): c is (typeof EXPENSE_CATEGORIES)[number] => Boolean(c)),
+    [activeCategoryKeys],
+  );
+  const amountNumber = parseDollarsInput(subtotal) ?? 0;
+  const taxNumber = isManual ? (parseDollarsInput(taxAmount) ?? 0) : 0;
+  const totalAmount = isManual ? Math.round((amountNumber + taxNumber) * 100) / 100 : amountNumber;
+
+  useEffect(() => {
+    if (activeCategoryKeys.includes(category)) return;
+    setCategory(activeCategoryKeys[0] ?? 'other');
+  }, [activeCategoryKeys, category]);
 
   const handleClose = useCallback(() => {
     router.replace('/(staff)/expenses' as never);
@@ -174,12 +275,15 @@ export default function ExpenseReviewScreen() {
   // Title/subtitle shown in the header. Manual mode advertises a fresh
   // form; attachment mode still talks about reading the receipt because
   // the AI extractor is running underneath.
-  const headerTitle = isManual ? 'New expense' : 'Review receipt';
+  const headerTitle = isManual ? 'Log expense or income' : 'Review receipt';
 
   const handleSave = useCallback(async () => {
     if (saving) return;
     if (!vendor.trim()) {
-      Alert.alert('Missing vendor', 'Add a vendor name before saving.');
+      Alert.alert(
+        transactionType === 'income' ? 'Missing source' : 'Missing vendor',
+        transactionType === 'income' ? 'Add a source before saving.' : 'Add a vendor name before saving.',
+      );
       return;
     }
     const amount = parseDollarsInput(subtotal);
@@ -187,6 +291,13 @@ export default function ExpenseReviewScreen() {
       Alert.alert('Missing amount', 'Enter how much the expense was for.');
       return;
     }
+    const tax = isManual ? (parseDollarsInput(taxAmount) ?? 0) : null;
+    if (tax != null && tax < 0) {
+      Alert.alert('Invalid tax', 'Tax must be zero or more.');
+      return;
+    }
+    const computedTotal = isManual ? Math.round((amount + (tax ?? 0)) * 100) / 100 : amount;
+    const paidAt = isManual && paymentStatus === 'paid' ? new Date().toISOString() : null;
 
     setSaving(true);
     try {
@@ -200,18 +311,18 @@ export default function ExpenseReviewScreen() {
           createdBy: 'u1',
           createdAt: new Date().toISOString(),
           vendorName: vendor.trim(),
-          description: null,
+          description: description.trim() || null,
           expenseDate: expenseDate || todayISO(),
           amount,
-          taxAmount: null,
-          totalAmount: amount,
+          taxAmount: tax,
+          totalAmount: computedTotal,
           currency: (currency || 'cad').toLowerCase(),
           category,
-          paymentStatus: 'paid',
-          paidAt: null,
-          transactionType: 'expense',
-          receiptUrl: null,
-          receiptType: null,
+          paymentStatus,
+          paidAt,
+          transactionType,
+          receiptUrl: scan?.uri ?? null,
+          receiptType: scan ? 'image' : null,
           aiCategorized: extractedFields.size > 0,
           aiExtractedData: null,
           notes: notes.trim() || null,
@@ -254,21 +365,23 @@ export default function ExpenseReviewScreen() {
         restaurantId,
         createdBy: profileId,
         vendorName: vendor.trim(),
-        description: null,
+        description: description.trim() || null,
         expenseDate: expenseDate || todayISO(),
         amount,
-        taxAmount: null,
-        totalAmount: amount,
+        taxAmount: tax,
+        totalAmount: computedTotal,
         currency: (currency || 'cad').toLowerCase(),
         category,
-        paymentStatus: 'paid',
-        paidAt: null,
-        transactionType: 'expense',
+        paymentStatus,
+        paidAt,
+        transactionType,
         receiptUrl: null,
         receiptType: scan ? 'image' : null,
         notes: notes.trim() || null,
         aiCategorized: extractedFields.size > 0,
         aiExtractedData: null,
+        frequency: isManual ? frequency : 'one_time',
+        recurringEndDate: isManual ? recurringEndDate || null : null,
       });
 
       if (created && scan) {
@@ -281,10 +394,14 @@ export default function ExpenseReviewScreen() {
           });
           if (path) {
             await patchExpense(created.id, { receiptUrl: path, receiptType: 'image' });
+          } else {
+            addLocalExpense({ ...created, receiptUrl: scan.uri, receiptType: 'image' });
           }
         } catch {
-          // image upload failed — the row is still saved. Owner can
-          // re-attach the image later via the detail screen (v2).
+          // Keep the just-submitted receipt visible in this session even if
+          // storage attachment fails, so the detail screen still shows the
+          // photo/file the owner used to create the expense.
+          addLocalExpense({ ...created, receiptUrl: scan.uri, receiptType: 'image' });
         }
       }
 
@@ -298,6 +415,11 @@ export default function ExpenseReviewScreen() {
     saving,
     vendor,
     subtotal,
+    taxAmount,
+    isManual,
+    paymentStatus,
+    transactionType,
+    description,
     ownerRestaurantId,
     addExpense,
     addLocalExpense,
@@ -305,6 +427,8 @@ export default function ExpenseReviewScreen() {
     currency,
     category,
     notes,
+    frequency,
+    recurringEndDate,
     extractedFields.size,
     scan,
     patchExpense,
@@ -334,7 +458,9 @@ export default function ExpenseReviewScreen() {
             <View style={styles.headText}>
               <Text style={styles.title}>{headerTitle}</Text>
               {isManual ? (
-                <Text style={styles.subtitle}>Enter the details below.</Text>
+                <Text style={styles.subtitle}>
+                  Save actual money in or out, and optionally create a recurring rule for forecasting.
+                </Text>
               ) : scanning ? (
                 <Text style={styles.subtitle}>Reading your receipt…</Text>
               ) : headerCount > 0 ? (
@@ -380,48 +506,59 @@ export default function ExpenseReviewScreen() {
               </GlassCard>
             ) : null}
 
-            {fieldLabel('Vendor', 'vendor')}
+            {isManual ? (
+              <>
+                <Text style={styles.fieldLabel}>Type</Text>
+                <ScrollView
+                  horizontal
+                  showsHorizontalScrollIndicator={false}
+                  contentContainerStyle={styles.catChips}
+                >
+                  {TRANSACTION_TYPE_OPTIONS.map((option) => {
+                    const on = option.value === transactionType;
+                    return (
+                      <Pressable
+                        key={option.value}
+                        onPress={() => setTransactionType(option.value)}
+                        style={[styles.catChip, on && styles.catChipOn]}
+                      >
+                        <Text style={[styles.catChipText, on && styles.catChipTextOn]}>{option.label}</Text>
+                      </Pressable>
+                    );
+                  })}
+                </ScrollView>
+              </>
+            ) : null}
+
+            {fieldLabel(transactionType === 'income' ? 'Source' : 'Vendor', 'vendor')}
             <TextInput
               value={vendor}
               onChangeText={(v) => {
                 setVendor(v);
                 clearExtracted('vendor');
               }}
-              placeholder="e.g. Sysco Foodservice"
+              placeholder={transactionType === 'income' ? 'DoorDash, event tickets, catering client' : 'Toronto Hydro'}
               placeholderTextColor={ownerColors.textMuted}
               style={styles.input}
               autoCapitalize="words"
             />
 
-            {fieldLabel('Date', 'expenseDate')}
-            <Pressable
-              onPress={() => setDatePickerOpen(true)}
-              style={({ pressed }) => [
-                styles.input,
-                styles.dateInput,
-                pressed && { opacity: 0.85 },
-              ]}
-              accessibilityRole="button"
-              accessibilityLabel={`Date: ${formatHumanDate(expenseDate)}`}
-            >
-              <Text style={styles.dateInputText}>
-                {formatHumanDate(expenseDate || todayISO())}
-              </Text>
-              <Ionicons name="calendar-outline" size={18} color={ownerColors.gold} />
-            </Pressable>
-
-            {fieldLabel(isManual ? 'Amount' : 'Subtotal', 'amount')}
-            <TextInput
-              value={subtotal}
-              onChangeText={(v) => {
-                setSubtotal(v);
-                clearExtracted('amount');
-              }}
-              placeholder="0.00"
-              placeholderTextColor={ownerColors.textMuted}
-              style={[styles.input, styles.inputTotal]}
-              keyboardType="decimal-pad"
-            />
+            {isManual ? (
+              <>
+                <Text style={styles.fieldLabel}>Description</Text>
+                <TextInput
+                  value={description}
+                  onChangeText={setDescription}
+                  placeholder={
+                    transactionType === 'income'
+                      ? 'Weekend pre-orders, private event deposit, catering invoice...'
+                      : 'May rent, weekly produce, annual insurance...'
+                  }
+                  placeholderTextColor={ownerColors.textMuted}
+                  style={styles.input}
+                />
+              </>
+            ) : null}
 
             {fieldLabel('Category', 'category')}
             <ScrollView
@@ -429,7 +566,7 @@ export default function ExpenseReviewScreen() {
               showsHorizontalScrollIndicator={false}
               contentContainerStyle={styles.catChips}
             >
-              {EXPENSE_CATEGORIES.map((c) => {
+              {activeCategories.map((c) => {
                 const on = c.key === category;
                 return (
                   <Pressable
@@ -447,11 +584,146 @@ export default function ExpenseReviewScreen() {
               })}
             </ScrollView>
 
+            {fieldLabel(isManual ? 'Amount' : 'Subtotal', 'amount')}
+            <View style={isManual ? styles.amountGrid : undefined}>
+              <TextInput
+                value={subtotal}
+                onChangeText={(v) => {
+                  setSubtotal(v);
+                  clearExtracted('amount');
+                }}
+                placeholder="0.00"
+                placeholderTextColor={ownerColors.textMuted}
+                style={[styles.input, styles.inputTotal, isManual && styles.amountInput]}
+                keyboardType="decimal-pad"
+              />
+              {isManual ? (
+                <View style={styles.amountInputWrap}>
+                  <Text style={styles.inlineFieldLabel}>Tax</Text>
+                  <TextInput
+                    value={taxAmount}
+                    onChangeText={setTaxAmount}
+                    placeholder="0.00"
+                    placeholderTextColor={ownerColors.textMuted}
+                    style={[styles.input, styles.amountInput]}
+                    keyboardType="decimal-pad"
+                  />
+                </View>
+              ) : null}
+            </View>
+
+            {isManual ? (
+              <GlassCard style={styles.totalPreviewCard}>
+                <Text style={styles.previewMetaTitle}>Total</Text>
+                <Text style={styles.totalPreviewAmount}>
+                  {formatCurrencyPreview(totalAmount, currency)}
+                </Text>
+              </GlassCard>
+            ) : null}
+
+            {fieldLabel('Date', 'expenseDate')}
+            <Pressable
+              onPress={() => setDatePickerTarget('expenseDate')}
+              style={({ pressed }) => [
+                styles.input,
+                styles.dateInput,
+                pressed && { opacity: 0.85 },
+              ]}
+              accessibilityRole="button"
+              accessibilityLabel={`Date: ${formatHumanDate(expenseDate)}`}
+            >
+              <Text style={styles.dateInputText}>
+                {formatHumanDate(expenseDate || todayISO())}
+              </Text>
+              <Ionicons name="calendar-outline" size={18} color={ownerColors.gold} />
+            </Pressable>
+
+            {isManual ? (
+              <>
+                <Text style={styles.fieldLabel}>Status</Text>
+                <ScrollView
+                  horizontal
+                  showsHorizontalScrollIndicator={false}
+                  contentContainerStyle={styles.catChips}
+                >
+                  {STATUS_OPTIONS.map((option) => {
+                    const on = option.value === paymentStatus;
+                    return (
+                      <Pressable
+                        key={option.value}
+                        onPress={() => setPaymentStatus(option.value)}
+                        style={[styles.catChip, on && styles.catChipOn]}
+                      >
+                        <Text style={[styles.catChipText, on && styles.catChipTextOn]}>
+                          {statusLabel(option.value, transactionType)}
+                        </Text>
+                      </Pressable>
+                    );
+                  })}
+                </ScrollView>
+
+                <Text style={styles.fieldLabel}>Frequency</Text>
+                <ScrollView
+                  horizontal
+                  showsHorizontalScrollIndicator={false}
+                  contentContainerStyle={styles.catChips}
+                >
+                  {FREQUENCY_OPTIONS.map((option) => {
+                    const on = option.value === frequency;
+                    return (
+                      <Pressable
+                        key={option.value}
+                        onPress={() => setFrequency(option.value)}
+                        style={[styles.catChip, on && styles.catChipOn]}
+                      >
+                        <Text style={[styles.catChipText, on && styles.catChipTextOn]}>{option.label}</Text>
+                      </Pressable>
+                    );
+                  })}
+                </ScrollView>
+
+                {frequency !== 'one_time' ? (
+                  <GlassCard style={styles.recurringCard}>
+                    <View style={styles.recurringHeader}>
+                      <Ionicons name="wallet-outline" size={16} color={ownerColors.gold} />
+                      <View style={{ flex: 1 }}>
+                        <Text style={styles.recurringTitle}>Recurring {transactionType} rule</Text>
+                        <Text style={styles.recurringBody}>
+                          This will save today's {transactionType} and create a recurring rule for future forecasting.
+                        </Text>
+                      </View>
+                    </View>
+                    <Text style={styles.fieldLabel}>Optional end date</Text>
+                    <Pressable
+                      onPress={() => setDatePickerTarget('recurringEndDate')}
+                      style={({ pressed }) => [
+                        styles.input,
+                        styles.dateInput,
+                        pressed && { opacity: 0.85 },
+                      ]}
+                      accessibilityRole="button"
+                      accessibilityLabel={recurringEndDate ? `Recurring end date: ${formatHumanDate(recurringEndDate)}` : 'No end date'}
+                    >
+                      <Text style={styles.dateInputText}>
+                        {recurringEndDate ? formatHumanDate(recurringEndDate) : 'No end date'}
+                      </Text>
+                      <Ionicons name="calendar-outline" size={18} color={ownerColors.gold} />
+                    </Pressable>
+                    {recurringEndDate ? (
+                      <Pressable onPress={() => setRecurringEndDate('')} style={styles.clearDateBtn}>
+                        <Text style={styles.rescanText}>Clear end date</Text>
+                      </Pressable>
+                    ) : null}
+                  </GlassCard>
+                ) : null}
+              </>
+            ) : null}
+
             <Text style={styles.fieldLabel}>Notes</Text>
             <TextInput
               value={notes}
               onChangeText={setNotes}
-              placeholder="Optional"
+              placeholder={isManual ? 'Internal notes for your team or accountant.' : 'Optional'}
               placeholderTextColor={ownerColors.textMuted}
               style={[styles.input, styles.inputMultiline]}
               multiline
@@ -466,10 +738,12 @@ export default function ExpenseReviewScreen() {
                 pressed && styles.btnPressed,
               ]}
               accessibilityRole="button"
-              accessibilityLabel="Save expense"
+              accessibilityLabel={isManual ? 'Save entry' : 'Save expense'}
             >
               <Ionicons name="checkmark" size={18} color="#0F0F0F" />
-              <Text style={styles.bottomSaveBtnText}>{saving ? 'Saving…' : 'Save expense'}</Text>
+              <Text style={styles.bottomSaveBtnText}>
+                {saving ? 'Saving…' : isManual ? 'Save entry' : 'Save expense'}
+              </Text>
             </Pressable>
 
             <View style={{ height: ownerSpace.xl + insets.bottom }} />
@@ -478,14 +752,18 @@ export default function ExpenseReviewScreen() {
       </KeyboardAvoidingView>
 
       <MonthCalendar
-        visible={datePickerOpen}
-        value={expenseDate}
-        title={isManual ? 'Expense date' : 'Receipt date'}
-        onClose={() => setDatePickerOpen(false)}
+        visible={datePickerTarget !== null}
+        value={datePickerTarget === 'recurringEndDate' ? (recurringEndDate || expenseDate) : expenseDate}
+        title={datePickerTarget === 'recurringEndDate' ? 'Optional end date' : isManual ? 'Expense date' : 'Receipt date'}
+        onClose={() => setDatePickerTarget(null)}
         onConfirm={(iso) => {
-          setExpenseDate(iso);
-          clearExtracted('expenseDate');
-          setDatePickerOpen(false);
+          if (datePickerTarget === 'recurringEndDate') {
+            setRecurringEndDate(iso);
+          } else {
+            setExpenseDate(iso);
+            clearExtracted('expenseDate');
+          }
+          setDatePickerTarget(null);
         }}
       />
     </View>
@@ -645,6 +923,62 @@ const useStyles = createStyles((c) => {
       borderColor: withAlpha(brandGold.dark, 0.4),
       color: ownerColors.gold,
       fontWeight: '700',
+    },
+    amountGrid: {
+      flexDirection: 'row',
+      gap: ownerSpace.sm,
+      alignItems: 'flex-end',
+    },
+    amountInputWrap: {
+      flex: 1,
+      minWidth: 0,
+    },
+    amountInput: {
+      flex: 1,
+    },
+    inlineFieldLabel: {
+      color: ownerColors.text,
+      fontSize: 13,
+      fontWeight: '600',
+      letterSpacing: 0.3,
+      textTransform: 'uppercase',
+      marginTop: ownerSpace.md,
+    },
+    totalPreviewCard: {
+      marginTop: ownerSpace.sm,
+      padding: ownerSpace.md,
+    },
+    totalPreviewAmount: {
+      color: ownerColors.text,
+      fontSize: 26,
+      fontWeight: '800',
+      letterSpacing: -0.4,
+      marginTop: 4,
+    },
+    recurringCard: {
+      marginTop: ownerSpace.sm,
+      padding: ownerSpace.md,
+    },
+    recurringHeader: {
+      flexDirection: 'row',
+      gap: ownerSpace.sm,
+      alignItems: 'flex-start',
+    },
+    recurringTitle: {
+      color: ownerColors.text,
+      fontSize: 14,
+      fontWeight: '700',
+    },
+    recurringBody: {
+      color: ownerColors.textSecondary,
+      fontSize: 12,
+      lineHeight: 17,
+      marginTop: 4,
+    },
+    clearDateBtn: {
+      alignSelf: 'flex-start',
+      paddingVertical: 8,
+      marginTop: 4,
     },
     catChips: {
       gap: 8,
