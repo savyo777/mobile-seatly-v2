@@ -467,7 +467,7 @@ export default function SnapStylesScreen() {
         <Text style={styles.continuePillText}>
           {returningToReward ? 'Apply' : 'Next'}
         </Text>
-        <Ionicons name="arrow-forward" size={16} color="#1a1410" />
+        <Ionicons name="arrow-forward" size={18} color="#1a1410" />
       </Pressable>
 
       {/* ── Retake pill (bottom-left, paired with Next) ── */}
@@ -484,7 +484,7 @@ export default function SnapStylesScreen() {
           accessibilityRole="button"
           accessibilityLabel="Retake"
         >
-          <Ionicons name="camera-reverse-outline" size={16} color="#fff" />
+          <Ionicons name="camera-reverse-outline" size={18} color="#fff" />
           <Text style={styles.retakePillText}>Retake</Text>
         </Pressable>
       )}
@@ -603,9 +603,9 @@ const styles = StyleSheet.create({
   continuePill: {
     position: 'absolute',
     right: 16,
-    paddingHorizontal: 18,
-    paddingVertical: 6,
-    borderRadius: 20,
+    paddingHorizontal: 22,
+    paddingVertical: 10,
+    borderRadius: 24,
     backgroundColor: '#c9a84c',
     flexDirection: 'row',
     alignItems: 'center',
@@ -625,9 +625,9 @@ const styles = StyleSheet.create({
   retakePill: {
     position: 'absolute',
     left: 16,
-    paddingHorizontal: 16,
-    paddingVertical: 6,
-    borderRadius: 20,
+    paddingHorizontal: 20,
+    paddingVertical: 10,
+    borderRadius: 24,
     backgroundColor: 'rgba(0,0,0,0.55)',
     borderWidth: 1,
     borderColor: 'rgba(255,255,255,0.18)',
@@ -638,13 +638,13 @@ const styles = StyleSheet.create({
   retakePillText: {
     color: '#fff',
     fontWeight: '600',
-    fontSize: 14,
+    fontSize: 15,
     letterSpacing: 0.2,
   },
   continuePillText: {
     color: '#1a1410',
     fontWeight: '700',
-    fontSize: 14,
+    fontSize: 15,
     letterSpacing: 0.2,
   },
   busyOverlay: {
