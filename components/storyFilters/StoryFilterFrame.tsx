@@ -20,6 +20,7 @@ import {
   StyleSheet,
   View,
   type ImageSourcePropType,
+  type ViewStyle,
 } from 'react-native';
 import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -44,6 +45,8 @@ type Props = {
   restaurantName?: string;
   city?: string;
   area?: string;
+  /** Override container style — e.g. pass `{ borderRadius: 0 }` for full-screen. */
+  containerStyle?: ViewStyle;
 };
 
 export function StoryFilterFrame({
@@ -57,6 +60,7 @@ export function StoryFilterFrame({
   restaurantName,
   city,
   area,
+  containerStyle,
 }: Props) {
   const frameH = height ?? Math.round((width * 16) / 9);
 
@@ -68,7 +72,7 @@ export function StoryFilterFrame({
     photoSource ?? (photo ? { uri: photo } : undefined);
 
   return (
-    <View style={[styles.frame, { width, height: frameH }]}>
+    <View style={[styles.frame, { width, height: frameH }, containerStyle]}>
       {/* 1 · media layer */}
       {mediaSlot ? (
         <View style={StyleSheet.absoluteFill}>{mediaSlot}</View>
