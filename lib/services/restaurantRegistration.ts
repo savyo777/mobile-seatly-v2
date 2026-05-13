@@ -125,6 +125,28 @@ export async function getRestaurantPaymentMethodPreview(
   return data as RestaurantPaymentMethodPreview;
 }
 
+export async function registerRestaurantNoBilling(
+  input: RestaurantRegistrationInput,
+): Promise<{ restaurantId: string; trialEndsAt: string }> {
+  const supabase = getSupabase();
+  if (!supabase) throw new Error('Supabase is not configured.');
+  const cleaned = sanitizeRegistrationInput(input);
+  if (!cleaned.business_name) throw new Error('Business name is required.');
+  if (!cleaned.address) throw new Error('Business address is required.');
+  if (!cleaned.owner_phone) throw new Error('Owner phone must be a valid phone number.');
+
+  const { data, error } = await supabase.functions.invoke('register-restaurant-owner', {
+    method: 'POST',
+    body: { action: 'register_no_billing', ...cleaned },
+  });
+  if (error) throw new Error(error.message || 'Failed to register restaurant.');
+  if (!data?.restaurantId) throw new Error('Registration did not return a restaurant ID.');
+  return {
+    restaurantId: String(data.restaurantId),
+    trialEndsAt: String(data.trialEndsAt ?? ''),
+  };
+}
+
 export async function finalizeRestaurantRegistration(
   input: RestaurantRegistrationInput,
   setupIntentId: string,

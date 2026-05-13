@@ -9,11 +9,11 @@ import {
 } from '../_shared/stripe.ts';
 
 type RegisterPayload = {
-  action?: 'init_payment_sheet' | 'preview_payment_method' | 'finalize_registration';
+  action?: 'init_payment_sheet' | 'preview_payment_method' | 'finalize_registration' | 'register_no_billing';
   business_name: string;
   address: string;
   owner_phone: string;
-  payment_method_id: string;
+  payment_method_id?: string;
   setup_intent_id?: string;
 };
 
@@ -93,6 +93,66 @@ Deno.serve(async (req) => {
 
     if (!payload.business_name || !payload.address || !payload.owner_phone) {
       return json(400, { error: 'Missing required fields.' });
+    }
+
+    // Stripe-free registration path used during development / trial setup.
+    // Inserts the restaurant row and updates user role without any billing.
+    if (action === 'register_no_billing') {
+      const { data: existingRow } = await adminClient
+        .from('restaurants')
+        .select('id, trial_ends_at')
+        .eq('owner_user_id', user.id)
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .maybeSingle();
+
+      let restaurantId: string;
+      let trialEndsAt: string;
+
+      if (existingRow?.id) {
+        restaurantId = existingRow.id;
+        trialEndsAt = existingRow.trial_ends_at ?? addCalendarMonths(new Date(), 3).toISOString();
+      } else {
+        trialEndsAt = addCalendarMonths(new Date(), 3).toISOString();
+        const { data: inserted, error: insertError } = await adminClient
+          .from('restaurants')
+          .insert({
+            owner_user_id: user.id,
+            name: payload.business_name,
+            slug: slugify(payload.business_name),
+            address: payload.address,
+            phone: payload.owner_phone,
+            has_bar: false,
+            is_active: true,
+            trial_ends_at: trialEndsAt,
+          })
+          .select('id')
+          .single();
+        if (insertError) throw insertError;
+        restaurantId = inserted.id;
+      }
+
+      await adminClient.from('user_profiles').upsert(
+        {
+          auth_user_id: user.id,
+          email: user.email?.toLowerCase() ?? '',
+          full_name:
+            (user.user_metadata?.full_name as string | undefined) ||
+            (user.user_metadata?.name as string | undefined) ||
+            'User',
+          role: 'diner_and_owner',
+        },
+        { onConflict: 'auth_user_id' },
+      );
+
+      await adminClient.auth.admin.updateUserById(user.id, {
+        user_metadata: {
+          ...(user.user_metadata ?? {}),
+          role: 'diner_and_owner',
+        },
+      });
+
+      return json(200, { restaurantId, trialEndsAt });
     }
 
     const existingRestaurant = await adminClient

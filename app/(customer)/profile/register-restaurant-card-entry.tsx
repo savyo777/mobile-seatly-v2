@@ -17,6 +17,8 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useColors } from '@/lib/theme';
 import { OWNER_TRIAL_MONTHS } from '@/lib/owner/trialPolicy';
+import { registerRestaurantNoBilling } from '@/lib/services/restaurantRegistration';
+import { getSupabase } from '@/lib/supabase/client';
 
 const SF = Platform.OS === 'ios' ? 'System' : undefined;
 const SERIF = Platform.OS === 'ios' ? 'Georgia' : 'serif';
@@ -146,10 +148,6 @@ export default function RegisterRestaurantCardEntryScreen() {
     !!parsedExpiry &&
     cvc.replace(/\D/g, '').length === expectedCvc;
 
-  // Local-only "create account" flow — no Stripe API, no backend call.
-  // Validate the card form, derive a brand/last-4 preview from what the
-  // user typed, and route to the success screen. Real Stripe integration
-  // can be wired back in on top of this once the API path is sorted.
   const onSubmit = () => {
     if (saving) return;
     Keyboard.dismiss();
@@ -168,28 +166,43 @@ export default function RegisterRestaurantCardEntryScreen() {
     }
 
     setSaving(true);
-
-    const digits = cardNumber.replace(/\D/g, '');
-    const last4 = digits.slice(-4);
-    const previewBrand = (brand || 'Card').toUpperCase();
-    const trialEndsIso = addMonths(new Date(), OWNER_TRIAL_MONTHS).toISOString();
-
-    // Tiny artificial delay so the SAVING… state reads naturally. Drop
-    // when the real API is wired back in.
-    setTimeout(() => {
-      router.replace({
-        pathname: '/(customer)/profile/register-restaurant-success',
-        params: {
-          trialEndsAt: trialEndsIso,
+    void (async () => {
+      try {
+        const result = await registerRestaurantNoBilling({
           businessName: input.businessName,
           address: input.address,
           ownerPhone: input.ownerPhone,
-          cardBrand: previewBrand,
-          cardLast4: last4,
-        },
-      });
-      setSaving(false);
-    }, 350);
+        });
+
+        // Refresh the local JWT so the updated role in user_metadata is
+        // picked up on the next cold boot without a DB round-trip delay.
+        const supabase = getSupabase();
+        if (supabase) await supabase.auth.refreshSession().catch(() => {});
+
+        const digits = cardNumber.replace(/\D/g, '');
+        const last4 = digits.slice(-4);
+        const previewBrand = (brand || 'Card').toUpperCase();
+
+        router.replace({
+          pathname: '/(customer)/profile/register-restaurant-success',
+          params: {
+            trialEndsAt: result.trialEndsAt,
+            businessName: input.businessName,
+            address: input.address,
+            ownerPhone: input.ownerPhone,
+            cardBrand: previewBrand,
+            cardLast4: last4,
+          },
+        });
+      } catch (err) {
+        Alert.alert(
+          'Registration failed',
+          err instanceof Error ? err.message : 'Something went wrong. Please try again.',
+        );
+      } finally {
+        setSaving(false);
+      }
+    })();
   };
 
   const bg = c.bgBase;

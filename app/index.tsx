@@ -7,6 +7,7 @@ import {
   getAppShellPreference,
   getCachedAppShellPreference,
 } from '@/lib/navigation/appShellPreference';
+import { fetchCurrentOwnerRestaurant } from '@/lib/services/ownerRestaurant';
 
 const useStyles = createStyles((c) => ({
   container: {
@@ -51,9 +52,25 @@ export default function SplashScreen() {
         router.replace('/(customer)/discover');
         return;
       }
-      if (pref === 'staff' && isStaffLike) {
-        router.replace('/(staff)');
-        return;
+      if (pref === 'staff') {
+        if (isStaffLike) {
+          router.replace('/(staff)');
+          return;
+        }
+        // pref='staff' but JWT metadata hasn't been refreshed yet (e.g. role
+        // was updated server-side after the last token issue). Verify via DB
+        // before falling through — this prevents owners being bounced to the
+        // customer side on a cold boot after in-app restaurant registration.
+        try {
+          const restaurant = await fetchCurrentOwnerRestaurant();
+          if (cancelled) return;
+          if (restaurant?.id) {
+            router.replace('/(staff)');
+            return;
+          }
+        } catch {
+          // fall through to customer on network error
+        }
       }
       router.replace('/(customer)/discover');
     })();
