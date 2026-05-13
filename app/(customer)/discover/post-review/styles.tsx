@@ -262,7 +262,7 @@ export default function SnapStylesScreen() {
   const hasImage = decodedUri.length > 0;
 
   const continueBottom = 0;
-  const carouselBottom = insets.bottom + 30;
+  const carouselBottom = 44;
   const pillBottom = carouselBottom + RING_SIZE + 6;
 
   // 9:16 card sized to fit between top + bottom chrome, centred on screen.
