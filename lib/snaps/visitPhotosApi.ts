@@ -56,16 +56,29 @@ export async function listVisitPhotosByRestaurant(
   const supabase = getSupabase();
   if (!supabase) return [];
 
-  const { data, error } = await supabase
+  const { data: photoRows, error } = await supabase
     .from('visit_photos')
-    .select('id, user_id, restaurant_id, booking_id, image_url, caption, story_filter_id, story_filter_captured_at, rating, tags, created_at, user_profiles!visit_photos_user_id_fkey(full_name, avatar_url)')
+    .select('id, user_id, restaurant_id, booking_id, image_url, caption, story_filter_id, story_filter_captured_at, rating, tags, created_at')
     .eq('restaurant_id', restaurantId)
     .order('created_at', { ascending: false })
     .limit(limit);
   if (error) throw error;
+  if (!photoRows || photoRows.length === 0) return [];
 
-  return ((data ?? []) as Array<Record<string, unknown>>).map((row) => {
-    const profile = row['user_profiles'] as Record<string, unknown> | null;
+  // visit_photos.user_id is auth.users.id; look up display info via user_profiles.auth_user_id.
+  const authUserIds = [...new Set((photoRows as Array<{ user_id: string }>).map((r) => r.user_id))];
+  const { data: profiles } = await supabase
+    .from('user_profiles')
+    .select('auth_user_id, full_name, avatar_url')
+    .in('auth_user_id', authUserIds);
+
+  const profileMap = new Map<string, { full_name: string | null; avatar_url: string | null }>();
+  for (const p of (profiles ?? []) as Array<{ auth_user_id: string; full_name: string | null; avatar_url: string | null }>) {
+    profileMap.set(p.auth_user_id, { full_name: p.full_name, avatar_url: p.avatar_url });
+  }
+
+  return (photoRows as Array<Record<string, unknown>>).map((row) => {
+    const profile = profileMap.get(row.user_id as string);
     return {
       id: row.id as string,
       user_id: row.user_id as string,
@@ -78,8 +91,8 @@ export async function listVisitPhotosByRestaurant(
       rating: (row.rating as number | null) ?? null,
       tags: (row.tags as string[] | null) ?? null,
       created_at: row.created_at as string,
-      full_name: (profile?.full_name as string | null) ?? null,
-      avatar_url: (profile?.avatar_url as string | null) ?? null,
+      full_name: profile?.full_name ?? null,
+      avatar_url: profile?.avatar_url ?? null,
     };
   });
 }
