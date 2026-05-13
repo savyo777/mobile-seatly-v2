@@ -1,5 +1,5 @@
-import React, { useMemo, useState } from 'react';
-import { Image, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import React, { useEffect, useMemo, useState } from 'react';
+import { ActivityIndicator, Image, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Input, ScreenWrapper } from '@/components/ui';
 import { useColors, createStyles, borderRadius, spacing, typography } from '@/lib/theme';
@@ -7,9 +7,9 @@ import { safeRouterBack } from '@/lib/navigation/transitions';
 import { snapRestaurants as DEMO_SNAP_RESTAURANTS } from '@/lib/mock/snaps';
 import { mockReservations as DEMO_RESERVATIONS } from '@/lib/mock/reservations';
 import { isDemoModeEnabled } from '@/lib/config/demoMode';
-
-const snapRestaurants: typeof DEMO_SNAP_RESTAURANTS = isDemoModeEnabled() ? DEMO_SNAP_RESTAURANTS : [];
-const mockReservations: typeof DEMO_RESERVATIONS = isDemoModeEnabled() ? DEMO_RESERVATIONS : [];
+import { loadRestaurantsForDiscover } from '@/lib/data/restaurantCatalog';
+import { fetchRecentlyVisitedRestaurants, type RecentRestaurant } from '@/lib/snaps/recentlyVisitedApi';
+import type { Restaurant } from '@/lib/mock/restaurants';
 import { Ionicons } from '@expo/vector-icons';
 
 const useStyles = createStyles((c) => ({
@@ -106,7 +106,33 @@ const useStyles = createStyles((c) => ({
     color: '#DDD5C4',
     fontWeight: '700',
   },
+  centered: {
+    alignItems: 'center',
+    paddingVertical: spacing.xl,
+  },
 }));
+
+// ---------- demo helpers (unchanged) ----------
+
+function getDemoRecentlyVisited(): typeof DEMO_SNAP_RESTAURANTS {
+  const completed = DEMO_RESERVATIONS
+    .filter((r) => r.status === 'completed')
+    .sort((a, b) => new Date(b.reservedAt).getTime() - new Date(a.reservedAt).getTime());
+  const seen = new Set<string>();
+  const ids: string[] = [];
+  for (const r of completed) {
+    if (!seen.has(r.restaurantId)) {
+      seen.add(r.restaurantId);
+      ids.push(r.restaurantId);
+    }
+    if (ids.length >= 3) break;
+  }
+  return ids
+    .map((id) => DEMO_SNAP_RESTAURANTS.find((restaurant) => restaurant.id === id))
+    .filter((restaurant): restaurant is (typeof DEMO_SNAP_RESTAURANTS)[number] => !!restaurant);
+}
+
+// ---------- screen ----------
 
 export default function ReviewRestaurantSelectScreen() {
   const c = useColors();
@@ -115,36 +141,61 @@ export default function ReviewRestaurantSelectScreen() {
   const { restaurantId } = useLocalSearchParams<{ restaurantId?: string }>();
   const [query, setQuery] = useState('');
 
-  const filteredRestaurants = useMemo(() => {
+  // Real-mode state
+  const [recentRestaurants, setRecentRestaurants] = useState<RecentRestaurant[]>([]);
+  const [allRestaurants, setAllRestaurants] = useState<Restaurant[]>([]);
+  const [loading, setLoading] = useState(!isDemoModeEnabled());
+
+  useEffect(() => {
+    if (isDemoModeEnabled()) return;
+    let cancelled = false;
+    Promise.all([
+      fetchRecentlyVisitedRestaurants(),
+      loadRestaurantsForDiscover().then((result) => result.list),
+    ])
+      .then(([recent, all]) => {
+        if (cancelled) return;
+        setRecentRestaurants(recent);
+        setAllRestaurants(all);
+      })
+      .catch(() => {})
+      .finally(() => { if (!cancelled) setLoading(false); });
+    return () => { cancelled = true; };
+  }, []);
+
+  // Demo-mode derived values
+  const demoRecentlyVisited = useMemo(
+    () => isDemoModeEnabled() ? getDemoRecentlyVisited() : [],
+    [],
+  );
+
+  const openCamera = (id: string) => {
+    router.push(`/(customer)/discover/post-review/camera?restaurantId=${id}`);
+  };
+
+  // ---------- real-mode filtered list ----------
+  const filteredReal = useMemo(() => {
     const q = query.trim().toLowerCase();
-    if (!q) return snapRestaurants;
-    return snapRestaurants.filter((restaurant) => {
-      const blob = `${restaurant.name} ${restaurant.cuisineType} ${restaurant.area}`.toLowerCase();
+    if (!q) return allRestaurants;
+    return allRestaurants.filter((r) => {
+      const blob = `${r.name} ${r.cuisineType} ${r.area} ${r.city}`.toLowerCase();
+      return blob.includes(q);
+    });
+  }, [query, allRestaurants]);
+
+  // ---------- demo-mode filtered list ----------
+  const filteredDemo = useMemo(() => {
+    const q = query.trim().toLowerCase();
+    if (!q) return DEMO_SNAP_RESTAURANTS;
+    return DEMO_SNAP_RESTAURANTS.filter((r) => {
+      const blob = `${r.name} ${r.cuisineType} ${r.area}`.toLowerCase();
       return blob.includes(q);
     });
   }, [query]);
 
-  const recentlyVisited = useMemo(() => {
-    const completed = mockReservations
-      .filter((r) => r.status === 'completed')
-      .sort((a, b) => new Date(b.reservedAt).getTime() - new Date(a.reservedAt).getTime());
-    const seen = new Set<string>();
-    const ids: string[] = [];
-    for (const r of completed) {
-      if (!seen.has(r.restaurantId)) {
-        seen.add(r.restaurantId);
-        ids.push(r.restaurantId);
-      }
-      if (ids.length >= 3) break;
-    }
-    return ids
-      .map((id) => snapRestaurants.find((restaurant) => restaurant.id === id))
-      .filter((restaurant): restaurant is (typeof snapRestaurants)[number] => !!restaurant);
-  }, []);
-
-  const openCamera = (restaurantId: string) => {
-    router.push(`/(customer)/discover/post-review/camera?restaurantId=${restaurantId}`);
-  };
+  const isDemo = isDemoModeEnabled();
+  const recentList = isDemo ? demoRecentlyVisited : recentRestaurants;
+  const allList = isDemo ? filteredDemo : filteredReal;
 
   return (
     <ScreenWrapper scrollable={false}>
@@ -160,62 +211,126 @@ export default function ReviewRestaurantSelectScreen() {
           <Text style={styles.title}>Where are you posting?</Text>
           <Text style={styles.subtitle}>Choose the restaurant this snap is for</Text>
         </View>
+
         <Input placeholder="Search restaurants" value={query} onChangeText={setQuery} />
 
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Recently visited</Text>
-          <View style={styles.list}>
-            {recentlyVisited.map((restaurant) => (
-              <Pressable
-                key={`recent-${restaurant.id}`}
-                onPress={() => openCamera(restaurant.id)}
-                style={({ pressed }) => [
-                  styles.card,
-                  styles.recentCard,
-                  restaurantId === restaurant.id && styles.selectedCard,
-                  pressed && styles.cardPressed,
-                ]}
-              >
-                <Image source={{ uri: restaurant.coverPhotoUrl }} style={styles.image} />
-                <View style={styles.overlayChip}>
-                  <Ionicons name="time-outline" size={12} color="#DDD5C4" />
-                  <Text style={styles.overlayChipText}>Recent</Text>
-                </View>
-                <View style={styles.cardBody}>
-                  <Text style={styles.name}>{restaurant.name}</Text>
-                  <Text style={styles.meta}>
-                    {restaurant.area} · {restaurant.cuisineType}
-                  </Text>
-                </View>
-              </Pressable>
-            ))}
+        {loading ? (
+          <View style={styles.centered}>
+            <ActivityIndicator color={c.gold} />
           </View>
-        </View>
+        ) : (
+          <>
+            {recentList.length > 0 ? (
+              <View style={styles.section}>
+                <Text style={styles.sectionTitle}>Recently visited</Text>
+                <View style={styles.list}>
+                  {isDemo
+                    ? demoRecentlyVisited.map((restaurant) => (
+                        <Pressable
+                          key={`recent-${restaurant.id}`}
+                          onPress={() => openCamera(restaurant.id)}
+                          style={({ pressed }) => [
+                            styles.card,
+                            styles.recentCard,
+                            restaurantId === restaurant.id && styles.selectedCard,
+                            pressed && styles.cardPressed,
+                          ]}
+                        >
+                          <Image source={{ uri: restaurant.coverPhotoUrl }} style={styles.image} />
+                          <View style={styles.overlayChip}>
+                            <Ionicons name="time-outline" size={12} color="#DDD5C4" />
+                            <Text style={styles.overlayChipText}>Recent</Text>
+                          </View>
+                          <View style={styles.cardBody}>
+                            <Text style={styles.name}>{restaurant.name}</Text>
+                            <Text style={styles.meta}>
+                              {restaurant.area} · {restaurant.cuisineType}
+                            </Text>
+                          </View>
+                        </Pressable>
+                      ))
+                    : recentRestaurants.map((restaurant) => (
+                        <Pressable
+                          key={`recent-${restaurant.restaurantId}`}
+                          onPress={() => openCamera(restaurant.restaurantId)}
+                          style={({ pressed }) => [
+                            styles.card,
+                            styles.recentCard,
+                            restaurantId === restaurant.restaurantId && styles.selectedCard,
+                            pressed && styles.cardPressed,
+                          ]}
+                        >
+                          {restaurant.coverPhotoUrl ? (
+                            <Image source={{ uri: restaurant.coverPhotoUrl }} style={styles.image} />
+                          ) : (
+                            <View style={styles.image} />
+                          )}
+                          <View style={styles.overlayChip}>
+                            <Ionicons name="time-outline" size={12} color="#DDD5C4" />
+                            <Text style={styles.overlayChipText}>Recent</Text>
+                          </View>
+                          <View style={styles.cardBody}>
+                            <Text style={styles.name}>{restaurant.restaurantName}</Text>
+                            <Text style={styles.meta}>
+                              {[restaurant.city, restaurant.cuisineType].filter(Boolean).join(' · ')}
+                            </Text>
+                          </View>
+                        </Pressable>
+                      ))}
+                </View>
+              </View>
+            ) : null}
 
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>All restaurants</Text>
-          <View style={styles.list}>
-            {filteredRestaurants.map((restaurant) => (
-              <Pressable
-                key={restaurant.id}
-                onPress={() => openCamera(restaurant.id)}
-                style={({ pressed }) => [
-                  styles.card,
-                  restaurantId === restaurant.id && styles.selectedCard,
-                  pressed && styles.cardPressed,
-                ]}
-              >
-                <Image source={{ uri: restaurant.coverPhotoUrl }} style={styles.image} />
-                <View style={styles.cardBody}>
-                  <Text style={styles.name}>{restaurant.name}</Text>
-                  <Text style={styles.meta}>
-                    {restaurant.area} · {restaurant.cuisineType}
-                  </Text>
-                </View>
-              </Pressable>
-            ))}
-          </View>
-        </View>
+            <View style={styles.section}>
+              <Text style={styles.sectionTitle}>All restaurants</Text>
+              <View style={styles.list}>
+                {isDemo
+                  ? filteredDemo.map((restaurant) => (
+                      <Pressable
+                        key={restaurant.id}
+                        onPress={() => openCamera(restaurant.id)}
+                        style={({ pressed }) => [
+                          styles.card,
+                          restaurantId === restaurant.id && styles.selectedCard,
+                          pressed && styles.cardPressed,
+                        ]}
+                      >
+                        <Image source={{ uri: restaurant.coverPhotoUrl }} style={styles.image} />
+                        <View style={styles.cardBody}>
+                          <Text style={styles.name}>{restaurant.name}</Text>
+                          <Text style={styles.meta}>
+                            {restaurant.area} · {restaurant.cuisineType}
+                          </Text>
+                        </View>
+                      </Pressable>
+                    ))
+                  : filteredReal.map((restaurant) => (
+                      <Pressable
+                        key={restaurant.id}
+                        onPress={() => openCamera(restaurant.id)}
+                        style={({ pressed }) => [
+                          styles.card,
+                          restaurantId === restaurant.id && styles.selectedCard,
+                          pressed && styles.cardPressed,
+                        ]}
+                      >
+                        {restaurant.coverPhotoUrl ? (
+                          <Image source={{ uri: restaurant.coverPhotoUrl }} style={styles.image} />
+                        ) : (
+                          <View style={styles.image} />
+                        )}
+                        <View style={styles.cardBody}>
+                          <Text style={styles.name}>{restaurant.name}</Text>
+                          <Text style={styles.meta}>
+                            {[restaurant.area || restaurant.city, restaurant.cuisineType].filter(Boolean).join(' · ')}
+                          </Text>
+                        </View>
+                      </Pressable>
+                    ))}
+              </View>
+            </View>
+          </>
+        )}
       </ScrollView>
     </ScreenWrapper>
   );
