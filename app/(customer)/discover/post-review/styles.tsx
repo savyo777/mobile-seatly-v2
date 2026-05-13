@@ -48,7 +48,7 @@ const FRAME_REF_W = 224;
 const FRAME_REF_H = 398;
 const CHIP_FILTER_SCALE = CHIP_SIZE / FRAME_REF_W;
 
-const CARD_FRAME_STYLE = { borderRadius: 20, backgroundColor: '#000' };
+const CARD_FRAME_STYLE = { borderRadius: 0, backgroundColor: '#000' };
 
 type FilterItem =
   | { kind: 'original'; id: '__none__'; categoryId: null }
@@ -262,25 +262,9 @@ export default function SnapStylesScreen() {
   const hasImage = decodedUri.length > 0;
 
   const continueBottom = 0;
-  // Filter-name pill now sits BELOW the carousel (between carousel + Retake/Next pills).
+  // Filter-name pill sits below the carousel (between carousel + Retake/Next pills).
   const pillBottom = 44;
   const carouselBottom = pillBottom + 28 + 8; // pill height (~28) + 8px gap
-
-  // 9:16 card sized to fit between top + bottom chrome, centred on screen.
-  const TOP_CHROME = 64;
-  // Reserve more space below the card so it shrinks slightly.
-  // Stack from screen bottom: Retake/Next pills (~36) + gap (8) + filter-name pill (28) + gap (8)
-  //   + carousel (RING_SIZE) + top breathing room (16).
-  const BOTTOM_CHROME = 36 + 8 + 28 + 8 + RING_SIZE + 16;
-  const SIDE_GUTTER = 12;
-  const availTop = insets.top + TOP_CHROME;
-  const availBottom = insets.bottom + BOTTOM_CHROME;
-  const availH = Math.max(0, windowH - availTop - availBottom);
-  const availW = Math.max(0, windowW - SIDE_GUTTER * 2);
-  const cardW = Math.floor(Math.min(availW, (availH * 9) / 16));
-  const cardH = Math.floor((cardW * 16) / 9);
-  const cardLeft = Math.floor((windowW - cardW) / 2);
-  const cardTop = Math.floor(availTop + (availH - cardH) / 2);
 
   const getItemLayout = useCallback(
     (_: ArrayLike<FilterItem> | null | undefined, index: number) => ({
@@ -364,25 +348,16 @@ export default function SnapStylesScreen() {
     <View style={styles.root}>
       <StatusBar style="light" />
 
-      {/* ── CAPTURE TARGET: 9:16 styled-snap card ── */}
+      {/* ── CAPTURE TARGET: full-screen styled snap (Snapchat-style) ── */}
       <View
         ref={captureRefView}
         collapsable={false}
-        style={{
-          position: 'absolute',
-          left: cardLeft,
-          top: cardTop,
-          width: cardW,
-          height: cardH,
-          borderRadius: 20,
-          overflow: 'hidden',
-          backgroundColor: '#000',
-        }}
+        style={[StyleSheet.absoluteFillObject, { width: windowW, height: windowH }]}
       >
         <StoryFilterFrame
           filterId={filterId}
-          width={cardW}
-          height={cardH}
+          width={windowW}
+          height={windowH}
           capturedAt={capturedAt}
           restaurantName={selectedRestaurantName}
           city={selectedRestaurantCity}
