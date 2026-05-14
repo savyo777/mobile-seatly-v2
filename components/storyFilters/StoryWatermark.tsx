@@ -38,11 +38,10 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     zIndex: 8,
   },
-  // Offsets are sized to clear the phone's busy zones on a full-screen
-  // camera preview: the iOS status bar / Dynamic Island at the top, and
-  // the filter chip carousel + name pill at the bottom.
-  tr: { top: 64, right: 14 },
-  bl: { bottom: 110, left: 14 },
+  // Offsets aligned to the filters' own corner decorations so the watermark
+  // reads as part of the design (e.g. matches the LipGlossNight kiss at top: 14).
+  tr: { top: 14, right: 14 },
+  bl: { bottom: 14, left: 14 },
   italic: {
     fontFamily: FONT_BODY_SERIF_ITALIC,
     fontStyle: 'italic',
