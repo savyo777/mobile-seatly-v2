@@ -13,7 +13,7 @@ import {
 import { Image } from 'expo-image';
 import * as Haptics from 'expo-haptics';
 import { Ionicons } from '@expo/vector-icons';
-import { useLocalSearchParams, useRouter } from 'expo-router';
+import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { OwnerScreen } from '@/components/owner/OwnerScreen';
@@ -154,18 +154,40 @@ export default function ExpenseReviewScreen() {
   const [notes, setNotes] = useState('');
   const [paymentMethod, setPaymentMethod] = useState('');
 
-  // Pull the captured image once on mount. For attachment mode (camera /
-  // file) we expect a pending payload; if it's missing we bail back to
-  // the entry point. Manual mode skips this step entirely.
-  useEffect(() => {
-    if (isManual) return;
-    const next = consumePendingScan();
-    if (!next) {
-      router.replace('/(staff)/expenses' as never);
-      return;
-    }
-    setScan(next);
-  }, [router, isManual]);
+  // This screen lives inside the (staff) tab navigator, so its component
+  // instance is reused between visits — `useState` initial values do NOT
+  // reset on subsequent navigations. Reset every form field on each
+  // focus so a fresh "Track expense" never inherits the previous
+  // session's vendor / amount / saving=true state. Pending-scan
+  // consumption also moves here so each capture visit picks up the new
+  // scan; manual mode just lands on a clean blank form.
+  useFocusEffect(
+    useCallback(() => {
+      setScan(null);
+      setScanning(!isManual);
+      setExtractedFields(new Set());
+      setSaving(false);
+      setDatePickerOpen(false);
+      setTransactionType('expense');
+      setVendor('');
+      setDescription('');
+      setExpenseDate(todayISO());
+      setSubtotal(isManual ? '0' : '');
+      setCurrency('cad');
+      setCategory('food_cost');
+      setPaymentStatus('paid');
+      setNotes('');
+      setPaymentMethod('');
+
+      if (isManual) return;
+      const next = consumePendingScan();
+      if (!next) {
+        router.replace('/(staff)/expenses' as never);
+        return;
+      }
+      setScan(next);
+    }, [isManual, router]),
+  );
 
   // Once we have the scan, kick off the AI extraction. The finally block is
   // critical: scanReceipt can throw or hang (network failure, missing edge

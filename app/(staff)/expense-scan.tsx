@@ -1,8 +1,8 @@
-import React, { useCallback, useEffect, useRef, useState } from 'react';
+import React, { useCallback, useState } from 'react';
 import { ActivityIndicator, Pressable, StyleSheet, Text, View } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import { Ionicons } from '@expo/vector-icons';
-import { useRouter } from 'expo-router';
+import { useFocusEffect, useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as FileSystem from 'expo-file-system';
 import { setPendingScan } from '@/lib/expenses/pendingScan';
@@ -31,7 +31,6 @@ type Status = 'launching' | 'unavailable' | 'error';
 export default function ExpenseScanScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
-  const launched = useRef(false);
   const [status, setStatus] = useState<Status>('launching');
 
   const runScan = useCallback(async () => {
@@ -75,11 +74,16 @@ export default function ExpenseScanScreen() {
     }
   }, [router]);
 
-  useEffect(() => {
-    if (launched.current) return;
-    launched.current = true;
-    void runScan();
-  }, [runScan]);
+  // Re-launch the native scanner every time the screen comes into focus.
+  // The (staff) tab navigator keeps screen instances mounted across
+  // navigations, so a plain useEffect would only fire on the first
+  // visit. useFocusEffect ensures each tap of the Camera CTA opens a
+  // fresh scan session.
+  useFocusEffect(
+    useCallback(() => {
+      void runScan();
+    }, [runScan]),
+  );
 
   const handleBack = useCallback(() => router.back(), [router]);
   const handleManual = useCallback(() => {
