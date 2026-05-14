@@ -972,7 +972,6 @@ export default function OwnerHomeScreen() {
       route: '/(staff)/guests',
     },
     { icon: 'receipt-outline', label: 'Receipts', sub: 'Expenses & history', route: '/(staff)/expenses' },
-    { icon: 'scan-outline', label: 'Scan receipt', sub: 'Snap to log instantly', route: '/(staff)/expense-scan' },
   ];
 
   return (
