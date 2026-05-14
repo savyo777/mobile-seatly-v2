@@ -1,4 +1,4 @@
-import React, { useCallback, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   Alert,
   KeyboardAvoidingView,
@@ -30,6 +30,8 @@ import { isDemoModeEnabled } from '@/lib/config/demoMode';
 import { useAuthSession } from '@/lib/auth/AuthContext';
 import { uploadSnapPhoto } from '@/lib/snaps/uploadSnapPhoto';
 import { insertVisitPhoto } from '@/lib/snaps/visitPhotosApi';
+import { fetchCurrentUserProfile, type AppUserProfile } from '@/lib/services/userProfile';
+import { insertRestaurantReview } from '@/lib/reviews/insertRestaurantReview';
 import { STORY_FILTERS } from '@/lib/storyFilters/registry';
 import {
   DEFAULT_SNAP_PHOTO_ASPECT,
@@ -279,7 +281,43 @@ export default function SnapCaptionScreen() {
     capturedAt?: string;
   }>();
   const [caption, setCaption] = useState('');
-  const [rating, setRating] = useState<1 | 2 | 3 | 4 | 5>(5);
+  const [rating, setRating] = useState<0 | 1 | 2 | 3 | 4 | 5>(0);
+  const [userProfile, setUserProfile] = useState<AppUserProfile | null>(null);
+
+  // Load the signed-in customer's profile so we can show their real avatar +
+  // name when posting. Demo mode keeps the mockCustomer fallback per CLAUDE.md.
+  useEffect(() => {
+    if (isDemoModeEnabled()) return;
+    if (!isAuthenticated || !user?.id) return;
+    let alive = true;
+    void fetchCurrentUserProfile()
+      .then((profile) => {
+        if (alive) setUserProfile(profile);
+      })
+      .catch(() => {});
+    return () => {
+      alive = false;
+    };
+  }, [isAuthenticated, user?.id]);
+
+  const profileDisplayName = useMemo(() => {
+    if (isDemoModeEnabled()) return mockCustomer.fullName;
+    return userProfile?.fullName?.trim() || user?.email?.split('@')[0] || 'User';
+  }, [userProfile, user?.email]);
+
+  const profileHandle = useMemo(() => {
+    const firstWord = profileDisplayName.split(/\s+/)[0] ?? '';
+    const slug = firstWord
+      .toLowerCase()
+      .replace(/[^a-z0-9]/g, '')
+      .slice(0, 16);
+    return slug ? `@${slug}` : '@user';
+  }, [profileDisplayName]);
+
+  const profileAvatarUrl = useMemo(() => {
+    if (isDemoModeEnabled()) return mockCustomer.avatarUrl;
+    return userProfile?.avatarUrl ?? null;
+  }, [userProfile]);
   const [dish, setDish] = useState('');
   const [tags, setTags] = useState<string[]>([]);
   const [tagInput, setTagInput] = useState('');
@@ -356,7 +394,7 @@ export default function SnapCaptionScreen() {
   }, []);
 
   const postSnap = async () => {
-    if (!restaurantId || !decodedUri || !caption.trim() || posting) return;
+    if (!restaurantId || !decodedUri || !caption.trim() || rating === 0 || posting) return;
     setPosting(true);
     let navigated = false;
 
@@ -405,6 +443,18 @@ export default function SnapCaptionScreen() {
                 rating,
                 tags,
               });
+            }
+            // Also write to restaurant_reviews so the rating + caption appears
+            // in the Reviews section of the restaurant detail page.
+            try {
+              await insertRestaurantReview({
+                userId: user.id,
+                restaurantId,
+                rating,
+                body: cleanCaption,
+              });
+            } catch {
+              // Non-fatal — the snap photo + rating are already persisted.
             }
           } catch {
             // Fire-and-forget: UI already navigated away; don't alert the user.
@@ -508,13 +558,13 @@ export default function SnapCaptionScreen() {
 
           <View style={styles.metaSection}>
             <View style={styles.identityRow}>
-              {mockCustomer.avatarUrl ? (
-                <Image source={{ uri: mockCustomer.avatarUrl }} style={styles.avatar} />
+              {profileAvatarUrl ? (
+                <Image source={{ uri: profileAvatarUrl }} style={styles.avatar} />
               ) : (
                 <View style={styles.avatar} />
               )}
               <View style={styles.identityText}>
-                <Text style={styles.username}>@alexj</Text>
+                <Text style={styles.username}>{profileHandle}</Text>
                 <Text style={styles.restaurantLine}>Posting to {restaurantName}</Text>
               </View>
             </View>
@@ -528,7 +578,7 @@ export default function SnapCaptionScreen() {
                       <Ionicons
                         name={active ? 'star' : 'star-outline'}
                         size={22}
-                        color={active ? c.gold : c.textMuted}
+                        color={c.gold}
                       />
                     </Pressable>
                   );
@@ -629,7 +679,7 @@ export default function SnapCaptionScreen() {
           <Button
             title={posting ? 'Posting...' : 'Post'}
             onPress={postSnap}
-            disabled={posting || !caption.trim() || !restaurantId || !decodedUri}
+            disabled={posting || !caption.trim() || rating === 0 || !restaurantId || !decodedUri}
             loading={posting}
             size="lg"
           />
