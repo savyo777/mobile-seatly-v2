@@ -18,6 +18,7 @@ import {
   filterExpensesInRange,
   groupExpensesByCategory,
   groupExpensesByMonth,
+  groupIncomeBySource,
   rangeForPeriod,
   summarizeExpenses,
   type ReportPeriodKey,
@@ -70,6 +71,7 @@ export default function ExpenseReportsScreen() {
 
   const summary = useMemo(() => summarizeExpenses(expenses, range), [expenses, range]);
   const byCategory = useMemo(() => groupExpensesByCategory(expenses, range), [expenses, range]);
+  const byIncome = useMemo(() => groupIncomeBySource(expenses, range), [expenses, range]);
   const monthSpan = useMemo(() => {
     const from = new Date(`${range.from}T12:00:00`);
     const to = new Date(`${range.to}T12:00:00`);
@@ -165,20 +167,32 @@ export default function ExpenseReportsScreen() {
             <HeadlineTile
               label="Total spend"
               value={formatCurrency(summary.totalSpend, 'cad')}
-              accent
-            />
-            <HeadlineTile
-              label="Total tax"
-              value={formatCurrency(summary.totalTax, 'cad')}
-            />
-            <HeadlineTile
-              label="Receipts"
-              value={String(summary.count)}
               subtitle={
                 summary.count > 0
-                  ? `${summary.receiptsAttached} attached`
-                  : 'No expenses yet'
+                  ? `${summary.count} ${summary.count === 1 ? 'receipt' : 'receipts'}`
+                  : 'No expenses'
               }
+            />
+            <HeadlineTile
+              label="Total income"
+              value={formatCurrency(summary.totalIncome, 'cad')}
+              subtitle={
+                summary.incomeCount > 0
+                  ? `${summary.incomeCount} ${summary.incomeCount === 1 ? 'entry' : 'entries'}`
+                  : 'No income'
+              }
+            />
+            <HeadlineTile
+              label="Net"
+              value={formatCurrency(Math.abs(summary.netSpend), 'cad')}
+              subtitle={
+                summary.netSpend > 0
+                  ? 'spent net'
+                  : summary.netSpend < 0
+                  ? 'earned net'
+                  : 'balanced'
+              }
+              accent
             />
           </View>
 
@@ -215,6 +229,36 @@ export default function ExpenseReportsScreen() {
               ))}
             </View>
           )}
+
+          {byIncome.length > 0 ? (
+            <>
+              <Text style={styles.sectionLabel}>Income by source</Text>
+              <View style={styles.catList}>
+                {byIncome.map((row) => (
+                  <View key={`inc-${row.category}`} style={styles.catRow}>
+                    <View style={styles.catRowHead}>
+                      <Text style={styles.catGlyph}>{row.glyph}</Text>
+                      <Text style={styles.catLabel}>{row.label}</Text>
+                      <Text style={styles.catCount}>
+                        {row.count}{row.count === 1 ? ' entry' : ' entries'}
+                      </Text>
+                      <Text style={styles.catSubtotal}>
+                        {formatCurrency(row.subtotal, 'cad')}
+                      </Text>
+                    </View>
+                    <View style={styles.catBarTrack}>
+                      <View
+                        style={[
+                          styles.catBarFill,
+                          { width: `${Math.max(2, Math.round(row.share * 100))}%` },
+                        ]}
+                      />
+                    </View>
+                  </View>
+                ))}
+              </View>
+            </>
+          ) : null}
 
           {byMonth.length > 0 ? (
             <>

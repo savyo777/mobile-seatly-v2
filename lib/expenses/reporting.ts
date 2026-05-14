@@ -38,28 +38,44 @@ function inRange(expense: Expense, range: ReportRange): boolean {
 
 export interface ExpenseSummary {
   totalSpend: number;
+  totalIncome: number;
+  /** netSpend = totalSpend - totalIncome. Positive means money went out
+   *  net; negative means more came in than went out for the period. */
+  netSpend: number;
   totalTax: number;
   count: number;
+  incomeCount: number;
   receiptsAttached: number;
 }
 
 export function summarizeExpenses(expenses: Expense[], range: ReportRange): ExpenseSummary {
   let totalSpend = 0;
+  let totalIncome = 0;
   let totalTax = 0;
   let count = 0;
+  let incomeCount = 0;
   let receiptsAttached = 0;
   for (const e of expenses) {
-    if (e.transactionType !== 'expense') continue;
     if (!inRange(e, range)) continue;
+    if (e.transactionType === 'income') {
+      totalIncome += e.totalAmount;
+      incomeCount += 1;
+      continue;
+    }
+    // transactionType === 'expense' (the column's default).
     totalSpend += e.totalAmount;
     if (e.taxAmount != null) totalTax += e.taxAmount;
     count += 1;
     if (e.receiptUrl) receiptsAttached += 1;
   }
+  const net = totalSpend - totalIncome;
   return {
     totalSpend: Math.round(totalSpend * 100) / 100,
+    totalIncome: Math.round(totalIncome * 100) / 100,
+    netSpend: Math.round(net * 100) / 100,
     totalTax: Math.round(totalTax * 100) / 100,
     count,
+    incomeCount,
     receiptsAttached,
   };
 }
@@ -73,14 +89,15 @@ export interface CategoryRollup {
   share: number;
 }
 
-export function groupExpensesByCategory(
+function groupByCategory(
   expenses: Expense[],
   range: ReportRange,
+  transactionType: 'expense' | 'income',
 ): CategoryRollup[] {
   const totals = new Map<ExpenseCategoryKey, { count: number; subtotal: number }>();
   let grand = 0;
   for (const e of expenses) {
-    if (e.transactionType !== 'expense') continue;
+    if (e.transactionType !== transactionType) continue;
     if (!inRange(e, range)) continue;
     const cur = totals.get(e.category) ?? { count: 0, subtotal: 0 };
     cur.count += 1;
@@ -102,6 +119,20 @@ export function groupExpensesByCategory(
   }
   out.sort((a, b) => b.subtotal - a.subtotal);
   return out;
+}
+
+export function groupExpensesByCategory(
+  expenses: Expense[],
+  range: ReportRange,
+): CategoryRollup[] {
+  return groupByCategory(expenses, range, 'expense');
+}
+
+export function groupIncomeBySource(
+  expenses: Expense[],
+  range: ReportRange,
+): CategoryRollup[] {
+  return groupByCategory(expenses, range, 'income');
 }
 
 export interface MonthRollup {
