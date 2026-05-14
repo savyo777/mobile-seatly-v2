@@ -524,21 +524,12 @@ export default function ReviewCameraScreen() {
     <View style={styles.root}>
       <StatusBar style="light" />
 
-      {/* CAPTURE TARGET — 9:16 card containing camera (or captured photo) + filter overlay */}
+      {/* CAPTURE TARGET — full-screen photo with the 9:16 filter overlay floating inside */}
       <View
         ref={captureRefView}
         collapsable={false}
         pointerEvents="box-none"
-        style={{
-          position: 'absolute',
-          left: frameLeft,
-          top: frameTop,
-          width: frameW,
-          height: frameH,
-          overflow: 'hidden',
-          borderRadius: 12,
-          backgroundColor: '#000',
-        }}
+        style={[StyleSheet.absoluteFillObject, { width: windowW, height: windowH }]}
       >
         {capturedUri ? (
           <Image
@@ -602,8 +593,18 @@ export default function ReviewCameraScreen() {
           </View>
         )}
 
-        {/* Filter decorations overlay (transparent, sized to the 9:16 frame). */}
-        <View pointerEvents="none" style={StyleSheet.absoluteFillObject}>
+        {/* Filter decorations overlay — kept at the previous 9:16 frame so all
+            corner-anchored elements fit exactly. Floats inside the full-bleed photo. */}
+        <View
+          pointerEvents="none"
+          style={{
+            position: 'absolute',
+            left: frameLeft,
+            top: frameTop,
+            width: frameW,
+            height: frameH,
+          }}
+        >
           <StoryFilterFrame
             filterId={selectedFilterId}
             width={frameW}
