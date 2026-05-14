@@ -315,19 +315,18 @@ export default function ReviewCameraScreen() {
   const carouselBottom = insets.bottom + 80;
   const pillBottom = carouselBottom + SNAP_FILTER_RING_SIZE + 8;
 
-  // During LIVE preview, push the filter decorations into the visible band
-  // (between the title bar and the filter picker / shutter row) so nothing
-  // is hidden behind chrome. During the brief composite pass (capturedUri
-  // set), drop the insets so the captured PNG keeps the decorations at the
-  // photo's actual corners.
-  const liveOverlayInsets = useMemo(
-    () => ({
-      top: insets.top + 56,
-      bottom: pillBottom + 28 + 12,
-    }),
-    [insets.top, pillBottom],
-  );
-  const overlayInsets = capturedUri ? undefined : liveOverlayInsets;
+  // 9:16 camera frame, fit between the top title row and the bottom chrome.
+  // Filter decorations sit at the frame's actual corners (no clamp) since the
+  // frame aspect matches each filter component's 9:16 design space.
+  const TOP_CHROME_H = 56;
+  const BOTTOM_CHROME_H = pillBottom + 28 + 12;
+  const availTop = insets.top + TOP_CHROME_H;
+  const availBottom = insets.bottom + BOTTOM_CHROME_H;
+  const availH = Math.max(120, windowH - availTop - availBottom);
+  const frameW = Math.floor(Math.min(windowW, (availH * 9) / 16));
+  const frameH = Math.floor((frameW * 16) / 9);
+  const frameLeft = Math.floor((windowW - frameW) / 2);
+  const frameTop = Math.floor(availTop + Math.max(0, (availH - frameH) / 2));
 
   const pushToCaption = useCallback(
     (uri: string, capturedAtMs: number) => {
@@ -525,12 +524,21 @@ export default function ReviewCameraScreen() {
     <View style={styles.root}>
       <StatusBar style="light" />
 
-      {/* CAPTURE TARGET — live camera (or captured photo during composite) + filter overlay */}
+      {/* CAPTURE TARGET — 9:16 card containing camera (or captured photo) + filter overlay */}
       <View
         ref={captureRefView}
         collapsable={false}
         pointerEvents="box-none"
-        style={[StyleSheet.absoluteFillObject, { width: windowW, height: windowH }]}
+        style={{
+          position: 'absolute',
+          left: frameLeft,
+          top: frameTop,
+          width: frameW,
+          height: frameH,
+          overflow: 'hidden',
+          borderRadius: 12,
+          backgroundColor: '#000',
+        }}
       >
         {capturedUri ? (
           <Image
@@ -543,7 +551,7 @@ export default function ReviewCameraScreen() {
           <CameraView
             ref={cameraRef}
             pointerEvents="none"
-            style={styles.cameraFill}
+            style={StyleSheet.absoluteFillObject}
             facing={cameraFacing}
             mirror={cameraFacing === 'front'}
             responsiveOrientationWhenOrientationLocked={Platform.OS === 'ios'}
@@ -594,19 +602,18 @@ export default function ReviewCameraScreen() {
           </View>
         )}
 
-        {/* Filter decorations overlay (transparent so the live camera shows through). */}
+        {/* Filter decorations overlay (transparent, sized to the 9:16 frame). */}
         <View pointerEvents="none" style={StyleSheet.absoluteFillObject}>
           <StoryFilterFrame
             filterId={selectedFilterId}
-            width={windowW}
-            height={windowH}
+            width={frameW}
+            height={frameH}
             capturedAt={undefined}
             restaurantName={restaurantName}
             city={restaurantCity}
             area={restaurantArea}
             mediaSlot={<View />}
             containerStyle={TRANSPARENT_FRAME_STYLE}
-            overlayInsets={overlayInsets}
           />
         </View>
       </View>
