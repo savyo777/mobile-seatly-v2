@@ -121,7 +121,8 @@
       ],
       "expo-asset",
       "expo-web-browser",
-      "expo-image"
+      "expo-image",
+      "react-native-document-scanner-plugin"
     ],
     "extra": {
       "socialSharing": {
