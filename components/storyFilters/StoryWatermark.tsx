@@ -38,8 +38,11 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     zIndex: 8,
   },
-  tr: { top: 10, right: 12 },
-  bl: { bottom: 10, left: 12 },
+  // Offsets are sized to clear the phone's busy zones on a full-screen
+  // camera preview: the iOS status bar / Dynamic Island at the top, and
+  // the filter chip carousel + name pill at the bottom.
+  tr: { top: 64, right: 14 },
+  bl: { bottom: 110, left: 14 },
   italic: {
     fontFamily: FONT_BODY_SERIF_ITALIC,
     fontStyle: 'italic',
