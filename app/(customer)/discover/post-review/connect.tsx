@@ -480,7 +480,7 @@ export default function SnapCaptionScreen() {
                       source={{ uri: decodedUri }}
                       style={styles.previewImage}
                       contentFit="cover"
-                      contentPosition="bottom"
+                      contentPosition="center"
                       onLoad={handlePhotoLoad}
                     />
                   }
@@ -492,7 +492,7 @@ export default function SnapCaptionScreen() {
                   source={{ uri: decodedUri }}
                   style={styles.previewImage}
                   contentFit="cover"
-                  contentPosition="bottom"
+                  contentPosition="center"
                   onLoad={handlePhotoLoad}
                 />
               </View>
