@@ -47,6 +47,7 @@ const getEventById: typeof DEMO_getEventById = (id) =>
   isDemoModeEnabled() ? DEMO_getEventById(id) : undefined;
 import { useColors, createStyles, spacing, borderRadius } from '@/lib/theme';
 import type { DateKey } from '@/lib/booking/availabilityTypes';
+import { NotifyMeButton } from '@/components/customer/NotifyMeButton';
 
 const SLOT_COLS = 3;
 const SLOT_GAP = 10;
@@ -683,6 +684,21 @@ export default function Step2Time() {
             <Pressable onPress={handleNextDate}>
               <Text style={styles.noTimesLink}>Next available date →</Text>
             </Pressable>
+            {!isClosedDay && rid ? (
+              <View style={{ marginTop: spacing.sm }}>
+                <NotifyMeButton
+                  variant="restaurant"
+                  restaurantId={rid}
+                  restaurantName={restaurant?.name}
+                  restaurantSlug={restaurant?.slug}
+                  defaultDate={dateKey}
+                  defaultTime="19:00"
+                  defaultPartySize={partySize}
+                  showLookForDay={false}
+                  triggerVariant="subtle"
+                />
+              </View>
+            ) : null}
           </View>
         )}
       </ScrollView>

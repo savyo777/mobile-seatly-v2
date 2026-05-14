@@ -22,6 +22,7 @@ import {
 } from '@/lib/postVisit/postTurn';
 import { getSupabase } from '@/lib/supabase/client';
 import { subscribeToNotifications } from '@/lib/realtime/notificationsRegistry';
+import { parseSlotOpenedRoute } from '@/lib/alerts/parseSlotOpenedRoute';
 
 // Demo mode only — see buildMockNotifications below. Real notifications
 // for the signed-in user come from a Supabase query (gated above).
@@ -34,7 +35,8 @@ type AppNotifType =
   | 'loyalty_milestone'
   | 'waitlist_ready'
   | 'review_request'
-  | 'photo_request';
+  | 'photo_request'
+  | 'slot_opened';
 
 type AppNotification = {
   id: string;
@@ -47,6 +49,8 @@ type AppNotification = {
   restaurantId?: string;
   postTurnType?: PostTurnRequestType;
   read: boolean;
+  slotRoute?: string;
+  slotData?: Record<string, unknown>;
 };
 
 type NotifConfig = {
@@ -64,6 +68,7 @@ const TYPE_CONFIG: Record<AppNotifType, NotifConfig> = {
   waitlist_ready:   { icon: 'ticket',            bg: 'rgba(99,179,237,0.12)', color: '#63B3ED' },
   review_request:   { icon: 'star-outline',      bg: 'rgba(201,162,74,0.14)', color: '#C9A24A' },
   photo_request:    { icon: 'camera-outline',    bg: 'rgba(99,179,237,0.12)', color: '#63B3ED' },
+  slot_opened:      { icon: 'flash',              bg: 'rgba(201,162,74,0.18)', color: '#C9A24A' },
 };
 
 function postTurnNotification(request: PostTurnRequest): AppNotification {
@@ -177,6 +182,7 @@ function mapSupabaseType(type: string | null, data: Record<string, unknown> | nu
     return hours != null && hours <= 3 ? 'reminder_2h' : 'reminder_24h';
   }
   if (type === 'review_request') return 'review_request';
+  if (type === 'slot_opened') return 'slot_opened';
   if (type === 'promotion_alert' || type === 'event_alert') return 'waitlist_ready';
   return 'loyalty_milestone';
 }
@@ -188,6 +194,7 @@ function pickString(value: unknown): string | undefined {
 function mapSupabaseRow(row: SupabaseNotificationRow): AppNotification {
   const data = row.data ?? {};
   const reservationId = pickString(data['reservation_id']);
+  const slotRoute = row.type === 'slot_opened' ? pickString(data['route']) : undefined;
   return {
     id: row.id,
     type: mapSupabaseType(row.type, data),
@@ -197,6 +204,8 @@ function mapSupabaseRow(row: SupabaseNotificationRow): AppNotification {
     restaurantId: row.restaurant_id ?? undefined,
     reservationId,
     read: row.is_read === true,
+    slotRoute,
+    slotData: row.type === 'slot_opened' ? data : undefined,
   };
 }
 
@@ -466,6 +475,38 @@ export default function NotificationsScreen() {
       }
       if (!n.postTurnType && !n.read && /^[0-9a-f-]{36}$/i.test(n.id)) {
         markSupabaseRead(n.id);
+      }
+      if (n.type === 'slot_opened') {
+        const parsed = parseSlotOpenedRoute(n.slotRoute, n.slotData);
+        if (parsed?.kind === 'restaurant') {
+          // Land directly in step2-time with the prefilled slot, since the
+          // restaurant detail screen does not yet consume date/time/party
+          // params. n.restaurantId (the notifications row's restaurant_id)
+          // is the canonical id on mobile.
+          if (n.restaurantId) {
+            const qs: string[] = [];
+            if (parsed.date) qs.push(`date=${encodeURIComponent(parsed.date)}`);
+            if (parsed.party) qs.push(`prefillParty=${parsed.party}`);
+            router.push(
+              `/booking/${n.restaurantId}/step2-time${qs.length ? `?${qs.join('&')}` : ''}` as Href,
+            );
+            return;
+          }
+          router.push(`/(customer)/discover/${encodeURIComponent(parsed.slug)}` as Href);
+          return;
+        }
+        if (parsed?.kind === 'event' && parsed.restaurantId) {
+          const partyQs = parsed.party ? `&prefillParty=${parsed.party}` : '';
+          router.push(
+            `/booking/${parsed.restaurantId}/step2-time?eventId=${encodeURIComponent(parsed.eventId)}${partyQs}` as Href,
+          );
+          return;
+        }
+        if (parsed?.kind === 'event') {
+          router.push(`/(customer)/events?event=${encodeURIComponent(parsed.eventId)}` as Href);
+          return;
+        }
+        return;
       }
       if (n.reservationId) {
         router.push(`/(customer)/bookings/${n.reservationId}` as Href);

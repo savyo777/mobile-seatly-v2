@@ -18,6 +18,7 @@ import {
   toggleSaveEvent as DEMO_toggleSaveEvent,
 } from '@/lib/mock/events';
 import { isDemoModeEnabled } from '@/lib/config/demoMode';
+import { NotifyMeButton } from '@/components/customer/NotifyMeButton';
 
 const getRestaurantForEvent: typeof DEMO_getRestaurantForEvent = (id) =>
   isDemoModeEnabled() ? DEMO_getRestaurantForEvent(id) : undefined;
@@ -216,11 +217,12 @@ export function EventCard({ event, isHero = false }: Props) {
   }, [event.date, event.id, event.restaurantId, router]);
 
   const isUrgent = event.spotsLeft !== undefined && event.spotsLeft <= 6;
+  const isSoldOut = event.spotsLeft !== undefined && event.spotsLeft <= 0;
 
   return (
     <Pressable
-      onPress={handleBook}
-      style={({ pressed }) => [styles.card, isHero && styles.cardHero, pressed && { opacity: 0.95 }]}
+      onPress={isSoldOut ? undefined : handleBook}
+      style={({ pressed }) => [styles.card, isHero && styles.cardHero, pressed && !isSoldOut && { opacity: 0.95 }]}
       accessibilityRole="button"
       accessibilityLabel={`${event.title} at ${restaurant?.name}`}
     >
@@ -277,13 +279,27 @@ export function EventCard({ event, isHero = false }: Props) {
           )}
         </View>
 
-        <Pressable
-          onPress={handleBook}
-          style={({ pressed }) => [styles.bookBtn, pressed && { opacity: 0.8 }]}
-        >
-          <Ionicons name="calendar" size={14} color={c.bgBase} />
-          <Text style={styles.bookBtnText}>Reserve a spot</Text>
-        </Pressable>
+        {isSoldOut ? (
+          <View style={{ alignSelf: 'flex-start', marginTop: 4 }}>
+            <NotifyMeButton
+              variant="event"
+              eventId={event.id}
+              eventName={event.title}
+              defaultPartySize={2}
+              showLookForDay={false}
+              triggerVariant="solid"
+              triggerLabel="Notify me"
+            />
+          </View>
+        ) : (
+          <Pressable
+            onPress={handleBook}
+            style={({ pressed }) => [styles.bookBtn, pressed && { opacity: 0.8 }]}
+          >
+            <Ionicons name="calendar" size={14} color={c.bgBase} />
+            <Text style={styles.bookBtnText}>Reserve a spot</Text>
+          </Pressable>
+        )}
       </View>
     </Pressable>
   );
