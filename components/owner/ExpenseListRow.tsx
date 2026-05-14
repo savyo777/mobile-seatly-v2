@@ -59,6 +59,7 @@ export function ExpenseListRow({ expense, onPress }: Props) {
         </Text>
         <View style={styles.metaRow}>
           <Text style={[styles.date, { color: ownerColors.textMuted }]}>{expense.expenseDate}</Text>
+          <TypePill kind={expense.transactionType} />
           <View
             style={[
               styles.chip,
@@ -83,6 +84,31 @@ export function ExpenseListRow({ expense, onPress }: Props) {
         ) : null}
       </View>
     </Pressable>
+  );
+}
+
+// Small pill that labels each list row as Expense or Income so owners
+// can tell at-a-glance whether the entry is money out (red) or money in
+// (green) without having to open it. Sits next to the date in the meta
+// row alongside the category chip.
+function TypePill({ kind }: { kind: 'expense' | 'income' }) {
+  const isIncome = kind === 'income';
+  return (
+    <View
+      style={[
+        styles.typePill,
+        isIncome ? styles.typePillIncome : styles.typePillExpense,
+      ]}
+    >
+      <Text
+        style={[
+          styles.typePillText,
+          isIncome ? styles.typePillTextIncome : styles.typePillTextExpense,
+        ]}
+      >
+        {isIncome ? 'Income' : 'Expense'}
+      </Text>
+    </View>
   );
 }
 
@@ -153,5 +179,31 @@ const styles = StyleSheet.create({
   aiHint: {
     fontSize: 11,
     opacity: 0.85,
+  },
+  typePill: {
+    paddingHorizontal: 7,
+    paddingVertical: 2,
+    borderRadius: 999,
+    borderWidth: StyleSheet.hairlineWidth,
+  },
+  typePillExpense: {
+    borderColor: 'rgba(255, 99, 99, 0.35)',
+    backgroundColor: 'rgba(255, 99, 99, 0.10)',
+  },
+  typePillIncome: {
+    borderColor: 'rgba(74, 222, 128, 0.45)',
+    backgroundColor: 'rgba(74, 222, 128, 0.12)',
+  },
+  typePillText: {
+    fontSize: 10,
+    fontWeight: '700',
+    letterSpacing: 0.4,
+    textTransform: 'uppercase',
+  },
+  typePillTextExpense: {
+    color: '#FF7A7A',
+  },
+  typePillTextIncome: {
+    color: '#4ADE80',
   },
 });

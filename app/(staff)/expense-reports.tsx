@@ -209,7 +209,12 @@ export default function ExpenseReportsScreen() {
                 <View key={row.category} style={styles.catRow}>
                   <View style={styles.catRowHead}>
                     <Text style={styles.catGlyph}>{row.glyph}</Text>
-                    <Text style={styles.catLabel}>{row.label}</Text>
+                    <Text style={styles.catLabel} numberOfLines={1}>
+                      {row.label}
+                    </Text>
+                    <View style={[styles.typeTag, styles.typeTagExpense]}>
+                      <Text style={[styles.typeTagText, styles.typeTagTextExpense]}>Expense</Text>
+                    </View>
                     <Text style={styles.catCount}>
                       {row.count}{row.count === 1 ? ' receipt' : ' receipts'}
                     </Text>
@@ -238,7 +243,12 @@ export default function ExpenseReportsScreen() {
                   <View key={`inc-${row.category}`} style={styles.catRow}>
                     <View style={styles.catRowHead}>
                       <Text style={styles.catGlyph}>{row.glyph}</Text>
-                      <Text style={styles.catLabel}>{row.label}</Text>
+                      <Text style={styles.catLabel} numberOfLines={1}>
+                        {row.label}
+                      </Text>
+                      <View style={[styles.typeTag, styles.typeTagIncome]}>
+                        <Text style={[styles.typeTagText, styles.typeTagTextIncome]}>Income</Text>
+                      </View>
                       <Text style={styles.catCount}>
                         {row.count}{row.count === 1 ? ' entry' : ' entries'}
                       </Text>
@@ -356,11 +366,23 @@ function HeadlineTile({
       style={[styles.headlineTile, accent && styles.headlineTileAccent]}
       variant={accent ? 'secondary' : 'primary'}
     >
-      <Text style={styles.headlineLabel}>{label}</Text>
-      <Text style={[styles.headlineValue, accent && styles.headlineValueAccent]}>
+      <Text style={styles.headlineLabel} numberOfLines={1}>
+        {label}
+      </Text>
+      <Text
+        style={[styles.headlineValue, accent && styles.headlineValueAccent]}
+        numberOfLines={1}
+        adjustsFontSizeToFit
+        minimumFontScale={0.55}
+        allowFontScaling={false}
+      >
         {value}
       </Text>
-      {subtitle ? <Text style={styles.headlineSub}>{subtitle}</Text> : null}
+      {subtitle ? (
+        <Text style={styles.headlineSub} numberOfLines={1}>
+          {subtitle}
+        </Text>
+      ) : null}
     </GlassCard>
   );
 }
@@ -451,8 +473,9 @@ const useStyles = createStyles((c) => {
     },
     headlineTile: {
       flex: 1,
-      padding: ownerSpace.md,
-      minHeight: 92,
+      paddingHorizontal: 10,
+      paddingVertical: 12,
+      minHeight: 88,
     },
     headlineTileAccent: {
       backgroundColor: withAlpha(brandGold.dark, 0.10),
@@ -467,10 +490,10 @@ const useStyles = createStyles((c) => {
     },
     headlineValue: {
       color: ownerColors.text,
-      fontSize: 22,
+      fontSize: 17,
       fontWeight: '800',
       marginTop: 6,
-      letterSpacing: -0.3,
+      letterSpacing: -0.2,
     },
     headlineValueAccent: {
       color: ownerColors.gold,
@@ -543,6 +566,32 @@ const useStyles = createStyles((c) => {
       height: '100%',
       backgroundColor: brandGold.dark,
       borderRadius: 999,
+    },
+    typeTag: {
+      paddingHorizontal: 6,
+      paddingVertical: 2,
+      borderRadius: 999,
+      borderWidth: StyleSheet.hairlineWidth,
+    },
+    typeTagExpense: {
+      borderColor: 'rgba(255, 99, 99, 0.35)',
+      backgroundColor: 'rgba(255, 99, 99, 0.10)',
+    },
+    typeTagIncome: {
+      borderColor: 'rgba(74, 222, 128, 0.45)',
+      backgroundColor: 'rgba(74, 222, 128, 0.12)',
+    },
+    typeTagText: {
+      fontSize: 9,
+      fontWeight: '700',
+      letterSpacing: 0.4,
+      textTransform: 'uppercase',
+    },
+    typeTagTextExpense: {
+      color: '#FF7A7A',
+    },
+    typeTagTextIncome: {
+      color: '#4ADE80',
     },
     chartCard: {
       padding: ownerSpace.md,
