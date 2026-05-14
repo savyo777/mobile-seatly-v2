@@ -1,23 +1,27 @@
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { Modal, Pressable, StyleSheet, Text, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useOwnerColors } from '@/lib/theme/ownerTheme';
 import { brandGold, withAlpha } from '@/lib/theme/tokens';
+
+// iOS Calendar–style modal date picker. Slides up as a bottom sheet,
+// shows a large month/year header with chevrons on the right, a
+// Sunday-first weekday row, a 6-row grid that includes overflow days
+// from the surrounding months (dimmed), and a Done / Cancel footer.
 
 const MONTH_LABELS = [
   'January', 'February', 'March', 'April', 'May', 'June',
   'July', 'August', 'September', 'October', 'November', 'December',
 ];
-const WEEKDAY_LABELS = ['M', 'T', 'W', 'T', 'F', 'S', 'S'];
+const WEEKDAY_LABELS = ['S', 'M', 'T', 'W', 'T', 'F', 'S'];
 
 function pad(n: number): string {
   return n < 10 ? `0${n}` : String(n);
 }
-
 function toISODate(year: number, month: number, day: number): string {
   return `${year}-${pad(month + 1)}-${pad(day)}`;
 }
-
 function parseISODate(iso: string | null | undefined): Date | null {
   if (!iso) return null;
   const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(iso);
@@ -26,37 +30,44 @@ function parseISODate(iso: string | null | undefined): Date | null {
   if (Number.isNaN(d.getTime())) return null;
   return d;
 }
-
 function daysInMonth(year: number, month: number): number {
   return new Date(year, month + 1, 0).getDate();
 }
 
-// 0 = Monday, 6 = Sunday — convert from JS getDay() (0=Sun) to Mon-first index.
-function mondayFirstIndex(jsDay: number): number {
-  return (jsDay + 6) % 7;
-}
+type Cell = {
+  day: number;
+  iso: string;
+  year: number;
+  month: number;
+  current: boolean;
+};
 
 type Props = {
   visible: boolean;
   value: string | null;
   onClose: () => void;
   onConfirm: (iso: string) => void;
+  /**
+   * Accepted but no longer rendered prominently — the iOS-style header
+   * shows month + year only. Kept for back-compat with existing call
+   * sites that still pass a contextual title.
+   */
   title?: string;
 };
 
-export function MonthCalendar({ visible, value, onClose, onConfirm, title = 'Pick a date' }: Props) {
+export function MonthCalendar({ visible, value, onClose, onConfirm }: Props) {
   const ownerColors = useOwnerColors();
+  const insets = useSafeAreaInsets();
   const today = useMemo(() => new Date(), []);
-  const initialDate = useMemo(() => parseISODate(value) ?? today, [value, today]);
 
-  const [viewYear, setViewYear] = useState(initialDate.getFullYear());
-  const [viewMonth, setViewMonth] = useState(initialDate.getMonth());
+  const initial = useMemo(() => parseISODate(value) ?? today, [value, today]);
+  const [viewYear, setViewYear] = useState(initial.getFullYear());
+  const [viewMonth, setViewMonth] = useState(initial.getMonth());
   const [selectedISO, setSelectedISO] = useState<string>(
     value ?? toISODate(today.getFullYear(), today.getMonth(), today.getDate()),
   );
 
-  // When the modal re-opens, reset view to the current value.
-  React.useEffect(() => {
+  useEffect(() => {
     if (visible) {
       const d = parseISODate(value) ?? today;
       setViewYear(d.getFullYear());
@@ -65,15 +76,51 @@ export function MonthCalendar({ visible, value, onClose, onConfirm, title = 'Pic
     }
   }, [visible, value, today]);
 
-  const grid = useMemo(() => {
-    const firstWeekday = mondayFirstIndex(new Date(viewYear, viewMonth, 1).getDay());
-    const days = daysInMonth(viewYear, viewMonth);
-    const cells: { day: number; iso: string }[] = [];
-    for (let i = 0; i < firstWeekday; i++) cells.push({ day: 0, iso: '' });
-    for (let d = 1; d <= days; d++) {
-      cells.push({ day: d, iso: toISODate(viewYear, viewMonth, d) });
+  const grid = useMemo<Cell[]>(() => {
+    // Sunday-first to match iOS US default. JS getDay(): 0 = Sun … 6 = Sat.
+    const firstWeekday = new Date(viewYear, viewMonth, 1).getDay();
+    const cur = daysInMonth(viewYear, viewMonth);
+    const prevMonth = viewMonth === 0 ? 11 : viewMonth - 1;
+    const prevYear = viewMonth === 0 ? viewYear - 1 : viewYear;
+    const prev = daysInMonth(prevYear, prevMonth);
+    const nextMonth = viewMonth === 11 ? 0 : viewMonth + 1;
+    const nextYear = viewMonth === 11 ? viewYear + 1 : viewYear;
+
+    const cells: Cell[] = [];
+    // Leading overflow days from previous month.
+    for (let i = firstWeekday - 1; i >= 0; i--) {
+      const day = prev - i;
+      cells.push({
+        day,
+        iso: toISODate(prevYear, prevMonth, day),
+        year: prevYear,
+        month: prevMonth,
+        current: false,
+      });
     }
-    while (cells.length % 7 !== 0) cells.push({ day: 0, iso: '' });
+    // Current month.
+    for (let d = 1; d <= cur; d++) {
+      cells.push({
+        day: d,
+        iso: toISODate(viewYear, viewMonth, d),
+        year: viewYear,
+        month: viewMonth,
+        current: true,
+      });
+    }
+    // Trailing overflow days to fill 6 rows (42 cells) so the grid height
+    // is stable as the month changes.
+    let nd = 1;
+    while (cells.length < 42) {
+      cells.push({
+        day: nd,
+        iso: toISODate(nextYear, nextMonth, nd),
+        year: nextYear,
+        month: nextMonth,
+        current: false,
+      });
+      nd++;
+    }
     return cells;
   }, [viewYear, viewMonth]);
 
@@ -97,28 +144,46 @@ export function MonthCalendar({ visible, value, onClose, onConfirm, title = 'Pic
   const todayISO = toISODate(today.getFullYear(), today.getMonth(), today.getDate());
 
   return (
-    <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
+    <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
       <Pressable style={styles.backdrop} onPress={onClose}>
         <Pressable
           style={[
             styles.sheet,
-            { backgroundColor: ownerColors.bgSurface, borderColor: ownerColors.border },
+            {
+              backgroundColor: ownerColors.bgElevated,
+              borderColor: ownerColors.border,
+              paddingBottom: insets.bottom + 18,
+            },
           ]}
           onPress={(e) => e.stopPropagation()}
         >
+          <View style={styles.grabber} />
+
           <View style={styles.headerRow}>
-            <Pressable onPress={goPrev} hitSlop={8} style={styles.navBtn}>
-              <Ionicons name="chevron-back" size={20} color={ownerColors.gold} />
-            </Pressable>
-            <View style={{ flex: 1, alignItems: 'center' }}>
-              <Text style={[styles.kicker, { color: ownerColors.gold }]}>{title.toUpperCase()}</Text>
-              <Text style={[styles.title, { color: ownerColors.text }]}>
-                {MONTH_LABELS[viewMonth]} {viewYear}
-              </Text>
+            <Text style={[styles.monthYear, { color: ownerColors.text }]} numberOfLines={1}>
+              {MONTH_LABELS[viewMonth]}{' '}
+              <Text style={{ color: ownerColors.textMuted }}>{viewYear}</Text>
+            </Text>
+            <View style={styles.navGroup}>
+              <Pressable
+                onPress={goPrev}
+                hitSlop={10}
+                style={({ pressed }) => [styles.navBtn, pressed && { opacity: 0.5 }]}
+                accessibilityRole="button"
+                accessibilityLabel="Previous month"
+              >
+                <Ionicons name="chevron-back" size={22} color={ownerColors.gold} />
+              </Pressable>
+              <Pressable
+                onPress={goNext}
+                hitSlop={10}
+                style={({ pressed }) => [styles.navBtn, pressed && { opacity: 0.5 }]}
+                accessibilityRole="button"
+                accessibilityLabel="Next month"
+              >
+                <Ionicons name="chevron-forward" size={22} color={ownerColors.gold} />
+              </Pressable>
             </View>
-            <Pressable onPress={goNext} hitSlop={8} style={styles.navBtn}>
-              <Ionicons name="chevron-forward" size={20} color={ownerColors.gold} />
-            </Pressable>
           </View>
 
           <View style={styles.weekdayRow}>
@@ -133,52 +198,65 @@ export function MonthCalendar({ visible, value, onClose, onConfirm, title = 'Pic
           </View>
 
           <View style={styles.grid}>
-            {grid.map((cell, i) => {
-              if (cell.day === 0) {
-                return <View key={`e-${i}`} style={styles.cell} />;
-              }
-              const isSelected = cell.iso === selectedISO;
-              const isToday = cell.iso === todayISO;
+            {grid.map((cell, idx) => {
+              const isSelected = cell.iso === selectedISO && cell.current;
+              const isToday = cell.iso === todayISO && cell.current;
+              const isOverflow = !cell.current;
               return (
                 <Pressable
-                  key={cell.iso}
-                  onPress={() => setSelectedISO(cell.iso)}
-                  style={[
-                    styles.cell,
-                    isSelected && {
-                      backgroundColor: brandGold.dark,
-                      borderRadius: 999,
-                    },
-                  ]}
+                  key={`${cell.iso}-${idx}`}
+                  onPress={() => {
+                    if (isOverflow) {
+                      setViewYear(cell.year);
+                      setViewMonth(cell.month);
+                    }
+                    setSelectedISO(cell.iso);
+                  }}
+                  style={styles.cell}
+                  accessibilityRole="button"
+                  accessibilityLabel={cell.iso}
                 >
-                  <Text
+                  <View
                     style={[
-                      styles.cellText,
-                      { color: ownerColors.text },
-                      isToday && !isSelected && { color: ownerColors.gold, fontWeight: '800' },
-                      isSelected && { color: '#0F0F0F', fontWeight: '800' },
+                      styles.cellInner,
+                      isSelected && { backgroundColor: brandGold.dark },
+                      isToday && !isSelected && {
+                        borderWidth: 1.5,
+                        borderColor: brandGold.dark,
+                      },
                     ]}
                   >
-                    {cell.day}
-                  </Text>
+                    <Text
+                      style={[
+                        styles.cellText,
+                        { color: ownerColors.text },
+                        isToday && !isSelected && { color: brandGold.dark, fontWeight: '700' },
+                        isSelected && { color: '#0F0F0F', fontWeight: '700' },
+                        isOverflow && { color: withAlpha(ownerColors.text, 0.32), fontWeight: '500' },
+                      ]}
+                    >
+                      {cell.day}
+                    </Text>
+                  </View>
                 </Pressable>
               );
             })}
           </View>
 
           <View style={styles.actionsRow}>
-            <Pressable onPress={onClose} style={styles.cancelBtn} hitSlop={6}>
-              <Text style={[styles.cancelText, { color: ownerColors.textMuted }]}>Cancel</Text>
+            <Pressable onPress={onClose} hitSlop={8} style={styles.actionBtn}>
+              <Text style={[styles.cancelText, { color: ownerColors.textSecondary }]}>
+                Cancel
+              </Text>
             </Pressable>
             <Pressable
               onPress={() => onConfirm(selectedISO)}
-              style={[
-                styles.confirmBtn,
-                { backgroundColor: brandGold.dark },
-              ]}
-              hitSlop={6}
+              hitSlop={8}
+              style={styles.actionBtn}
+              accessibilityRole="button"
+              accessibilityLabel="Confirm date"
             >
-              <Text style={styles.confirmText}>Use date</Text>
+              <Text style={styles.doneText}>Done</Text>
             </Pressable>
           </View>
         </Pressable>
@@ -190,42 +268,49 @@ export function MonthCalendar({ visible, value, onClose, onConfirm, title = 'Pic
 const styles = StyleSheet.create({
   backdrop: {
     flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.65)',
-    alignItems: 'center',
-    justifyContent: 'center',
-    padding: 24,
+    backgroundColor: 'rgba(0,0,0,0.55)',
+    justifyContent: 'flex-end',
   },
   sheet: {
-    width: '100%',
-    maxWidth: 360,
-    borderRadius: 18,
-    padding: 18,
-    borderWidth: StyleSheet.hairlineWidth,
+    paddingHorizontal: 20,
+    paddingTop: 6,
+    borderTopLeftRadius: 22,
+    borderTopRightRadius: 22,
+    borderTopWidth: StyleSheet.hairlineWidth,
+    borderLeftWidth: StyleSheet.hairlineWidth,
+    borderRightWidth: StyleSheet.hairlineWidth,
+  },
+  grabber: {
+    alignSelf: 'center',
+    width: 38,
+    height: 4,
+    borderRadius: 2,
+    backgroundColor: 'rgba(255,255,255,0.18)',
+    marginBottom: 16,
   },
   headerRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 4,
+    justifyContent: 'space-between',
     marginBottom: 14,
   },
+  monthYear: {
+    fontSize: 22,
+    fontWeight: '700',
+    letterSpacing: -0.4,
+    flex: 1,
+    paddingRight: 8,
+  },
+  navGroup: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 16,
+  },
   navBtn: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
+    width: 30,
+    height: 30,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: withAlpha(brandGold.dark, 0.08),
-  },
-  kicker: {
-    fontSize: 10,
-    letterSpacing: 1.4,
-    fontWeight: '800',
-    marginBottom: 2,
-  },
-  title: {
-    fontSize: 18,
-    fontWeight: '800',
-    letterSpacing: -0.2,
   },
   weekdayRow: {
     flexDirection: 'row',
@@ -234,9 +319,9 @@ const styles = StyleSheet.create({
   weekday: {
     flex: 1,
     textAlign: 'center',
-    fontSize: 11,
-    fontWeight: '700',
-    letterSpacing: 0.6,
+    fontSize: 12,
+    fontWeight: '600',
+    letterSpacing: 0.4,
   },
   grid: {
     flexDirection: 'row',
@@ -247,35 +332,38 @@ const styles = StyleSheet.create({
     aspectRatio: 1,
     alignItems: 'center',
     justifyContent: 'center',
+    paddingVertical: 2,
+  },
+  cellInner: {
+    width: '76%',
+    aspectRatio: 1,
+    borderRadius: 999,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   cellText: {
-    fontSize: 14,
-    fontWeight: '600',
+    fontSize: 17,
+    fontWeight: '500',
     fontVariant: ['tabular-nums'],
   },
   actionsRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'flex-end',
-    gap: 12,
-    marginTop: 12,
+    justifyContent: 'space-between',
+    marginTop: 14,
+    paddingHorizontal: 4,
   },
-  cancelBtn: {
-    paddingHorizontal: 14,
+  actionBtn: {
     paddingVertical: 10,
+    paddingHorizontal: 4,
   },
   cancelText: {
-    fontSize: 14,
+    fontSize: 15,
     fontWeight: '600',
   },
-  confirmBtn: {
-    paddingHorizontal: 18,
-    paddingVertical: 10,
-    borderRadius: 999,
-  },
-  confirmText: {
-    color: '#0F0F0F',
-    fontWeight: '800',
-    fontSize: 14,
+  doneText: {
+    color: brandGold.dark,
+    fontSize: 16,
+    fontWeight: '700',
   },
 });

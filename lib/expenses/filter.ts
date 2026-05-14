@@ -38,9 +38,9 @@ export function applyExpenseFilter(expenses: Expense[], filter: ExpenseFilter): 
     if (needle) {
       const haystack = [
         e.vendorName ?? '',
-        e.receiptNumber ?? '',
         e.notes ?? '',
         e.description ?? '',
+        e.paymentMethod ?? '',
       ]
         .join(' ')
         .toLowerCase();

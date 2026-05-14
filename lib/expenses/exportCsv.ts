@@ -11,7 +11,6 @@ const CSV_HEADER = [
   'total',
   'currency',
   'payment_method',
-  'receipt_number',
   'payment_status',
   'notes',
 ];
@@ -37,7 +36,6 @@ export function buildExpensesCsv(expenses: Expense[]): string {
         e.totalAmount.toFixed(2),
         (e.currency ?? '').toUpperCase(),
         e.paymentMethod ?? '',
-        e.receiptNumber ?? '',
         e.paymentStatus,
         e.notes ?? '',
       ]

@@ -590,7 +590,6 @@ function makeDemoExpense(partial: Partial<Expense> & { id: string; vendorName: s
     aiExtractedData: null,
     notes: null,
     paymentMethod: null,
-    receiptNumber: null,
     ...partial,
   };
 }

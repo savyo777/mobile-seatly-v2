@@ -100,7 +100,6 @@ export default function ExpenseDetailScreen() {
   const [paymentStatus, setPaymentStatus] = useState<PaymentStatus>('paid');
   const [notes, setNotes] = useState('');
   const [paymentMethod, setPaymentMethod] = useState('');
-  const [receiptNumber, setReceiptNumber] = useState('');
 
   const expense = useMemo(
     () => (id ? expenses.find((e) => e.id === id) ?? null : null),
@@ -138,7 +137,6 @@ export default function ExpenseDetailScreen() {
     setPaymentStatus(expense.paymentStatus);
     setNotes(expense.notes ?? '');
     setPaymentMethod(expense.paymentMethod ?? '');
-    setReceiptNumber(expense.receiptNumber ?? '');
   }, [expense]);
 
   const handleClose = useCallback(() => {
@@ -176,7 +174,6 @@ export default function ExpenseDetailScreen() {
     setPaymentStatus(expense.paymentStatus);
     setNotes(expense.notes ?? '');
     setPaymentMethod(expense.paymentMethod ?? '');
-    setReceiptNumber(expense.receiptNumber ?? '');
     setEditing(false);
   }, [expense]);
 
@@ -217,7 +214,6 @@ export default function ExpenseDetailScreen() {
         transactionType,
         notes: notes.trim() || null,
         paymentMethod: paymentMethod.trim() || null,
-        receiptNumber: receiptNumber.trim() || null,
       };
       if (expense.id.startsWith('local-')) {
         const updated: Expense = {
@@ -234,7 +230,6 @@ export default function ExpenseDetailScreen() {
           transactionType: patch.transactionType,
           notes: patch.notes,
           paymentMethod: patch.paymentMethod,
-          receiptNumber: patch.receiptNumber,
         };
         addLocalExpense(updated);
       } else {
@@ -259,7 +254,6 @@ export default function ExpenseDetailScreen() {
     category,
     notes,
     paymentMethod,
-    receiptNumber,
     addLocalExpense,
     patchExpense,
   ]);
@@ -349,8 +343,6 @@ export default function ExpenseDetailScreen() {
               setNotes={setNotes}
               paymentMethod={paymentMethod}
               setPaymentMethod={setPaymentMethod}
-              receiptNumber={receiptNumber}
-              setReceiptNumber={setReceiptNumber}
               currency={expense.currency}
               saving={saving}
               onCancel={handleCancelEdit}
@@ -378,9 +370,6 @@ export default function ExpenseDetailScreen() {
             <DetailRow label="Currency" value={expense.currency.toUpperCase()} />
             {expense.paymentMethod ? (
               <DetailRow label="Payment" value={expense.paymentMethod} />
-            ) : null}
-            {expense.receiptNumber ? (
-              <DetailRow label="Receipt #" value={expense.receiptNumber} />
             ) : null}
           </View>
 
@@ -432,8 +421,6 @@ function EditForm({
   setNotes,
   paymentMethod,
   setPaymentMethod,
-  receiptNumber,
-  setReceiptNumber,
   currency,
   saving,
   onCancel,
@@ -459,8 +446,6 @@ function EditForm({
   setNotes: (value: string) => void;
   paymentMethod: string;
   setPaymentMethod: (value: string) => void;
-  receiptNumber: string;
-  setReceiptNumber: (value: string) => void;
   currency: string;
   saving: boolean;
   onCancel: () => void;
@@ -573,7 +558,7 @@ function EditForm({
         })}
       </ScrollView>
 
-      <Text style={styles.fieldLabel}>Payment method</Text>
+      <Text style={styles.fieldLabel}>Payment method (optional)</Text>
       <TextInput
         value={paymentMethod}
         onChangeText={setPaymentMethod}
@@ -581,16 +566,6 @@ function EditForm({
         placeholderTextColor={ownerColors.textMuted}
         style={styles.input}
         autoCapitalize="none"
-      />
-
-      <Text style={styles.fieldLabel}>Receipt #</Text>
-      <TextInput
-        value={receiptNumber}
-        onChangeText={setReceiptNumber}
-        placeholder="Optional — printed order or invoice #"
-        placeholderTextColor={ownerColors.textMuted}
-        style={styles.input}
-        autoCapitalize="characters"
       />
 
       <Text style={styles.fieldLabel}>Notes</Text>
