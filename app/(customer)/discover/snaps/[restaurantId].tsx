@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { ActivityIndicator, FlatList, Pressable, StyleSheet, Text, View, useWindowDimensions } from 'react-native';
+import { ActivityIndicator, FlatList, Pressable, Text, View, useWindowDimensions } from 'react-native';
 import { Image } from 'expo-image';
 import { useLocalSearchParams, useRouter, type Href } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
@@ -40,7 +40,7 @@ type DisplaySnap = {
   storyFilterCapturedAt: number | undefined;
 };
 
-function fromVisitPhoto(row: VisitPhotoRow, restaurantName: string): DisplaySnap {
+function fromVisitPhoto(row: VisitPhotoRow, _restaurantName: string): DisplaySnap {
   return {
     id: row.id,
     image: row.image_url,
@@ -54,7 +54,7 @@ function fromVisitPhoto(row: VisitPhotoRow, restaurantName: string): DisplaySnap
 }
 
 function fromSnapPost(snap: SnapPost): DisplaySnap {
-  const user = DEMO_getSnapUser(snap.user_id);
+  const user = getSnapUser(snap.user_id);
   return {
     id: snap.id,
     image: snap.image,
@@ -66,6 +66,11 @@ function fromSnapPost(snap: SnapPost): DisplaySnap {
     storyFilterCapturedAt: snap.storyFilterCapturedAt,
   };
 }
+
+// Instagram-style 3-column grid — see plan for the math.
+const NUM_COLS = 3;
+const GRID_PAD = 16;
+const COL_GAP = 6;
 
 const useStyles = createStyles((c) => ({
   root: {
@@ -99,52 +104,54 @@ const useStyles = createStyles((c) => ({
     color: c.textSecondary,
   },
   grid: {
+    paddingHorizontal: GRID_PAD,
     paddingBottom: spacing['3xl'],
-    gap: spacing.md,
+    gap: COL_GAP,
   },
   col: {
-    gap: spacing.md,
+    gap: COL_GAP,
   },
   card: {
-    flex: 1,
-    borderRadius: borderRadius.lg,
+    borderRadius: 8,
     overflow: 'hidden',
     borderWidth: 1,
-    borderColor: 'rgba(201, 168, 76, 0.26)',
+    borderColor: 'rgba(201, 168, 76, 0.2)',
     backgroundColor: '#101010',
   },
   cardPressed: {
     opacity: 0.9,
-    transform: [{ scale: 0.99 }],
+    transform: [{ scale: 0.98 }],
   },
   photo: {
     width: '100%',
-    height: 170,
+    height: '100%',
     backgroundColor: c.bgElevated,
   },
   cardBody: {
-    padding: spacing.sm,
-    gap: spacing.xs,
+    paddingHorizontal: 6,
+    paddingVertical: 5,
+    gap: 2,
   },
   userRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: spacing.xs,
+    gap: 4,
   },
   avatar: {
-    width: 20,
-    height: 20,
-    borderRadius: borderRadius.full,
+    width: 14,
+    height: 14,
+    borderRadius: 999,
     backgroundColor: c.bgElevated,
   },
   username: {
-    ...typography.bodySmall,
-    color: '#DDD5C4',
+    fontSize: 11,
     fontWeight: '700',
+    color: '#DDD5C4',
     flex: 1,
   },
   caption: {
-    ...typography.bodySmall,
+    fontSize: 10,
+    lineHeight: 12,
     color: c.textSecondary,
   },
 }));
@@ -160,7 +167,9 @@ export default function RestaurantSnapGalleryScreen() {
   const [loading, setLoading] = useState(!isDemoModeEnabled());
 
   const restaurantName = useMemo(() => getSnapRestaurantName(restaurantId), [restaurantId]);
-  const cardPhotoWidth = Math.max(1, Math.floor((windowW - 40 - spacing.md) / 2));
+  const cellSize = Math.floor(
+    (windowW - GRID_PAD * 2 - COL_GAP * (NUM_COLS - 1)) / NUM_COLS,
+  );
   const restaurantFallback = restaurantId
     ? (`/(customer)/discover/${restaurantId}` as Href)
     : '/(customer)/discover';
@@ -205,7 +214,7 @@ export default function RestaurantSnapGalleryScreen() {
         ) : (
           <FlatList
             data={snaps}
-            numColumns={2}
+            numColumns={NUM_COLS}
             keyExtractor={(item) => item.id}
             contentContainerStyle={styles.grid}
             columnWrapperStyle={styles.col}
@@ -222,32 +231,34 @@ export default function RestaurantSnapGalleryScreen() {
                   onPress={() => router.push(`/(customer)/discover/snaps/detail/${item.id}?restaurantId=${restaurantId}`)}
                   onPressIn={() => setPressingId(item.id)}
                   onPressOut={() => setPressingId(null)}
-                  style={[styles.card, pressed && styles.cardPressed]}
+                  style={[styles.card, { width: cellSize }, pressed && styles.cardPressed]}
                 >
-                  {item.storyFilterId ? (
-                    <StoryFilterFrame
-                      filterId={item.storyFilterId}
-                      width={cardPhotoWidth}
-                      height={170}
-                      capturedAt={item.storyFilterCapturedAt}
-                      restaurantName={restaurantName}
-                      mediaSlot={
-                        <Image
-                          source={{ uri: item.image }}
-                          style={styles.photo}
-                          contentFit="cover"
-                          contentPosition="bottom"
-                        />
-                      }
-                    />
-                  ) : (
-                    <Image
-                      source={{ uri: item.image }}
-                      style={styles.photo}
-                      contentFit="cover"
-                      contentPosition="bottom"
-                    />
-                  )}
+                  <View style={{ width: cellSize, height: cellSize }}>
+                    {item.storyFilterId ? (
+                      <StoryFilterFrame
+                        filterId={item.storyFilterId}
+                        width={cellSize}
+                        height={cellSize}
+                        capturedAt={item.storyFilterCapturedAt}
+                        restaurantName={restaurantName}
+                        mediaSlot={
+                          <Image
+                            source={{ uri: item.image }}
+                            style={styles.photo}
+                            contentFit="cover"
+                            contentPosition="bottom"
+                          />
+                        }
+                      />
+                    ) : (
+                      <Image
+                        source={{ uri: item.image }}
+                        style={styles.photo}
+                        contentFit="cover"
+                        contentPosition="bottom"
+                      />
+                    )}
+                  </View>
                   <View style={styles.cardBody}>
                     <View style={styles.userRow}>
                       {item.avatarUrl
@@ -258,7 +269,7 @@ export default function RestaurantSnapGalleryScreen() {
                       </Text>
                     </View>
                     {item.caption ? (
-                      <Text style={styles.caption} numberOfLines={3}>{item.caption}</Text>
+                      <Text style={styles.caption} numberOfLines={1}>{item.caption}</Text>
                     ) : null}
                   </View>
                 </Pressable>
