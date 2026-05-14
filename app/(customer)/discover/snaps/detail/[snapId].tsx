@@ -6,8 +6,9 @@
  * nothing else — no story-style overlays, no likes/comments composer,
  * no big modal sheets. Just what was posted.
  */
-import React, { useCallback, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import {
+  ActivityIndicator,
   Alert,
   Modal,
   Pressable,
@@ -31,7 +32,12 @@ import {
   timeAgoLabel,
 } from '@/lib/mock/snaps';
 import { mockCustomer } from '@/lib/mock/users';
+import { mockRestaurants } from '@/lib/mock/restaurants';
 import { isDemoModeEnabled } from '@/lib/config/demoMode';
+import { getVisitPhotoById, type VisitPhotoRow } from '@/lib/snaps/visitPhotosApi';
+import { getSupabase } from '@/lib/supabase/client';
+import { VISIT_PHOTOS_BUCKET } from '@/lib/storage/buckets';
+import type { StoryFilterId } from '@/lib/storyFilters/types';
 
 const deleteSnapPost: typeof DEMO_deleteSnapPost = (postId, userId) =>
   isDemoModeEnabled() ? DEMO_deleteSnapPost(postId, userId) : false;
@@ -210,9 +216,90 @@ export default function SnapDetailScreen() {
   const { snapId, restaurantId } = useLocalSearchParams<{ snapId: string; restaurantId?: string }>();
 
   const me = useCurrentUserId();
-  const post = snapId ? getSnapPostById(snapId) : undefined;
-  const user = post ? getSnapUser(post.user_id) : undefined;
-  const restaurant = post ? getRestaurantForPost(post.restaurant_id) : null;
+  const mockPost = snapId ? getSnapPostById(snapId) : undefined;
+  const [supaPhoto, setSupaPhoto] = useState<VisitPhotoRow | null>(null);
+  const [loadingSupa, setLoadingSupa] = useState(!mockPost);
+
+  // When the in-memory mock store doesn't know this snapId (true for every
+  // real customer-uploaded snap), fall back to fetching the visit_photos row
+  // from Supabase so the screen renders the actual photo + caption.
+  useEffect(() => {
+    if (mockPost || !snapId) {
+      setLoadingSupa(false);
+      return;
+    }
+    let alive = true;
+    setLoadingSupa(true);
+    void getVisitPhotoById(snapId)
+      .then((row) => {
+        if (!alive) return;
+        setSupaPhoto(row);
+      })
+      .catch(() => {
+        if (alive) setSupaPhoto(null);
+      })
+      .finally(() => {
+        if (alive) setLoadingSupa(false);
+      });
+    return () => {
+      alive = false;
+    };
+  }, [snapId, mockPost]);
+
+  // Normalize both data sources into a single shape the JSX below expects.
+  const post = useMemo(() => {
+    if (mockPost) {
+      return {
+        id: mockPost.id,
+        user_id: mockPost.user_id,
+        restaurant_id: mockPost.restaurant_id,
+        image: mockPost.image,
+        caption: mockPost.caption,
+        timestamp: mockPost.timestamp,
+        storyFilterId: mockPost.storyFilterId,
+        storyFilterCapturedAt: mockPost.storyFilterCapturedAt,
+      };
+    }
+    if (supaPhoto) {
+      return {
+        id: supaPhoto.id,
+        user_id: supaPhoto.user_id,
+        restaurant_id: supaPhoto.restaurant_id,
+        image: supaPhoto.image_url,
+        caption: supaPhoto.caption ?? '',
+        timestamp: supaPhoto.created_at,
+        storyFilterId: supaPhoto.story_filter_id ?? undefined,
+        storyFilterCapturedAt: supaPhoto.story_filter_captured_at ?? undefined,
+      };
+    }
+    return undefined;
+  }, [mockPost, supaPhoto]);
+
+  const user = useMemo(() => {
+    if (mockPost) return getSnapUser(mockPost.user_id);
+    if (supaPhoto) {
+      const handle = (supaPhoto.full_name ?? '')
+        .trim()
+        .split(/\s+/)[0]
+        ?.toLowerCase()
+        .replace(/[^a-z0-9]/g, '') || 'guest';
+      return {
+        id: supaPhoto.user_id,
+        username: handle,
+        fullName: supaPhoto.full_name ?? 'Guest',
+        avatarUrl: supaPhoto.avatar_url ?? null,
+      };
+    }
+    return undefined;
+  }, [mockPost, supaPhoto]);
+
+  const restaurant = useMemo(() => {
+    const restaurantId = mockPost?.restaurant_id ?? supaPhoto?.restaurant_id ?? null;
+    if (!restaurantId) return null;
+    if (mockPost) return getRestaurantForPost(restaurantId);
+    return mockRestaurants.find((r) => r.id === restaurantId) ?? null;
+  }, [mockPost, supaPhoto]);
+
   const isOwnPost = !!me && post?.user_id === me;
   const [showDeleteSheet, setShowDeleteSheet] = useState(false);
   const [photoAspect, setPhotoAspect] = useState(DEFAULT_SNAP_PHOTO_ASPECT);
@@ -239,15 +326,40 @@ export default function SnapDetailScreen() {
         {
           text: 'Delete',
           style: 'destructive',
-          onPress: () => {
+          onPress: async () => {
             if (!me) return;
-            deleteSnapPost(post.id, me);
+            // In demo mode this deletes the in-memory snap. For real
+            // Supabase-backed snaps, deleteMyReview() removes the review
+            // row + visit_photo row + the storage object in one shot.
+            if (mockPost) {
+              deleteSnapPost(post.id, me);
+            } else if (supaPhoto) {
+              const supabase = getSupabase();
+              if (supabase) {
+                try {
+                  await supabase
+                    .from('visit_photos')
+                    .delete()
+                    .eq('id', supaPhoto.id)
+                    .eq('user_id', me);
+                  const marker = `/${VISIT_PHOTOS_BUCKET}/`;
+                  const idx = supaPhoto.image_url.indexOf(marker);
+                  if (idx >= 0) {
+                    await supabase.storage
+                      .from(VISIT_PHOTOS_BUCKET)
+                      .remove([supaPhoto.image_url.slice(idx + marker.length)]);
+                  }
+                } catch {
+                  /* non-fatal — UI navigates away regardless */
+                }
+              }
+            }
             goBack();
           },
         },
       ],
     );
-  }, [goBack, post]);
+  }, [goBack, post, mockPost, supaPhoto, me]);
 
   const handlePhotoLoad = useCallback((event: ImageLoadEventData) => {
     const { width, height } = event.source ?? {};
@@ -257,6 +369,13 @@ export default function SnapDetailScreen() {
   }, []);
 
   if (!post) {
+    if (loadingSupa) {
+      return (
+        <View style={[styles.root, styles.centered, { paddingTop: insets.top + spacing['3xl'] }]}>
+          <ActivityIndicator color={c.gold} />
+        </View>
+      );
+    }
     return (
       <View style={[styles.root, styles.centered, { paddingTop: insets.top + spacing['3xl'] }]}>
         <Text style={styles.emptyTitle}>Snap not found</Text>
@@ -307,7 +426,7 @@ export default function SnapDetailScreen() {
         <View style={[styles.photoWrap, { width: photoW, height: photoH }]}>
           {post.storyFilterId ? (
             <StoryFilterFrame
-              filterId={post.storyFilterId}
+              filterId={post.storyFilterId as StoryFilterId}
               width={photoW}
               height={photoH}
               capturedAt={post.storyFilterCapturedAt}

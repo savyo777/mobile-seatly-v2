@@ -96,3 +96,62 @@ export async function listVisitPhotosByRestaurant(
     };
   });
 }
+
+/**
+ * Fetches a single visit photo by id, joined with the poster's profile (full
+ * name + avatar) so the snap detail screen can render even when the in-memory
+ * mock store has never seen this snap (which is always the case for real
+ * customer-uploaded snaps with Supabase UUIDs).
+ */
+export async function getVisitPhotoById(id: string): Promise<VisitPhotoRow | null> {
+  const supabase = getSupabase();
+  if (!supabase || !id) return null;
+
+  const { data: row, error } = await supabase
+    .from('visit_photos')
+    .select(
+      'id, user_id, restaurant_id, booking_id, image_url, caption, story_filter_id, story_filter_captured_at, rating, tags, created_at',
+    )
+    .eq('id', id)
+    .maybeSingle();
+  if (error) throw error;
+  if (!row) return null;
+
+  const r = row as {
+    id: string;
+    user_id: string;
+    restaurant_id: string;
+    booking_id: string | null;
+    image_url: string;
+    caption: string | null;
+    story_filter_id: string | null;
+    story_filter_captured_at: number | null;
+    rating: number | null;
+    tags: string[] | null;
+    created_at: string;
+  };
+
+  const { data: profile } = await supabase
+    .from('user_profiles')
+    .select('full_name, avatar_url')
+    .eq('auth_user_id', r.user_id)
+    .maybeSingle();
+
+  const p = (profile ?? null) as { full_name: string | null; avatar_url: string | null } | null;
+
+  return {
+    id: r.id,
+    user_id: r.user_id,
+    restaurant_id: r.restaurant_id,
+    booking_id: r.booking_id,
+    image_url: r.image_url,
+    caption: r.caption,
+    story_filter_id: r.story_filter_id,
+    story_filter_captured_at: r.story_filter_captured_at,
+    rating: r.rating,
+    tags: r.tags,
+    created_at: r.created_at,
+    full_name: p?.full_name ?? null,
+    avatar_url: p?.avatar_url ?? null,
+  };
+}
