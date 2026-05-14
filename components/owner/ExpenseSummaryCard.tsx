@@ -39,23 +39,33 @@ function inMonth(iso: string, monthStart: Date): boolean {
 export function ExpenseSummaryCard({ expenses }: Props) {
   const ownerColors = useOwnerColors();
 
-  const { thisMonthTotal, deltaPercent, currency, topCategories } = useMemo(() => {
+  const { thisMonthSpent, thisMonthEarned, deltaPercent, currency, topCategories } = useMemo(() => {
     const now = new Date();
     const thisMonthStart = startOfMonth(now);
     const prevMonthStart = startOfPrevMonth(now);
 
-    let thisMonth = 0;
-    let prevMonth = 0;
+    // Track spent (expense rows) and earned (income rows) separately so
+    // the card can label them clearly. Mixing them produced a confusing
+    // number — e.g. $2000 expense + $4000 income reading as "$6000 this
+    // month" with no way to tell the owner whether that's good or bad.
+    let thisSpent = 0;
+    let thisEarned = 0;
+    let prevSpent = 0;
     const byCategory = new Map<ExpenseCategoryKey, number>();
     const currencyCounts = new Map<string, number>();
 
     for (const exp of expenses) {
       currencyCounts.set(exp.currency, (currencyCounts.get(exp.currency) ?? 0) + 1);
+      const isIncome = exp.transactionType === 'income';
       if (inMonth(exp.expenseDate, thisMonthStart)) {
-        thisMonth += exp.totalAmount;
-        byCategory.set(exp.category, (byCategory.get(exp.category) ?? 0) + exp.totalAmount);
-      } else if (inMonth(exp.expenseDate, prevMonthStart)) {
-        prevMonth += exp.totalAmount;
+        if (isIncome) {
+          thisEarned += exp.totalAmount;
+        } else {
+          thisSpent += exp.totalAmount;
+          byCategory.set(exp.category, (byCategory.get(exp.category) ?? 0) + exp.totalAmount);
+        }
+      } else if (inMonth(exp.expenseDate, prevMonthStart) && !isIncome) {
+        prevSpent += exp.totalAmount;
       }
     }
 
@@ -71,10 +81,13 @@ export function ExpenseSummaryCard({ expenses }: Props) {
       .sort((a, b) => b.amount - a.amount)
       .slice(0, 3);
 
-    const delta = prevMonth > 0 ? ((thisMonth - prevMonth) / prevMonth) * 100 : null;
+    // Delta compares spend-to-spend; mixing income in would make a
+    // good-news month (lots earned) look like a runaway-spend month.
+    const delta = prevSpent > 0 ? ((thisSpent - prevSpent) / prevSpent) * 100 : null;
 
     return {
-      thisMonthTotal: thisMonth,
+      thisMonthSpent: thisSpent,
+      thisMonthEarned: thisEarned,
       deltaPercent: delta,
       currency: dominantCurrency,
       topCategories: cats,
@@ -83,15 +96,12 @@ export function ExpenseSummaryCard({ expenses }: Props) {
 
   const maxAmount = topCategories[0]?.amount ?? 0;
 
+  const hasActivity = thisMonthSpent > 0 || thisMonthEarned > 0;
+
   return (
     <GlassCard variant="secondary" style={styles.card}>
-      <View style={styles.headerRow}>
-        <View style={{ flex: 1, minWidth: 0 }}>
-          <Text style={[styles.label, { color: ownerColors.textMuted }]}>This month</Text>
-          <Text style={[styles.amount, { color: ownerColors.gold }]}>
-            {formatCurrency(thisMonthTotal, currency)}
-          </Text>
-        </View>
+      <View style={styles.topRow}>
+        <Text style={[styles.label, { color: ownerColors.textMuted }]}>This month</Text>
         {deltaPercent !== null ? (
           <View
             style={[
@@ -105,13 +115,41 @@ export function ExpenseSummaryCard({ expenses }: Props) {
             <Text style={[styles.deltaText, { color: ownerColors.text }]}>
               {deltaPercent >= 0 ? '▲' : '▼'} {Math.abs(deltaPercent).toFixed(1)}%
             </Text>
-            <Text style={[styles.deltaLabel, { color: ownerColors.textMuted }]}>vs last</Text>
+            <Text style={[styles.deltaLabel, { color: ownerColors.textMuted }]}>spend vs last</Text>
           </View>
         ) : null}
       </View>
 
+      <View style={styles.statRow}>
+        <View style={[styles.statTile, styles.statTileSpent]}>
+          <Text style={styles.statTileLabel}>SPENT</Text>
+          <Text
+            style={[styles.statTileAmount, styles.statTileAmountSpent]}
+            numberOfLines={1}
+            adjustsFontSizeToFit
+            minimumFontScale={0.55}
+          >
+            {formatCurrency(thisMonthSpent, currency)}
+          </Text>
+        </View>
+        <View style={[styles.statTile, styles.statTileEarned]}>
+          <Text style={styles.statTileLabel}>EARNED</Text>
+          <Text
+            style={[styles.statTileAmount, styles.statTileAmountEarned]}
+            numberOfLines={1}
+            adjustsFontSizeToFit
+            minimumFontScale={0.55}
+          >
+            {formatCurrency(thisMonthEarned, currency)}
+          </Text>
+        </View>
+      </View>
+
       {topCategories.length > 0 ? (
         <View style={styles.bars}>
+          <Text style={[styles.barsHeading, { color: ownerColors.textMuted }]}>
+            Top spend
+          </Text>
           {topCategories.map((c, i) => {
             const widthPercent = maxAmount > 0 ? (c.amount / maxAmount) * 100 : 0;
             const tintAlpha = 0.36 - i * 0.08;
@@ -138,11 +176,11 @@ export function ExpenseSummaryCard({ expenses }: Props) {
             );
           })}
         </View>
-      ) : (
+      ) : !hasActivity ? (
         <Text style={[styles.emptyHint, { color: ownerColors.textMuted }]}>
-          No expenses this month yet.
+          No activity this month yet.
         </Text>
-      )}
+      ) : null}
     </GlassCard>
   );
 }
@@ -152,23 +190,18 @@ const styles = StyleSheet.create({
     padding: 16,
     marginBottom: 14,
   },
-  headerRow: {
+  topRow: {
     flexDirection: 'row',
-    alignItems: 'flex-end',
+    alignItems: 'center',
+    justifyContent: 'space-between',
     gap: 12,
-    marginBottom: 14,
+    marginBottom: 10,
   },
   label: {
     fontSize: 11,
     letterSpacing: 0.6,
     textTransform: 'uppercase',
     fontWeight: '700',
-  },
-  amount: {
-    fontSize: 28,
-    fontWeight: '800',
-    letterSpacing: -0.5,
-    marginTop: 2,
   },
   deltaChip: {
     flexDirection: 'column',
@@ -179,15 +212,60 @@ const styles = StyleSheet.create({
     borderWidth: StyleSheet.hairlineWidth,
   },
   deltaText: {
-    fontSize: 13,
+    fontSize: 12,
     fontWeight: '700',
   },
   deltaLabel: {
-    fontSize: 10,
+    fontSize: 9,
     marginTop: 1,
+  },
+  statRow: {
+    flexDirection: 'row',
+    gap: 8,
+    marginBottom: 14,
+  },
+  statTile: {
+    flex: 1,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    borderRadius: 12,
+    borderWidth: StyleSheet.hairlineWidth,
+  },
+  statTileSpent: {
+    borderColor: 'rgba(255, 99, 99, 0.32)',
+    backgroundColor: 'rgba(255, 99, 99, 0.08)',
+  },
+  statTileEarned: {
+    borderColor: 'rgba(74, 222, 128, 0.42)',
+    backgroundColor: 'rgba(74, 222, 128, 0.08)',
+  },
+  statTileLabel: {
+    fontSize: 10,
+    letterSpacing: 0.8,
+    fontWeight: '800',
+    color: 'rgba(255,255,255,0.7)',
+  },
+  statTileAmount: {
+    fontSize: 22,
+    fontWeight: '800',
+    marginTop: 4,
+    letterSpacing: -0.4,
+  },
+  statTileAmountSpent: {
+    color: '#FF7A7A',
+  },
+  statTileAmountEarned: {
+    color: '#4ADE80',
   },
   bars: {
     gap: 8,
+  },
+  barsHeading: {
+    fontSize: 10,
+    letterSpacing: 0.6,
+    textTransform: 'uppercase',
+    fontWeight: '700',
+    marginBottom: 2,
   },
   barRow: {
     flexDirection: 'row',
