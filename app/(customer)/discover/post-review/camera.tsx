@@ -23,7 +23,7 @@ import { getSnapRestaurantName as DEMO_getSnapRestaurantName } from '@/lib/mock/
 import { mockRestaurants as DEMO_RESTAURANTS } from '@/lib/mock/restaurants';
 import { isDemoModeEnabled } from '@/lib/config/demoMode';
 import { StoryFilterFrame } from '@/components/storyFilters/StoryFilterFrame';
-import { SnapFilterPicker } from '@/components/storyFilters/SnapFilterPicker';
+import { SnapFilterPicker, SNAP_FILTER_RING_SIZE } from '@/components/storyFilters/SnapFilterPicker';
 import type { StoryFilterId } from '@/lib/storyFilters/types';
 import { captureStyledSnapToTmpFile } from '@/lib/snapOverlays/captureStyledSnap';
 
@@ -311,9 +311,23 @@ export default function ReviewCameraScreen() {
   );
   const canUseCamera = Boolean(permission?.granted) && !cameraUnavailable;
 
-  // Filter picker placement — above the shutter row.
-  const carouselBottom = insets.bottom + 110;
-  const pillBottom = carouselBottom + 60 + 8; // RING_SIZE (60) + gap
+  // Filter picker placement — just above the shutter/gallery/flip row.
+  const carouselBottom = insets.bottom + 80;
+  const pillBottom = carouselBottom + SNAP_FILTER_RING_SIZE + 8;
+
+  // During LIVE preview, push the filter decorations into the visible band
+  // (between the title bar and the filter picker / shutter row) so nothing
+  // is hidden behind chrome. During the brief composite pass (capturedUri
+  // set), drop the insets so the captured PNG keeps the decorations at the
+  // photo's actual corners.
+  const liveOverlayInsets = useMemo(
+    () => ({
+      top: insets.top + 56,
+      bottom: pillBottom + 28 + 12,
+    }),
+    [insets.top, pillBottom],
+  );
+  const overlayInsets = capturedUri ? undefined : liveOverlayInsets;
 
   const pushToCaption = useCallback(
     (uri: string, capturedAtMs: number) => {
@@ -592,6 +606,7 @@ export default function ReviewCameraScreen() {
             area={restaurantArea}
             mediaSlot={<View />}
             containerStyle={TRANSPARENT_FRAME_STYLE}
+            overlayInsets={overlayInsets}
           />
         </View>
       </View>

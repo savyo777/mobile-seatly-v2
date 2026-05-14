@@ -17,7 +17,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { StatusBar } from 'expo-status-bar';
 import { StoryFilterFrame } from '@/components/storyFilters/StoryFilterFrame';
-import { SnapFilterPicker } from '@/components/storyFilters/SnapFilterPicker';
+import { SnapFilterPicker, SNAP_FILTER_RING_SIZE } from '@/components/storyFilters/SnapFilterPicker';
 import { type StoryFilterId } from '@/lib/storyFilters/types';
 import { getSnapRestaurantName as DEMO_getSnapRestaurantName } from '@/lib/mock/snaps';
 import { mockRestaurants as DEMO_RESTAURANTS } from '@/lib/mock/restaurants';
@@ -162,7 +162,7 @@ export default function SnapStylesScreen() {
 
   const continueBottom = 0;
   const carouselBottom = 80;
-  const pillBottom = carouselBottom + 60 + 8; // RING_SIZE + gap
+  const pillBottom = carouselBottom + SNAP_FILTER_RING_SIZE + 8;
 
   return (
     <View style={styles.root}>

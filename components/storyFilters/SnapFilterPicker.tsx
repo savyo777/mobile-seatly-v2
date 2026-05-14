@@ -31,11 +31,12 @@ import {
   type StoryFilterId,
 } from '@/lib/storyFilters/types';
 
-const CHIP_SIZE = 52;
-const SIDE_SCALE = 26 / 52;
-const CHIP_GAP = 14;
+const CHIP_SIZE = 68;
+const SIDE_SCALE = 38 / 68;
+const CHIP_GAP = 16;
 const CHIP_STRIDE = CHIP_SIZE + CHIP_GAP;
-const RING_SIZE = CHIP_SIZE + 8;
+export const SNAP_FILTER_RING_SIZE = CHIP_SIZE + 10;
+const RING_SIZE = SNAP_FILTER_RING_SIZE;
 
 const FRAME_REF_W = 224;
 const FRAME_REF_H = 398;
