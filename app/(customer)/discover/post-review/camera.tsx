@@ -605,7 +605,7 @@ export default function ReviewCameraScreen() {
         pointerEvents="none"
       />
 
-      {/* Filter picker — overlays above the shutter row. */}
+      {/* Filter picker — overlays above the shutter row. Tapping the centred chip captures. */}
       {canUseCamera && (
         <SnapFilterPicker
           selectedFilterId={selectedFilterId}
@@ -617,6 +617,7 @@ export default function ReviewCameraScreen() {
           restaurantName={restaurantName}
           city={restaurantCity}
           area={restaurantArea}
+          onCapture={() => void capturePhoto()}
         />
       )}
 
@@ -662,21 +663,11 @@ export default function ReviewCameraScreen() {
               <Ionicons name="images-outline" size={24} color="#fff" />
             </Pressable>
 
-            <Pressable
-              onPress={canUseCamera ? capturePhoto : () => void openGallery()}
-              onPressIn={onCapturePressIn}
-              onPressOut={onCapturePressOut}
-              disabled={canUseCamera && (!cameraReady || capturing)}
-              style={styles.captureHit}
-            >
-              <Animated.View style={[styles.captureRing, { transform: [{ scale: pressScale }] }]}>
-                <View style={styles.captureOuterRing}>
-                  <View style={[styles.captureInner, captureFill && styles.captureInnerActive]}>
-                    {capturing ? <ActivityIndicator color="rgba(0,0,0,0.45)" size="small" /> : null}
-                  </View>
-                </View>
-              </Animated.View>
-            </Pressable>
+            {capturing ? (
+              <ActivityIndicator color="rgba(255,255,255,0.85)" size="small" />
+            ) : (
+              <View style={{ width: 48 }} />
+            )}
 
             <GlassCircle
               onPress={() => {

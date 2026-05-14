@@ -76,6 +76,8 @@ export type SnapFilterPickerProps = {
   restaurantName?: string;
   city?: string;
   area?: string;
+  /** Fired when the user taps the chip that's already centred — used to trigger capture. */
+  onCapture?: () => void;
 };
 
 export function SnapFilterPicker({
@@ -89,6 +91,7 @@ export function SnapFilterPicker({
   restaurantName,
   city,
   area,
+  onCapture,
 }: SnapFilterPickerProps) {
   const listRef = useRef<FlatList<FilterItem>>(null);
 
@@ -163,12 +166,19 @@ export function SnapFilterPicker({
     [scrollX, handleScrollListener],
   );
 
-  const onChipPress = useCallback((index: number) => {
-    listRef.current?.scrollToOffset({
-      offset: index * CHIP_STRIDE,
-      animated: true,
-    });
-  }, []);
+  const onChipPress = useCallback(
+    (index: number) => {
+      if (index === centeredIndex && onCapture) {
+        onCapture();
+        return;
+      }
+      listRef.current?.scrollToOffset({
+        offset: index * CHIP_STRIDE,
+        animated: true,
+      });
+    },
+    [centeredIndex, onCapture],
+  );
 
   const getItemLayout = useCallback(
     (_: ArrayLike<FilterItem> | null | undefined, index: number) => ({
