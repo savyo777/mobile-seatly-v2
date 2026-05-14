@@ -3,41 +3,45 @@ import { VISIT_PHOTOS_BUCKET } from '@/lib/storage/buckets';
 
 export type DeleteMyReviewInput = {
   userId: string;
-  reviewId: string;
-  visitPhotoId?: string | null;
+  visitPhotoId: string;
   visitPhotoUrl?: string | null;
+  /** Paired restaurant_reviews.id — when present, also delete the review row. */
+  reviewId?: string | null;
 };
 
 /**
- * Removes the user's restaurant_reviews row and, when we paired one with it,
- * the matching visit_photos row + its storage object. RLS scopes deletes to
- * the row's owner (auth.uid() = user_id) so a missing/wrong userId fails
- * cleanly.
+ * Removes the user's visit_photos row + the underlying storage object, and
+ * (when supplied) the paired restaurant_reviews row. Photo deletion drives the
+ * cascade so a snap-only entry can also be cleaned up.
  *
- * Storage object path is derived from the public URL the bucket served:
+ * RLS scopes deletes to the row's owner (auth.uid() = user_id) so a missing or
+ * mismatched userId fails cleanly without affecting another customer's data.
+ *
+ * Storage path is parsed from the public URL the bucket served:
  *   .../storage/v1/object/public/visit-photos/{userId}/{photoId}.jpg
- * We pull everything after `visit-photos/` and pass it to storage.remove().
+ * Everything after `/visit-photos/` is the object key we pass to remove().
  */
 export async function deleteMyReview(input: DeleteMyReviewInput): Promise<void> {
   const supabase = getSupabase();
-  if (!supabase || !input.userId || !input.reviewId) return;
+  if (!supabase || !input.userId || !input.visitPhotoId) return;
 
-  const { error: reviewErr } = await supabase
-    .from('restaurant_reviews')
+  const { error: photoErr } = await supabase
+    .from('visit_photos')
     .delete()
-    .eq('id', input.reviewId)
+    .eq('id', input.visitPhotoId)
     .eq('user_id', input.userId);
-  if (reviewErr) throw reviewErr;
+  if (photoErr) throw photoErr;
 
-  if (input.visitPhotoId) {
+  if (input.reviewId) {
     try {
       await supabase
-        .from('visit_photos')
+        .from('restaurant_reviews')
         .delete()
-        .eq('id', input.visitPhotoId)
+        .eq('id', input.reviewId)
         .eq('user_id', input.userId);
     } catch {
-      // Non-fatal — review is already gone.
+      // Non-fatal — the photo is already gone, restaurant Photos section
+      // will refresh on focus; review section will too once the row is gone.
     }
   }
 

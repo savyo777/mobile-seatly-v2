@@ -1,7 +1,7 @@
-import React, { useEffect, useMemo, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { ActivityIndicator, View, Text, StyleSheet, ScrollView, Image, Pressable, Linking, useWindowDimensions } from 'react-native';
 import { Image as ExpoImage } from 'expo-image';
-import { useLocalSearchParams, useRouter } from 'expo-router';
+import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Button, Badge, ScreenWrapper } from '@/components/ui';
@@ -739,30 +739,31 @@ export default function RestaurantDetailScreen() {
     };
   }, [restaurant?.id]);
 
-  useEffect(() => {
-    // Preview should mirror the diner view 1:1, so fetch reviews even when
-    // isPreview is true.
-    const targetId = restaurant?.id ?? null;
-    if (!targetId) {
-      setReviews([]);
-      return;
-    }
-    if (isDemoModeEnabled()) {
-      setReviews([]);
-      return;
-    }
-    let active = true;
-    void fetchRestaurantPublicReviews(targetId, 12)
-      .then((rows) => {
-        if (active) setReviews(rows);
-      })
-      .catch(() => {
-        if (active) setReviews([]);
-      });
-    return () => {
-      active = false;
-    };
-  }, [restaurant?.id]);
+  useFocusEffect(
+    // Refetch on every focus so deletes from My Reviews propagate here.
+    useCallback(() => {
+      const targetId = restaurant?.id ?? null;
+      if (!targetId) {
+        setReviews([]);
+        return;
+      }
+      if (isDemoModeEnabled()) {
+        setReviews([]);
+        return;
+      }
+      let active = true;
+      void fetchRestaurantPublicReviews(targetId, 12)
+        .then((rows) => {
+          if (active) setReviews(rows);
+        })
+        .catch(() => {
+          if (active) setReviews([]);
+        });
+      return () => {
+        active = false;
+      };
+    }, [restaurant?.id]),
+  );
 
   const categoryNameById = useMemo(
     () => new Map(menuCategories.map((category) => [category.id, category.name])),
@@ -816,14 +817,17 @@ export default function RestaurantDetailScreen() {
     }
   }, [menuCategoryTabs, selectedMenuTab]);
 
-  useEffect(() => {
-    if (isDemoModeEnabled() || !restaurant?.id) return;
-    let cancelled = false;
-    listVisitPhotosByRestaurant(restaurant.id, 3)
-      .then((rows) => { if (!cancelled) setVisitPhotoStrip(rows); })
-      .catch(() => {});
-    return () => { cancelled = true; };
-  }, [restaurant?.id]);
+  useFocusEffect(
+    // Refetch on focus so deletes from My Reviews propagate here.
+    useCallback(() => {
+      if (isDemoModeEnabled() || !restaurant?.id) return;
+      let cancelled = false;
+      listVisitPhotosByRestaurant(restaurant.id, 3)
+        .then((rows) => { if (!cancelled) setVisitPhotoStrip(rows); })
+        .catch(() => {});
+      return () => { cancelled = true; };
+    }, [restaurant?.id]),
+  );
 
   const todayKey = currentRestaurantWeekdayKey();
   const todayHours = restaurant?.hoursJson[todayKey];

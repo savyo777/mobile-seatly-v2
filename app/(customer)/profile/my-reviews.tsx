@@ -79,6 +79,26 @@ const useStyles = createStyles((c) => ({
     gap: 2,
     marginTop: spacing.xs,
   },
+  snapBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    marginTop: spacing.xs,
+    alignSelf: 'flex-start',
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 10,
+    backgroundColor: 'rgba(255,255,255,0.06)',
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: c.border,
+  },
+  snapBadgeText: {
+    fontSize: 10,
+    fontWeight: '700',
+    letterSpacing: 0.6,
+    color: c.textSecondary,
+    textTransform: 'uppercase',
+  },
   body: {
     ...typography.bodySmall,
     color: c.textSecondary,
@@ -234,9 +254,9 @@ export default function MyReviewsScreen() {
     try {
       await deleteMyReview({
         userId,
-        reviewId: pendingDelete.id,
         visitPhotoId: pendingDelete.visitPhotoId,
         visitPhotoUrl: pendingDelete.visitPhotoUrl,
+        reviewId: pendingDelete.reviewId,
       });
       setRows((prev) => prev.filter((r) => r.id !== pendingDelete.id));
       setPendingDelete(null);
@@ -284,16 +304,23 @@ export default function MyReviewsScreen() {
                 {item.createdAt && (
                   <Text style={styles.dateLine}>{formatReviewDate(item.createdAt)}</Text>
                 )}
-                <View style={styles.stars}>
-                  {[1, 2, 3, 4, 5].map((value) => (
-                    <Ionicons
-                      key={value}
-                      name={value <= item.rating ? 'star' : 'star-outline'}
-                      size={14}
-                      color={c.gold}
-                    />
-                  ))}
-                </View>
+                {typeof item.rating === 'number' && item.rating > 0 ? (
+                  <View style={styles.stars}>
+                    {[1, 2, 3, 4, 5].map((value) => (
+                      <Ionicons
+                        key={value}
+                        name={value <= (item.rating ?? 0) ? 'star' : 'star-outline'}
+                        size={14}
+                        color={c.gold}
+                      />
+                    ))}
+                  </View>
+                ) : (
+                  <View style={styles.snapBadge}>
+                    <Ionicons name="image-outline" size={11} color={c.textSecondary} />
+                    <Text style={styles.snapBadgeText}>Snap</Text>
+                  </View>
+                )}
               </View>
               <Pressable
                 onPress={() => setPendingDelete(item)}
