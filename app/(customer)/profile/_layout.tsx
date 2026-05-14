@@ -29,6 +29,7 @@ export default function ProfileStackLayout() {
       <Stack.Screen name="promotions" />
       <Stack.Screen name="loyalty" />
       <Stack.Screen name="favorites" />
+      <Stack.Screen name="my-reviews" />
       <Stack.Screen name="invite" />
       <Stack.Screen name="help" />
       <Stack.Screen name="about" />

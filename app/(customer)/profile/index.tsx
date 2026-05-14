@@ -62,6 +62,7 @@ const savedRestaurants = isDemoModeEnabled() ? getSavedRestaurants() : [];
 
 const ACCOUNT_ROWS = [
   { icon: 'notifications-outline' as const, title: 'Notifications', value: 'On', route: '/(customer)/profile/notifications' },
+  { icon: 'star-outline' as const, title: 'My Reviews', value: null, route: '/(customer)/profile/my-reviews' },
   { icon: 'lock-closed-outline' as const, title: 'Privacy', value: null, route: '/(customer)/profile/privacy' },
   { icon: 'help-circle-outline' as const, title: 'Help & support', value: null, route: '/(customer)/profile/help' },
 ];
