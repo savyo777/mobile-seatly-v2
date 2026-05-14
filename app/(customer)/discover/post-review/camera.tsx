@@ -311,16 +311,9 @@ export default function ReviewCameraScreen() {
   );
   const canUseCamera = Boolean(permission?.granted) && !cameraUnavailable;
 
-  // Filter picker placement — hugs the bottom safe area. Gallery + flip
-  // moved to the top bar so the bottom only carries the carousel + pill.
-  const carouselBottom = insets.bottom + 16;
-  const pillBottom = carouselBottom + SNAP_FILTER_RING_SIZE + 6;
-
-  // 9:16 design frame for the filter overlay — width-locked to the screen,
-  // top-anchored, never scaled or cropped. Every filter component is
-  // designed against this aspect so corner-anchored decorations land on
-  // their natural positions.
-  const filterFrameH = Math.round((windowW * 16) / 9);
+  // Filter picker placement — just above the shutter/gallery/flip row.
+  const carouselBottom = insets.bottom + 80;
+  const pillBottom = carouselBottom + SNAP_FILTER_RING_SIZE + 8;
 
   const pushToCaption = useCallback(
     (uri: string, capturedAtMs: number) => {
@@ -587,25 +580,13 @@ export default function ReviewCameraScreen() {
           </View>
         )}
 
-        {/* Filter design frame — 9:16, full screen width, top-anchored.
-            Every filter component is rendered inside its native design
-            space so absolute positions (top:10, right:12, bottom:14...)
-            land on the actual frame corners. */}
-        <View
-          pointerEvents="none"
-          style={{
-            position: 'absolute',
-            top: 0,
-            left: 0,
-            width: windowW,
-            height: filterFrameH,
-            overflow: 'visible',
-          }}
-        >
+        {/* Filter decorations overlay — full-screen so the grain, vignette,
+            and decorations span the same resolution as the photo. */}
+        <View pointerEvents="none" style={StyleSheet.absoluteFillObject}>
           <StoryFilterFrame
             filterId={selectedFilterId}
             width={windowW}
-            height={filterFrameH}
+            height={windowH}
             capturedAt={undefined}
             restaurantName={restaurantName}
             city={restaurantCity}
@@ -646,29 +627,9 @@ export default function ReviewCameraScreen() {
           <Pressable onPress={goBack} hitSlop={12} style={styles.topIconHit} accessibilityRole="button" accessibilityLabel="Back">
             <Ionicons name="chevron-back" size={28} color="#fff" />
           </Pressable>
-          <Pressable
-            onPress={() => void openGallery()}
-            hitSlop={12}
-            style={styles.topIconHit}
-            accessibilityRole="button"
-            accessibilityLabel="Choose from photo library"
-          >
-            <Ionicons name="images-outline" size={24} color="#fff" />
-          </Pressable>
           <Text style={styles.topTitle} numberOfLines={1}>
             Posting to {restaurantName}
           </Text>
-          <Pressable
-            onPress={() => {
-              setCameraFacing((prev) => (prev === 'back' ? 'front' : 'back'));
-            }}
-            hitSlop={12}
-            style={styles.topIconHit}
-            accessibilityRole="button"
-            accessibilityLabel="Flip camera"
-          >
-            <Ionicons name="camera-reverse-outline" size={24} color="#fff" />
-          </Pressable>
           <Pressable
             onPress={() => {
               if (!canUseCamera || cameraFacing !== 'back') return;
@@ -688,18 +649,36 @@ export default function ReviewCameraScreen() {
           </Pressable>
         </View>
 
-        {capturing && (
-          <View
-            pointerEvents="none"
-            style={{
-              position: 'absolute',
-              bottom: insets.bottom + 16 + SNAP_FILTER_RING_SIZE + 6 + 28 + 16,
-              alignSelf: 'center',
-            }}
-          >
-            <ActivityIndicator color="rgba(255,255,255,0.85)" size="small" />
+        <View
+          pointerEvents="auto"
+          style={[styles.bottomUi, { paddingBottom: insets.bottom + 20 }]}
+        >
+          <View style={styles.captureRow}>
+            <Pressable
+              onPress={() => void openGallery()}
+              hitSlop={{ top: 16, bottom: 16, left: 16, right: 16 }}
+              style={({ pressed }) => [styles.galleryBtn, pressed && { opacity: 0.86 }]}
+              accessibilityRole="button"
+              accessibilityLabel="Choose from photo library"
+            >
+              <Ionicons name="images-outline" size={24} color="#fff" />
+            </Pressable>
+
+            {capturing ? (
+              <ActivityIndicator color="rgba(255,255,255,0.85)" size="small" />
+            ) : (
+              <View style={{ width: 48 }} />
+            )}
+
+            <GlassCircle
+              onPress={() => {
+                setCameraFacing((prev) => (prev === 'back' ? 'front' : 'back'));
+              }}
+            >
+              <Ionicons name="camera-reverse-outline" size={22} color="#fff" />
+            </GlassCircle>
           </View>
-        )}
+        </View>
       </View>
     </View>
   );
