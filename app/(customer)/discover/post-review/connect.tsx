@@ -22,7 +22,7 @@ import { Button } from '@/components/ui';
 import { StoryFilterFrame } from '@/components/storyFilters/StoryFilterFrame';
 import { useColors, createStyles, borderRadius, spacing, typography } from '@/lib/theme';
 import { safeRouterBack } from '@/lib/navigation/transitions';
-import { createSnapPost, getSnapRestaurantName, TAG_POOL } from '@/lib/mock/snaps';
+import { createSnapPost, getSnapRestaurantName } from '@/lib/mock/snaps';
 import { mockRestaurants } from '@/lib/mock/restaurants';
 import { mockCustomer } from '@/lib/mock/users';
 import { useCurrentUserId } from '@/lib/auth/currentUserId';
@@ -318,23 +318,8 @@ export default function SnapCaptionScreen() {
     if (isDemoModeEnabled()) return mockCustomer.avatarUrl;
     return userProfile?.avatarUrl ?? null;
   }, [userProfile]);
-  const [dish, setDish] = useState('');
-  const [tags, setTags] = useState<string[]>([]);
-  const [tagInput, setTagInput] = useState('');
   const [photoAspect, setPhotoAspect] = useState(DEFAULT_SNAP_PHOTO_ASPECT);
   const [posting, setPosting] = useState(false);
-
-  const toggleTag = (tag: string) => {
-    setTags((prev) => (prev.includes(tag) ? prev.filter((t) => t !== tag) : [...prev, tag]));
-  };
-
-  const addCustomTag = () => {
-    const raw = tagInput.trim().toLowerCase();
-    if (!raw) return;
-    const normalized = raw.startsWith('#') ? raw : `#${raw}`;
-    if (!tags.includes(normalized)) setTags([...tags, normalized]);
-    setTagInput('');
-  };
 
   const decodedUri = photoUri
     ? (() => {
@@ -414,8 +399,7 @@ export default function SnapCaptionScreen() {
         image: decodedUri,
         caption: cleanCaption,
         rating,
-        tags,
-        dish: dish.trim() || undefined,
+        tags: [],
         storyFilterId: selectedFilterId ?? undefined,
         storyFilterCapturedAt: selectedFilterId ? capturedAt : undefined,
       });
@@ -441,7 +425,7 @@ export default function SnapCaptionScreen() {
                 storyFilterId: selectedFilterId ?? null,
                 storyFilterCapturedAt: selectedFilterId ? capturedAt : null,
                 rating,
-                tags,
+                tags: [],
               });
             }
             // Also write to restaurant_reviews so the rating + caption appears
@@ -600,71 +584,6 @@ export default function SnapCaptionScreen() {
             <Text style={styles.counter}>{caption.length}/220</Text>
           </View>
 
-          <View style={styles.fieldSection}>
-            <Text style={styles.fieldLabel}>Dish name (optional)</Text>
-            <TextInput
-              value={dish}
-              onChangeText={setDish}
-              placeholder="e.g. Tonkotsu ramen"
-              placeholderTextColor={c.textMuted}
-              style={styles.lineInput}
-              maxLength={60}
-            />
-          </View>
-
-          <View style={styles.fieldSection}>
-            <Text style={styles.fieldLabel}>Tags</Text>
-            <View style={styles.tagPoolRow}>
-              {TAG_POOL.map((tag) => {
-                const on = tags.includes(tag);
-                return (
-                  <Pressable
-                    key={tag}
-                    onPress={() => toggleTag(tag)}
-                    style={[styles.tagChip, on && styles.tagChipOn]}
-                  >
-                    <Text style={[styles.tagChipText, on && styles.tagChipTextOn]}>{tag}</Text>
-                  </Pressable>
-                );
-              })}
-            </View>
-            <View style={styles.customTagRow}>
-              <TextInput
-                value={tagInput}
-                onChangeText={setTagInput}
-                placeholder="Add your own tag"
-                placeholderTextColor={c.textMuted}
-                style={styles.lineInput}
-                onSubmitEditing={addCustomTag}
-                autoCapitalize="none"
-                maxLength={24}
-              />
-              <Pressable
-                onPress={addCustomTag}
-                disabled={!tagInput.trim()}
-                style={({ pressed }) => [
-                  styles.addBtn,
-                  (!tagInput.trim() || pressed) && { opacity: 0.5 },
-                ]}
-              >
-                <Ionicons name="add" size={20} color={c.bgBase} />
-              </Pressable>
-            </View>
-            {tags.length > 0 ? (
-              <View style={styles.selectedRow}>
-                {tags.map((t) => (
-                  <Pressable
-                    key={t}
-                    onPress={() => toggleTag(t)}
-                    style={styles.selectedChip}
-                  >
-                    <Text style={styles.selectedChipText}>{t}</Text>
-                    <Ionicons name="close" size={13} color={c.bgBase} />
-                  </Pressable>
-                ))}
-              </View>
-            ) : null}
-          </View>
         </ScrollView>
 
         <View
