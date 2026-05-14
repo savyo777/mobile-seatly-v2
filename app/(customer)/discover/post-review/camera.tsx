@@ -315,12 +315,6 @@ export default function ReviewCameraScreen() {
   const carouselBottom = insets.bottom + 80;
   const pillBottom = carouselBottom + SNAP_FILTER_RING_SIZE + 8;
 
-  // Safe rooms for filter decorations:
-  //   Top — clear of the iPhone status bar + Dynamic Island (insets.top + small margin).
-  //   Bottom — clear of the filter chip carousel + name pill.
-  const filterTopInset = insets.top + 8;
-  const filterBottomInset = pillBottom + 28 + 12;
-
   const pushToCaption = useCallback(
     (uri: string, capturedAtMs: number) => {
       const encodedUri = encodeURIComponent(uri);
@@ -586,9 +580,8 @@ export default function ReviewCameraScreen() {
           </View>
         )}
 
-        {/* Filter decorations overlay — full-screen with safe-area insets so
-            decorations don't hide behind the iPhone status bar / Dynamic
-            Island at the top or behind the chip carousel at the bottom. */}
+        {/* Filter decorations overlay — full-screen so the grain, vignette,
+            and decorations span the same resolution as the photo. */}
         <View pointerEvents="none" style={StyleSheet.absoluteFillObject}>
           <StoryFilterFrame
             filterId={selectedFilterId}
@@ -600,7 +593,6 @@ export default function ReviewCameraScreen() {
             area={restaurantArea}
             mediaSlot={<View />}
             containerStyle={TRANSPARENT_FRAME_STYLE}
-            overlayInsets={{ top: filterTopInset, bottom: filterBottomInset }}
           />
         </View>
       </View>
