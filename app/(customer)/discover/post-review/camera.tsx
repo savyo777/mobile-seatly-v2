@@ -522,7 +522,7 @@ export default function ReviewCameraScreen() {
           <Image
             source={{ uri: capturedUri }}
             style={StyleSheet.absoluteFillObject}
-            contentFit="cover"
+            contentFit="contain"
             contentPosition="center"
           />
         ) : canUseCamera ? (
