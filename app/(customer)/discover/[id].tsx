@@ -509,11 +509,28 @@ const useStyles = createStyles((c) => ({
     marginBottom: spacing.sm,
   },
   photoThumb: {
-    flex: 1,
-    height: 90,
-    borderRadius: borderRadius.lg,
+    borderRadius: borderRadius.md,
     backgroundColor: c.bgElevated,
     overflow: 'hidden',
+  },
+  showMoreBtn: {
+    marginTop: spacing.sm,
+    alignSelf: 'stretch',
+    paddingVertical: spacing.sm,
+    borderRadius: borderRadius.full,
+    borderWidth: 1,
+    borderColor: 'rgba(201,168,76,0.45)',
+    alignItems: 'center',
+    backgroundColor: 'rgba(201,168,76,0.06)',
+  },
+  showMoreBtnPressed: {
+    opacity: 0.85,
+  },
+  showMoreText: {
+    fontSize: 14,
+    fontWeight: '700',
+    color: c.gold,
+    letterSpacing: 0.2,
   },
   photoEmpty: {
     flexDirection: 'row',
@@ -1081,14 +1098,6 @@ export default function RestaurantDetailScreen() {
               <View style={{ marginTop: spacing.xl }}>
                 <View style={styles.photoSectionHeader}>
                   <Text style={styles.sectionHeading}>Photos</Text>
-                  {!isEmpty ? (
-                    <Pressable
-                      hitSlop={8}
-                      onPress={() => router.push(`/(customer)/discover/snaps/${restaurant.id}`)}
-                    >
-                      <Text style={styles.seeAll}>See all</Text>
-                    </Pressable>
-                  ) : null}
                 </View>
                 <Text style={styles.photoSubtitle}>See what people are eating here</Text>
 
@@ -1119,66 +1128,26 @@ export default function RestaurantDetailScreen() {
                     </View>
                   )
                 ) : isDemoModeEnabled() ? (
-                  <View style={styles.photoStrip}>
-                    {demoPhotos.map((snap) => (
-                      <Pressable
-                        key={snap.id}
-                        style={styles.photoThumb}
-                        onPress={() => router.push(`/(customer)/discover/snaps/detail/${snap.id}`)}
-                      >
-                        {snap.storyFilterId ? (
-                          <StoryFilterFrame
-                            filterId={snap.storyFilterId}
-                            width={photoThumbWidth}
-                            height={90}
-                            capturedAt={snap.storyFilterCapturedAt}
-                            restaurantName={restaurant.name}
-                            city={restaurant.city}
-                            area={restaurant.area}
-                            mediaSlot={
-                              <ExpoImage
-                                source={{ uri: snap.image }}
-                                style={{ width: '100%', height: '100%' }}
-                                contentFit="cover"
-                                contentPosition="bottom"
-                              />
-                            }
-                          />
-                        ) : (
-                          <ExpoImage
-                            source={{ uri: snap.image }}
-                            style={{ width: '100%', height: '100%' }}
-                            contentFit="cover"
-                            contentPosition="bottom"
-                          />
-                        )}
-                      </Pressable>
-                    ))}
-                  </View>
-                ) : (
-                  <View style={styles.photoStrip}>
-                    {visitPhotoStrip.map((photo) => {
-                      const validFilter = STORY_FILTERS.some((f) => f.id === photo.story_filter_id)
-                        ? (photo.story_filter_id as StoryFilterId)
-                        : undefined;
-                      return (
+                  <>
+                    <View style={styles.photoStrip}>
+                      {demoPhotos.map((snap) => (
                         <Pressable
-                          key={photo.id}
-                          style={styles.photoThumb}
-                          onPress={() => router.push(`/(customer)/discover/snaps/${restaurant.id}`)}
+                          key={snap.id}
+                          style={[styles.photoThumb, { width: photoThumbWidth, height: photoThumbWidth }]}
+                          onPress={() => router.push(`/(customer)/discover/snaps/detail/${snap.id}`)}
                         >
-                          {validFilter ? (
+                          {snap.storyFilterId ? (
                             <StoryFilterFrame
-                              filterId={validFilter}
+                              filterId={snap.storyFilterId}
                               width={photoThumbWidth}
-                              height={90}
-                              capturedAt={photo.story_filter_captured_at ?? undefined}
+                              height={photoThumbWidth}
+                              capturedAt={snap.storyFilterCapturedAt}
                               restaurantName={restaurant.name}
                               city={restaurant.city}
                               area={restaurant.area}
                               mediaSlot={
                                 <ExpoImage
-                                  source={{ uri: photo.image_url }}
+                                  source={{ uri: snap.image }}
                                   style={{ width: '100%', height: '100%' }}
                                   contentFit="cover"
                                   contentPosition="bottom"
@@ -1187,16 +1156,82 @@ export default function RestaurantDetailScreen() {
                             />
                           ) : (
                             <ExpoImage
-                              source={{ uri: photo.image_url }}
+                              source={{ uri: snap.image }}
                               style={{ width: '100%', height: '100%' }}
                               contentFit="cover"
                               contentPosition="bottom"
                             />
                           )}
                         </Pressable>
-                      );
-                    })}
-                  </View>
+                      ))}
+                    </View>
+                    <Pressable
+                      onPress={() => router.push(`/(customer)/discover/snaps/${restaurant.id}`)}
+                      style={({ pressed }) => [
+                        styles.showMoreBtn,
+                        pressed && styles.showMoreBtnPressed,
+                      ]}
+                      accessibilityRole="button"
+                      accessibilityLabel="Show more photos"
+                    >
+                      <Text style={styles.showMoreText}>Show more</Text>
+                    </Pressable>
+                  </>
+                ) : (
+                  <>
+                    <View style={styles.photoStrip}>
+                      {visitPhotoStrip.map((photo) => {
+                        const validFilter = STORY_FILTERS.some((f) => f.id === photo.story_filter_id)
+                          ? (photo.story_filter_id as StoryFilterId)
+                          : undefined;
+                        return (
+                          <Pressable
+                            key={photo.id}
+                            style={[styles.photoThumb, { width: photoThumbWidth, height: photoThumbWidth }]}
+                            onPress={() => router.push(`/(customer)/discover/snaps/detail/${photo.id}?restaurantId=${restaurant.id}`)}
+                          >
+                            {validFilter ? (
+                              <StoryFilterFrame
+                                filterId={validFilter}
+                                width={photoThumbWidth}
+                                height={photoThumbWidth}
+                                capturedAt={photo.story_filter_captured_at ?? undefined}
+                                restaurantName={restaurant.name}
+                                city={restaurant.city}
+                                area={restaurant.area}
+                                mediaSlot={
+                                  <ExpoImage
+                                    source={{ uri: photo.image_url }}
+                                    style={{ width: '100%', height: '100%' }}
+                                    contentFit="cover"
+                                    contentPosition="bottom"
+                                  />
+                                }
+                              />
+                            ) : (
+                              <ExpoImage
+                                source={{ uri: photo.image_url }}
+                                style={{ width: '100%', height: '100%' }}
+                                contentFit="cover"
+                                contentPosition="bottom"
+                              />
+                            )}
+                          </Pressable>
+                        );
+                      })}
+                    </View>
+                    <Pressable
+                      onPress={() => router.push(`/(customer)/discover/snaps/${restaurant.id}`)}
+                      style={({ pressed }) => [
+                        styles.showMoreBtn,
+                        pressed && styles.showMoreBtnPressed,
+                      ]}
+                      accessibilityRole="button"
+                      accessibilityLabel="Show more photos"
+                    >
+                      <Text style={styles.showMoreText}>Show more</Text>
+                    </Pressable>
+                  </>
                 )}
               </View>
             );
