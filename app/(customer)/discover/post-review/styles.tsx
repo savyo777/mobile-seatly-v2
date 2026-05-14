@@ -266,6 +266,11 @@ export default function SnapStylesScreen() {
   const pillBottom = 44;
   const carouselBottom = pillBottom + 28 + 8; // pill height (~28) + 8px gap
 
+  // Push the filter overlay decorations away from the bottom chrome
+  // so corner-anchored elements (watermark, labels, badges) aren't clipped.
+  const overlayBottomInset = carouselBottom + RING_SIZE + 12;
+  const overlayTopInset = insets.top + 56;
+
   const getItemLayout = useCallback(
     (_: ArrayLike<FilterItem> | null | undefined, index: number) => ({
       length: CHIP_STRIDE,
@@ -373,6 +378,7 @@ export default function SnapStylesScreen() {
             ) : null
           }
           containerStyle={CARD_FRAME_STYLE}
+          overlayInsets={{ top: overlayTopInset, bottom: overlayBottomInset }}
         />
       </View>
 

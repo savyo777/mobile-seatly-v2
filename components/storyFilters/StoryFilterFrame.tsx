@@ -47,6 +47,13 @@ type Props = {
   area?: string;
   /** Override container style — e.g. pass `{ borderRadius: 0 }` for full-screen. */
   containerStyle?: ViewStyle;
+  /**
+   * Optional safe inset applied ONLY to the filter overlay layer, so corner
+   * decorations don't get clipped by chrome (bottom carousel etc.) when the
+   * frame is rendered at a non-9:16 aspect (e.g. full-screen 9:19.5).
+   * Photo, grain, and vignette layers remain unclipped.
+   */
+  overlayInsets?: { top?: number; right?: number; bottom?: number; left?: number };
 };
 
 export function StoryFilterFrame({
@@ -61,7 +68,12 @@ export function StoryFilterFrame({
   city,
   area,
   containerStyle,
+  overlayInsets,
 }: Props) {
+  const overlayTop = overlayInsets?.top ?? 0;
+  const overlayRight = overlayInsets?.right ?? 0;
+  const overlayBottom = overlayInsets?.bottom ?? 0;
+  const overlayLeft = overlayInsets?.left ?? 0;
   const frameH = height ?? Math.round((width * 16) / 9);
 
   const entry: StoryFilterEntry | null = filterId
@@ -97,16 +109,27 @@ export function StoryFilterFrame({
         style={StyleSheet.absoluteFill}
       />
 
-      {/* 4 · the chosen overlay */}
+      {/* 4 · the chosen overlay — clamped to the safe overlay region */}
       {entry ? (
-        <entry.Component
-          width={width}
-          height={frameH}
-          capturedAt={capturedAt}
-          restaurantName={restaurantName}
-          city={city}
-          area={area}
-        />
+        <View
+          pointerEvents="none"
+          style={{
+            position: 'absolute',
+            top: overlayTop,
+            left: overlayLeft,
+            right: overlayRight,
+            bottom: overlayBottom,
+          }}
+        >
+          <entry.Component
+            width={width - overlayLeft - overlayRight}
+            height={frameH - overlayTop - overlayBottom}
+            capturedAt={capturedAt}
+            restaurantName={restaurantName}
+            city={city}
+            area={area}
+          />
+        </View>
       ) : null}
     </View>
   );
