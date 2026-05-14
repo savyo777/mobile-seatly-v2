@@ -315,19 +315,6 @@ export default function ReviewCameraScreen() {
   const carouselBottom = insets.bottom + 80;
   const pillBottom = carouselBottom + SNAP_FILTER_RING_SIZE + 8;
 
-  // 9:16 camera frame, fit between the top title row and the bottom chrome.
-  // Filter decorations sit at the frame's actual corners (no clamp) since the
-  // frame aspect matches each filter component's 9:16 design space.
-  const TOP_CHROME_H = 56;
-  const BOTTOM_CHROME_H = pillBottom + 28 + 12;
-  const availTop = insets.top + TOP_CHROME_H;
-  const availBottom = insets.bottom + BOTTOM_CHROME_H;
-  const availH = Math.max(120, windowH - availTop - availBottom);
-  const frameW = Math.floor(Math.min(windowW, (availH * 9) / 16));
-  const frameH = Math.floor((frameW * 16) / 9);
-  const frameLeft = Math.floor((windowW - frameW) / 2);
-  const frameTop = Math.floor(availTop + Math.max(0, (availH - frameH) / 2));
-
   const pushToCaption = useCallback(
     (uri: string, capturedAtMs: number) => {
       const encodedUri = encodeURIComponent(uri);
@@ -593,22 +580,13 @@ export default function ReviewCameraScreen() {
           </View>
         )}
 
-        {/* Filter decorations overlay — kept at the previous 9:16 frame so all
-            corner-anchored elements fit exactly. Floats inside the full-bleed photo. */}
-        <View
-          pointerEvents="none"
-          style={{
-            position: 'absolute',
-            left: frameLeft,
-            top: frameTop,
-            width: frameW,
-            height: frameH,
-          }}
-        >
+        {/* Filter decorations overlay — full-screen so the grain, vignette,
+            and decorations span the same resolution as the photo. */}
+        <View pointerEvents="none" style={StyleSheet.absoluteFillObject}>
           <StoryFilterFrame
             filterId={selectedFilterId}
-            width={frameW}
-            height={frameH}
+            width={windowW}
+            height={windowH}
             capturedAt={undefined}
             restaurantName={restaurantName}
             city={restaurantCity}
