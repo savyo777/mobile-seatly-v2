@@ -95,7 +95,6 @@ export default function ExpenseDetailScreen() {
   const [description, setDescription] = useState('');
   const [expenseDate, setExpenseDate] = useState('');
   const [amount, setAmount] = useState('');
-  const [taxAmount, setTaxAmount] = useState('');
   const [category, setCategory] = useState<ExpenseCategoryKey>('other');
   const [paymentStatus, setPaymentStatus] = useState<PaymentStatus>('paid');
   const [notes, setNotes] = useState('');
@@ -132,7 +131,6 @@ export default function ExpenseDetailScreen() {
     setDescription(expense.description ?? '');
     setExpenseDate(expense.expenseDate);
     setAmount(dollarsToInputString(expense.amount));
-    setTaxAmount(dollarsToInputString(expense.taxAmount ?? 0));
     setCategory(expense.category);
     setPaymentStatus(expense.paymentStatus);
     setNotes(expense.notes ?? '');
@@ -169,7 +167,6 @@ export default function ExpenseDetailScreen() {
     setDescription(expense.description ?? '');
     setExpenseDate(expense.expenseDate);
     setAmount(dollarsToInputString(expense.amount));
-    setTaxAmount(dollarsToInputString(expense.taxAmount ?? 0));
     setCategory(expense.category);
     setPaymentStatus(expense.paymentStatus);
     setNotes(expense.notes ?? '');
@@ -187,16 +184,11 @@ export default function ExpenseDetailScreen() {
       return;
     }
     const parsedAmount = parseDollarsInput(amount);
-    const parsedTax = parseDollarsInput(taxAmount) ?? 0;
     if (parsedAmount == null || parsedAmount < 0) {
       Alert.alert('Missing amount', 'Enter how much the entry was for.');
       return;
     }
-    if (parsedTax < 0) {
-      Alert.alert('Invalid tax', 'Tax must be zero or more.');
-      return;
-    }
-    const totalAmount = Math.round((parsedAmount + parsedTax) * 100) / 100;
+    const totalAmount = parsedAmount;
     const paidAt = paymentStatus === 'paid' ? (expense.paidAt ?? new Date().toISOString()) : null;
 
     setSaving(true);
@@ -206,7 +198,7 @@ export default function ExpenseDetailScreen() {
         description: description.trim() || null,
         expenseDate,
         amount: parsedAmount,
-        taxAmount: parsedTax,
+        taxAmount: null as number | null,
         totalAmount,
         category,
         paymentStatus,
@@ -247,7 +239,6 @@ export default function ExpenseDetailScreen() {
     vendor,
     transactionType,
     amount,
-    taxAmount,
     paymentStatus,
     description,
     expenseDate,
@@ -333,8 +324,6 @@ export default function ExpenseDetailScreen() {
               openDatePicker={() => setDatePickerOpen(true)}
               amount={amount}
               setAmount={setAmount}
-              taxAmount={taxAmount}
-              setTaxAmount={setTaxAmount}
               category={category}
               setCategory={setCategory}
               paymentStatus={paymentStatus}
@@ -360,12 +349,6 @@ export default function ExpenseDetailScreen() {
           </GlassCard>
 
           <View style={styles.detailGrid}>
-            <DetailRow label="Subtotal" value={formatCurrency(expense.amount, expense.currency)} />
-            <DetailRow
-              label="Tax"
-              value={expense.taxAmount != null ? formatCurrency(expense.taxAmount, expense.currency) : '—'}
-              muted={expense.taxAmount == null}
-            />
             <DetailRow label="Status" value={capitalize(expense.paymentStatus)} />
             <DetailRow label="Currency" value={expense.currency.toUpperCase()} />
             {expense.paymentMethod ? (
@@ -411,8 +394,6 @@ function EditForm({
   openDatePicker,
   amount,
   setAmount,
-  taxAmount,
-  setTaxAmount,
   category,
   setCategory,
   paymentStatus,
@@ -436,8 +417,6 @@ function EditForm({
   openDatePicker: () => void;
   amount: string;
   setAmount: (value: string) => void;
-  taxAmount: string;
-  setTaxAmount: (value: string) => void;
   category: ExpenseCategoryKey;
   setCategory: (value: ExpenseCategoryKey) => void;
   paymentStatus: PaymentStatus;
@@ -453,7 +432,6 @@ function EditForm({
 }) {
   const ownerColors = useOwnerColors();
   const styles = useStyles();
-  const total = Math.round(((parseDollarsInput(amount) ?? 0) + (parseDollarsInput(taxAmount) ?? 0)) * 100) / 100;
   const categories = EXPENSE_CATEGORIES.filter((c) => (
     transactionType === 'income'
       ? ['sales', 'preorders', 'events', 'catering', 'delivery', 'gift_cards', 'other'].includes(c.key)
@@ -476,6 +454,16 @@ function EditForm({
         placeholder={transactionType === 'income' ? 'DoorDash, event tickets, catering client' : 'Toronto Hydro'}
         placeholderTextColor={ownerColors.textMuted}
         style={styles.input}
+      />
+
+      <Text style={styles.fieldLabel}>Amount</Text>
+      <TextInput
+        value={amount}
+        onChangeText={setAmount}
+        placeholder="0.00"
+        placeholderTextColor={ownerColors.textMuted}
+        style={[styles.input, styles.inputTotal]}
+        keyboardType="decimal-pad"
       />
 
       <Text style={styles.fieldLabel}>Category</Text>
@@ -504,35 +492,6 @@ function EditForm({
         style={styles.input}
       />
 
-      <View style={styles.amountGrid}>
-        <View style={styles.amountInputWrap}>
-          <Text style={styles.fieldLabel}>Amount</Text>
-          <TextInput
-            value={amount}
-            onChangeText={setAmount}
-            placeholder="0.00"
-            placeholderTextColor={ownerColors.textMuted}
-            style={[styles.input, styles.inputTotal]}
-            keyboardType="decimal-pad"
-          />
-        </View>
-        <View style={styles.amountInputWrap}>
-          <Text style={styles.fieldLabel}>Tax</Text>
-          <TextInput
-            value={taxAmount}
-            onChangeText={setTaxAmount}
-            placeholder="0.00"
-            placeholderTextColor={ownerColors.textMuted}
-            style={styles.input}
-            keyboardType="decimal-pad"
-          />
-        </View>
-      </View>
-
-      <GlassCard style={styles.totalPreviewCard}>
-        <Text style={styles.totalLabel}>Total</Text>
-        <Text style={styles.totalAmount}>{formatCurrency(total, currency)}</Text>
-      </GlassCard>
 
       <Text style={styles.fieldLabel}>Date</Text>
       <Pressable onPress={openDatePicker} style={styles.dateInputButton}>
@@ -827,21 +786,6 @@ const useStyles = createStyles((c) => {
     },
     catChipTextOn: {
       color: ownerColors.text,
-    },
-    amountGrid: {
-      flexDirection: 'row',
-      alignItems: 'flex-end',
-      gap: ownerSpace.sm,
-    },
-    amountInputWrap: {
-      flex: 1,
-      minWidth: 0,
-    },
-    totalPreviewCard: {
-      marginTop: ownerSpace.sm,
-      padding: ownerSpace.md,
-      backgroundColor: withAlpha(brandGold.dark, 0.08),
-      borderColor: withAlpha(brandGold.dark, 0.22),
     },
     dateInputButton: {
       marginTop: 6,

@@ -1,20 +1,31 @@
-import React, { useEffect, useMemo, useState } from 'react';
-import { Modal, Pressable, StyleSheet, Text, View } from 'react-native';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
+import {
+  FlatList,
+  Modal,
+  Pressable,
+  StyleSheet,
+  Text,
+  View,
+} from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useOwnerColors } from '@/lib/theme/ownerTheme';
 import { brandGold, withAlpha } from '@/lib/theme/tokens';
 
-// iOS Calendar–style modal date picker. Slides up as a bottom sheet,
-// shows a large month/year header with chevrons on the right, a
-// Sunday-first weekday row, a 6-row grid that includes overflow days
-// from the surrounding months (dimmed), and a Done / Cancel footer.
+// Google-Calendar-style date picker. Material 3 layout:
+//   - Header strip: "SELECT DATE" label, then the formatted selected
+//     date in large type (e.g. "Wed, May 14").
+//   - Body: a month/year toggle on the left + prev / next chevrons
+//     on the right. Tapping the toggle swaps the body between the
+//     month-grid view and a year-grid view (Material's behaviour).
+//   - Footer: Cancel / OK actions, right-aligned.
 
 const MONTH_LABELS = [
   'January', 'February', 'March', 'April', 'May', 'June',
   'July', 'August', 'September', 'October', 'November', 'December',
 ];
 const WEEKDAY_LABELS = ['S', 'M', 'T', 'W', 'T', 'F', 'S'];
+const YEAR_RANGE = 60; // 60 years backwards + 60 forwards in the year picker.
 
 function pad(n: number): string {
   return n < 10 ? `0${n}` : String(n);
@@ -34,6 +45,16 @@ function daysInMonth(year: number, month: number): number {
   return new Date(year, month + 1, 0).getDate();
 }
 
+function formatHeaderDate(iso: string): string {
+  const d = parseISODate(iso);
+  if (!d) return iso;
+  return d.toLocaleDateString(undefined, {
+    weekday: 'short',
+    month: 'short',
+    day: 'numeric',
+  });
+}
+
 type Cell = {
   day: number;
   iso: string;
@@ -47,15 +68,11 @@ type Props = {
   value: string | null;
   onClose: () => void;
   onConfirm: (iso: string) => void;
-  /**
-   * Accepted but no longer rendered prominently — the iOS-style header
-   * shows month + year only. Kept for back-compat with existing call
-   * sites that still pass a contextual title.
-   */
+  /** Optional. Replaces the "SELECT DATE" header label. */
   title?: string;
 };
 
-export function MonthCalendar({ visible, value, onClose, onConfirm }: Props) {
+export function MonthCalendar({ visible, value, onClose, onConfirm, title }: Props) {
   const ownerColors = useOwnerColors();
   const insets = useSafeAreaInsets();
   const today = useMemo(() => new Date(), []);
@@ -66,6 +83,8 @@ export function MonthCalendar({ visible, value, onClose, onConfirm }: Props) {
   const [selectedISO, setSelectedISO] = useState<string>(
     value ?? toISODate(today.getFullYear(), today.getMonth(), today.getDate()),
   );
+  const [mode, setMode] = useState<'days' | 'years'>('days');
+  const yearListRef = useRef<FlatList<number> | null>(null);
 
   useEffect(() => {
     if (visible) {
@@ -73,11 +92,11 @@ export function MonthCalendar({ visible, value, onClose, onConfirm }: Props) {
       setViewYear(d.getFullYear());
       setViewMonth(d.getMonth());
       setSelectedISO(value ?? toISODate(today.getFullYear(), today.getMonth(), today.getDate()));
+      setMode('days');
     }
   }, [visible, value, today]);
 
   const grid = useMemo<Cell[]>(() => {
-    // Sunday-first to match iOS US default. JS getDay(): 0 = Sun … 6 = Sat.
     const firstWeekday = new Date(viewYear, viewMonth, 1).getDay();
     const cur = daysInMonth(viewYear, viewMonth);
     const prevMonth = viewMonth === 0 ? 11 : viewMonth - 1;
@@ -87,7 +106,6 @@ export function MonthCalendar({ visible, value, onClose, onConfirm }: Props) {
     const nextYear = viewMonth === 11 ? viewYear + 1 : viewYear;
 
     const cells: Cell[] = [];
-    // Leading overflow days from previous month.
     for (let i = firstWeekday - 1; i >= 0; i--) {
       const day = prev - i;
       cells.push({
@@ -98,7 +116,6 @@ export function MonthCalendar({ visible, value, onClose, onConfirm }: Props) {
         current: false,
       });
     }
-    // Current month.
     for (let d = 1; d <= cur; d++) {
       cells.push({
         day: d,
@@ -108,8 +125,6 @@ export function MonthCalendar({ visible, value, onClose, onConfirm }: Props) {
         current: true,
       });
     }
-    // Trailing overflow days to fill 6 rows (42 cells) so the grid height
-    // is stable as the month changes.
     let nd = 1;
     while (cells.length < 42) {
       cells.push({
@@ -123,6 +138,13 @@ export function MonthCalendar({ visible, value, onClose, onConfirm }: Props) {
     }
     return cells;
   }, [viewYear, viewMonth]);
+
+  const years = useMemo(() => {
+    const base = today.getFullYear();
+    const out: number[] = [];
+    for (let y = base - YEAR_RANGE; y <= base + YEAR_RANGE; y++) out.push(y);
+    return out;
+  }, [today]);
 
   const goPrev = () => {
     if (viewMonth === 0) {
@@ -143,8 +165,25 @@ export function MonthCalendar({ visible, value, onClose, onConfirm }: Props) {
 
   const todayISO = toISODate(today.getFullYear(), today.getMonth(), today.getDate());
 
+  const enterYearMode = () => {
+    setMode('years');
+    // Scroll to the current view year after the FlatList mounts.
+    setTimeout(() => {
+      const idx = years.indexOf(viewYear);
+      if (idx >= 0 && yearListRef.current) {
+        const row = Math.floor(idx / 3);
+        yearListRef.current.scrollToOffset({ offset: Math.max(0, row * 56 - 100), animated: false });
+      }
+    }, 30);
+  };
+
+  const pickYear = (y: number) => {
+    setViewYear(y);
+    setMode('days');
+  };
+
   return (
-    <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
+    <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
       <Pressable style={styles.backdrop} onPress={onClose}>
         <Pressable
           style={[
@@ -152,102 +191,154 @@ export function MonthCalendar({ visible, value, onClose, onConfirm }: Props) {
             {
               backgroundColor: ownerColors.bgElevated,
               borderColor: ownerColors.border,
-              paddingBottom: insets.bottom + 18,
             },
           ]}
           onPress={(e) => e.stopPropagation()}
         >
-          <View style={styles.grabber} />
-
-          <View style={styles.headerRow}>
-            <Text style={[styles.monthYear, { color: ownerColors.text }]} numberOfLines={1}>
-              {MONTH_LABELS[viewMonth]}{' '}
-              <Text style={{ color: ownerColors.textMuted }}>{viewYear}</Text>
+          {/* Header strip — selected date display */}
+          <View
+            style={[
+              styles.header,
+              { backgroundColor: withAlpha(brandGold.dark, 0.16), borderBottomColor: ownerColors.border },
+            ]}
+          >
+            <Text style={[styles.headerKicker, { color: ownerColors.text }]}>
+              {(title ?? 'Select date').toUpperCase()}
             </Text>
-            <View style={styles.navGroup}>
-              <Pressable
-                onPress={goPrev}
-                hitSlop={10}
-                style={({ pressed }) => [styles.navBtn, pressed && { opacity: 0.5 }]}
-                accessibilityRole="button"
-                accessibilityLabel="Previous month"
-              >
-                <Ionicons name="chevron-back" size={22} color={ownerColors.gold} />
-              </Pressable>
-              <Pressable
-                onPress={goNext}
-                hitSlop={10}
-                style={({ pressed }) => [styles.navBtn, pressed && { opacity: 0.5 }]}
-                accessibilityRole="button"
-                accessibilityLabel="Next month"
-              >
-                <Ionicons name="chevron-forward" size={22} color={ownerColors.gold} />
-              </Pressable>
-            </View>
+            <Text style={[styles.headerDate, { color: ownerColors.text }]} numberOfLines={1}>
+              {formatHeaderDate(selectedISO)}
+            </Text>
           </View>
 
-          <View style={styles.weekdayRow}>
-            {WEEKDAY_LABELS.map((w, i) => (
-              <Text
-                key={`w-${i}`}
-                style={[styles.weekday, { color: ownerColors.textMuted }]}
-              >
-                {w}
+          {/* Month / year toggle + chevrons */}
+          <View style={styles.navRow}>
+            <Pressable
+              onPress={() => (mode === 'years' ? setMode('days') : enterYearMode())}
+              style={({ pressed }) => [styles.monthToggle, pressed && { opacity: 0.6 }]}
+              hitSlop={6}
+              accessibilityRole="button"
+              accessibilityLabel="Pick year"
+            >
+              <Text style={[styles.monthToggleText, { color: ownerColors.text }]}>
+                {MONTH_LABELS[viewMonth]} {viewYear}
               </Text>
-            ))}
+              <Ionicons
+                name={mode === 'years' ? 'chevron-up' : 'chevron-down'}
+                size={18}
+                color={ownerColors.text}
+              />
+            </Pressable>
+
+            {mode === 'days' ? (
+              <View style={styles.navBtns}>
+                <Pressable onPress={goPrev} hitSlop={10} style={({ pressed }) => [styles.navBtn, pressed && { opacity: 0.5 }]}>
+                  <Ionicons name="chevron-back" size={22} color={ownerColors.text} />
+                </Pressable>
+                <Pressable onPress={goNext} hitSlop={10} style={({ pressed }) => [styles.navBtn, pressed && { opacity: 0.5 }]}>
+                  <Ionicons name="chevron-forward" size={22} color={ownerColors.text} />
+                </Pressable>
+              </View>
+            ) : (
+              <View style={styles.navBtns} />
+            )}
           </View>
 
-          <View style={styles.grid}>
-            {grid.map((cell, idx) => {
-              const isSelected = cell.iso === selectedISO && cell.current;
-              const isToday = cell.iso === todayISO && cell.current;
-              const isOverflow = !cell.current;
-              return (
-                <Pressable
-                  key={`${cell.iso}-${idx}`}
-                  onPress={() => {
-                    if (isOverflow) {
-                      setViewYear(cell.year);
-                      setViewMonth(cell.month);
-                    }
-                    setSelectedISO(cell.iso);
-                  }}
-                  style={styles.cell}
-                  accessibilityRole="button"
-                  accessibilityLabel={cell.iso}
-                >
-                  <View
-                    style={[
-                      styles.cellInner,
-                      isSelected && { backgroundColor: brandGold.dark },
-                      isToday && !isSelected && {
-                        borderWidth: 1.5,
-                        borderColor: brandGold.dark,
-                      },
+          {mode === 'days' ? (
+            <>
+              <View style={styles.weekdayRow}>
+                {WEEKDAY_LABELS.map((w, i) => (
+                  <Text key={`w-${i}`} style={[styles.weekday, { color: ownerColors.textMuted }]}>
+                    {w}
+                  </Text>
+                ))}
+              </View>
+
+              <View style={styles.grid}>
+                {grid.map((cell, idx) => {
+                  const isSelected = cell.iso === selectedISO && cell.current;
+                  const isToday = cell.iso === todayISO && cell.current;
+                  const isOverflow = !cell.current;
+                  return (
+                    <Pressable
+                      key={`${cell.iso}-${idx}`}
+                      onPress={() => {
+                        if (isOverflow) {
+                          setViewYear(cell.year);
+                          setViewMonth(cell.month);
+                        }
+                        setSelectedISO(cell.iso);
+                      }}
+                      style={styles.cell}
+                      accessibilityRole="button"
+                      accessibilityLabel={cell.iso}
+                    >
+                      <View
+                        style={[
+                          styles.cellInner,
+                          isSelected && { backgroundColor: brandGold.dark },
+                          isToday && !isSelected && {
+                            borderWidth: 1.5,
+                            borderColor: brandGold.dark,
+                          },
+                        ]}
+                      >
+                        <Text
+                          style={[
+                            styles.cellText,
+                            { color: ownerColors.text },
+                            isToday && !isSelected && { color: brandGold.dark, fontWeight: '700' },
+                            isSelected && { color: '#0F0F0F', fontWeight: '700' },
+                            isOverflow && { color: withAlpha(ownerColors.text, 0.3), fontWeight: '500' },
+                          ]}
+                        >
+                          {cell.day}
+                        </Text>
+                      </View>
+                    </Pressable>
+                  );
+                })}
+              </View>
+            </>
+          ) : (
+            <FlatList
+              ref={yearListRef}
+              data={years}
+              numColumns={3}
+              keyExtractor={(y) => String(y)}
+              style={styles.yearList}
+              contentContainerStyle={styles.yearListContent}
+              showsVerticalScrollIndicator={false}
+              renderItem={({ item: y }) => {
+                const isView = y === viewYear;
+                const isToday = y === today.getFullYear();
+                return (
+                  <Pressable
+                    onPress={() => pickYear(y)}
+                    style={({ pressed }) => [
+                      styles.yearCell,
+                      isView && { backgroundColor: brandGold.dark },
+                      pressed && !isView && { opacity: 0.6 },
                     ]}
                   >
                     <Text
                       style={[
-                        styles.cellText,
+                        styles.yearText,
                         { color: ownerColors.text },
-                        isToday && !isSelected && { color: brandGold.dark, fontWeight: '700' },
-                        isSelected && { color: '#0F0F0F', fontWeight: '700' },
-                        isOverflow && { color: withAlpha(ownerColors.text, 0.32), fontWeight: '500' },
+                        isToday && !isView && { color: brandGold.dark, fontWeight: '700' },
+                        isView && { color: '#0F0F0F', fontWeight: '700' },
                       ]}
                     >
-                      {cell.day}
+                      {y}
                     </Text>
-                  </View>
-                </Pressable>
-              );
-            })}
-          </View>
+                  </Pressable>
+                );
+              }}
+            />
+          )}
 
-          <View style={styles.actionsRow}>
+          <View style={[styles.actionsRow, { paddingBottom: Math.max(insets.bottom, 8) }]}>
             <Pressable onPress={onClose} hitSlop={8} style={styles.actionBtn}>
-              <Text style={[styles.cancelText, { color: ownerColors.textSecondary }]}>
-                Cancel
-              </Text>
+              <Text style={[styles.actionTextSecondary, { color: ownerColors.gold }]}>CANCEL</Text>
             </Pressable>
             <Pressable
               onPress={() => onConfirm(selectedISO)}
@@ -256,7 +347,7 @@ export function MonthCalendar({ visible, value, onClose, onConfirm }: Props) {
               accessibilityRole="button"
               accessibilityLabel="Confirm date"
             >
-              <Text style={styles.doneText}>Done</Text>
+              <Text style={[styles.actionTextPrimary, { color: ownerColors.gold }]}>OK</Text>
             </Pressable>
           </View>
         </Pressable>
@@ -269,52 +360,70 @@ const styles = StyleSheet.create({
   backdrop: {
     flex: 1,
     backgroundColor: 'rgba(0,0,0,0.55)',
-    justifyContent: 'flex-end',
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: 20,
   },
   sheet: {
+    width: '100%',
+    maxWidth: 360,
+    borderRadius: 24,
+    borderWidth: StyleSheet.hairlineWidth,
+    overflow: 'hidden',
+  },
+  header: {
     paddingHorizontal: 20,
-    paddingTop: 6,
-    borderTopLeftRadius: 22,
-    borderTopRightRadius: 22,
-    borderTopWidth: StyleSheet.hairlineWidth,
-    borderLeftWidth: StyleSheet.hairlineWidth,
-    borderRightWidth: StyleSheet.hairlineWidth,
+    paddingTop: 18,
+    paddingBottom: 14,
+    borderBottomWidth: StyleSheet.hairlineWidth,
   },
-  grabber: {
-    alignSelf: 'center',
-    width: 38,
-    height: 4,
-    borderRadius: 2,
-    backgroundColor: 'rgba(255,255,255,0.18)',
-    marginBottom: 16,
+  headerKicker: {
+    fontSize: 11,
+    letterSpacing: 1.2,
+    fontWeight: '700',
+    opacity: 0.7,
   },
-  headerRow: {
+  headerDate: {
+    marginTop: 8,
+    fontSize: 30,
+    fontWeight: '700',
+    letterSpacing: -0.6,
+  },
+  navRow: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    marginBottom: 14,
+    paddingHorizontal: 16,
+    paddingTop: 14,
+    paddingBottom: 6,
   },
-  monthYear: {
-    fontSize: 22,
-    fontWeight: '700',
-    letterSpacing: -0.4,
-    flex: 1,
-    paddingRight: 8,
-  },
-  navGroup: {
+  monthToggle: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 16,
+    gap: 4,
+    paddingVertical: 6,
+    paddingHorizontal: 4,
+  },
+  monthToggleText: {
+    fontSize: 14,
+    fontWeight: '600',
+    letterSpacing: 0.2,
+  },
+  navBtns: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
   },
   navBtn: {
-    width: 30,
-    height: 30,
+    width: 36,
+    height: 36,
     alignItems: 'center',
     justifyContent: 'center',
   },
   weekdayRow: {
     flexDirection: 'row',
-    paddingBottom: 6,
+    paddingHorizontal: 12,
+    paddingBottom: 4,
   },
   weekday: {
     flex: 1,
@@ -326,6 +435,8 @@ const styles = StyleSheet.create({
   grid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
+    paddingHorizontal: 6,
+    paddingBottom: 6,
   },
   cell: {
     width: `${100 / 7}%`,
@@ -335,35 +446,58 @@ const styles = StyleSheet.create({
     paddingVertical: 2,
   },
   cellInner: {
-    width: '76%',
+    width: '78%',
     aspectRatio: 1,
     borderRadius: 999,
     alignItems: 'center',
     justifyContent: 'center',
   },
   cellText: {
-    fontSize: 17,
+    fontSize: 16,
+    fontWeight: '500',
+    fontVariant: ['tabular-nums'],
+  },
+  yearList: {
+    maxHeight: 280,
+  },
+  yearListContent: {
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+  },
+  yearCell: {
+    flex: 1,
+    margin: 6,
+    paddingVertical: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderRadius: 999,
+  },
+  yearText: {
+    fontSize: 16,
     fontWeight: '500',
     fontVariant: ['tabular-nums'],
   },
   actionsRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
-    marginTop: 14,
-    paddingHorizontal: 4,
+    justifyContent: 'flex-end',
+    gap: 8,
+    paddingHorizontal: 12,
+    paddingTop: 6,
   },
   actionBtn: {
     paddingVertical: 10,
-    paddingHorizontal: 4,
+    paddingHorizontal: 12,
+    borderRadius: 8,
   },
-  cancelText: {
-    fontSize: 15,
-    fontWeight: '600',
-  },
-  doneText: {
-    color: brandGold.dark,
-    fontSize: 16,
+  actionTextSecondary: {
+    fontSize: 13,
     fontWeight: '700',
+    letterSpacing: 0.8,
+  },
+  actionTextPrimary: {
+    fontSize: 13,
+    fontWeight: '800',
+    letterSpacing: 0.8,
   },
 });

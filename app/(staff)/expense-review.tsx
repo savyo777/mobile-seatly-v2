@@ -109,13 +109,6 @@ function statusLabel(status: PaymentStatus, type: TransactionType): string {
   return STATUS_OPTIONS.find((option) => option.value === status)?.label ?? 'Paid';
 }
 
-function formatCurrencyPreview(amount: number, currency: string): string {
-  return new Intl.NumberFormat(undefined, {
-    style: 'currency',
-    currency: (currency || 'cad').toUpperCase(),
-  }).format(amount);
-}
-
 function todayISO(): string {
   return new Date().toISOString().slice(0, 10);
 }
@@ -155,7 +148,6 @@ export default function ExpenseReviewScreen() {
   const [description, setDescription] = useState('');
   const [expenseDate, setExpenseDate] = useState(todayISO());
   const [subtotal, setSubtotal] = useState(isManual ? '0' : '');
-  const [taxAmount, setTaxAmount] = useState('0');
   const [currency, setCurrency] = useState('cad');
   const [category, setCategory] = useState<ExpenseCategoryKey>('food_cost');
   const [paymentStatus, setPaymentStatus] = useState<PaymentStatus>('paid');
@@ -245,9 +237,6 @@ export default function ExpenseReviewScreen() {
       .filter((c): c is (typeof EXPENSE_CATEGORIES)[number] => Boolean(c)),
     [activeCategoryKeys],
   );
-  const amountNumber = parseDollarsInput(subtotal) ?? 0;
-  const taxNumber = isManual ? (parseDollarsInput(taxAmount) ?? 0) : 0;
-  const totalAmount = isManual ? Math.round((amountNumber + taxNumber) * 100) / 100 : amountNumber;
 
   useEffect(() => {
     if (activeCategoryKeys.includes(category)) return;
@@ -281,12 +270,6 @@ export default function ExpenseReviewScreen() {
       Alert.alert('Missing amount', 'Enter how much the expense was for.');
       return;
     }
-    const tax = isManual ? (parseDollarsInput(taxAmount) ?? 0) : null;
-    if (tax != null && tax < 0) {
-      Alert.alert('Invalid tax', 'Tax must be zero or more.');
-      return;
-    }
-    const computedTotal = isManual ? Math.round((amount + (tax ?? 0)) * 100) / 100 : amount;
     const paidAt = isManual && paymentStatus === 'paid' ? new Date().toISOString() : null;
 
     setSaving(true);
@@ -304,8 +287,8 @@ export default function ExpenseReviewScreen() {
           description: description.trim() || null,
           expenseDate: expenseDate || todayISO(),
           amount,
-          taxAmount: tax,
-          totalAmount: computedTotal,
+          taxAmount: null,
+          totalAmount: amount,
           currency: (currency || 'cad').toLowerCase(),
           category,
           paymentStatus,
@@ -359,8 +342,8 @@ export default function ExpenseReviewScreen() {
         description: description.trim() || null,
         expenseDate: expenseDate || todayISO(),
         amount,
-        taxAmount: tax,
-        totalAmount: computedTotal,
+        taxAmount: null,
+        totalAmount: amount,
         currency: (currency || 'cad').toLowerCase(),
         category,
         paymentStatus,
@@ -405,7 +388,6 @@ export default function ExpenseReviewScreen() {
     saving,
     vendor,
     subtotal,
-    taxAmount,
     isManual,
     paymentStatus,
     transactionType,
@@ -532,22 +514,18 @@ export default function ExpenseReviewScreen() {
               autoCapitalize="words"
             />
 
-            {isManual ? (
-              <>
-                <Text style={styles.fieldLabel}>Description</Text>
-                <TextInput
-                  value={description}
-                  onChangeText={setDescription}
-                  placeholder={
-                    transactionType === 'income'
-                      ? 'Weekend pre-orders, private event deposit, catering invoice...'
-                      : 'May rent, weekly produce, annual insurance...'
-                  }
-                  placeholderTextColor={ownerColors.textMuted}
-                  style={styles.input}
-                />
-              </>
-            ) : null}
+            {fieldLabel('Amount', 'amount')}
+            <TextInput
+              value={subtotal}
+              onChangeText={(v) => {
+                setSubtotal(v);
+                clearExtracted('amount');
+              }}
+              placeholder="0.00"
+              placeholderTextColor={ownerColors.textMuted}
+              style={[styles.input, styles.inputTotal]}
+              keyboardType="decimal-pad"
+            />
 
             {fieldLabel('Category', 'category')}
             <ScrollView
@@ -573,41 +551,21 @@ export default function ExpenseReviewScreen() {
               })}
             </ScrollView>
 
-            {fieldLabel(isManual ? 'Amount' : 'Subtotal', 'amount')}
-            <View style={isManual ? styles.amountGrid : undefined}>
-              <TextInput
-                value={subtotal}
-                onChangeText={(v) => {
-                  setSubtotal(v);
-                  clearExtracted('amount');
-                }}
-                placeholder="0.00"
-                placeholderTextColor={ownerColors.textMuted}
-                style={[styles.input, styles.inputTotal, isManual && styles.amountInput]}
-                keyboardType="decimal-pad"
-              />
-              {isManual ? (
-                <View style={styles.amountInputWrap}>
-                  <Text style={styles.inlineFieldLabel}>Tax</Text>
-                  <TextInput
-                    value={taxAmount}
-                    onChangeText={setTaxAmount}
-                    placeholder="0.00"
-                    placeholderTextColor={ownerColors.textMuted}
-                    style={[styles.input, styles.amountInput]}
-                    keyboardType="decimal-pad"
-                  />
-                </View>
-              ) : null}
-            </View>
-
             {isManual ? (
-              <GlassCard style={styles.totalPreviewCard}>
-                <Text style={styles.previewMetaTitle}>Total</Text>
-                <Text style={styles.totalPreviewAmount}>
-                  {formatCurrencyPreview(totalAmount, currency)}
-                </Text>
-              </GlassCard>
+              <>
+                <Text style={styles.fieldLabel}>Description</Text>
+                <TextInput
+                  value={description}
+                  onChangeText={setDescription}
+                  placeholder={
+                    transactionType === 'income'
+                      ? 'Weekend pre-orders, private event deposit, catering invoice...'
+                      : 'May rent, weekly produce, annual insurance...'
+                  }
+                  placeholderTextColor={ownerColors.textMuted}
+                  style={styles.input}
+                />
+              </>
             ) : null}
 
             {fieldLabel('Date', 'expenseDate')}
@@ -867,37 +825,6 @@ const useStyles = createStyles((c) => {
       borderColor: withAlpha(brandGold.dark, 0.4),
       color: ownerColors.gold,
       fontWeight: '700',
-    },
-    amountGrid: {
-      flexDirection: 'row',
-      gap: ownerSpace.sm,
-      alignItems: 'flex-end',
-    },
-    amountInputWrap: {
-      flex: 1,
-      minWidth: 0,
-    },
-    amountInput: {
-      flex: 1,
-    },
-    inlineFieldLabel: {
-      color: ownerColors.text,
-      fontSize: 13,
-      fontWeight: '600',
-      letterSpacing: 0.3,
-      textTransform: 'uppercase',
-      marginTop: ownerSpace.md,
-    },
-    totalPreviewCard: {
-      marginTop: ownerSpace.sm,
-      padding: ownerSpace.md,
-    },
-    totalPreviewAmount: {
-      color: ownerColors.text,
-      fontSize: 26,
-      fontWeight: '800',
-      letterSpacing: -0.4,
-      marginTop: 4,
     },
     catChips: {
       gap: 8,
