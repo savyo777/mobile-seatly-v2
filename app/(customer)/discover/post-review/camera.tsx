@@ -315,13 +315,6 @@ export default function ReviewCameraScreen() {
   const carouselBottom = insets.bottom + 80;
   const pillBottom = carouselBottom + SNAP_FILTER_RING_SIZE + 8;
 
-  // Filter overlay is rendered at 9:16 anchored to the top of the screen so
-  // every filter component's corner-anchored decorations sit in their exact
-  // design space. The "extra" strip below it (windowH - filterH) is the
-  // bottom dead zone where the chrome (carousel + pill + gallery/flip row)
-  // lives without colliding with decorations.
-  const filterOverlayH = Math.round((windowW * 16) / 9);
-
   const pushToCaption = useCallback(
     (uri: string, capturedAtMs: number) => {
       const encodedUri = encodeURIComponent(uri);
@@ -587,23 +580,13 @@ export default function ReviewCameraScreen() {
           </View>
         )}
 
-        {/* Filter decorations overlay — 9:16, top-anchored. The strip below
-            it is the dead zone the chrome lives in. Photo behind it is still
-            full-screen. */}
-        <View
-          pointerEvents="none"
-          style={{
-            position: 'absolute',
-            top: 0,
-            left: 0,
-            width: windowW,
-            height: filterOverlayH,
-          }}
-        >
+        {/* Filter decorations overlay — full-screen so the grain, vignette,
+            and decorations span the same resolution as the photo. */}
+        <View pointerEvents="none" style={StyleSheet.absoluteFillObject}>
           <StoryFilterFrame
             filterId={selectedFilterId}
             width={windowW}
-            height={filterOverlayH}
+            height={windowH}
             capturedAt={undefined}
             restaurantName={restaurantName}
             city={restaurantCity}
