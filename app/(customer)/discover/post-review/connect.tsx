@@ -320,7 +320,12 @@ export default function SnapCaptionScreen() {
   const previewLayout = getSnapPreviewLayout({
     photoAspect,
     maxWidth: windowW - spacing.lg * 2,
-    maxHeight: Math.min(420, Math.max(320, windowH - insets.top - insets.bottom - 280)),
+    maxHeight: Math.min(560, Math.max(360, windowH - insets.top - insets.bottom - 240)),
+    // Composite snaps from the camera are full-screen 9:19.5 (~0.46 aspect).
+    // The default 0.75 minimum would clamp the container wider than the photo,
+    // causing contentFit="cover" to crop top + bottom. Allow the container to
+    // match the composite's actual aspect so nothing gets clipped.
+    minAspect: 0.45,
   });
   const photoW = previewLayout.width;
   const photoH = previewLayout.height;
