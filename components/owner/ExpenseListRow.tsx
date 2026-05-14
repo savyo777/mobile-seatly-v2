@@ -5,6 +5,7 @@ import { Ionicons } from '@expo/vector-icons';
 import type { Expense } from '@/lib/expenses/types';
 import { getExpenseCategory, getExpenseCategoryLabel } from '@/lib/owner/expenseCategories';
 import { getReceiptSignedUrl } from '@/lib/expenses/uploadReceiptImage';
+import { getCachedReceiptPreview, isDirectReceiptUri } from '@/lib/expenses/receiptPreviewCache';
 import { formatCurrency } from '@/lib/utils/formatCurrency';
 import { useOwnerColors } from '@/lib/theme/ownerTheme';
 import { brandGold, withAlpha } from '@/lib/theme/tokens';
@@ -20,8 +21,17 @@ export function ExpenseListRow({ expense, onPress }: Props) {
 
   useEffect(() => {
     let cancelled = false;
+    const cached = getCachedReceiptPreview(expense);
+    if (cached) {
+      setThumbUrl(cached);
+      return;
+    }
     if (!expense.receiptUrl) {
       setThumbUrl(null);
+      return;
+    }
+    if (isDirectReceiptUri(expense.receiptUrl)) {
+      setThumbUrl(expense.receiptUrl);
       return;
     }
     (async () => {

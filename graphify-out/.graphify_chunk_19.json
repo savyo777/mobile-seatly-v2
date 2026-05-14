@@ -1,0 +1,177 @@
+{
+  "nodes": [
+    {"id": "promptmatrix_cenaivaqascenario", "label": "CenaivaQaScenario", "file_type": "code", "source_file": "lib/cenaiva/qa/promptMatrix.ts", "source_location": null, "source_url": null, "captured_at": null, "author": null, "contributor": null},
+    {"id": "promptmatrix_cenaiva_qa_scenarios", "label": "CENAIVA_QA_SCENARIOS", "file_type": "code", "source_file": "lib/cenaiva/qa/promptMatrix.ts", "source_location": null, "source_url": null, "captured_at": null, "author": null, "contributor": null},
+    {"id": "promptmatrix_cenaiva_qa_forbidden_text", "label": "CENAIVA_QA_FORBIDDEN_TEXT", "file_type": "code", "source_file": "lib/cenaiva/qa/promptMatrix.ts", "source_location": null, "source_url": null, "captured_at": null, "author": null, "contributor": null},
+    {"id": "promptmatrix_cenaiva_qa_category_order", "label": "CENAIVA_QA_CATEGORY_ORDER", "file_type": "code", "source_file": "lib/cenaiva/qa/promptMatrix.ts", "source_location": null, "source_url": null, "captured_at": null, "author": null, "contributor": null},
+    {"id": "promptmatrix_scenario", "label": "scenario", "file_type": "code", "source_file": "lib/cenaiva/qa/promptMatrix.ts", "source_location": null, "source_url": null, "captured_at": null, "author": null, "contributor": null},
+
+    {"id": "scenarioassertions_validatescenarioresponse", "label": "validateScenarioResponse", "file_type": "code", "source_file": "lib/cenaiva/qa/scenarioAssertions.ts", "source_location": null, "source_url": null, "captured_at": null, "author": null, "contributor": null},
+    {"id": "scenarioassertions_assertscenarioresponse", "label": "assertScenarioResponse", "file_type": "code", "source_file": "lib/cenaiva/qa/scenarioAssertions.ts", "source_location": null, "source_url": null, "captured_at": null, "author": null, "contributor": null},
+    {"id": "scenarioassertions_cenaivaqafinding", "label": "CenaivaQaFinding", "file_type": "code", "source_file": "lib/cenaiva/qa/scenarioAssertions.ts", "source_location": null, "source_url": null, "captured_at": null, "author": null, "contributor": null},
+
+    {"id": "assistantstore_assistantstate", "label": "AssistantState", "file_type": "code", "source_file": "lib/cenaiva/state/assistantStore.tsx", "source_location": null, "source_url": null, "captured_at": null, "author": null, "contributor": null},
+    {"id": "assistantstore_assistantreducer", "label": "assistantReducer", "file_type": "code", "source_file": "lib/cenaiva/state/assistantStore.tsx", "source_location": null, "source_url": null, "captured_at": null, "author": null, "contributor": null},
+    {"id": "assistantstore_applyuiaction", "label": "applyUIAction", "file_type": "code", "source_file": "lib/cenaiva/state/assistantStore.tsx", "source_location": null, "source_url": null, "captured_at": null, "author": null, "contributor": null},
+    {"id": "assistantstore_assistantstoreprovider", "label": "AssistantStoreProvider", "file_type": "code", "source_file": "lib/cenaiva/state/assistantStore.tsx", "source_location": null, "source_url": null, "captured_at": null, "author": null, "contributor": null},
+    {"id": "assistantstore_useassistantstore", "label": "useAssistantStore", "file_type": "code", "source_file": "lib/cenaiva/state/assistantStore.tsx", "source_location": null, "source_url": null, "captured_at": null, "author": null, "contributor": null},
+    {"id": "assistantstore_initialstate", "label": "initialState", "file_type": "code", "source_file": "lib/cenaiva/state/assistantStore.tsx", "source_location": null, "source_url": null, "captured_at": null, "author": null, "contributor": null},
+    {"id": "assistantstore_beginbookingforrestaurant", "label": "beginBookingForRestaurant", "file_type": "code", "source_file": "lib/cenaiva/state/assistantStore.tsx", "source_location": null, "source_url": null, "captured_at": null, "author": null, "contributor": null},
+    {"id": "assistantstore_mergeassistantmemory", "label": "mergeAssistantMemory", "file_type": "code", "source_file": "lib/cenaiva/state/assistantStore.tsx", "source_location": null, "source_url": null, "captured_at": null, "author": null, "contributor": null},
+    {"id": "assistantstore_computecartsubtotal", "label": "computeCartSubtotal", "file_type": "code", "source_file": "lib/cenaiva/state/assistantStore.tsx", "source_location": null, "source_url": null, "captured_at": null, "author": null, "contributor": null},
+    {"id": "assistantstore_bookingprocessmemoryfromstate", "label": "bookingProcessMemoryFromState", "file_type": "code", "source_file": "lib/cenaiva/state/assistantStore.tsx", "source_location": null, "source_url": null, "captured_at": null, "author": null, "contributor": null},
+
+    {"id": "cenaivavoicepreferenceprovider_provider", "label": "CenaivaVoicePreferenceProvider", "file_type": "code", "source_file": "lib/cenaiva/voice/CenaivaVoicePreferenceProvider.tsx", "source_location": null, "source_url": null, "captured_at": null, "author": null, "contributor": null},
+    {"id": "cenaivavoicepreferenceprovider_usecenaivavoicepreference", "label": "useCenaivaVoicePreference", "file_type": "code", "source_file": "lib/cenaiva/voice/CenaivaVoicePreferenceProvider.tsx", "source_location": null, "source_url": null, "captured_at": null, "author": null, "contributor": null},
+    {"id": "cenaivavoicepreferenceprovider_storagekeyforuser", "label": "storageKeyForUser", "file_type": "code", "source_file": "lib/cenaiva/voice/CenaivaVoicePreferenceProvider.tsx", "source_location": null, "source_url": null, "captured_at": null, "author": null, "contributor": null},
+
+    {"id": "usecenaivavoice_hook", "label": "useCenaivaVoice", "file_type": "code", "source_file": "lib/cenaiva/voice/useCenaivaVoice.ts", "source_location": null, "source_url": null, "captured_at": null, "author": null, "contributor": null},
+
+    {"id": "usecenaivawakeword_hook", "label": "useCenaivaWakeWord", "file_type": "code", "source_file": "lib/cenaiva/voice/useCenaivaWakeWord.ts", "source_location": null, "source_url": null, "captured_at": null, "author": null, "contributor": null},
+    {"id": "usecenaivawakeword_native_speech", "label": "NATIVE_SPEECH (wake)", "file_type": "code", "source_file": "lib/cenaiva/voice/useCenaivaWakeWord.ts", "source_location": null, "source_url": null, "captured_at": null, "author": null, "contributor": null},
+    {"id": "usecenaivawakeword_wake_context_strings", "label": "WAKE_CONTEXT_STRINGS", "file_type": "code", "source_file": "lib/cenaiva/voice/useCenaivaWakeWord.ts", "source_location": null, "source_url": null, "captured_at": null, "author": null, "contributor": null},
+
+    {"id": "usemobilett_hook", "label": "useMobileTTS", "file_type": "code", "source_file": "lib/cenaiva/voice/useMobileTTS.ts", "source_location": null, "source_url": null, "captured_at": null, "author": null, "contributor": null},
+    {"id": "usemobilett_common_tts_cache_texts", "label": "COMMON_TTS_CACHE_TEXTS", "file_type": "code", "source_file": "lib/cenaiva/voice/useMobileTTS.ts", "source_location": null, "source_url": null, "captured_at": null, "author": null, "contributor": null},
+    {"id": "usemobilett_elevenlabs_tts_endpoint", "label": "elevenlabs-tts edge function", "file_type": "code", "source_file": "lib/cenaiva/voice/useMobileTTS.ts", "source_location": null, "source_url": null, "captured_at": null, "author": null, "contributor": null},
+
+    {"id": "usemobiletranscription_hook", "label": "useMobileTranscription", "file_type": "code", "source_file": "lib/cenaiva/voice/useMobileTranscription.ts", "source_location": null, "source_url": null, "captured_at": null, "author": null, "contributor": null},
+    {"id": "usemobiletranscription_deepgramurl", "label": "DEEPGRAM_URL", "file_type": "code", "source_file": "lib/cenaiva/voice/useMobileTranscription.ts", "source_location": null, "source_url": null, "captured_at": null, "author": null, "contributor": null},
+    {"id": "usemobiletranscription_deepgram_live_token", "label": "deepgram-live-token edge function", "file_type": "code", "source_file": "lib/cenaiva/voice/useMobileTranscription.ts", "source_location": null, "source_url": null, "captured_at": null, "author": null, "contributor": null},
+
+    {"id": "voicepermission_resolvewakepermissionstate", "label": "resolveWakePermissionState", "file_type": "code", "source_file": "lib/cenaiva/voice/voicePermission.ts", "source_location": null, "source_url": null, "captured_at": null, "author": null, "contributor": null},
+    {"id": "voicepermission_state", "label": "CenaivaVoicePermissionState", "file_type": "code", "source_file": "lib/cenaiva/voice/voicePermission.ts", "source_location": null, "source_url": null, "captured_at": null, "author": null, "contributor": null},
+
+    {"id": "voicepreference_cenaivattsvoice", "label": "CenaivaTtsVoice", "file_type": "code", "source_file": "lib/cenaiva/voice/voicePreference.ts", "source_location": null, "source_url": null, "captured_at": null, "author": null, "contributor": null},
+    {"id": "voicepreference_getcenaivattsvoiceid", "label": "getCenaivaTtsVoiceId", "file_type": "code", "source_file": "lib/cenaiva/voice/voicePreference.ts", "source_location": null, "source_url": null, "captured_at": null, "author": null, "contributor": null},
+    {"id": "voicepreference_normalizecenaivattsvoice", "label": "normalizeCenaivaTtsVoice", "file_type": "code", "source_file": "lib/cenaiva/voice/voicePreference.ts", "source_location": null, "source_url": null, "captured_at": null, "author": null, "contributor": null},
+    {"id": "voicepreference_options", "label": "CENAIVA_TTS_VOICE_OPTIONS", "file_type": "code", "source_file": "lib/cenaiva/voice/voicePreference.ts", "source_location": null, "source_url": null, "captured_at": null, "author": null, "contributor": null},
+
+    {"id": "wakegreeting_buildwakegreeting", "label": "buildWakeGreeting", "file_type": "code", "source_file": "lib/cenaiva/voice/wakeGreeting.ts", "source_location": null, "source_url": null, "captured_at": null, "author": null, "contributor": null},
+    {"id": "wakegreeting_resolvewakegreetingname", "label": "resolveWakeGreetingName", "file_type": "code", "source_file": "lib/cenaiva/voice/wakeGreeting.ts", "source_location": null, "source_url": null, "captured_at": null, "author": null, "contributor": null},
+    {"id": "wakegreeting_resolvewakegreetingperiod", "label": "resolveWakeGreetingPeriod", "file_type": "code", "source_file": "lib/cenaiva/voice/wakeGreeting.ts", "source_location": null, "source_url": null, "captured_at": null, "author": null, "contributor": null},
+
+    {"id": "wakewordphrases_iscenaivawakephrase", "label": "isCenaivaWakePhrase", "file_type": "code", "source_file": "lib/cenaiva/voice/wakeWordPhrases.ts", "source_location": null, "source_url": null, "captured_at": null, "author": null, "contributor": null},
+    {"id": "wakewordphrases_iscenaivaimmediatewakephrase", "label": "isCenaivaImmediateWakePhrase", "file_type": "code", "source_file": "lib/cenaiva/voice/wakeWordPhrases.ts", "source_location": null, "source_url": null, "captured_at": null, "author": null, "contributor": null},
+    {"id": "wakewordphrases_wake_phrases", "label": "WAKE_PHRASES", "file_type": "code", "source_file": "lib/cenaiva/voice/wakeWordPhrases.ts", "source_location": null, "source_url": null, "captured_at": null, "author": null, "contributor": null},
+    {"id": "wakewordphrases_iscenaivatoken", "label": "isCenaivaToken", "file_type": "code", "source_file": "lib/cenaiva/voice/wakeWordPhrases.ts", "source_location": null, "source_url": null, "captured_at": null, "author": null, "contributor": null},
+
+    {"id": "cenaivasocial_follow_urls", "label": "CENAIVA_FOLLOW_URLS", "file_type": "code", "source_file": "lib/config/cenaivaSocial.ts", "source_location": null, "source_url": null, "captured_at": null, "author": null, "contributor": null},
+    {"id": "cenaivasocial_opencenaivasocialprofile", "label": "openCenaivaSocialProfile", "file_type": "code", "source_file": "lib/config/cenaivaSocial.ts", "source_location": null, "source_url": null, "captured_at": null, "author": null, "contributor": null},
+
+    {"id": "contactinfo_support_email", "label": "SUPPORT_EMAIL", "file_type": "code", "source_file": "lib/config/contactInfo.ts", "source_location": null, "source_url": null, "captured_at": null, "author": null, "contributor": null},
+    {"id": "contactinfo_privacy_email", "label": "PRIVACY_EMAIL", "file_type": "code", "source_file": "lib/config/contactInfo.ts", "source_location": null, "source_url": null, "captured_at": null, "author": null, "contributor": null},
+    {"id": "contactinfo_legal_email", "label": "LEGAL_EMAIL", "file_type": "code", "source_file": "lib/config/contactInfo.ts", "source_location": null, "source_url": null, "captured_at": null, "author": null, "contributor": null},
+    {"id": "contactinfo_mailtourl", "label": "mailtoUrl", "file_type": "code", "source_file": "lib/config/contactInfo.ts", "source_location": null, "source_url": null, "captured_at": null, "author": null, "contributor": null},
+
+    {"id": "demomode_isdemomoideenabled", "label": "isDemoModeEnabled", "file_type": "code", "source_file": "lib/config/demoMode.ts", "source_location": null, "source_url": null, "captured_at": null, "author": null, "contributor": null},
+
+    {"id": "legallinks_brand_domain", "label": "BRAND_DOMAIN", "file_type": "code", "source_file": "lib/config/legalLinks.ts", "source_location": null, "source_url": null, "captured_at": null, "author": null, "contributor": null},
+    {"id": "legallinks_terms_url", "label": "TERMS_URL", "file_type": "code", "source_file": "lib/config/legalLinks.ts", "source_location": null, "source_url": null, "captured_at": null, "author": null, "contributor": null},
+    {"id": "legallinks_privacy_url", "label": "PRIVACY_URL", "file_type": "code", "source_file": "lib/config/legalLinks.ts", "source_location": null, "source_url": null, "captured_at": null, "author": null, "contributor": null},
+    {"id": "legallinks_licenses_url", "label": "LICENSES_URL", "file_type": "code", "source_file": "lib/config/legalLinks.ts", "source_location": null, "source_url": null, "captured_at": null, "author": null, "contributor": null},
+    {"id": "legallinks_ack_url", "label": "ACK_URL", "file_type": "code", "source_file": "lib/config/legalLinks.ts", "source_location": null, "source_url": null, "captured_at": null, "author": null, "contributor": null},
+
+    {"id": "businesstypes_business_types", "label": "BUSINESS_TYPES", "file_type": "code", "source_file": "lib/constants/businessTypes.ts", "source_location": null, "source_url": null, "captured_at": null, "author": null, "contributor": null},
+
+    {"id": "preferencecatalog_suggested_cuisines", "label": "SUGGESTED_CUISINES", "file_type": "code", "source_file": "lib/constants/preferenceCatalog.ts", "source_location": null, "source_url": null, "captured_at": null, "author": null, "contributor": null},
+    {"id": "preferencecatalog_suggested_dietary", "label": "SUGGESTED_DIETARY", "file_type": "code", "source_file": "lib/constants/preferenceCatalog.ts", "source_location": null, "source_url": null, "captured_at": null, "author": null, "contributor": null},
+    {"id": "preferencecatalog_suggested_vibes", "label": "SUGGESTED_VIBES", "file_type": "code", "source_file": "lib/constants/preferenceCatalog.ts", "source_location": null, "source_url": null, "captured_at": null, "author": null, "contributor": null},
+
+    {"id": "expensescontext_provider", "label": "ExpensesProvider", "file_type": "code", "source_file": "lib/context/ExpensesContext.tsx", "source_location": null, "source_url": null, "captured_at": null, "author": null, "contributor": null},
+    {"id": "expensescontext_useexpenses", "label": "useExpenses", "file_type": "code", "source_file": "lib/context/ExpensesContext.tsx", "source_location": null, "source_url": null, "captured_at": null, "author": null, "contributor": null},
+
+    {"id": "menucontext_provider", "label": "MenuProvider", "file_type": "code", "source_file": "lib/context/MenuContext.tsx", "source_location": null, "source_url": null, "captured_at": null, "author": null, "contributor": null},
+    {"id": "menucontext_usemenu", "label": "useMenu", "file_type": "code", "source_file": "lib/context/MenuContext.tsx", "source_location": null, "source_url": null, "captured_at": null, "author": null, "contributor": null},
+    {"id": "menucontext_maprowtomenuitem", "label": "mapRowToMenuItem", "file_type": "code", "source_file": "lib/context/MenuContext.tsx", "source_location": null, "source_url": null, "captured_at": null, "author": null, "contributor": null},
+    {"id": "menucontext_categoriesfromitems", "label": "categoriesFromItems", "file_type": "code", "source_file": "lib/context/MenuContext.tsx", "source_location": null, "source_url": null, "captured_at": null, "author": null, "contributor": null},
+
+    {"id": "guestintel_matchesfilterrule", "label": "matchesFilterRule", "file_type": "code", "source_file": "lib/crm/guestIntel.ts", "source_location": null, "source_url": null, "captured_at": null, "author": null, "contributor": null},
+    {"id": "guestintel_matchesmultifilters", "label": "matchesMultiFilters", "file_type": "code", "source_file": "lib/crm/guestIntel.ts", "source_location": null, "source_url": null, "captured_at": null, "author": null, "contributor": null},
+    {"id": "guestintel_matchessinglefilter", "label": "matchesSingleFilter", "file_type": "code", "source_file": "lib/crm/guestIntel.ts", "source_location": null, "source_url": null, "captured_at": null, "author": null, "contributor": null},
+    {"id": "guestintel_sortguests", "label": "sortGuests", "file_type": "code", "source_file": "lib/crm/guestIntel.ts", "source_location": null, "source_url": null, "captured_at": null, "author": null, "contributor": null},
+    {"id": "guestintel_dayssincelastvisit", "label": "daysSinceLastVisit", "file_type": "code", "source_file": "lib/crm/guestIntel.ts", "source_location": null, "source_url": null, "captured_at": null, "author": null, "contributor": null},
+    {"id": "guestintel_searchmatchesguest", "label": "searchMatchesGuest", "file_type": "code", "source_file": "lib/crm/guestIntel.ts", "source_location": null, "source_url": null, "captured_at": null, "author": null, "contributor": null},
+
+    {"id": "restaurantcatalog_loadrestaurantsfordiscover", "label": "loadRestaurantsForDiscover", "file_type": "code", "source_file": "lib/data/restaurantCatalog.ts", "source_location": null, "source_url": null, "captured_at": null, "author": null, "contributor": null},
+    {"id": "restaurantcatalog_loadrestaurantforbooking", "label": "loadRestaurantForBooking", "file_type": "code", "source_file": "lib/data/restaurantCatalog.ts", "source_location": null, "source_url": null, "captured_at": null, "author": null, "contributor": null},
+    {"id": "restaurantcatalog_rememberrestaurants", "label": "rememberRestaurants", "file_type": "code", "source_file": "lib/data/restaurantCatalog.ts", "source_location": null, "source_url": null, "captured_at": null, "author": null, "contributor": null},
+    {"id": "restaurantcatalog_getcachedrestaurantbyid", "label": "getCachedRestaurantById", "file_type": "code", "source_file": "lib/data/restaurantCatalog.ts", "source_location": null, "source_url": null, "captured_at": null, "author": null, "contributor": null}
+  ],
+  "edges": [
+    {"source": "promptmatrix_cenaiva_qa_scenarios", "target": "promptmatrix_scenario", "relation": "calls", "confidence": "EXTRACTED", "confidence_score": 1.0, "source_file": "lib/cenaiva/qa/promptMatrix.ts", "source_location": null, "weight": 1.0},
+    {"source": "promptmatrix_cenaiva_qa_scenarios", "target": "promptmatrix_cenaivaqascenario", "relation": "references", "confidence": "EXTRACTED", "confidence_score": 1.0, "source_file": "lib/cenaiva/qa/promptMatrix.ts", "source_location": null, "weight": 1.0},
+
+    {"source": "scenarioassertions_validatescenarioresponse", "target": "promptmatrix_cenaivaqascenario", "relation": "references", "confidence": "EXTRACTED", "confidence_score": 1.0, "source_file": "lib/cenaiva/qa/scenarioAssertions.ts", "source_location": null, "weight": 1.0},
+    {"source": "scenarioassertions_validatescenarioresponse", "target": "promptmatrix_cenaiva_qa_forbidden_text", "relation": "references", "confidence": "EXTRACTED", "confidence_score": 1.0, "source_file": "lib/cenaiva/qa/scenarioAssertions.ts", "source_location": null, "weight": 1.0},
+    {"source": "scenarioassertions_assertscenarioresponse", "target": "scenarioassertions_validatescenarioresponse", "relation": "calls", "confidence": "EXTRACTED", "confidence_score": 1.0, "source_file": "lib/cenaiva/qa/scenarioAssertions.ts", "source_location": null, "weight": 1.0},
+
+    {"source": "assistantstore_assistantreducer", "target": "assistantstore_applyuiaction", "relation": "calls", "confidence": "EXTRACTED", "confidence_score": 1.0, "source_file": "lib/cenaiva/state/assistantStore.tsx", "source_location": null, "weight": 1.0},
+    {"source": "assistantstore_assistantreducer", "target": "assistantstore_mergeassistantmemory", "relation": "calls", "confidence": "EXTRACTED", "confidence_score": 1.0, "source_file": "lib/cenaiva/state/assistantStore.tsx", "source_location": null, "weight": 1.0},
+    {"source": "assistantstore_assistantreducer", "target": "assistantstore_bookingprocessmemoryfromstate", "relation": "calls", "confidence": "EXTRACTED", "confidence_score": 1.0, "source_file": "lib/cenaiva/state/assistantStore.tsx", "source_location": null, "weight": 1.0},
+    {"source": "assistantstore_assistantreducer", "target": "assistantstore_beginbookingforrestaurant", "relation": "calls", "confidence": "EXTRACTED", "confidence_score": 1.0, "source_file": "lib/cenaiva/state/assistantStore.tsx", "source_location": null, "weight": 1.0},
+    {"source": "assistantstore_applyuiaction", "target": "assistantstore_beginbookingforrestaurant", "relation": "calls", "confidence": "EXTRACTED", "confidence_score": 1.0, "source_file": "lib/cenaiva/state/assistantStore.tsx", "source_location": null, "weight": 1.0},
+    {"source": "assistantstore_applyuiaction", "target": "assistantstore_computecartsubtotal", "relation": "calls", "confidence": "EXTRACTED", "confidence_score": 1.0, "source_file": "lib/cenaiva/state/assistantStore.tsx", "source_location": null, "weight": 1.0},
+    {"source": "assistantstore_assistantstoreprovider", "target": "assistantstore_assistantreducer", "relation": "calls", "confidence": "EXTRACTED", "confidence_score": 1.0, "source_file": "lib/cenaiva/state/assistantStore.tsx", "source_location": null, "weight": 1.0},
+    {"source": "assistantstore_assistantstoreprovider", "target": "assistantstore_initialstate", "relation": "references", "confidence": "EXTRACTED", "confidence_score": 1.0, "source_file": "lib/cenaiva/state/assistantStore.tsx", "source_location": null, "weight": 1.0},
+    {"source": "assistantstore_useassistantstore", "target": "assistantstore_assistantstoreprovider", "relation": "references", "confidence": "EXTRACTED", "confidence_score": 1.0, "source_file": "lib/cenaiva/state/assistantStore.tsx", "source_location": null, "weight": 1.0},
+
+    {"source": "cenaivavoicepreferenceprovider_provider", "target": "voicepreference_normalizecenaivattsvoice", "relation": "calls", "confidence": "EXTRACTED", "confidence_score": 1.0, "source_file": "lib/cenaiva/voice/CenaivaVoicePreferenceProvider.tsx", "source_location": null, "weight": 1.0},
+    {"source": "cenaivavoicepreferenceprovider_provider", "target": "voicepreference_getcenaivattsvoiceid", "relation": "calls", "confidence": "EXTRACTED", "confidence_score": 1.0, "source_file": "lib/cenaiva/voice/CenaivaVoicePreferenceProvider.tsx", "source_location": null, "weight": 1.0},
+    {"source": "cenaivavoicepreferenceprovider_provider", "target": "cenaivavoicepreferenceprovider_storagekeyforuser", "relation": "calls", "confidence": "EXTRACTED", "confidence_score": 1.0, "source_file": "lib/cenaiva/voice/CenaivaVoicePreferenceProvider.tsx", "source_location": null, "weight": 1.0},
+    {"source": "cenaivavoicepreferenceprovider_usecenaivavoicepreference", "target": "cenaivavoicepreferenceprovider_provider", "relation": "references", "confidence": "EXTRACTED", "confidence_score": 1.0, "source_file": "lib/cenaiva/voice/CenaivaVoicePreferenceProvider.tsx", "source_location": null, "weight": 1.0},
+
+    {"source": "usecenaivavoice_hook", "target": "usemobiletranscription_hook", "relation": "calls", "confidence": "EXTRACTED", "confidence_score": 1.0, "source_file": "lib/cenaiva/voice/useCenaivaVoice.ts", "source_location": null, "weight": 1.0},
+    {"source": "usecenaivavoice_hook", "target": "usemobilett_hook", "relation": "calls", "confidence": "EXTRACTED", "confidence_score": 1.0, "source_file": "lib/cenaiva/voice/useCenaivaVoice.ts", "source_location": null, "weight": 1.0},
+
+    {"source": "usecenaivawakeword_hook", "target": "wakewordphrases_iscenaivaimmediatewakephrase", "relation": "calls", "confidence": "EXTRACTED", "confidence_score": 1.0, "source_file": "lib/cenaiva/voice/useCenaivaWakeWord.ts", "source_location": null, "weight": 1.0},
+    {"source": "usecenaivawakeword_hook", "target": "voicepermission_resolvewakepermissionstate", "relation": "calls", "confidence": "EXTRACTED", "confidence_score": 1.0, "source_file": "lib/cenaiva/voice/useCenaivaWakeWord.ts", "source_location": null, "weight": 1.0},
+    {"source": "usecenaivawakeword_hook", "target": "usecenaivawakeword_native_speech", "relation": "references", "confidence": "EXTRACTED", "confidence_score": 1.0, "source_file": "lib/cenaiva/voice/useCenaivaWakeWord.ts", "source_location": null, "weight": 1.0},
+    {"source": "usecenaivawakeword_hook", "target": "usecenaivawakeword_wake_context_strings", "relation": "references", "confidence": "EXTRACTED", "confidence_score": 1.0, "source_file": "lib/cenaiva/voice/useCenaivaWakeWord.ts", "source_location": null, "weight": 1.0},
+
+    {"source": "usemobilett_hook", "target": "cenaivavoicepreferenceprovider_usecenaivavoicepreference", "relation": "calls", "confidence": "EXTRACTED", "confidence_score": 1.0, "source_file": "lib/cenaiva/voice/useMobileTTS.ts", "source_location": null, "weight": 1.0},
+    {"source": "usemobilett_hook", "target": "usemobilett_common_tts_cache_texts", "relation": "references", "confidence": "EXTRACTED", "confidence_score": 1.0, "source_file": "lib/cenaiva/voice/useMobileTTS.ts", "source_location": null, "weight": 1.0},
+    {"source": "usemobilett_hook", "target": "usemobilett_elevenlabs_tts_endpoint", "relation": "calls", "confidence": "EXTRACTED", "confidence_score": 1.0, "source_file": "lib/cenaiva/voice/useMobileTTS.ts", "source_location": null, "weight": 1.0},
+
+    {"source": "usemobiletranscription_hook", "target": "usemobiletranscription_deepgramurl", "relation": "references", "confidence": "EXTRACTED", "confidence_score": 1.0, "source_file": "lib/cenaiva/voice/useMobileTranscription.ts", "source_location": null, "weight": 1.0},
+    {"source": "usemobiletranscription_hook", "target": "usemobiletranscription_deepgram_live_token", "relation": "calls", "confidence": "EXTRACTED", "confidence_score": 1.0, "source_file": "lib/cenaiva/voice/useMobileTranscription.ts", "source_location": null, "weight": 1.0},
+
+    {"source": "wakewordphrases_iscenaivaimmediatewakephrase", "target": "wakewordphrases_iscenaivawakephrase", "relation": "calls", "confidence": "EXTRACTED", "confidence_score": 1.0, "source_file": "lib/cenaiva/voice/wakeWordPhrases.ts", "source_location": null, "weight": 1.0},
+    {"source": "wakewordphrases_iscenaivawakephrase", "target": "wakewordphrases_iscenaivatoken", "relation": "calls", "confidence": "EXTRACTED", "confidence_score": 1.0, "source_file": "lib/cenaiva/voice/wakeWordPhrases.ts", "source_location": null, "weight": 1.0},
+    {"source": "wakewordphrases_wake_phrases", "target": "wakewordphrases_iscenaivawakephrase", "relation": "references", "confidence": "EXTRACTED", "confidence_score": 1.0, "source_file": "lib/cenaiva/voice/wakeWordPhrases.ts", "source_location": null, "weight": 1.0},
+
+    {"source": "wakegreeting_buildwakegreeting", "target": "wakegreeting_resolvewakegreetingname", "relation": "calls", "confidence": "EXTRACTED", "confidence_score": 1.0, "source_file": "lib/cenaiva/voice/wakeGreeting.ts", "source_location": null, "weight": 1.0},
+    {"source": "wakegreeting_buildwakegreeting", "target": "wakegreeting_resolvewakegreetingperiod", "relation": "calls", "confidence": "EXTRACTED", "confidence_score": 1.0, "source_file": "lib/cenaiva/voice/wakeGreeting.ts", "source_location": null, "weight": 1.0},
+
+    {"source": "cenaivasocial_opencenaivasocialprofile", "target": "cenaivasocial_follow_urls", "relation": "references", "confidence": "EXTRACTED", "confidence_score": 1.0, "source_file": "lib/config/cenaivaSocial.ts", "source_location": null, "weight": 1.0},
+
+    {"source": "legallinks_terms_url", "target": "legallinks_brand_domain", "relation": "references", "confidence": "EXTRACTED", "confidence_score": 1.0, "source_file": "lib/config/legalLinks.ts", "source_location": null, "weight": 1.0},
+    {"source": "legallinks_privacy_url", "target": "legallinks_brand_domain", "relation": "references", "confidence": "EXTRACTED", "confidence_score": 1.0, "source_file": "lib/config/legalLinks.ts", "source_location": null, "weight": 1.0},
+    {"source": "legallinks_licenses_url", "target": "legallinks_brand_domain", "relation": "references", "confidence": "EXTRACTED", "confidence_score": 1.0, "source_file": "lib/config/legalLinks.ts", "source_location": null, "weight": 1.0},
+    {"source": "legallinks_ack_url", "target": "legallinks_brand_domain", "relation": "references", "confidence": "EXTRACTED", "confidence_score": 1.0, "source_file": "lib/config/legalLinks.ts", "source_location": null, "weight": 1.0},
+
+    {"source": "expensescontext_provider", "target": "demomode_isdemomoideenabled", "relation": "calls", "confidence": "EXTRACTED", "confidence_score": 1.0, "source_file": "lib/context/ExpensesContext.tsx", "source_location": null, "weight": 1.0},
+    {"source": "expensescontext_useexpenses", "target": "expensescontext_provider", "relation": "references", "confidence": "EXTRACTED", "confidence_score": 1.0, "source_file": "lib/context/ExpensesContext.tsx", "source_location": null, "weight": 1.0},
+
+    {"source": "menucontext_provider", "target": "demomode_isdemomoideenabled", "relation": "calls", "confidence": "EXTRACTED", "confidence_score": 1.0, "source_file": "lib/context/MenuContext.tsx", "source_location": null, "weight": 1.0},
+    {"source": "menucontext_provider", "target": "menucontext_maprowtomenuitem", "relation": "calls", "confidence": "EXTRACTED", "confidence_score": 1.0, "source_file": "lib/context/MenuContext.tsx", "source_location": null, "weight": 1.0},
+    {"source": "menucontext_provider", "target": "menucontext_categoriesfromitems", "relation": "calls", "confidence": "EXTRACTED", "confidence_score": 1.0, "source_file": "lib/context/MenuContext.tsx", "source_location": null, "weight": 1.0},
+    {"source": "menucontext_usemenu", "target": "menucontext_provider", "relation": "references", "confidence": "EXTRACTED", "confidence_score": 1.0, "source_file": "lib/context/MenuContext.tsx", "source_location": null, "weight": 1.0},
+
+    {"source": "guestintel_matchesmultifilters", "target": "guestintel_matchesfilterrule", "relation": "calls", "confidence": "EXTRACTED", "confidence_score": 1.0, "source_file": "lib/crm/guestIntel.ts", "source_location": null, "weight": 1.0},
+    {"source": "guestintel_matchessinglefilter", "target": "guestintel_matchesfilterrule", "relation": "calls", "confidence": "EXTRACTED", "confidence_score": 1.0, "source_file": "lib/crm/guestIntel.ts", "source_location": null, "weight": 1.0},
+
+    {"source": "restaurantcatalog_loadrestaurantsfordiscover", "target": "restaurantcatalog_rememberrestaurants", "relation": "calls", "confidence": "EXTRACTED", "confidence_score": 1.0, "source_file": "lib/data/restaurantCatalog.ts", "source_location": null, "weight": 1.0},
+    {"source": "restaurantcatalog_loadrestaurantsfordiscover", "target": "demomode_isdemomoideenabled", "relation": "calls", "confidence": "EXTRACTED", "confidence_score": 1.0, "source_file": "lib/data/restaurantCatalog.ts", "source_location": null, "weight": 1.0},
+    {"source": "restaurantcatalog_loadrestaurantforbooking", "target": "restaurantcatalog_getcachedrestaurantbyid", "relation": "calls", "confidence": "EXTRACTED", "confidence_score": 1.0, "source_file": "lib/data/restaurantCatalog.ts", "source_location": null, "weight": 1.0},
+    {"source": "restaurantcatalog_loadrestaurantforbooking", "target": "restaurantcatalog_rememberrestaurants", "relation": "calls", "confidence": "EXTRACTED", "confidence_score": 1.0, "source_file": "lib/data/restaurantCatalog.ts", "source_location": null, "weight": 1.0},
+
+    {"source": "promptmatrix_cenaiva_qa_scenarios", "target": "scenarioassertions_validatescenarioresponse", "relation": "shares_data_with", "confidence": "INFERRED", "confidence_score": 0.95, "source_file": "lib/cenaiva/qa/scenarioAssertions.ts", "source_location": null, "weight": 0.9},
+    {"source": "usecenaivavoice_hook", "target": "usecenaivawakeword_hook", "relation": "conceptually_related_to", "confidence": "INFERRED", "confidence_score": 0.85, "source_file": "lib/cenaiva/voice/useCenaivaVoice.ts", "source_location": null, "weight": 0.8},
+    {"source": "usemobilett_hook", "target": "voicepreference_cenaivattsvoice", "relation": "shares_data_with", "confidence": "INFERRED", "confidence_score": 0.9, "source_file": "lib/cenaiva/voice/useMobileTTS.ts", "source_location": null, "weight": 0.9},
+    {"source": "expensescontext_provider", "target": "menucontext_provider", "relation": "conceptually_related_to", "confidence": "INFERRED", "confidence_score": 0.65, "source_file": "lib/context/MenuContext.tsx", "source_location": null, "weight": 0.6}
+  ],
+  "hyperedges": [],
+  "input_tokens": 0,
+  "output_tokens": 0
+}

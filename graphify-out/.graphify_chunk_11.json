@@ -1,0 +1,170 @@
+{
+  "nodes": [
+    {"id": "discoverhorizontalsection_component", "label": "DiscoverHorizontalSection", "file_type": "code", "source_file": "components/discover/DiscoverHorizontalSection.tsx", "source_location": null, "source_url": null, "captured_at": null, "author": null, "contributor": null},
+    {"id": "discoverhorizontalsection_section_header", "label": "Section Header with See All", "file_type": "code", "source_file": "components/discover/DiscoverHorizontalSection.tsx", "source_location": null, "source_url": null, "captured_at": null, "author": null, "contributor": null},
+    {"id": "discoverhorizontalsection_card_render", "label": "Horizontal Restaurant Card FlatList", "file_type": "code", "source_file": "components/discover/DiscoverHorizontalSection.tsx", "source_location": null, "source_url": null, "captured_at": null, "author": null, "contributor": null},
+
+    {"id": "discovermapview_component", "label": "DiscoverMapView", "file_type": "code", "source_file": "components/discover/DiscoverMapView.tsx", "source_location": null, "source_url": null, "captured_at": null, "author": null, "contributor": null},
+    {"id": "discovermapview_filters", "label": "Map Filter Chips (nearby, topRated, dateNight, outdoor, openNow)", "file_type": "code", "source_file": "components/discover/DiscoverMapView.tsx", "source_location": null, "source_url": null, "captured_at": null, "author": null, "contributor": null},
+    {"id": "discovermapview_iscoordvalid", "label": "isFiniteLatLng guard", "file_type": "code", "source_file": "components/discover/DiscoverMapView.tsx", "source_location": null, "source_url": null, "captured_at": null, "author": null, "contributor": null},
+    {"id": "discovermapview_normalizekey", "label": "normalizeRestaurantKey", "file_type": "code", "source_file": "components/discover/DiscoverMapView.tsx", "source_location": null, "source_url": null, "captured_at": null, "author": null, "contributor": null},
+    {"id": "discovermapview_withdisplaycoords", "label": "withMapDisplayCoordinates fallback", "file_type": "code", "source_file": "components/discover/DiscoverMapView.tsx", "source_location": null, "source_url": null, "captured_at": null, "author": null, "contributor": null},
+    {"id": "discovermapview_clustersheet", "label": "Cluster Sheet UI", "file_type": "code", "source_file": "components/discover/DiscoverMapView.tsx", "source_location": null, "source_url": null, "captured_at": null, "author": null, "contributor": null},
+    {"id": "discovermapview_loaddata", "label": "Load restaurants async effect", "file_type": "code", "source_file": "components/discover/DiscoverMapView.tsx", "source_location": null, "source_url": null, "captured_at": null, "author": null, "contributor": null},
+
+    {"id": "restaurantbrowsecard_component", "label": "RestaurantBrowseCard", "file_type": "code", "source_file": "components/discover/RestaurantBrowseCard.tsx", "source_location": null, "source_url": null, "captured_at": null, "author": null, "contributor": null},
+
+    {"id": "restaurantcarouselsection_component", "label": "RestaurantCarouselSection", "file_type": "code", "source_file": "components/discover/RestaurantCarouselSection.tsx", "source_location": null, "source_url": null, "captured_at": null, "author": null, "contributor": null},
+
+    {"id": "reviewrestaurantcard_component", "label": "ReviewRestaurantCard", "file_type": "code", "source_file": "components/discover/ReviewRestaurantCard.tsx", "source_location": null, "source_url": null, "captured_at": null, "author": null, "contributor": null},
+
+    {"id": "snapentrybutton_component", "label": "SnapEntryButton (Snap, earn points CTA)", "file_type": "code", "source_file": "components/discover/SnapEntryButton.tsx", "source_location": null, "source_url": null, "captured_at": null, "author": null, "contributor": null},
+
+    {"id": "snappreviewcard_component", "label": "SnapPreviewCard", "file_type": "code", "source_file": "components/discover/SnapPreviewCard.tsx", "source_location": null, "source_url": null, "captured_at": null, "author": null, "contributor": null},
+    {"id": "snappreviewcard_image_loader", "label": "Snap Preview Image Loader", "file_type": "code", "source_file": "components/discover/SnapPreviewCard.tsx", "source_location": null, "source_url": null, "captured_at": null, "author": null, "contributor": null},
+
+    {"id": "snapviewermodal_component", "label": "SnapViewerModal", "file_type": "code", "source_file": "components/discover/SnapViewerModal.tsx", "source_location": null, "source_url": null, "captured_at": null, "author": null, "contributor": null},
+    {"id": "snapviewermodal_demogate_user", "label": "Demo gate: getSnapUser", "file_type": "code", "source_file": "components/discover/SnapViewerModal.tsx", "source_location": null, "source_url": null, "captured_at": null, "author": null, "contributor": null},
+    {"id": "snapviewermodal_demogate_restaurantname", "label": "Demo gate: getSnapRestaurantName", "file_type": "code", "source_file": "components/discover/SnapViewerModal.tsx", "source_location": null, "source_url": null, "captured_at": null, "author": null, "contributor": null},
+
+    {"id": "trendingdishesrow_component", "label": "TrendingDishesRow", "file_type": "code", "source_file": "components/discover/TrendingDishesRow.tsx", "source_location": null, "source_url": null, "captured_at": null, "author": null, "contributor": null},
+    {"id": "trendingdishesrow_demogate_restaurant", "label": "Demo gate: getRestaurantForPost", "file_type": "code", "source_file": "components/discover/TrendingDishesRow.tsx", "source_location": null, "source_url": null, "captured_at": null, "author": null, "contributor": null},
+
+    {"id": "eventcard_component", "label": "EventCard", "file_type": "code", "source_file": "components/events/EventCard.tsx", "source_location": null, "source_url": null, "captured_at": null, "author": null, "contributor": null},
+    {"id": "eventcard_type_label", "label": "TYPE_LABEL map (event types)", "file_type": "code", "source_file": "components/events/EventCard.tsx", "source_location": null, "source_url": null, "captured_at": null, "author": null, "contributor": null},
+    {"id": "eventcard_formateventdate", "label": "formatEventDate", "file_type": "code", "source_file": "components/events/EventCard.tsx", "source_location": null, "source_url": null, "captured_at": null, "author": null, "contributor": null},
+    {"id": "eventcard_handlesave", "label": "handleSave (toggle saved event)", "file_type": "code", "source_file": "components/events/EventCard.tsx", "source_location": null, "source_url": null, "captured_at": null, "author": null, "contributor": null},
+    {"id": "eventcard_handlebook", "label": "handleBook (router push booking)", "file_type": "code", "source_file": "components/events/EventCard.tsx", "source_location": null, "source_url": null, "captured_at": null, "author": null, "contributor": null},
+    {"id": "eventcard_urgency_logic", "label": "Urgent/Sold-out spotsLeft logic", "file_type": "code", "source_file": "components/events/EventCard.tsx", "source_location": null, "source_url": null, "captured_at": null, "author": null, "contributor": null},
+    {"id": "eventcard_demogate_restaurant", "label": "Demo gate: getRestaurantForEvent", "file_type": "code", "source_file": "components/events/EventCard.tsx", "source_location": null, "source_url": null, "captured_at": null, "author": null, "contributor": null},
+
+    {"id": "eventfilterbar_component", "label": "EventFilterBar", "file_type": "code", "source_file": "components/events/EventFilterBar.tsx", "source_location": null, "source_url": null, "captured_at": null, "author": null, "contributor": null},
+    {"id": "eventfilterbar_date_chips", "label": "DATE_CHIPS constant", "file_type": "code", "source_file": "components/events/EventFilterBar.tsx", "source_location": null, "source_url": null, "captured_at": null, "author": null, "contributor": null},
+    {"id": "eventfilterbar_type_chips", "label": "TYPE_CHIPS constant", "file_type": "code", "source_file": "components/events/EventFilterBar.tsx", "source_location": null, "source_url": null, "captured_at": null, "author": null, "contributor": null},
+
+    {"id": "collectionsstrip_component", "label": "CollectionsStrip", "file_type": "code", "source_file": "components/feed/CollectionsStrip.tsx", "source_location": null, "source_url": null, "captured_at": null, "author": null, "contributor": null},
+    {"id": "collectionsstrip_demogate", "label": "Demo gate: feedCollections", "file_type": "code", "source_file": "components/feed/CollectionsStrip.tsx", "source_location": null, "source_url": null, "captured_at": null, "author": null, "contributor": null},
+
+    {"id": "feedhero_component", "label": "FeedHero (Tonight's Pick)", "file_type": "code", "source_file": "components/feed/FeedHero.tsx", "source_location": null, "source_url": null, "captured_at": null, "author": null, "contributor": null},
+
+    {"id": "feedpostcard_component", "label": "FeedPostCard", "file_type": "code", "source_file": "components/feed/FeedPostCard.tsx", "source_location": null, "source_url": null, "captured_at": null, "author": null, "contributor": null},
+    {"id": "feedpostcard_handlelike", "label": "handleLike (heart with haptic)", "file_type": "code", "source_file": "components/feed/FeedPostCard.tsx", "source_location": null, "source_url": null, "captured_at": null, "author": null, "contributor": null},
+    {"id": "feedpostcard_handlesave", "label": "handleSave (bookmark)", "file_type": "code", "source_file": "components/feed/FeedPostCard.tsx", "source_location": null, "source_url": null, "captured_at": null, "author": null, "contributor": null},
+    {"id": "feedpostcard_handlecomment", "label": "handleComment (open snap detail)", "file_type": "code", "source_file": "components/feed/FeedPostCard.tsx", "source_location": null, "source_url": null, "captured_at": null, "author": null, "contributor": null},
+    {"id": "feedpostcard_handlebook", "label": "handleBook (route to booking)", "file_type": "code", "source_file": "components/feed/FeedPostCard.tsx", "source_location": null, "source_url": null, "captured_at": null, "author": null, "contributor": null},
+    {"id": "feedpostcard_photo_modal", "label": "Photo Fullscreen Modal", "file_type": "code", "source_file": "components/feed/FeedPostCard.tsx", "source_location": null, "source_url": null, "captured_at": null, "author": null, "contributor": null},
+    {"id": "feedpostcard_entrance_anim", "label": "Entrance Animation (opacity+translateY)", "file_type": "code", "source_file": "components/feed/FeedPostCard.tsx", "source_location": null, "source_url": null, "captured_at": null, "author": null, "contributor": null},
+
+    {"id": "heartburst_component", "label": "HeartBurst animation", "file_type": "code", "source_file": "components/feed/HeartBurst.tsx", "source_location": null, "source_url": null, "captured_at": null, "author": null, "contributor": null},
+
+    {"id": "restaurantdiscoverymap_native_component", "label": "RestaurantDiscoveryMap (native)", "file_type": "code", "source_file": "components/map/RestaurantDiscoveryMap.tsx", "source_location": null, "source_url": null, "captured_at": null, "author": null, "contributor": null},
+    {"id": "restaurantdiscoverymap_isfinitecoord", "label": "isFiniteCoordinate", "file_type": "code", "source_file": "components/map/RestaurantDiscoveryMap.tsx", "source_location": null, "source_url": null, "captured_at": null, "author": null, "contributor": null},
+    {"id": "restaurantdiscoverymap_saferating", "label": "safeRating helper", "file_type": "code", "source_file": "components/map/RestaurantDiscoveryMap.tsx", "source_location": null, "source_url": null, "captured_at": null, "author": null, "contributor": null},
+    {"id": "restaurantdiscoverymap_clusterkey", "label": "clusterKey", "file_type": "code", "source_file": "components/map/RestaurantDiscoveryMap.tsx", "source_location": null, "source_url": null, "captured_at": null, "author": null, "contributor": null},
+    {"id": "restaurantdiscoverymap_clusterradius", "label": "clusterRadiusForRegion", "file_type": "code", "source_file": "components/map/RestaurantDiscoveryMap.tsx", "source_location": null, "source_url": null, "captured_at": null, "author": null, "contributor": null},
+    {"id": "restaurantdiscoverymap_clusterrestaurants", "label": "clusterRestaurants algorithm", "file_type": "code", "source_file": "components/map/RestaurantDiscoveryMap.tsx", "source_location": null, "source_url": null, "captured_at": null, "author": null, "contributor": null},
+    {"id": "restaurantdiscoverymap_recenter", "label": "recenterOnUser FAB action", "file_type": "code", "source_file": "components/map/RestaurantDiscoveryMap.tsx", "source_location": null, "source_url": null, "captured_at": null, "author": null, "contributor": null},
+    {"id": "restaurantdiscoverymap_autofocus_user", "label": "Auto-focus user-location effect", "file_type": "code", "source_file": "components/map/RestaurantDiscoveryMap.tsx", "source_location": null, "source_url": null, "captured_at": null, "author": null, "contributor": null},
+    {"id": "restaurantdiscoverymap_focusselected", "label": "Focus user+selected restaurant fit", "file_type": "code", "source_file": "components/map/RestaurantDiscoveryMap.tsx", "source_location": null, "source_url": null, "captured_at": null, "author": null, "contributor": null},
+    {"id": "restaurantdiscoverymap_focuscluster", "label": "focusCluster fitToCoordinates", "file_type": "code", "source_file": "components/map/RestaurantDiscoveryMap.tsx", "source_location": null, "source_url": null, "captured_at": null, "author": null, "contributor": null},
+    {"id": "restaurantdiscoverymap_regionrescue", "label": "Out-of-bounds region rescue (zoom guard)", "file_type": "code", "source_file": "components/map/RestaurantDiscoveryMap.tsx", "source_location": null, "source_url": null, "captured_at": null, "author": null, "contributor": null},
+
+    {"id": "restaurantdiscoverymap_web_component", "label": "RestaurantDiscoveryMap (web fallback list)", "file_type": "code", "source_file": "components/map/RestaurantDiscoveryMap.web.tsx", "source_location": null, "source_url": null, "captured_at": null, "author": null, "contributor": null},
+
+    {"id": "restaurantmapdetailsheet_component", "label": "RestaurantMapDetailSheet", "file_type": "code", "source_file": "components/map/RestaurantMapDetailSheet.tsx", "source_location": null, "source_url": null, "captured_at": null, "author": null, "contributor": null},
+    {"id": "restaurantmapdetailsheet_availabilityvariant", "label": "availabilityVariant mapper", "file_type": "code", "source_file": "components/map/RestaurantMapDetailSheet.tsx", "source_location": null, "source_url": null, "captured_at": null, "author": null, "contributor": null},
+    {"id": "restaurantmapdetailsheet_slideanim", "label": "Slide-in spring animation", "file_type": "code", "source_file": "components/map/RestaurantMapDetailSheet.tsx", "source_location": null, "source_url": null, "captured_at": null, "author": null, "contributor": null},
+
+    {"id": "restaurantmapmarker_content", "label": "RestaurantMapMarkerContent", "file_type": "code", "source_file": "components/map/RestaurantMapMarker.tsx", "source_location": null, "source_url": null, "captured_at": null, "author": null, "contributor": null},
+    {"id": "restaurantmapmarker_component", "label": "RestaurantMapMarker (memo)", "file_type": "code", "source_file": "components/map/RestaurantMapMarker.tsx", "source_location": null, "source_url": null, "captured_at": null, "author": null, "contributor": null},
+    {"id": "restaurantmapmarker_cenaiva_variant", "label": "Cenaiva pin variant", "file_type": "code", "source_file": "components/map/RestaurantMapMarker.tsx", "source_location": null, "source_url": null, "captured_at": null, "author": null, "contributor": null},
+    {"id": "restaurantmapmarker_saferating", "label": "safeRating helper", "file_type": "code", "source_file": "components/map/RestaurantMapMarker.tsx", "source_location": null, "source_url": null, "captured_at": null, "author": null, "contributor": null},
+
+    {"id": "restaurantmaptypes_props", "label": "RestaurantDiscoveryMapProps type", "file_type": "code", "source_file": "components/map/restaurantMapTypes.ts", "source_location": null, "source_url": null, "captured_at": null, "author": null, "contributor": null},
+    {"id": "restaurantmaptypes_regiondelta", "label": "MapRegionDelta type", "file_type": "code", "source_file": "components/map/restaurantMapTypes.ts", "source_location": null, "source_url": null, "captured_at": null, "author": null, "contributor": null},
+
+    {"id": "aiinsightscard_component", "label": "AIInsightsCard (owner dashboard)", "file_type": "code", "source_file": "components/owner/AIInsightsCard.tsx", "source_location": null, "source_url": null, "captured_at": null, "author": null, "contributor": null},
+
+    {"id": "aibadge_component", "label": "AiBadge (extracted-field sparkle)", "file_type": "code", "source_file": "components/owner/AiBadge.tsx", "source_location": null, "source_url": null, "captured_at": null, "author": null, "contributor": null}
+  ],
+  "edges": [
+    {"source": "discoverhorizontalsection_component", "target": "discoverhorizontalsection_section_header", "relation": "references", "confidence": "EXTRACTED", "confidence_score": 1.0, "source_file": "components/discover/DiscoverHorizontalSection.tsx", "source_location": null, "weight": 1.0},
+    {"source": "discoverhorizontalsection_component", "target": "discoverhorizontalsection_card_render", "relation": "references", "confidence": "EXTRACTED", "confidence_score": 1.0, "source_file": "components/discover/DiscoverHorizontalSection.tsx", "source_location": null, "weight": 1.0},
+    {"source": "discoverhorizontalsection_component", "target": "restaurantcarouselsection_component", "relation": "semantically_similar_to", "confidence": "INFERRED", "confidence_score": 0.85, "source_file": "components/discover/DiscoverHorizontalSection.tsx", "source_location": null, "weight": 0.85},
+
+    {"source": "discovermapview_component", "target": "discovermapview_filters", "relation": "references", "confidence": "EXTRACTED", "confidence_score": 1.0, "source_file": "components/discover/DiscoverMapView.tsx", "source_location": null, "weight": 1.0},
+    {"source": "discovermapview_component", "target": "discovermapview_clustersheet", "relation": "references", "confidence": "EXTRACTED", "confidence_score": 1.0, "source_file": "components/discover/DiscoverMapView.tsx", "source_location": null, "weight": 1.0},
+    {"source": "discovermapview_component", "target": "discovermapview_loaddata", "relation": "references", "confidence": "EXTRACTED", "confidence_score": 1.0, "source_file": "components/discover/DiscoverMapView.tsx", "source_location": null, "weight": 1.0},
+    {"source": "discovermapview_component", "target": "discovermapview_withdisplaycoords", "relation": "calls", "confidence": "EXTRACTED", "confidence_score": 1.0, "source_file": "components/discover/DiscoverMapView.tsx", "source_location": null, "weight": 1.0},
+    {"source": "discovermapview_withdisplaycoords", "target": "discovermapview_iscoordvalid", "relation": "calls", "confidence": "EXTRACTED", "confidence_score": 1.0, "source_file": "components/discover/DiscoverMapView.tsx", "source_location": null, "weight": 1.0},
+    {"source": "discovermapview_withdisplaycoords", "target": "discovermapview_normalizekey", "relation": "calls", "confidence": "EXTRACTED", "confidence_score": 1.0, "source_file": "components/discover/DiscoverMapView.tsx", "source_location": null, "weight": 1.0},
+    {"source": "discovermapview_component", "target": "restaurantdiscoverymap_native_component", "relation": "references", "confidence": "EXTRACTED", "confidence_score": 1.0, "source_file": "components/discover/DiscoverMapView.tsx", "source_location": null, "weight": 1.0},
+    {"source": "discovermapview_component", "target": "restaurantmapdetailsheet_component", "relation": "references", "confidence": "EXTRACTED", "confidence_score": 1.0, "source_file": "components/discover/DiscoverMapView.tsx", "source_location": null, "weight": 1.0},
+
+    {"source": "restaurantcarouselsection_component", "target": "restaurantbrowsecard_component", "relation": "references", "confidence": "EXTRACTED", "confidence_score": 1.0, "source_file": "components/discover/RestaurantCarouselSection.tsx", "source_location": null, "weight": 1.0},
+
+    {"source": "snappreviewcard_component", "target": "snappreviewcard_image_loader", "relation": "references", "confidence": "EXTRACTED", "confidence_score": 1.0, "source_file": "components/discover/SnapPreviewCard.tsx", "source_location": null, "weight": 1.0},
+    {"source": "snappreviewcard_component", "target": "snapviewermodal_component", "relation": "conceptually_related_to", "confidence": "INFERRED", "confidence_score": 0.85, "source_file": "components/discover/SnapPreviewCard.tsx", "source_location": null, "weight": 0.85},
+    {"source": "snapentrybutton_component", "target": "snappreviewcard_component", "relation": "conceptually_related_to", "confidence": "INFERRED", "confidence_score": 0.75, "source_file": "components/discover/SnapEntryButton.tsx", "source_location": null, "weight": 0.75},
+
+    {"source": "snapviewermodal_component", "target": "snapviewermodal_demogate_user", "relation": "calls", "confidence": "EXTRACTED", "confidence_score": 1.0, "source_file": "components/discover/SnapViewerModal.tsx", "source_location": null, "weight": 1.0},
+    {"source": "snapviewermodal_component", "target": "snapviewermodal_demogate_restaurantname", "relation": "calls", "confidence": "EXTRACTED", "confidence_score": 1.0, "source_file": "components/discover/SnapViewerModal.tsx", "source_location": null, "weight": 1.0},
+
+    {"source": "trendingdishesrow_component", "target": "trendingdishesrow_demogate_restaurant", "relation": "calls", "confidence": "EXTRACTED", "confidence_score": 1.0, "source_file": "components/discover/TrendingDishesRow.tsx", "source_location": null, "weight": 1.0},
+
+    {"source": "eventcard_component", "target": "eventcard_type_label", "relation": "references", "confidence": "EXTRACTED", "confidence_score": 1.0, "source_file": "components/events/EventCard.tsx", "source_location": null, "weight": 1.0},
+    {"source": "eventcard_component", "target": "eventcard_formateventdate", "relation": "calls", "confidence": "EXTRACTED", "confidence_score": 1.0, "source_file": "components/events/EventCard.tsx", "source_location": null, "weight": 1.0},
+    {"source": "eventcard_component", "target": "eventcard_handlesave", "relation": "calls", "confidence": "EXTRACTED", "confidence_score": 1.0, "source_file": "components/events/EventCard.tsx", "source_location": null, "weight": 1.0},
+    {"source": "eventcard_component", "target": "eventcard_handlebook", "relation": "calls", "confidence": "EXTRACTED", "confidence_score": 1.0, "source_file": "components/events/EventCard.tsx", "source_location": null, "weight": 1.0},
+    {"source": "eventcard_component", "target": "eventcard_urgency_logic", "relation": "references", "confidence": "EXTRACTED", "confidence_score": 1.0, "source_file": "components/events/EventCard.tsx", "source_location": null, "weight": 1.0},
+    {"source": "eventcard_component", "target": "eventcard_demogate_restaurant", "relation": "calls", "confidence": "EXTRACTED", "confidence_score": 1.0, "source_file": "components/events/EventCard.tsx", "source_location": null, "weight": 1.0},
+    {"source": "eventcard_component", "target": "eventfilterbar_component", "relation": "conceptually_related_to", "confidence": "INFERRED", "confidence_score": 0.85, "source_file": "components/events/EventCard.tsx", "source_location": null, "weight": 0.85},
+
+    {"source": "eventfilterbar_component", "target": "eventfilterbar_date_chips", "relation": "references", "confidence": "EXTRACTED", "confidence_score": 1.0, "source_file": "components/events/EventFilterBar.tsx", "source_location": null, "weight": 1.0},
+    {"source": "eventfilterbar_component", "target": "eventfilterbar_type_chips", "relation": "references", "confidence": "EXTRACTED", "confidence_score": 1.0, "source_file": "components/events/EventFilterBar.tsx", "source_location": null, "weight": 1.0},
+
+    {"source": "collectionsstrip_component", "target": "collectionsstrip_demogate", "relation": "calls", "confidence": "EXTRACTED", "confidence_score": 1.0, "source_file": "components/feed/CollectionsStrip.tsx", "source_location": null, "weight": 1.0},
+
+    {"source": "feedhero_component", "target": "feedpostcard_component", "relation": "conceptually_related_to", "confidence": "INFERRED", "confidence_score": 0.75, "source_file": "components/feed/FeedHero.tsx", "source_location": null, "weight": 0.75},
+
+    {"source": "feedpostcard_component", "target": "feedpostcard_handlelike", "relation": "calls", "confidence": "EXTRACTED", "confidence_score": 1.0, "source_file": "components/feed/FeedPostCard.tsx", "source_location": null, "weight": 1.0},
+    {"source": "feedpostcard_component", "target": "feedpostcard_handlesave", "relation": "calls", "confidence": "EXTRACTED", "confidence_score": 1.0, "source_file": "components/feed/FeedPostCard.tsx", "source_location": null, "weight": 1.0},
+    {"source": "feedpostcard_component", "target": "feedpostcard_handlecomment", "relation": "calls", "confidence": "EXTRACTED", "confidence_score": 1.0, "source_file": "components/feed/FeedPostCard.tsx", "source_location": null, "weight": 1.0},
+    {"source": "feedpostcard_component", "target": "feedpostcard_handlebook", "relation": "calls", "confidence": "EXTRACTED", "confidence_score": 1.0, "source_file": "components/feed/FeedPostCard.tsx", "source_location": null, "weight": 1.0},
+    {"source": "feedpostcard_component", "target": "feedpostcard_photo_modal", "relation": "references", "confidence": "EXTRACTED", "confidence_score": 1.0, "source_file": "components/feed/FeedPostCard.tsx", "source_location": null, "weight": 1.0},
+    {"source": "feedpostcard_component", "target": "feedpostcard_entrance_anim", "relation": "references", "confidence": "EXTRACTED", "confidence_score": 1.0, "source_file": "components/feed/FeedPostCard.tsx", "source_location": null, "weight": 1.0},
+    {"source": "feedpostcard_component", "target": "heartburst_component", "relation": "conceptually_related_to", "confidence": "INFERRED", "confidence_score": 0.75, "source_file": "components/feed/FeedPostCard.tsx", "source_location": null, "weight": 0.75},
+
+    {"source": "restaurantdiscoverymap_native_component", "target": "restaurantdiscoverymap_isfinitecoord", "relation": "calls", "confidence": "EXTRACTED", "confidence_score": 1.0, "source_file": "components/map/RestaurantDiscoveryMap.tsx", "source_location": null, "weight": 1.0},
+    {"source": "restaurantdiscoverymap_native_component", "target": "restaurantdiscoverymap_saferating", "relation": "calls", "confidence": "EXTRACTED", "confidence_score": 1.0, "source_file": "components/map/RestaurantDiscoveryMap.tsx", "source_location": null, "weight": 1.0},
+    {"source": "restaurantdiscoverymap_native_component", "target": "restaurantdiscoverymap_clusterrestaurants", "relation": "calls", "confidence": "EXTRACTED", "confidence_score": 1.0, "source_file": "components/map/RestaurantDiscoveryMap.tsx", "source_location": null, "weight": 1.0},
+    {"source": "restaurantdiscoverymap_clusterrestaurants", "target": "restaurantdiscoverymap_clusterkey", "relation": "conceptually_related_to", "confidence": "INFERRED", "confidence_score": 0.85, "source_file": "components/map/RestaurantDiscoveryMap.tsx", "source_location": null, "weight": 0.85},
+    {"source": "restaurantdiscoverymap_native_component", "target": "restaurantdiscoverymap_clusterradius", "relation": "calls", "confidence": "EXTRACTED", "confidence_score": 1.0, "source_file": "components/map/RestaurantDiscoveryMap.tsx", "source_location": null, "weight": 1.0},
+    {"source": "restaurantdiscoverymap_native_component", "target": "restaurantdiscoverymap_recenter", "relation": "calls", "confidence": "EXTRACTED", "confidence_score": 1.0, "source_file": "components/map/RestaurantDiscoveryMap.tsx", "source_location": null, "weight": 1.0},
+    {"source": "restaurantdiscoverymap_native_component", "target": "restaurantdiscoverymap_autofocus_user", "relation": "references", "confidence": "EXTRACTED", "confidence_score": 1.0, "source_file": "components/map/RestaurantDiscoveryMap.tsx", "source_location": null, "weight": 1.0},
+    {"source": "restaurantdiscoverymap_native_component", "target": "restaurantdiscoverymap_focusselected", "relation": "references", "confidence": "EXTRACTED", "confidence_score": 1.0, "source_file": "components/map/RestaurantDiscoveryMap.tsx", "source_location": null, "weight": 1.0},
+    {"source": "restaurantdiscoverymap_native_component", "target": "restaurantdiscoverymap_focuscluster", "relation": "calls", "confidence": "EXTRACTED", "confidence_score": 1.0, "source_file": "components/map/RestaurantDiscoveryMap.tsx", "source_location": null, "weight": 1.0},
+    {"source": "restaurantdiscoverymap_native_component", "target": "restaurantdiscoverymap_regionrescue", "relation": "references", "confidence": "EXTRACTED", "confidence_score": 1.0, "source_file": "components/map/RestaurantDiscoveryMap.tsx", "source_location": null, "weight": 1.0},
+    {"source": "restaurantdiscoverymap_native_component", "target": "restaurantmapmarker_content", "relation": "references", "confidence": "EXTRACTED", "confidence_score": 1.0, "source_file": "components/map/RestaurantDiscoveryMap.tsx", "source_location": null, "weight": 1.0},
+    {"source": "restaurantdiscoverymap_native_component", "target": "restaurantmaptypes_props", "relation": "implements", "confidence": "EXTRACTED", "confidence_score": 1.0, "source_file": "components/map/RestaurantDiscoveryMap.tsx", "source_location": null, "weight": 1.0},
+    {"source": "restaurantdiscoverymap_web_component", "target": "restaurantmaptypes_props", "relation": "implements", "confidence": "EXTRACTED", "confidence_score": 1.0, "source_file": "components/map/RestaurantDiscoveryMap.web.tsx", "source_location": null, "weight": 1.0},
+    {"source": "restaurantdiscoverymap_web_component", "target": "restaurantdiscoverymap_native_component", "relation": "semantically_similar_to", "confidence": "INFERRED", "confidence_score": 0.95, "source_file": "components/map/RestaurantDiscoveryMap.web.tsx", "source_location": null, "weight": 0.95},
+
+    {"source": "restaurantmapdetailsheet_component", "target": "restaurantmapdetailsheet_availabilityvariant", "relation": "calls", "confidence": "EXTRACTED", "confidence_score": 1.0, "source_file": "components/map/RestaurantMapDetailSheet.tsx", "source_location": null, "weight": 1.0},
+    {"source": "restaurantmapdetailsheet_component", "target": "restaurantmapdetailsheet_slideanim", "relation": "references", "confidence": "EXTRACTED", "confidence_score": 1.0, "source_file": "components/map/RestaurantMapDetailSheet.tsx", "source_location": null, "weight": 1.0},
+
+    {"source": "restaurantmapmarker_component", "target": "restaurantmapmarker_content", "relation": "calls", "confidence": "EXTRACTED", "confidence_score": 1.0, "source_file": "components/map/RestaurantMapMarker.tsx", "source_location": null, "weight": 1.0},
+    {"source": "restaurantmapmarker_component", "target": "restaurantmapmarker_cenaiva_variant", "relation": "references", "confidence": "EXTRACTED", "confidence_score": 1.0, "source_file": "components/map/RestaurantMapMarker.tsx", "source_location": null, "weight": 1.0},
+    {"source": "restaurantmapmarker_content", "target": "restaurantmapmarker_saferating", "relation": "calls", "confidence": "EXTRACTED", "confidence_score": 1.0, "source_file": "components/map/RestaurantMapMarker.tsx", "source_location": null, "weight": 1.0},
+
+    {"source": "restaurantmaptypes_props", "target": "restaurantmaptypes_regiondelta", "relation": "references", "confidence": "EXTRACTED", "confidence_score": 1.0, "source_file": "components/map/restaurantMapTypes.ts", "source_location": null, "weight": 1.0},
+
+    {"source": "aiinsightscard_component", "target": "aibadge_component", "relation": "conceptually_related_to", "confidence": "INFERRED", "confidence_score": 0.65, "source_file": "components/owner/AIInsightsCard.tsx", "source_location": null, "weight": 0.65},
+
+    {"source": "discoverhorizontalsection_card_render", "target": "restaurantbrowsecard_component", "relation": "semantically_similar_to", "confidence": "INFERRED", "confidence_score": 0.75, "source_file": "components/discover/DiscoverHorizontalSection.tsx", "source_location": null, "weight": 0.75},
+    {"source": "reviewrestaurantcard_component", "target": "restaurantbrowsecard_component", "relation": "semantically_similar_to", "confidence": "INFERRED", "confidence_score": 0.75, "source_file": "components/discover/ReviewRestaurantCard.tsx", "source_location": null, "weight": 0.75}
+  ],
+  "hyperedges": [],
+  "input_tokens": 0,
+  "output_tokens": 0
+}

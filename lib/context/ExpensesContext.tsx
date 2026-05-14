@@ -15,6 +15,10 @@ import { DEMO_EXPENSES } from '@/lib/mock/ownerApp';
 
 type ExpensesContextValue = {
   ownerRestaurantId: string | null;
+  /** Lowercase ISO 4217 currency code of the selected restaurant. Used as
+   *  the conversion target when a scanned receipt is in a different
+   *  currency. Null when no specific restaurant is selected. */
+  ownerRestaurantCurrency: string | null;
   expenses: Expense[];
   loading: boolean;
   refresh: () => Promise<void>;
@@ -30,7 +34,7 @@ const ExpensesContext = createContext<ExpensesContextValue | null>(null);
 
 export function ExpensesProvider({ children }: { children: React.ReactNode }) {
   const { user, isStaffLike } = useAuthSession();
-  const { restaurantIds, selectedRestaurantId } = useOwnerScope();
+  const { restaurantIds, selectedRestaurantId, selectedRestaurant } = useOwnerScope();
   const restaurantIdsKey = restaurantIds.join('|');
   const [expenses, setExpenses] = useState<Expense[]>([]);
   const [loading, setLoading] = useState<boolean>(false);
@@ -39,6 +43,9 @@ export function ExpensesProvider({ children }: { children: React.ReactNode }) {
   // new rows to. In all-mode this is null and the calling screen should
   // prompt the user to pick a specific restaurant.
   const ownerRestaurantId = selectedRestaurantId;
+  const ownerRestaurantCurrency = selectedRestaurant?.currency
+    ? selectedRestaurant.currency.toLowerCase()
+    : null;
 
   const reload = useCallback(async () => {
     if (!user || !isStaffLike) {
@@ -108,6 +115,7 @@ export function ExpensesProvider({ children }: { children: React.ReactNode }) {
   const value = useMemo<ExpensesContextValue>(
     () => ({
       ownerRestaurantId,
+      ownerRestaurantCurrency,
       expenses,
       loading,
       refresh: reload,
@@ -116,7 +124,7 @@ export function ExpensesProvider({ children }: { children: React.ReactNode }) {
       patchExpense,
       removeExpense,
     }),
-    [ownerRestaurantId, expenses, loading, reload, addExpense, addLocalExpense, patchExpense, removeExpense],
+    [ownerRestaurantId, ownerRestaurantCurrency, expenses, loading, reload, addExpense, addLocalExpense, patchExpense, removeExpense],
   );
 
   return <ExpensesContext.Provider value={value}>{children}</ExpensesContext.Provider>;

@@ -1,0 +1,189 @@
+{
+  "nodes": [
+    {"id": "menu-item-edit_screen", "label": "MenuItemEditScreen", "file_type": "code", "source_file": "app/(staff)/menu-item-edit.tsx", "source_location": null, "source_url": null, "captured_at": null, "author": null, "contributor": null},
+    {"id": "menu-item-edit_pick_photo", "label": "pickPhoto", "file_type": "code", "source_file": "app/(staff)/menu-item-edit.tsx", "source_location": null, "source_url": null, "captured_at": null, "author": null, "contributor": null},
+    {"id": "menu-item-edit_save", "label": "save", "file_type": "code", "source_file": "app/(staff)/menu-item-edit.tsx", "source_location": null, "source_url": null, "captured_at": null, "author": null, "contributor": null},
+    {"id": "menu-item-edit_use_menu_context", "label": "useMenu context", "file_type": "code", "source_file": "app/(staff)/menu-item-edit.tsx", "source_location": null, "source_url": null, "captured_at": null, "author": null, "contributor": null},
+
+    {"id": "menu-manage_screen", "label": "MenuManageScreen", "file_type": "code", "source_file": "app/(staff)/menu-manage.tsx", "source_location": null, "source_url": null, "captured_at": null, "author": null, "contributor": null},
+
+    {"id": "menu_screen", "label": "OwnerMenuScreen", "file_type": "code", "source_file": "app/(staff)/menu.tsx", "source_location": null, "source_url": null, "captured_at": null, "author": null, "contributor": null},
+    {"id": "menu_filter_items", "label": "filterItems", "file_type": "code", "source_file": "app/(staff)/menu.tsx", "source_location": null, "source_url": null, "captured_at": null, "author": null, "contributor": null},
+    {"id": "menu_backdrop", "label": "MenuBackdrop", "file_type": "code", "source_file": "app/(staff)/menu.tsx", "source_location": null, "source_url": null, "captured_at": null, "author": null, "contributor": null},
+    {"id": "menu_chunk", "label": "chunk", "file_type": "code", "source_file": "app/(staff)/menu.tsx", "source_location": null, "source_url": null, "captured_at": null, "author": null, "contributor": null},
+    {"id": "menu_placeholder_photo", "label": "PLACEHOLDER_PHOTO constant", "file_type": "code", "source_file": "app/(staff)/menu.tsx", "source_location": null, "source_url": null, "captured_at": null, "author": null, "contributor": null},
+
+    {"id": "notifications_screen", "label": "StaffNotificationsScreen", "file_type": "code", "source_file": "app/(staff)/notifications.tsx", "source_location": null, "source_url": null, "captured_at": null, "author": null, "contributor": null},
+    {"id": "notifications_map_row", "label": "mapNotificationRow", "file_type": "code", "source_file": "app/(staff)/notifications.tsx", "source_location": null, "source_url": null, "captured_at": null, "author": null, "contributor": null},
+    {"id": "notifications_initial", "label": "initialStaffNotifications (demo gate)", "file_type": "code", "source_file": "app/(staff)/notifications.tsx", "source_location": null, "source_url": null, "captured_at": null, "author": null, "contributor": null},
+
+    {"id": "orderskds_screen", "label": "OrdersKdsScreen", "file_type": "code", "source_file": "app/(staff)/ordersKds.tsx", "source_location": null, "source_url": null, "captured_at": null, "author": null, "contributor": null},
+    {"id": "orderskds_ticket_is_delayed", "label": "ticketIsDelayed", "file_type": "code", "source_file": "app/(staff)/ordersKds.tsx", "source_location": null, "source_url": null, "captured_at": null, "author": null, "contributor": null},
+    {"id": "orderskds_left_accent_color", "label": "leftAccentColor", "file_type": "code", "source_file": "app/(staff)/ordersKds.tsx", "source_location": null, "source_url": null, "captured_at": null, "author": null, "contributor": null},
+    {"id": "orderskds_station_key", "label": "stationKey", "file_type": "code", "source_file": "app/(staff)/ordersKds.tsx", "source_location": null, "source_url": null, "captured_at": null, "author": null, "contributor": null},
+    {"id": "orderskds_status_label_key", "label": "statusLabelKey", "file_type": "code", "source_file": "app/(staff)/ordersKds.tsx", "source_location": null, "source_url": null, "captured_at": null, "author": null, "contributor": null},
+    {"id": "orderskds_status_pill_style", "label": "statusPillStyle", "file_type": "code", "source_file": "app/(staff)/ordersKds.tsx", "source_location": null, "source_url": null, "captured_at": null, "author": null, "contributor": null},
+    {"id": "orderskds_feed_dot_color", "label": "feedDotColor", "file_type": "code", "source_file": "app/(staff)/ordersKds.tsx", "source_location": null, "source_url": null, "captured_at": null, "author": null, "contributor": null},
+    {"id": "orderskds_delayed_threshold", "label": "DELAYED_MINS threshold", "file_type": "code", "source_file": "app/(staff)/ordersKds.tsx", "source_location": null, "source_url": null, "captured_at": null, "author": null, "contributor": null},
+
+    {"id": "payment-method_screen", "label": "PaymentMethodScreen", "file_type": "code", "source_file": "app/(staff)/payment-method.tsx", "source_location": null, "source_url": null, "captured_at": null, "author": null, "contributor": null},
+    {"id": "payment-method_funding_label", "label": "fundingLabel", "file_type": "code", "source_file": "app/(staff)/payment-method.tsx", "source_location": null, "source_url": null, "captured_at": null, "author": null, "contributor": null},
+    {"id": "payment-method_card_type", "label": "Card type", "file_type": "code", "source_file": "app/(staff)/payment-method.tsx", "source_location": null, "source_url": null, "captured_at": null, "author": null, "contributor": null},
+
+    {"id": "personal-details_screen", "label": "PersonalDetailsScreen", "file_type": "code", "source_file": "app/(staff)/personal-details.tsx", "source_location": null, "source_url": null, "captured_at": null, "author": null, "contributor": null},
+
+    {"id": "promote_screen", "label": "PromoteScreen", "file_type": "code", "source_file": "app/(staff)/promote.tsx", "source_location": null, "source_url": null, "captured_at": null, "author": null, "contributor": null},
+
+    {"id": "quiet-hours_screen", "label": "QuietHoursScreen", "file_type": "code", "source_file": "app/(staff)/quiet-hours.tsx", "source_location": null, "source_url": null, "captured_at": null, "author": null, "contributor": null},
+    {"id": "quiet-hours_hours_const", "label": "HOURS constant", "file_type": "code", "source_file": "app/(staff)/quiet-hours.tsx", "source_location": null, "source_url": null, "captured_at": null, "author": null, "contributor": null},
+
+    {"id": "rate-cenaiva_screen", "label": "RateCenaivaScreen", "file_type": "code", "source_file": "app/(staff)/rate-cenaiva.tsx", "source_location": null, "source_url": null, "captured_at": null, "author": null, "contributor": null},
+    {"id": "rate-cenaiva_reasons", "label": "REASONS constant", "file_type": "code", "source_file": "app/(staff)/rate-cenaiva.tsx", "source_location": null, "source_url": null, "captured_at": null, "author": null, "contributor": null},
+
+    {"id": "reservation-settings_screen", "label": "ReservationSettingsScreen", "file_type": "code", "source_file": "app/(staff)/reservation-settings.tsx", "source_location": null, "source_url": null, "captured_at": null, "author": null, "contributor": null},
+
+    {"id": "reservations_screen", "label": "StaffReservationsScreen", "file_type": "code", "source_file": "app/(staff)/reservations.tsx", "source_location": null, "source_url": null, "captured_at": null, "author": null, "contributor": null},
+    {"id": "reservations_to_date_key", "label": "toDateKey", "file_type": "code", "source_file": "app/(staff)/reservations.tsx", "source_location": null, "source_url": null, "captured_at": null, "author": null, "contributor": null},
+    {"id": "reservations_date_range_label", "label": "dateRangeLabel", "file_type": "code", "source_file": "app/(staff)/reservations.tsx", "source_location": null, "source_url": null, "captured_at": null, "author": null, "contributor": null},
+    {"id": "reservations_build_calendar_grid", "label": "buildCalendarGrid", "file_type": "code", "source_file": "app/(staff)/reservations.tsx", "source_location": null, "source_url": null, "captured_at": null, "author": null, "contributor": null},
+
+    {"id": "roles-permissions_screen", "label": "RolesPermissionsScreen", "file_type": "code", "source_file": "app/(staff)/roles-permissions.tsx", "source_location": null, "source_url": null, "captured_at": null, "author": null, "contributor": null},
+
+    {"id": "schedule_screen", "label": "StaffScheduleScreen", "file_type": "code", "source_file": "app/(staff)/schedule.tsx", "source_location": null, "source_url": null, "captured_at": null, "author": null, "contributor": null},
+    {"id": "schedule_initials", "label": "initials (schedule)", "file_type": "code", "source_file": "app/(staff)/schedule.tsx", "source_location": null, "source_url": null, "captured_at": null, "author": null, "contributor": null},
+    {"id": "schedule_day_label", "label": "dayLabel", "file_type": "code", "source_file": "app/(staff)/schedule.tsx", "source_location": null, "source_url": null, "captured_at": null, "author": null, "contributor": null},
+    {"id": "schedule_badge_label", "label": "badgeLabel", "file_type": "code", "source_file": "app/(staff)/schedule.tsx", "source_location": null, "source_url": null, "captured_at": null, "author": null, "contributor": null},
+    {"id": "schedule_empty_briefing", "label": "EMPTY_TONIGHT_BRIEFING", "file_type": "code", "source_file": "app/(staff)/schedule.tsx", "source_location": null, "source_url": null, "captured_at": null, "author": null, "contributor": null},
+
+    {"id": "settings_screen", "label": "StaffSettingsScreen", "file_type": "code", "source_file": "app/(staff)/settings.tsx", "source_location": null, "source_url": null, "captured_at": null, "author": null, "contributor": null},
+    {"id": "settings_theme_label", "label": "themeLabel", "file_type": "code", "source_file": "app/(staff)/settings.tsx", "source_location": null, "source_url": null, "captured_at": null, "author": null, "contributor": null},
+    {"id": "settings_theme_options", "label": "THEME_OPTIONS constant", "file_type": "code", "source_file": "app/(staff)/settings.tsx", "source_location": null, "source_url": null, "captured_at": null, "author": null, "contributor": null},
+    {"id": "settings_owner_monthly_sub_dollars", "label": "OWNER_MONTHLY_SUB_DOLLARS env", "file_type": "code", "source_file": "app/(staff)/settings.tsx", "source_location": null, "source_url": null, "captured_at": null, "author": null, "contributor": null},
+
+    {"id": "staff-members_screen", "label": "StaffMembersScreen", "file_type": "code", "source_file": "app/(staff)/staff-members.tsx", "source_location": null, "source_url": null, "captured_at": null, "author": null, "contributor": null},
+    {"id": "staff-members_role_tone", "label": "ROLE_TONE", "file_type": "code", "source_file": "app/(staff)/staff-members.tsx", "source_location": null, "source_url": null, "captured_at": null, "author": null, "contributor": null},
+    {"id": "staff-members_initials", "label": "initials (staff-members)", "file_type": "code", "source_file": "app/(staff)/staff-members.tsx", "source_location": null, "source_url": null, "captured_at": null, "author": null, "contributor": null},
+    {"id": "staff-members_initial_team", "label": "INITIAL_TEAM (empty)", "file_type": "code", "source_file": "app/(staff)/staff-members.tsx", "source_location": null, "source_url": null, "captured_at": null, "author": null, "contributor": null},
+
+    {"id": "staff-pins_screen", "label": "StaffPinsScreen", "file_type": "code", "source_file": "app/(staff)/staff-pins.tsx", "source_location": null, "source_url": null, "captured_at": null, "author": null, "contributor": null},
+    {"id": "staff-pins_generate_pin", "label": "generatePin", "file_type": "code", "source_file": "app/(staff)/staff-pins.tsx", "source_location": null, "source_url": null, "captured_at": null, "author": null, "contributor": null},
+    {"id": "staff-pins_initials", "label": "initials (staff-pins)", "file_type": "code", "source_file": "app/(staff)/staff-pins.tsx", "source_location": null, "source_url": null, "captured_at": null, "author": null, "contributor": null},
+    {"id": "staff-pins_initial_pins", "label": "INITIAL_PINS (empty)", "file_type": "code", "source_file": "app/(staff)/staff-pins.tsx", "source_location": null, "source_url": null, "captured_at": null, "author": null, "contributor": null},
+
+    {"id": "staff_screen", "label": "StaffScreen", "file_type": "code", "source_file": "app/(staff)/staff.tsx", "source_location": null, "source_url": null, "captured_at": null, "author": null, "contributor": null},
+    {"id": "staff_initials", "label": "initials (staff)", "file_type": "code", "source_file": "app/(staff)/staff.tsx", "source_location": null, "source_url": null, "captured_at": null, "author": null, "contributor": null},
+    {"id": "staff_clock_in_label", "label": "clockInLabel", "file_type": "code", "source_file": "app/(staff)/staff.tsx", "source_location": null, "source_url": null, "captured_at": null, "author": null, "contributor": null},
+
+    {"id": "subscription-plan_screen", "label": "SubscriptionPlanScreen", "file_type": "code", "source_file": "app/(staff)/subscription-plan.tsx", "source_location": null, "source_url": null, "captured_at": null, "author": null, "contributor": null},
+    {"id": "subscription-plan_next_bill_date", "label": "nextBillDateLabel", "file_type": "code", "source_file": "app/(staff)/subscription-plan.tsx", "source_location": null, "source_url": null, "captured_at": null, "author": null, "contributor": null},
+    {"id": "subscription-plan_mid_cycle_cancel_note", "label": "midCycleCancelNote", "file_type": "code", "source_file": "app/(staff)/subscription-plan.tsx", "source_location": null, "source_url": null, "captured_at": null, "author": null, "contributor": null},
+    {"id": "subscription-plan_plan_const", "label": "PLAN constant", "file_type": "code", "source_file": "app/(staff)/subscription-plan.tsx", "source_location": null, "source_url": null, "captured_at": null, "author": null, "contributor": null},
+
+    {"id": "support_screen", "label": "SupportScreen", "file_type": "code", "source_file": "app/(staff)/support.tsx", "source_location": null, "source_url": null, "captured_at": null, "author": null, "contributor": null},
+    {"id": "support_faq_items", "label": "FAQ_ITEMS", "file_type": "code", "source_file": "app/(staff)/support.tsx", "source_location": null, "source_url": null, "captured_at": null, "author": null, "contributor": null},
+
+    {"id": "team_screen", "label": "TeamScreen", "file_type": "code", "source_file": "app/(staff)/team.tsx", "source_location": null, "source_url": null, "captured_at": null, "author": null, "contributor": null},
+    {"id": "team_cards", "label": "CARDS (team nav)", "file_type": "code", "source_file": "app/(staff)/team.tsx", "source_location": null, "source_url": null, "captured_at": null, "author": null, "contributor": null},
+
+    {"id": "two-factor_screen", "label": "TwoFactorScreen", "file_type": "code", "source_file": "app/(staff)/two-factor.tsx", "source_location": null, "source_url": null, "captured_at": null, "author": null, "contributor": null}
+  ],
+  "edges": [
+    {"source": "menu-item-edit_screen", "target": "menu-item-edit_use_menu_context", "relation": "references", "confidence": "EXTRACTED", "confidence_score": 1.0, "source_file": "app/(staff)/menu-item-edit.tsx", "source_location": null, "weight": 1.0},
+    {"source": "menu-item-edit_screen", "target": "menu-item-edit_pick_photo", "relation": "calls", "confidence": "EXTRACTED", "confidence_score": 1.0, "source_file": "app/(staff)/menu-item-edit.tsx", "source_location": null, "weight": 1.0},
+    {"source": "menu-item-edit_screen", "target": "menu-item-edit_save", "relation": "calls", "confidence": "EXTRACTED", "confidence_score": 1.0, "source_file": "app/(staff)/menu-item-edit.tsx", "source_location": null, "weight": 1.0},
+    {"source": "menu-item-edit_screen", "target": "menu_screen", "relation": "conceptually_related_to", "confidence": "INFERRED", "confidence_score": 0.85, "source_file": "app/(staff)/menu-item-edit.tsx", "source_location": null, "weight": 1.0},
+    {"source": "menu-item-edit_screen", "target": "menu-manage_screen", "relation": "conceptually_related_to", "confidence": "INFERRED", "confidence_score": 0.85, "source_file": "app/(staff)/menu-item-edit.tsx", "source_location": null, "weight": 1.0},
+
+    {"source": "menu-manage_screen", "target": "menu_screen", "relation": "conceptually_related_to", "confidence": "INFERRED", "confidence_score": 0.85, "source_file": "app/(staff)/menu-manage.tsx", "source_location": null, "weight": 1.0},
+
+    {"source": "menu_screen", "target": "menu_filter_items", "relation": "calls", "confidence": "EXTRACTED", "confidence_score": 1.0, "source_file": "app/(staff)/menu.tsx", "source_location": null, "weight": 1.0},
+    {"source": "menu_screen", "target": "menu_backdrop", "relation": "references", "confidence": "EXTRACTED", "confidence_score": 1.0, "source_file": "app/(staff)/menu.tsx", "source_location": null, "weight": 1.0},
+    {"source": "menu_screen", "target": "menu_chunk", "relation": "calls", "confidence": "EXTRACTED", "confidence_score": 1.0, "source_file": "app/(staff)/menu.tsx", "source_location": null, "weight": 1.0},
+    {"source": "menu_screen", "target": "menu_placeholder_photo", "relation": "references", "confidence": "EXTRACTED", "confidence_score": 1.0, "source_file": "app/(staff)/menu.tsx", "source_location": null, "weight": 1.0},
+
+    {"source": "notifications_screen", "target": "notifications_map_row", "relation": "calls", "confidence": "EXTRACTED", "confidence_score": 1.0, "source_file": "app/(staff)/notifications.tsx", "source_location": null, "weight": 1.0},
+    {"source": "notifications_screen", "target": "notifications_initial", "relation": "references", "confidence": "EXTRACTED", "confidence_score": 1.0, "source_file": "app/(staff)/notifications.tsx", "source_location": null, "weight": 1.0},
+
+    {"source": "orderskds_screen", "target": "orderskds_ticket_is_delayed", "relation": "calls", "confidence": "EXTRACTED", "confidence_score": 1.0, "source_file": "app/(staff)/ordersKds.tsx", "source_location": null, "weight": 1.0},
+    {"source": "orderskds_screen", "target": "orderskds_left_accent_color", "relation": "calls", "confidence": "EXTRACTED", "confidence_score": 1.0, "source_file": "app/(staff)/ordersKds.tsx", "source_location": null, "weight": 1.0},
+    {"source": "orderskds_screen", "target": "orderskds_station_key", "relation": "calls", "confidence": "EXTRACTED", "confidence_score": 1.0, "source_file": "app/(staff)/ordersKds.tsx", "source_location": null, "weight": 1.0},
+    {"source": "orderskds_screen", "target": "orderskds_status_label_key", "relation": "calls", "confidence": "EXTRACTED", "confidence_score": 1.0, "source_file": "app/(staff)/ordersKds.tsx", "source_location": null, "weight": 1.0},
+    {"source": "orderskds_screen", "target": "orderskds_status_pill_style", "relation": "calls", "confidence": "EXTRACTED", "confidence_score": 1.0, "source_file": "app/(staff)/ordersKds.tsx", "source_location": null, "weight": 1.0},
+    {"source": "orderskds_screen", "target": "orderskds_feed_dot_color", "relation": "calls", "confidence": "EXTRACTED", "confidence_score": 1.0, "source_file": "app/(staff)/ordersKds.tsx", "source_location": null, "weight": 1.0},
+    {"source": "orderskds_ticket_is_delayed", "target": "orderskds_delayed_threshold", "relation": "references", "confidence": "EXTRACTED", "confidence_score": 1.0, "source_file": "app/(staff)/ordersKds.tsx", "source_location": null, "weight": 1.0},
+    {"source": "orderskds_left_accent_color", "target": "orderskds_ticket_is_delayed", "relation": "calls", "confidence": "EXTRACTED", "confidence_score": 1.0, "source_file": "app/(staff)/ordersKds.tsx", "source_location": null, "weight": 1.0},
+    {"source": "orderskds_status_label_key", "target": "orderskds_ticket_is_delayed", "relation": "calls", "confidence": "EXTRACTED", "confidence_score": 1.0, "source_file": "app/(staff)/ordersKds.tsx", "source_location": null, "weight": 1.0},
+    {"source": "orderskds_status_pill_style", "target": "orderskds_ticket_is_delayed", "relation": "calls", "confidence": "EXTRACTED", "confidence_score": 1.0, "source_file": "app/(staff)/ordersKds.tsx", "source_location": null, "weight": 1.0},
+
+    {"source": "payment-method_screen", "target": "payment-method_funding_label", "relation": "calls", "confidence": "EXTRACTED", "confidence_score": 1.0, "source_file": "app/(staff)/payment-method.tsx", "source_location": null, "weight": 1.0},
+    {"source": "payment-method_screen", "target": "payment-method_card_type", "relation": "references", "confidence": "EXTRACTED", "confidence_score": 1.0, "source_file": "app/(staff)/payment-method.tsx", "source_location": null, "weight": 1.0},
+    {"source": "payment-method_screen", "target": "subscription-plan_screen", "relation": "conceptually_related_to", "confidence": "INFERRED", "confidence_score": 0.85, "source_file": "app/(staff)/payment-method.tsx", "source_location": null, "weight": 1.0},
+
+    {"source": "personal-details_screen", "target": "settings_screen", "relation": "conceptually_related_to", "confidence": "INFERRED", "confidence_score": 0.85, "source_file": "app/(staff)/personal-details.tsx", "source_location": null, "weight": 1.0},
+
+    {"source": "promote_screen", "target": "menu_screen", "relation": "conceptually_related_to", "confidence": "INFERRED", "confidence_score": 0.75, "source_file": "app/(staff)/promote.tsx", "source_location": null, "weight": 1.0},
+
+    {"source": "quiet-hours_screen", "target": "quiet-hours_hours_const", "relation": "references", "confidence": "EXTRACTED", "confidence_score": 1.0, "source_file": "app/(staff)/quiet-hours.tsx", "source_location": null, "weight": 1.0},
+    {"source": "quiet-hours_screen", "target": "settings_screen", "relation": "conceptually_related_to", "confidence": "INFERRED", "confidence_score": 0.85, "source_file": "app/(staff)/quiet-hours.tsx", "source_location": null, "weight": 1.0},
+
+    {"source": "rate-cenaiva_screen", "target": "rate-cenaiva_reasons", "relation": "references", "confidence": "EXTRACTED", "confidence_score": 1.0, "source_file": "app/(staff)/rate-cenaiva.tsx", "source_location": null, "weight": 1.0},
+
+    {"source": "reservation-settings_screen", "target": "reservations_screen", "relation": "conceptually_related_to", "confidence": "INFERRED", "confidence_score": 0.85, "source_file": "app/(staff)/reservation-settings.tsx", "source_location": null, "weight": 1.0},
+    {"source": "reservation-settings_screen", "target": "settings_screen", "relation": "conceptually_related_to", "confidence": "INFERRED", "confidence_score": 0.85, "source_file": "app/(staff)/reservation-settings.tsx", "source_location": null, "weight": 1.0},
+
+    {"source": "reservations_screen", "target": "reservations_to_date_key", "relation": "calls", "confidence": "EXTRACTED", "confidence_score": 1.0, "source_file": "app/(staff)/reservations.tsx", "source_location": null, "weight": 1.0},
+    {"source": "reservations_screen", "target": "reservations_date_range_label", "relation": "calls", "confidence": "EXTRACTED", "confidence_score": 1.0, "source_file": "app/(staff)/reservations.tsx", "source_location": null, "weight": 1.0},
+    {"source": "reservations_screen", "target": "reservations_build_calendar_grid", "relation": "calls", "confidence": "EXTRACTED", "confidence_score": 1.0, "source_file": "app/(staff)/reservations.tsx", "source_location": null, "weight": 1.0},
+
+    {"source": "roles-permissions_screen", "target": "team_screen", "relation": "conceptually_related_to", "confidence": "INFERRED", "confidence_score": 0.85, "source_file": "app/(staff)/roles-permissions.tsx", "source_location": null, "weight": 1.0},
+    {"source": "roles-permissions_screen", "target": "staff-members_screen", "relation": "conceptually_related_to", "confidence": "INFERRED", "confidence_score": 0.85, "source_file": "app/(staff)/roles-permissions.tsx", "source_location": null, "weight": 1.0},
+
+    {"source": "schedule_screen", "target": "schedule_initials", "relation": "calls", "confidence": "EXTRACTED", "confidence_score": 1.0, "source_file": "app/(staff)/schedule.tsx", "source_location": null, "weight": 1.0},
+    {"source": "schedule_screen", "target": "schedule_day_label", "relation": "calls", "confidence": "EXTRACTED", "confidence_score": 1.0, "source_file": "app/(staff)/schedule.tsx", "source_location": null, "weight": 1.0},
+    {"source": "schedule_screen", "target": "schedule_badge_label", "relation": "calls", "confidence": "EXTRACTED", "confidence_score": 1.0, "source_file": "app/(staff)/schedule.tsx", "source_location": null, "weight": 1.0},
+    {"source": "schedule_screen", "target": "schedule_empty_briefing", "relation": "references", "confidence": "EXTRACTED", "confidence_score": 1.0, "source_file": "app/(staff)/schedule.tsx", "source_location": null, "weight": 1.0},
+
+    {"source": "settings_screen", "target": "settings_theme_label", "relation": "calls", "confidence": "EXTRACTED", "confidence_score": 1.0, "source_file": "app/(staff)/settings.tsx", "source_location": null, "weight": 1.0},
+    {"source": "settings_screen", "target": "settings_theme_options", "relation": "references", "confidence": "EXTRACTED", "confidence_score": 1.0, "source_file": "app/(staff)/settings.tsx", "source_location": null, "weight": 1.0},
+    {"source": "settings_screen", "target": "settings_owner_monthly_sub_dollars", "relation": "references", "confidence": "EXTRACTED", "confidence_score": 1.0, "source_file": "app/(staff)/settings.tsx", "source_location": null, "weight": 1.0},
+    {"source": "settings_screen", "target": "payment-method_screen", "relation": "references", "confidence": "INFERRED", "confidence_score": 0.85, "source_file": "app/(staff)/settings.tsx", "source_location": null, "weight": 1.0},
+    {"source": "settings_screen", "target": "personal-details_screen", "relation": "references", "confidence": "INFERRED", "confidence_score": 0.85, "source_file": "app/(staff)/settings.tsx", "source_location": null, "weight": 1.0},
+    {"source": "settings_screen", "target": "team_screen", "relation": "references", "confidence": "INFERRED", "confidence_score": 0.85, "source_file": "app/(staff)/settings.tsx", "source_location": null, "weight": 1.0},
+    {"source": "settings_screen", "target": "reservation-settings_screen", "relation": "references", "confidence": "INFERRED", "confidence_score": 0.85, "source_file": "app/(staff)/settings.tsx", "source_location": null, "weight": 1.0},
+    {"source": "settings_screen", "target": "subscription-plan_screen", "relation": "references", "confidence": "INFERRED", "confidence_score": 0.85, "source_file": "app/(staff)/settings.tsx", "source_location": null, "weight": 1.0},
+    {"source": "settings_screen", "target": "two-factor_screen", "relation": "references", "confidence": "INFERRED", "confidence_score": 0.75, "source_file": "app/(staff)/settings.tsx", "source_location": null, "weight": 1.0},
+    {"source": "settings_screen", "target": "quiet-hours_screen", "relation": "references", "confidence": "INFERRED", "confidence_score": 0.75, "source_file": "app/(staff)/settings.tsx", "source_location": null, "weight": 1.0},
+    {"source": "settings_screen", "target": "support_screen", "relation": "references", "confidence": "INFERRED", "confidence_score": 0.75, "source_file": "app/(staff)/settings.tsx", "source_location": null, "weight": 1.0},
+    {"source": "settings_screen", "target": "rate-cenaiva_screen", "relation": "references", "confidence": "INFERRED", "confidence_score": 0.75, "source_file": "app/(staff)/settings.tsx", "source_location": null, "weight": 1.0},
+
+    {"source": "staff-members_screen", "target": "staff-members_role_tone", "relation": "references", "confidence": "EXTRACTED", "confidence_score": 1.0, "source_file": "app/(staff)/staff-members.tsx", "source_location": null, "weight": 1.0},
+    {"source": "staff-members_screen", "target": "staff-members_initials", "relation": "calls", "confidence": "EXTRACTED", "confidence_score": 1.0, "source_file": "app/(staff)/staff-members.tsx", "source_location": null, "weight": 1.0},
+    {"source": "staff-members_screen", "target": "staff-members_initial_team", "relation": "references", "confidence": "EXTRACTED", "confidence_score": 1.0, "source_file": "app/(staff)/staff-members.tsx", "source_location": null, "weight": 1.0},
+
+    {"source": "staff-pins_screen", "target": "staff-pins_generate_pin", "relation": "calls", "confidence": "EXTRACTED", "confidence_score": 1.0, "source_file": "app/(staff)/staff-pins.tsx", "source_location": null, "weight": 1.0},
+    {"source": "staff-pins_screen", "target": "staff-pins_initials", "relation": "calls", "confidence": "EXTRACTED", "confidence_score": 1.0, "source_file": "app/(staff)/staff-pins.tsx", "source_location": null, "weight": 1.0},
+    {"source": "staff-pins_screen", "target": "staff-pins_initial_pins", "relation": "references", "confidence": "EXTRACTED", "confidence_score": 1.0, "source_file": "app/(staff)/staff-pins.tsx", "source_location": null, "weight": 1.0},
+
+    {"source": "staff_screen", "target": "staff_initials", "relation": "calls", "confidence": "EXTRACTED", "confidence_score": 1.0, "source_file": "app/(staff)/staff.tsx", "source_location": null, "weight": 1.0},
+    {"source": "staff_screen", "target": "staff_clock_in_label", "relation": "calls", "confidence": "EXTRACTED", "confidence_score": 1.0, "source_file": "app/(staff)/staff.tsx", "source_location": null, "weight": 1.0},
+    {"source": "staff_screen", "target": "staff-members_screen", "relation": "conceptually_related_to", "confidence": "INFERRED", "confidence_score": 0.85, "source_file": "app/(staff)/staff.tsx", "source_location": null, "weight": 1.0},
+    {"source": "staff_screen", "target": "schedule_screen", "relation": "conceptually_related_to", "confidence": "INFERRED", "confidence_score": 0.75, "source_file": "app/(staff)/staff.tsx", "source_location": null, "weight": 1.0},
+
+    {"source": "subscription-plan_screen", "target": "subscription-plan_next_bill_date", "relation": "calls", "confidence": "EXTRACTED", "confidence_score": 1.0, "source_file": "app/(staff)/subscription-plan.tsx", "source_location": null, "weight": 1.0},
+    {"source": "subscription-plan_screen", "target": "subscription-plan_mid_cycle_cancel_note", "relation": "calls", "confidence": "EXTRACTED", "confidence_score": 1.0, "source_file": "app/(staff)/subscription-plan.tsx", "source_location": null, "weight": 1.0},
+    {"source": "subscription-plan_screen", "target": "subscription-plan_plan_const", "relation": "references", "confidence": "EXTRACTED", "confidence_score": 1.0, "source_file": "app/(staff)/subscription-plan.tsx", "source_location": null, "weight": 1.0},
+    {"source": "subscription-plan_screen", "target": "payment-method_screen", "relation": "conceptually_related_to", "confidence": "INFERRED", "confidence_score": 0.85, "source_file": "app/(staff)/subscription-plan.tsx", "source_location": null, "weight": 1.0},
+
+    {"source": "support_screen", "target": "support_faq_items", "relation": "references", "confidence": "EXTRACTED", "confidence_score": 1.0, "source_file": "app/(staff)/support.tsx", "source_location": null, "weight": 1.0},
+
+    {"source": "team_screen", "target": "team_cards", "relation": "references", "confidence": "EXTRACTED", "confidence_score": 1.0, "source_file": "app/(staff)/team.tsx", "source_location": null, "weight": 1.0},
+    {"source": "team_screen", "target": "staff-members_screen", "relation": "references", "confidence": "EXTRACTED", "confidence_score": 1.0, "source_file": "app/(staff)/team.tsx", "source_location": null, "weight": 1.0},
+    {"source": "team_screen", "target": "roles-permissions_screen", "relation": "references", "confidence": "EXTRACTED", "confidence_score": 1.0, "source_file": "app/(staff)/team.tsx", "source_location": null, "weight": 1.0},
+    {"source": "team_screen", "target": "staff-pins_screen", "relation": "references", "confidence": "EXTRACTED", "confidence_score": 1.0, "source_file": "app/(staff)/team.tsx", "source_location": null, "weight": 1.0},
+
+    {"source": "two-factor_screen", "target": "settings_screen", "relation": "conceptually_related_to", "confidence": "INFERRED", "confidence_score": 0.85, "source_file": "app/(staff)/two-factor.tsx", "source_location": null, "weight": 1.0}
+  ],
+  "hyperedges": [],
+  "input_tokens": 0,
+  "output_tokens": 0
+}

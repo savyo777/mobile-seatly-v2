@@ -1,0 +1,158 @@
+{
+  "nodes": [
+    {"id": "cornerbrackets_component", "label": "CornerBrackets", "file_type": "code", "source_file": "components/owner/CornerBrackets.tsx", "source_location": null, "source_url": null, "captured_at": null, "author": null, "contributor": null},
+    {"id": "cornerbrackets_viewfinder_frame", "label": "Receipt Scanner Viewfinder Frame", "file_type": "code", "source_file": "components/owner/CornerBrackets.tsx", "source_location": null, "source_url": null, "captured_at": null, "author": null, "contributor": null},
+    {"id": "cornerbrackets_pulse_animation", "label": "Pulse Breathing Animation", "file_type": "code", "source_file": "components/owner/CornerBrackets.tsx", "source_location": null, "source_url": null, "captured_at": null, "author": null, "contributor": null},
+
+    {"id": "expenselistrow_component", "label": "ExpenseListRow", "file_type": "code", "source_file": "components/owner/ExpenseListRow.tsx", "source_location": null, "source_url": null, "captured_at": null, "author": null, "contributor": null},
+    {"id": "expenselistrow_typepill", "label": "TypePill (Income/Expense Pill)", "file_type": "code", "source_file": "components/owner/ExpenseListRow.tsx", "source_location": null, "source_url": null, "captured_at": null, "author": null, "contributor": null},
+    {"id": "expenselistrow_thumbnail_loader", "label": "Receipt Thumbnail Signed-URL Loader", "file_type": "code", "source_file": "components/owner/ExpenseListRow.tsx", "source_location": null, "source_url": null, "captured_at": null, "author": null, "contributor": null},
+
+    {"id": "expensesummarycard_component", "label": "ExpenseSummaryCard", "file_type": "code", "source_file": "components/owner/ExpenseSummaryCard.tsx", "source_location": null, "source_url": null, "captured_at": null, "author": null, "contributor": null},
+    {"id": "expensesummarycard_split_spent_earned", "label": "Split Spent vs Earned Tiles", "file_type": "code", "source_file": "components/owner/ExpenseSummaryCard.tsx", "source_location": null, "source_url": null, "captured_at": null, "author": null, "contributor": null},
+    {"id": "expensesummarycard_top_categories", "label": "Top Spend Category Bars", "file_type": "code", "source_file": "components/owner/ExpenseSummaryCard.tsx", "source_location": null, "source_url": null, "captured_at": null, "author": null, "contributor": null},
+    {"id": "expensesummarycard_monthly_delta", "label": "Month-over-Month Spend Delta", "file_type": "code", "source_file": "components/owner/ExpenseSummaryCard.tsx", "source_location": null, "source_url": null, "captured_at": null, "author": null, "contributor": null},
+
+    {"id": "floorcanvas_component", "label": "FloorCanvas", "file_type": "code", "source_file": "components/owner/FloorCanvas.tsx", "source_location": null, "source_url": null, "captured_at": null, "author": null, "contributor": null},
+    {"id": "floorcanvas_pinch_pan_gesture", "label": "Pinch & Pan Composed Gesture", "file_type": "code", "source_file": "components/owner/FloorCanvas.tsx", "source_location": null, "source_url": null, "captured_at": null, "author": null, "contributor": null},
+    {"id": "floorcanvas_table_status_colors", "label": "Table Status Color Mapping", "file_type": "code", "source_file": "components/owner/FloorCanvas.tsx", "source_location": null, "source_url": null, "captured_at": null, "author": null, "contributor": null},
+    {"id": "floorcanvas_legend", "label": "Floor Status Legend", "file_type": "code", "source_file": "components/owner/FloorCanvas.tsx", "source_location": null, "source_url": null, "captured_at": null, "author": null, "contributor": null},
+
+    {"id": "glasscard_component", "label": "GlassCard", "file_type": "code", "source_file": "components/owner/GlassCard.tsx", "source_location": null, "source_url": null, "captured_at": null, "author": null, "contributor": null},
+
+    {"id": "homebookingtrendcard_component", "label": "HomeBookingTrendCard", "file_type": "code", "source_file": "components/owner/HomeBookingTrendCard.tsx", "source_location": null, "source_url": null, "captured_at": null, "author": null, "contributor": null},
+    {"id": "homebookingtrendcard_sparkline_chart", "label": "Bookings Trend SVG Area Chart", "file_type": "code", "source_file": "components/owner/HomeBookingTrendCard.tsx", "source_location": null, "source_url": null, "captured_at": null, "author": null, "contributor": null},
+
+    {"id": "homehero_component", "label": "HomeHero", "file_type": "code", "source_file": "components/owner/HomeHero.tsx", "source_location": null, "source_url": null, "captured_at": null, "author": null, "contributor": null},
+    {"id": "homehero_sparkline_bars", "label": "Hourly Sparkline Bars", "file_type": "code", "source_file": "components/owner/HomeHero.tsx", "source_location": null, "source_url": null, "captured_at": null, "author": null, "contributor": null},
+
+    {"id": "livetimeline_component", "label": "LiveTimeline", "file_type": "code", "source_file": "components/owner/LiveTimeline.tsx", "source_location": null, "source_url": null, "captured_at": null, "author": null, "contributor": null},
+    {"id": "livetimeline_status_accent", "label": "Reservation Status Accent Colors", "file_type": "code", "source_file": "components/owner/LiveTimeline.tsx", "source_location": null, "source_url": null, "captured_at": null, "author": null, "contributor": null},
+
+    {"id": "monthcalendar_component", "label": "MonthCalendar (Material 3 Date Picker)", "file_type": "code", "source_file": "components/owner/MonthCalendar.tsx", "source_location": null, "source_url": null, "captured_at": null, "author": null, "contributor": null},
+    {"id": "monthcalendar_year_grid", "label": "Year Grid Mode", "file_type": "code", "source_file": "components/owner/MonthCalendar.tsx", "source_location": null, "source_url": null, "captured_at": null, "author": null, "contributor": null},
+    {"id": "monthcalendar_day_grid", "label": "Day Grid Builder", "file_type": "code", "source_file": "components/owner/MonthCalendar.tsx", "source_location": null, "source_url": null, "captured_at": null, "author": null, "contributor": null},
+
+    {"id": "owneralertsstrip_component", "label": "OwnerAlertsStrip", "file_type": "code", "source_file": "components/owner/OwnerAlertsStrip.tsx", "source_location": null, "source_url": null, "captured_at": null, "author": null, "contributor": null},
+    {"id": "owneralertsstrip_severity_style", "label": "Alert Severity Style Mapping", "file_type": "code", "source_file": "components/owner/OwnerAlertsStrip.tsx", "source_location": null, "source_url": null, "captured_at": null, "author": null, "contributor": null},
+
+    {"id": "ownerheader_component", "label": "OwnerHeader", "file_type": "code", "source_file": "components/owner/OwnerHeader.tsx", "source_location": null, "source_url": null, "captured_at": null, "author": null, "contributor": null},
+    {"id": "ownerheader_notification_badge", "label": "Notification Badge Count", "file_type": "code", "source_file": "components/owner/OwnerHeader.tsx", "source_location": null, "source_url": null, "captured_at": null, "author": null, "contributor": null},
+
+    {"id": "ownerlivefeed_component", "label": "OwnerLiveFeed", "file_type": "code", "source_file": "components/owner/OwnerLiveFeed.tsx", "source_location": null, "source_url": null, "captured_at": null, "author": null, "contributor": null},
+    {"id": "ownerlivefeed_kind_color", "label": "Feed Item Kind Color Mapping", "file_type": "code", "source_file": "components/owner/OwnerLiveFeed.tsx", "source_location": null, "source_url": null, "captured_at": null, "author": null, "contributor": null},
+
+    {"id": "ownerlivemetrics_component", "label": "OwnerLiveMetrics", "file_type": "code", "source_file": "components/owner/OwnerLiveMetrics.tsx", "source_location": null, "source_url": null, "captured_at": null, "author": null, "contributor": null},
+    {"id": "ownerlivemetrics_demo_gating", "label": "Demo Mode Gating for Live Metrics", "file_type": "code", "source_file": "components/owner/OwnerLiveMetrics.tsx", "source_location": null, "source_url": null, "captured_at": null, "author": null, "contributor": null},
+
+    {"id": "ownerscreen_component", "label": "OwnerScreen", "file_type": "code", "source_file": "components/owner/OwnerScreen.tsx", "source_location": null, "source_url": null, "captured_at": null, "author": null, "contributor": null},
+    {"id": "ownerscreen_sticky_header", "label": "Sticky Header Slot", "file_type": "code", "source_file": "components/owner/OwnerScreen.tsx", "source_location": null, "source_url": null, "captured_at": null, "author": null, "contributor": null},
+
+    {"id": "ownersectionlabel_component", "label": "OwnerSectionLabel", "file_type": "code", "source_file": "components/owner/OwnerSectionLabel.tsx", "source_location": null, "source_url": null, "captured_at": null, "author": null, "contributor": null},
+
+    {"id": "ownertabbar_component", "label": "OwnerTabBar", "file_type": "code", "source_file": "components/owner/OwnerTabBar.tsx", "source_location": null, "source_url": null, "captured_at": null, "author": null, "contributor": null},
+    {"id": "ownertabbar_quickadd_sheet", "label": "Quick-Add Bottom Sheet", "file_type": "code", "source_file": "components/owner/OwnerTabBar.tsx", "source_location": null, "source_url": null, "captured_at": null, "author": null, "contributor": null},
+    {"id": "ownertabbar_plus_button", "label": "Floating Gold Plus Button", "file_type": "code", "source_file": "components/owner/OwnerTabBar.tsx", "source_location": null, "source_url": null, "captured_at": null, "author": null, "contributor": null},
+    {"id": "ownertabbar_blur_background", "label": "iOS BlurView Background", "file_type": "code", "source_file": "components/owner/OwnerTabBar.tsx", "source_location": null, "source_url": null, "captured_at": null, "author": null, "contributor": null},
+
+    {"id": "periodtoggle_component", "label": "PeriodToggle", "file_type": "code", "source_file": "components/owner/PeriodToggle.tsx", "source_location": null, "source_url": null, "captured_at": null, "author": null, "contributor": null},
+
+    {"id": "quickactions_component", "label": "QuickActions", "file_type": "code", "source_file": "components/owner/QuickActions.tsx", "source_location": null, "source_url": null, "captured_at": null, "author": null, "contributor": null},
+
+    {"id": "restaurantpicker_component", "label": "RestaurantPicker", "file_type": "code", "source_file": "components/owner/RestaurantPicker.tsx", "source_location": null, "source_url": null, "captured_at": null, "author": null, "contributor": null},
+    {"id": "restaurantpicker_all_restaurants", "label": "All Restaurants Aggregate Row", "file_type": "code", "source_file": "components/owner/RestaurantPicker.tsx", "source_location": null, "source_url": null, "captured_at": null, "author": null, "contributor": null},
+
+    {"id": "revenuehero_component", "label": "RevenueHero", "file_type": "code", "source_file": "components/owner/RevenueHero.tsx", "source_location": null, "source_url": null, "captured_at": null, "author": null, "contributor": null},
+    {"id": "revenuehero_animated_count", "label": "useAnimatedCount Cubic Ease Hook", "file_type": "code", "source_file": "components/owner/RevenueHero.tsx", "source_location": null, "source_url": null, "captured_at": null, "author": null, "contributor": null},
+    {"id": "revenuehero_chart_bar", "label": "Animated ChartBar", "file_type": "code", "source_file": "components/owner/RevenueHero.tsx", "source_location": null, "source_url": null, "captured_at": null, "author": null, "contributor": null},
+    {"id": "revenuehero_demo_gating", "label": "Demo Mode Gating for Revenue Data", "file_type": "code", "source_file": "components/owner/RevenueHero.tsx", "source_location": null, "source_url": null, "captured_at": null, "author": null, "contributor": null},
+
+    {"id": "scanshimmer_component", "label": "ScanShimmer", "file_type": "code", "source_file": "components/owner/ScanShimmer.tsx", "source_location": null, "source_url": null, "captured_at": null, "author": null, "contributor": null},
+
+    {"id": "schedulebottomsheet_component", "label": "ScheduleBottomSheet", "file_type": "code", "source_file": "components/owner/ScheduleBottomSheet.tsx", "source_location": null, "source_url": null, "captured_at": null, "author": null, "contributor": null},
+    {"id": "schedulebottomsheet_centermodal", "label": "ScheduleCenterModal", "file_type": "code", "source_file": "components/owner/ScheduleBottomSheet.tsx", "source_location": null, "source_url": null, "captured_at": null, "author": null, "contributor": null},
+    {"id": "schedulebottomsheet_primarybutton", "label": "SheetPrimaryButton", "file_type": "code", "source_file": "components/owner/ScheduleBottomSheet.tsx", "source_location": null, "source_url": null, "captured_at": null, "author": null, "contributor": null},
+    {"id": "schedulebottomsheet_secondarybutton", "label": "SheetSecondaryButton", "file_type": "code", "source_file": "components/owner/ScheduleBottomSheet.tsx", "source_location": null, "source_url": null, "captured_at": null, "author": null, "contributor": null},
+
+    {"id": "owner_design_system_owner_theme_tokens", "label": "Owner Theme Tokens (palette/radii/spacing)", "file_type": "code", "source_file": "components/owner/FloorCanvas.tsx", "source_location": null, "source_url": null, "captured_at": null, "author": null, "contributor": null},
+    {"id": "owner_design_system_brandgold", "label": "Brand Gold Tokens", "file_type": "code", "source_file": "components/owner/CornerBrackets.tsx", "source_location": null, "source_url": null, "captured_at": null, "author": null, "contributor": null}
+  ],
+  "edges": [
+    {"source": "cornerbrackets_component", "target": "cornerbrackets_viewfinder_frame", "relation": "implements", "confidence": "EXTRACTED", "confidence_score": 1.0, "source_file": "components/owner/CornerBrackets.tsx", "source_location": null, "weight": 1.0},
+    {"source": "cornerbrackets_component", "target": "cornerbrackets_pulse_animation", "relation": "implements", "confidence": "EXTRACTED", "confidence_score": 1.0, "source_file": "components/owner/CornerBrackets.tsx", "source_location": null, "weight": 1.0},
+    {"source": "cornerbrackets_component", "target": "owner_design_system_brandgold", "relation": "references", "confidence": "EXTRACTED", "confidence_score": 1.0, "source_file": "components/owner/CornerBrackets.tsx", "source_location": null, "weight": 1.0},
+    {"source": "cornerbrackets_component", "target": "scanshimmer_component", "relation": "conceptually_related_to", "confidence": "INFERRED", "confidence_score": 0.85, "source_file": "components/owner/CornerBrackets.tsx", "source_location": null, "weight": 0.85},
+
+    {"source": "expenselistrow_component", "target": "expenselistrow_typepill", "relation": "calls", "confidence": "EXTRACTED", "confidence_score": 1.0, "source_file": "components/owner/ExpenseListRow.tsx", "source_location": null, "weight": 1.0},
+    {"source": "expenselistrow_component", "target": "expenselistrow_thumbnail_loader", "relation": "implements", "confidence": "EXTRACTED", "confidence_score": 1.0, "source_file": "components/owner/ExpenseListRow.tsx", "source_location": null, "weight": 1.0},
+    {"source": "expenselistrow_component", "target": "owner_design_system_brandgold", "relation": "references", "confidence": "EXTRACTED", "confidence_score": 1.0, "source_file": "components/owner/ExpenseListRow.tsx", "source_location": null, "weight": 1.0},
+
+    {"source": "expensesummarycard_component", "target": "glasscard_component", "relation": "calls", "confidence": "EXTRACTED", "confidence_score": 1.0, "source_file": "components/owner/ExpenseSummaryCard.tsx", "source_location": null, "weight": 1.0},
+    {"source": "expensesummarycard_component", "target": "expensesummarycard_split_spent_earned", "relation": "implements", "confidence": "EXTRACTED", "confidence_score": 1.0, "source_file": "components/owner/ExpenseSummaryCard.tsx", "source_location": null, "weight": 1.0},
+    {"source": "expensesummarycard_component", "target": "expensesummarycard_top_categories", "relation": "implements", "confidence": "EXTRACTED", "confidence_score": 1.0, "source_file": "components/owner/ExpenseSummaryCard.tsx", "source_location": null, "weight": 1.0},
+    {"source": "expensesummarycard_component", "target": "expensesummarycard_monthly_delta", "relation": "implements", "confidence": "EXTRACTED", "confidence_score": 1.0, "source_file": "components/owner/ExpenseSummaryCard.tsx", "source_location": null, "weight": 1.0},
+    {"source": "expensesummarycard_component", "target": "expenselistrow_component", "relation": "shares_data_with", "confidence": "INFERRED", "confidence_score": 0.95, "source_file": "components/owner/ExpenseSummaryCard.tsx", "source_location": null, "weight": 0.95},
+
+    {"source": "floorcanvas_component", "target": "floorcanvas_pinch_pan_gesture", "relation": "implements", "confidence": "EXTRACTED", "confidence_score": 1.0, "source_file": "components/owner/FloorCanvas.tsx", "source_location": null, "weight": 1.0},
+    {"source": "floorcanvas_component", "target": "floorcanvas_table_status_colors", "relation": "calls", "confidence": "EXTRACTED", "confidence_score": 1.0, "source_file": "components/owner/FloorCanvas.tsx", "source_location": null, "weight": 1.0},
+    {"source": "floorcanvas_component", "target": "floorcanvas_legend", "relation": "implements", "confidence": "EXTRACTED", "confidence_score": 1.0, "source_file": "components/owner/FloorCanvas.tsx", "source_location": null, "weight": 1.0},
+    {"source": "floorcanvas_component", "target": "owner_design_system_owner_theme_tokens", "relation": "references", "confidence": "EXTRACTED", "confidence_score": 1.0, "source_file": "components/owner/FloorCanvas.tsx", "source_location": null, "weight": 1.0},
+
+    {"source": "homebookingtrendcard_component", "target": "homebookingtrendcard_sparkline_chart", "relation": "implements", "confidence": "EXTRACTED", "confidence_score": 1.0, "source_file": "components/owner/HomeBookingTrendCard.tsx", "source_location": null, "weight": 1.0},
+    {"source": "homebookingtrendcard_component", "target": "homehero_component", "relation": "semantically_similar_to", "confidence": "INFERRED", "confidence_score": 0.85, "source_file": "components/owner/HomeBookingTrendCard.tsx", "source_location": null, "weight": 0.85},
+
+    {"source": "homehero_component", "target": "homehero_sparkline_bars", "relation": "implements", "confidence": "EXTRACTED", "confidence_score": 1.0, "source_file": "components/owner/HomeHero.tsx", "source_location": null, "weight": 1.0},
+
+    {"source": "livetimeline_component", "target": "ownersectionlabel_component", "relation": "calls", "confidence": "EXTRACTED", "confidence_score": 1.0, "source_file": "components/owner/LiveTimeline.tsx", "source_location": null, "weight": 1.0},
+    {"source": "livetimeline_component", "target": "livetimeline_status_accent", "relation": "calls", "confidence": "EXTRACTED", "confidence_score": 1.0, "source_file": "components/owner/LiveTimeline.tsx", "source_location": null, "weight": 1.0},
+    {"source": "livetimeline_component", "target": "ownerlivefeed_component", "relation": "conceptually_related_to", "confidence": "INFERRED", "confidence_score": 0.85, "source_file": "components/owner/LiveTimeline.tsx", "source_location": null, "weight": 0.85},
+
+    {"source": "monthcalendar_component", "target": "monthcalendar_year_grid", "relation": "implements", "confidence": "EXTRACTED", "confidence_score": 1.0, "source_file": "components/owner/MonthCalendar.tsx", "source_location": null, "weight": 1.0},
+    {"source": "monthcalendar_component", "target": "monthcalendar_day_grid", "relation": "implements", "confidence": "EXTRACTED", "confidence_score": 1.0, "source_file": "components/owner/MonthCalendar.tsx", "source_location": null, "weight": 1.0},
+    {"source": "monthcalendar_component", "target": "owner_design_system_brandgold", "relation": "references", "confidence": "EXTRACTED", "confidence_score": 1.0, "source_file": "components/owner/MonthCalendar.tsx", "source_location": null, "weight": 1.0},
+
+    {"source": "owneralertsstrip_component", "target": "ownersectionlabel_component", "relation": "calls", "confidence": "EXTRACTED", "confidence_score": 1.0, "source_file": "components/owner/OwnerAlertsStrip.tsx", "source_location": null, "weight": 1.0},
+    {"source": "owneralertsstrip_component", "target": "owneralertsstrip_severity_style", "relation": "calls", "confidence": "EXTRACTED", "confidence_score": 1.0, "source_file": "components/owner/OwnerAlertsStrip.tsx", "source_location": null, "weight": 1.0},
+
+    {"source": "ownerheader_component", "target": "ownerheader_notification_badge", "relation": "implements", "confidence": "EXTRACTED", "confidence_score": 1.0, "source_file": "components/owner/OwnerHeader.tsx", "source_location": null, "weight": 1.0},
+
+    {"source": "ownerlivefeed_component", "target": "ownersectionlabel_component", "relation": "calls", "confidence": "EXTRACTED", "confidence_score": 1.0, "source_file": "components/owner/OwnerLiveFeed.tsx", "source_location": null, "weight": 1.0},
+    {"source": "ownerlivefeed_component", "target": "ownerlivefeed_kind_color", "relation": "calls", "confidence": "EXTRACTED", "confidence_score": 1.0, "source_file": "components/owner/OwnerLiveFeed.tsx", "source_location": null, "weight": 1.0},
+
+    {"source": "ownerlivemetrics_component", "target": "ownersectionlabel_component", "relation": "calls", "confidence": "EXTRACTED", "confidence_score": 1.0, "source_file": "components/owner/OwnerLiveMetrics.tsx", "source_location": null, "weight": 1.0},
+    {"source": "ownerlivemetrics_component", "target": "ownerlivemetrics_demo_gating", "relation": "implements", "confidence": "EXTRACTED", "confidence_score": 1.0, "source_file": "components/owner/OwnerLiveMetrics.tsx", "source_location": null, "weight": 1.0},
+
+    {"source": "ownertabbar_component", "target": "ownertabbar_quickadd_sheet", "relation": "implements", "confidence": "EXTRACTED", "confidence_score": 1.0, "source_file": "components/owner/OwnerTabBar.tsx", "source_location": null, "weight": 1.0},
+    {"source": "ownertabbar_component", "target": "ownertabbar_plus_button", "relation": "implements", "confidence": "EXTRACTED", "confidence_score": 1.0, "source_file": "components/owner/OwnerTabBar.tsx", "source_location": null, "weight": 1.0},
+    {"source": "ownertabbar_component", "target": "ownertabbar_blur_background", "relation": "implements", "confidence": "EXTRACTED", "confidence_score": 1.0, "source_file": "components/owner/OwnerTabBar.tsx", "source_location": null, "weight": 1.0},
+    {"source": "ownertabbar_plus_button", "target": "ownertabbar_quickadd_sheet", "relation": "calls", "confidence": "EXTRACTED", "confidence_score": 1.0, "source_file": "components/owner/OwnerTabBar.tsx", "source_location": null, "weight": 1.0},
+
+    {"source": "quickactions_component", "target": "ownersectionlabel_component", "relation": "calls", "confidence": "EXTRACTED", "confidence_score": 1.0, "source_file": "components/owner/QuickActions.tsx", "source_location": null, "weight": 1.0},
+    {"source": "quickactions_component", "target": "ownertabbar_quickadd_sheet", "relation": "semantically_similar_to", "confidence": "INFERRED", "confidence_score": 0.75, "source_file": "components/owner/QuickActions.tsx", "source_location": null, "weight": 0.75},
+
+    {"source": "restaurantpicker_component", "target": "restaurantpicker_all_restaurants", "relation": "implements", "confidence": "EXTRACTED", "confidence_score": 1.0, "source_file": "components/owner/RestaurantPicker.tsx", "source_location": null, "weight": 1.0},
+
+    {"source": "revenuehero_component", "target": "periodtoggle_component", "relation": "calls", "confidence": "EXTRACTED", "confidence_score": 1.0, "source_file": "components/owner/RevenueHero.tsx", "source_location": null, "weight": 1.0},
+    {"source": "revenuehero_component", "target": "glasscard_component", "relation": "calls", "confidence": "EXTRACTED", "confidence_score": 1.0, "source_file": "components/owner/RevenueHero.tsx", "source_location": null, "weight": 1.0},
+    {"source": "revenuehero_component", "target": "ownersectionlabel_component", "relation": "calls", "confidence": "EXTRACTED", "confidence_score": 1.0, "source_file": "components/owner/RevenueHero.tsx", "source_location": null, "weight": 1.0},
+    {"source": "revenuehero_component", "target": "revenuehero_animated_count", "relation": "calls", "confidence": "EXTRACTED", "confidence_score": 1.0, "source_file": "components/owner/RevenueHero.tsx", "source_location": null, "weight": 1.0},
+    {"source": "revenuehero_component", "target": "revenuehero_chart_bar", "relation": "calls", "confidence": "EXTRACTED", "confidence_score": 1.0, "source_file": "components/owner/RevenueHero.tsx", "source_location": null, "weight": 1.0},
+    {"source": "revenuehero_component", "target": "revenuehero_demo_gating", "relation": "implements", "confidence": "EXTRACTED", "confidence_score": 1.0, "source_file": "components/owner/RevenueHero.tsx", "source_location": null, "weight": 1.0},
+    {"source": "revenuehero_component", "target": "expensesummarycard_component", "relation": "conceptually_related_to", "confidence": "INFERRED", "confidence_score": 0.85, "source_file": "components/owner/RevenueHero.tsx", "source_location": null, "weight": 0.85},
+
+    {"source": "scanshimmer_component", "target": "owner_design_system_brandgold", "relation": "references", "confidence": "EXTRACTED", "confidence_score": 1.0, "source_file": "components/owner/ScanShimmer.tsx", "source_location": null, "weight": 1.0},
+
+    {"source": "schedulebottomsheet_component", "target": "schedulebottomsheet_centermodal", "relation": "conceptually_related_to", "confidence": "EXTRACTED", "confidence_score": 1.0, "source_file": "components/owner/ScheduleBottomSheet.tsx", "source_location": null, "weight": 1.0},
+    {"source": "schedulebottomsheet_component", "target": "schedulebottomsheet_primarybutton", "relation": "conceptually_related_to", "confidence": "EXTRACTED", "confidence_score": 1.0, "source_file": "components/owner/ScheduleBottomSheet.tsx", "source_location": null, "weight": 1.0},
+    {"source": "schedulebottomsheet_component", "target": "schedulebottomsheet_secondarybutton", "relation": "conceptually_related_to", "confidence": "EXTRACTED", "confidence_score": 1.0, "source_file": "components/owner/ScheduleBottomSheet.tsx", "source_location": null, "weight": 1.0},
+
+    {"source": "homehero_component", "target": "ownerscreen_component", "relation": "conceptually_related_to", "confidence": "INFERRED", "confidence_score": 0.65, "source_file": "components/owner/HomeHero.tsx", "source_location": null, "weight": 0.65},
+    {"source": "ownerscreen_component", "target": "ownerscreen_sticky_header", "relation": "implements", "confidence": "EXTRACTED", "confidence_score": 1.0, "source_file": "components/owner/OwnerScreen.tsx", "source_location": null, "weight": 1.0},
+    {"source": "ownerscreen_component", "target": "ownertabbar_component", "relation": "conceptually_related_to", "confidence": "INFERRED", "confidence_score": 0.75, "source_file": "components/owner/OwnerScreen.tsx", "source_location": null, "weight": 0.75},
+
+    {"source": "monthcalendar_component", "target": "schedulebottomsheet_component", "relation": "conceptually_related_to", "confidence": "INFERRED", "confidence_score": 0.65, "source_file": "components/owner/MonthCalendar.tsx", "source_location": null, "weight": 0.65}
+  ],
+  "hyperedges": [],
+  "input_tokens": 0,
+  "output_tokens": 0
+}

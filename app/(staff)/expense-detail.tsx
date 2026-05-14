@@ -19,6 +19,7 @@ import { GlassCard } from '@/components/owner/GlassCard';
 import { MonthCalendar } from '@/components/owner/MonthCalendar';
 import { useExpenses } from '@/lib/context/ExpensesContext';
 import { getReceiptSignedUrl } from '@/lib/expenses/uploadReceiptImage';
+import { getCachedReceiptPreview, isDirectReceiptUri } from '@/lib/expenses/receiptPreviewCache';
 import {
   EXPENSE_CATEGORIES,
   getExpenseCategoryLabel,
@@ -55,10 +56,6 @@ function parseDollarsInput(value: string): number | null {
   return Math.round(dollars * 100) / 100;
 }
 
-function isDirectImageUri(value: string): boolean {
-  return /^(file|content|data|https?):/i.test(value);
-}
-
 function formatHumanDate(iso: string): string {
   const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(iso);
   if (!m) return iso;
@@ -70,6 +67,49 @@ function formatHumanDate(iso: string): string {
     day: 'numeric',
     year: 'numeric',
   });
+}
+
+type ConversionMetadata = {
+  originalAmount: number;
+  originalCurrency: string;
+  convertedAmount: number;
+  convertedCurrency: string;
+  rate: number;
+  provider: string;
+  quotedAt: string;
+};
+
+// Pulls the FX-conversion blob written by expense-review out of the
+// (intentionally untyped) `aiExtractedData` JSON. Returns null whenever
+// the row was saved without a currency conversion attached.
+function readConversion(aiExtractedData: unknown): ConversionMetadata | null {
+  if (!aiExtractedData || typeof aiExtractedData !== 'object') return null;
+  const blob = (aiExtractedData as Record<string, unknown>).conversion;
+  if (!blob || typeof blob !== 'object') return null;
+  const c = blob as Record<string, unknown>;
+  const originalAmount = typeof c.originalAmount === 'number' ? c.originalAmount : null;
+  const originalCurrency = typeof c.originalCurrency === 'string' ? c.originalCurrency : null;
+  const convertedAmount = typeof c.convertedAmount === 'number' ? c.convertedAmount : null;
+  const convertedCurrency = typeof c.convertedCurrency === 'string' ? c.convertedCurrency : null;
+  const rate = typeof c.rate === 'number' ? c.rate : null;
+  if (
+    originalAmount == null ||
+    !originalCurrency ||
+    convertedAmount == null ||
+    !convertedCurrency ||
+    rate == null
+  ) {
+    return null;
+  }
+  return {
+    originalAmount,
+    originalCurrency: originalCurrency.toLowerCase(),
+    convertedAmount,
+    convertedCurrency: convertedCurrency.toLowerCase(),
+    rate,
+    provider: typeof c.provider === 'string' ? c.provider : 'fx',
+    quotedAt: typeof c.quotedAt === 'string' ? c.quotedAt : '',
+  };
 }
 
 function statusLabel(status: PaymentStatus, type: TransactionType): string {
@@ -108,16 +148,21 @@ export default function ExpenseDetailScreen() {
   useEffect(() => {
     let cancelled = false;
     if (!expense?.receiptUrl) {
-      setSignedUrl(null);
+      setSignedUrl(expense ? getCachedReceiptPreview(expense) : null);
       return;
     }
-    if (isDirectImageUri(expense.receiptUrl)) {
+    const cached = getCachedReceiptPreview(expense);
+    if (cached) {
+      setSignedUrl(cached);
+      return;
+    }
+    if (isDirectReceiptUri(expense.receiptUrl)) {
       setSignedUrl(expense.receiptUrl);
       return;
     }
     (async () => {
       const url = await getReceiptSignedUrl(expense.receiptUrl ?? '');
-      if (!cancelled) setSignedUrl(url);
+      if (!cancelled) setSignedUrl(url ?? getCachedReceiptPreview(expense));
     })();
     return () => {
       cancelled = true;
@@ -345,6 +390,17 @@ export default function ExpenseDetailScreen() {
             <Text style={styles.totalAmount}>
               {formatCurrency(expense.totalAmount, expense.currency)}
             </Text>
+            {(() => {
+              const conv = readConversion(expense.aiExtractedData);
+              if (!conv) return null;
+              return (
+                <Text style={styles.conversionNote}>
+                  Converted from {formatCurrency(conv.originalAmount, conv.originalCurrency)}
+                  {' '}at 1 {conv.originalCurrency.toUpperCase()} = {conv.rate.toFixed(4)}{' '}
+                  {conv.convertedCurrency.toUpperCase()}
+                </Text>
+              );
+            })()}
             {expense.aiCategorized ? <Text style={styles.totalAiHint}>✨ AI extracted</Text> : null}
           </GlassCard>
 
@@ -719,6 +775,12 @@ const useStyles = createStyles((c) => {
       color: ownerColors.gold,
       fontSize: 12,
       marginTop: 6,
+    },
+    conversionNote: {
+      color: ownerColors.textMuted,
+      fontSize: 12,
+      lineHeight: 16,
+      marginTop: 8,
     },
     detailGrid: {
       paddingHorizontal: 4,

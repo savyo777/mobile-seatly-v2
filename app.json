@@ -78,7 +78,7 @@
       [
         "expo-camera",
         {
-          "cameraPermission": "Allow Cenaiva to access your camera so you can capture and post restaurant review snaps."
+          "cameraPermission": "Allow Cenaiva to access your camera so you can scan receipts and capture restaurant review snaps."
         }
       ],
       [
@@ -121,8 +121,7 @@
       ],
       "expo-asset",
       "expo-web-browser",
-      "expo-image",
-      "react-native-document-scanner-plugin"
+      "expo-image"
     ],
     "extra": {
       "socialSharing": {

@@ -27,6 +27,9 @@ import { getCurrentOwnerRestaurantId } from '@/lib/services/ownerRestaurant';
 import { consumePendingScan, type PendingScan } from '@/lib/expenses/pendingScan';
 import { scanReceipt } from '@/lib/expenses/scanReceipt';
 import { uploadReceiptImage } from '@/lib/expenses/uploadReceiptImage';
+import { rememberReceiptPreview, rememberReceiptStoragePath } from '@/lib/expenses/receiptPreviewCache';
+import { convertCurrency, type ConvertCurrencySuccess } from '@/lib/expenses/convertCurrency';
+import { formatCurrency } from '@/lib/utils/formatCurrency';
 import { getCurrentUserProfileId } from '@/lib/expenses/expensesApi';
 import {
   EXPENSE_CATEGORIES,
@@ -133,7 +136,7 @@ export default function ExpenseReviewScreen() {
   const styles = useStyles();
   const params = useLocalSearchParams<{ mode?: string }>();
   const isManual = params.mode === 'manual';
-  const { ownerRestaurantId, addExpense, addLocalExpense, patchExpense } = useExpenses();
+  const { ownerRestaurantId, ownerRestaurantCurrency, addExpense, addLocalExpense, patchExpense } = useExpenses();
 
   const [scan, setScan] = useState<PendingScan | null>(null);
   // Manual mode skips the AI extraction entirely, so the form starts
@@ -153,6 +156,13 @@ export default function ExpenseReviewScreen() {
   const [paymentStatus, setPaymentStatus] = useState<PaymentStatus>('paid');
   const [notes, setNotes] = useState('');
   const [paymentMethod, setPaymentMethod] = useState('');
+
+  // Currency-conversion state. Populated when the receipt was in a
+  // different currency from the restaurant and we successfully converted
+  // it; cleared when the user edits the amount or starts a fresh scan.
+  const [conversion, setConversion] = useState<ConvertCurrencySuccess | null>(null);
+  const [converting, setConverting] = useState(false);
+  const [conversionFailed, setConversionFailed] = useState<string | null>(null);
 
   // This screen lives inside the (staff) tab navigator, so its component
   // instance is reused between visits — `useState` initial values do NOT
@@ -178,6 +188,9 @@ export default function ExpenseReviewScreen() {
       setPaymentStatus('paid');
       setNotes('');
       setPaymentMethod('');
+      setConversion(null);
+      setConverting(false);
+      setConversionFailed(null);
 
       if (isManual) return;
       const next = consumePendingScan();
@@ -210,8 +223,9 @@ export default function ExpenseReviewScreen() {
         // totalAmount (the bottom-line on the receipt); fall back to amount
         // if the model only returned the pre-tax number.
         const headlineAmount = draft.totalAmount ?? draft.amount;
+        const detectedCurrency = draft.currency ? draft.currency.toLowerCase() : null;
         if (headlineAmount != null) setSubtotal(dollarsToInputString(headlineAmount));
-        if (draft.currency) setCurrency(draft.currency.toLowerCase());
+        if (detectedCurrency) setCurrency(detectedCurrency);
         if (draft.category && isExpenseCategoryKey(draft.category)) setCategory(draft.category);
         if (draft.paymentMethod) setPaymentMethod(draft.paymentMethod);
         // Collapse the AI-extraction tracking to match the simplified form.
@@ -224,6 +238,37 @@ export default function ExpenseReviewScreen() {
           }
         }
         setExtractedFields(collapsed);
+
+        // FX conversion: if the receipt is in a currency other than the
+        // restaurant's currency, convert the headline amount before the
+        // owner saves. Skips silently when no target currency is known
+        // (e.g. all-mode) or the currencies match.
+        const targetCurrency = ownerRestaurantCurrency;
+        if (
+          targetCurrency &&
+          detectedCurrency &&
+          detectedCurrency !== targetCurrency &&
+          headlineAmount != null &&
+          headlineAmount > 0
+        ) {
+          setConverting(true);
+          setConversionFailed(null);
+          const conv = await convertCurrency({
+            amount: headlineAmount,
+            from: detectedCurrency,
+            to: targetCurrency,
+            date: draft.expenseDate ?? null,
+          });
+          if (cancelled) return;
+          if (conv.ok) {
+            setConversion(conv);
+            setSubtotal(dollarsToInputString(conv.convertedAmount));
+            setCurrency(conv.targetCurrency);
+          } else if (conv.reason !== 'same_currency') {
+            setConversionFailed(conv.reason);
+          }
+          setConverting(false);
+        }
       } catch (err) {
         // scanReceipt failed — surface nothing prefilled, let the owner
         // type the receipt in manually instead of being stuck.
@@ -235,7 +280,7 @@ export default function ExpenseReviewScreen() {
     return () => {
       cancelled = true;
     };
-  }, [scan]);
+  }, [scan, ownerRestaurantCurrency]);
 
   const clearExtracted = useCallback((field: ExpenseDraftFieldKey) => {
     setExtractedFields((prev) => {
@@ -294,6 +339,24 @@ export default function ExpenseReviewScreen() {
     }
     const paidAt = isManual && paymentStatus === 'paid' ? new Date().toISOString() : null;
 
+    // Build the structured AI-extracted blob the rest of the app reads
+    // from `expenses.ai_extracted_data`. When the receipt was converted
+    // from another currency we record the originals + rate + provider so
+    // the detail screen can show "Converted from X at rate Y".
+    const aiExtractedData: Record<string, unknown> | null = conversion
+      ? {
+          conversion: {
+            originalAmount: Math.round((conversion.convertedAmount / conversion.rate) * 100) / 100,
+            originalCurrency: conversion.sourceCurrency,
+            convertedAmount: conversion.convertedAmount,
+            convertedCurrency: conversion.targetCurrency,
+            rate: conversion.rate,
+            provider: conversion.provider,
+            quotedAt: conversion.quotedAt,
+          },
+        }
+      : null;
+
     setSaving(true);
     try {
       // Demo mode: never write to the DB. Synthesize a local expense row
@@ -319,7 +382,7 @@ export default function ExpenseReviewScreen() {
           receiptUrl: scan?.uri ?? null,
           receiptType: scan ? 'image' : null,
           aiCategorized: extractedFields.size > 0,
-          aiExtractedData: null,
+          aiExtractedData,
           notes: notes.trim() || null,
           paymentMethod: paymentMethod.trim() || null,
         };
@@ -376,10 +439,11 @@ export default function ExpenseReviewScreen() {
         notes: notes.trim() || null,
         paymentMethod: paymentMethod.trim() || null,
         aiCategorized: extractedFields.size > 0,
-        aiExtractedData: null,
+        aiExtractedData,
       });
 
       if (created && scan) {
+        rememberReceiptPreview(created.id, scan.uri);
         try {
           const path = await uploadReceiptImage({
             uri: scan.uri,
@@ -388,6 +452,7 @@ export default function ExpenseReviewScreen() {
             contentType: scan.mimeType,
           });
           if (path) {
+            rememberReceiptStoragePath(created.id, path);
             await patchExpense(created.id, { receiptUrl: path, receiptType: 'image' });
           } else {
             addLocalExpense({ ...created, receiptUrl: scan.uri, receiptType: 'image' });
@@ -424,6 +489,7 @@ export default function ExpenseReviewScreen() {
     paymentMethod,
     extractedFields.size,
     scan,
+    conversion,
     patchExpense,
     router,
   ]);
@@ -542,12 +608,30 @@ export default function ExpenseReviewScreen() {
               onChangeText={(v) => {
                 setSubtotal(v);
                 clearExtracted('amount');
+                // Manual edits invalidate the auto-conversion banner: the
+                // owner has overridden the converted value.
+                if (conversion) setConversion(null);
+                if (conversionFailed) setConversionFailed(null);
               }}
               placeholder="0.00"
               placeholderTextColor={ownerColors.textMuted}
               style={[styles.input, styles.inputTotal]}
               keyboardType="decimal-pad"
             />
+            {converting ? (
+              <Text style={styles.conversionHint}>Converting to {(ownerRestaurantCurrency ?? '').toUpperCase()}…</Text>
+            ) : conversion ? (
+              <Text style={styles.conversionHint}>
+                Converted from {formatCurrency(
+                  Math.round((conversion.convertedAmount / conversion.rate) * 100) / 100,
+                  conversion.sourceCurrency,
+                )} at 1 {conversion.sourceCurrency.toUpperCase()} = {conversion.rate.toFixed(4)} {conversion.targetCurrency.toUpperCase()}
+              </Text>
+            ) : conversionFailed ? (
+              <Text style={styles.conversionWarning}>
+                Couldn’t fetch an exchange rate. Confirm the amount in {(ownerRestaurantCurrency ?? '').toUpperCase()} before saving.
+              </Text>
+            ) : null}
 
             {fieldLabel('Category', 'category')}
             <ScrollView
@@ -847,6 +931,19 @@ const useStyles = createStyles((c) => {
       borderColor: withAlpha(brandGold.dark, 0.4),
       color: ownerColors.gold,
       fontWeight: '700',
+    },
+    conversionHint: {
+      marginTop: 6,
+      color: ownerColors.textMuted,
+      fontSize: 12,
+      lineHeight: 16,
+    },
+    conversionWarning: {
+      marginTop: 6,
+      color: ownerColors.danger,
+      fontSize: 12,
+      lineHeight: 16,
+      fontWeight: '600',
     },
     catChips: {
       gap: 8,
