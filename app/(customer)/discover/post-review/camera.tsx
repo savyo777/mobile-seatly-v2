@@ -315,11 +315,6 @@ export default function ReviewCameraScreen() {
   const carouselBottom = insets.bottom + 80;
   const pillBottom = carouselBottom + SNAP_FILTER_RING_SIZE + 8;
 
-  // Bottom chrome height — used to shift every filter's bottom-anchored
-  // decorations up the same amount so they sit just above the picker/pills
-  // instead of being clipped by them. Top and side decorations stay put.
-  const bottomChromeHeight = pillBottom + 28 + 12; // pill top + breathing room
-
   const pushToCaption = useCallback(
     (uri: string, capturedAtMs: number) => {
       const encodedUri = encodeURIComponent(uri);
@@ -598,7 +593,6 @@ export default function ReviewCameraScreen() {
             area={restaurantArea}
             mediaSlot={<View />}
             containerStyle={TRANSPARENT_FRAME_STYLE}
-            overlayInsets={{ bottom: bottomChromeHeight }}
           />
         </View>
       </View>
