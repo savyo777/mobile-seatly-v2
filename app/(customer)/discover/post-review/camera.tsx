@@ -8,7 +8,9 @@ import {
   StyleSheet,
   Text,
   View,
+  useWindowDimensions,
 } from 'react-native';
+import { Image } from 'expo-image';
 import { CameraView, CameraType, FlashMode, useCameraPermissions } from 'expo-camera';
 import * as ImagePicker from 'expo-image-picker';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -18,12 +20,21 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { StatusBar } from 'expo-status-bar';
 import { useColors, createStyles, borderRadius, spacing, typography } from '@/lib/theme';
 import { getSnapRestaurantName as DEMO_getSnapRestaurantName } from '@/lib/mock/snaps';
+import { mockRestaurants as DEMO_RESTAURANTS } from '@/lib/mock/restaurants';
 import { isDemoModeEnabled } from '@/lib/config/demoMode';
+import { StoryFilterFrame } from '@/components/storyFilters/StoryFilterFrame';
+import { SnapFilterPicker } from '@/components/storyFilters/SnapFilterPicker';
+import type { StoryFilterId } from '@/lib/storyFilters/types';
+import { captureStyledSnapToTmpFile } from '@/lib/snapOverlays/captureStyledSnap';
 
 const getSnapRestaurantName: typeof DEMO_getSnapRestaurantName = (id) =>
   isDemoModeEnabled() ? DEMO_getSnapRestaurantName(id) : '';
+const mockRestaurants: typeof DEMO_RESTAURANTS = isDemoModeEnabled() ? DEMO_RESTAURANTS : [];
+
 import { openAppPhotoSettings } from '@/lib/device/openAppPhotoSettings';
 import { safeRouterBack } from '@/lib/navigation/transitions';
+
+const TRANSPARENT_FRAME_STYLE = { borderRadius: 0, backgroundColor: 'transparent' };
 
 function GlassCircle({
   onPress,
@@ -258,6 +269,7 @@ export default function ReviewCameraScreen() {
   const router = useRouter();
   const navigation = useNavigation();
   const insets = useSafeAreaInsets();
+  const { width: windowW, height: windowH } = useWindowDimensions();
   const params = useLocalSearchParams<{
     restaurantId: string;
     bookingId?: string;
@@ -270,32 +282,70 @@ export default function ReviewCameraScreen() {
   const [cameraReady, setCameraReady] = useState(false);
   const [cameraUnavailable, setCameraUnavailable] = useState(false);
   const [capturing, setCapturing] = useState(false);
+  const [selectedFilterId, setSelectedFilterId] = useState<StoryFilterId | null>(null);
+  // Transient — set briefly during composite so viewshot rasterises the photo.
+  const [capturedUri, setCapturedUri] = useState<string | null>(null);
 
   const cameraRef = useRef<CameraView | null>(null);
+  const captureRefView = useRef<View>(null);
   const shutterOpacity = useRef(new Animated.Value(0)).current;
   const pressScale = useRef(new Animated.Value(1)).current;
   const galleryOpeningRef = useRef(false);
   const [captureFill, setCaptureFill] = useState(false);
 
-  const restaurantName = useMemo(
-    () => (restaurantId ? getSnapRestaurantName(restaurantId) : 'Restaurant'),
+  const restaurant = useMemo(
+    () => mockRestaurants.find((item) => item.id === restaurantId) ?? null,
     [restaurantId],
   );
+  const restaurantName = useMemo(() => {
+    if (restaurant?.name) return restaurant.name;
+    if (restaurantId) return getSnapRestaurantName(restaurantId);
+    return 'Restaurant';
+  }, [restaurant?.name, restaurantId]);
+  const restaurantCity = restaurant?.city ?? 'Toronto';
+  const restaurantArea = restaurant?.area ?? restaurantCity;
+
   const effectiveFlash = useMemo(
     () => (cameraFacing === 'back' ? flash : 'off'),
     [cameraFacing, flash],
   );
   const canUseCamera = Boolean(permission?.granted) && !cameraUnavailable;
 
-  const goNext = useCallback(
+  // Filter picker placement — above the shutter row.
+  const carouselBottom = insets.bottom + 110;
+  const pillBottom = carouselBottom + 60 + 8; // RING_SIZE (60) + gap
+
+  const pushToCaption = useCallback(
     (uri: string, capturedAtMs: number) => {
       const encodedUri = encodeURIComponent(uri);
       const bookingQuery = bookingId ? `&bookingId=${encodeURIComponent(String(bookingId))}` : '';
       router.push(
-        `/(customer)/discover/post-review/styles?photoUri=${encodedUri}&restaurantId=${restaurantId}&capturedAt=${capturedAtMs}${bookingQuery}`,
+        `/(customer)/discover/post-review/details?photoUri=${encodedUri}&restaurantId=${restaurantId}&capturedAt=${capturedAtMs}${bookingQuery}`,
       );
     },
     [bookingId, restaurantId, router],
+  );
+
+  const compositeAndGo = useCallback(
+    async (rawPhotoUri: string, capturedAtMs: number) => {
+      if (!selectedFilterId) {
+        pushToCaption(rawPhotoUri, capturedAtMs);
+        return;
+      }
+      setCapturedUri(rawPhotoUri);
+      // Wait for the swap (CameraView → <Image>) to commit + expo-image to paint.
+      await new Promise<void>((r) => requestAnimationFrame(() => r()));
+      await new Promise<void>((r) => setTimeout(r, 90));
+      let composed: string | undefined;
+      try {
+        composed = await captureStyledSnapToTmpFile(captureRefView);
+      } catch {
+        composed = undefined;
+      }
+      pushToCaption(composed ?? rawPhotoUri, capturedAtMs);
+      setCapturedUri(null);
+    },
+    [selectedFilterId, pushToCaption],
   );
 
   const TAB_BAR_STYLE = {
@@ -325,7 +375,7 @@ export default function ReviewCameraScreen() {
           if (pending.canceled) return;
           const asset = pending.assets?.[0];
           if (asset?.uri) {
-            goNext(asset.uri, readExifTimestamp(asset.exif) ?? Date.now());
+            void compositeAndGo(asset.uri, readExifTimestamp(asset.exif) ?? Date.now());
           }
         } catch {
           // Android may surface edge cases; ignore
@@ -334,7 +384,7 @@ export default function ReviewCameraScreen() {
       return () => {
         alive = false;
       };
-    }, [goNext]),
+    }, [compositeAndGo]),
   );
 
   useEffect(() => {
@@ -371,14 +421,14 @@ export default function ReviewCameraScreen() {
       });
       if (result.canceled || !result.assets?.[0]?.uri) return;
       const asset = result.assets[0];
-      goNext(asset.uri, readExifTimestamp(asset.exif) ?? Date.now());
+      void compositeAndGo(asset.uri, readExifTimestamp(asset.exif) ?? Date.now());
     } catch {
       Alert.alert(
         'Could not open photos',
         'Something went wrong opening your photo library. Please try again.',
       );
     }
-  }, [goNext]);
+  }, [compositeAndGo]);
 
   const openGallery = useCallback(async () => {
     if (galleryOpeningRef.current) return;
@@ -440,11 +490,6 @@ export default function ReviewCameraScreen() {
       setCapturing(true);
       pulseCapture();
       runShutter();
-      // skipProcessing: tells expo-camera to NOT apply HDR / auto-tone / etc.
-      // The pixels we save match exactly what was on screen at the moment of
-      // capture — no lighting/colour shift between live view and saved frame.
-      // exif: keeps EXIF metadata so iOS knows the rotation; downstream
-      // <Image> renders it in the correct orientation (no horizontal flip).
       const capturedAt = Date.now();
       const photo = await cameraRef.current.takePictureAsync({
         quality: 1,
@@ -452,7 +497,7 @@ export default function ReviewCameraScreen() {
         exif: true,
       });
       if (!photo?.uri) return;
-      goNext(photo.uri, readExifTimestamp(photo.exif) ?? capturedAt);
+      await compositeAndGo(photo.uri, readExifTimestamp(photo.exif) ?? capturedAt);
     } finally {
       setCapturing(false);
     }
@@ -466,60 +511,90 @@ export default function ReviewCameraScreen() {
     <View style={styles.root}>
       <StatusBar style="light" />
 
-      {canUseCamera ? (
-        <CameraView
-          ref={cameraRef}
-          pointerEvents="none"
-          style={styles.cameraFill}
-          facing={cameraFacing}
-          mirror={cameraFacing === 'front'}
-          responsiveOrientationWhenOrientationLocked={Platform.OS === 'ios'}
-          zoom={0}
-          flash={effectiveFlash}
-          onCameraReady={() => setCameraReady(true)}
-          onMountError={() => setCameraUnavailable(true)}
-        />
-      ) : (
-        <View style={styles.cameraFallback}>
-          <View style={styles.cameraFallbackIcon}>
-            {permission ? (
-              <Ionicons name="camera-outline" size={26} color="#E2C778" />
-            ) : (
-              <ActivityIndicator color="#E2C778" size="small" />
-            )}
+      {/* CAPTURE TARGET — live camera (or captured photo during composite) + filter overlay */}
+      <View
+        ref={captureRefView}
+        collapsable={false}
+        pointerEvents="box-none"
+        style={[StyleSheet.absoluteFillObject, { width: windowW, height: windowH }]}
+      >
+        {capturedUri ? (
+          <Image
+            source={{ uri: capturedUri }}
+            style={StyleSheet.absoluteFillObject}
+            contentFit="cover"
+            contentPosition="center"
+          />
+        ) : canUseCamera ? (
+          <CameraView
+            ref={cameraRef}
+            pointerEvents="none"
+            style={styles.cameraFill}
+            facing={cameraFacing}
+            mirror={cameraFacing === 'front'}
+            responsiveOrientationWhenOrientationLocked={Platform.OS === 'ios'}
+            zoom={0}
+            flash={effectiveFlash}
+            onCameraReady={() => setCameraReady(true)}
+            onMountError={() => setCameraUnavailable(true)}
+          />
+        ) : (
+          <View style={styles.cameraFallback}>
+            <View style={styles.cameraFallbackIcon}>
+              {permission ? (
+                <Ionicons name="camera-outline" size={26} color="#E2C778" />
+              ) : (
+                <ActivityIndicator color="#E2C778" size="small" />
+              )}
+            </View>
+            <Text style={styles.cameraFallbackTitle}>
+              {permission ? 'Camera access needed' : 'Preparing camera'}
+            </Text>
+            <Text style={styles.cameraFallbackBody}>
+              Allow camera access or choose a photo to continue.
+            </Text>
+            <View style={styles.cameraFallbackActions}>
+              <Pressable
+                onPress={() => void requestPermission()}
+                disabled={!permission}
+                style={({ pressed }) => [
+                  styles.cameraFallbackBtn,
+                  styles.cameraFallbackBtnGold,
+                  pressed && { opacity: 0.82 },
+                  !permission && { opacity: 0.5 },
+                ]}
+              >
+                <Ionicons name="camera" size={14} color={c.bgBase} />
+                <Text style={[styles.cameraFallbackBtnText, styles.cameraFallbackBtnTextGold]}>
+                  Allow
+                </Text>
+              </Pressable>
+              <Pressable
+                onPress={() => void openGallery()}
+                style={({ pressed }) => [styles.cameraFallbackBtn, pressed && { opacity: 0.82 }]}
+              >
+                <Ionicons name="images-outline" size={14} color="#fff" />
+                <Text style={styles.cameraFallbackBtnText}>Photos</Text>
+              </Pressable>
+            </View>
           </View>
-          <Text style={styles.cameraFallbackTitle}>
-            {permission ? 'Camera access needed' : 'Preparing camera'}
-          </Text>
-          <Text style={styles.cameraFallbackBody}>
-            Allow camera access or choose a photo to continue.
-          </Text>
-          <View style={styles.cameraFallbackActions}>
-            <Pressable
-              onPress={() => void requestPermission()}
-              disabled={!permission}
-              style={({ pressed }) => [
-                styles.cameraFallbackBtn,
-                styles.cameraFallbackBtnGold,
-                pressed && { opacity: 0.82 },
-                !permission && { opacity: 0.5 },
-              ]}
-            >
-              <Ionicons name="camera" size={14} color={c.bgBase} />
-              <Text style={[styles.cameraFallbackBtnText, styles.cameraFallbackBtnTextGold]}>
-                Allow
-              </Text>
-            </Pressable>
-            <Pressable
-              onPress={() => void openGallery()}
-              style={({ pressed }) => [styles.cameraFallbackBtn, pressed && { opacity: 0.82 }]}
-            >
-              <Ionicons name="images-outline" size={14} color="#fff" />
-              <Text style={styles.cameraFallbackBtnText}>Photos</Text>
-            </Pressable>
-          </View>
+        )}
+
+        {/* Filter decorations overlay (transparent so the live camera shows through). */}
+        <View pointerEvents="none" style={StyleSheet.absoluteFillObject}>
+          <StoryFilterFrame
+            filterId={selectedFilterId}
+            width={windowW}
+            height={windowH}
+            capturedAt={undefined}
+            restaurantName={restaurantName}
+            city={restaurantCity}
+            area={restaurantArea}
+            mediaSlot={<View />}
+            containerStyle={TRANSPARENT_FRAME_STYLE}
+          />
         </View>
-      )}
+      </View>
 
       <Animated.View pointerEvents="none" style={[styles.shutter, { opacity: shutterOpacity }]} />
 
@@ -529,6 +604,21 @@ export default function ReviewCameraScreen() {
         style={styles.bottomGradient}
         pointerEvents="none"
       />
+
+      {/* Filter picker — overlays above the shutter row. */}
+      {canUseCamera && (
+        <SnapFilterPicker
+          selectedFilterId={selectedFilterId}
+          onChangeSelected={setSelectedFilterId}
+          carouselBottom={carouselBottom}
+          pillBottom={pillBottom}
+          windowW={windowW}
+          capturedAt={undefined}
+          restaurantName={restaurantName}
+          city={restaurantCity}
+          area={restaurantArea}
+        />
+      )}
 
       <View style={styles.chrome} pointerEvents="box-none">
         <View style={[styles.topBar, { paddingTop: insets.top + 4 }]}>
