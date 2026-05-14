@@ -282,9 +282,7 @@ export default function ReviewCameraScreen() {
   const [cameraReady, setCameraReady] = useState(false);
   const [cameraUnavailable, setCameraUnavailable] = useState(false);
   const [capturing, setCapturing] = useState(false);
-  // Default to the first new Cenaiva filter so the camera opens with a
-  // new filter centred in the carousel rather than "Original".
-  const [selectedFilterId, setSelectedFilterId] = useState<StoryFilterId | null>('lux-gem');
+  const [selectedFilterId, setSelectedFilterId] = useState<StoryFilterId | null>(null);
   // Transient — set briefly during composite so viewshot rasterises the photo.
   const [capturedUri, setCapturedUri] = useState<string | null>(null);
 

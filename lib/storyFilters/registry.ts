@@ -10,21 +10,6 @@
  * Order matters — the carousel renders filters in this exact order.
  */
 import type { StoryFilterEntry, StoryFilterId } from './types';
-// 00 · BEAUTY (Cenaiva)
-import { LuxGem } from '@/components/storyFilters/filters/LuxGem';
-import { GoldenHourGlow } from '@/components/storyFilters/filters/GoldenHourGlow';
-import { DewyGlass } from '@/components/storyFilters/filters/DewyGlass';
-import { SoftBaddie } from '@/components/storyFilters/filters/SoftBaddie';
-import { AngelLight } from '@/components/storyFilters/filters/AngelLight';
-import { NightOutGlam } from '@/components/storyFilters/filters/NightOutGlam';
-// 00 · FUNNY (Cenaiva)
-import { TinyFaceCEO } from '@/components/storyFilters/filters/TinyFaceCEO';
-import { FoodComa } from '@/components/storyFilters/filters/FoodComa';
-import { DramaQueen } from '@/components/storyFilters/filters/DramaQueen';
-import { UncleBBQ } from '@/components/storyFilters/filters/UncleBBQ';
-import { MainCharacterMeltdown } from '@/components/storyFilters/filters/MainCharacterMeltdown';
-import { AlienRizz } from '@/components/storyFilters/filters/AlienRizz';
-// 01 · CUTE
 import { PinkBowDinner } from '@/components/storyFilters/filters/PinkBowDinner';
 import { CoquetteDinner } from '@/components/storyFilters/filters/CoquetteDinner';
 import { MartiniGirlsNight } from '@/components/storyFilters/filters/MartiniGirlsNight';
@@ -57,105 +42,6 @@ import { TonightsSpot } from '@/components/storyFilters/filters/TonightsSpot';
 import { BestSeatInTheHouse } from '@/components/storyFilters/filters/BestSeatInTheHouse';
 
 export const STORY_FILTERS: StoryFilterEntry[] = [
-  // ─── 00 · BEAUTY (new — placed first so they appear on the left of the carousel)
-  {
-    id: 'lux-gem',
-    name: 'Lux Gem',
-    shortLabel: 'Lux Gem',
-    category: 'beauty',
-    watermark: 'tr',
-    Component: LuxGem,
-  },
-  {
-    id: 'golden-hour-glow',
-    name: 'Golden Hour Glow',
-    shortLabel: 'Golden Hr',
-    category: 'beauty',
-    watermark: 'tr',
-    Component: GoldenHourGlow,
-  },
-  {
-    id: 'dewy-glass',
-    name: 'Dewy Glass',
-    shortLabel: 'Dewy',
-    category: 'beauty',
-    watermark: 'tr',
-    Component: DewyGlass,
-  },
-  {
-    id: 'soft-baddie',
-    name: 'Soft Baddie',
-    shortLabel: 'Baddie',
-    category: 'beauty',
-    watermark: 'tr',
-    Component: SoftBaddie,
-  },
-  {
-    id: 'angel-light',
-    name: 'Angel Light',
-    shortLabel: 'Angel',
-    category: 'beauty',
-    watermark: 'tr',
-    Component: AngelLight,
-  },
-  {
-    id: 'night-out-glam',
-    name: 'Night Out Glam',
-    shortLabel: 'Night Out',
-    category: 'beauty',
-    watermark: 'tr',
-    Component: NightOutGlam,
-  },
-  // ─── 00 · FUNNY (new)
-  {
-    id: 'tiny-face-ceo',
-    name: 'Tiny Face CEO',
-    shortLabel: 'CEO',
-    category: 'funny',
-    watermark: 'tr',
-    Component: TinyFaceCEO,
-  },
-  {
-    id: 'food-coma',
-    name: 'Food Coma',
-    shortLabel: 'Food Coma',
-    category: 'funny',
-    watermark: 'tr',
-    Component: FoodComa,
-  },
-  {
-    id: 'drama-queen',
-    name: 'Drama Queen',
-    shortLabel: 'Drama',
-    category: 'funny',
-    watermark: 'tr',
-    Component: DramaQueen,
-  },
-  {
-    id: 'uncle-bbq',
-    name: 'Uncle at the BBQ',
-    shortLabel: 'Uncle',
-    category: 'funny',
-    watermark: 'tr',
-    Component: UncleBBQ,
-  },
-  {
-    id: 'main-character-meltdown',
-    name: 'Main Character Meltdown',
-    shortLabel: 'Meltdown',
-    category: 'funny',
-    watermark: 'tr',
-    Component: MainCharacterMeltdown,
-  },
-  {
-    id: 'alien-rizz',
-    name: 'Alien Rizz',
-    shortLabel: 'Alien',
-    category: 'funny',
-    watermark: 'tr',
-    Component: AlienRizz,
-  },
-  // ─── 01 · CUTE (existing) ───────────────────────────────────────────────
   {
     id: 'pink-bow-dinner',
     name: 'Pink Bow Dinner',
