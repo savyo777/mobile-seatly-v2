@@ -32,6 +32,7 @@ import { uploadSnapPhoto } from '@/lib/snaps/uploadSnapPhoto';
 import { insertVisitPhoto } from '@/lib/snaps/visitPhotosApi';
 import { fetchCurrentUserProfile, type AppUserProfile } from '@/lib/services/userProfile';
 import { insertRestaurantReview } from '@/lib/reviews/insertRestaurantReview';
+import * as Crypto from 'expo-crypto';
 import { STORY_FILTERS } from '@/lib/storyFilters/registry';
 import {
   DEFAULT_SNAP_PHOTO_ASPECT,
@@ -407,7 +408,7 @@ export default function SnapCaptionScreen() {
       // Persist to Supabase whenever the user is authenticated, regardless of
       // whether a bookingId is present (covers the past-restaurants carousel flow).
       if (isAuthenticated && user?.id) {
-        const photoId = crypto.randomUUID();
+        const photoId = Crypto.randomUUID();
         void (async () => {
           try {
             const publicUrl = await uploadSnapPhoto({
@@ -464,7 +465,8 @@ export default function SnapCaptionScreen() {
             : {}),
         },
       });
-    } catch {
+    } catch (err) {
+      console.warn('[connect.postSnap] failed:', err);
       Alert.alert('Could not post snap', 'Please try again.');
     } finally {
       if (!navigated) setPosting(false);
