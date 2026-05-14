@@ -32,6 +32,9 @@ export interface Expense {
   aiExtractedData: unknown;
 
   notes: string | null;
+
+  paymentMethod: string | null;
+  receiptNumber: string | null;
 }
 
 export type PaymentStatus = 'paid' | 'due' | 'scheduled' | 'overdue';
@@ -53,6 +56,8 @@ export interface ExpenseDraft {
   totalAmount: number | null;
   currency: string | null;
   category: ExpenseCategoryKey | null;
+  paymentMethod: string | null;
+  receiptNumber: string | null;
 }
 
 export type ExpenseDraftFieldKey = keyof ExpenseDraft;
@@ -94,6 +99,8 @@ export interface ExpenseRow {
   paid_at: string | null;
   recurring_rule_id: string | null;
   transaction_type: string;
+  payment_method: string | null;
+  receipt_number: string | null;
 }
 
 // Postgres `numeric` columns come back from supabase-js as either string
@@ -134,5 +141,7 @@ export function expenseFromRow(row: ExpenseRow): Expense {
     aiCategorized: row.ai_categorized ?? false,
     aiExtractedData: row.ai_extracted_data ?? null,
     notes: row.notes,
+    paymentMethod: row.payment_method,
+    receiptNumber: row.receipt_number,
   };
 }

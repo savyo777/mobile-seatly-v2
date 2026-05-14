@@ -172,6 +172,8 @@ export default function ExpenseReviewScreen() {
   const [frequency, setFrequency] = useState<ExpenseFrequency>('one_time');
   const [recurringEndDate, setRecurringEndDate] = useState('');
   const [notes, setNotes] = useState('');
+  const [paymentMethod, setPaymentMethod] = useState('');
+  const [receiptNumber, setReceiptNumber] = useState('');
 
   // Pull the captured image once on mount. For attachment mode (camera /
   // file) we expect a pending payload; if it's missing we bail back to
@@ -210,6 +212,8 @@ export default function ExpenseReviewScreen() {
         if (headlineAmount != null) setSubtotal(dollarsToInputString(headlineAmount));
         if (draft.currency) setCurrency(draft.currency.toLowerCase());
         if (draft.category && isExpenseCategoryKey(draft.category)) setCategory(draft.category);
+        if (draft.paymentMethod) setPaymentMethod(draft.paymentMethod);
+        if (draft.receiptNumber) setReceiptNumber(draft.receiptNumber);
         // Collapse the AI-extraction tracking to match the simplified form.
         const collapsed = new Set<ExpenseDraftFieldKey>();
         for (const f of result.extractedFields) {
@@ -326,6 +330,8 @@ export default function ExpenseReviewScreen() {
           aiCategorized: extractedFields.size > 0,
           aiExtractedData: null,
           notes: notes.trim() || null,
+          paymentMethod: paymentMethod.trim() || null,
+          receiptNumber: receiptNumber.trim() || null,
         };
         addLocalExpense(localExpense);
         void Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
@@ -378,6 +384,8 @@ export default function ExpenseReviewScreen() {
         receiptUrl: null,
         receiptType: scan ? 'image' : null,
         notes: notes.trim() || null,
+        paymentMethod: paymentMethod.trim() || null,
+        receiptNumber: receiptNumber.trim() || null,
         aiCategorized: extractedFields.size > 0,
         aiExtractedData: null,
         frequency: isManual ? frequency : 'one_time',
@@ -427,6 +435,8 @@ export default function ExpenseReviewScreen() {
     currency,
     category,
     notes,
+    paymentMethod,
+    receiptNumber,
     frequency,
     recurringEndDate,
     extractedFields.size,
@@ -718,6 +728,32 @@ export default function ExpenseReviewScreen() {
                 ) : null}
               </>
             ) : null}
+
+            {fieldLabel('Payment method', 'paymentMethod')}
+            <TextInput
+              value={paymentMethod}
+              onChangeText={(v) => {
+                setPaymentMethod(v);
+                clearExtracted('paymentMethod');
+              }}
+              placeholder="Visa ****4242, cash, interac"
+              placeholderTextColor={ownerColors.textMuted}
+              style={styles.input}
+              autoCapitalize="none"
+            />
+
+            {fieldLabel('Receipt #', 'receiptNumber')}
+            <TextInput
+              value={receiptNumber}
+              onChangeText={(v) => {
+                setReceiptNumber(v);
+                clearExtracted('receiptNumber');
+              }}
+              placeholder="Optional — printed order or invoice #"
+              placeholderTextColor={ownerColors.textMuted}
+              style={styles.input}
+              autoCapitalize="characters"
+            />
 
             <Text style={styles.fieldLabel}>Notes</Text>
             <TextInput

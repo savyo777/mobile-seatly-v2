@@ -15,6 +15,8 @@ const DEMO_DRAFT: ExpenseDraft = {
   totalAmount: 44.72,
   currency: 'cad',
   category: 'delivery',
+  paymentMethod: 'visa ****4242',
+  receiptNumber: 'TX-008421',
 };
 
 const DEMO_EXTRACTED: ExpenseDraftFieldKey[] = [
@@ -25,6 +27,8 @@ const DEMO_EXTRACTED: ExpenseDraftFieldKey[] = [
   'totalAmount',
   'currency',
   'category',
+  'paymentMethod',
+  'receiptNumber',
 ];
 
 const EMPTY_DRAFT: ExpenseDraft = {
@@ -35,6 +39,8 @@ const EMPTY_DRAFT: ExpenseDraft = {
   totalAmount: null,
   currency: null,
   category: null,
+  paymentMethod: null,
+  receiptNumber: null,
 };
 
 export interface ScanReceiptArgs {

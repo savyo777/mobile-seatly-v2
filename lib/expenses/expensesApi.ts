@@ -30,6 +30,8 @@ export interface CreateExpenseInput {
   notes: string | null;
   aiCategorized: boolean;
   aiExtractedData: unknown;
+  paymentMethod?: string | null;
+  receiptNumber?: string | null;
   frequency?: ExpenseFrequency;
   recurringEndDate?: string | null;
 }
@@ -117,6 +119,8 @@ function inputToRow(input: CreateExpenseInput, recurringRuleId: string | null): 
     notes: input.notes,
     ai_categorized: input.aiCategorized,
     ai_extracted_data: input.aiExtractedData ?? null,
+    payment_method: input.paymentMethod ?? null,
+    receipt_number: input.receiptNumber ?? null,
   };
 }
 
@@ -191,6 +195,8 @@ export type UpdateExpensePatch = Partial<Pick<
   | 'receiptUrl'
   | 'receiptType'
   | 'notes'
+  | 'paymentMethod'
+  | 'receiptNumber'
 >>;
 
 function patchToRow(patch: UpdateExpensePatch): Record<string, unknown> {
@@ -209,6 +215,8 @@ function patchToRow(patch: UpdateExpensePatch): Record<string, unknown> {
   if (patch.receiptUrl !== undefined) out.receipt_url = patch.receiptUrl;
   if (patch.receiptType !== undefined) out.receipt_type = patch.receiptType;
   if (patch.notes !== undefined) out.notes = patch.notes;
+  if (patch.paymentMethod !== undefined) out.payment_method = patch.paymentMethod;
+  if (patch.receiptNumber !== undefined) out.receipt_number = patch.receiptNumber;
   return out;
 }
 

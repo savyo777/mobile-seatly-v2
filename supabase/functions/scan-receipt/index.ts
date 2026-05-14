@@ -63,6 +63,8 @@ Rules:
   - gift_cards: gift-card stock, gift-card processing fees.
   - other: anything that doesn't fit cleanly above.
 - vendor: the merchant's display name as it appears on the receipt (e.g. "Shell #1234", "Sysco Foodservice"). Trim weird artifacts.
+- payment_method: a short lowercase phrase describing how the receipt was paid, when visible. Examples: "visa ****4242", "mastercard", "amex", "cash", "interac", "debit", "apple pay". Prefer the actual card brand + last 4 if printed. Null if not visible.
+- receipt_number: the receipt's own printed order / transaction / check / invoice number, exactly as printed (keep punctuation and leading zeros). Null if no such number is visible. Do NOT use phone numbers, store numbers, or POS-terminal IDs.
 - If you cannot read a field, return null for that field. Do NOT guess.
 - If the image is not a receipt at all, return all nulls.`;
 
@@ -79,6 +81,8 @@ const RECEIPT_SCHEMA = {
       "total_amount",
       "currency",
       "category",
+      "payment_method",
+      "receipt_number",
     ],
     properties: {
       vendor: { type: ["string", "null"] },
@@ -91,6 +95,8 @@ const RECEIPT_SCHEMA = {
         type: ["string", "null"],
         enum: [...EXPENSE_CATEGORY_KEYS, null],
       },
+      payment_method: { type: ["string", "null"] },
+      receipt_number: { type: ["string", "null"] },
     },
   },
 } as const;
@@ -103,6 +109,8 @@ interface ReceiptModelOutput {
   total_amount: number | null;
   currency: string | null;
   category: string | null;
+  payment_method: string | null;
+  receipt_number: string | null;
 }
 
 function jsonResWithCors(req: Request, body: unknown, status = 200): Response {
@@ -162,6 +170,8 @@ Deno.serve(async (req) => {
     if (parsed.total_amount !== null) extractedFields.push("totalAmount");
     if (parsed.currency !== null) extractedFields.push("currency");
     if (parsed.category !== null) extractedFields.push("category");
+    if (parsed.payment_method !== null) extractedFields.push("paymentMethod");
+    if (parsed.receipt_number !== null) extractedFields.push("receiptNumber");
 
     return jsonResWithCors(req, {
       draft: {
@@ -172,6 +182,10 @@ Deno.serve(async (req) => {
         totalAmount: parsed.total_amount,
         currency: parsed.currency ? String(parsed.currency).toLowerCase() : null,
         category: parsed.category,
+        paymentMethod: parsed.payment_method
+          ? String(parsed.payment_method).trim().toLowerCase()
+          : null,
+        receiptNumber: parsed.receipt_number ? String(parsed.receipt_number).trim() : null,
       },
       extractedFields,
       aiRaw: raw,

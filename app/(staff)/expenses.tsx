@@ -1,5 +1,5 @@
-import React, { useCallback, useState } from 'react';
-import { Modal, Pressable, StyleSheet, Text, View } from 'react-native';
+import React, { useCallback, useMemo, useState } from 'react';
+import { FlatList, Modal, Pressable, StyleSheet, Text, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { File as FsFile } from 'expo-file-system';
@@ -9,8 +9,15 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { OwnerScreen } from '@/components/owner/OwnerScreen';
 import { ExpenseSummaryCard } from '@/components/owner/ExpenseSummaryCard';
 import { ExpenseListRow } from '@/components/owner/ExpenseListRow';
+import { ExpenseFilterBar } from '@/components/owner/expenses/ExpenseFilterBar';
 import { useExpenses } from '@/lib/context/ExpensesContext';
 import { setPendingScan } from '@/lib/expenses/pendingScan';
+import {
+  EMPTY_EXPENSE_FILTER,
+  applyExpenseFilter,
+  isExpenseFilterActive,
+  type ExpenseFilter,
+} from '@/lib/expenses/filter';
 import { createStyles } from '@/lib/theme';
 import { ownerColorsFromPalette, ownerSpace, useOwnerColors } from '@/lib/theme/ownerTheme';
 import { brandGold, withAlpha } from '@/lib/theme/tokens';
@@ -32,6 +39,17 @@ export default function OwnerExpensesScreen() {
   const { expenses, loading } = useExpenses();
   const [pickerOpen, setPickerOpen] = useState(false);
   const [loadingFile, setLoadingFile] = useState(false);
+  const [filter, setFilter] = useState<ExpenseFilter>(EMPTY_EXPENSE_FILTER);
+
+  const filteredExpenses = useMemo(
+    () => applyExpenseFilter(expenses, filter),
+    [expenses, filter],
+  );
+  const filterActive = isExpenseFilterActive(filter);
+
+  const handleOpenReports = useCallback(() => {
+    router.push('/(staff)/expense-reports');
+  }, [router]);
 
   const handleOpenPicker = useCallback(() => {
     void Haptics.selectionAsync().catch(() => {});
@@ -90,62 +108,91 @@ export default function OwnerExpensesScreen() {
     [router],
   );
 
+  const listHeader = (
+    <View>
+      <View style={styles.scanCtaWrap}>
+        <Pressable
+          style={({ pressed }) => [styles.scanCta, pressed && styles.scanCtaPressed]}
+          onPress={handleOpenPicker}
+          accessibilityRole="button"
+          accessibilityLabel="Track expense"
+        >
+          <View style={styles.scanCtaIcon}>
+            <Ionicons name="add" size={20} color="#0F0F0F" />
+          </View>
+          <View style={{ flex: 1, minWidth: 0 }}>
+            <Text style={styles.scanCtaTitle}>Track expense</Text>
+            <Text style={styles.scanCtaBody}>Snap a receipt, upload a file, or enter the details manually.</Text>
+          </View>
+          <Ionicons name="chevron-forward" size={18} color="#0F0F0F" />
+        </Pressable>
+      </View>
+
+      <ExpenseSummaryCard expenses={expenses} />
+
+      <ExpenseFilterBar value={filter} onChange={setFilter} />
+    </View>
+  );
+
+  const listEmpty = (
+    <View style={styles.emptyWrap}>
+      <View style={[styles.emptyIcon, { borderColor: ownerColors.border }]}>
+        <Ionicons name="receipt-outline" size={28} color={ownerColors.textMuted} />
+      </View>
+      <Text style={[styles.emptyHeadline, { color: ownerColors.text }]}>
+        {filterActive ? 'No matches' : 'No expenses yet.'}
+      </Text>
+      <Text style={[styles.emptyBody, { color: ownerColors.textMuted }]}>
+        {filterActive
+          ? 'Try widening the date range or clearing a filter.'
+          : 'Track your first.'}
+      </Text>
+      {loading && expenses.length === 0 ? (
+        <Text style={[styles.loadingText, { color: ownerColors.textMuted }]}>Loading…</Text>
+      ) : null}
+    </View>
+  );
+
   return (
     <>
       <OwnerScreen
+        scrollable={false}
         header={
           <View style={styles.tabHeader}>
             <Text style={styles.tabHeaderKicker}>EXPENSES</Text>
-            <Text style={styles.tabHeaderTitle}>Expenses</Text>
+            <View style={styles.tabHeaderTitleRow}>
+              <Text style={styles.tabHeaderTitle}>Expenses</Text>
+              <Pressable
+                onPress={handleOpenReports}
+                hitSlop={8}
+                style={({ pressed }) => [styles.reportsLink, pressed && { opacity: 0.7 }]}
+                accessibilityRole="button"
+                accessibilityLabel="View reports"
+              >
+                <Ionicons name="bar-chart-outline" size={16} color={ownerColors.gold} />
+                <Text style={styles.reportsLinkText}>Reports</Text>
+              </Pressable>
+            </View>
             <Text style={styles.tabHeaderSubtitle}>Track receipts and expenses — Cenaiva fills the rest.</Text>
           </View>
         }
       >
-        <View style={styles.scanCtaWrap}>
-          <Pressable
-            style={({ pressed }) => [styles.scanCta, pressed && styles.scanCtaPressed]}
-            onPress={handleOpenPicker}
-            accessibilityRole="button"
-            accessibilityLabel="Track expense"
-          >
-            <View style={styles.scanCtaIcon}>
-              <Ionicons name="add" size={20} color="#0F0F0F" />
-            </View>
-            <View style={{ flex: 1, minWidth: 0 }}>
-              <Text style={styles.scanCtaTitle}>Track expense</Text>
-              <Text style={styles.scanCtaBody}>Snap a receipt, upload a file, or enter the details manually.</Text>
-            </View>
-            <Ionicons name="chevron-forward" size={18} color="#0F0F0F" />
-          </Pressable>
-        </View>
-
-        <ExpenseSummaryCard expenses={expenses} />
-
-        {expenses.length === 0 ? (
-          <View style={styles.emptyWrap}>
-            <View style={[styles.emptyIcon, { borderColor: ownerColors.border }]}>
-              <Ionicons name="receipt-outline" size={28} color={ownerColors.textMuted} />
-            </View>
-            <Text style={[styles.emptyHeadline, { color: ownerColors.text }]}>No expenses yet.</Text>
-            <Text style={[styles.emptyBody, { color: ownerColors.textMuted }]}>
-              Track your first.
-            </Text>
-          </View>
-        ) : (
-          <View style={styles.listWrap}>
-            {expenses.map((exp, i) => (
-              <Animated.View key={exp.id} entering={FadeInDown.delay(i * 35).duration(280)}>
-                <ExpenseListRow expense={exp} onPress={() => handleOpenDetail(exp.id)} />
-              </Animated.View>
-            ))}
-          </View>
-        )}
-
-        {loading && expenses.length === 0 ? (
-          <Text style={[styles.loadingText, { color: ownerColors.textMuted }]}>Loading…</Text>
-        ) : null}
-
-        <View style={{ height: ownerSpace.xl }} />
+        <FlatList
+          data={filteredExpenses}
+          keyExtractor={(exp) => exp.id}
+          renderItem={({ item, index }) => (
+            <Animated.View entering={FadeInDown.delay(Math.min(index, 8) * 25).duration(240)}>
+              <ExpenseListRow expense={item} onPress={() => handleOpenDetail(item.id)} />
+            </Animated.View>
+          )}
+          ListHeaderComponent={listHeader}
+          ListEmptyComponent={listEmpty}
+          contentContainerStyle={styles.listContent}
+          showsVerticalScrollIndicator={false}
+          keyboardShouldPersistTaps="handled"
+          initialNumToRender={12}
+          windowSize={9}
+        />
       </OwnerScreen>
 
       <Modal
@@ -309,11 +356,38 @@ const useStyles = createStyles((c) => {
       letterSpacing: 1.4,
       marginBottom: 4,
     },
+    tabHeaderTitleRow: {
+      flexDirection: 'row',
+      alignItems: 'flex-end',
+      justifyContent: 'space-between',
+      gap: 8,
+    },
     tabHeaderTitle: {
       color: ownerColors.text,
       fontSize: 28,
       fontWeight: '800',
       letterSpacing: -0.5,
+    },
+    reportsLink: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 4,
+      paddingVertical: 6,
+      paddingHorizontal: 10,
+      borderRadius: 999,
+      borderWidth: StyleSheet.hairlineWidth,
+      borderColor: withAlpha(brandGold.dark, 0.35),
+      backgroundColor: withAlpha(brandGold.dark, 0.08),
+    },
+    reportsLinkText: {
+      color: ownerColors.gold,
+      fontSize: 12,
+      fontWeight: '700',
+      letterSpacing: 0.2,
+    },
+    listContent: {
+      paddingTop: ownerSpace.sm,
+      paddingBottom: ownerSpace.xl,
     },
     tabHeaderSubtitle: {
       color: ownerColors.textMuted,
@@ -355,9 +429,6 @@ const useStyles = createStyles((c) => {
       fontSize: 12,
       marginTop: 2,
       lineHeight: 16,
-    },
-    listWrap: {
-      paddingHorizontal: 4,
     },
     emptyWrap: {
       alignItems: 'center',
