@@ -97,6 +97,37 @@ async function createRecurringExpenseRule(input: CreateExpenseInput): Promise<st
   return typeof data?.id === 'string' ? data.id : null;
 }
 
+// PostgREST surfaces unknown columns as code "PGRST204" with a message
+// like: "Could not find the 'payment_method' column of 'expenses' in
+// the schema cache". That happens when the client sends a column the DB
+// hasn't been migrated to yet. The helpers below strip the offending
+// column from the payload and retry, so a missing migration causes one
+// field to silently drop rather than failing the whole save. The dev
+// console gets a one-line breadcrumb pointing at the unapplied migration.
+
+const SCHEMA_CACHE_CODES = new Set(['PGRST204', 'PGRST205']);
+
+function extractMissingColumn(error: { code?: string | null; message?: string | null } | null): string | null {
+  if (!error) return null;
+  if (!error.code || !SCHEMA_CACHE_CODES.has(error.code)) return null;
+  const m = /'([\w]+)' column of/.exec(error.message ?? '');
+  return m ? m[1] : null;
+}
+
+function stripColumn(row: Record<string, unknown>, column: string): boolean {
+  if (column in row) {
+    delete row[column];
+    if (__DEV__) {
+      // eslint-disable-next-line no-console
+      console.warn(
+        `[expensesApi] DB is missing column "${column}". Stripped it from the payload — apply pending migrations to enable it.`,
+      );
+    }
+    return true;
+  }
+  return false;
+}
+
 function inputToRow(input: CreateExpenseInput, recurringRuleId: string | null): Record<string, unknown> {
   return {
     restaurant_id: input.restaurantId,
@@ -152,18 +183,30 @@ export async function createExpense(input: CreateExpenseInput): Promise<Expense 
   const supabase = getSupabase();
   if (!supabase) return null;
   const recurringRuleId = await createRecurringExpenseRule(input);
-  const { data, error } = await supabase
-    .from('expenses')
-    .insert(inputToRow(input, recurringRuleId))
-    .select('*')
-    .single();
-  if (error) {
+  const row = inputToRow(input, recurringRuleId);
+
+  // Retry up to 4x: each iteration peels off one column the DB doesn't
+  // know about. Beyond that something else is wrong; let it throw.
+  for (let attempt = 0; attempt < 5; attempt++) {
+    const { data, error } = await supabase
+      .from('expenses')
+      .insert(row)
+      .select('*')
+      .single();
+    if (!error) {
+      return data ? expenseFromRow(data as ExpenseRow) : null;
+    }
+    const missing = extractMissingColumn(error);
+    if (missing && stripColumn(row, missing)) continue;
     if (recurringRuleId) {
       await supabase.from('recurring_expense_rules').delete().eq('id', recurringRuleId);
     }
     throw error;
   }
-  return data ? expenseFromRow(data as ExpenseRow) : null;
+  if (recurringRuleId) {
+    await supabase.from('recurring_expense_rules').delete().eq('id', recurringRuleId);
+  }
+  throw new Error('createExpense: retry budget exhausted');
 }
 
 export async function deleteExpense(id: string): Promise<void> {
@@ -219,14 +262,22 @@ function patchToRow(patch: UpdateExpensePatch): Record<string, unknown> {
 export async function updateExpense(id: string, patch: UpdateExpensePatch): Promise<Expense | null> {
   const supabase = getSupabase();
   if (!supabase) return null;
-  const { data, error } = await supabase
-    .from('expenses')
-    .update(patchToRow(patch))
-    .eq('id', id)
-    .select('*')
-    .single();
-  if (error) throw error;
-  return data ? expenseFromRow(data as ExpenseRow) : null;
+  const row = patchToRow(patch);
+  for (let attempt = 0; attempt < 5; attempt++) {
+    const { data, error } = await supabase
+      .from('expenses')
+      .update(row)
+      .eq('id', id)
+      .select('*')
+      .single();
+    if (!error) {
+      return data ? expenseFromRow(data as ExpenseRow) : null;
+    }
+    const missing = extractMissingColumn(error);
+    if (missing && stripColumn(row, missing)) continue;
+    throw error;
+  }
+  throw new Error('updateExpense: retry budget exhausted');
 }
 
 /**
