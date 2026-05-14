@@ -110,7 +110,7 @@ const useStyles = createStyles((c) => ({
   },
   metaSection: {
     paddingHorizontal: H_PAD,
-    paddingTop: spacing.lg,
+    paddingTop: spacing.md,
     gap: spacing.md,
   },
   identityRow: {
@@ -152,7 +152,7 @@ const useStyles = createStyles((c) => ({
   },
   inputSection: {
     marginHorizontal: H_PAD,
-    marginTop: spacing.lg,
+    marginTop: spacing.md,
     paddingVertical: spacing.md,
     paddingHorizontal: spacing.md,
     borderRadius: borderRadius.md,
@@ -320,7 +320,7 @@ export default function SnapCaptionScreen() {
   const previewLayout = getSnapPreviewLayout({
     photoAspect,
     maxWidth: windowW - spacing.lg * 2,
-    maxHeight: Math.min(560, Math.max(360, windowH - insets.top - insets.bottom - 240)),
+    maxHeight: Math.min(560, Math.max(360, windowH - insets.top - insets.bottom - 180)),
     // Composite snaps from the camera are full-screen 9:19.5 (~0.46 aspect).
     // The default 0.75 minimum would clamp the container wider than the photo,
     // causing contentFit="cover" to crop top + bottom. Allow the container to
