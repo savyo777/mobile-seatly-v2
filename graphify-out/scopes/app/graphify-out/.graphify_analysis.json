@@ -1,0 +1,933 @@
+{
+  "communities": {
+    "0": [
+      "booking_restaurantid_step4_preorder_tsx",
+      "bookings_id_bookingdetailscreen",
+      "bookings_id_formatbookingwhen",
+      "bookings_id_ismodifiablereservation",
+      "bookings_id_isupcomingreservation",
+      "bookings_id_reservationbadgevariant",
+      "customer_profile_my_reviews_tsx",
+      "discover_id_displaymenuitem",
+      "discover_id_displaymenuitemfrommock",
+      "discover_id_displaymenuitemfrompublic",
+      "discover_id_formatreviewdate",
+      "discover_id_groupdisplaymenuitems",
+      "discover_id_mergecatalogwithmockfallback",
+      "discover_id_openmaps",
+      "discover_id_renderstars",
+      "discover_id_restaurantdetailscreen",
+      "discover_id_summarizedepositpolicy",
+      "discover_id_weekday_keys",
+      "discover_id_weekday_short",
+      "guests_id_findguest",
+      "guests_id_formatdate",
+      "guests_id_guestdetailscreen",
+      "guests_id_kv",
+      "guests_id_risktone",
+      "guests_id_severitystyle",
+      "guests_id_stars",
+      "guests_id_tagchips",
+      "guests_index_fetchownerguests",
+      "guests_index_hydrateguestrelations",
+      "menu_id_restaurantmenuscreen",
+      "menu_id_restaurantsummary",
+      "orders_id_mono",
+      "orders_id_orderbadgevariant",
+      "orders_id_orderdetailscreen",
+      "profile_my_reviews_myreviewsscreen",
+      "restaurantid_step4_preorder_cartitem",
+      "staff_guests_id_tsx",
+      "type_id_formatwhen",
+      "type_id_isreceiptkind",
+      "type_id_receiptscreen"
+    ],
+    "1": [
+      "auth_verify_phone_otp_tsx",
+      "auth_verify_phone_otp_verifyphoneotpscreen",
+      "auth_welcome_tsx",
+      "auth_welcome_welcomescreen",
+      "booking_restaurantid_step3_table_tsx",
+      "booking_restaurantid_step7_confirmation_tsx",
+      "category_category_discovercategoryscreen",
+      "customer_discover_category_category_tsx",
+      "customer_discover_post_review_restaurant_tsx",
+      "customer_profile_cenaiva_voice_tsx",
+      "customer_profile_invite_tsx",
+      "customer_profile_privacy_tsx",
+      "customer_profile_security_tsx",
+      "menu_id_usestyles",
+      "post_review_restaurant_createsnappost",
+      "post_review_restaurant_snaprestaurantscreen",
+      "profile_cenaiva_voice_cenaivavoicescreen",
+      "profile_invite_invitescreen",
+      "profile_privacy_privacyscreen",
+      "profile_security_securityscreen",
+      "restaurantid_step3_table_step3tableredirect",
+      "staff_ai_owneraiscreen",
+      "staff_ai_tsx",
+      "staff_biometric_biometricscreen",
+      "staff_biometric_tsx",
+      "staff_legal_legalscreen",
+      "staff_legal_tsx",
+      "staff_menu_categories_menucategoriesscreen",
+      "staff_menu_categories_tsx",
+      "staff_menu_item_edit_menuitemeditscreen",
+      "staff_menu_item_edit_tsx",
+      "staff_menu_manage_edititemsheet",
+      "staff_menu_manage_menumanagescreen",
+      "staff_menu_manage_tsx",
+      "staff_personal_details_personaldetailsscreen",
+      "staff_personal_details_tsx",
+      "staff_roles_permissions_rolespermissionsscreen",
+      "staff_roles_permissions_tsx"
+    ],
+    "2": [
+      "activity_index_activityscreen",
+      "activity_index_bookingitem",
+      "activity_index_formatdatetime",
+      "activity_index_segmentkey",
+      "app_index_splashscreen",
+      "app_index_tsx",
+      "bookings_index_bookingsindexredirect",
+      "customer_index_customerindex",
+      "discover_index_cuisinematchesfilter",
+      "discover_index_discoverscreen",
+      "discover_index_excludebyid",
+      "discover_index_quickfilter",
+      "discover_index_searchmode",
+      "discover_index_viewmode",
+      "events_index_eventsscreen",
+      "events_index_listevents",
+      "events_index_ownereventsscreen",
+      "events_index_statuskey",
+      "events_index_typefilterkey",
+      "guests_index_dayssince",
+      "guests_index_mapdbguestrow",
+      "guests_index_ownerguestsscreen",
+      "orders_index_ordersindexredirect",
+      "post_review_index_getdemorecentlyvisited",
+      "post_review_index_reviewrestaurantselectscreen",
+      "profile_index_account_rows",
+      "profile_index_diningprefpickrow",
+      "profile_index_formatvisitdate",
+      "promotions_index_formataudience",
+      "promotions_index_formatcount",
+      "promotions_index_formatpromotype",
+      "promotions_index_formatstatus",
+      "promotions_index_isactive",
+      "promotions_index_ispast",
+      "promotions_index_promosscreen",
+      "promotions_index_tab",
+      "staff_index_staffindex"
+    ],
+    "3": [
+      "activity_layout_activitystacklayout",
+      "app_layout_recoverylinkhandler",
+      "app_layout_rootlayout",
+      "app_layout_themedrootshell",
+      "auth_layout_authlayout",
+      "booking_layout_bookinglayout",
+      "bookings_layout_bookingsstacklayout",
+      "customer_layout_customertabslayout",
+      "customer_layout_hide_fab_routes",
+      "discover_layout_discoverstacklayout",
+      "events_layout_eventslayout",
+      "guests_layout_guestsstacklayout",
+      "layout_tsx",
+      "orders_layout_ordersstacklayout",
+      "profile_layout_profilestacklayout",
+      "promotions_layout_promotionslayout",
+      "restaurantid_layout_bookingstepslayout",
+      "staff_home_attentionicontone",
+      "staff_home_bookingsbyhourcard",
+      "staff_home_classifyhourtier",
+      "staff_home_day_label_format",
+      "staff_home_empty_booking_trend_week",
+      "staff_home_empty_live_metrics",
+      "staff_home_formathourlabel",
+      "staff_home_greetingfor",
+      "staff_home_hourtierstroke",
+      "staff_home_ioniconname",
+      "staff_home_line_pad",
+      "staff_home_ownerhomescreen",
+      "staff_home_tsx",
+      "staff_home_weekmomentumchart",
+      "staff_layout_ownertabslayout",
+      "staff_layout_quick_actions",
+      "staff_layout_tab_roots"
+    ],
+    "4": [
+      "customer_map_mapscreen",
+      "customer_map_tsx",
+      "guests_id_initials",
+      "staff_business_hours_businesshoursscreen",
+      "staff_business_hours_dayrow",
+      "staff_business_hours_pickertarget",
+      "staff_business_hours_rowstoschedule",
+      "staff_business_hours_scheduletorows",
+      "staff_business_hours_time_options",
+      "staff_business_hours_tsx",
+      "staff_crm_filters",
+      "staff_schedule_badgelabel",
+      "staff_schedule_daylabel",
+      "staff_schedule_empty_tonight_briefing",
+      "staff_schedule_tonightscreen",
+      "staff_schedule_tsx",
+      "staff_staff_clockinlabel",
+      "staff_staff_demo_roster_as_entries",
+      "staff_staff_managerapproval",
+      "staff_staff_members_initial_team",
+      "staff_staff_members_role_tone",
+      "staff_staff_members_staffmembersscreen",
+      "staff_staff_members_staffrole",
+      "staff_staff_members_tsx",
+      "staff_staff_ownerstaffscreen",
+      "staff_staff_pins_generatepin",
+      "staff_staff_pins_initial_pins",
+      "staff_staff_pins_pin",
+      "staff_staff_pins_staffpinsscreen",
+      "staff_staff_pins_tsx",
+      "staff_staff_staffinvite",
+      "staff_staff_tsx"
+    ],
+    "5": [
+      "customer_profile_payment_tsx",
+      "customer_profile_promotions_tsx",
+      "customer_profile_register_restaurant_card_entry_tsx",
+      "profile_payment_brandlabel",
+      "profile_payment_paymentscreen",
+      "profile_promotions_formatdiscount",
+      "profile_promotions_promotionsscreen",
+      "profile_register_restaurant_card_entry_addmonths",
+      "profile_register_restaurant_card_entry_detectbrand",
+      "profile_register_restaurant_card_entry_expectedcvclength",
+      "profile_register_restaurant_card_entry_formattrialend",
+      "profile_register_restaurant_card_entry_parseexpiry",
+      "profile_register_restaurant_card_entry_passesluhn",
+      "profile_register_restaurant_card_entry_receiptrow",
+      "profile_register_restaurant_card_entry_s",
+      "staff_add_card_addcardscreen",
+      "staff_add_card_brand_options",
+      "staff_add_card_cardbrandkey",
+      "staff_add_card_formatcardnumber",
+      "staff_add_card_formatexpiry",
+      "staff_add_card_funding_options",
+      "staff_add_card_sanitizedigits",
+      "staff_add_card_tsx",
+      "staff_promote_eventstatuscolors",
+      "staff_promote_mapeventrow",
+      "staff_promote_mappromotionrow",
+      "staff_promote_ownerpromotescreen",
+      "staff_promote_promostatuscolors",
+      "staff_promote_tsx"
+    ],
+    "6": [
+      "profile_edit_periods",
+      "staff_expense_detail_capitalize",
+      "staff_expense_detail_chiprow",
+      "staff_expense_detail_conversionmetadata",
+      "staff_expense_detail_detailrow",
+      "staff_expense_detail_detailrowstyles",
+      "staff_expense_detail_dollarstoinputstring",
+      "staff_expense_detail_editform",
+      "staff_expense_detail_expensedetailscreen",
+      "staff_expense_detail_formathumandate",
+      "staff_expense_detail_parsedollarsinput",
+      "staff_expense_detail_payment_statuses",
+      "staff_expense_detail_readconversion",
+      "staff_expense_detail_statuslabel",
+      "staff_expense_detail_transaction_types",
+      "staff_expense_detail_tsx",
+      "staff_expense_reports_expensereportsscreen",
+      "staff_expense_reports_headlinetile",
+      "staff_expense_reports_tsx",
+      "staff_expense_review_expensereviewscreen",
+      "staff_expense_review_status_options",
+      "staff_expense_review_todayiso",
+      "staff_expense_review_tsx",
+      "staff_expense_review_web_expense_category_keys",
+      "staff_expense_review_web_income_category_keys"
+    ],
+    "7": [
+      "staff_crm_ownercolors",
+      "staff_orderskds_feeddotcolor",
+      "staff_orderskds_kdsbackdrop",
+      "staff_orderskds_leftaccentcolor",
+      "staff_orderskds_ownerorderskdsscreen",
+      "staff_orderskds_stationkey",
+      "staff_orderskds_statuspillstyle",
+      "staff_orderskds_statuspilltextstyle",
+      "staff_orderskds_ticketisdelayed",
+      "staff_orderskds_tsx",
+      "staff_waitlist_detailtarget",
+      "staff_waitlist_formatquotedtime",
+      "staff_waitlist_mapwaitlistrowtoentry",
+      "staff_waitlist_mapwaitlistrowtowalkin",
+      "staff_waitlist_mapwaitliststatus",
+      "staff_waitlist_ownerwaitlistscreen",
+      "staff_waitlist_statusbadgestyle",
+      "staff_waitlist_statuslabelkey",
+      "staff_waitlist_statustextstyle",
+      "staff_waitlist_tsx",
+      "staff_waitlist_waitlistbackdrop",
+      "staff_waitlist_waitlistrow"
+    ],
+    "8": [
+      "staff_closures_buildcalendargrid",
+      "staff_closures_closure",
+      "staff_closures_closuresscreen",
+      "staff_closures_closurestoentries",
+      "staff_closures_days_short",
+      "staff_closures_entriestoclosures",
+      "staff_closures_todaykey",
+      "staff_closures_tsx",
+      "staff_reservations_datefilter",
+      "staff_reservations_daterangelabel",
+      "staff_reservations_formattimeofday",
+      "staff_reservations_hoursectiontitle",
+      "staff_reservations_ownerreservationsscreen",
+      "staff_reservations_parseminutes",
+      "staff_reservations_reservationextras",
+      "staff_reservations_splittime",
+      "staff_reservations_status_sort_weight",
+      "staff_reservations_statuspresentation",
+      "staff_reservations_statustoslotstatus",
+      "staff_reservations_todatekey",
+      "staff_reservations_tsx"
+    ],
+    "9": [
+      "booking_restaurantid_review_tsx",
+      "customer_discover_snaps_detail_snapid_tsx",
+      "customer_discover_snaps_restaurantid_tsx",
+      "customer_post_camera_tsx",
+      "detail_snapid_deletesnappost",
+      "detail_snapid_getsnappostbyid",
+      "detail_snapid_getsnapuser",
+      "detail_snapid_snapdetailscreen",
+      "post_camera_postcameraredirect",
+      "post_review_camera_glasscircle",
+      "post_review_camera_glassstyles",
+      "post_review_camera_readexiftimestamp",
+      "post_review_camera_reviewcamerascreen",
+      "post_review_camera_transparent_frame_style",
+      "restaurantid_review_bookingreviewscreen",
+      "snaps_restaurantid_displaysnap",
+      "snaps_restaurantid_fromsnappost",
+      "snaps_restaurantid_fromvisitphoto",
+      "snaps_restaurantid_getsnaprestaurantname",
+      "snaps_restaurantid_restaurantsnapgalleryscreen",
+      "snaps_restaurantid_validfilterid"
+    ],
+    "10": [
+      "customer_notifications_appnotification",
+      "customer_notifications_appnotiftype",
+      "customer_notifications_bucket",
+      "customer_notifications_bucketkey",
+      "customer_notifications_buildmocknotifications",
+      "customer_notifications_fetchsupabasenotifications",
+      "customer_notifications_mapsupabaserow",
+      "customer_notifications_mapsupabasetype",
+      "customer_notifications_notifconfig",
+      "customer_notifications_pickstring",
+      "customer_notifications_postturnnotification",
+      "customer_notifications_supabasenotificationrow",
+      "customer_notifications_timeago",
+      "customer_notifications_type_config",
+      "profile_notifications_notificationsscreen",
+      "staff_notifications_mapnotificationrow",
+      "staff_notifications_notificationrow",
+      "staff_notifications_staffnotificationitem",
+      "staff_notifications_staffnotificationsscreen",
+      "staff_notifications_tsx"
+    ],
+    "11": [
+      "staff_analytics_analyticsrow",
+      "staff_analytics_avgturnover",
+      "staff_analytics_heatrgb",
+      "staff_analytics_kvrowitem",
+      "staff_analytics_owneranalyticsscreen",
+      "staff_analytics_perfrange",
+      "staff_analytics_periodfromrange",
+      "staff_analytics_range_map",
+      "staff_analytics_ranges",
+      "staff_analytics_reduceperiod",
+      "staff_analytics_tsx",
+      "staff_insights_barcolor",
+      "staff_insights_empty_analytics_insights",
+      "staff_insights_empty_analytics_metrics",
+      "staff_insights_empty_revenue_data",
+      "staff_insights_ownerinsightsscreen",
+      "staff_insights_tsx",
+      "staff_insights_zero_metric",
+      "staff_insights_zero_revenue"
+    ],
+    "12": [
+      "staff_billing_history_billinghistoryscreen",
+      "staff_billing_history_category",
+      "staff_billing_history_cycleactivity",
+      "staff_billing_history_cyclebilledon",
+      "staff_billing_history_cyclelabel",
+      "staff_billing_history_cyclestart",
+      "staff_billing_history_envmoney",
+      "staff_billing_history_nextcyclestart",
+      "staff_billing_history_past_years",
+      "staff_billing_history_pricing",
+      "staff_billing_history_tsx",
+      "staff_billing_history_yearsummary",
+      "staff_billing_year_billingyearscreen",
+      "staff_billing_year_demo_invoices_by_year",
+      "staff_billing_year_formatmoney",
+      "staff_billing_year_formatpaidon",
+      "staff_billing_year_tsx",
+      "staff_billing_year_yearinvoice"
+    ],
+    "13": [
+      "profile_edit_clampturntime",
+      "profile_edit_editbusinessprofilescreen",
+      "profile_edit_editprofilescreen",
+      "profile_edit_empty_owner_business_profile",
+      "profile_edit_fieldinput",
+      "profile_edit_hours",
+      "profile_edit_hoursroweditor",
+      "profile_edit_minutes",
+      "profile_edit_parsetime12",
+      "profile_edit_sectionheader",
+      "profile_edit_timepickermodal",
+      "profile_edit_to12h",
+      "profile_edit_turn_time_options",
+      "profile_edit_turntimepickermodal",
+      "profile_edit_wheelcolumn",
+      "staff_profile_edit_tsx",
+      "staff_quiet_hours_quiethoursscreen",
+      "staff_quiet_hours_tsx"
+    ],
+    "14": [
+      "app_auth_callback_authcallbackscreen",
+      "auth_callback_tsx",
+      "checkout_orderid_cenaivacheckoutscreen",
+      "checkout_orderid_checkoutitem",
+      "checkout_orderid_checkoutorder",
+      "customer_checkout_orderid_tsx",
+      "customer_discover_post_review_styles_tsx",
+      "post_review_styles_card_frame_style",
+      "post_review_styles_snapstylesscreen",
+      "staff_expense_scan_expensescanscreen",
+      "staff_expense_scan_tsx",
+      "staff_expense_scan_withtimeout",
+      "staff_floor_normalizestatus",
+      "staff_floor_num",
+      "staff_floor_ownerfloorscreen",
+      "staff_floor_rowtofloortable",
+      "staff_floor_styles",
+      "staff_floor_tsx"
+    ],
+    "15": [
+      "customer_discover_explore_tsx",
+      "customer_discover_tag_tag_tsx",
+      "customer_feed_feeditem",
+      "customer_feed_feedmode",
+      "customer_feed_feedscreen",
+      "customer_feed_getgreeting",
+      "customer_feed_injectcollections",
+      "customer_feed_listfeedposts",
+      "customer_feed_listfollowingposts",
+      "customer_feed_listtrendingposts",
+      "customer_feed_mode_tabs",
+      "customer_feed_tsx",
+      "discover_explore_explorescreen",
+      "discover_explore_listtoptags",
+      "tag_tag_getrestaurantforpost",
+      "tag_tag_listpostsbytag",
+      "tag_tag_tagfeedscreen"
+    ],
+    "16": [
+      "staff_crm_accentforguest",
+      "staff_crm_crmbackdrop",
+      "staff_crm_deriveliveline",
+      "staff_crm_empty_insight_placeholder",
+      "staff_crm_escaperegexp",
+      "staff_crm_filterkey",
+      "staff_crm_highlightedtext",
+      "staff_crm_mergeguest",
+      "staff_crm_ownercrmscreen",
+      "staff_crm_secondarytag",
+      "staff_crm_secondarytaglabel",
+      "staff_crm_sortkey",
+      "staff_crm_sorts",
+      "staff_crm_tsx"
+    ],
+    "17": [
+      "profile_settings_row",
+      "profile_settings_settingsscreen",
+      "staff_settings_appearancepicker",
+      "staff_settings_navrow",
+      "staff_settings_ownersettingsscreen",
+      "staff_settings_rowitem",
+      "staff_settings_section",
+      "staff_settings_settingssection",
+      "staff_settings_theme_options",
+      "staff_settings_themelabel",
+      "staff_settings_togglerow",
+      "staff_settings_tsx"
+    ],
+    "18": [
+      "events_new_buildrrule",
+      "events_new_day_chips",
+      "events_new_freq_opts",
+      "events_new_neweventscreen",
+      "promotions_new_appliesto",
+      "promotions_new_badgecolor",
+      "promotions_new_combinedateandtime",
+      "promotions_new_newpromotionscreen",
+      "promotions_new_promotype",
+      "promotions_new_recurfreq",
+      "staff_events_new_tsx"
+    ],
+    "19": [
+      "customer_loyalty_loyaltyredirect",
+      "customer_loyalty_tsx",
+      "customer_profile_wallet_tsx",
+      "profile_loyalty_earnbullet",
+      "profile_loyalty_formatactivitydate",
+      "profile_loyalty_maployaltyrowtotransaction",
+      "profile_loyalty_profileloyaltyscreen",
+      "profile_loyalty_tierlabelforbalance",
+      "profile_wallet_demo",
+      "profile_wallet_demo_mini_activity",
+      "profile_wallet_walletscreen"
+    ],
+    "20": [
+      "app_onboarding_bookillustration",
+      "app_onboarding_discoverillustration",
+      "app_onboarding_ill",
+      "app_onboarding_onboardingscreen",
+      "app_onboarding_rewardsillustration",
+      "app_onboarding_slide",
+      "app_onboarding_slides",
+      "app_onboarding_width_w_height_h",
+      "onboarding_tsx"
+    ],
+    "21": [
+      "activity_index_occasion_icons",
+      "booking_restaurantid_confirm_tsx",
+      "booking_restaurantid_step5_review_tsx",
+      "restaurantid_confirm_confirmscreen",
+      "restaurantid_confirm_isvalidemail",
+      "restaurantid_confirm_seating_options",
+      "security_change_email_changeemailscreen",
+      "staff_security_change_email_tsx"
+    ],
+    "22": [
+      "customer_profile_security_sessions_tsx",
+      "security_sessions_formatlastactive",
+      "security_sessions_platformicon",
+      "security_sessions_session",
+      "security_sessions_sessionsscreen",
+      "staff_active_sessions_activesessionsscreen",
+      "staff_active_sessions_initial_sessions",
+      "staff_active_sessions_tsx"
+    ],
+    "23": [
+      "staff_add_pin_addpinscreen",
+      "staff_add_pin_role",
+      "staff_add_pin_roles",
+      "staff_add_pin_sanitizepin",
+      "staff_add_pin_tsx",
+      "staff_invite_team_member_inviteteammemberscreen",
+      "staff_invite_team_member_tsx"
+    ],
+    "24": [
+      "staff_subscription_plan_midcyclecancelnote",
+      "staff_subscription_plan_month_names",
+      "staff_subscription_plan_nextbilldatelabel",
+      "staff_subscription_plan_plan",
+      "staff_subscription_plan_subscriptionplanscreen",
+      "staff_subscription_plan_tsx"
+    ],
+    "25": [
+      "auth_login_failureskey",
+      "auth_login_lockoutkey",
+      "auth_login_loginscreen",
+      "auth_login_tsx",
+      "auth_owner_login_ownerloginscreen",
+      "auth_owner_login_tsx"
+    ],
+    "26": [
+      "staff_menu_chunk",
+      "staff_menu_filteritems",
+      "staff_menu_menubackdrop",
+      "staff_menu_ownermenuscreen",
+      "staff_menu_tsx"
+    ],
+    "27": [
+      "auth_owner_register_ownerregisterscreen",
+      "auth_owner_register_tsx",
+      "auth_register_passwordchecks",
+      "auth_register_registerscreen",
+      "auth_register_tsx"
+    ],
+    "28": [
+      "staff_expenses_choicerow",
+      "staff_expenses_choicestyles",
+      "staff_expenses_mimefromname",
+      "staff_expenses_ownerexpensesscreen",
+      "staff_expenses_tsx"
+    ],
+    "29": [
+      "booking_restaurantid_step6_payment_tsx",
+      "staff_payment_method_card",
+      "staff_payment_method_fundinglabel",
+      "staff_payment_method_initial_cards",
+      "staff_payment_method_tsx"
+    ],
+    "30": [
+      "profile_index_galleryphoto",
+      "profile_index_ownerbusinessscreen",
+      "staff_business_restaurantsettings",
+      "staff_business_tsx"
+    ],
+    "31": [
+      "events_index_buildeventdateiso",
+      "events_index_buildeventendsatiso",
+      "events_index_infereventtype",
+      "events_index_mapeventrowtodining"
+    ],
+    "32": [
+      "customer_profile_language_tsx",
+      "profile_language_lang",
+      "profile_language_languages",
+      "profile_language_languagescreen"
+    ],
+    "33": [
+      "staff_reservation_settings_reservationsettingsscreen",
+      "staff_reservation_settings_stepper",
+      "staff_reservation_settings_stepperprops",
+      "staff_reservation_settings_tsx"
+    ],
+    "34": [
+      "customer_profile_help_tsx",
+      "profile_help_helpscreen",
+      "profile_help_opensupportemail",
+      "profile_help_topic_subjects"
+    ],
+    "35": [
+      "staff_team_cards",
+      "staff_team_teamcard",
+      "staff_team_teamoverviewscreen",
+      "staff_team_tsx"
+    ],
+    "36": [
+      "booking_restaurantid_step2_time_tsx",
+      "restaurantid_step2_time_availabilityslotkey",
+      "restaurantid_step2_time_geteventbyid",
+      "restaurantid_step2_time_step2time"
+    ],
+    "37": [
+      "events_index_formatpromobadge",
+      "events_index_mappromotionrowtodining",
+      "events_index_todayisodate"
+    ],
+    "38": [
+      "staff_two_factor_method",
+      "staff_two_factor_tsx",
+      "staff_two_factor_twofactorscreen"
+    ],
+    "39": [
+      "staff_export_formatdaterange",
+      "staff_export_ownerexportscreen",
+      "staff_export_tsx"
+    ],
+    "40": [
+      "staff_rate_cenaiva_rateseatlyscreen",
+      "staff_rate_cenaiva_reasons",
+      "staff_rate_cenaiva_tsx"
+    ],
+    "41": [
+      "customer_profile_register_restaurant_success_tsx",
+      "customer_profile_register_restaurant_tsx",
+      "profile_register_restaurant_registerrestaurantscreen"
+    ],
+    "42": [
+      "customer_discover_post_review_connect_tsx",
+      "customer_discover_post_review_details_tsx",
+      "post_review_connect_snapcaptionscreen"
+    ],
+    "43": [
+      "staff_support_faq_items",
+      "staff_support_supportscreen",
+      "staff_support_tsx"
+    ],
+    "44": [
+      "staff_billing_address_billingaddressscreen",
+      "staff_billing_address_fielderrors",
+      "staff_billing_address_tsx"
+    ],
+    "45": [
+      "customer_post_reward_tsx",
+      "post_review_reward_reviewrewardscreen",
+      "post_reward_postrewardredirect"
+    ],
+    "46": [
+      "customer_profile_appearance_tsx",
+      "profile_appearance_appearancescreen",
+      "profile_appearance_option"
+    ],
+    "47": [
+      "activity_index_bucketof",
+      "activity_index_isupcomingitem"
+    ],
+    "48": [
+      "promotions_index_mappromostatus",
+      "promotions_index_mappromotionrowtoownerpromotion"
+    ],
+    "49": [
+      "events_index_formateventdatelabel",
+      "events_index_mapeventrowtoownerevent"
+    ],
+    "50": [
+      "profile_index_initialsfromname",
+      "profile_index_profilescreen"
+    ],
+    "51": [
+      "profile_index_parsepreferenceinput",
+      "profile_index_togglecommapreference"
+    ],
+    "52": [
+      "discover_index_peopleresults",
+      "discover_index_usepeoplestyles"
+    ],
+    "53": [
+      "events_index_getrestaurantforevent",
+      "events_index_matchesquery"
+    ],
+    "54": [
+      "staff_dashboard_staffdashboardredirect",
+      "staff_dashboard_tsx"
+    ],
+    "55": [
+      "customer_post_postplaceholder",
+      "customer_post_tsx"
+    ],
+    "56": [
+      "customer_ai_chat_aichatscreen",
+      "customer_ai_chat_tsx"
+    ],
+    "57": [
+      "customer_post_caption_tsx",
+      "post_caption_postcaptionredirect"
+    ],
+    "58": [
+      "customer_profile_favorites_tsx",
+      "profile_favorites_favoritesscreen"
+    ],
+    "59": [
+      "customer_profile_legal_terms_tsx",
+      "legal_terms_termsscreen"
+    ],
+    "60": [
+      "customer_profile_legal_licenses_tsx",
+      "legal_licenses_licensesscreen"
+    ],
+    "61": [
+      "customer_profile_legal_privacy_policy_tsx",
+      "legal_privacy_policy_privacypolicyscreen"
+    ],
+    "62": [
+      "customer_profile_about_tsx",
+      "profile_about_aboutscreen"
+    ],
+    "63": [
+      "customer_profile_security_change_phone_tsx",
+      "security_change_phone_changephonescreen"
+    ],
+    "64": [
+      "booking_restaurantid_step_prepay_offer_tsx",
+      "restaurantid_step_prepay_offer_stepprepayofferscreen"
+    ],
+    "65": [
+      "restaurantid_step1_date_step1date"
+    ]
+  },
+  "cohesion": {
+    "0": 0.06,
+    "1": 0.08,
+    "2": 0.05,
+    "3": 0.06,
+    "4": 0.07,
+    "5": 0.09,
+    "6": 0.11,
+    "7": 0.15,
+    "8": 0.11,
+    "9": 0.11,
+    "10": 0.12,
+    "11": 0.13,
+    "12": 0.15,
+    "13": 0.13,
+    "14": 0.12,
+    "15": 0.13,
+    "16": 0.15,
+    "17": 0.18,
+    "18": 0.18,
+    "19": 0.18,
+    "20": 0.22,
+    "21": 0.29,
+    "22": 0.25,
+    "23": 0.38,
+    "24": 0.47,
+    "25": 0.4,
+    "26": 0.5,
+    "27": 0.4,
+    "28": 0.4,
+    "29": 0.4,
+    "30": 0.5,
+    "31": 0.67,
+    "32": 0.5,
+    "33": 0.5,
+    "34": 0.5,
+    "35": 0.5,
+    "36": 0.5,
+    "37": 0.67,
+    "38": 0.67,
+    "39": 0.67,
+    "40": 0.67,
+    "41": 0.67,
+    "42": 0.67,
+    "43": 0.67,
+    "44": 0.67,
+    "45": 0.67,
+    "46": 0.67,
+    "47": 1.0,
+    "48": 1.0,
+    "49": 1.0,
+    "50": 1.0,
+    "51": 1.0,
+    "52": 1.0,
+    "53": 1.0,
+    "54": 1.0,
+    "55": 1.0,
+    "56": 1.0,
+    "57": 1.0,
+    "58": 1.0,
+    "59": 1.0,
+    "60": 1.0,
+    "61": 1.0,
+    "62": 1.0,
+    "63": 1.0,
+    "64": 1.0,
+    "65": 1.0
+  },
+  "gods": [
+    {
+      "id": "menu_id_usestyles",
+      "label": "useStyles",
+      "degree": 226
+    },
+    {
+      "id": "guests_id_initials",
+      "label": "initials()",
+      "degree": 12
+    },
+    {
+      "id": "staff_expense_detail_formathumandate",
+      "label": "formatHumanDate()",
+      "degree": 6
+    },
+    {
+      "id": "staff_floor_styles",
+      "label": "styles",
+      "degree": 6
+    },
+    {
+      "id": "staff_orderskds_ownerorderskdsscreen",
+      "label": "OwnerOrdersKdsScreen()",
+      "degree": 6
+    },
+    {
+      "id": "staff_add_card_formatexpiry",
+      "label": "formatExpiry()",
+      "degree": 6
+    },
+    {
+      "id": "staff_reservations_ownerreservationsscreen",
+      "label": "OwnerReservationsScreen()",
+      "degree": 6
+    },
+    {
+      "id": "guests_id_guestdetailscreen",
+      "label": "GuestDetailScreen()",
+      "degree": 6
+    },
+    {
+      "id": "bookings_id_bookingdetailscreen",
+      "label": "BookingDetailScreen()",
+      "degree": 6
+    },
+    {
+      "id": "staff_crm_filters",
+      "label": "FILTERS",
+      "degree": 5
+    }
+  ],
+  "surprises": [
+    {
+      "source": "SplashScreen()",
+      "target": "useStyles",
+      "source_files": [
+        "app/index.tsx",
+        "(customer)/discover/menu/[id].tsx"
+      ],
+      "confidence": "EXTRACTED",
+      "relation": "calls",
+      "why": "connects across different repos/directories; bridges separate communities; peripheral node `SplashScreen()` unexpectedly reaches hub `useStyles`"
+    },
+    {
+      "source": "OnboardingScreen()",
+      "target": "useStyles",
+      "source_files": [
+        "onboarding.tsx",
+        "(customer)/discover/menu/[id].tsx"
+      ],
+      "confidence": "EXTRACTED",
+      "relation": "calls",
+      "why": "connects across different repos/directories; bridges separate communities; peripheral node `OnboardingScreen()` unexpectedly reaches hub `useStyles`"
+    },
+    {
+      "source": "NavRow()",
+      "target": "useStyles",
+      "source_files": [
+        "(staff)/settings.tsx",
+        "(customer)/discover/menu/[id].tsx"
+      ],
+      "confidence": "EXTRACTED",
+      "relation": "calls",
+      "why": "connects across different repos/directories; bridges separate communities; peripheral node `NavRow()` unexpectedly reaches hub `useStyles`"
+    },
+    {
+      "source": "ToggleRow()",
+      "target": "useStyles",
+      "source_files": [
+        "(staff)/settings.tsx",
+        "(customer)/discover/menu/[id].tsx"
+      ],
+      "confidence": "EXTRACTED",
+      "relation": "calls",
+      "why": "connects across different repos/directories; bridges separate communities; peripheral node `ToggleRow()` unexpectedly reaches hub `useStyles`"
+    },
+    {
+      "source": "AppearancePicker()",
+      "target": "useStyles",
+      "source_files": [
+        "(staff)/settings.tsx",
+        "(customer)/discover/menu/[id].tsx"
+      ],
+      "confidence": "EXTRACTED",
+      "relation": "calls",
+      "why": "connects across different repos/directories; bridges separate communities; peripheral node `AppearancePicker()` unexpectedly reaches hub `useStyles`"
+    }
+  ],
+  "tokens": {
+    "input": 0,
+    "output": 0
+  }
+}

@@ -1,0 +1,255 @@
+{
+  "communities": {
+    "0": [
+      "owner_tonightbriefing_analyticsrow",
+      "owner_tonightbriefing_badgefor",
+      "owner_tonightbriefing_counted_statuses",
+      "owner_tonightbriefing_fetchtonightbriefing",
+      "owner_tonightbriefing_fetchtonightguests",
+      "owner_tonightbriefing_formathourlong",
+      "owner_tonightbriefing_formathourshort",
+      "owner_tonightbriefing_formattimeshort",
+      "owner_tonightbriefing_getrestauranttimezone",
+      "owner_tonightbriefing_guestjoin",
+      "owner_tonightbriefing_hasallergydata",
+      "owner_tonightbriefing_headlinefor",
+      "owner_tonightbriefing_iscountedstatus",
+      "owner_tonightbriefing_localdatekey",
+      "owner_tonightbriefing_localhour",
+      "owner_tonightbriefing_reservationguestrow",
+      "owner_tonightbriefing_reservationrow",
+      "owner_tonightbriefing_restauranttimezonecache",
+      "owner_tonightbriefing_statusfromcovers",
+      "owner_tonightbriefing_statuslabel",
+      "owner_tonightbriefing_todayboundsintimezone",
+      "owner_tonightbriefing_tonightbadge",
+      "owner_tonightbriefing_tonightguest",
+      "owner_tonightbriefing_tonightstatus",
+      "tonightbriefing_ts"
+    ],
+    "1": [
+      "kdsfeed_ts",
+      "owner_kdsfeed_active_order_statuses",
+      "owner_kdsfeed_fetchkdstickets",
+      "owner_kdsfeed_fetchrecentlivefeed",
+      "owner_kdsfeed_formattimelabel",
+      "owner_kdsfeed_kdsticket",
+      "owner_kdsfeed_kindfor",
+      "owner_kdsfeed_livefeedevent",
+      "owner_kdsfeed_livefeedkind",
+      "owner_kdsfeed_minutessince",
+      "owner_kdsfeed_orderrowsubset",
+      "owner_kdsfeed_orderstatustokds",
+      "owner_kdsfeed_partylabel",
+      "owner_kdsfeed_reservationfeedrow",
+      "owner_kdsfeed_todaystartiso",
+      "owner_kdsfeed_tomorrowstartiso"
+    ],
+    "2": [
+      "owner_rolepermissionssettings_default_perms",
+      "owner_rolepermissionssettings_isplainobject",
+      "owner_rolepermissionssettings_mergewithdefaults",
+      "owner_rolepermissionssettings_permission",
+      "owner_rolepermissionssettings_readrolepermissions",
+      "owner_rolepermissionssettings_role",
+      "owner_rolepermissionssettings_roleid",
+      "owner_rolepermissionssettings_rolepermissionmatrix",
+      "owner_rolepermissionssettings_roles",
+      "owner_rolepermissionssettings_writerolepermissions",
+      "rolepermissionssettings_ts"
+    ],
+    "3": [
+      "businesshourssettings_ts",
+      "owner_businesshourssettings_businesshoursday",
+      "owner_businesshourssettings_businesshoursschedule",
+      "owner_businesshourssettings_coerceday",
+      "owner_businesshourssettings_coerceschedule",
+      "owner_businesshourssettings_default_business_hours",
+      "owner_businesshourssettings_isobject",
+      "owner_businesshourssettings_readbusinesshours",
+      "owner_businesshourssettings_readsettingsjson",
+      "owner_businesshourssettings_writebusinesshours"
+    ],
+    "4": [
+      "owner_restaurantshifts_buildweeklyhours",
+      "owner_restaurantshifts_dailyhoursrow",
+      "owner_restaurantshifts_day_long",
+      "owner_restaurantshifts_day_short",
+      "owner_restaurantshifts_fetchrestaurantshifts",
+      "owner_restaurantshifts_formatdaysofweek",
+      "owner_restaurantshifts_formatshiftwindow",
+      "owner_restaurantshifts_formattime",
+      "restaurantshifts_ts"
+    ],
+    "5": [
+      "owner_reservationsettings_default_reservation_settings",
+      "owner_reservationsettings_normalize",
+      "owner_reservationsettings_picknumber",
+      "owner_reservationsettings_readreservationsettings",
+      "owner_reservationsettings_writereservationsettings",
+      "reservationsettings_ts",
+      "saverestaurantprofile_ts"
+    ],
+    "6": [
+      "owner_visitphotos_fetchrestaurantvisitphotos",
+      "owner_visitphotos_maprow",
+      "owner_visitphotos_restaurantvisitphoto",
+      "owner_visitphotos_stringornull",
+      "owner_visitphotos_stringvalue",
+      "owner_visitphotos_visitphotorow",
+      "visitphotos_ts"
+    ],
+    "7": [
+      "owner_ownerrestaurantcontext_null_context",
+      "owner_ownerrestaurantcontext_ownerrestaurantprovider",
+      "owner_ownerrestaurantcontext_ownerrestaurantselection",
+      "owner_ownerrestaurantcontext_pickinitial",
+      "owner_ownerrestaurantcontext_storage_key",
+      "owner_ownerrestaurantcontext_useownerrestaurantcontext",
+      "ownerrestaurantcontext_tsx"
+    ],
+    "8": [
+      "closuressettings_ts",
+      "owner_closuressettings_closureentry",
+      "owner_closuressettings_dedupe",
+      "owner_closuressettings_readclosures",
+      "owner_closuressettings_sanitize",
+      "owner_closuressettings_writeclosures"
+    ],
+    "9": [
+      "owner_staffroster_fetchstaffroster",
+      "owner_staffroster_pickprofile",
+      "owner_staffroster_rolerow",
+      "owner_staffroster_staffrosterentry",
+      "owner_staffroster_userprofilejoin",
+      "staffroster_ts"
+    ],
+    "10": [
+      "createeventorpromotion_ts",
+      "owner_createeventorpromotion_createevent",
+      "owner_createeventorpromotion_createpromotion",
+      "owner_createeventorpromotion_eventinput",
+      "owner_createeventorpromotion_promotioninput"
+    ],
+    "11": [
+      "owner_uploadrestaurantphoto_bucket_for",
+      "owner_uploadrestaurantphoto_kind",
+      "owner_uploadrestaurantphoto_path_for",
+      "uploadrestaurantphoto_ts"
+    ],
+    "12": [
+      "owner_trialpolicy_envnumber",
+      "owner_trialpolicy_owner_trial_months",
+      "owner_trialpolicy_ownertriallengthlabel",
+      "trialpolicy_ts"
+    ],
+    "13": [
+      "expensecategories_ts",
+      "owner_expensecategories_expensecategorykey",
+      "owner_expensecategories_getexpensecategory",
+      "owner_expensecategories_isexpensecategorykey"
+    ],
+    "14": [
+      "owner_saverestauranthours_dailyhoursinput",
+      "owner_saverestauranthours_time12htodbstring",
+      "saverestauranthours_ts"
+    ],
+    "15": [
+      "floorcapacity_ts",
+      "owner_floorcapacity_fetchfloorcapacity"
+    ],
+    "16": [
+      "owner_promotiontypes_promotiontypekey",
+      "promotiontypes_ts"
+    ],
+    "17": [
+      "owner_staffroles_staffrole",
+      "staffroles_ts"
+    ],
+    "18": [
+      "uploadeventmedia_ts"
+    ],
+    "19": [
+      "kdsthresholds_ts"
+    ]
+  },
+  "cohesion": {
+    "0": 0.12,
+    "1": 0.17,
+    "2": 0.25,
+    "3": 0.36,
+    "4": 0.25,
+    "5": 0.43,
+    "6": 0.43,
+    "7": 0.29,
+    "8": 0.47,
+    "9": 0.33,
+    "10": 0.4,
+    "11": 0.5,
+    "12": 0.5,
+    "13": 0.5,
+    "14": 0.67,
+    "15": 1.0,
+    "16": 1.0,
+    "17": 1.0,
+    "18": 1.0,
+    "19": 1.0
+  },
+  "gods": [
+    {
+      "id": "owner_tonightbriefing_fetchtonightbriefing",
+      "label": "fetchTonightBriefing()",
+      "degree": 11
+    },
+    {
+      "id": "owner_kdsfeed_fetchrecentlivefeed",
+      "label": "fetchRecentLiveFeed()",
+      "degree": 5
+    },
+    {
+      "id": "owner_reservationsettings_normalize",
+      "label": "normalize()",
+      "degree": 5
+    },
+    {
+      "id": "owner_tonightbriefing_fetchtonightguests",
+      "label": "fetchTonightGuests()",
+      "degree": 4
+    },
+    {
+      "id": "owner_rolepermissionssettings_isplainobject",
+      "label": "isPlainObject()",
+      "degree": 4
+    },
+    {
+      "id": "owner_visitphotos_maprow",
+      "label": "mapRow()",
+      "degree": 4
+    },
+    {
+      "id": "owner_businesshourssettings_isobject",
+      "label": "isObject()",
+      "degree": 4
+    },
+    {
+      "id": "owner_businesshourssettings_coerceschedule",
+      "label": "coerceSchedule()",
+      "degree": 4
+    },
+    {
+      "id": "owner_businesshourssettings_readsettingsjson",
+      "label": "readSettingsJson()",
+      "degree": 4
+    },
+    {
+      "id": "owner_closuressettings_dedupe",
+      "label": "dedupe()",
+      "degree": 3
+    }
+  ],
+  "surprises": [],
+  "tokens": {
+    "input": 0,
+    "output": 0
+  }
+}

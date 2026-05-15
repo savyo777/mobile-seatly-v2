@@ -1,0 +1,98 @@
+{
+  "/Users/stevengeorgy/mobile-seatly-v2-5/lib/mock/menuItems.ts": {
+    "mtime": 1778615269.422479,
+    "hash": "e2ac587af59b2fc4bfdd42cb5908d851"
+  },
+  "/Users/stevengeorgy/mobile-seatly-v2-5/lib/mock/feedCollections.ts": {
+    "mtime": 1778615269.4219315,
+    "hash": "f3dd1e641ae3a3e63dba71cbf6df2fd1"
+  },
+  "/Users/stevengeorgy/mobile-seatly-v2-5/lib/mock/profileScreens.ts": {
+    "mtime": 1778615269.4233086,
+    "hash": "98701e714fdd003b4f71819024677858"
+  },
+  "/Users/stevengeorgy/mobile-seatly-v2-5/lib/mock/comments.ts": {
+    "mtime": 1778615269.421509,
+    "hash": "dd8e50070669a518ab7e42f1a8b82828"
+  },
+  "/Users/stevengeorgy/mobile-seatly-v2-5/lib/mock/reservations.ts": {
+    "mtime": 1778615269.4234428,
+    "hash": "9e2d54e9f4f34160affd0c3ad5b0557f"
+  },
+  "/Users/stevengeorgy/mobile-seatly-v2-5/lib/mock/loyalty.ts": {
+    "mtime": 1778615269.4221995,
+    "hash": "b07feb6dbe0f44912a88a48cb58055f0"
+  },
+  "/Users/stevengeorgy/mobile-seatly-v2-5/lib/mock/aiChat.ts": {
+    "mtime": 1778615269.4211016,
+    "hash": "91d99df2b81a85f2afac8e015d85d4d9"
+  },
+  "/Users/stevengeorgy/mobile-seatly-v2-5/lib/mock/profileDisplayUser.ts": {
+    "mtime": 1778615269.4231155,
+    "hash": "1ba351a1f3f5aed92c6164b2b86756ef"
+  },
+  "/Users/stevengeorgy/mobile-seatly-v2-5/lib/mock/snaps.ts": {
+    "mtime": 1778615269.4240274,
+    "hash": "936b1746c0116b36b78612a73768e642"
+  },
+  "/Users/stevengeorgy/mobile-seatly-v2-5/lib/mock/tables.ts": {
+    "mtime": 1778615269.4242754,
+    "hash": "6be38acf42de1648ff559bca96b6f555"
+  },
+  "/Users/stevengeorgy/mobile-seatly-v2-5/lib/mock/notifications.ts": {
+    "mtime": 1778615269.4226186,
+    "hash": "c2cd642e01d822075636e01ad520e932"
+  },
+  "/Users/stevengeorgy/mobile-seatly-v2-5/lib/mock/bookingAvailability.ts": {
+    "mtime": 1778615269.4212868,
+    "hash": "bc791c008d76779a8328edea09307353"
+  },
+  "/Users/stevengeorgy/mobile-seatly-v2-5/lib/mock/mapRestaurants.ts": {
+    "mtime": 1778615269.422311,
+    "hash": "fc65624af56e44dc6a8ab95c6364a524"
+  },
+  "/Users/stevengeorgy/mobile-seatly-v2-5/lib/mock/collections.ts": {
+    "mtime": 1778615269.4214017,
+    "hash": "4c43ca877c33068698e8febe1a2c5ed6"
+  },
+  "/Users/stevengeorgy/mobile-seatly-v2-5/lib/mock/discoverPresentation.ts": {
+    "mtime": 1778615269.4216266,
+    "hash": "27d98f6bff0e0194d9554d801c33353e"
+  },
+  "/Users/stevengeorgy/mobile-seatly-v2-5/lib/mock/orders.ts": {
+    "mtime": 1778615269.4227629,
+    "hash": "c2bb53fd84fdcc7a6b5e13ef8cbdc132"
+  },
+  "/Users/stevengeorgy/mobile-seatly-v2-5/lib/mock/events.ts": {
+    "mtime": 1778615269.4218225,
+    "hash": "e6cfc77d1618654c008e3e3f8b644b98"
+  },
+  "/Users/stevengeorgy/mobile-seatly-v2-5/lib/mock/reviewSnap.ts": {
+    "mtime": 1778615269.4237404,
+    "hash": "aacd221cba27aac092e0b911f5b50b84"
+  },
+  "/Users/stevengeorgy/mobile-seatly-v2-5/lib/mock/restaurants.ts": {
+    "mtime": 1778615269.4236166,
+    "hash": "bce94e247a51c319fdd07f5e36db4a77"
+  },
+  "/Users/stevengeorgy/mobile-seatly-v2-5/lib/mock/users.ts": {
+    "mtime": 1778615269.424382,
+    "hash": "8e06d22491793c32d21e3b1668e4ded1"
+  },
+  "/Users/stevengeorgy/mobile-seatly-v2-5/lib/mock/social.ts": {
+    "mtime": 1778615269.4241638,
+    "hash": "bc09ad9df49a7526ef9205175e19a5d8"
+  },
+  "/Users/stevengeorgy/mobile-seatly-v2-5/lib/mock/sessions.ts": {
+    "mtime": 1778615269.4238453,
+    "hash": "01c771a7bafff3e41037c8f52485dc9a"
+  },
+  "/Users/stevengeorgy/mobile-seatly-v2-5/lib/mock/guests.ts": {
+    "mtime": 1778615269.4220908,
+    "hash": "e53fbf15c057e5c76b0ccb6d04821542"
+  },
+  "/Users/stevengeorgy/mobile-seatly-v2-5/lib/mock/ownerApp.ts": {
+    "mtime": 1778787929.3414888,
+    "hash": "d87b78b70a9b9f87ed4743dbc4ce1a8a"
+  }
+}

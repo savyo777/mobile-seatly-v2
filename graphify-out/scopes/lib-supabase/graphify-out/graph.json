@@ -1,0 +1,891 @@
+{
+  "directed": false,
+  "multigraph": false,
+  "graph": {},
+  "nodes": [
+    {
+      "label": "mapRestaurantRow.ts",
+      "file_type": "code",
+      "source_file": "mapRestaurantRow.ts",
+      "source_location": "L1",
+      "id": "maprestaurantrow_ts",
+      "community": 2,
+      "norm_label": "maprestaurantrow.ts"
+    },
+    {
+      "label": "num()",
+      "file_type": "code",
+      "source_file": "mapRestaurantRow.ts",
+      "source_location": "L16",
+      "id": "supabase_maprestaurantrow_num",
+      "community": 3,
+      "norm_label": "num()"
+    },
+    {
+      "label": "readSettingsLatLng()",
+      "file_type": "code",
+      "source_file": "mapRestaurantRow.ts",
+      "source_location": "L22",
+      "id": "supabase_maprestaurantrow_readsettingslatlng",
+      "community": 2,
+      "norm_label": "readsettingslatlng()"
+    },
+    {
+      "label": "numOrNull()",
+      "file_type": "code",
+      "source_file": "mapRestaurantRow.ts",
+      "source_location": "L32",
+      "id": "supabase_maprestaurantrow_numornull",
+      "community": 5,
+      "norm_label": "numornull()"
+    },
+    {
+      "label": "intOrNull()",
+      "file_type": "code",
+      "source_file": "mapRestaurantRow.ts",
+      "source_location": "L38",
+      "id": "supabase_maprestaurantrow_intornull",
+      "community": 5,
+      "norm_label": "intornull()"
+    },
+    {
+      "label": "boolOrNull()",
+      "file_type": "code",
+      "source_file": "mapRestaurantRow.ts",
+      "source_location": "L43",
+      "id": "supabase_maprestaurantrow_boolornull",
+      "community": 3,
+      "norm_label": "boolornull()"
+    },
+    {
+      "label": "objectOrNull()",
+      "file_type": "code",
+      "source_file": "mapRestaurantRow.ts",
+      "source_location": "L48",
+      "id": "supabase_maprestaurantrow_objectornull",
+      "community": 3,
+      "norm_label": "objectornull()"
+    },
+    {
+      "label": "WEEKDAY_SET",
+      "file_type": "code",
+      "source_file": "mapRestaurantRow.ts",
+      "source_location": "L53",
+      "id": "supabase_maprestaurantrow_weekday_set",
+      "community": 2,
+      "norm_label": "weekday_set"
+    },
+    {
+      "label": "readSpecialHours()",
+      "file_type": "code",
+      "source_file": "mapRestaurantRow.ts",
+      "source_location": "L55",
+      "id": "supabase_maprestaurantrow_readspecialhours",
+      "community": 2,
+      "norm_label": "readspecialhours()"
+    },
+    {
+      "label": "hoursFromJson()",
+      "file_type": "code",
+      "source_file": "mapRestaurantRow.ts",
+      "source_location": "L73",
+      "id": "supabase_maprestaurantrow_hoursfromjson",
+      "community": 2,
+      "norm_label": "hoursfromjson()"
+    },
+    {
+      "label": "mapRestaurantRowToRestaurant()",
+      "file_type": "code",
+      "source_file": "mapRestaurantRow.ts",
+      "source_location": "L103",
+      "id": "supabase_maprestaurantrow_maprestaurantrowtorestaurant",
+      "community": 3,
+      "norm_label": "maprestaurantrowtorestaurant()"
+    },
+    {
+      "label": "client.ts",
+      "file_type": "code",
+      "source_file": "client.ts",
+      "source_location": "L1",
+      "id": "client_ts",
+      "community": 0,
+      "norm_label": "client.ts"
+    },
+    {
+      "label": "getSupabaseAuthStorageKey()",
+      "file_type": "code",
+      "source_file": "client.ts",
+      "source_location": "L7",
+      "id": "supabase_client_getsupabaseauthstoragekey",
+      "community": 0,
+      "norm_label": "getsupabaseauthstoragekey()"
+    },
+    {
+      "label": "clearPersistedSupabaseSession()",
+      "file_type": "code",
+      "source_file": "client.ts",
+      "source_location": "L26",
+      "id": "supabase_client_clearpersistedsupabasesession",
+      "community": 0,
+      "norm_label": "clearpersistedsupabasesession()"
+    },
+    {
+      "label": "clearSupabaseStorageOnly()",
+      "file_type": "code",
+      "source_file": "client.ts",
+      "source_location": "L44",
+      "id": "supabase_client_clearsupabasestorageonly",
+      "community": 0,
+      "norm_label": "clearsupabasestorageonly()"
+    },
+    {
+      "label": "clearUnusablePersistedSupabaseSession()",
+      "file_type": "code",
+      "source_file": "client.ts",
+      "source_location": "L54",
+      "id": "supabase_client_clearunusablepersistedsupabasesession",
+      "community": 0,
+      "norm_label": "clearunusablepersistedsupabasesession()"
+    },
+    {
+      "label": "getSupabase()",
+      "file_type": "code",
+      "source_file": "client.ts",
+      "source_location": "L86",
+      "id": "supabase_client_getsupabase",
+      "community": 0,
+      "norm_label": "getsupabase()"
+    },
+    {
+      "label": "authErrors.ts",
+      "file_type": "code",
+      "source_file": "authErrors.ts",
+      "source_location": "L1",
+      "id": "autherrors_ts",
+      "community": 4,
+      "norm_label": "autherrors.ts"
+    },
+    {
+      "label": "valueToText()",
+      "file_type": "code",
+      "source_file": "authErrors.ts",
+      "source_location": "L1",
+      "id": "supabase_autherrors_valuetotext",
+      "community": 4,
+      "norm_label": "valuetotext()"
+    },
+    {
+      "label": "collectErrorText()",
+      "file_type": "code",
+      "source_file": "authErrors.ts",
+      "source_location": "L7",
+      "id": "supabase_autherrors_collecterrortext",
+      "community": 4,
+      "norm_label": "collecterrortext()"
+    },
+    {
+      "label": "isUnusablePersistedSupabaseAuthError()",
+      "file_type": "code",
+      "source_file": "authErrors.ts",
+      "source_location": "L29",
+      "id": "supabase_autherrors_isunusablepersistedsupabaseautherror",
+      "community": 4,
+      "norm_label": "isunusablepersistedsupabaseautherror()"
+    },
+    {
+      "label": "env.ts",
+      "file_type": "code",
+      "source_file": "env.ts",
+      "source_location": "L1",
+      "id": "env_ts",
+      "community": 0,
+      "norm_label": "env.ts"
+    },
+    {
+      "label": "isSupabaseConfigured()",
+      "file_type": "code",
+      "source_file": "env.ts",
+      "source_location": "L12",
+      "id": "supabase_env_issupabaseconfigured",
+      "community": 0,
+      "norm_label": "issupabaseconfigured()"
+    },
+    {
+      "label": "fetchRestaurants.ts",
+      "file_type": "code",
+      "source_file": "fetchRestaurants.ts",
+      "source_location": "L1",
+      "id": "fetchrestaurants_ts",
+      "community": 1,
+      "norm_label": "fetchrestaurants.ts"
+    },
+    {
+      "label": "MenuPriceRow",
+      "file_type": "code",
+      "source_file": "fetchRestaurants.ts",
+      "source_location": "L11",
+      "id": "supabase_fetchrestaurants_menupricerow",
+      "community": 1,
+      "norm_label": "menupricerow"
+    },
+    {
+      "label": "MenuCategoryRow",
+      "file_type": "code",
+      "source_file": "fetchRestaurants.ts",
+      "source_location": "L16",
+      "id": "supabase_fetchrestaurants_menucategoryrow",
+      "community": 1,
+      "norm_label": "menucategoryrow"
+    },
+    {
+      "label": "chunks()",
+      "file_type": "code",
+      "source_file": "fetchRestaurants.ts",
+      "source_location": "L24",
+      "id": "supabase_fetchrestaurants_chunks",
+      "community": 1,
+      "norm_label": "chunks()"
+    },
+    {
+      "label": "fetchMenuCategoriesById()",
+      "file_type": "code",
+      "source_file": "fetchRestaurants.ts",
+      "source_location": "L32",
+      "id": "supabase_fetchrestaurants_fetchmenucategoriesbyid",
+      "community": 1,
+      "norm_label": "fetchmenucategoriesbyid()"
+    },
+    {
+      "label": "fetchMenuPriceRows()",
+      "file_type": "code",
+      "source_file": "fetchRestaurants.ts",
+      "source_location": "L51",
+      "id": "supabase_fetchrestaurants_fetchmenupricerows",
+      "community": 1,
+      "norm_label": "fetchmenupricerows()"
+    },
+    {
+      "label": "applyMenuDerivedPriceRanges()",
+      "file_type": "code",
+      "source_file": "fetchRestaurants.ts",
+      "source_location": "L112",
+      "id": "supabase_fetchrestaurants_applymenuderivedpriceranges",
+      "community": 1,
+      "norm_label": "applymenuderivedpriceranges()"
+    },
+    {
+      "label": "fetchRestaurantsFromSupabase()",
+      "file_type": "code",
+      "source_file": "fetchRestaurants.ts",
+      "source_location": "L125",
+      "id": "supabase_fetchrestaurants_fetchrestaurantsfromsupabase",
+      "community": 1,
+      "norm_label": "fetchrestaurantsfromsupabase()"
+    }
+  ],
+  "links": [
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "mapRestaurantRow.ts",
+      "source_location": "L16",
+      "weight": 1.0,
+      "source": "maprestaurantrow_ts",
+      "target": "supabase_maprestaurantrow_num",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "mapRestaurantRow.ts",
+      "source_location": "L22",
+      "weight": 1.0,
+      "source": "maprestaurantrow_ts",
+      "target": "supabase_maprestaurantrow_readsettingslatlng",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "mapRestaurantRow.ts",
+      "source_location": "L32",
+      "weight": 1.0,
+      "source": "maprestaurantrow_ts",
+      "target": "supabase_maprestaurantrow_numornull",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "mapRestaurantRow.ts",
+      "source_location": "L38",
+      "weight": 1.0,
+      "source": "maprestaurantrow_ts",
+      "target": "supabase_maprestaurantrow_intornull",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "mapRestaurantRow.ts",
+      "source_location": "L43",
+      "weight": 1.0,
+      "source": "maprestaurantrow_ts",
+      "target": "supabase_maprestaurantrow_boolornull",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "mapRestaurantRow.ts",
+      "source_location": "L48",
+      "weight": 1.0,
+      "source": "maprestaurantrow_ts",
+      "target": "supabase_maprestaurantrow_objectornull",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "mapRestaurantRow.ts",
+      "source_location": "L53",
+      "weight": 1.0,
+      "source": "maprestaurantrow_ts",
+      "target": "supabase_maprestaurantrow_weekday_set",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "mapRestaurantRow.ts",
+      "source_location": "L55",
+      "weight": 1.0,
+      "source": "maprestaurantrow_ts",
+      "target": "supabase_maprestaurantrow_readspecialhours",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "mapRestaurantRow.ts",
+      "source_location": "L73",
+      "weight": 1.0,
+      "source": "maprestaurantrow_ts",
+      "target": "supabase_maprestaurantrow_hoursfromjson",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "mapRestaurantRow.ts",
+      "source_location": "L103",
+      "weight": 1.0,
+      "source": "maprestaurantrow_ts",
+      "target": "supabase_maprestaurantrow_maprestaurantrowtorestaurant",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "fetchRestaurants.ts",
+      "source_location": "L4",
+      "weight": 1.0,
+      "source": "fetchrestaurants_ts",
+      "target": "maprestaurantrow_ts",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "mapRestaurantRow.ts",
+      "source_location": "L154",
+      "weight": 1.0,
+      "source": "supabase_maprestaurantrow_maprestaurantrowtorestaurant",
+      "target": "supabase_maprestaurantrow_num",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "mapRestaurantRow.ts",
+      "source_location": "L106",
+      "weight": 1.0,
+      "source": "supabase_maprestaurantrow_maprestaurantrowtorestaurant",
+      "target": "supabase_maprestaurantrow_readsettingslatlng",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "mapRestaurantRow.ts",
+      "source_location": "L39",
+      "weight": 1.0,
+      "source": "supabase_maprestaurantrow_intornull",
+      "target": "supabase_maprestaurantrow_numornull",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "mapRestaurantRow.ts",
+      "source_location": "L107",
+      "weight": 1.0,
+      "source": "supabase_maprestaurantrow_maprestaurantrowtorestaurant",
+      "target": "supabase_maprestaurantrow_numornull",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "mapRestaurantRow.ts",
+      "source_location": "L144",
+      "weight": 1.0,
+      "source": "supabase_maprestaurantrow_maprestaurantrowtorestaurant",
+      "target": "supabase_maprestaurantrow_intornull",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "mapRestaurantRow.ts",
+      "source_location": "L159",
+      "weight": 1.0,
+      "source": "supabase_maprestaurantrow_maprestaurantrowtorestaurant",
+      "target": "supabase_maprestaurantrow_boolornull",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "mapRestaurantRow.ts",
+      "source_location": "L162",
+      "weight": 1.0,
+      "source": "supabase_maprestaurantrow_maprestaurantrowtorestaurant",
+      "target": "supabase_maprestaurantrow_objectornull",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "mapRestaurantRow.ts",
+      "source_location": "L80",
+      "weight": 1.0,
+      "source": "supabase_maprestaurantrow_hoursfromjson",
+      "target": "supabase_maprestaurantrow_readspecialhours",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "mapRestaurantRow.ts",
+      "source_location": "L153",
+      "weight": 1.0,
+      "source": "supabase_maprestaurantrow_maprestaurantrowtorestaurant",
+      "target": "supabase_maprestaurantrow_hoursfromjson",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "fetchRestaurants.ts",
+      "source_location": "L4",
+      "weight": 1.0,
+      "source": "fetchrestaurants_ts",
+      "target": "supabase_maprestaurantrow_maprestaurantrowtorestaurant",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "fetchRestaurants.ts",
+      "source_location": "L175",
+      "weight": 1.0,
+      "source": "supabase_fetchrestaurants_fetchrestaurantsfromsupabase",
+      "target": "supabase_maprestaurantrow_maprestaurantrowtorestaurant"
+    },
+    {
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "client.ts",
+      "source_location": "L3",
+      "weight": 1.0,
+      "source": "client_ts",
+      "target": "env_ts",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "client.ts",
+      "source_location": "L86",
+      "weight": 1.0,
+      "source": "client_ts",
+      "target": "supabase_client_getsupabase",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "client.ts",
+      "source_location": "L3",
+      "weight": 1.0,
+      "source": "client_ts",
+      "target": "supabase_env_issupabaseconfigured",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "client.ts",
+      "source_location": "L7",
+      "weight": 1.0,
+      "source": "client_ts",
+      "target": "supabase_client_getsupabaseauthstoragekey",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "client.ts",
+      "source_location": "L26",
+      "weight": 1.0,
+      "source": "client_ts",
+      "target": "supabase_client_clearpersistedsupabasesession",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "client.ts",
+      "source_location": "L44",
+      "weight": 1.0,
+      "source": "client_ts",
+      "target": "supabase_client_clearsupabasestorageonly",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "client.ts",
+      "source_location": "L54",
+      "weight": 1.0,
+      "source": "client_ts",
+      "target": "supabase_client_clearunusablepersistedsupabasesession",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "fetchRestaurants.ts",
+      "source_location": "L3",
+      "weight": 1.0,
+      "source": "fetchrestaurants_ts",
+      "target": "client_ts",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "client.ts",
+      "source_location": "L27",
+      "weight": 1.0,
+      "source": "supabase_client_clearpersistedsupabasesession",
+      "target": "supabase_client_getsupabaseauthstoragekey",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "client.ts",
+      "source_location": "L45",
+      "weight": 1.0,
+      "source": "supabase_client_clearsupabasestorageonly",
+      "target": "supabase_client_getsupabaseauthstoragekey",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "client.ts",
+      "source_location": "L55",
+      "weight": 1.0,
+      "source": "supabase_client_clearunusablepersistedsupabasesession",
+      "target": "supabase_client_getsupabaseauthstoragekey",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "client.ts",
+      "source_location": "L9",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "supabase_client_getsupabaseauthstoragekey",
+      "target": "supabase_client_getsupabase"
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "client.ts",
+      "source_location": "L8",
+      "weight": 1.0,
+      "source": "supabase_client_getsupabaseauthstoragekey",
+      "target": "supabase_env_issupabaseconfigured"
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "client.ts",
+      "source_location": "L79",
+      "weight": 1.0,
+      "source": "supabase_client_clearunusablepersistedsupabasesession",
+      "target": "supabase_client_clearpersistedsupabasesession",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "env.ts",
+      "source_location": "L5",
+      "weight": 1.0,
+      "source": "env_ts",
+      "target": "supabase_client_getsupabase",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "client.ts",
+      "source_location": "L87",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "supabase_client_getsupabase",
+      "target": "supabase_env_issupabaseconfigured"
+    },
+    {
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "fetchRestaurants.ts",
+      "source_location": "L3",
+      "weight": 1.0,
+      "source": "fetchrestaurants_ts",
+      "target": "supabase_client_getsupabase",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "fetchRestaurants.ts",
+      "source_location": "L151",
+      "weight": 1.0,
+      "source": "supabase_fetchrestaurants_fetchrestaurantsfromsupabase",
+      "target": "supabase_client_getsupabase"
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "authErrors.ts",
+      "source_location": "L1",
+      "weight": 1.0,
+      "source": "autherrors_ts",
+      "target": "supabase_autherrors_valuetotext",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "authErrors.ts",
+      "source_location": "L7",
+      "weight": 1.0,
+      "source": "autherrors_ts",
+      "target": "supabase_autherrors_collecterrortext",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "authErrors.ts",
+      "source_location": "L29",
+      "weight": 1.0,
+      "source": "autherrors_ts",
+      "target": "supabase_autherrors_isunusablepersistedsupabaseautherror",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "authErrors.ts",
+      "source_location": "L30",
+      "weight": 1.0,
+      "source": "supabase_autherrors_isunusablepersistedsupabaseautherror",
+      "target": "supabase_autherrors_collecterrortext",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "env.ts",
+      "source_location": "L12",
+      "weight": 1.0,
+      "source": "env_ts",
+      "target": "supabase_env_issupabaseconfigured",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "fetchRestaurants.ts",
+      "source_location": "L11",
+      "weight": 1.0,
+      "source": "fetchrestaurants_ts",
+      "target": "supabase_fetchrestaurants_menupricerow",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "fetchRestaurants.ts",
+      "source_location": "L16",
+      "weight": 1.0,
+      "source": "fetchrestaurants_ts",
+      "target": "supabase_fetchrestaurants_menucategoryrow",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "fetchRestaurants.ts",
+      "source_location": "L24",
+      "weight": 1.0,
+      "source": "fetchrestaurants_ts",
+      "target": "supabase_fetchrestaurants_chunks",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "fetchRestaurants.ts",
+      "source_location": "L32",
+      "weight": 1.0,
+      "source": "fetchrestaurants_ts",
+      "target": "supabase_fetchrestaurants_fetchmenucategoriesbyid",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "fetchRestaurants.ts",
+      "source_location": "L51",
+      "weight": 1.0,
+      "source": "fetchrestaurants_ts",
+      "target": "supabase_fetchrestaurants_fetchmenupricerows",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "fetchRestaurants.ts",
+      "source_location": "L112",
+      "weight": 1.0,
+      "source": "fetchrestaurants_ts",
+      "target": "supabase_fetchrestaurants_applymenuderivedpriceranges",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "fetchRestaurants.ts",
+      "source_location": "L148",
+      "weight": 1.0,
+      "source": "fetchrestaurants_ts",
+      "target": "supabase_fetchrestaurants_fetchrestaurantsfromsupabase",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "fetchRestaurants.ts",
+      "source_location": "L37",
+      "weight": 1.0,
+      "source": "supabase_fetchrestaurants_fetchmenucategoriesbyid",
+      "target": "supabase_fetchrestaurants_chunks",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "fetchRestaurants.ts",
+      "source_location": "L58",
+      "weight": 1.0,
+      "source": "supabase_fetchrestaurants_fetchmenupricerows",
+      "target": "supabase_fetchrestaurants_chunks",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "fetchRestaurants.ts",
+      "source_location": "L55",
+      "weight": 1.0,
+      "source": "supabase_fetchrestaurants_fetchmenupricerows",
+      "target": "supabase_fetchrestaurants_fetchmenucategoriesbyid",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "fetchRestaurants.ts",
+      "source_location": "L120",
+      "weight": 1.0,
+      "source": "supabase_fetchrestaurants_applymenuderivedpriceranges",
+      "target": "supabase_fetchrestaurants_fetchmenupricerows",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "fetchRestaurants.ts",
+      "source_location": "L177",
+      "weight": 1.0,
+      "source": "supabase_fetchrestaurants_fetchrestaurantsfromsupabase",
+      "target": "supabase_fetchrestaurants_applymenuderivedpriceranges",
+      "confidence_score": 1.0
+    }
+  ],
+  "hyperedges": [],
+  "built_at_commit": "f8e49f380bc144eec2877ce30747d7a6c1711a63"
+}

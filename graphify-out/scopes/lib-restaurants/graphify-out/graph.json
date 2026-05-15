@@ -1,0 +1,762 @@
+{
+  "directed": false,
+  "multigraph": false,
+  "graph": {},
+  "nodes": [
+    {
+      "label": "pricing.ts",
+      "file_type": "code",
+      "source_file": "pricing.ts",
+      "source_location": "L1",
+      "id": "pricing_ts",
+      "community": 0,
+      "norm_label": "pricing.ts"
+    },
+    {
+      "label": "RestaurantPriceTier",
+      "file_type": "code",
+      "source_file": "pricing.ts",
+      "source_location": "L1",
+      "id": "restaurants_pricing_restaurantpricetier",
+      "community": 0,
+      "norm_label": "restaurantpricetier"
+    },
+    {
+      "label": "envNumber()",
+      "file_type": "code",
+      "source_file": "pricing.ts",
+      "source_location": "L8",
+      "id": "restaurants_pricing_envnumber",
+      "community": 0,
+      "norm_label": "envnumber()"
+    },
+    {
+      "label": "LOW_PRICE_MAX",
+      "file_type": "code",
+      "source_file": "pricing.ts",
+      "source_location": "L14",
+      "id": "restaurants_pricing_low_price_max",
+      "community": 0,
+      "norm_label": "low_price_max"
+    },
+    {
+      "label": "HIGH_PRICE_MIN",
+      "file_type": "code",
+      "source_file": "pricing.ts",
+      "source_location": "L15",
+      "id": "restaurants_pricing_high_price_min",
+      "community": 0,
+      "norm_label": "high_price_min"
+    },
+    {
+      "label": "PRICE_LEVEL_CATEGORY_NAMES",
+      "file_type": "code",
+      "source_file": "pricing.ts",
+      "source_location": "L20",
+      "id": "restaurants_pricing_price_level_category_names",
+      "community": 0,
+      "norm_label": "price_level_category_names"
+    },
+    {
+      "label": "RestaurantMenuPriceItem",
+      "file_type": "code",
+      "source_file": "pricing.ts",
+      "source_location": "L31",
+      "id": "restaurants_pricing_restaurantmenupriceitem",
+      "community": 0,
+      "norm_label": "restaurantmenupriceitem"
+    },
+    {
+      "label": "parsePriceTier()",
+      "file_type": "code",
+      "source_file": "pricing.ts",
+      "source_location": "L38",
+      "id": "restaurants_pricing_parsepricetier",
+      "community": 2,
+      "norm_label": "parsepricetier()"
+    },
+    {
+      "label": "normalizeExplicitRestaurantPriceRange()",
+      "file_type": "code",
+      "source_file": "pricing.ts",
+      "source_location": "L54",
+      "id": "restaurants_pricing_normalizeexplicitrestaurantpricerange",
+      "community": 2,
+      "norm_label": "normalizeexplicitrestaurantpricerange()"
+    },
+    {
+      "label": "normalizeRestaurantPriceRange()",
+      "file_type": "code",
+      "source_file": "pricing.ts",
+      "source_location": "L64",
+      "id": "restaurants_pricing_normalizerestaurantpricerange",
+      "community": 2,
+      "norm_label": "normalizerestaurantpricerange()"
+    },
+    {
+      "label": "restaurantPriceLabel()",
+      "file_type": "code",
+      "source_file": "pricing.ts",
+      "source_location": "L71",
+      "id": "restaurants_pricing_restaurantpricelabel",
+      "community": 2,
+      "norm_label": "restaurantpricelabel()"
+    },
+    {
+      "label": "parseMenuPrice()",
+      "file_type": "code",
+      "source_file": "pricing.ts",
+      "source_location": "L78",
+      "id": "restaurants_pricing_parsemenuprice",
+      "community": 0,
+      "norm_label": "parsemenuprice()"
+    },
+    {
+      "label": "normalizeText()",
+      "file_type": "code",
+      "source_file": "pricing.ts",
+      "source_location": "L87",
+      "id": "restaurants_pricing_normalizetext",
+      "community": 0,
+      "norm_label": "normalizetext()"
+    },
+    {
+      "label": "isRestaurantPriceMenuCategory()",
+      "file_type": "code",
+      "source_file": "pricing.ts",
+      "source_location": "L95",
+      "id": "restaurants_pricing_isrestaurantpricemenucategory",
+      "community": 0,
+      "norm_label": "isrestaurantpricemenucategory()"
+    },
+    {
+      "label": "restaurantPriceRangeFromAverageDishPrice()",
+      "file_type": "code",
+      "source_file": "pricing.ts",
+      "source_location": "L99",
+      "id": "restaurants_pricing_restaurantpricerangefromaveragedishprice",
+      "community": 3,
+      "norm_label": "restaurantpricerangefromaveragedishprice()"
+    },
+    {
+      "label": "medianMainEntreePrice()",
+      "file_type": "code",
+      "source_file": "pricing.ts",
+      "source_location": "L106",
+      "id": "restaurants_pricing_medianmainentreeprice",
+      "community": 3,
+      "norm_label": "medianmainentreeprice()"
+    },
+    {
+      "label": "averageRestaurantMenuDishPrice()",
+      "file_type": "code",
+      "source_file": "pricing.ts",
+      "source_location": "L121",
+      "id": "restaurants_pricing_averagerestaurantmenudishprice",
+      "community": 3,
+      "norm_label": "averagerestaurantmenudishprice()"
+    },
+    {
+      "label": "deriveRestaurantPriceRangeFromMenuOnly()",
+      "file_type": "code",
+      "source_file": "pricing.ts",
+      "source_location": "L136",
+      "id": "restaurants_pricing_deriverestaurantpricerangefrommenuonly",
+      "community": 3,
+      "norm_label": "deriverestaurantpricerangefrommenuonly()"
+    },
+    {
+      "label": "priceTiers.ts",
+      "file_type": "code",
+      "source_file": "priceTiers.ts",
+      "source_location": "L1",
+      "id": "pricetiers_ts",
+      "community": 5,
+      "norm_label": "pricetiers.ts"
+    },
+    {
+      "label": "PRICE_TIER_OPTIONS",
+      "file_type": "code",
+      "source_file": "priceTiers.ts",
+      "source_location": "L4",
+      "id": "restaurants_pricetiers_price_tier_options",
+      "community": 5,
+      "norm_label": "price_tier_options"
+    },
+    {
+      "label": "PriceTier",
+      "file_type": "code",
+      "source_file": "priceTiers.ts",
+      "source_location": "L5",
+      "id": "restaurants_pricetiers_pricetier",
+      "community": 5,
+      "norm_label": "pricetier"
+    },
+    {
+      "label": "hoursStatus.ts",
+      "file_type": "code",
+      "source_file": "hoursStatus.ts",
+      "source_location": "L1",
+      "id": "hoursstatus_ts",
+      "community": 1,
+      "norm_label": "hoursstatus.ts"
+    },
+    {
+      "label": "HoursRange",
+      "file_type": "code",
+      "source_file": "hoursStatus.ts",
+      "source_location": "L7",
+      "id": "restaurants_hoursstatus_hoursrange",
+      "community": 1,
+      "norm_label": "hoursrange"
+    },
+    {
+      "label": "WEEKDAY_KEYS",
+      "file_type": "code",
+      "source_file": "hoursStatus.ts",
+      "source_location": "L9",
+      "id": "restaurants_hoursstatus_weekday_keys",
+      "community": 1,
+      "norm_label": "weekday_keys"
+    },
+    {
+      "label": "WEEKDAY_INDEX",
+      "file_type": "code",
+      "source_file": "hoursStatus.ts",
+      "source_location": "L19",
+      "id": "restaurants_hoursstatus_weekday_index",
+      "community": 1,
+      "norm_label": "weekday_index"
+    },
+    {
+      "label": "ParsedClockTime",
+      "file_type": "code",
+      "source_file": "hoursStatus.ts",
+      "source_location": "L29",
+      "id": "restaurants_hoursstatus_parsedclocktime",
+      "community": 1,
+      "norm_label": "parsedclocktime"
+    },
+    {
+      "label": "parseClockTime()",
+      "file_type": "code",
+      "source_file": "hoursStatus.ts",
+      "source_location": "L36",
+      "id": "restaurants_hoursstatus_parseclocktime",
+      "community": 4,
+      "norm_label": "parseclocktime()"
+    },
+    {
+      "label": "normalizeHoursRange()",
+      "file_type": "code",
+      "source_file": "hoursStatus.ts",
+      "source_location": "L62",
+      "id": "restaurants_hoursstatus_normalizehoursrange",
+      "community": 4,
+      "norm_label": "normalizehoursrange()"
+    },
+    {
+      "label": "formatClockMinutes()",
+      "file_type": "code",
+      "source_file": "hoursStatus.ts",
+      "source_location": "L79",
+      "id": "restaurants_hoursstatus_formatclockminutes",
+      "community": 4,
+      "norm_label": "formatclockminutes()"
+    },
+    {
+      "label": "formatHoursRange()",
+      "file_type": "code",
+      "source_file": "hoursStatus.ts",
+      "source_location": "L88",
+      "id": "restaurants_hoursstatus_formathoursrange",
+      "community": 4,
+      "norm_label": "formathoursrange()"
+    },
+    {
+      "label": "zonedWeekdayAndMinute()",
+      "file_type": "code",
+      "source_file": "hoursStatus.ts",
+      "source_location": "L94",
+      "id": "restaurants_hoursstatus_zonedweekdayandminute",
+      "community": 6,
+      "norm_label": "zonedweekdayandminute()"
+    },
+    {
+      "label": "currentRestaurantWeekdayKey()",
+      "file_type": "code",
+      "source_file": "hoursStatus.ts",
+      "source_location": "L113",
+      "id": "restaurants_hoursstatus_currentrestaurantweekdaykey",
+      "community": 6,
+      "norm_label": "currentrestaurantweekdaykey()"
+    },
+    {
+      "label": "isRestaurantOpenForHours()",
+      "file_type": "code",
+      "source_file": "hoursStatus.ts",
+      "source_location": "L120",
+      "id": "restaurants_hoursstatus_isrestaurantopenforhours",
+      "community": 6,
+      "norm_label": "isrestaurantopenforhours()"
+    }
+  ],
+  "links": [
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "pricing.ts",
+      "source_location": "L1",
+      "weight": 1.0,
+      "source": "pricing_ts",
+      "target": "restaurants_pricing_restaurantpricetier",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "pricing.ts",
+      "source_location": "L8",
+      "weight": 1.0,
+      "source": "pricing_ts",
+      "target": "restaurants_pricing_envnumber",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "pricing.ts",
+      "source_location": "L14",
+      "weight": 1.0,
+      "source": "pricing_ts",
+      "target": "restaurants_pricing_low_price_max",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "pricing.ts",
+      "source_location": "L15",
+      "weight": 1.0,
+      "source": "pricing_ts",
+      "target": "restaurants_pricing_high_price_min",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "pricing.ts",
+      "source_location": "L20",
+      "weight": 1.0,
+      "source": "pricing_ts",
+      "target": "restaurants_pricing_price_level_category_names",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "pricing.ts",
+      "source_location": "L31",
+      "weight": 1.0,
+      "source": "pricing_ts",
+      "target": "restaurants_pricing_restaurantmenupriceitem",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "pricing.ts",
+      "source_location": "L38",
+      "weight": 1.0,
+      "source": "pricing_ts",
+      "target": "restaurants_pricing_parsepricetier",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "pricing.ts",
+      "source_location": "L54",
+      "weight": 1.0,
+      "source": "pricing_ts",
+      "target": "restaurants_pricing_normalizeexplicitrestaurantpricerange",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "pricing.ts",
+      "source_location": "L64",
+      "weight": 1.0,
+      "source": "pricing_ts",
+      "target": "restaurants_pricing_normalizerestaurantpricerange",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "pricing.ts",
+      "source_location": "L71",
+      "weight": 1.0,
+      "source": "pricing_ts",
+      "target": "restaurants_pricing_restaurantpricelabel",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "pricing.ts",
+      "source_location": "L78",
+      "weight": 1.0,
+      "source": "pricing_ts",
+      "target": "restaurants_pricing_parsemenuprice",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "pricing.ts",
+      "source_location": "L87",
+      "weight": 1.0,
+      "source": "pricing_ts",
+      "target": "restaurants_pricing_normalizetext",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "pricing.ts",
+      "source_location": "L95",
+      "weight": 1.0,
+      "source": "pricing_ts",
+      "target": "restaurants_pricing_isrestaurantpricemenucategory",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "pricing.ts",
+      "source_location": "L99",
+      "weight": 1.0,
+      "source": "pricing_ts",
+      "target": "restaurants_pricing_restaurantpricerangefromaveragedishprice",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "pricing.ts",
+      "source_location": "L106",
+      "weight": 1.0,
+      "source": "pricing_ts",
+      "target": "restaurants_pricing_medianmainentreeprice",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "pricing.ts",
+      "source_location": "L121",
+      "weight": 1.0,
+      "source": "pricing_ts",
+      "target": "restaurants_pricing_averagerestaurantmenudishprice",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "pricing.ts",
+      "source_location": "L136",
+      "weight": 1.0,
+      "source": "pricing_ts",
+      "target": "restaurants_pricing_deriverestaurantpricerangefrommenuonly",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "pricing.ts",
+      "source_location": "L55",
+      "weight": 1.0,
+      "source": "restaurants_pricing_normalizeexplicitrestaurantpricerange",
+      "target": "restaurants_pricing_parsepricetier",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "pricing.ts",
+      "source_location": "L68",
+      "weight": 1.0,
+      "source": "restaurants_pricing_normalizerestaurantpricerange",
+      "target": "restaurants_pricing_normalizeexplicitrestaurantpricerange",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "pricing.ts",
+      "source_location": "L130",
+      "weight": 1.0,
+      "source": "restaurants_pricing_deriverestaurantpricerangefrommenuonly",
+      "target": "restaurants_pricing_normalizeexplicitrestaurantpricerange",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "pricing.ts",
+      "source_location": "L75",
+      "weight": 1.0,
+      "source": "restaurants_pricing_restaurantpricelabel",
+      "target": "restaurants_pricing_normalizerestaurantpricerange",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "pricing.ts",
+      "source_location": "L96",
+      "weight": 1.0,
+      "source": "restaurants_pricing_isrestaurantpricemenucategory",
+      "target": "restaurants_pricing_normalizetext",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "pricing.ts",
+      "source_location": "L140",
+      "weight": 1.0,
+      "source": "restaurants_pricing_deriverestaurantpricerangefrommenuonly",
+      "target": "restaurants_pricing_restaurantpricerangefromaveragedishprice",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "pricing.ts",
+      "source_location": "L122",
+      "weight": 1.0,
+      "source": "restaurants_pricing_averagerestaurantmenudishprice",
+      "target": "restaurants_pricing_medianmainentreeprice",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "pricing.ts",
+      "source_location": "L139",
+      "weight": 1.0,
+      "source": "restaurants_pricing_deriverestaurantpricerangefrommenuonly",
+      "target": "restaurants_pricing_medianmainentreeprice",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "priceTiers.ts",
+      "source_location": "L4",
+      "weight": 1.0,
+      "source": "pricetiers_ts",
+      "target": "restaurants_pricetiers_price_tier_options",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "priceTiers.ts",
+      "source_location": "L5",
+      "weight": 1.0,
+      "source": "pricetiers_ts",
+      "target": "restaurants_pricetiers_pricetier",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "hoursStatus.ts",
+      "source_location": "L7",
+      "weight": 1.0,
+      "source": "hoursstatus_ts",
+      "target": "restaurants_hoursstatus_hoursrange",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "hoursStatus.ts",
+      "source_location": "L9",
+      "weight": 1.0,
+      "source": "hoursstatus_ts",
+      "target": "restaurants_hoursstatus_weekday_keys",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "hoursStatus.ts",
+      "source_location": "L19",
+      "weight": 1.0,
+      "source": "hoursstatus_ts",
+      "target": "restaurants_hoursstatus_weekday_index",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "hoursStatus.ts",
+      "source_location": "L29",
+      "weight": 1.0,
+      "source": "hoursstatus_ts",
+      "target": "restaurants_hoursstatus_parsedclocktime",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "hoursStatus.ts",
+      "source_location": "L36",
+      "weight": 1.0,
+      "source": "hoursstatus_ts",
+      "target": "restaurants_hoursstatus_parseclocktime",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "hoursStatus.ts",
+      "source_location": "L62",
+      "weight": 1.0,
+      "source": "hoursstatus_ts",
+      "target": "restaurants_hoursstatus_normalizehoursrange",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "hoursStatus.ts",
+      "source_location": "L79",
+      "weight": 1.0,
+      "source": "hoursstatus_ts",
+      "target": "restaurants_hoursstatus_formatclockminutes",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "hoursStatus.ts",
+      "source_location": "L88",
+      "weight": 1.0,
+      "source": "hoursstatus_ts",
+      "target": "restaurants_hoursstatus_formathoursrange",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "hoursStatus.ts",
+      "source_location": "L94",
+      "weight": 1.0,
+      "source": "hoursstatus_ts",
+      "target": "restaurants_hoursstatus_zonedweekdayandminute",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "hoursStatus.ts",
+      "source_location": "L113",
+      "weight": 1.0,
+      "source": "hoursstatus_ts",
+      "target": "restaurants_hoursstatus_currentrestaurantweekdaykey",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "hoursStatus.ts",
+      "source_location": "L120",
+      "weight": 1.0,
+      "source": "hoursstatus_ts",
+      "target": "restaurants_hoursstatus_isrestaurantopenforhours",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "hoursStatus.ts",
+      "source_location": "L64",
+      "weight": 1.0,
+      "source": "restaurants_hoursstatus_normalizehoursrange",
+      "target": "restaurants_hoursstatus_parseclocktime",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "hoursStatus.ts",
+      "source_location": "L89",
+      "weight": 1.0,
+      "source": "restaurants_hoursstatus_formathoursrange",
+      "target": "restaurants_hoursstatus_normalizehoursrange",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "hoursStatus.ts",
+      "source_location": "L127",
+      "weight": 1.0,
+      "source": "restaurants_hoursstatus_isrestaurantopenforhours",
+      "target": "restaurants_hoursstatus_normalizehoursrange",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "hoursStatus.ts",
+      "source_location": "L91",
+      "weight": 1.0,
+      "source": "restaurants_hoursstatus_formathoursrange",
+      "target": "restaurants_hoursstatus_formatclockminutes",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "hoursStatus.ts",
+      "source_location": "L117",
+      "weight": 1.0,
+      "source": "restaurants_hoursstatus_currentrestaurantweekdaykey",
+      "target": "restaurants_hoursstatus_zonedweekdayandminute",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "hoursStatus.ts",
+      "source_location": "L126",
+      "weight": 1.0,
+      "source": "restaurants_hoursstatus_isrestaurantopenforhours",
+      "target": "restaurants_hoursstatus_zonedweekdayandminute",
+      "confidence_score": 1.0
+    }
+  ],
+  "hyperedges": [],
+  "built_at_commit": "f8e49f380bc144eec2877ce30747d7a6c1711a63"
+}

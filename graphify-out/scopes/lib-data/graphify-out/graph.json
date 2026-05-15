@@ -1,0 +1,189 @@
+{
+  "directed": false,
+  "multigraph": false,
+  "graph": {},
+  "nodes": [
+    {
+      "label": "restaurantCatalog.ts",
+      "file_type": "code",
+      "source_file": "restaurantCatalog.ts",
+      "source_location": "L1",
+      "id": "restaurantcatalog_ts",
+      "community": 0,
+      "norm_label": "restaurantcatalog.ts"
+    },
+    {
+      "label": "restaurantCache",
+      "file_type": "code",
+      "source_file": "restaurantCatalog.ts",
+      "source_location": "L11",
+      "id": "data_restaurantcatalog_restaurantcache",
+      "community": 0,
+      "norm_label": "restaurantcache"
+    },
+    {
+      "label": "cacheKey()",
+      "file_type": "code",
+      "source_file": "restaurantCatalog.ts",
+      "source_location": "L13",
+      "id": "data_restaurantcatalog_cachekey",
+      "community": 1,
+      "norm_label": "cachekey()"
+    },
+    {
+      "label": "rememberRestaurants()",
+      "file_type": "code",
+      "source_file": "restaurantCatalog.ts",
+      "source_location": "L17",
+      "id": "data_restaurantcatalog_rememberrestaurants",
+      "community": 0,
+      "norm_label": "rememberrestaurants()"
+    },
+    {
+      "label": "getCachedRestaurantById()",
+      "file_type": "code",
+      "source_file": "restaurantCatalog.ts",
+      "source_location": "L26",
+      "id": "data_restaurantcatalog_getcachedrestaurantbyid",
+      "community": 1,
+      "norm_label": "getcachedrestaurantbyid()"
+    },
+    {
+      "label": "loadRestaurantsForDiscover()",
+      "file_type": "code",
+      "source_file": "restaurantCatalog.ts",
+      "source_location": "L38",
+      "id": "data_restaurantcatalog_loadrestaurantsfordiscover",
+      "community": 0,
+      "norm_label": "loadrestaurantsfordiscover()"
+    },
+    {
+      "label": "loadRestaurantForBooking()",
+      "file_type": "code",
+      "source_file": "restaurantCatalog.ts",
+      "source_location": "L63",
+      "id": "data_restaurantcatalog_loadrestaurantforbooking",
+      "community": 1,
+      "norm_label": "loadrestaurantforbooking()"
+    }
+  ],
+  "links": [
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "restaurantCatalog.ts",
+      "source_location": "L11",
+      "weight": 1.0,
+      "source": "restaurantcatalog_ts",
+      "target": "data_restaurantcatalog_restaurantcache",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "restaurantCatalog.ts",
+      "source_location": "L13",
+      "weight": 1.0,
+      "source": "restaurantcatalog_ts",
+      "target": "data_restaurantcatalog_cachekey",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "restaurantCatalog.ts",
+      "source_location": "L17",
+      "weight": 1.0,
+      "source": "restaurantcatalog_ts",
+      "target": "data_restaurantcatalog_rememberrestaurants",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "restaurantCatalog.ts",
+      "source_location": "L26",
+      "weight": 1.0,
+      "source": "restaurantcatalog_ts",
+      "target": "data_restaurantcatalog_getcachedrestaurantbyid",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "restaurantCatalog.ts",
+      "source_location": "L38",
+      "weight": 1.0,
+      "source": "restaurantcatalog_ts",
+      "target": "data_restaurantcatalog_loadrestaurantsfordiscover",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "restaurantCatalog.ts",
+      "source_location": "L63",
+      "weight": 1.0,
+      "source": "restaurantcatalog_ts",
+      "target": "data_restaurantcatalog_loadrestaurantforbooking",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "restaurantCatalog.ts",
+      "source_location": "L27",
+      "weight": 1.0,
+      "source": "data_restaurantcatalog_getcachedrestaurantbyid",
+      "target": "data_restaurantcatalog_cachekey",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "restaurantCatalog.ts",
+      "source_location": "L67",
+      "weight": 1.0,
+      "source": "data_restaurantcatalog_loadrestaurantforbooking",
+      "target": "data_restaurantcatalog_cachekey",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "restaurantCatalog.ts",
+      "source_location": "L44",
+      "weight": 1.0,
+      "source": "data_restaurantcatalog_loadrestaurantsfordiscover",
+      "target": "data_restaurantcatalog_rememberrestaurants",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "restaurantCatalog.ts",
+      "source_location": "L74",
+      "weight": 1.0,
+      "source": "data_restaurantcatalog_loadrestaurantforbooking",
+      "target": "data_restaurantcatalog_rememberrestaurants",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "restaurantCatalog.ts",
+      "source_location": "L66",
+      "weight": 1.0,
+      "source": "data_restaurantcatalog_loadrestaurantforbooking",
+      "target": "data_restaurantcatalog_getcachedrestaurantbyid",
+      "confidence_score": 1.0
+    }
+  ],
+  "hyperedges": [],
+  "built_at_commit": "f8e49f380bc144eec2877ce30747d7a6c1711a63"
+}

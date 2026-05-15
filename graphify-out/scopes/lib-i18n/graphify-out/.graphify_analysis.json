@@ -1,0 +1,35 @@
+{
+  "communities": {
+    "0": [
+      "index_ts",
+      "locales_en_ts",
+      "locales_fr_ts"
+    ],
+    "1": [
+      "i18n_webkeyaliases_mobile_booking_step_keys",
+      "i18n_webkeyaliases_web_booking_step_titles",
+      "webkeyaliases_ts"
+    ]
+  },
+  "cohesion": {
+    "0": 0.67,
+    "1": 0.67
+  },
+  "gods": [
+    {
+      "id": "i18n_webkeyaliases_web_booking_step_titles",
+      "label": "WEB_BOOKING_STEP_TITLES",
+      "degree": 1
+    },
+    {
+      "id": "i18n_webkeyaliases_mobile_booking_step_keys",
+      "label": "MOBILE_BOOKING_STEP_KEYS",
+      "degree": 1
+    }
+  ],
+  "surprises": [],
+  "tokens": {
+    "input": 0,
+    "output": 0
+  }
+}

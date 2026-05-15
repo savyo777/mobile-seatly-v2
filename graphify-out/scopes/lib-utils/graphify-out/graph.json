@@ -1,0 +1,19 @@
+{
+  "directed": false,
+  "multigraph": false,
+  "graph": {},
+  "nodes": [
+    {
+      "label": "formatCurrency.ts",
+      "file_type": "code",
+      "source_file": "formatCurrency.ts",
+      "source_location": "L1",
+      "id": "formatcurrency_ts",
+      "community": 0,
+      "norm_label": "formatcurrency.ts"
+    }
+  ],
+  "links": [],
+  "hyperedges": [],
+  "built_at_commit": "f8e49f380bc144eec2877ce30747d7a6c1711a63"
+}

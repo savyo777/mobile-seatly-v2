@@ -1,0 +1,140 @@
+{
+  "communities": {
+    "0": [
+      "pricing_ts",
+      "restaurants_pricing_envnumber",
+      "restaurants_pricing_high_price_min",
+      "restaurants_pricing_isrestaurantpricemenucategory",
+      "restaurants_pricing_low_price_max",
+      "restaurants_pricing_normalizetext",
+      "restaurants_pricing_parsemenuprice",
+      "restaurants_pricing_price_level_category_names",
+      "restaurants_pricing_restaurantmenupriceitem",
+      "restaurants_pricing_restaurantpricetier"
+    ],
+    "1": [
+      "hoursstatus_ts",
+      "restaurants_hoursstatus_hoursrange",
+      "restaurants_hoursstatus_parsedclocktime",
+      "restaurants_hoursstatus_weekday_index",
+      "restaurants_hoursstatus_weekday_keys"
+    ],
+    "2": [
+      "restaurants_pricing_normalizeexplicitrestaurantpricerange",
+      "restaurants_pricing_normalizerestaurantpricerange",
+      "restaurants_pricing_parsepricetier",
+      "restaurants_pricing_restaurantpricelabel"
+    ],
+    "3": [
+      "restaurants_pricing_averagerestaurantmenudishprice",
+      "restaurants_pricing_deriverestaurantpricerangefrommenuonly",
+      "restaurants_pricing_medianmainentreeprice",
+      "restaurants_pricing_restaurantpricerangefromaveragedishprice"
+    ],
+    "4": [
+      "restaurants_hoursstatus_formatclockminutes",
+      "restaurants_hoursstatus_formathoursrange",
+      "restaurants_hoursstatus_normalizehoursrange",
+      "restaurants_hoursstatus_parseclocktime"
+    ],
+    "5": [
+      "pricetiers_ts",
+      "restaurants_pricetiers_price_tier_options",
+      "restaurants_pricetiers_pricetier"
+    ],
+    "6": [
+      "restaurants_hoursstatus_currentrestaurantweekdaykey",
+      "restaurants_hoursstatus_isrestaurantopenforhours",
+      "restaurants_hoursstatus_zonedweekdayandminute"
+    ]
+  },
+  "cohesion": {
+    "0": 0.22,
+    "1": 0.4,
+    "2": 0.5,
+    "3": 0.5,
+    "4": 0.5,
+    "5": 0.67,
+    "6": 0.67
+  },
+  "gods": [
+    {
+      "id": "restaurants_pricing_normalizeexplicitrestaurantpricerange",
+      "label": "normalizeExplicitRestaurantPriceRange()",
+      "degree": 4
+    },
+    {
+      "id": "restaurants_pricing_deriverestaurantpricerangefrommenuonly",
+      "label": "deriveRestaurantPriceRangeFromMenuOnly()",
+      "degree": 4
+    },
+    {
+      "id": "restaurants_hoursstatus_normalizehoursrange",
+      "label": "normalizeHoursRange()",
+      "degree": 4
+    },
+    {
+      "id": "restaurants_pricing_normalizerestaurantpricerange",
+      "label": "normalizeRestaurantPriceRange()",
+      "degree": 3
+    },
+    {
+      "id": "restaurants_pricing_medianmainentreeprice",
+      "label": "medianMainEntreePrice()",
+      "degree": 3
+    },
+    {
+      "id": "restaurants_hoursstatus_formathoursrange",
+      "label": "formatHoursRange()",
+      "degree": 3
+    },
+    {
+      "id": "restaurants_hoursstatus_zonedweekdayandminute",
+      "label": "zonedWeekdayAndMinute()",
+      "degree": 3
+    },
+    {
+      "id": "restaurants_hoursstatus_isrestaurantopenforhours",
+      "label": "isRestaurantOpenForHours()",
+      "degree": 3
+    },
+    {
+      "id": "restaurants_pricing_parsepricetier",
+      "label": "parsePriceTier()",
+      "degree": 2
+    },
+    {
+      "id": "restaurants_pricing_restaurantpricelabel",
+      "label": "restaurantPriceLabel()",
+      "degree": 2
+    }
+  ],
+  "surprises": [
+    {
+      "source": "deriveRestaurantPriceRangeFromMenuOnly()",
+      "target": "normalizeExplicitRestaurantPriceRange()",
+      "source_files": [
+        "pricing.ts",
+        "pricing.ts"
+      ],
+      "confidence": "EXTRACTED",
+      "relation": "calls",
+      "note": "Bridges community 2 \u2192 community 3"
+    },
+    {
+      "source": "isRestaurantOpenForHours()",
+      "target": "normalizeHoursRange()",
+      "source_files": [
+        "hoursStatus.ts",
+        "hoursStatus.ts"
+      ],
+      "confidence": "EXTRACTED",
+      "relation": "calls",
+      "note": "Bridges community 4 \u2192 community 6"
+    }
+  ],
+  "tokens": {
+    "input": 0,
+    "output": 0
+  }
+}

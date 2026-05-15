@@ -1,0 +1,68 @@
+{
+  "communities": {
+    "0": [
+      "data_restaurantcatalog_loadrestaurantsfordiscover",
+      "data_restaurantcatalog_rememberrestaurants",
+      "data_restaurantcatalog_restaurantcache",
+      "restaurantcatalog_ts"
+    ],
+    "1": [
+      "data_restaurantcatalog_cachekey",
+      "data_restaurantcatalog_getcachedrestaurantbyid",
+      "data_restaurantcatalog_loadrestaurantforbooking"
+    ]
+  },
+  "cohesion": {
+    "0": 0.67,
+    "1": 1.0
+  },
+  "gods": [
+    {
+      "id": "data_restaurantcatalog_loadrestaurantforbooking",
+      "label": "loadRestaurantForBooking()",
+      "degree": 4
+    },
+    {
+      "id": "data_restaurantcatalog_cachekey",
+      "label": "cacheKey()",
+      "degree": 3
+    },
+    {
+      "id": "data_restaurantcatalog_rememberrestaurants",
+      "label": "rememberRestaurants()",
+      "degree": 3
+    },
+    {
+      "id": "data_restaurantcatalog_getcachedrestaurantbyid",
+      "label": "getCachedRestaurantById()",
+      "degree": 3
+    },
+    {
+      "id": "data_restaurantcatalog_loadrestaurantsfordiscover",
+      "label": "loadRestaurantsForDiscover()",
+      "degree": 2
+    },
+    {
+      "id": "data_restaurantcatalog_restaurantcache",
+      "label": "restaurantCache",
+      "degree": 1
+    }
+  ],
+  "surprises": [
+    {
+      "source": "loadRestaurantForBooking()",
+      "target": "rememberRestaurants()",
+      "source_files": [
+        "restaurantCatalog.ts",
+        "restaurantCatalog.ts"
+      ],
+      "confidence": "EXTRACTED",
+      "relation": "calls",
+      "note": "Bridges community 0 \u2192 community 1"
+    }
+  ],
+  "tokens": {
+    "input": 0,
+    "output": 0
+  }
+}

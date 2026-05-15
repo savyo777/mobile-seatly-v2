@@ -1,0 +1,30 @@
+{
+  "/Users/stevengeorgy/mobile-seatly-v2-5/lib/theme/createStyles.ts": {
+    "mtime": 1778615269.435774,
+    "hash": "5ecf9c7f90af88cd4861a9f8d1224e73"
+  },
+  "/Users/stevengeorgy/mobile-seatly-v2-5/lib/theme/ownerTheme.ts": {
+    "mtime": 1778615269.4360151,
+    "hash": "58c2dbdff8c7146786f85f6d67764480"
+  },
+  "/Users/stevengeorgy/mobile-seatly-v2-5/lib/theme/palettes.ts": {
+    "mtime": 1778615269.436122,
+    "hash": "a5891ae47d9c674609819cf161dc06ad"
+  },
+  "/Users/stevengeorgy/mobile-seatly-v2-5/lib/theme/ThemeProvider.tsx": {
+    "mtime": 1778615269.4355671,
+    "hash": "2af3f234da8d9198a34070b157d0dba9"
+  },
+  "/Users/stevengeorgy/mobile-seatly-v2-5/lib/theme/appPalette.ts": {
+    "mtime": 1778615269.435674,
+    "hash": "bc757c790716334f688188514dac3965"
+  },
+  "/Users/stevengeorgy/mobile-seatly-v2-5/lib/theme/index.ts": {
+    "mtime": 1778615269.4358828,
+    "hash": "1444298dbd476e4ec13e6a0bbe6dc19e"
+  },
+  "/Users/stevengeorgy/mobile-seatly-v2-5/lib/theme/useColors.ts": {
+    "mtime": 1778615269.436387,
+    "hash": "30f172ca2b2f87ec5b6f7b2810959edc"
+  }
+}

@@ -1,0 +1,97 @@
+{
+  "communities": {
+    "0": [
+      "map_mapfilters_applymapfilter",
+      "map_mapfilters_default_map_center",
+      "map_mapfilters_envnumber",
+      "map_mapfilters_hasdatenightsignals",
+      "map_mapfilters_hasoutdoorsignals",
+      "map_mapfilters_mapfilterid",
+      "map_mapfilters_restaurantwithdistance",
+      "map_mapfilters_withdistances",
+      "mapfilters_ts"
+    ],
+    "1": [
+      "geo_ts",
+      "map_geo_formatdistancemeters",
+      "map_geo_hasfinitecoords",
+      "map_geo_haversinemeters",
+      "map_mapfilters_ismaplocationindemoregion"
+    ],
+    "2": [
+      "darkmapstyle_ts",
+      "map_darkmapstyle_buildgooglemapstyle",
+      "map_darkmapstyle_googledarkmapstyle",
+      "map_darkmapstyle_googlelightmapstyle"
+    ],
+    "3": [
+      "hours_ts",
+      "map_hours_isrestaurantopennow"
+    ]
+  },
+  "cohesion": {
+    "0": 0.22,
+    "1": 0.4,
+    "2": 0.5,
+    "3": 1.0
+  },
+  "gods": [
+    {
+      "id": "map_geo_haversinemeters",
+      "label": "haversineMeters()",
+      "degree": 3
+    },
+    {
+      "id": "map_mapfilters_ismaplocationindemoregion",
+      "label": "isMapLocationInDemoRegion()",
+      "degree": 2
+    },
+    {
+      "id": "map_hours_isrestaurantopennow",
+      "label": "isRestaurantOpenNow()",
+      "degree": 2
+    },
+    {
+      "id": "map_mapfilters_mapfilterid",
+      "label": "MapFilterId",
+      "degree": 1
+    },
+    {
+      "id": "map_mapfilters_restaurantwithdistance",
+      "label": "RestaurantWithDistance",
+      "degree": 1
+    },
+    {
+      "id": "map_mapfilters_default_map_center",
+      "label": "DEFAULT_MAP_CENTER",
+      "degree": 1
+    },
+    {
+      "id": "map_darkmapstyle_googledarkmapstyle",
+      "label": "googleDarkMapStyle",
+      "degree": 1
+    },
+    {
+      "id": "map_darkmapstyle_googlelightmapstyle",
+      "label": "googleLightMapStyle",
+      "degree": 1
+    }
+  ],
+  "surprises": [
+    {
+      "source": "isMapLocationInDemoRegion()",
+      "target": "haversineMeters()",
+      "source_files": [
+        "mapFilters.ts",
+        "geo.ts"
+      ],
+      "confidence": "EXTRACTED",
+      "relation": "calls",
+      "why": "connects across different repos/directories"
+    }
+  ],
+  "tokens": {
+    "input": 0,
+    "output": 0
+  }
+}

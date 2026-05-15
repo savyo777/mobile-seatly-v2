@@ -1,0 +1,189 @@
+{
+  "communities": {
+    "0": [
+      "accountsecurity_ts",
+      "services_accountsecurity_changeemail",
+      "services_accountsecurity_changepassword",
+      "services_accountsecurity_confirmchangephone",
+      "services_accountsecurity_deleteaccount",
+      "services_accountsecurity_friendlydeleteaccounterror",
+      "services_accountsecurity_requiresupabase",
+      "services_accountsecurity_resendverificationemail",
+      "services_accountsecurity_revokeallothersessions",
+      "services_accountsecurity_revokesession",
+      "services_accountsecurity_sendpasswordresetemail",
+      "services_accountsecurity_signoutalldevices",
+      "services_accountsecurity_startchangephone",
+      "services_accountsecurity_togglebiometric",
+      "services_accountsecurity_toggletwofactor"
+    ],
+    "1": [
+      "restaurantregistration_ts",
+      "services_restaurantregistration_addcalendarmonths",
+      "services_restaurantregistration_finalizerestaurantregistration",
+      "services_restaurantregistration_getrestaurantpaymentmethodpreview",
+      "services_restaurantregistration_initrestaurantregistrationpaymentsheet",
+      "services_restaurantregistration_normalizephonewithcountrycode",
+      "services_restaurantregistration_registerrestaurantnobilling",
+      "services_restaurantregistration_registerrestaurantowner",
+      "services_restaurantregistration_restaurantpaymentmethodpreview",
+      "services_restaurantregistration_restaurantpaymentsheetinitresult",
+      "services_restaurantregistration_restaurantregistrationresult",
+      "services_restaurantregistration_sanitizeregistrationinput"
+    ],
+    "2": [
+      "services_userprofile_appuserprofile",
+      "services_userprofile_authfallbackname",
+      "services_userprofile_fetchcurrentuserprofile",
+      "services_userprofile_fetchuserprofilenotificationprefs",
+      "services_userprofile_firststringarray",
+      "services_userprofile_getcurrentuserprofileid",
+      "services_userprofile_mapprofilerow",
+      "services_userprofile_numbervalue",
+      "services_userprofile_stringarray",
+      "services_userprofile_updatecurrentuserprofile",
+      "services_userprofile_userprofileupdate",
+      "userprofile_ts"
+    ],
+    "3": [
+      "ownerrestaurant_ts",
+      "services_ownerrestaurant_businessprofile",
+      "services_ownerrestaurant_fetchcurrentownerrestaurant",
+      "services_ownerrestaurant_fetchownerrestaurants",
+      "services_ownerrestaurant_getcurrentownerrestaurantid",
+      "services_ownerrestaurant_mapownerrestaurantrow",
+      "services_ownerrestaurant_numberornull",
+      "services_ownerrestaurant_pricerangetostring",
+      "services_ownerrestaurant_settings",
+      "services_userprofile_stringornull",
+      "services_userprofile_stringvalue"
+    ],
+    "4": [
+      "phoneauth_ts",
+      "services_phoneauth_friendlyphoneautherror",
+      "services_phoneauth_prepareprofilelinkedphonelogin",
+      "services_phoneauth_readfunctionerrorbody",
+      "services_phoneauth_resolvedisplayphone",
+      "services_phoneauth_sendphoneotp",
+      "services_phoneauth_sendsupabasephoneotp",
+      "services_phoneauth_shouldattemptprofilephonelink",
+      "services_phoneauth_verifyphoneotp"
+    ],
+    "5": [
+      "oauth_ts",
+      "services_oauth_ensurecustomerprofile",
+      "services_oauth_ensureownerprofile",
+      "services_oauth_ensureprofilewithrole",
+      "services_oauth_googlesigninresult",
+      "services_oauth_parseauthcodefromurl",
+      "services_oauth_parsetokensfromurl",
+      "services_oauth_signinwithgoogle"
+    ],
+    "6": [
+      "cookieconsent_ts",
+      "services_cookieconsent_clearcookieconsent",
+      "services_cookieconsent_loadcookieconsent",
+      "services_cookieconsent_savecookieconsent"
+    ]
+  },
+  "cohesion": {
+    "0": 0.24,
+    "1": 0.24,
+    "2": 0.27,
+    "3": 0.35,
+    "4": 0.42,
+    "5": 0.39,
+    "6": 0.5
+  },
+  "gods": [
+    {
+      "id": "services_accountsecurity_requiresupabase",
+      "label": "requireSupabase()",
+      "degree": 10
+    },
+    {
+      "id": "services_userprofile_mapprofilerow",
+      "label": "mapProfileRow()",
+      "degree": 8
+    },
+    {
+      "id": "services_ownerrestaurant_mapownerrestaurantrow",
+      "label": "mapOwnerRestaurantRow()",
+      "degree": 7
+    },
+    {
+      "id": "services_restaurantregistration_sanitizeregistrationinput",
+      "label": "sanitizeRegistrationInput()",
+      "degree": 6
+    },
+    {
+      "id": "services_userprofile_stringvalue",
+      "label": "stringValue()",
+      "degree": 6
+    },
+    {
+      "id": "services_phoneauth_sendphoneotp",
+      "label": "sendPhoneOtp()",
+      "degree": 5
+    },
+    {
+      "id": "services_userprofile_stringornull",
+      "label": "stringOrNull()",
+      "degree": 5
+    },
+    {
+      "id": "services_phoneauth_prepareprofilelinkedphonelogin",
+      "label": "prepareProfileLinkedPhoneLogin()",
+      "degree": 4
+    },
+    {
+      "id": "services_phoneauth_readfunctionerrorbody",
+      "label": "readFunctionErrorBody()",
+      "degree": 4
+    },
+    {
+      "id": "services_phoneauth_friendlyphoneautherror",
+      "label": "friendlyPhoneAuthError()",
+      "degree": 4
+    }
+  ],
+  "surprises": [
+    {
+      "source": "deleteAccount()",
+      "target": "readFunctionErrorBody()",
+      "source_files": [
+        "accountSecurity.ts",
+        "phoneAuth.ts"
+      ],
+      "confidence": "EXTRACTED",
+      "relation": "calls",
+      "why": "connects across different repos/directories; bridges separate communities"
+    },
+    {
+      "source": "mapOwnerRestaurantRow()",
+      "target": "stringValue()",
+      "source_files": [
+        "ownerRestaurant.ts",
+        "userProfile.ts"
+      ],
+      "confidence": "EXTRACTED",
+      "relation": "calls",
+      "why": "connects across different repos/directories"
+    },
+    {
+      "source": "mapOwnerRestaurantRow()",
+      "target": "stringOrNull()",
+      "source_files": [
+        "ownerRestaurant.ts",
+        "userProfile.ts"
+      ],
+      "confidence": "EXTRACTED",
+      "relation": "calls",
+      "why": "connects across different repos/directories"
+    }
+  ],
+  "tokens": {
+    "input": 0,
+    "output": 0
+  }
+}

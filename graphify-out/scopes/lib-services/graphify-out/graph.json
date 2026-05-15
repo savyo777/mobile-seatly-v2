@@ -1,0 +1,1848 @@
+{
+  "directed": false,
+  "multigraph": false,
+  "graph": {},
+  "nodes": [
+    {
+      "label": "oauth.ts",
+      "file_type": "code",
+      "source_file": "oauth.ts",
+      "source_location": "L1",
+      "id": "oauth_ts",
+      "community": 5,
+      "norm_label": "oauth.ts"
+    },
+    {
+      "label": "GoogleSignInResult",
+      "file_type": "code",
+      "source_file": "oauth.ts",
+      "source_location": "L7",
+      "id": "services_oauth_googlesigninresult",
+      "community": 5,
+      "norm_label": "googlesigninresult"
+    },
+    {
+      "label": "parseTokensFromUrl()",
+      "file_type": "code",
+      "source_file": "oauth.ts",
+      "source_location": "L14",
+      "id": "services_oauth_parsetokensfromurl",
+      "community": 5,
+      "norm_label": "parsetokensfromurl()"
+    },
+    {
+      "label": "parseAuthCodeFromUrl()",
+      "file_type": "code",
+      "source_file": "oauth.ts",
+      "source_location": "L28",
+      "id": "services_oauth_parseauthcodefromurl",
+      "community": 5,
+      "norm_label": "parseauthcodefromurl()"
+    },
+    {
+      "label": "signInWithGoogle()",
+      "file_type": "code",
+      "source_file": "oauth.ts",
+      "source_location": "L38",
+      "id": "services_oauth_signinwithgoogle",
+      "community": 5,
+      "norm_label": "signinwithgoogle()"
+    },
+    {
+      "label": "ensureCustomerProfile()",
+      "file_type": "code",
+      "source_file": "oauth.ts",
+      "source_location": "L104",
+      "id": "services_oauth_ensurecustomerprofile",
+      "community": 5,
+      "norm_label": "ensurecustomerprofile()"
+    },
+    {
+      "label": "ensureOwnerProfile()",
+      "file_type": "code",
+      "source_file": "oauth.ts",
+      "source_location": "L111",
+      "id": "services_oauth_ensureownerprofile",
+      "community": 5,
+      "norm_label": "ensureownerprofile()"
+    },
+    {
+      "label": "ensureProfileWithRole()",
+      "file_type": "code",
+      "source_file": "oauth.ts",
+      "source_location": "L118",
+      "id": "services_oauth_ensureprofilewithrole",
+      "community": 5,
+      "norm_label": "ensureprofilewithrole()"
+    },
+    {
+      "label": "restaurantRegistration.ts",
+      "file_type": "code",
+      "source_file": "restaurantRegistration.ts",
+      "source_location": "L1",
+      "id": "restaurantregistration_ts",
+      "community": 1,
+      "norm_label": "restaurantregistration.ts"
+    },
+    {
+      "label": "RestaurantRegistrationResult",
+      "file_type": "code",
+      "source_file": "restaurantRegistration.ts",
+      "source_location": "L10",
+      "id": "services_restaurantregistration_restaurantregistrationresult",
+      "community": 1,
+      "norm_label": "restaurantregistrationresult"
+    },
+    {
+      "label": "RestaurantPaymentSheetInitResult",
+      "file_type": "code",
+      "source_file": "restaurantRegistration.ts",
+      "source_location": "L17",
+      "id": "services_restaurantregistration_restaurantpaymentsheetinitresult",
+      "community": 1,
+      "norm_label": "restaurantpaymentsheetinitresult"
+    },
+    {
+      "label": "RestaurantPaymentMethodPreview",
+      "file_type": "code",
+      "source_file": "restaurantRegistration.ts",
+      "source_location": "L24",
+      "id": "services_restaurantregistration_restaurantpaymentmethodpreview",
+      "community": 1,
+      "norm_label": "restaurantpaymentmethodpreview"
+    },
+    {
+      "label": "addCalendarMonths()",
+      "file_type": "code",
+      "source_file": "restaurantRegistration.ts",
+      "source_location": "L29",
+      "id": "services_restaurantregistration_addcalendarmonths",
+      "community": 1,
+      "norm_label": "addcalendarmonths()"
+    },
+    {
+      "label": "normalizePhoneWithCountryCode()",
+      "file_type": "code",
+      "source_file": "restaurantRegistration.ts",
+      "source_location": "L46",
+      "id": "services_restaurantregistration_normalizephonewithcountrycode",
+      "community": 1,
+      "norm_label": "normalizephonewithcountrycode()"
+    },
+    {
+      "label": "sanitizeRegistrationInput()",
+      "file_type": "code",
+      "source_file": "restaurantRegistration.ts",
+      "source_location": "L50",
+      "id": "services_restaurantregistration_sanitizeregistrationinput",
+      "community": 1,
+      "norm_label": "sanitizeregistrationinput()"
+    },
+    {
+      "label": "registerRestaurantOwner()",
+      "file_type": "code",
+      "source_file": "restaurantRegistration.ts",
+      "source_location": "L58",
+      "id": "services_restaurantregistration_registerrestaurantowner",
+      "community": 1,
+      "norm_label": "registerrestaurantowner()"
+    },
+    {
+      "label": "initRestaurantRegistrationPaymentSheet()",
+      "file_type": "code",
+      "source_file": "restaurantRegistration.ts",
+      "source_location": "L90",
+      "id": "services_restaurantregistration_initrestaurantregistrationpaymentsheet",
+      "community": 1,
+      "norm_label": "initrestaurantregistrationpaymentsheet()"
+    },
+    {
+      "label": "getRestaurantPaymentMethodPreview()",
+      "file_type": "code",
+      "source_file": "restaurantRegistration.ts",
+      "source_location": "L111",
+      "id": "services_restaurantregistration_getrestaurantpaymentmethodpreview",
+      "community": 1,
+      "norm_label": "getrestaurantpaymentmethodpreview()"
+    },
+    {
+      "label": "registerRestaurantNoBilling()",
+      "file_type": "code",
+      "source_file": "restaurantRegistration.ts",
+      "source_location": "L128",
+      "id": "services_restaurantregistration_registerrestaurantnobilling",
+      "community": 1,
+      "norm_label": "registerrestaurantnobilling()"
+    },
+    {
+      "label": "finalizeRestaurantRegistration()",
+      "file_type": "code",
+      "source_file": "restaurantRegistration.ts",
+      "source_location": "L150",
+      "id": "services_restaurantregistration_finalizerestaurantregistration",
+      "community": 1,
+      "norm_label": "finalizerestaurantregistration()"
+    },
+    {
+      "label": "phoneAuth.ts",
+      "file_type": "code",
+      "source_file": "phoneAuth.ts",
+      "source_location": "L1",
+      "id": "phoneauth_ts",
+      "community": 4,
+      "norm_label": "phoneauth.ts"
+    },
+    {
+      "label": "resolveDisplayPhone()",
+      "file_type": "code",
+      "source_file": "phoneAuth.ts",
+      "source_location": "L12",
+      "id": "services_phoneauth_resolvedisplayphone",
+      "community": 4,
+      "norm_label": "resolvedisplayphone()"
+    },
+    {
+      "label": "sendPhoneOtp()",
+      "file_type": "code",
+      "source_file": "phoneAuth.ts",
+      "source_location": "L29",
+      "id": "services_phoneauth_sendphoneotp",
+      "community": 4,
+      "norm_label": "sendphoneotp()"
+    },
+    {
+      "label": "sendSupabasePhoneOtp()",
+      "file_type": "code",
+      "source_file": "phoneAuth.ts",
+      "source_location": "L60",
+      "id": "services_phoneauth_sendsupabasephoneotp",
+      "community": 4,
+      "norm_label": "sendsupabasephoneotp()"
+    },
+    {
+      "label": "prepareProfileLinkedPhoneLogin()",
+      "file_type": "code",
+      "source_file": "phoneAuth.ts",
+      "source_location": "L78",
+      "id": "services_phoneauth_prepareprofilelinkedphonelogin",
+      "community": 4,
+      "norm_label": "prepareprofilelinkedphonelogin()"
+    },
+    {
+      "label": "readFunctionErrorBody()",
+      "file_type": "code",
+      "source_file": "phoneAuth.ts",
+      "source_location": "L121",
+      "id": "services_phoneauth_readfunctionerrorbody",
+      "community": 4,
+      "norm_label": "readfunctionerrorbody()"
+    },
+    {
+      "label": "shouldAttemptProfilePhoneLink()",
+      "file_type": "code",
+      "source_file": "phoneAuth.ts",
+      "source_location": "L139",
+      "id": "services_phoneauth_shouldattemptprofilephonelink",
+      "community": 4,
+      "norm_label": "shouldattemptprofilephonelink()"
+    },
+    {
+      "label": "friendlyPhoneAuthError()",
+      "file_type": "code",
+      "source_file": "phoneAuth.ts",
+      "source_location": "L151",
+      "id": "services_phoneauth_friendlyphoneautherror",
+      "community": 4,
+      "norm_label": "friendlyphoneautherror()"
+    },
+    {
+      "label": "verifyPhoneOtp()",
+      "file_type": "code",
+      "source_file": "phoneAuth.ts",
+      "source_location": "L158",
+      "id": "services_phoneauth_verifyphoneotp",
+      "community": 4,
+      "norm_label": "verifyphoneotp()"
+    },
+    {
+      "label": "cookieConsent.ts",
+      "file_type": "code",
+      "source_file": "cookieConsent.ts",
+      "source_location": "L1",
+      "id": "cookieconsent_ts",
+      "community": 6,
+      "norm_label": "cookieconsent.ts"
+    },
+    {
+      "label": "loadCookieConsent()",
+      "file_type": "code",
+      "source_file": "cookieConsent.ts",
+      "source_location": "L12",
+      "id": "services_cookieconsent_loadcookieconsent",
+      "community": 6,
+      "norm_label": "loadcookieconsent()"
+    },
+    {
+      "label": "saveCookieConsent()",
+      "file_type": "code",
+      "source_file": "cookieConsent.ts",
+      "source_location": "L29",
+      "id": "services_cookieconsent_savecookieconsent",
+      "community": 6,
+      "norm_label": "savecookieconsent()"
+    },
+    {
+      "label": "clearCookieConsent()",
+      "file_type": "code",
+      "source_file": "cookieConsent.ts",
+      "source_location": "L43",
+      "id": "services_cookieconsent_clearcookieconsent",
+      "community": 6,
+      "norm_label": "clearcookieconsent()"
+    },
+    {
+      "label": "ownerRestaurant.ts",
+      "file_type": "code",
+      "source_file": "ownerRestaurant.ts",
+      "source_location": "L1",
+      "id": "ownerrestaurant_ts",
+      "community": 3,
+      "norm_label": "ownerrestaurant.ts"
+    },
+    {
+      "label": "numberOrNull()",
+      "file_type": "code",
+      "source_file": "ownerRestaurant.ts",
+      "source_location": "L45",
+      "id": "services_ownerrestaurant_numberornull",
+      "community": 3,
+      "norm_label": "numberornull()"
+    },
+    {
+      "label": "settings()",
+      "file_type": "code",
+      "source_file": "ownerRestaurant.ts",
+      "source_location": "L54",
+      "id": "services_ownerrestaurant_settings",
+      "community": 3,
+      "norm_label": "settings()"
+    },
+    {
+      "label": "businessProfile()",
+      "file_type": "code",
+      "source_file": "ownerRestaurant.ts",
+      "source_location": "L59",
+      "id": "services_ownerrestaurant_businessprofile",
+      "community": 3,
+      "norm_label": "businessprofile()"
+    },
+    {
+      "label": "priceRangeToString()",
+      "file_type": "code",
+      "source_file": "ownerRestaurant.ts",
+      "source_location": "L67",
+      "id": "services_ownerrestaurant_pricerangetostring",
+      "community": 3,
+      "norm_label": "pricerangetostring()"
+    },
+    {
+      "label": "mapOwnerRestaurantRow()",
+      "file_type": "code",
+      "source_file": "ownerRestaurant.ts",
+      "source_location": "L83",
+      "id": "services_ownerrestaurant_mapownerrestaurantrow",
+      "community": 3,
+      "norm_label": "mapownerrestaurantrow()"
+    },
+    {
+      "label": "fetchOwnerRestaurants()",
+      "file_type": "code",
+      "source_file": "ownerRestaurant.ts",
+      "source_location": "L134",
+      "id": "services_ownerrestaurant_fetchownerrestaurants",
+      "community": 3,
+      "norm_label": "fetchownerrestaurants()"
+    },
+    {
+      "label": "fetchCurrentOwnerRestaurant()",
+      "file_type": "code",
+      "source_file": "ownerRestaurant.ts",
+      "source_location": "L192",
+      "id": "services_ownerrestaurant_fetchcurrentownerrestaurant",
+      "community": 3,
+      "norm_label": "fetchcurrentownerrestaurant()"
+    },
+    {
+      "label": "getCurrentOwnerRestaurantId()",
+      "file_type": "code",
+      "source_file": "ownerRestaurant.ts",
+      "source_location": "L197",
+      "id": "services_ownerrestaurant_getcurrentownerrestaurantid",
+      "community": 3,
+      "norm_label": "getcurrentownerrestaurantid()"
+    },
+    {
+      "label": "accountSecurity.ts",
+      "file_type": "code",
+      "source_file": "accountSecurity.ts",
+      "source_location": "L1",
+      "id": "accountsecurity_ts",
+      "community": 0,
+      "norm_label": "accountsecurity.ts"
+    },
+    {
+      "label": "requireSupabase()",
+      "file_type": "code",
+      "source_file": "accountSecurity.ts",
+      "source_location": "L6",
+      "id": "services_accountsecurity_requiresupabase",
+      "community": 0,
+      "norm_label": "requiresupabase()"
+    },
+    {
+      "label": "friendlyDeleteAccountError()",
+      "file_type": "code",
+      "source_file": "accountSecurity.ts",
+      "source_location": "L24",
+      "id": "services_accountsecurity_friendlydeleteaccounterror",
+      "community": 0,
+      "norm_label": "friendlydeleteaccounterror()"
+    },
+    {
+      "label": "changePassword()",
+      "file_type": "code",
+      "source_file": "accountSecurity.ts",
+      "source_location": "L45",
+      "id": "services_accountsecurity_changepassword",
+      "community": 0,
+      "norm_label": "changepassword()"
+    },
+    {
+      "label": "changeEmail()",
+      "file_type": "code",
+      "source_file": "accountSecurity.ts",
+      "source_location": "L52",
+      "id": "services_accountsecurity_changeemail",
+      "community": 0,
+      "norm_label": "changeemail()"
+    },
+    {
+      "label": "startChangePhone()",
+      "file_type": "code",
+      "source_file": "accountSecurity.ts",
+      "source_location": "L70",
+      "id": "services_accountsecurity_startchangephone",
+      "community": 0,
+      "norm_label": "startchangephone()"
+    },
+    {
+      "label": "confirmChangePhone()",
+      "file_type": "code",
+      "source_file": "accountSecurity.ts",
+      "source_location": "L84",
+      "id": "services_accountsecurity_confirmchangephone",
+      "community": 0,
+      "norm_label": "confirmchangephone()"
+    },
+    {
+      "label": "resendVerificationEmail()",
+      "file_type": "code",
+      "source_file": "accountSecurity.ts",
+      "source_location": "L109",
+      "id": "services_accountsecurity_resendverificationemail",
+      "community": 0,
+      "norm_label": "resendverificationemail()"
+    },
+    {
+      "label": "sendPasswordResetEmail()",
+      "file_type": "code",
+      "source_file": "accountSecurity.ts",
+      "source_location": "L119",
+      "id": "services_accountsecurity_sendpasswordresetemail",
+      "community": 0,
+      "norm_label": "sendpasswordresetemail()"
+    },
+    {
+      "label": "toggleTwoFactor()",
+      "file_type": "code",
+      "source_file": "accountSecurity.ts",
+      "source_location": "L129",
+      "id": "services_accountsecurity_toggletwofactor",
+      "community": 0,
+      "norm_label": "toggletwofactor()"
+    },
+    {
+      "label": "toggleBiometric()",
+      "file_type": "code",
+      "source_file": "accountSecurity.ts",
+      "source_location": "L134",
+      "id": "services_accountsecurity_togglebiometric",
+      "community": 0,
+      "norm_label": "togglebiometric()"
+    },
+    {
+      "label": "revokeSession()",
+      "file_type": "code",
+      "source_file": "accountSecurity.ts",
+      "source_location": "L139",
+      "id": "services_accountsecurity_revokesession",
+      "community": 0,
+      "norm_label": "revokesession()"
+    },
+    {
+      "label": "deleteAccount()",
+      "file_type": "code",
+      "source_file": "accountSecurity.ts",
+      "source_location": "L146",
+      "id": "services_accountsecurity_deleteaccount",
+      "community": 0,
+      "norm_label": "deleteaccount()"
+    },
+    {
+      "label": "revokeAllOtherSessions()",
+      "file_type": "code",
+      "source_file": "accountSecurity.ts",
+      "source_location": "L177",
+      "id": "services_accountsecurity_revokeallothersessions",
+      "community": 0,
+      "norm_label": "revokeallothersessions()"
+    },
+    {
+      "label": "signOutAllDevices()",
+      "file_type": "code",
+      "source_file": "accountSecurity.ts",
+      "source_location": "L184",
+      "id": "services_accountsecurity_signoutalldevices",
+      "community": 0,
+      "norm_label": "signoutalldevices()"
+    },
+    {
+      "label": "userProfile.ts",
+      "file_type": "code",
+      "source_file": "userProfile.ts",
+      "source_location": "L1",
+      "id": "userprofile_ts",
+      "community": 2,
+      "norm_label": "userprofile.ts"
+    },
+    {
+      "label": "AppUserProfile",
+      "file_type": "code",
+      "source_file": "userProfile.ts",
+      "source_location": "L4",
+      "id": "services_userprofile_appuserprofile",
+      "community": 2,
+      "norm_label": "appuserprofile"
+    },
+    {
+      "label": "stringValue()",
+      "file_type": "code",
+      "source_file": "userProfile.ts",
+      "source_location": "L24",
+      "id": "services_userprofile_stringvalue",
+      "community": 3,
+      "norm_label": "stringvalue()"
+    },
+    {
+      "label": "stringOrNull()",
+      "file_type": "code",
+      "source_file": "userProfile.ts",
+      "source_location": "L28",
+      "id": "services_userprofile_stringornull",
+      "community": 3,
+      "norm_label": "stringornull()"
+    },
+    {
+      "label": "stringArray()",
+      "file_type": "code",
+      "source_file": "userProfile.ts",
+      "source_location": "L33",
+      "id": "services_userprofile_stringarray",
+      "community": 2,
+      "norm_label": "stringarray()"
+    },
+    {
+      "label": "firstStringArray()",
+      "file_type": "code",
+      "source_file": "userProfile.ts",
+      "source_location": "L38",
+      "id": "services_userprofile_firststringarray",
+      "community": 2,
+      "norm_label": "firststringarray()"
+    },
+    {
+      "label": "numberValue()",
+      "file_type": "code",
+      "source_file": "userProfile.ts",
+      "source_location": "L46",
+      "id": "services_userprofile_numbervalue",
+      "community": 2,
+      "norm_label": "numbervalue()"
+    },
+    {
+      "label": "authFallbackName()",
+      "file_type": "code",
+      "source_file": "userProfile.ts",
+      "source_location": "L55",
+      "id": "services_userprofile_authfallbackname",
+      "community": 2,
+      "norm_label": "authfallbackname()"
+    },
+    {
+      "label": "mapProfileRow()",
+      "file_type": "code",
+      "source_file": "userProfile.ts",
+      "source_location": "L66",
+      "id": "services_userprofile_mapprofilerow",
+      "community": 2,
+      "norm_label": "mapprofilerow()"
+    },
+    {
+      "label": "fetchCurrentUserProfile()",
+      "file_type": "code",
+      "source_file": "userProfile.ts",
+      "source_location": "L91",
+      "id": "services_userprofile_fetchcurrentuserprofile",
+      "community": 2,
+      "norm_label": "fetchcurrentuserprofile()"
+    },
+    {
+      "label": "getCurrentUserProfileId()",
+      "file_type": "code",
+      "source_file": "userProfile.ts",
+      "source_location": "L108",
+      "id": "services_userprofile_getcurrentuserprofileid",
+      "community": 2,
+      "norm_label": "getcurrentuserprofileid()"
+    },
+    {
+      "label": "UserProfileUpdate",
+      "file_type": "code",
+      "source_file": "userProfile.ts",
+      "source_location": "L113",
+      "id": "services_userprofile_userprofileupdate",
+      "community": 2,
+      "norm_label": "userprofileupdate"
+    },
+    {
+      "label": "updateCurrentUserProfile()",
+      "file_type": "code",
+      "source_file": "userProfile.ts",
+      "source_location": "L130",
+      "id": "services_userprofile_updatecurrentuserprofile",
+      "community": 2,
+      "norm_label": "updatecurrentuserprofile()"
+    },
+    {
+      "label": "fetchUserProfileNotificationPrefs()",
+      "file_type": "code",
+      "source_file": "userProfile.ts",
+      "source_location": "L148",
+      "id": "services_userprofile_fetchuserprofilenotificationprefs",
+      "community": 2,
+      "norm_label": "fetchuserprofilenotificationprefs()"
+    }
+  ],
+  "links": [
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "oauth.ts",
+      "source_location": "L7",
+      "weight": 1.0,
+      "source": "oauth_ts",
+      "target": "services_oauth_googlesigninresult",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "oauth.ts",
+      "source_location": "L14",
+      "weight": 1.0,
+      "source": "oauth_ts",
+      "target": "services_oauth_parsetokensfromurl",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "oauth.ts",
+      "source_location": "L28",
+      "weight": 1.0,
+      "source": "oauth_ts",
+      "target": "services_oauth_parseauthcodefromurl",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "oauth.ts",
+      "source_location": "L38",
+      "weight": 1.0,
+      "source": "oauth_ts",
+      "target": "services_oauth_signinwithgoogle",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "oauth.ts",
+      "source_location": "L104",
+      "weight": 1.0,
+      "source": "oauth_ts",
+      "target": "services_oauth_ensurecustomerprofile",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "oauth.ts",
+      "source_location": "L111",
+      "weight": 1.0,
+      "source": "oauth_ts",
+      "target": "services_oauth_ensureownerprofile",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "oauth.ts",
+      "source_location": "L118",
+      "weight": 1.0,
+      "source": "oauth_ts",
+      "target": "services_oauth_ensureprofilewithrole",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "oauth.ts",
+      "source_location": "L76",
+      "weight": 1.0,
+      "source": "services_oauth_signinwithgoogle",
+      "target": "services_oauth_parsetokensfromurl",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "oauth.ts",
+      "source_location": "L88",
+      "weight": 1.0,
+      "source": "services_oauth_signinwithgoogle",
+      "target": "services_oauth_parseauthcodefromurl",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "oauth.ts",
+      "source_location": "L108",
+      "weight": 1.0,
+      "source": "services_oauth_ensurecustomerprofile",
+      "target": "services_oauth_ensureprofilewithrole",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "oauth.ts",
+      "source_location": "L115",
+      "weight": 1.0,
+      "source": "services_oauth_ensureownerprofile",
+      "target": "services_oauth_ensureprofilewithrole",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "restaurantRegistration.ts",
+      "source_location": "L10",
+      "weight": 1.0,
+      "source": "restaurantregistration_ts",
+      "target": "services_restaurantregistration_restaurantregistrationresult",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "restaurantRegistration.ts",
+      "source_location": "L17",
+      "weight": 1.0,
+      "source": "restaurantregistration_ts",
+      "target": "services_restaurantregistration_restaurantpaymentsheetinitresult",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "restaurantRegistration.ts",
+      "source_location": "L24",
+      "weight": 1.0,
+      "source": "restaurantregistration_ts",
+      "target": "services_restaurantregistration_restaurantpaymentmethodpreview",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "restaurantRegistration.ts",
+      "source_location": "L29",
+      "weight": 1.0,
+      "source": "restaurantregistration_ts",
+      "target": "services_restaurantregistration_addcalendarmonths",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "restaurantRegistration.ts",
+      "source_location": "L46",
+      "weight": 1.0,
+      "source": "restaurantregistration_ts",
+      "target": "services_restaurantregistration_normalizephonewithcountrycode",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "restaurantRegistration.ts",
+      "source_location": "L50",
+      "weight": 1.0,
+      "source": "restaurantregistration_ts",
+      "target": "services_restaurantregistration_sanitizeregistrationinput",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "restaurantRegistration.ts",
+      "source_location": "L58",
+      "weight": 1.0,
+      "source": "restaurantregistration_ts",
+      "target": "services_restaurantregistration_registerrestaurantowner",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "restaurantRegistration.ts",
+      "source_location": "L90",
+      "weight": 1.0,
+      "source": "restaurantregistration_ts",
+      "target": "services_restaurantregistration_initrestaurantregistrationpaymentsheet",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "restaurantRegistration.ts",
+      "source_location": "L111",
+      "weight": 1.0,
+      "source": "restaurantregistration_ts",
+      "target": "services_restaurantregistration_getrestaurantpaymentmethodpreview",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "restaurantRegistration.ts",
+      "source_location": "L128",
+      "weight": 1.0,
+      "source": "restaurantregistration_ts",
+      "target": "services_restaurantregistration_registerrestaurantnobilling",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "restaurantRegistration.ts",
+      "source_location": "L150",
+      "weight": 1.0,
+      "source": "restaurantregistration_ts",
+      "target": "services_restaurantregistration_finalizerestaurantregistration",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "restaurantRegistration.ts",
+      "source_location": "L54",
+      "weight": 1.0,
+      "source": "services_restaurantregistration_sanitizeregistrationinput",
+      "target": "services_restaurantregistration_normalizephonewithcountrycode",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "restaurantRegistration.ts",
+      "source_location": "L66",
+      "weight": 1.0,
+      "source": "services_restaurantregistration_registerrestaurantowner",
+      "target": "services_restaurantregistration_sanitizeregistrationinput",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "restaurantRegistration.ts",
+      "source_location": "L95",
+      "weight": 1.0,
+      "source": "services_restaurantregistration_initrestaurantregistrationpaymentsheet",
+      "target": "services_restaurantregistration_sanitizeregistrationinput",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "restaurantRegistration.ts",
+      "source_location": "L133",
+      "weight": 1.0,
+      "source": "services_restaurantregistration_registerrestaurantnobilling",
+      "target": "services_restaurantregistration_sanitizeregistrationinput",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "restaurantRegistration.ts",
+      "source_location": "L156",
+      "weight": 1.0,
+      "source": "services_restaurantregistration_finalizerestaurantregistration",
+      "target": "services_restaurantregistration_sanitizeregistrationinput",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "phoneAuth.ts",
+      "source_location": "L12",
+      "weight": 1.0,
+      "source": "phoneauth_ts",
+      "target": "services_phoneauth_resolvedisplayphone",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "phoneAuth.ts",
+      "source_location": "L29",
+      "weight": 1.0,
+      "source": "phoneauth_ts",
+      "target": "services_phoneauth_sendphoneotp",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "phoneAuth.ts",
+      "source_location": "L60",
+      "weight": 1.0,
+      "source": "phoneauth_ts",
+      "target": "services_phoneauth_sendsupabasephoneotp",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "phoneAuth.ts",
+      "source_location": "L78",
+      "weight": 1.0,
+      "source": "phoneauth_ts",
+      "target": "services_phoneauth_prepareprofilelinkedphonelogin",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "phoneAuth.ts",
+      "source_location": "L121",
+      "weight": 1.0,
+      "source": "phoneauth_ts",
+      "target": "services_phoneauth_readfunctionerrorbody",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "phoneAuth.ts",
+      "source_location": "L139",
+      "weight": 1.0,
+      "source": "phoneauth_ts",
+      "target": "services_phoneauth_shouldattemptprofilephonelink",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "phoneAuth.ts",
+      "source_location": "L151",
+      "weight": 1.0,
+      "source": "phoneauth_ts",
+      "target": "services_phoneauth_friendlyphoneautherror",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "phoneAuth.ts",
+      "source_location": "L158",
+      "weight": 1.0,
+      "source": "phoneauth_ts",
+      "target": "services_phoneauth_verifyphoneotp",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "accountSecurity.ts",
+      "source_location": "L2",
+      "weight": 1.0,
+      "source": "accountsecurity_ts",
+      "target": "phoneauth_ts",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "phoneAuth.ts",
+      "source_location": "L38",
+      "weight": 1.0,
+      "source": "services_phoneauth_sendphoneotp",
+      "target": "services_phoneauth_sendsupabasephoneotp",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "phoneAuth.ts",
+      "source_location": "L44",
+      "weight": 1.0,
+      "source": "services_phoneauth_sendphoneotp",
+      "target": "services_phoneauth_shouldattemptprofilephonelink",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "phoneAuth.ts",
+      "source_location": "L45",
+      "weight": 1.0,
+      "source": "services_phoneauth_sendphoneotp",
+      "target": "services_phoneauth_prepareprofilelinkedphonelogin",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "phoneAuth.ts",
+      "source_location": "L53",
+      "weight": 1.0,
+      "source": "services_phoneauth_sendphoneotp",
+      "target": "services_phoneauth_friendlyphoneautherror",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "phoneAuth.ts",
+      "source_location": "L93",
+      "weight": 1.0,
+      "source": "services_phoneauth_prepareprofilelinkedphonelogin",
+      "target": "services_phoneauth_readfunctionerrorbody",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "phoneAuth.ts",
+      "source_location": "L96",
+      "weight": 1.0,
+      "source": "services_phoneauth_prepareprofilelinkedphonelogin",
+      "target": "services_phoneauth_friendlyphoneautherror",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "accountSecurity.ts",
+      "source_location": "L12",
+      "weight": 1.0,
+      "source": "accountsecurity_ts",
+      "target": "services_phoneauth_readfunctionerrorbody",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "accountSecurity.ts",
+      "source_location": "L156",
+      "weight": 1.0,
+      "source": "services_accountsecurity_deleteaccount",
+      "target": "services_phoneauth_readfunctionerrorbody",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "phoneAuth.ts",
+      "source_location": "L152",
+      "weight": 1.0,
+      "source": "services_phoneauth_friendlyphoneautherror",
+      "target": "services_phoneauth_shouldattemptprofilephonelink",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "cookieConsent.ts",
+      "source_location": "L12",
+      "weight": 1.0,
+      "source": "cookieconsent_ts",
+      "target": "services_cookieconsent_loadcookieconsent",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "cookieConsent.ts",
+      "source_location": "L29",
+      "weight": 1.0,
+      "source": "cookieconsent_ts",
+      "target": "services_cookieconsent_savecookieconsent",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "cookieConsent.ts",
+      "source_location": "L43",
+      "weight": 1.0,
+      "source": "cookieconsent_ts",
+      "target": "services_cookieconsent_clearcookieconsent",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "ownerRestaurant.ts",
+      "source_location": "L36",
+      "weight": 1.0,
+      "source": "ownerrestaurant_ts",
+      "target": "services_userprofile_stringvalue",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "ownerRestaurant.ts",
+      "source_location": "L40",
+      "weight": 1.0,
+      "source": "ownerrestaurant_ts",
+      "target": "services_userprofile_stringornull",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "ownerRestaurant.ts",
+      "source_location": "L45",
+      "weight": 1.0,
+      "source": "ownerrestaurant_ts",
+      "target": "services_ownerrestaurant_numberornull",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "ownerRestaurant.ts",
+      "source_location": "L54",
+      "weight": 1.0,
+      "source": "ownerrestaurant_ts",
+      "target": "services_ownerrestaurant_settings",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "ownerRestaurant.ts",
+      "source_location": "L59",
+      "weight": 1.0,
+      "source": "ownerrestaurant_ts",
+      "target": "services_ownerrestaurant_businessprofile",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "ownerRestaurant.ts",
+      "source_location": "L67",
+      "weight": 1.0,
+      "source": "ownerrestaurant_ts",
+      "target": "services_ownerrestaurant_pricerangetostring",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "ownerRestaurant.ts",
+      "source_location": "L83",
+      "weight": 1.0,
+      "source": "ownerrestaurant_ts",
+      "target": "services_ownerrestaurant_mapownerrestaurantrow",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "ownerRestaurant.ts",
+      "source_location": "L134",
+      "weight": 1.0,
+      "source": "ownerrestaurant_ts",
+      "target": "services_ownerrestaurant_fetchownerrestaurants",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "ownerRestaurant.ts",
+      "source_location": "L192",
+      "weight": 1.0,
+      "source": "ownerrestaurant_ts",
+      "target": "services_ownerrestaurant_fetchcurrentownerrestaurant",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "ownerRestaurant.ts",
+      "source_location": "L197",
+      "weight": 1.0,
+      "source": "ownerrestaurant_ts",
+      "target": "services_ownerrestaurant_getcurrentownerrestaurantid",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "ownerRestaurant.ts",
+      "source_location": "L87",
+      "weight": 1.0,
+      "source": "services_ownerrestaurant_mapownerrestaurantrow",
+      "target": "services_ownerrestaurant_numberornull",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "ownerRestaurant.ts",
+      "source_location": "L84",
+      "weight": 1.0,
+      "source": "services_ownerrestaurant_mapownerrestaurantrow",
+      "target": "services_ownerrestaurant_settings",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "ownerRestaurant.ts",
+      "source_location": "L85",
+      "weight": 1.0,
+      "source": "services_ownerrestaurant_mapownerrestaurantrow",
+      "target": "services_ownerrestaurant_businessprofile",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "ownerRestaurant.ts",
+      "source_location": "L113",
+      "weight": 1.0,
+      "source": "services_ownerrestaurant_mapownerrestaurantrow",
+      "target": "services_ownerrestaurant_pricerangetostring",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "ownerRestaurant.ts",
+      "source_location": "L86",
+      "weight": 1.0,
+      "source": "services_ownerrestaurant_mapownerrestaurantrow",
+      "target": "services_userprofile_stringvalue",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "ownerRestaurant.ts",
+      "source_location": "L92",
+      "weight": 1.0,
+      "source": "services_ownerrestaurant_mapownerrestaurantrow",
+      "target": "services_userprofile_stringornull",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "ownerRestaurant.ts",
+      "source_location": "L193",
+      "weight": 1.0,
+      "source": "services_ownerrestaurant_fetchcurrentownerrestaurant",
+      "target": "services_ownerrestaurant_fetchownerrestaurants",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "ownerRestaurant.ts",
+      "source_location": "L198",
+      "weight": 1.0,
+      "source": "services_ownerrestaurant_getcurrentownerrestaurantid",
+      "target": "services_ownerrestaurant_fetchcurrentownerrestaurant",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "accountSecurity.ts",
+      "source_location": "L6",
+      "weight": 1.0,
+      "source": "accountsecurity_ts",
+      "target": "services_accountsecurity_requiresupabase",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "accountSecurity.ts",
+      "source_location": "L24",
+      "weight": 1.0,
+      "source": "accountsecurity_ts",
+      "target": "services_accountsecurity_friendlydeleteaccounterror",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "accountSecurity.ts",
+      "source_location": "L45",
+      "weight": 1.0,
+      "source": "accountsecurity_ts",
+      "target": "services_accountsecurity_changepassword",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "accountSecurity.ts",
+      "source_location": "L52",
+      "weight": 1.0,
+      "source": "accountsecurity_ts",
+      "target": "services_accountsecurity_changeemail",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "accountSecurity.ts",
+      "source_location": "L70",
+      "weight": 1.0,
+      "source": "accountsecurity_ts",
+      "target": "services_accountsecurity_startchangephone",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "accountSecurity.ts",
+      "source_location": "L84",
+      "weight": 1.0,
+      "source": "accountsecurity_ts",
+      "target": "services_accountsecurity_confirmchangephone",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "accountSecurity.ts",
+      "source_location": "L109",
+      "weight": 1.0,
+      "source": "accountsecurity_ts",
+      "target": "services_accountsecurity_resendverificationemail",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "accountSecurity.ts",
+      "source_location": "L119",
+      "weight": 1.0,
+      "source": "accountsecurity_ts",
+      "target": "services_accountsecurity_sendpasswordresetemail",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "accountSecurity.ts",
+      "source_location": "L129",
+      "weight": 1.0,
+      "source": "accountsecurity_ts",
+      "target": "services_accountsecurity_toggletwofactor",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "accountSecurity.ts",
+      "source_location": "L134",
+      "weight": 1.0,
+      "source": "accountsecurity_ts",
+      "target": "services_accountsecurity_togglebiometric",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "accountSecurity.ts",
+      "source_location": "L139",
+      "weight": 1.0,
+      "source": "accountsecurity_ts",
+      "target": "services_accountsecurity_revokesession",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "accountSecurity.ts",
+      "source_location": "L146",
+      "weight": 1.0,
+      "source": "accountsecurity_ts",
+      "target": "services_accountsecurity_deleteaccount",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "accountSecurity.ts",
+      "source_location": "L177",
+      "weight": 1.0,
+      "source": "accountsecurity_ts",
+      "target": "services_accountsecurity_revokeallothersessions",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "accountSecurity.ts",
+      "source_location": "L184",
+      "weight": 1.0,
+      "source": "accountsecurity_ts",
+      "target": "services_accountsecurity_signoutalldevices",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "accountSecurity.ts",
+      "source_location": "L47",
+      "weight": 1.0,
+      "source": "services_accountsecurity_changepassword",
+      "target": "services_accountsecurity_requiresupabase",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "accountSecurity.ts",
+      "source_location": "L54",
+      "weight": 1.0,
+      "source": "services_accountsecurity_changeemail",
+      "target": "services_accountsecurity_requiresupabase",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "accountSecurity.ts",
+      "source_location": "L71",
+      "weight": 1.0,
+      "source": "services_accountsecurity_startchangephone",
+      "target": "services_accountsecurity_requiresupabase",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "accountSecurity.ts",
+      "source_location": "L85",
+      "weight": 1.0,
+      "source": "services_accountsecurity_confirmchangephone",
+      "target": "services_accountsecurity_requiresupabase",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "accountSecurity.ts",
+      "source_location": "L110",
+      "weight": 1.0,
+      "source": "services_accountsecurity_resendverificationemail",
+      "target": "services_accountsecurity_requiresupabase",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "accountSecurity.ts",
+      "source_location": "L120",
+      "weight": 1.0,
+      "source": "services_accountsecurity_sendpasswordresetemail",
+      "target": "services_accountsecurity_requiresupabase",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "accountSecurity.ts",
+      "source_location": "L147",
+      "weight": 1.0,
+      "source": "services_accountsecurity_deleteaccount",
+      "target": "services_accountsecurity_requiresupabase",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "accountSecurity.ts",
+      "source_location": "L178",
+      "weight": 1.0,
+      "source": "services_accountsecurity_revokeallothersessions",
+      "target": "services_accountsecurity_requiresupabase",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "accountSecurity.ts",
+      "source_location": "L185",
+      "weight": 1.0,
+      "source": "services_accountsecurity_signoutalldevices",
+      "target": "services_accountsecurity_requiresupabase",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "accountSecurity.ts",
+      "source_location": "L158",
+      "weight": 1.0,
+      "source": "services_accountsecurity_deleteaccount",
+      "target": "services_accountsecurity_friendlydeleteaccounterror",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "accountSecurity.ts",
+      "source_location": "L60",
+      "weight": 1.0,
+      "source": "services_accountsecurity_changeemail",
+      "target": "services_accountsecurity_resendverificationemail",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "userProfile.ts",
+      "source_location": "L4",
+      "weight": 1.0,
+      "source": "userprofile_ts",
+      "target": "services_userprofile_appuserprofile",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "userProfile.ts",
+      "source_location": "L24",
+      "weight": 1.0,
+      "source": "userprofile_ts",
+      "target": "services_userprofile_stringvalue",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "userProfile.ts",
+      "source_location": "L28",
+      "weight": 1.0,
+      "source": "userprofile_ts",
+      "target": "services_userprofile_stringornull",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "userProfile.ts",
+      "source_location": "L33",
+      "weight": 1.0,
+      "source": "userprofile_ts",
+      "target": "services_userprofile_stringarray",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "userProfile.ts",
+      "source_location": "L38",
+      "weight": 1.0,
+      "source": "userprofile_ts",
+      "target": "services_userprofile_firststringarray",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "userProfile.ts",
+      "source_location": "L46",
+      "weight": 1.0,
+      "source": "userprofile_ts",
+      "target": "services_userprofile_numbervalue",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "userProfile.ts",
+      "source_location": "L55",
+      "weight": 1.0,
+      "source": "userprofile_ts",
+      "target": "services_userprofile_authfallbackname",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "userProfile.ts",
+      "source_location": "L66",
+      "weight": 1.0,
+      "source": "userprofile_ts",
+      "target": "services_userprofile_mapprofilerow",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "userProfile.ts",
+      "source_location": "L91",
+      "weight": 1.0,
+      "source": "userprofile_ts",
+      "target": "services_userprofile_fetchcurrentuserprofile",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "userProfile.ts",
+      "source_location": "L108",
+      "weight": 1.0,
+      "source": "userprofile_ts",
+      "target": "services_userprofile_getcurrentuserprofileid",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "userProfile.ts",
+      "source_location": "L113",
+      "weight": 1.0,
+      "source": "userprofile_ts",
+      "target": "services_userprofile_userprofileupdate",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "userProfile.ts",
+      "source_location": "L130",
+      "weight": 1.0,
+      "source": "userprofile_ts",
+      "target": "services_userprofile_updatecurrentuserprofile",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "userProfile.ts",
+      "source_location": "L148",
+      "weight": 1.0,
+      "source": "userprofile_ts",
+      "target": "services_userprofile_fetchuserprofilenotificationprefs",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "userProfile.ts",
+      "source_location": "L29",
+      "weight": 1.0,
+      "source": "services_userprofile_stringornull",
+      "target": "services_userprofile_stringvalue",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "userProfile.ts",
+      "source_location": "L58",
+      "weight": 1.0,
+      "source": "services_userprofile_authfallbackname",
+      "target": "services_userprofile_stringvalue",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "userProfile.ts",
+      "source_location": "L68",
+      "weight": 1.0,
+      "source": "services_userprofile_mapprofilerow",
+      "target": "services_userprofile_stringvalue",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "userProfile.ts",
+      "source_location": "L73",
+      "weight": 1.0,
+      "source": "services_userprofile_mapprofilerow",
+      "target": "services_userprofile_stringornull",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "userProfile.ts",
+      "source_location": "L40",
+      "weight": 1.0,
+      "source": "services_userprofile_firststringarray",
+      "target": "services_userprofile_stringarray",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "userProfile.ts",
+      "source_location": "L85",
+      "weight": 1.0,
+      "source": "services_userprofile_mapprofilerow",
+      "target": "services_userprofile_stringarray",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "userProfile.ts",
+      "source_location": "L84",
+      "weight": 1.0,
+      "source": "services_userprofile_mapprofilerow",
+      "target": "services_userprofile_firststringarray",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "userProfile.ts",
+      "source_location": "L77",
+      "weight": 1.0,
+      "source": "services_userprofile_mapprofilerow",
+      "target": "services_userprofile_numbervalue",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "userProfile.ts",
+      "source_location": "L70",
+      "weight": 1.0,
+      "source": "services_userprofile_mapprofilerow",
+      "target": "services_userprofile_authfallbackname",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "userProfile.ts",
+      "source_location": "L105",
+      "weight": 1.0,
+      "source": "services_userprofile_fetchcurrentuserprofile",
+      "target": "services_userprofile_mapprofilerow",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "userProfile.ts",
+      "source_location": "L109",
+      "weight": 1.0,
+      "source": "services_userprofile_getcurrentuserprofileid",
+      "target": "services_userprofile_fetchcurrentuserprofile",
+      "confidence_score": 1.0
+    }
+  ],
+  "hyperedges": [],
+  "built_at_commit": "f8e49f380bc144eec2877ce30747d7a6c1711a63"
+}

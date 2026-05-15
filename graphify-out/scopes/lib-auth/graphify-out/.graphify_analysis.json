@@ -1,0 +1,156 @@
+{
+  "communities": {
+    "0": [
+      "auth_recoverylinks_getrecoveryauthcodefromurl",
+      "auth_recoverylinks_getrecoverytokenhashfromurl",
+      "auth_recoverylinks_getrecoverytokensfromurl",
+      "auth_recoverylinks_isrecoveryroute",
+      "auth_recoverylinks_paramsfromurl",
+      "auth_recoverylinks_recoverytokens",
+      "auth_recoverylinks_routepart",
+      "recoverylinks_ts"
+    ],
+    "1": [
+      "auth_displayprofile_compactnamelabel",
+      "auth_displayprofile_displayprofilefallback",
+      "auth_displayprofile_initialsfromdisplayname",
+      "auth_displayprofile_metadatastring",
+      "auth_displayprofile_resolveauthdisplayprofile",
+      "auth_displayprofile_splitname",
+      "displayprofile_ts"
+    ],
+    "2": [
+      "auth_authcontext_authctx",
+      "auth_authcontext_authprovider",
+      "auth_authcontext_ctx",
+      "auth_authcontext_resolvedefaultprofile",
+      "auth_authcontext_resolverolefrommetadata",
+      "auth_roles_resolveisstafflike",
+      "authcontext_tsx"
+    ],
+    "3": [
+      "auth_postsigninrouting_authhomehref",
+      "auth_postsigninrouting_getmetadatarole",
+      "auth_postsigninrouting_getroleforsignedinuser",
+      "auth_postsigninrouting_normalizerole",
+      "auth_postsigninrouting_resolvehomeforsignedinuser",
+      "postsigninrouting_ts"
+    ],
+    "4": [
+      "auth_roles_approleexpectation",
+      "auth_roles_mergerole",
+      "auth_roles_roleincludes",
+      "auth_roles_totokens",
+      "roles_ts"
+    ],
+    "5": [
+      "auth_authcontext_useauthsession",
+      "auth_currentuserid_getdemofallbackuserid",
+      "auth_currentuserid_usecurrentuserid",
+      "currentuserid_ts"
+    ],
+    "6": [
+      "lockoutpolicy_ts"
+    ]
+  },
+  "cohesion": {
+    "0": 0.5,
+    "1": 0.43,
+    "2": 0.33,
+    "3": 0.6,
+    "4": 0.6,
+    "5": 0.67,
+    "6": 1.0
+  },
+  "gods": [
+    {
+      "id": "auth_recoverylinks_isrecoveryroute",
+      "label": "isRecoveryRoute()",
+      "degree": 5
+    },
+    {
+      "id": "auth_roles_roleincludes",
+      "label": "roleIncludes()",
+      "degree": 5
+    },
+    {
+      "id": "auth_recoverylinks_paramsfromurl",
+      "label": "paramsFromUrl()",
+      "degree": 4
+    },
+    {
+      "id": "auth_postsigninrouting_getroleforsignedinuser",
+      "label": "getRoleForSignedInUser()",
+      "degree": 4
+    },
+    {
+      "id": "auth_roles_resolveisstafflike",
+      "label": "resolveIsStaffLike()",
+      "degree": 4
+    },
+    {
+      "id": "auth_displayprofile_splitname",
+      "label": "splitName()",
+      "degree": 3
+    },
+    {
+      "id": "auth_displayprofile_resolveauthdisplayprofile",
+      "label": "resolveAuthDisplayProfile()",
+      "degree": 3
+    },
+    {
+      "id": "auth_recoverylinks_getrecoverytokensfromurl",
+      "label": "getRecoveryTokensFromUrl()",
+      "degree": 3
+    },
+    {
+      "id": "auth_recoverylinks_getrecoveryauthcodefromurl",
+      "label": "getRecoveryAuthCodeFromUrl()",
+      "degree": 3
+    },
+    {
+      "id": "auth_recoverylinks_getrecoverytokenhashfromurl",
+      "label": "getRecoveryTokenHashFromUrl()",
+      "degree": 3
+    }
+  ],
+  "surprises": [
+    {
+      "source": "resolveHomeForSignedInUser()",
+      "target": "roleIncludes()",
+      "source_files": [
+        "postSignInRouting.ts",
+        "roles.ts"
+      ],
+      "confidence": "EXTRACTED",
+      "relation": "calls",
+      "why": "connects across different repos/directories; bridges separate communities"
+    },
+    {
+      "source": "AuthProvider()",
+      "target": "resolveIsStaffLike()",
+      "source_files": [
+        "AuthContext.tsx",
+        "roles.ts"
+      ],
+      "confidence": "EXTRACTED",
+      "relation": "calls",
+      "why": "connects across different repos/directories"
+    },
+    {
+      "source": "useCurrentUserId()",
+      "target": "useAuthSession()",
+      "source_files": [
+        "currentUserId.ts",
+        "AuthContext.tsx"
+      ],
+      "confidence": "EXTRACTED",
+      "relation": "calls",
+      "why": "connects across different repos/directories"
+    }
+  ],
+  "tokens": {
+    "input": 0,
+    "output": 0
+  }
+}

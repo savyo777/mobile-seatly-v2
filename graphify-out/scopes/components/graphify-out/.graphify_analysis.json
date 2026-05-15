@@ -1,0 +1,563 @@
+{
+  "communities": {
+    "0": [
+      "filters_blackcarddinner_blackcarddinner",
+      "filters_bookedoncenaiva_bookedoncenaiva",
+      "filters_butterflyglow_butterflyglow",
+      "filters_champagneglow_bubble",
+      "filters_champagneglow_champagneglow",
+      "filters_cocktailhour_cocktailhour",
+      "filters_cocktailhour_formateasterncapturetime",
+      "filters_coquettedinner_coquettedinner",
+      "filters_dessertfirst_dessertfirst",
+      "filters_dinedintoronto_dinedintoronto",
+      "filters_goldenhourdinner_goldenhourdinner",
+      "filters_hiddengem_hiddengem",
+      "filters_lipglossnight_lipglossnight",
+      "filters_nocrumbsleft_nocrumbsleft",
+      "filters_pastanight_pastanight",
+      "filters_pinkbowdinner_pinkbowdinner",
+      "filters_pizzadate_pizzadate",
+      "filters_povbesttable_povbesttable",
+      "filters_prettyfoodonly_prettyfoodonly",
+      "filters_shesexpensive_shesexpensive",
+      "filters_sushidate_sushidate",
+      "filters_tablefortwo_tablefortwo",
+      "filters_tonightsspot_tonightsspot",
+      "filters_velvetnight_cornerbase",
+      "filters_velvetnight_velvetnight",
+      "storyfilters_filters_bestseatinthehouse_tsx",
+      "storyfilters_filters_birthdayprincess_tsx",
+      "storyfilters_filters_cocktailhour_tsx",
+      "storyfilters_filters_datenightverified_tsx",
+      "storyfilters_filters_dinedatrestaurant_tsx",
+      "storyfilters_filters_dinnerwastheplot_tsx",
+      "storyfilters_filters_goldenhourdinner_tsx",
+      "storyfilters_filters_hiddengem_tsx",
+      "storyfilters_filters_maincharactermeal_tsx",
+      "storyfilters_filters_martinigirlsnight_tsx",
+      "storyfilters_filters_pastanight_tsx",
+      "storyfilters_filters_pizzadate_tsx",
+      "storyfilters_filters_restaurantlocationstamp_tsx",
+      "storyfilters_filters_tablefortwo_tsx",
+      "storyfilters_glyphs_arrowswoop",
+      "storyfilters_glyphs_bowglyph",
+      "storyfilters_glyphs_butterflyglyph",
+      "storyfilters_glyphs_chopsticksglyph",
+      "storyfilters_glyphs_clockglyph",
+      "storyfilters_glyphs_crownglyph",
+      "storyfilters_glyphs_heart",
+      "storyfilters_glyphs_martiniglyph",
+      "storyfilters_glyphs_pastastrands",
+      "storyfilters_glyphs_pearl",
+      "storyfilters_glyphs_pinglyph",
+      "storyfilters_glyphs_ribbon",
+      "storyfilters_glyphs_sparkle",
+      "storyfilters_glyphs_sushiglyph",
+      "storyfilters_glyphs_tsx",
+      "storyfilters_snapfilterpicker_filteritem",
+      "storyfilters_snapfilterpicker_tsx",
+      "storyfilters_storyfilterpicker_storyfilterpickerprops",
+      "storyfilters_storyfilterpicker_tsx",
+      "storyfilters_storywatermark_storywatermark",
+      "storyfilters_storywatermark_storywatermarkprops",
+      "storyfilters_storywatermark_tsx",
+      "ui_button_styles"
+    ],
+    "1": [
+      "booking_partysizewheel_tsx",
+      "booking_timeslotwheel_tsx",
+      "discover_discovercompactlist_tsx",
+      "discover_discoverenhancedcard_badgelabel",
+      "discover_discoverenhancedcard_tsx",
+      "discover_discoverenhancedcard_variant",
+      "discover_discovergridsection_tsx",
+      "discover_discoverherofeatured_tsx",
+      "discover_discoverhorizontalsection_tsx",
+      "discover_restaurantbrowsecard_restaurantbrowsecardprops",
+      "discover_restaurantbrowsecard_tsx",
+      "discover_restaurantcarouselsection_tsx",
+      "discover_trendingdishesrow_tsx",
+      "feed_collectionsstrip_tsx",
+      "feed_heartburst_tsx",
+      "owner_aibadge_tsx",
+      "owner_cornerbrackets_tsx",
+      "owner_expenselistrow_tsx",
+      "owner_expenselistrow_typepill",
+      "owner_homebookingtrendcard_tsx",
+      "owner_scanshimmer_tsx",
+      "owner_tabledetailsheet_tsx",
+      "profile_chevronsettingrow_tsx",
+      "profile_preferencechip_tsx",
+      "profile_profilesectiontitle_tsx",
+      "profile_savedrestaurantcard_tsx",
+      "profile_savedrestaurantslist_getsavedrestaurants",
+      "profile_savedrestaurantslist_tsx",
+      "snaps_snapsharesheet_destination_label",
+      "snaps_snapsharesheet_shareoption",
+      "snaps_snapsharesheet_snapsharesheetprops",
+      "snaps_snapsharesheet_tsx",
+      "storyfilters_storyfilterframe_tsx",
+      "ui_checkbox_props",
+      "ui_checkbox_tsx",
+      "ui_chevronglyph_chevronglyph",
+      "ui_chevronglyph_tsx",
+      "ui_socialauthbuttons_tsx"
+    ],
+    "2": [
+      "cenaiva_cenaivavoiceoptionlist_iconforvoice",
+      "cenaiva_cenaivavoiceoptionlist_tsx",
+      "cenaiva_cenaivavoiceshell_cenaiva_eagle_region_delta",
+      "cenaiva_cenaivavoiceshell_confirmation_or_post_booking_statuses",
+      "cenaiva_cenaivavoiceshell_discovermaprestaurantbyid",
+      "cenaiva_cenaivavoiceshell_distancetext",
+      "cenaiva_cenaivavoiceshell_formatclockminutes",
+      "cenaiva_cenaivavoiceshell_formathoursrange",
+      "cenaiva_cenaivavoiceshell_hoursrange",
+      "cenaiva_cenaivavoiceshell_manual_menu_statuses",
+      "cenaiva_cenaivavoiceshell_moneytext",
+      "cenaiva_cenaivavoiceshell_normalizehoursrange",
+      "cenaiva_cenaivavoiceshell_parseclocktime",
+      "cenaiva_cenaivavoiceshell_parsedclocktime",
+      "cenaiva_cenaivavoiceshell_permissioncopy",
+      "cenaiva_cenaivavoiceshell_restaurantwithcoords",
+      "cenaiva_cenaivavoiceshell_statuscopy",
+      "cenaiva_cenaivavoiceshell_todayhourstext",
+      "cenaiva_cenaivavoiceshell_tsx",
+      "cenaiva_cenaivavoiceshell_weekday_keys",
+      "cenaiva_cenaivavoiceshell_withdiscovermapcoordinates",
+      "cenaiva_restaurantrail_cuisineemoji",
+      "cenaiva_restaurantrail_railrestaurant",
+      "cenaiva_restaurantrail_tsx",
+      "cenaiva_voiceorb_labelforstatus",
+      "cenaiva_voiceorb_tsx",
+      "cenaiva_voiceorb_voiceorb",
+      "discover_discovermapview_filters",
+      "discover_discovermapview_isfinitelatlng",
+      "discover_discovermapview_mapfallbackbyid",
+      "discover_discovermapview_mapfallbackbyname",
+      "discover_discovermapview_normalizerestaurantkey",
+      "discover_discovermapview_tsx",
+      "discover_discovermapview_withmapdisplaycoordinates",
+      "ui_button_button",
+      "ui_button_buttonprops",
+      "ui_button_tsx"
+    ],
+    "3": [
+      "cookie_consent_cookieconsentbanner_tsx",
+      "discover_snapentrybutton_tsx",
+      "feed_feedhero_feedhero",
+      "feed_feedhero_tsx",
+      "forms_menuitempicker_commonprops",
+      "forms_menuitempicker_menuitemmultipicker",
+      "forms_menuitempicker_menuitemsinglepicker",
+      "forms_menuitempicker_menusinglepicker",
+      "owner_forms_menuitempicker_tsx",
+      "owner_homehero_homehero",
+      "owner_homehero_tsx",
+      "owner_ownerscreen_ownerscreen",
+      "owner_ownerscreen_tsx",
+      "postvisit_postturnprompthost_tsx",
+      "profile_togglerow_togglerow",
+      "profile_togglerow_tsx",
+      "snaps_postvisitprompt_getpostvisitreservation",
+      "snaps_postvisitprompt_tsx",
+      "snaps_snapgrid_snapgrid",
+      "snaps_snapgrid_tsx",
+      "ui_card_usestyles",
+      "ui_input_input",
+      "ui_input_inputprops",
+      "ui_input_tsx",
+      "ui_termsfooter_termsfooter",
+      "ui_termsfooter_tsx"
+    ],
+    "4": [
+      "owner_aiinsightscard_tsx",
+      "owner_livetimeline_livetimeline",
+      "owner_livetimeline_statusaccent",
+      "owner_livetimeline_tsx",
+      "owner_owneralertsstrip_severitystyle",
+      "owner_owneralertsstrip_tsx",
+      "owner_ownerlivefeed_kindcolor",
+      "owner_ownerlivefeed_tsx",
+      "owner_ownerlivemetrics_empty_live_metrics",
+      "owner_ownerlivemetrics_tsx",
+      "owner_ownersectionlabel_ownersectionlabel",
+      "owner_ownersectionlabel_tsx",
+      "owner_quickactions_action",
+      "owner_quickactions_tsx",
+      "owner_revenuehero_ownercolors",
+      "profile_profilequickactions_tsx"
+    ],
+    "5": [
+      "cenaiva_assistantmapoverlay_tsx",
+      "map_restaurantdiscoverymap_clusterablerestaurant",
+      "map_restaurantdiscoverymap_clusterkey",
+      "map_restaurantdiscoverymap_clusterradiusforregion",
+      "map_restaurantdiscoverymap_clusterrestaurants",
+      "map_restaurantdiscoverymap_default_recenter_region_delta",
+      "map_restaurantdiscoverymap_isfinitecoordinate",
+      "map_restaurantdiscoverymap_markercluster",
+      "map_restaurantdiscoverymap_tsx",
+      "map_restaurantdiscoverymap_zoom_out_rescue_region_delta",
+      "map_restaurantmapmarker_contentprops",
+      "map_restaurantmapmarker_restaurantmapmarkercontent",
+      "map_restaurantmapmarker_saferating",
+      "map_restaurantmapmarker_tsx",
+      "map_restaurantmaptypes_mapregiondelta",
+      "map_restaurantmaptypes_ts"
+    ],
+    "6": [
+      "expenses_expensefilterbar_expensefilterbar",
+      "expenses_expensefilterbar_formathumandate",
+      "expenses_expensefilterbar_parseamount",
+      "owner_expenses_expensefilterbar_tsx",
+      "owner_monthcalendar_cell",
+      "owner_monthcalendar_daysinmonth",
+      "owner_monthcalendar_formatheaderdate",
+      "owner_monthcalendar_month_labels",
+      "owner_monthcalendar_pad",
+      "owner_monthcalendar_parseisodate",
+      "owner_monthcalendar_toisodate",
+      "owner_monthcalendar_tsx",
+      "owner_monthcalendar_weekday_labels"
+    ],
+    "7": [
+      "owner_ownerheader_ownerheader",
+      "owner_ownerheader_righticon",
+      "owner_ownerheader_tsx",
+      "owner_ownertabbar_icons",
+      "owner_ownertabbar_ownertabbar",
+      "owner_ownertabbar_tsx",
+      "owner_ownertabbar_visible_order",
+      "owner_sectioncard_tsx",
+      "owner_statcard_delta",
+      "owner_statcard_ioniconname",
+      "owner_statcard_tone",
+      "owner_statcard_tonestyle",
+      "owner_statcard_tsx"
+    ],
+    "8": [
+      "customer_notifymebutton_eventprops",
+      "customer_notifymebutton_formatdatelabel",
+      "customer_notifymebutton_formattimelabel",
+      "customer_notifymebutton_notifymebuttonprops",
+      "customer_notifymebutton_restaurantprops",
+      "customer_notifymebutton_tsx",
+      "events_eventcard_formateventdate",
+      "events_eventcard_getrestaurantforevent",
+      "events_eventcard_iseventsaved",
+      "events_eventcard_togglesaveevent",
+      "events_eventcard_tsx",
+      "events_eventcard_type_label"
+    ],
+    "9": [
+      "ai_aichatfab_tsx",
+      "ai_aichatpanel_aichatpanelprops",
+      "ai_aichatpanel_tsx",
+      "cenaiva_cenaivaassistantboundary_tsx",
+      "ui_apperrorboundary_apperrorboundary_componentdidcatch",
+      "ui_apperrorboundary_apperrorboundary_componentdidupdate",
+      "ui_apperrorboundary_apperrorboundary_getderivedstatefromerror",
+      "ui_apperrorboundary_apperrorboundary_render",
+      "ui_apperrorboundary_state",
+      "ui_apperrorboundary_tsx",
+      "ui_shellerrorboundary_tsx"
+    ],
+    "10": [
+      "booking_bookingcalendarmodal_chunkweeks",
+      "booking_bookingcalendarmodal_tsx",
+      "booking_bookingcalendarmodal_week_labels",
+      "owner_expensesummarycard_categorytotal",
+      "owner_expensesummarycard_inmonth",
+      "owner_expensesummarycard_startofmonth",
+      "owner_expensesummarycard_startofprevmonth",
+      "owner_expensesummarycard_tsx",
+      "owner_glasscard_glasscard",
+      "owner_glasscard_glasscardvariant",
+      "owner_glasscard_tsx"
+    ],
+    "11": [
+      "discover_snapviewermodal_getsnaprestaurantname",
+      "discover_snapviewermodal_snapviewermodal",
+      "discover_snapviewermodal_snapviewermodalprops",
+      "discover_snapviewermodal_tsx",
+      "feed_feedpostcard_getrestaurantforpost",
+      "feed_feedpostcard_getsnapuser",
+      "feed_feedpostcard_isliked",
+      "feed_feedpostcard_issaved",
+      "feed_feedpostcard_togglelike",
+      "feed_feedpostcard_togglesave",
+      "feed_feedpostcard_tsx"
+    ],
+    "12": [
+      "forms_timefield_format12",
+      "forms_timefield_hours",
+      "forms_timefield_minutes",
+      "forms_timefield_parsetimestring",
+      "forms_timefield_timefieldprops",
+      "forms_timefield_timefieldstyles",
+      "forms_timefield_todbtime",
+      "forms_timefield_wheel",
+      "forms_timefield_wheelprops",
+      "owner_forms_timefield_tsx"
+    ],
+    "13": [
+      "cenaiva_bookingsheet_formatdate",
+      "cenaiva_bookingsheet_groupmenuitems",
+      "cenaiva_bookingsheet_money",
+      "cenaiva_bookingsheet_tsx",
+      "map_restaurantmapdetailsheet_availabilityvariant",
+      "map_restaurantmapdetailsheet_height_screen_h",
+      "map_restaurantmapdetailsheet_sheet_max",
+      "map_restaurantmapdetailsheet_tsx",
+      "profile_promotionoffercard_tsx",
+      "ui_index_ts"
+    ],
+    "14": [
+      "owner_periodtoggle_periods",
+      "owner_periodtoggle_periodtoggle",
+      "owner_periodtoggle_tsx",
+      "owner_revenuehero_barcolor",
+      "owner_revenuehero_chartbar",
+      "owner_revenuehero_empty_revenue_data",
+      "owner_revenuehero_tsx",
+      "owner_revenuehero_useanimatedcount",
+      "owner_revenuehero_zero_revenue"
+    ],
+    "15": [
+      "snaps_savetocollectionsheet_addposttocollection",
+      "snaps_savetocollectionsheet_createcollection",
+      "snaps_savetocollectionsheet_getcollectionscontainingpost",
+      "snaps_savetocollectionsheet_getsnappostbyid",
+      "snaps_savetocollectionsheet_listcollections",
+      "snaps_savetocollectionsheet_noopmutator",
+      "snaps_savetocollectionsheet_removepostfromcollection",
+      "snaps_savetocollectionsheet_tsx"
+    ],
+    "16": [
+      "forms_datefield_buildgrid",
+      "forms_datefield_datefieldstyles",
+      "forms_datefield_day_labels",
+      "forms_datefield_fromiso",
+      "forms_datefield_months",
+      "forms_datefield_toiso",
+      "owner_forms_datefield_tsx"
+    ],
+    "17": [
+      "profile_personalinformationbody_empty_customer",
+      "profile_personalinformationbody_field",
+      "profile_personalinformationbody_fieldprops",
+      "profile_personalinformationbody_formstate",
+      "profile_personalinformationbody_tsx",
+      "profile_personalinformationbody_useform"
+    ],
+    "18": [
+      "owner_schedulebottomsheet_centermodalprops",
+      "owner_schedulebottomsheet_schedulecentermodal",
+      "owner_schedulebottomsheet_sheetprimarybutton",
+      "owner_schedulebottomsheet_sheetsecondarybutton",
+      "owner_schedulebottomsheet_tsx"
+    ],
+    "19": [
+      "events_eventfilterbar_date_chips",
+      "events_eventfilterbar_eventfilterbar",
+      "events_eventfilterbar_tsx",
+      "events_eventfilterbar_type_chips",
+      "events_eventfilterbar_typefilterkey"
+    ],
+    "20": [
+      "profile_legalscreen_legalscreen",
+      "profile_legalscreen_section",
+      "profile_legalscreen_tsx",
+      "profile_profilestackscreen_tsx"
+    ],
+    "21": [
+      "ui_badge_badge",
+      "ui_badge_badgeprops",
+      "ui_badge_badgevariant",
+      "ui_badge_tsx"
+    ],
+    "22": [
+      "ui_keyboarddonebar_keyboardheightfromevent",
+      "ui_keyboarddonebar_keyboardstate",
+      "ui_keyboarddonebar_tsx"
+    ],
+    "23": [
+      "ui_card_card",
+      "ui_card_cardprops",
+      "ui_card_tsx"
+    ],
+    "24": [
+      "owner_floorcanvas_colorforstatus",
+      "owner_floorcanvas_legend",
+      "owner_floorcanvas_tsx"
+    ],
+    "25": [
+      "owner_subpageheader_rootfallbacktab",
+      "owner_subpageheader_subpageheaderprops",
+      "owner_subpageheader_tsx"
+    ],
+    "26": [
+      "ui_screenwrapper_screenwrapperprops",
+      "ui_screenwrapper_tsx"
+    ],
+    "27": [
+      "discover_snappreviewcard_snappreviewcardprops",
+      "discover_snappreviewcard_tsx"
+    ],
+    "28": [
+      "discover_reviewrestaurantcard_reviewrestaurantcardprops",
+      "discover_reviewrestaurantcard_tsx"
+    ],
+    "29": [
+      "owner_restaurantpicker_restaurantpickerprops",
+      "owner_restaurantpicker_tsx"
+    ]
+  },
+  "cohesion": {
+    "0": 0.08,
+    "1": 0.07,
+    "2": 0.07,
+    "3": 0.11,
+    "4": 0.19,
+    "5": 0.15,
+    "6": 0.18,
+    "7": 0.15,
+    "8": 0.17,
+    "9": 0.24,
+    "10": 0.2,
+    "11": 0.22,
+    "12": 0.2,
+    "13": 0.2,
+    "14": 0.25,
+    "15": 0.36,
+    "16": 0.29,
+    "17": 0.33,
+    "18": 0.4,
+    "19": 0.4,
+    "20": 0.5,
+    "21": 0.5,
+    "22": 0.67,
+    "23": 0.67,
+    "24": 0.67,
+    "25": 0.67,
+    "26": 1.0,
+    "27": 1.0,
+    "28": 1.0,
+    "29": 1.0
+  },
+  "gods": [
+    {
+      "id": "ui_card_usestyles",
+      "label": "useStyles",
+      "degree": 113
+    },
+    {
+      "id": "ui_checkbox_props",
+      "label": "Props",
+      "degree": 64
+    },
+    {
+      "id": "ui_button_styles",
+      "label": "styles",
+      "degree": 45
+    },
+    {
+      "id": "storyfilters_storywatermark_storywatermark",
+      "label": "StoryWatermark()",
+      "degree": 31
+    },
+    {
+      "id": "owner_ownersectionlabel_ownersectionlabel",
+      "label": "OwnerSectionLabel()",
+      "degree": 9
+    },
+    {
+      "id": "ui_chevronglyph_chevronglyph",
+      "label": "ChevronGlyph()",
+      "degree": 8
+    },
+    {
+      "id": "filters_sushidate_sushidate",
+      "label": "SushiDate()",
+      "degree": 7
+    },
+    {
+      "id": "filters_coquettedinner_coquettedinner",
+      "label": "CoquetteDinner()",
+      "degree": 7
+    },
+    {
+      "id": "filters_pinkbowdinner_pinkbowdinner",
+      "label": "PinkBowDinner()",
+      "degree": 6
+    },
+    {
+      "id": "owner_revenuehero_ownercolors",
+      "label": "OwnerColors",
+      "degree": 5
+    }
+  ],
+  "surprises": [
+    {
+      "source": "ScheduleCenterModal()",
+      "target": "useStyles",
+      "source_files": [
+        "owner/ScheduleBottomSheet.tsx",
+        "ui/Card.tsx"
+      ],
+      "confidence": "EXTRACTED",
+      "relation": "calls",
+      "why": "connects across different repos/directories; bridges separate communities; peripheral node `ScheduleCenterModal()` unexpectedly reaches hub `useStyles`"
+    },
+    {
+      "source": "SheetPrimaryButton()",
+      "target": "useStyles",
+      "source_files": [
+        "owner/ScheduleBottomSheet.tsx",
+        "ui/Card.tsx"
+      ],
+      "confidence": "EXTRACTED",
+      "relation": "calls",
+      "why": "connects across different repos/directories; bridges separate communities; peripheral node `SheetPrimaryButton()` unexpectedly reaches hub `useStyles`"
+    },
+    {
+      "source": "SheetSecondaryButton()",
+      "target": "useStyles",
+      "source_files": [
+        "owner/ScheduleBottomSheet.tsx",
+        "ui/Card.tsx"
+      ],
+      "confidence": "EXTRACTED",
+      "relation": "calls",
+      "why": "connects across different repos/directories; bridges separate communities; peripheral node `SheetSecondaryButton()` unexpectedly reaches hub `useStyles`"
+    },
+    {
+      "source": "ChartBar()",
+      "target": "useStyles",
+      "source_files": [
+        "owner/RevenueHero.tsx",
+        "ui/Card.tsx"
+      ],
+      "confidence": "EXTRACTED",
+      "relation": "calls",
+      "why": "connects across different repos/directories; bridges separate communities; peripheral node `ChartBar()` unexpectedly reaches hub `useStyles`"
+    },
+    {
+      "source": "OwnerTabBar()",
+      "target": "useStyles",
+      "source_files": [
+        "owner/OwnerTabBar.tsx",
+        "ui/Card.tsx"
+      ],
+      "confidence": "EXTRACTED",
+      "relation": "calls",
+      "why": "connects across different repos/directories; bridges separate communities; peripheral node `OwnerTabBar()` unexpectedly reaches hub `useStyles`"
+    }
+  ],
+  "tokens": {
+    "input": 0,
+    "output": 0
+  }
+}

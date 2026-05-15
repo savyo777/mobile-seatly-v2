@@ -1,0 +1,187 @@
+{
+  "communities": {
+    "0": [
+      "keys_ts",
+      "migrate_ts",
+      "restaurantbillingaddress_ts",
+      "storage_keys_key",
+      "storage_keys_legacykey",
+      "storage_migrate_bare_keys",
+      "storage_migrate_copykeyifmissing",
+      "storage_migrate_runstoragemigrations",
+      "storage_referrallimits_storage_key",
+      "storage_restaurantbillingaddress_default_billing_country",
+      "storage_restaurantbillingaddress_empty_billing_address",
+      "storage_restaurantbillingaddress_formatbillingaddressoneline",
+      "storage_restaurantbillingaddress_getstoredbillingaddress",
+      "storage_restaurantbillingaddress_isbillingaddresscomplete",
+      "storage_restaurantbillingaddress_savebillingaddress"
+    ],
+    "1": [
+      "restaurantpaymentmethod_ts",
+      "storage_restaurantpaymentmethod_cardfunding",
+      "storage_restaurantpaymentmethod_expirylabel",
+      "storage_restaurantpaymentmethod_getstoredrestaurantpaymentcards",
+      "storage_restaurantpaymentmethod_infercardbrand",
+      "storage_restaurantpaymentmethod_readlocaldemocards",
+      "storage_restaurantpaymentmethod_removerestaurantpaymentcard",
+      "storage_restaurantpaymentmethod_restaurantpaymentcard",
+      "storage_restaurantpaymentmethod_saverestaurantpaymentcard",
+      "storage_restaurantpaymentmethod_seedrestaurantpaymentcards",
+      "storage_restaurantpaymentmethod_setdefaultrestaurantpaymentcard",
+      "storage_restaurantpaymentmethod_writecards"
+    ],
+    "2": [
+      "referrallimits_ts",
+      "storage_referrallimits_cansharereferral",
+      "storage_referrallimits_default_state",
+      "storage_referrallimits_getreferrallimits",
+      "storage_referrallimits_readstate",
+      "storage_referrallimits_recordreferralcreditearned",
+      "storage_referrallimits_recordreferralshare",
+      "storage_referrallimits_referrallimitssnapshot",
+      "storage_referrallimits_sharegate",
+      "storage_referrallimits_todaykey",
+      "storage_referrallimits_writestate"
+    ],
+    "3": [
+      "customerpaymentmethods_ts",
+      "storage_customerpaymentmethods_getstoredcustomerpaymentmethods",
+      "storage_customerpaymentmethods_makeid",
+      "storage_customerpaymentmethods_normalizebrand",
+      "storage_customerpaymentmethods_normalizeexpiry",
+      "storage_customerpaymentmethods_readlocaldemomethods",
+      "storage_customerpaymentmethods_removecustomerpaymentmethod",
+      "storage_customerpaymentmethods_rowlast4",
+      "storage_customerpaymentmethods_savecustomerpaymentmethod",
+      "storage_customerpaymentmethods_setdefaultcustomerpaymentmethod",
+      "storage_customerpaymentmethods_writemethods"
+    ],
+    "4": [
+      "snapshareconnections_ts",
+      "storage_snapshareconnections_clearpendingsnapplatformselection",
+      "storage_snapshareconnections_default_connections",
+      "storage_snapshareconnections_getpendingsnapplatformselection",
+      "storage_snapshareconnections_getsnapplatformconnections",
+      "storage_snapshareconnections_setpendingsnapplatformselection",
+      "storage_snapshareconnections_setsnapplatformconnected",
+      "storage_snapshareconnections_snapplatform",
+      "storage_snapshareconnections_snapplatformconnections"
+    ],
+    "5": [
+      "claimedpromotions_ts",
+      "storage_claimedpromotions_claimpromotion",
+      "storage_claimedpromotions_getclaimedpromotions",
+      "storage_claimedpromotions_ispromotionclaimed",
+      "storage_claimedpromotions_readall",
+      "storage_claimedpromotions_redeempromotion",
+      "storage_claimedpromotions_writeall"
+    ],
+    "6": [
+      "buckets_ts",
+      "storage_buckets_eventmediapath",
+      "storage_buckets_receiptobjectpath",
+      "storage_buckets_restaurantcoverpath",
+      "storage_buckets_restaurantlogopath",
+      "storage_buckets_visitphotoobjectpath"
+    ],
+    "7": [
+      "cameraroll_ts",
+      "storage_cameraroll_getmedialibrary",
+      "storage_cameraroll_medialibrarymodule",
+      "storage_cameraroll_savemediatocameraroll",
+      "storage_cameraroll_savemediatocamerarolldetailed",
+      "storage_cameraroll_savetocamerarollresult"
+    ]
+  },
+  "cohesion": {
+    "0": 0.18,
+    "1": 0.35,
+    "2": 0.31,
+    "3": 0.4,
+    "4": 0.25,
+    "5": 0.57,
+    "6": 0.33,
+    "7": 0.47
+  },
+  "gods": [
+    {
+      "id": "storage_keys_key",
+      "label": "key()",
+      "degree": 8
+    },
+    {
+      "id": "storage_restaurantpaymentmethod_getstoredrestaurantpaymentcards",
+      "label": "getStoredRestaurantPaymentCards()",
+      "degree": 6
+    },
+    {
+      "id": "storage_customerpaymentmethods_savecustomerpaymentmethod",
+      "label": "saveCustomerPaymentMethod()",
+      "degree": 6
+    },
+    {
+      "id": "storage_claimedpromotions_readall",
+      "label": "readAll()",
+      "degree": 5
+    },
+    {
+      "id": "storage_restaurantpaymentmethod_readlocaldemocards",
+      "label": "readLocalDemoCards()",
+      "degree": 5
+    },
+    {
+      "id": "storage_restaurantpaymentmethod_writecards",
+      "label": "writeCards()",
+      "degree": 5
+    },
+    {
+      "id": "storage_restaurantpaymentmethod_saverestaurantpaymentcard",
+      "label": "saveRestaurantPaymentCard()",
+      "degree": 5
+    },
+    {
+      "id": "storage_referrallimits_storage_key",
+      "label": "STORAGE_KEY",
+      "degree": 5
+    },
+    {
+      "id": "storage_referrallimits_readstate",
+      "label": "readState()",
+      "degree": 5
+    },
+    {
+      "id": "storage_customerpaymentmethods_readlocaldemomethods",
+      "label": "readLocalDemoMethods()",
+      "degree": 5
+    }
+  ],
+  "surprises": [
+    {
+      "source": "saveRestaurantPaymentCard()",
+      "target": "makeId()",
+      "source_files": [
+        "restaurantPaymentMethod.ts",
+        "customerPaymentMethods.ts"
+      ],
+      "confidence": "EXTRACTED",
+      "relation": "calls",
+      "why": "connects across different repos/directories; bridges separate communities"
+    },
+    {
+      "source": "runStorageMigrations()",
+      "target": "key()",
+      "source_files": [
+        "migrate.ts",
+        "keys.ts"
+      ],
+      "confidence": "EXTRACTED",
+      "relation": "calls",
+      "why": "connects across different repos/directories"
+    }
+  ],
+  "tokens": {
+    "input": 0,
+    "output": 0
+  }
+}

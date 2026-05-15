@@ -1,0 +1,2040 @@
+{
+  "directed": false,
+  "multigraph": false,
+  "graph": {},
+  "nodes": [
+    {
+      "label": "migrate.ts",
+      "file_type": "code",
+      "source_file": "migrate.ts",
+      "source_location": "L1",
+      "id": "migrate_ts",
+      "community": 0,
+      "norm_label": "migrate.ts"
+    },
+    {
+      "label": "BARE_KEYS",
+      "file_type": "code",
+      "source_file": "migrate.ts",
+      "source_location": "L15",
+      "id": "storage_migrate_bare_keys",
+      "community": 0,
+      "norm_label": "bare_keys"
+    },
+    {
+      "label": "runStorageMigrations()",
+      "file_type": "code",
+      "source_file": "migrate.ts",
+      "source_location": "L25",
+      "id": "storage_migrate_runstoragemigrations",
+      "community": 0,
+      "norm_label": "runstoragemigrations()"
+    },
+    {
+      "label": "copyKeyIfMissing()",
+      "file_type": "code",
+      "source_file": "migrate.ts",
+      "source_location": "L47",
+      "id": "storage_migrate_copykeyifmissing",
+      "community": 0,
+      "norm_label": "copykeyifmissing()"
+    },
+    {
+      "label": "buckets.ts",
+      "file_type": "code",
+      "source_file": "buckets.ts",
+      "source_location": "L1",
+      "id": "buckets_ts",
+      "community": 6,
+      "norm_label": "buckets.ts"
+    },
+    {
+      "label": "visitPhotoObjectPath()",
+      "file_type": "code",
+      "source_file": "buckets.ts",
+      "source_location": "L11",
+      "id": "storage_buckets_visitphotoobjectpath",
+      "community": 6,
+      "norm_label": "visitphotoobjectpath()"
+    },
+    {
+      "label": "receiptObjectPath()",
+      "file_type": "code",
+      "source_file": "buckets.ts",
+      "source_location": "L21",
+      "id": "storage_buckets_receiptobjectpath",
+      "community": 6,
+      "norm_label": "receiptobjectpath()"
+    },
+    {
+      "label": "restaurantLogoPath()",
+      "file_type": "code",
+      "source_file": "buckets.ts",
+      "source_location": "L28",
+      "id": "storage_buckets_restaurantlogopath",
+      "community": 6,
+      "norm_label": "restaurantlogopath()"
+    },
+    {
+      "label": "restaurantCoverPath()",
+      "file_type": "code",
+      "source_file": "buckets.ts",
+      "source_location": "L31",
+      "id": "storage_buckets_restaurantcoverpath",
+      "community": 6,
+      "norm_label": "restaurantcoverpath()"
+    },
+    {
+      "label": "eventMediaPath()",
+      "file_type": "code",
+      "source_file": "buckets.ts",
+      "source_location": "L35",
+      "id": "storage_buckets_eventmediapath",
+      "community": 6,
+      "norm_label": "eventmediapath()"
+    },
+    {
+      "label": "keys.ts",
+      "file_type": "code",
+      "source_file": "keys.ts",
+      "source_location": "L1",
+      "id": "keys_ts",
+      "community": 0,
+      "norm_label": "keys.ts"
+    },
+    {
+      "label": "key()",
+      "file_type": "code",
+      "source_file": "keys.ts",
+      "source_location": "L9",
+      "id": "storage_keys_key",
+      "community": 0,
+      "norm_label": "key()"
+    },
+    {
+      "label": "legacyKey()",
+      "file_type": "code",
+      "source_file": "keys.ts",
+      "source_location": "L13",
+      "id": "storage_keys_legacykey",
+      "community": 0,
+      "norm_label": "legacykey()"
+    },
+    {
+      "label": "claimedPromotions.ts",
+      "file_type": "code",
+      "source_file": "claimedPromotions.ts",
+      "source_location": "L1",
+      "id": "claimedpromotions_ts",
+      "community": 5,
+      "norm_label": "claimedpromotions.ts"
+    },
+    {
+      "label": "readAll()",
+      "file_type": "code",
+      "source_file": "claimedPromotions.ts",
+      "source_location": "L12",
+      "id": "storage_claimedpromotions_readall",
+      "community": 5,
+      "norm_label": "readall()"
+    },
+    {
+      "label": "writeAll()",
+      "file_type": "code",
+      "source_file": "claimedPromotions.ts",
+      "source_location": "L23",
+      "id": "storage_claimedpromotions_writeall",
+      "community": 5,
+      "norm_label": "writeall()"
+    },
+    {
+      "label": "getClaimedPromotions()",
+      "file_type": "code",
+      "source_file": "claimedPromotions.ts",
+      "source_location": "L27",
+      "id": "storage_claimedpromotions_getclaimedpromotions",
+      "community": 5,
+      "norm_label": "getclaimedpromotions()"
+    },
+    {
+      "label": "isPromotionClaimed()",
+      "file_type": "code",
+      "source_file": "claimedPromotions.ts",
+      "source_location": "L31",
+      "id": "storage_claimedpromotions_ispromotionclaimed",
+      "community": 5,
+      "norm_label": "ispromotionclaimed()"
+    },
+    {
+      "label": "claimPromotion()",
+      "file_type": "code",
+      "source_file": "claimedPromotions.ts",
+      "source_location": "L36",
+      "id": "storage_claimedpromotions_claimpromotion",
+      "community": 5,
+      "norm_label": "claimpromotion()"
+    },
+    {
+      "label": "redeemPromotion()",
+      "file_type": "code",
+      "source_file": "claimedPromotions.ts",
+      "source_location": "L49",
+      "id": "storage_claimedpromotions_redeempromotion",
+      "community": 5,
+      "norm_label": "redeempromotion()"
+    },
+    {
+      "label": "cameraRoll.ts",
+      "file_type": "code",
+      "source_file": "cameraRoll.ts",
+      "source_location": "L1",
+      "id": "cameraroll_ts",
+      "community": 7,
+      "norm_label": "cameraroll.ts"
+    },
+    {
+      "label": "SaveToCameraRollResult",
+      "file_type": "code",
+      "source_file": "cameraRoll.ts",
+      "source_location": "L19",
+      "id": "storage_cameraroll_savetocamerarollresult",
+      "community": 7,
+      "norm_label": "savetocamerarollresult"
+    },
+    {
+      "label": "MediaLibraryModule",
+      "file_type": "code",
+      "source_file": "cameraRoll.ts",
+      "source_location": "L27",
+      "id": "storage_cameraroll_medialibrarymodule",
+      "community": 7,
+      "norm_label": "medialibrarymodule"
+    },
+    {
+      "label": "getMediaLibrary()",
+      "file_type": "code",
+      "source_file": "cameraRoll.ts",
+      "source_location": "L37",
+      "id": "storage_cameraroll_getmedialibrary",
+      "community": 7,
+      "norm_label": "getmedialibrary()"
+    },
+    {
+      "label": "saveMediaToCameraRollDetailed()",
+      "file_type": "code",
+      "source_file": "cameraRoll.ts",
+      "source_location": "L54",
+      "id": "storage_cameraroll_savemediatocamerarolldetailed",
+      "community": 7,
+      "norm_label": "savemediatocamerarolldetailed()"
+    },
+    {
+      "label": "saveMediaToCameraRoll()",
+      "file_type": "code",
+      "source_file": "cameraRoll.ts",
+      "source_location": "L124",
+      "id": "storage_cameraroll_savemediatocameraroll",
+      "community": 7,
+      "norm_label": "savemediatocameraroll()"
+    },
+    {
+      "label": "restaurantPaymentMethod.ts",
+      "file_type": "code",
+      "source_file": "restaurantPaymentMethod.ts",
+      "source_location": "L1",
+      "id": "restaurantpaymentmethod_ts",
+      "community": 1,
+      "norm_label": "restaurantpaymentmethod.ts"
+    },
+    {
+      "label": "CardFunding",
+      "file_type": "code",
+      "source_file": "restaurantPaymentMethod.ts",
+      "source_location": "L15",
+      "id": "storage_restaurantpaymentmethod_cardfunding",
+      "community": 1,
+      "norm_label": "cardfunding"
+    },
+    {
+      "label": "RestaurantPaymentCard",
+      "file_type": "code",
+      "source_file": "restaurantPaymentMethod.ts",
+      "source_location": "L17",
+      "id": "storage_restaurantpaymentmethod_restaurantpaymentcard",
+      "community": 1,
+      "norm_label": "restaurantpaymentcard"
+    },
+    {
+      "label": "inferCardBrand()",
+      "file_type": "code",
+      "source_file": "restaurantPaymentMethod.ts",
+      "source_location": "L34",
+      "id": "storage_restaurantpaymentmethod_infercardbrand",
+      "community": 1,
+      "norm_label": "infercardbrand()"
+    },
+    {
+      "label": "expiryLabel()",
+      "file_type": "code",
+      "source_file": "restaurantPaymentMethod.ts",
+      "source_location": "L43",
+      "id": "storage_restaurantpaymentmethod_expirylabel",
+      "community": 1,
+      "norm_label": "expirylabel()"
+    },
+    {
+      "label": "readLocalDemoCards()",
+      "file_type": "code",
+      "source_file": "restaurantPaymentMethod.ts",
+      "source_location": "L48",
+      "id": "storage_restaurantpaymentmethod_readlocaldemocards",
+      "community": 1,
+      "norm_label": "readlocaldemocards()"
+    },
+    {
+      "label": "writeCards()",
+      "file_type": "code",
+      "source_file": "restaurantPaymentMethod.ts",
+      "source_location": "L59",
+      "id": "storage_restaurantpaymentmethod_writecards",
+      "community": 1,
+      "norm_label": "writecards()"
+    },
+    {
+      "label": "getStoredRestaurantPaymentCards()",
+      "file_type": "code",
+      "source_file": "restaurantPaymentMethod.ts",
+      "source_location": "L63",
+      "id": "storage_restaurantpaymentmethod_getstoredrestaurantpaymentcards",
+      "community": 1,
+      "norm_label": "getstoredrestaurantpaymentcards()"
+    },
+    {
+      "label": "saveRestaurantPaymentCard()",
+      "file_type": "code",
+      "source_file": "restaurantPaymentMethod.ts",
+      "source_location": "L81",
+      "id": "storage_restaurantpaymentmethod_saverestaurantpaymentcard",
+      "community": 1,
+      "norm_label": "saverestaurantpaymentcard()"
+    },
+    {
+      "label": "setDefaultRestaurantPaymentCard()",
+      "file_type": "code",
+      "source_file": "restaurantPaymentMethod.ts",
+      "source_location": "L126",
+      "id": "storage_restaurantpaymentmethod_setdefaultrestaurantpaymentcard",
+      "community": 1,
+      "norm_label": "setdefaultrestaurantpaymentcard()"
+    },
+    {
+      "label": "removeRestaurantPaymentCard()",
+      "file_type": "code",
+      "source_file": "restaurantPaymentMethod.ts",
+      "source_location": "L133",
+      "id": "storage_restaurantpaymentmethod_removerestaurantpaymentcard",
+      "community": 1,
+      "norm_label": "removerestaurantpaymentcard()"
+    },
+    {
+      "label": "seedRestaurantPaymentCards()",
+      "file_type": "code",
+      "source_file": "restaurantPaymentMethod.ts",
+      "source_location": "L158",
+      "id": "storage_restaurantpaymentmethod_seedrestaurantpaymentcards",
+      "community": 1,
+      "norm_label": "seedrestaurantpaymentcards()"
+    },
+    {
+      "label": "restaurantBillingAddress.ts",
+      "file_type": "code",
+      "source_file": "restaurantBillingAddress.ts",
+      "source_location": "L1",
+      "id": "restaurantbillingaddress_ts",
+      "community": 0,
+      "norm_label": "restaurantbillingaddress.ts"
+    },
+    {
+      "label": "DEFAULT_BILLING_COUNTRY",
+      "file_type": "code",
+      "source_file": "restaurantBillingAddress.ts",
+      "source_location": "L18",
+      "id": "storage_restaurantbillingaddress_default_billing_country",
+      "community": 0,
+      "norm_label": "default_billing_country"
+    },
+    {
+      "label": "EMPTY_BILLING_ADDRESS",
+      "file_type": "code",
+      "source_file": "restaurantBillingAddress.ts",
+      "source_location": "L22",
+      "id": "storage_restaurantbillingaddress_empty_billing_address",
+      "community": 0,
+      "norm_label": "empty_billing_address"
+    },
+    {
+      "label": "getStoredBillingAddress()",
+      "file_type": "code",
+      "source_file": "restaurantBillingAddress.ts",
+      "source_location": "L31",
+      "id": "storage_restaurantbillingaddress_getstoredbillingaddress",
+      "community": 0,
+      "norm_label": "getstoredbillingaddress()"
+    },
+    {
+      "label": "saveBillingAddress()",
+      "file_type": "code",
+      "source_file": "restaurantBillingAddress.ts",
+      "source_location": "L43",
+      "id": "storage_restaurantbillingaddress_savebillingaddress",
+      "community": 0,
+      "norm_label": "savebillingaddress()"
+    },
+    {
+      "label": "isBillingAddressComplete()",
+      "file_type": "code",
+      "source_file": "restaurantBillingAddress.ts",
+      "source_location": "L47",
+      "id": "storage_restaurantbillingaddress_isbillingaddresscomplete",
+      "community": 0,
+      "norm_label": "isbillingaddresscomplete()"
+    },
+    {
+      "label": "formatBillingAddressOneLine()",
+      "file_type": "code",
+      "source_file": "restaurantBillingAddress.ts",
+      "source_location": "L57",
+      "id": "storage_restaurantbillingaddress_formatbillingaddressoneline",
+      "community": 0,
+      "norm_label": "formatbillingaddressoneline()"
+    },
+    {
+      "label": "referralLimits.ts",
+      "file_type": "code",
+      "source_file": "referralLimits.ts",
+      "source_location": "L1",
+      "id": "referrallimits_ts",
+      "community": 2,
+      "norm_label": "referrallimits.ts"
+    },
+    {
+      "label": "STORAGE_KEY",
+      "file_type": "code",
+      "source_file": "referralLimits.ts",
+      "source_location": "L8",
+      "id": "storage_referrallimits_storage_key",
+      "community": 0,
+      "norm_label": "storage_key"
+    },
+    {
+      "label": "DEFAULT_STATE",
+      "file_type": "code",
+      "source_file": "referralLimits.ts",
+      "source_location": "L17",
+      "id": "storage_referrallimits_default_state",
+      "community": 2,
+      "norm_label": "default_state"
+    },
+    {
+      "label": "todayKey()",
+      "file_type": "code",
+      "source_file": "referralLimits.ts",
+      "source_location": "L24",
+      "id": "storage_referrallimits_todaykey",
+      "community": 2,
+      "norm_label": "todaykey()"
+    },
+    {
+      "label": "readState()",
+      "file_type": "code",
+      "source_file": "referralLimits.ts",
+      "source_location": "L29",
+      "id": "storage_referrallimits_readstate",
+      "community": 2,
+      "norm_label": "readstate()"
+    },
+    {
+      "label": "writeState()",
+      "file_type": "code",
+      "source_file": "referralLimits.ts",
+      "source_location": "L45",
+      "id": "storage_referrallimits_writestate",
+      "community": 2,
+      "norm_label": "writestate()"
+    },
+    {
+      "label": "ReferralLimitsSnapshot",
+      "file_type": "code",
+      "source_file": "referralLimits.ts",
+      "source_location": "L49",
+      "id": "storage_referrallimits_referrallimitssnapshot",
+      "community": 2,
+      "norm_label": "referrallimitssnapshot"
+    },
+    {
+      "label": "getReferralLimits()",
+      "file_type": "code",
+      "source_file": "referralLimits.ts",
+      "source_location": "L57",
+      "id": "storage_referrallimits_getreferrallimits",
+      "community": 2,
+      "norm_label": "getreferrallimits()"
+    },
+    {
+      "label": "ShareGate",
+      "file_type": "code",
+      "source_file": "referralLimits.ts",
+      "source_location": "L73",
+      "id": "storage_referrallimits_sharegate",
+      "community": 2,
+      "norm_label": "sharegate"
+    },
+    {
+      "label": "canShareReferral()",
+      "file_type": "code",
+      "source_file": "referralLimits.ts",
+      "source_location": "L77",
+      "id": "storage_referrallimits_cansharereferral",
+      "community": 2,
+      "norm_label": "cansharereferral()"
+    },
+    {
+      "label": "recordReferralShare()",
+      "file_type": "code",
+      "source_file": "referralLimits.ts",
+      "source_location": "L91",
+      "id": "storage_referrallimits_recordreferralshare",
+      "community": 2,
+      "norm_label": "recordreferralshare()"
+    },
+    {
+      "label": "recordReferralCreditEarned()",
+      "file_type": "code",
+      "source_file": "referralLimits.ts",
+      "source_location": "L98",
+      "id": "storage_referrallimits_recordreferralcreditearned",
+      "community": 2,
+      "norm_label": "recordreferralcreditearned()"
+    },
+    {
+      "label": "snapShareConnections.ts",
+      "file_type": "code",
+      "source_file": "snapShareConnections.ts",
+      "source_location": "L1",
+      "id": "snapshareconnections_ts",
+      "community": 4,
+      "norm_label": "snapshareconnections.ts"
+    },
+    {
+      "label": "SnapPlatform",
+      "file_type": "code",
+      "source_file": "snapShareConnections.ts",
+      "source_location": "L3",
+      "id": "storage_snapshareconnections_snapplatform",
+      "community": 4,
+      "norm_label": "snapplatform"
+    },
+    {
+      "label": "SnapPlatformConnections",
+      "file_type": "code",
+      "source_file": "snapShareConnections.ts",
+      "source_location": "L8",
+      "id": "storage_snapshareconnections_snapplatformconnections",
+      "community": 4,
+      "norm_label": "snapplatformconnections"
+    },
+    {
+      "label": "DEFAULT_CONNECTIONS",
+      "file_type": "code",
+      "source_file": "snapShareConnections.ts",
+      "source_location": "L14",
+      "id": "storage_snapshareconnections_default_connections",
+      "community": 4,
+      "norm_label": "default_connections"
+    },
+    {
+      "label": "getSnapPlatformConnections()",
+      "file_type": "code",
+      "source_file": "snapShareConnections.ts",
+      "source_location": "L20",
+      "id": "storage_snapshareconnections_getsnapplatformconnections",
+      "community": 4,
+      "norm_label": "getsnapplatformconnections()"
+    },
+    {
+      "label": "setSnapPlatformConnected()",
+      "file_type": "code",
+      "source_file": "snapShareConnections.ts",
+      "source_location": "L35",
+      "id": "storage_snapshareconnections_setsnapplatformconnected",
+      "community": 4,
+      "norm_label": "setsnapplatformconnected()"
+    },
+    {
+      "label": "setPendingSnapPlatformSelection()",
+      "file_type": "code",
+      "source_file": "snapShareConnections.ts",
+      "source_location": "L45",
+      "id": "storage_snapshareconnections_setpendingsnapplatformselection",
+      "community": 4,
+      "norm_label": "setpendingsnapplatformselection()"
+    },
+    {
+      "label": "getPendingSnapPlatformSelection()",
+      "file_type": "code",
+      "source_file": "snapShareConnections.ts",
+      "source_location": "L49",
+      "id": "storage_snapshareconnections_getpendingsnapplatformselection",
+      "community": 4,
+      "norm_label": "getpendingsnapplatformselection()"
+    },
+    {
+      "label": "clearPendingSnapPlatformSelection()",
+      "file_type": "code",
+      "source_file": "snapShareConnections.ts",
+      "source_location": "L55",
+      "id": "storage_snapshareconnections_clearpendingsnapplatformselection",
+      "community": 4,
+      "norm_label": "clearpendingsnapplatformselection()"
+    },
+    {
+      "label": "customerPaymentMethods.ts",
+      "file_type": "code",
+      "source_file": "customerPaymentMethods.ts",
+      "source_location": "L1",
+      "id": "customerpaymentmethods_ts",
+      "community": 3,
+      "norm_label": "customerpaymentmethods.ts"
+    },
+    {
+      "label": "makeId()",
+      "file_type": "code",
+      "source_file": "customerPaymentMethods.ts",
+      "source_location": "L18",
+      "id": "storage_customerpaymentmethods_makeid",
+      "community": 3,
+      "norm_label": "makeid()"
+    },
+    {
+      "label": "normalizeBrand()",
+      "file_type": "code",
+      "source_file": "customerPaymentMethods.ts",
+      "source_location": "L22",
+      "id": "storage_customerpaymentmethods_normalizebrand",
+      "community": 3,
+      "norm_label": "normalizebrand()"
+    },
+    {
+      "label": "normalizeExpiry()",
+      "file_type": "code",
+      "source_file": "customerPaymentMethods.ts",
+      "source_location": "L30",
+      "id": "storage_customerpaymentmethods_normalizeexpiry",
+      "community": 3,
+      "norm_label": "normalizeexpiry()"
+    },
+    {
+      "label": "rowLast4()",
+      "file_type": "code",
+      "source_file": "customerPaymentMethods.ts",
+      "source_location": "L37",
+      "id": "storage_customerpaymentmethods_rowlast4",
+      "community": 3,
+      "norm_label": "rowlast4()"
+    },
+    {
+      "label": "readLocalDemoMethods()",
+      "file_type": "code",
+      "source_file": "customerPaymentMethods.ts",
+      "source_location": "L45",
+      "id": "storage_customerpaymentmethods_readlocaldemomethods",
+      "community": 3,
+      "norm_label": "readlocaldemomethods()"
+    },
+    {
+      "label": "writeMethods()",
+      "file_type": "code",
+      "source_file": "customerPaymentMethods.ts",
+      "source_location": "L56",
+      "id": "storage_customerpaymentmethods_writemethods",
+      "community": 3,
+      "norm_label": "writemethods()"
+    },
+    {
+      "label": "getStoredCustomerPaymentMethods()",
+      "file_type": "code",
+      "source_file": "customerPaymentMethods.ts",
+      "source_location": "L60",
+      "id": "storage_customerpaymentmethods_getstoredcustomerpaymentmethods",
+      "community": 3,
+      "norm_label": "getstoredcustomerpaymentmethods()"
+    },
+    {
+      "label": "saveCustomerPaymentMethod()",
+      "file_type": "code",
+      "source_file": "customerPaymentMethods.ts",
+      "source_location": "L94",
+      "id": "storage_customerpaymentmethods_savecustomerpaymentmethod",
+      "community": 3,
+      "norm_label": "savecustomerpaymentmethod()"
+    },
+    {
+      "label": "setDefaultCustomerPaymentMethod()",
+      "file_type": "code",
+      "source_file": "customerPaymentMethods.ts",
+      "source_location": "L141",
+      "id": "storage_customerpaymentmethods_setdefaultcustomerpaymentmethod",
+      "community": 3,
+      "norm_label": "setdefaultcustomerpaymentmethod()"
+    },
+    {
+      "label": "removeCustomerPaymentMethod()",
+      "file_type": "code",
+      "source_file": "customerPaymentMethods.ts",
+      "source_location": "L164",
+      "id": "storage_customerpaymentmethods_removecustomerpaymentmethod",
+      "community": 3,
+      "norm_label": "removecustomerpaymentmethod()"
+    }
+  ],
+  "links": [
+    {
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "migrate.ts",
+      "source_location": "L11",
+      "weight": 1.0,
+      "source": "migrate_ts",
+      "target": "keys_ts",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "migrate.ts",
+      "source_location": "L11",
+      "weight": 1.0,
+      "source": "migrate_ts",
+      "target": "storage_keys_key",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "migrate.ts",
+      "source_location": "L15",
+      "weight": 1.0,
+      "source": "migrate_ts",
+      "target": "storage_migrate_bare_keys",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "migrate.ts",
+      "source_location": "L25",
+      "weight": 1.0,
+      "source": "migrate_ts",
+      "target": "storage_migrate_runstoragemigrations",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "migrate.ts",
+      "source_location": "L47",
+      "weight": 1.0,
+      "source": "migrate_ts",
+      "target": "storage_migrate_copykeyifmissing",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "migrate.ts",
+      "source_location": "L35",
+      "weight": 1.0,
+      "source": "storage_migrate_runstoragemigrations",
+      "target": "storage_migrate_copykeyifmissing",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "migrate.ts",
+      "source_location": "L35",
+      "weight": 1.0,
+      "source": "storage_migrate_runstoragemigrations",
+      "target": "storage_keys_key"
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "buckets.ts",
+      "source_location": "L11",
+      "weight": 1.0,
+      "source": "buckets_ts",
+      "target": "storage_buckets_visitphotoobjectpath",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "buckets.ts",
+      "source_location": "L21",
+      "weight": 1.0,
+      "source": "buckets_ts",
+      "target": "storage_buckets_receiptobjectpath",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "buckets.ts",
+      "source_location": "L28",
+      "weight": 1.0,
+      "source": "buckets_ts",
+      "target": "storage_buckets_restaurantlogopath",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "buckets.ts",
+      "source_location": "L31",
+      "weight": 1.0,
+      "source": "buckets_ts",
+      "target": "storage_buckets_restaurantcoverpath",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "buckets.ts",
+      "source_location": "L35",
+      "weight": 1.0,
+      "source": "buckets_ts",
+      "target": "storage_buckets_eventmediapath",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "keys.ts",
+      "source_location": "L9",
+      "weight": 1.0,
+      "source": "keys_ts",
+      "target": "storage_keys_key",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "keys.ts",
+      "source_location": "L13",
+      "weight": 1.0,
+      "source": "keys_ts",
+      "target": "storage_keys_legacykey",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "claimedPromotions.ts",
+      "source_location": "L2",
+      "weight": 1.0,
+      "source": "claimedpromotions_ts",
+      "target": "keys_ts",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "restaurantPaymentMethod.ts",
+      "source_location": "L5",
+      "weight": 1.0,
+      "source": "restaurantpaymentmethod_ts",
+      "target": "keys_ts",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "restaurantBillingAddress.ts",
+      "source_location": "L2",
+      "weight": 1.0,
+      "source": "restaurantbillingaddress_ts",
+      "target": "keys_ts",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "referralLimits.ts",
+      "source_location": "L2",
+      "weight": 1.0,
+      "source": "referrallimits_ts",
+      "target": "keys_ts",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "customerPaymentMethods.ts",
+      "source_location": "L5",
+      "weight": 1.0,
+      "source": "customerpaymentmethods_ts",
+      "target": "keys_ts",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "claimedPromotions.ts",
+      "source_location": "L2",
+      "weight": 1.0,
+      "source": "claimedpromotions_ts",
+      "target": "storage_keys_key",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "restaurantPaymentMethod.ts",
+      "source_location": "L5",
+      "weight": 1.0,
+      "source": "restaurantpaymentmethod_ts",
+      "target": "storage_keys_key",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "restaurantBillingAddress.ts",
+      "source_location": "L2",
+      "weight": 1.0,
+      "source": "restaurantbillingaddress_ts",
+      "target": "storage_keys_key",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "referralLimits.ts",
+      "source_location": "L2",
+      "weight": 1.0,
+      "source": "referrallimits_ts",
+      "target": "storage_keys_key",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "customerPaymentMethods.ts",
+      "source_location": "L5",
+      "weight": 1.0,
+      "source": "customerpaymentmethods_ts",
+      "target": "storage_keys_key",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "claimedPromotions.ts",
+      "source_location": "L4",
+      "weight": 1.0,
+      "source": "claimedpromotions_ts",
+      "target": "storage_referrallimits_storage_key",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "claimedPromotions.ts",
+      "source_location": "L12",
+      "weight": 1.0,
+      "source": "claimedpromotions_ts",
+      "target": "storage_claimedpromotions_readall",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "claimedPromotions.ts",
+      "source_location": "L23",
+      "weight": 1.0,
+      "source": "claimedpromotions_ts",
+      "target": "storage_claimedpromotions_writeall",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "claimedPromotions.ts",
+      "source_location": "L27",
+      "weight": 1.0,
+      "source": "claimedpromotions_ts",
+      "target": "storage_claimedpromotions_getclaimedpromotions",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "claimedPromotions.ts",
+      "source_location": "L31",
+      "weight": 1.0,
+      "source": "claimedpromotions_ts",
+      "target": "storage_claimedpromotions_ispromotionclaimed",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "claimedPromotions.ts",
+      "source_location": "L59",
+      "weight": 1.0,
+      "source": "claimedpromotions_ts",
+      "target": "storage_claimedpromotions_claimpromotion",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "claimedPromotions.ts",
+      "source_location": "L49",
+      "weight": 1.0,
+      "source": "claimedpromotions_ts",
+      "target": "storage_claimedpromotions_redeempromotion",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "claimedPromotions.ts",
+      "source_location": "L28",
+      "weight": 1.0,
+      "source": "storage_claimedpromotions_getclaimedpromotions",
+      "target": "storage_claimedpromotions_readall",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "claimedPromotions.ts",
+      "source_location": "L32",
+      "weight": 1.0,
+      "source": "storage_claimedpromotions_ispromotionclaimed",
+      "target": "storage_claimedpromotions_readall",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "claimedPromotions.ts",
+      "source_location": "L60",
+      "weight": 1.0,
+      "source": "storage_claimedpromotions_claimpromotion",
+      "target": "storage_claimedpromotions_readall",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "claimedPromotions.ts",
+      "source_location": "L50",
+      "weight": 1.0,
+      "source": "storage_claimedpromotions_redeempromotion",
+      "target": "storage_claimedpromotions_readall",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "claimedPromotions.ts",
+      "source_location": "L61",
+      "weight": 1.0,
+      "source": "storage_claimedpromotions_claimpromotion",
+      "target": "storage_claimedpromotions_writeall",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "claimedPromotions.ts",
+      "source_location": "L56",
+      "weight": 1.0,
+      "source": "storage_claimedpromotions_redeempromotion",
+      "target": "storage_claimedpromotions_writeall",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "cameraRoll.ts",
+      "source_location": "L19",
+      "weight": 1.0,
+      "source": "cameraroll_ts",
+      "target": "storage_cameraroll_savetocamerarollresult",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "cameraRoll.ts",
+      "source_location": "L27",
+      "weight": 1.0,
+      "source": "cameraroll_ts",
+      "target": "storage_cameraroll_medialibrarymodule",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "cameraRoll.ts",
+      "source_location": "L37",
+      "weight": 1.0,
+      "source": "cameraroll_ts",
+      "target": "storage_cameraroll_getmedialibrary",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "cameraRoll.ts",
+      "source_location": "L54",
+      "weight": 1.0,
+      "source": "cameraroll_ts",
+      "target": "storage_cameraroll_savemediatocamerarolldetailed",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "cameraRoll.ts",
+      "source_location": "L124",
+      "weight": 1.0,
+      "source": "cameraroll_ts",
+      "target": "storage_cameraroll_savemediatocameraroll",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "cameraRoll.ts",
+      "source_location": "L59",
+      "weight": 1.0,
+      "source": "storage_cameraroll_savemediatocamerarolldetailed",
+      "target": "storage_cameraroll_getmedialibrary",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "cameraRoll.ts",
+      "source_location": "L125",
+      "weight": 1.0,
+      "source": "storage_cameraroll_savemediatocameraroll",
+      "target": "storage_cameraroll_savemediatocamerarolldetailed",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "restaurantPaymentMethod.ts",
+      "source_location": "L15",
+      "weight": 1.0,
+      "source": "restaurantpaymentmethod_ts",
+      "target": "storage_restaurantpaymentmethod_cardfunding",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "restaurantPaymentMethod.ts",
+      "source_location": "L17",
+      "weight": 1.0,
+      "source": "restaurantpaymentmethod_ts",
+      "target": "storage_restaurantpaymentmethod_restaurantpaymentcard",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "restaurantPaymentMethod.ts",
+      "source_location": "L28",
+      "weight": 1.0,
+      "source": "restaurantpaymentmethod_ts",
+      "target": "storage_referrallimits_storage_key",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "restaurantPaymentMethod.ts",
+      "source_location": "L30",
+      "weight": 1.0,
+      "source": "restaurantpaymentmethod_ts",
+      "target": "storage_customerpaymentmethods_makeid",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "restaurantPaymentMethod.ts",
+      "source_location": "L34",
+      "weight": 1.0,
+      "source": "restaurantpaymentmethod_ts",
+      "target": "storage_restaurantpaymentmethod_infercardbrand",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "restaurantPaymentMethod.ts",
+      "source_location": "L43",
+      "weight": 1.0,
+      "source": "restaurantpaymentmethod_ts",
+      "target": "storage_restaurantpaymentmethod_expirylabel",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "restaurantPaymentMethod.ts",
+      "source_location": "L48",
+      "weight": 1.0,
+      "source": "restaurantpaymentmethod_ts",
+      "target": "storage_restaurantpaymentmethod_readlocaldemocards",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "restaurantPaymentMethod.ts",
+      "source_location": "L59",
+      "weight": 1.0,
+      "source": "restaurantpaymentmethod_ts",
+      "target": "storage_restaurantpaymentmethod_writecards",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "restaurantPaymentMethod.ts",
+      "source_location": "L63",
+      "weight": 1.0,
+      "source": "restaurantpaymentmethod_ts",
+      "target": "storage_restaurantpaymentmethod_getstoredrestaurantpaymentcards",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "restaurantPaymentMethod.ts",
+      "source_location": "L81",
+      "weight": 1.0,
+      "source": "restaurantpaymentmethod_ts",
+      "target": "storage_restaurantpaymentmethod_saverestaurantpaymentcard",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "restaurantPaymentMethod.ts",
+      "source_location": "L126",
+      "weight": 1.0,
+      "source": "restaurantpaymentmethod_ts",
+      "target": "storage_restaurantpaymentmethod_setdefaultrestaurantpaymentcard",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "restaurantPaymentMethod.ts",
+      "source_location": "L133",
+      "weight": 1.0,
+      "source": "restaurantpaymentmethod_ts",
+      "target": "storage_restaurantpaymentmethod_removerestaurantpaymentcard",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "restaurantPaymentMethod.ts",
+      "source_location": "L158",
+      "weight": 1.0,
+      "source": "restaurantpaymentmethod_ts",
+      "target": "storage_restaurantpaymentmethod_seedrestaurantpaymentcards",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "restaurantPaymentMethod.ts",
+      "source_location": "L71",
+      "weight": 1.0,
+      "source": "storage_restaurantpaymentmethod_getstoredrestaurantpaymentcards",
+      "target": "storage_restaurantpaymentmethod_expirylabel",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "restaurantPaymentMethod.ts",
+      "source_location": "L77",
+      "weight": 1.0,
+      "source": "storage_restaurantpaymentmethod_getstoredrestaurantpaymentcards",
+      "target": "storage_restaurantpaymentmethod_readlocaldemocards",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "restaurantPaymentMethod.ts",
+      "source_location": "L107",
+      "weight": 1.0,
+      "source": "storage_restaurantpaymentmethod_saverestaurantpaymentcard",
+      "target": "storage_restaurantpaymentmethod_readlocaldemocards",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "restaurantPaymentMethod.ts",
+      "source_location": "L127",
+      "weight": 1.0,
+      "source": "storage_restaurantpaymentmethod_setdefaultrestaurantpaymentcard",
+      "target": "storage_restaurantpaymentmethod_readlocaldemocards",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "restaurantPaymentMethod.ts",
+      "source_location": "L150",
+      "weight": 1.0,
+      "source": "storage_restaurantpaymentmethod_removerestaurantpaymentcard",
+      "target": "storage_restaurantpaymentmethod_readlocaldemocards",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "restaurantPaymentMethod.ts",
+      "source_location": "L122",
+      "weight": 1.0,
+      "source": "storage_restaurantpaymentmethod_saverestaurantpaymentcard",
+      "target": "storage_restaurantpaymentmethod_writecards",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "restaurantPaymentMethod.ts",
+      "source_location": "L129",
+      "weight": 1.0,
+      "source": "storage_restaurantpaymentmethod_setdefaultrestaurantpaymentcard",
+      "target": "storage_restaurantpaymentmethod_writecards",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "restaurantPaymentMethod.ts",
+      "source_location": "L154",
+      "weight": 1.0,
+      "source": "storage_restaurantpaymentmethod_removerestaurantpaymentcard",
+      "target": "storage_restaurantpaymentmethod_writecards",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "restaurantPaymentMethod.ts",
+      "source_location": "L161",
+      "weight": 1.0,
+      "source": "storage_restaurantpaymentmethod_seedrestaurantpaymentcards",
+      "target": "storage_restaurantpaymentmethod_writecards",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "restaurantPaymentMethod.ts",
+      "source_location": "L100",
+      "weight": 1.0,
+      "source": "storage_restaurantpaymentmethod_saverestaurantpaymentcard",
+      "target": "storage_restaurantpaymentmethod_getstoredrestaurantpaymentcards",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "restaurantPaymentMethod.ts",
+      "source_location": "L130",
+      "weight": 1.0,
+      "source": "storage_restaurantpaymentmethod_setdefaultrestaurantpaymentcard",
+      "target": "storage_restaurantpaymentmethod_getstoredrestaurantpaymentcards",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "restaurantPaymentMethod.ts",
+      "source_location": "L155",
+      "weight": 1.0,
+      "source": "storage_restaurantpaymentmethod_removerestaurantpaymentcard",
+      "target": "storage_restaurantpaymentmethod_getstoredrestaurantpaymentcards",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "restaurantPaymentMethod.ts",
+      "source_location": "L109",
+      "weight": 1.0,
+      "source": "storage_restaurantpaymentmethod_saverestaurantpaymentcard",
+      "target": "storage_customerpaymentmethods_makeid",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "restaurantBillingAddress.ts",
+      "source_location": "L13",
+      "weight": 1.0,
+      "source": "restaurantbillingaddress_ts",
+      "target": "storage_referrallimits_storage_key",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "restaurantBillingAddress.ts",
+      "source_location": "L18",
+      "weight": 1.0,
+      "source": "restaurantbillingaddress_ts",
+      "target": "storage_restaurantbillingaddress_default_billing_country",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "restaurantBillingAddress.ts",
+      "source_location": "L22",
+      "weight": 1.0,
+      "source": "restaurantbillingaddress_ts",
+      "target": "storage_restaurantbillingaddress_empty_billing_address",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "restaurantBillingAddress.ts",
+      "source_location": "L31",
+      "weight": 1.0,
+      "source": "restaurantbillingaddress_ts",
+      "target": "storage_restaurantbillingaddress_getstoredbillingaddress",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "restaurantBillingAddress.ts",
+      "source_location": "L43",
+      "weight": 1.0,
+      "source": "restaurantbillingaddress_ts",
+      "target": "storage_restaurantbillingaddress_savebillingaddress",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "restaurantBillingAddress.ts",
+      "source_location": "L47",
+      "weight": 1.0,
+      "source": "restaurantbillingaddress_ts",
+      "target": "storage_restaurantbillingaddress_isbillingaddresscomplete",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "restaurantBillingAddress.ts",
+      "source_location": "L57",
+      "weight": 1.0,
+      "source": "restaurantbillingaddress_ts",
+      "target": "storage_restaurantbillingaddress_formatbillingaddressoneline",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "restaurantBillingAddress.ts",
+      "source_location": "L58",
+      "weight": 1.0,
+      "source": "storage_restaurantbillingaddress_formatbillingaddressoneline",
+      "target": "storage_restaurantbillingaddress_isbillingaddresscomplete",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "referralLimits.ts",
+      "source_location": "L8",
+      "weight": 1.0,
+      "source": "referrallimits_ts",
+      "target": "storage_referrallimits_storage_key",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "referralLimits.ts",
+      "source_location": "L17",
+      "weight": 1.0,
+      "source": "referrallimits_ts",
+      "target": "storage_referrallimits_default_state",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "referralLimits.ts",
+      "source_location": "L24",
+      "weight": 1.0,
+      "source": "referrallimits_ts",
+      "target": "storage_referrallimits_todaykey",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "referralLimits.ts",
+      "source_location": "L29",
+      "weight": 1.0,
+      "source": "referrallimits_ts",
+      "target": "storage_referrallimits_readstate",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "referralLimits.ts",
+      "source_location": "L45",
+      "weight": 1.0,
+      "source": "referrallimits_ts",
+      "target": "storage_referrallimits_writestate",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "referralLimits.ts",
+      "source_location": "L49",
+      "weight": 1.0,
+      "source": "referrallimits_ts",
+      "target": "storage_referrallimits_referrallimitssnapshot",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "referralLimits.ts",
+      "source_location": "L57",
+      "weight": 1.0,
+      "source": "referrallimits_ts",
+      "target": "storage_referrallimits_getreferrallimits",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "referralLimits.ts",
+      "source_location": "L73",
+      "weight": 1.0,
+      "source": "referrallimits_ts",
+      "target": "storage_referrallimits_sharegate",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "referralLimits.ts",
+      "source_location": "L77",
+      "weight": 1.0,
+      "source": "referrallimits_ts",
+      "target": "storage_referrallimits_cansharereferral",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "referralLimits.ts",
+      "source_location": "L91",
+      "weight": 1.0,
+      "source": "referrallimits_ts",
+      "target": "storage_referrallimits_recordreferralshare",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "referralLimits.ts",
+      "source_location": "L98",
+      "weight": 1.0,
+      "source": "referrallimits_ts",
+      "target": "storage_referrallimits_recordreferralcreditearned",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "customerPaymentMethods.ts",
+      "source_location": "L16",
+      "weight": 1.0,
+      "source": "customerpaymentmethods_ts",
+      "target": "storage_referrallimits_storage_key",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "referralLimits.ts",
+      "source_location": "L31",
+      "weight": 1.0,
+      "source": "storage_referrallimits_readstate",
+      "target": "storage_referrallimits_todaykey",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "referralLimits.ts",
+      "source_location": "L58",
+      "weight": 1.0,
+      "source": "storage_referrallimits_getreferrallimits",
+      "target": "storage_referrallimits_readstate",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "referralLimits.ts",
+      "source_location": "L92",
+      "weight": 1.0,
+      "source": "storage_referrallimits_recordreferralshare",
+      "target": "storage_referrallimits_readstate",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "referralLimits.ts",
+      "source_location": "L100",
+      "weight": 1.0,
+      "source": "storage_referrallimits_recordreferralcreditearned",
+      "target": "storage_referrallimits_readstate",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "referralLimits.ts",
+      "source_location": "L95",
+      "weight": 1.0,
+      "source": "storage_referrallimits_recordreferralshare",
+      "target": "storage_referrallimits_writestate",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "referralLimits.ts",
+      "source_location": "L105",
+      "weight": 1.0,
+      "source": "storage_referrallimits_recordreferralcreditearned",
+      "target": "storage_referrallimits_writestate",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "referralLimits.ts",
+      "source_location": "L78",
+      "weight": 1.0,
+      "source": "storage_referrallimits_cansharereferral",
+      "target": "storage_referrallimits_getreferrallimits",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "snapShareConnections.ts",
+      "source_location": "L3",
+      "weight": 1.0,
+      "source": "snapshareconnections_ts",
+      "target": "storage_snapshareconnections_snapplatform",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "snapShareConnections.ts",
+      "source_location": "L8",
+      "weight": 1.0,
+      "source": "snapshareconnections_ts",
+      "target": "storage_snapshareconnections_snapplatformconnections",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "snapShareConnections.ts",
+      "source_location": "L14",
+      "weight": 1.0,
+      "source": "snapshareconnections_ts",
+      "target": "storage_snapshareconnections_default_connections",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "snapShareConnections.ts",
+      "source_location": "L20",
+      "weight": 1.0,
+      "source": "snapshareconnections_ts",
+      "target": "storage_snapshareconnections_getsnapplatformconnections",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "snapShareConnections.ts",
+      "source_location": "L35",
+      "weight": 1.0,
+      "source": "snapshareconnections_ts",
+      "target": "storage_snapshareconnections_setsnapplatformconnected",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "snapShareConnections.ts",
+      "source_location": "L45",
+      "weight": 1.0,
+      "source": "snapshareconnections_ts",
+      "target": "storage_snapshareconnections_setpendingsnapplatformselection",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "snapShareConnections.ts",
+      "source_location": "L49",
+      "weight": 1.0,
+      "source": "snapshareconnections_ts",
+      "target": "storage_snapshareconnections_getpendingsnapplatformselection",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "snapShareConnections.ts",
+      "source_location": "L55",
+      "weight": 1.0,
+      "source": "snapshareconnections_ts",
+      "target": "storage_snapshareconnections_clearpendingsnapplatformselection",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "snapShareConnections.ts",
+      "source_location": "L39",
+      "weight": 1.0,
+      "source": "storage_snapshareconnections_setsnapplatformconnected",
+      "target": "storage_snapshareconnections_getsnapplatformconnections",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "customerPaymentMethods.ts",
+      "source_location": "L18",
+      "weight": 1.0,
+      "source": "customerpaymentmethods_ts",
+      "target": "storage_customerpaymentmethods_makeid",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "customerPaymentMethods.ts",
+      "source_location": "L22",
+      "weight": 1.0,
+      "source": "customerpaymentmethods_ts",
+      "target": "storage_customerpaymentmethods_normalizebrand",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "customerPaymentMethods.ts",
+      "source_location": "L30",
+      "weight": 1.0,
+      "source": "customerpaymentmethods_ts",
+      "target": "storage_customerpaymentmethods_normalizeexpiry",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "customerPaymentMethods.ts",
+      "source_location": "L37",
+      "weight": 1.0,
+      "source": "customerpaymentmethods_ts",
+      "target": "storage_customerpaymentmethods_rowlast4",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "customerPaymentMethods.ts",
+      "source_location": "L45",
+      "weight": 1.0,
+      "source": "customerpaymentmethods_ts",
+      "target": "storage_customerpaymentmethods_readlocaldemomethods",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "customerPaymentMethods.ts",
+      "source_location": "L56",
+      "weight": 1.0,
+      "source": "customerpaymentmethods_ts",
+      "target": "storage_customerpaymentmethods_writemethods",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "customerPaymentMethods.ts",
+      "source_location": "L60",
+      "weight": 1.0,
+      "source": "customerpaymentmethods_ts",
+      "target": "storage_customerpaymentmethods_getstoredcustomerpaymentmethods",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "customerPaymentMethods.ts",
+      "source_location": "L94",
+      "weight": 1.0,
+      "source": "customerpaymentmethods_ts",
+      "target": "storage_customerpaymentmethods_savecustomerpaymentmethod",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "customerPaymentMethods.ts",
+      "source_location": "L141",
+      "weight": 1.0,
+      "source": "customerpaymentmethods_ts",
+      "target": "storage_customerpaymentmethods_setdefaultcustomerpaymentmethod",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "customerPaymentMethods.ts",
+      "source_location": "L164",
+      "weight": 1.0,
+      "source": "customerpaymentmethods_ts",
+      "target": "storage_customerpaymentmethods_removecustomerpaymentmethod",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "customerPaymentMethods.ts",
+      "source_location": "L120",
+      "weight": 1.0,
+      "source": "storage_customerpaymentmethods_savecustomerpaymentmethod",
+      "target": "storage_customerpaymentmethods_makeid",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "customerPaymentMethods.ts",
+      "source_location": "L106",
+      "weight": 1.0,
+      "source": "storage_customerpaymentmethods_savecustomerpaymentmethod",
+      "target": "storage_customerpaymentmethods_normalizebrand",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "customerPaymentMethods.ts",
+      "source_location": "L62",
+      "weight": 1.0,
+      "source": "storage_customerpaymentmethods_getstoredcustomerpaymentmethods",
+      "target": "storage_customerpaymentmethods_readlocaldemomethods",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "customerPaymentMethods.ts",
+      "source_location": "L118",
+      "weight": 1.0,
+      "source": "storage_customerpaymentmethods_savecustomerpaymentmethod",
+      "target": "storage_customerpaymentmethods_readlocaldemomethods",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "customerPaymentMethods.ts",
+      "source_location": "L158",
+      "weight": 1.0,
+      "source": "storage_customerpaymentmethods_setdefaultcustomerpaymentmethod",
+      "target": "storage_customerpaymentmethods_readlocaldemomethods",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "customerPaymentMethods.ts",
+      "source_location": "L180",
+      "weight": 1.0,
+      "source": "storage_customerpaymentmethods_removecustomerpaymentmethod",
+      "target": "storage_customerpaymentmethods_readlocaldemomethods",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "customerPaymentMethods.ts",
+      "source_location": "L137",
+      "weight": 1.0,
+      "source": "storage_customerpaymentmethods_savecustomerpaymentmethod",
+      "target": "storage_customerpaymentmethods_writemethods",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "customerPaymentMethods.ts",
+      "source_location": "L160",
+      "weight": 1.0,
+      "source": "storage_customerpaymentmethods_setdefaultcustomerpaymentmethod",
+      "target": "storage_customerpaymentmethods_writemethods",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "customerPaymentMethods.ts",
+      "source_location": "L184",
+      "weight": 1.0,
+      "source": "storage_customerpaymentmethods_removecustomerpaymentmethod",
+      "target": "storage_customerpaymentmethods_writemethods",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "customerPaymentMethods.ts",
+      "source_location": "L111",
+      "weight": 1.0,
+      "source": "storage_customerpaymentmethods_savecustomerpaymentmethod",
+      "target": "storage_customerpaymentmethods_getstoredcustomerpaymentmethods",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "customerPaymentMethods.ts",
+      "source_location": "L155",
+      "weight": 1.0,
+      "source": "storage_customerpaymentmethods_setdefaultcustomerpaymentmethod",
+      "target": "storage_customerpaymentmethods_getstoredcustomerpaymentmethods",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "customerPaymentMethods.ts",
+      "source_location": "L177",
+      "weight": 1.0,
+      "source": "storage_customerpaymentmethods_removecustomerpaymentmethod",
+      "target": "storage_customerpaymentmethods_getstoredcustomerpaymentmethods",
+      "confidence_score": 1.0
+    }
+  ],
+  "hyperedges": [],
+  "built_at_commit": "f8e49f380bc144eec2877ce30747d7a6c1711a63"
+}

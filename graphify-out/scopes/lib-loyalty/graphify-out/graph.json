@@ -1,0 +1,291 @@
+{
+  "directed": false,
+  "multigraph": false,
+  "graph": {},
+  "nodes": [
+    {
+      "label": "tiers.ts",
+      "file_type": "code",
+      "source_file": "tiers.ts",
+      "source_location": "L1",
+      "id": "tiers_ts",
+      "community": 0,
+      "norm_label": "tiers.ts"
+    },
+    {
+      "label": "LoyaltyTier",
+      "file_type": "code",
+      "source_file": "tiers.ts",
+      "source_location": "L8",
+      "id": "loyalty_tiers_loyaltytier",
+      "community": 0,
+      "norm_label": "loyaltytier"
+    },
+    {
+      "label": "getLoyaltyTier()",
+      "file_type": "code",
+      "source_file": "tiers.ts",
+      "source_location": "L21",
+      "id": "loyalty_tiers_getloyaltytier",
+      "community": 0,
+      "norm_label": "getloyaltytier()"
+    },
+    {
+      "label": "getNextLoyaltyTier()",
+      "file_type": "code",
+      "source_file": "tiers.ts",
+      "source_location": "L29",
+      "id": "loyalty_tiers_getnextloyaltytier",
+      "community": 0,
+      "norm_label": "getnextloyaltytier()"
+    },
+    {
+      "label": "pointsToNextLoyaltyTier()",
+      "file_type": "code",
+      "source_file": "tiers.ts",
+      "source_location": "L36",
+      "id": "loyalty_tiers_pointstonextloyaltytier",
+      "community": 0,
+      "norm_label": "pointstonextloyaltytier()"
+    },
+    {
+      "label": "loyaltyTierProgress()",
+      "file_type": "code",
+      "source_file": "tiers.ts",
+      "source_location": "L43",
+      "id": "loyalty_tiers_loyaltytierprogress",
+      "community": 0,
+      "norm_label": "loyaltytierprogress()"
+    },
+    {
+      "label": "dinerTiers.ts",
+      "file_type": "code",
+      "source_file": "dinerTiers.ts",
+      "source_location": "L1",
+      "id": "dinertiers_ts",
+      "community": 1,
+      "norm_label": "dinertiers.ts"
+    },
+    {
+      "label": "DinerTier",
+      "file_type": "code",
+      "source_file": "dinerTiers.ts",
+      "source_location": "L4",
+      "id": "loyalty_dinertiers_dinertier",
+      "community": 1,
+      "norm_label": "dinertier"
+    },
+    {
+      "label": "getDinerTier()",
+      "file_type": "code",
+      "source_file": "dinerTiers.ts",
+      "source_location": "L15",
+      "id": "loyalty_dinertiers_getdinertier",
+      "community": 1,
+      "norm_label": "getdinertier()"
+    },
+    {
+      "label": "getNextDinerTier()",
+      "file_type": "code",
+      "source_file": "dinerTiers.ts",
+      "source_location": "L23",
+      "id": "loyalty_dinertiers_getnextdinertier",
+      "community": 1,
+      "norm_label": "getnextdinertier()"
+    },
+    {
+      "label": "dinersToNextTier()",
+      "file_type": "code",
+      "source_file": "dinerTiers.ts",
+      "source_location": "L30",
+      "id": "loyalty_dinertiers_dinerstonexttier",
+      "community": 1,
+      "norm_label": "dinerstonexttier()"
+    },
+    {
+      "label": "getLoyaltyTransactions.ts",
+      "file_type": "code",
+      "source_file": "getLoyaltyTransactions.ts",
+      "source_location": "L1",
+      "id": "getloyaltytransactions_ts",
+      "community": 2,
+      "norm_label": "getloyaltytransactions.ts"
+    },
+    {
+      "label": "LoyaltyTransactionRow",
+      "file_type": "code",
+      "source_file": "getLoyaltyTransactions.ts",
+      "source_location": "L3",
+      "id": "loyalty_getloyaltytransactions_loyaltytransactionrow",
+      "community": 2,
+      "norm_label": "loyaltytransactionrow"
+    },
+    {
+      "label": "fetchLoyaltyTransactionsForUser()",
+      "file_type": "code",
+      "source_file": "getLoyaltyTransactions.ts",
+      "source_location": "L41",
+      "id": "loyalty_getloyaltytransactions_fetchloyaltytransactionsforuser",
+      "community": 2,
+      "norm_label": "fetchloyaltytransactionsforuser()"
+    }
+  ],
+  "links": [
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "tiers.ts",
+      "source_location": "L14",
+      "weight": 1.0,
+      "source": "tiers_ts",
+      "target": "loyalty_tiers_loyaltytier",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "tiers.ts",
+      "source_location": "L21",
+      "weight": 1.0,
+      "source": "tiers_ts",
+      "target": "loyalty_tiers_getloyaltytier",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "tiers.ts",
+      "source_location": "L29",
+      "weight": 1.0,
+      "source": "tiers_ts",
+      "target": "loyalty_tiers_getnextloyaltytier",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "tiers.ts",
+      "source_location": "L36",
+      "weight": 1.0,
+      "source": "tiers_ts",
+      "target": "loyalty_tiers_pointstonextloyaltytier",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "tiers.ts",
+      "source_location": "L43",
+      "weight": 1.0,
+      "source": "tiers_ts",
+      "target": "loyalty_tiers_loyaltytierprogress",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "tiers.ts",
+      "source_location": "L44",
+      "weight": 1.0,
+      "source": "loyalty_tiers_loyaltytierprogress",
+      "target": "loyalty_tiers_getloyaltytier",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "tiers.ts",
+      "source_location": "L37",
+      "weight": 1.0,
+      "source": "loyalty_tiers_pointstonextloyaltytier",
+      "target": "loyalty_tiers_getnextloyaltytier",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "tiers.ts",
+      "source_location": "L45",
+      "weight": 1.0,
+      "source": "loyalty_tiers_loyaltytierprogress",
+      "target": "loyalty_tiers_getnextloyaltytier",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "dinerTiers.ts",
+      "source_location": "L9",
+      "weight": 1.0,
+      "source": "dinertiers_ts",
+      "target": "loyalty_dinertiers_dinertier",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "dinerTiers.ts",
+      "source_location": "L15",
+      "weight": 1.0,
+      "source": "dinertiers_ts",
+      "target": "loyalty_dinertiers_getdinertier",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "dinerTiers.ts",
+      "source_location": "L23",
+      "weight": 1.0,
+      "source": "dinertiers_ts",
+      "target": "loyalty_dinertiers_getnextdinertier",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "dinerTiers.ts",
+      "source_location": "L30",
+      "weight": 1.0,
+      "source": "dinertiers_ts",
+      "target": "loyalty_dinertiers_dinerstonexttier",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "dinerTiers.ts",
+      "source_location": "L31",
+      "weight": 1.0,
+      "source": "loyalty_dinertiers_dinerstonexttier",
+      "target": "loyalty_dinertiers_getnextdinertier",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "getLoyaltyTransactions.ts",
+      "source_location": "L3",
+      "weight": 1.0,
+      "source": "getloyaltytransactions_ts",
+      "target": "loyalty_getloyaltytransactions_loyaltytransactionrow",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "getLoyaltyTransactions.ts",
+      "source_location": "L41",
+      "weight": 1.0,
+      "source": "getloyaltytransactions_ts",
+      "target": "loyalty_getloyaltytransactions_fetchloyaltytransactionsforuser",
+      "confidence_score": 1.0
+    }
+  ],
+  "hyperedges": [],
+  "built_at_commit": "f8e49f380bc144eec2877ce30747d7a6c1711a63"
+}

@@ -1,0 +1,300 @@
+{
+  "directed": false,
+  "multigraph": false,
+  "graph": {},
+  "nodes": [
+    {
+      "label": "buildReceiptHtml.ts",
+      "file_type": "code",
+      "source_file": "buildReceiptHtml.ts",
+      "source_location": "L1",
+      "id": "buildreceipthtml_ts",
+      "community": 0,
+      "norm_label": "buildreceipthtml.ts"
+    },
+    {
+      "label": "escapeHtml()",
+      "file_type": "code",
+      "source_file": "buildReceiptHtml.ts",
+      "source_location": "L3",
+      "id": "receipt_buildreceipthtml_escapehtml",
+      "community": 0,
+      "norm_label": "escapehtml()"
+    },
+    {
+      "label": "formatMoney()",
+      "file_type": "code",
+      "source_file": "buildReceiptHtml.ts",
+      "source_location": "L11",
+      "id": "receipt_buildreceipthtml_formatmoney",
+      "community": 0,
+      "norm_label": "formatmoney()"
+    },
+    {
+      "label": "formatWhen()",
+      "file_type": "code",
+      "source_file": "buildReceiptHtml.ts",
+      "source_location": "L15",
+      "id": "receipt_buildreceipthtml_formatwhen",
+      "community": 0,
+      "norm_label": "formatwhen()"
+    },
+    {
+      "label": "getReceiptPayload.ts",
+      "file_type": "code",
+      "source_file": "getReceiptPayload.ts",
+      "source_location": "L1",
+      "id": "getreceiptpayload_ts",
+      "community": 1,
+      "norm_label": "getreceiptpayload.ts"
+    },
+    {
+      "label": "mapOrderItem()",
+      "file_type": "code",
+      "source_file": "getReceiptPayload.ts",
+      "source_location": "L7",
+      "id": "receipt_getreceiptpayload_maporderitem",
+      "community": 1,
+      "norm_label": "maporderitem()"
+    },
+    {
+      "label": "receiptStatusReservation()",
+      "file_type": "code",
+      "source_file": "getReceiptPayload.ts",
+      "source_location": "L17",
+      "id": "receipt_getreceiptpayload_receiptstatusreservation",
+      "community": 1,
+      "norm_label": "receiptstatusreservation()"
+    },
+    {
+      "label": "receiptStatusOrder()",
+      "file_type": "code",
+      "source_file": "getReceiptPayload.ts",
+      "source_location": "L35",
+      "id": "receipt_getreceiptpayload_receiptstatusorder",
+      "community": 1,
+      "norm_label": "receiptstatusorder()"
+    },
+    {
+      "label": "orderFromReservation()",
+      "file_type": "code",
+      "source_file": "getReceiptPayload.ts",
+      "source_location": "L53",
+      "id": "receipt_getreceiptpayload_orderfromreservation",
+      "community": 1,
+      "norm_label": "orderfromreservation()"
+    },
+    {
+      "label": "receiptTypes.ts",
+      "file_type": "code",
+      "source_file": "receiptTypes.ts",
+      "source_location": "L1",
+      "id": "receipttypes_ts",
+      "community": 2,
+      "norm_label": "receipttypes.ts"
+    },
+    {
+      "label": "ReceiptActivityKind",
+      "file_type": "code",
+      "source_file": "receiptTypes.ts",
+      "source_location": "L1",
+      "id": "receipt_receipttypes_receiptactivitykind",
+      "community": 2,
+      "norm_label": "receiptactivitykind"
+    },
+    {
+      "label": "ReceiptLineItem",
+      "file_type": "code",
+      "source_file": "receiptTypes.ts",
+      "source_location": "L3",
+      "id": "receipt_receipttypes_receiptlineitem",
+      "community": 2,
+      "norm_label": "receiptlineitem"
+    },
+    {
+      "label": "ReceiptPayload",
+      "file_type": "code",
+      "source_file": "receiptTypes.ts",
+      "source_location": "L11",
+      "id": "receipt_receipttypes_receiptpayload",
+      "community": 0,
+      "norm_label": "receiptpayload"
+    }
+  ],
+  "links": [
+    {
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "buildReceiptHtml.ts",
+      "source_location": "L1",
+      "weight": 1.0,
+      "source": "buildreceipthtml_ts",
+      "target": "receipttypes_ts",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "buildReceiptHtml.ts",
+      "source_location": "L1",
+      "weight": 1.0,
+      "source": "buildreceipthtml_ts",
+      "target": "receipt_receipttypes_receiptpayload",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "confidence": "EXTRACTED",
+      "source_file": "buildReceiptHtml.ts",
+      "source_location": "L56",
+      "weight": 1.0,
+      "context": "call",
+      "source": "buildreceipthtml_ts",
+      "target": "receipt_buildreceipthtml_escapehtml",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "confidence": "EXTRACTED",
+      "source_file": "buildReceiptHtml.ts",
+      "source_location": "L49",
+      "weight": 1.0,
+      "context": "call",
+      "source": "buildreceipthtml_ts",
+      "target": "receipt_buildreceipthtml_formatmoney",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "confidence": "EXTRACTED",
+      "source_file": "buildReceiptHtml.ts",
+      "source_location": "L83",
+      "weight": 1.0,
+      "context": "call",
+      "source": "buildreceipthtml_ts",
+      "target": "receipt_buildreceipthtml_formatwhen",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "getReceiptPayload.ts",
+      "source_location": "L5",
+      "weight": 1.0,
+      "source": "getreceiptpayload_ts",
+      "target": "receipttypes_ts",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "getReceiptPayload.ts",
+      "source_location": "L5",
+      "weight": 1.0,
+      "source": "getreceiptpayload_ts",
+      "target": "receipt_receipttypes_receiptactivitykind",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "getReceiptPayload.ts",
+      "source_location": "L5",
+      "weight": 1.0,
+      "source": "getreceiptpayload_ts",
+      "target": "receipt_receipttypes_receiptlineitem",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "getReceiptPayload.ts",
+      "source_location": "L5",
+      "weight": 1.0,
+      "source": "getreceiptpayload_ts",
+      "target": "receipt_receipttypes_receiptpayload",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "getReceiptPayload.ts",
+      "source_location": "L7",
+      "weight": 1.0,
+      "source": "getreceiptpayload_ts",
+      "target": "receipt_getreceiptpayload_maporderitem",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "confidence": "EXTRACTED",
+      "source_file": "getReceiptPayload.ts",
+      "source_location": "L96",
+      "weight": 1.0,
+      "context": "call",
+      "source": "getreceiptpayload_ts",
+      "target": "receipt_getreceiptpayload_receiptstatusreservation",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "confidence": "EXTRACTED",
+      "source_file": "getReceiptPayload.ts",
+      "source_location": "L121",
+      "weight": 1.0,
+      "context": "call",
+      "source": "getreceiptpayload_ts",
+      "target": "receipt_getreceiptpayload_receiptstatusorder",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "confidence": "EXTRACTED",
+      "source_file": "getReceiptPayload.ts",
+      "source_location": "L68",
+      "weight": 1.0,
+      "context": "call",
+      "source": "getreceiptpayload_ts",
+      "target": "receipt_getreceiptpayload_orderfromreservation",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "receiptTypes.ts",
+      "source_location": "L1",
+      "weight": 1.0,
+      "source": "receipttypes_ts",
+      "target": "receipt_receipttypes_receiptactivitykind",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "receiptTypes.ts",
+      "source_location": "L3",
+      "weight": 1.0,
+      "source": "receipttypes_ts",
+      "target": "receipt_receipttypes_receiptlineitem",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "receiptTypes.ts",
+      "source_location": "L11",
+      "weight": 1.0,
+      "source": "receipttypes_ts",
+      "target": "receipt_receipttypes_receiptpayload",
+      "confidence_score": 1.0
+    }
+  ],
+  "hyperedges": [],
+  "built_at_commit": "f8e49f380bc144eec2877ce30747d7a6c1711a63"
+}

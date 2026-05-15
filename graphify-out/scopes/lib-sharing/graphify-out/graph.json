@@ -1,0 +1,1166 @@
+{
+  "directed": false,
+  "multigraph": false,
+  "graph": {},
+  "nodes": [
+    {
+      "label": "mediaExport.ts",
+      "file_type": "code",
+      "source_file": "mediaExport.ts",
+      "source_location": "L1",
+      "id": "mediaexport_ts",
+      "community": 1,
+      "norm_label": "mediaexport.ts"
+    },
+    {
+      "label": "ExportOptions",
+      "file_type": "code",
+      "source_file": "mediaExport.ts",
+      "source_location": "L11",
+      "id": "sharing_mediaexport_exportoptions",
+      "community": 1,
+      "norm_label": "exportoptions"
+    },
+    {
+      "label": "normalizeLocalFileUri()",
+      "file_type": "code",
+      "source_file": "mediaExport.ts",
+      "source_location": "L16",
+      "id": "sharing_mediaexport_normalizelocalfileuri",
+      "community": 2,
+      "norm_label": "normalizelocalfileuri()"
+    },
+    {
+      "label": "buildOutputUri()",
+      "file_type": "code",
+      "source_file": "mediaExport.ts",
+      "source_location": "L20",
+      "id": "sharing_mediaexport_buildoutputuri",
+      "community": 8,
+      "norm_label": "buildoutputuri()"
+    },
+    {
+      "label": "resolveExportMimeType()",
+      "file_type": "code",
+      "source_file": "mediaExport.ts",
+      "source_location": "L26",
+      "id": "sharing_mediaexport_resolveexportmimetype",
+      "community": 2,
+      "norm_label": "resolveexportmimetype()"
+    },
+    {
+      "label": "ensureShareDirectory()",
+      "file_type": "code",
+      "source_file": "mediaExport.ts",
+      "source_location": "L34",
+      "id": "sharing_mediaexport_ensuresharedirectory",
+      "community": 2,
+      "norm_label": "ensuresharedirectory()"
+    },
+    {
+      "label": "exportDataUri()",
+      "file_type": "code",
+      "source_file": "mediaExport.ts",
+      "source_location": "L42",
+      "id": "sharing_mediaexport_exportdatauri",
+      "community": 2,
+      "norm_label": "exportdatauri()"
+    },
+    {
+      "label": "exportMedia()",
+      "file_type": "code",
+      "source_file": "mediaExport.ts",
+      "source_location": "L54",
+      "id": "sharing_mediaexport_exportmedia",
+      "community": 2,
+      "norm_label": "exportmedia()"
+    },
+    {
+      "label": "exportFilteredPhoto()",
+      "file_type": "code",
+      "source_file": "mediaExport.ts",
+      "source_location": "L82",
+      "id": "sharing_mediaexport_exportfilteredphoto",
+      "community": 1,
+      "norm_label": "exportfilteredphoto()"
+    },
+    {
+      "label": "exportFilteredVideo()",
+      "file_type": "code",
+      "source_file": "mediaExport.ts",
+      "source_location": "L86",
+      "id": "sharing_mediaexport_exportfilteredvideo",
+      "community": 1,
+      "norm_label": "exportfilteredvideo()"
+    },
+    {
+      "label": "exportFilteredMedia()",
+      "file_type": "code",
+      "source_file": "mediaExport.ts",
+      "source_location": "L90",
+      "id": "sharing_mediaexport_exportfilteredmedia",
+      "community": 1,
+      "norm_label": "exportfilteredmedia()"
+    },
+    {
+      "label": "personalSocialApp.ts",
+      "file_type": "code",
+      "source_file": "personalSocialApp.ts",
+      "source_location": "L1",
+      "id": "personalsocialapp_ts",
+      "community": 6,
+      "norm_label": "personalsocialapp.ts"
+    },
+    {
+      "label": "openPersonalSnapchatApp()",
+      "file_type": "code",
+      "source_file": "personalSocialApp.ts",
+      "source_location": "L7",
+      "id": "sharing_personalsocialapp_openpersonalsnapchatapp",
+      "community": 6,
+      "norm_label": "openpersonalsnapchatapp()"
+    },
+    {
+      "label": "openPersonalTikTokApp()",
+      "file_type": "code",
+      "source_file": "personalSocialApp.ts",
+      "source_location": "L16",
+      "id": "sharing_personalsocialapp_openpersonaltiktokapp",
+      "community": 6,
+      "norm_label": "openpersonaltiktokapp()"
+    },
+    {
+      "label": "nativeSocialShare.ts",
+      "file_type": "code",
+      "source_file": "nativeSocialShare.ts",
+      "source_location": "L1",
+      "id": "nativesocialshare_ts",
+      "community": 4,
+      "norm_label": "nativesocialshare.ts"
+    },
+    {
+      "label": "NativeSocialShareModule",
+      "file_type": "code",
+      "source_file": "nativeSocialShare.ts",
+      "source_location": "L10",
+      "id": "sharing_nativesocialshare_nativesocialsharemodule",
+      "community": 4,
+      "norm_label": "nativesocialsharemodule"
+    },
+    {
+      "label": "SocialShareDestination",
+      "file_type": "code",
+      "source_file": "nativeSocialShare.ts",
+      "source_location": "L18",
+      "id": "sharing_nativesocialshare_socialsharedestination",
+      "community": 4,
+      "norm_label": "socialsharedestination"
+    },
+    {
+      "label": "SocialShareResult",
+      "file_type": "code",
+      "source_file": "nativeSocialShare.ts",
+      "source_location": "L25",
+      "id": "sharing_nativesocialshare_socialshareresult",
+      "community": 4,
+      "norm_label": "socialshareresult"
+    },
+    {
+      "label": "getNativeSocialShare()",
+      "file_type": "code",
+      "source_file": "nativeSocialShare.ts",
+      "source_location": "L31",
+      "id": "sharing_nativesocialshare_getnativesocialshare",
+      "community": 5,
+      "norm_label": "getnativesocialshare()"
+    },
+    {
+      "label": "isNativeSocialShareAvailable()",
+      "file_type": "code",
+      "source_file": "nativeSocialShare.ts",
+      "source_location": "L35",
+      "id": "sharing_nativesocialshare_isnativesocialshareavailable",
+      "community": 5,
+      "norm_label": "isnativesocialshareavailable()"
+    },
+    {
+      "label": "resolveMimeType()",
+      "file_type": "code",
+      "source_file": "nativeSocialShare.ts",
+      "source_location": "L39",
+      "id": "sharing_nativesocialshare_resolvemimetype",
+      "community": 9,
+      "norm_label": "resolvemimetype()"
+    },
+    {
+      "label": "instagramAppId()",
+      "file_type": "code",
+      "source_file": "nativeSocialShare.ts",
+      "source_location": "L49",
+      "id": "sharing_nativesocialshare_instagramappid",
+      "community": 4,
+      "norm_label": "instagramappid()"
+    },
+    {
+      "label": "directComposerUnavailableMessage()",
+      "file_type": "code",
+      "source_file": "nativeSocialShare.ts",
+      "source_location": "L53",
+      "id": "sharing_nativesocialshare_directcomposerunavailablemessage",
+      "community": 5,
+      "norm_label": "directcomposerunavailablemessage()"
+    },
+    {
+      "label": "openSystemShareSheet()",
+      "file_type": "code",
+      "source_file": "nativeSocialShare.ts",
+      "source_location": "L68",
+      "id": "sharing_nativesocialshare_opensystemsharesheet",
+      "community": 9,
+      "norm_label": "opensystemsharesheet()"
+    },
+    {
+      "label": "shareWithNativeComposer()",
+      "file_type": "code",
+      "source_file": "nativeSocialShare.ts",
+      "source_location": "L93",
+      "id": "sharing_nativesocialshare_sharewithnativecomposer",
+      "community": 3,
+      "norm_label": "sharewithnativecomposer()"
+    },
+    {
+      "label": "shareToInstagramStory()",
+      "file_type": "code",
+      "source_file": "nativeSocialShare.ts",
+      "source_location": "L118",
+      "id": "sharing_nativesocialshare_sharetoinstagramstory",
+      "community": 3,
+      "norm_label": "sharetoinstagramstory()"
+    },
+    {
+      "label": "shareToInstagramFeed()",
+      "file_type": "code",
+      "source_file": "nativeSocialShare.ts",
+      "source_location": "L129",
+      "id": "sharing_nativesocialshare_sharetoinstagramfeed",
+      "community": 3,
+      "norm_label": "sharetoinstagramfeed()"
+    },
+    {
+      "label": "shareToTikTok()",
+      "file_type": "code",
+      "source_file": "nativeSocialShare.ts",
+      "source_location": "L140",
+      "id": "sharing_nativesocialshare_sharetotiktok",
+      "community": 3,
+      "norm_label": "sharetotiktok()"
+    },
+    {
+      "label": "shareToSnapchat()",
+      "file_type": "code",
+      "source_file": "nativeSocialShare.ts",
+      "source_location": "L148",
+      "id": "sharing_nativesocialshare_sharetosnapchat",
+      "community": 3,
+      "norm_label": "sharetosnapchat()"
+    },
+    {
+      "label": "shareToYouTube()",
+      "file_type": "code",
+      "source_file": "nativeSocialShare.ts",
+      "source_location": "L159",
+      "id": "sharing_nativesocialshare_sharetoyoutube",
+      "community": 5,
+      "norm_label": "sharetoyoutube()"
+    },
+    {
+      "label": "generateShareCard.ts",
+      "file_type": "code",
+      "source_file": "generateShareCard.ts",
+      "source_location": "L1",
+      "id": "generatesharecard_ts",
+      "community": 7,
+      "norm_label": "generatesharecard.ts"
+    },
+    {
+      "label": "buildShareCaption()",
+      "file_type": "code",
+      "source_file": "generateShareCard.ts",
+      "source_location": "L4",
+      "id": "sharing_generatesharecard_buildsharecaption",
+      "community": 7,
+      "norm_label": "buildsharecaption()"
+    },
+    {
+      "label": "shareSnapToSocial()",
+      "file_type": "code",
+      "source_file": "generateShareCard.ts",
+      "source_location": "L10",
+      "id": "sharing_generatesharecard_sharesnaptosocial",
+      "community": 7,
+      "norm_label": "sharesnaptosocial()"
+    },
+    {
+      "label": "mime.ts",
+      "file_type": "code",
+      "source_file": "mime.ts",
+      "source_location": "L1",
+      "id": "mime_ts",
+      "community": 0,
+      "norm_label": "mime.ts"
+    },
+    {
+      "label": "SocialMediaType",
+      "file_type": "code",
+      "source_file": "mime.ts",
+      "source_location": "L1",
+      "id": "sharing_mime_socialmediatype",
+      "community": 0,
+      "norm_label": "socialmediatype"
+    },
+    {
+      "label": "SocialMimeType",
+      "file_type": "code",
+      "source_file": "mime.ts",
+      "source_location": "L3",
+      "id": "sharing_mime_socialmimetype",
+      "community": 0,
+      "norm_label": "socialmimetype"
+    },
+    {
+      "label": "MIME_FROM_EXTENSION",
+      "file_type": "code",
+      "source_file": "mime.ts",
+      "source_location": "L5",
+      "id": "sharing_mime_mime_from_extension",
+      "community": 0,
+      "norm_label": "mime_from_extension"
+    },
+    {
+      "label": "stripUriDecoration()",
+      "file_type": "code",
+      "source_file": "mime.ts",
+      "source_location": "L13",
+      "id": "sharing_mime_stripuridecoration",
+      "community": 0,
+      "norm_label": "stripuridecoration()"
+    },
+    {
+      "label": "getMimeType()",
+      "file_type": "code",
+      "source_file": "mime.ts",
+      "source_location": "L17",
+      "id": "sharing_mime_getmimetype",
+      "community": 0,
+      "norm_label": "getmimetype()"
+    },
+    {
+      "label": "getMediaTypeFromMime()",
+      "file_type": "code",
+      "source_file": "mime.ts",
+      "source_location": "L35",
+      "id": "sharing_mime_getmediatypefrommime",
+      "community": 1,
+      "norm_label": "getmediatypefrommime()"
+    },
+    {
+      "label": "getFileExtensionForMime()",
+      "file_type": "code",
+      "source_file": "mime.ts",
+      "source_location": "L39",
+      "id": "sharing_mime_getfileextensionformime",
+      "community": 8,
+      "norm_label": "getfileextensionformime()"
+    },
+    {
+      "label": "getWildcardMimeType()",
+      "file_type": "code",
+      "source_file": "mime.ts",
+      "source_location": "L45",
+      "id": "sharing_mime_getwildcardmimetype",
+      "community": 0,
+      "norm_label": "getwildcardmimetype()"
+    }
+  ],
+  "links": [
+    {
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "mediaExport.ts",
+      "source_location": "L2",
+      "weight": 1.0,
+      "source": "mediaexport_ts",
+      "target": "mime_ts",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "mediaExport.ts",
+      "source_location": "L2",
+      "weight": 1.0,
+      "source": "mediaexport_ts",
+      "target": "sharing_mime_getfileextensionformime",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "mediaExport.ts",
+      "source_location": "L2",
+      "weight": 1.0,
+      "source": "mediaexport_ts",
+      "target": "sharing_mime_getmediatypefrommime",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "mediaExport.ts",
+      "source_location": "L2",
+      "weight": 1.0,
+      "source": "mediaexport_ts",
+      "target": "sharing_mime_getmimetype",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "mediaExport.ts",
+      "source_location": "L2",
+      "weight": 1.0,
+      "source": "mediaexport_ts",
+      "target": "sharing_mime_socialmediatype",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "mediaExport.ts",
+      "source_location": "L11",
+      "weight": 1.0,
+      "source": "mediaexport_ts",
+      "target": "sharing_mediaexport_exportoptions",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "mediaExport.ts",
+      "source_location": "L16",
+      "weight": 1.0,
+      "source": "mediaexport_ts",
+      "target": "sharing_mediaexport_normalizelocalfileuri",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "mediaExport.ts",
+      "source_location": "L20",
+      "weight": 1.0,
+      "source": "mediaexport_ts",
+      "target": "sharing_mediaexport_buildoutputuri",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "mediaExport.ts",
+      "source_location": "L26",
+      "weight": 1.0,
+      "source": "mediaexport_ts",
+      "target": "sharing_mediaexport_resolveexportmimetype",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "mediaExport.ts",
+      "source_location": "L34",
+      "weight": 1.0,
+      "source": "mediaexport_ts",
+      "target": "sharing_mediaexport_ensuresharedirectory",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "mediaExport.ts",
+      "source_location": "L42",
+      "weight": 1.0,
+      "source": "mediaexport_ts",
+      "target": "sharing_mediaexport_exportdatauri",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "mediaExport.ts",
+      "source_location": "L54",
+      "weight": 1.0,
+      "source": "mediaexport_ts",
+      "target": "sharing_mediaexport_exportmedia",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "mediaExport.ts",
+      "source_location": "L82",
+      "weight": 1.0,
+      "source": "mediaexport_ts",
+      "target": "sharing_mediaexport_exportfilteredphoto",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "mediaExport.ts",
+      "source_location": "L86",
+      "weight": 1.0,
+      "source": "mediaexport_ts",
+      "target": "sharing_mediaexport_exportfilteredvideo",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "mediaExport.ts",
+      "source_location": "L90",
+      "weight": 1.0,
+      "source": "mediaexport_ts",
+      "target": "sharing_mediaexport_exportfilteredmedia",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "mediaExport.ts",
+      "source_location": "L63",
+      "weight": 1.0,
+      "source": "sharing_mediaexport_exportmedia",
+      "target": "sharing_mediaexport_normalizelocalfileuri",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "mediaExport.ts",
+      "source_location": "L62",
+      "weight": 1.0,
+      "source": "sharing_mediaexport_exportmedia",
+      "target": "sharing_mediaexport_buildoutputuri",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "mediaExport.ts",
+      "source_location": "L21",
+      "weight": 1.0,
+      "source": "sharing_mediaexport_buildoutputuri",
+      "target": "sharing_mime_getfileextensionformime"
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "mediaExport.ts",
+      "source_location": "L61",
+      "weight": 1.0,
+      "source": "sharing_mediaexport_exportmedia",
+      "target": "sharing_mediaexport_resolveexportmimetype",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "mediaExport.ts",
+      "source_location": "L31",
+      "weight": 1.0,
+      "source": "sharing_mediaexport_resolveexportmimetype",
+      "target": "sharing_mime_getmimetype"
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "mediaExport.ts",
+      "source_location": "L59",
+      "weight": 1.0,
+      "source": "sharing_mediaexport_exportmedia",
+      "target": "sharing_mediaexport_ensuresharedirectory",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "mediaExport.ts",
+      "source_location": "L66",
+      "weight": 1.0,
+      "source": "sharing_mediaexport_exportmedia",
+      "target": "sharing_mediaexport_exportdatauri",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "mediaExport.ts",
+      "source_location": "L83",
+      "weight": 1.0,
+      "source": "sharing_mediaexport_exportfilteredphoto",
+      "target": "sharing_mediaexport_exportmedia",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "mediaExport.ts",
+      "source_location": "L87",
+      "weight": 1.0,
+      "source": "sharing_mediaexport_exportfilteredvideo",
+      "target": "sharing_mediaexport_exportmedia",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "mediaExport.ts",
+      "source_location": "L95",
+      "weight": 1.0,
+      "source": "sharing_mediaexport_exportfilteredmedia",
+      "target": "sharing_mediaexport_exportfilteredphoto",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "mediaExport.ts",
+      "source_location": "L92",
+      "weight": 1.0,
+      "source": "sharing_mediaexport_exportfilteredmedia",
+      "target": "sharing_mediaexport_exportfilteredvideo",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "mediaExport.ts",
+      "source_location": "L91",
+      "weight": 1.0,
+      "source": "sharing_mediaexport_exportfilteredmedia",
+      "target": "sharing_mime_getmediatypefrommime"
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "mediaExport.ts",
+      "source_location": "L91",
+      "weight": 1.0,
+      "source": "sharing_mediaexport_exportfilteredmedia",
+      "target": "sharing_mime_getmimetype"
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "personalSocialApp.ts",
+      "source_location": "L7",
+      "weight": 1.0,
+      "source": "personalsocialapp_ts",
+      "target": "sharing_personalsocialapp_openpersonalsnapchatapp",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "personalSocialApp.ts",
+      "source_location": "L16",
+      "weight": 1.0,
+      "source": "personalsocialapp_ts",
+      "target": "sharing_personalsocialapp_openpersonaltiktokapp",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "nativeSocialShare.ts",
+      "source_location": "L4",
+      "weight": 1.0,
+      "source": "nativesocialshare_ts",
+      "target": "mime_ts",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "nativeSocialShare.ts",
+      "source_location": "L4",
+      "weight": 1.0,
+      "source": "nativesocialshare_ts",
+      "target": "sharing_mime_getmimetype",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "nativeSocialShare.ts",
+      "source_location": "L4",
+      "weight": 1.0,
+      "source": "nativesocialshare_ts",
+      "target": "sharing_mime_socialmediatype",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "nativeSocialShare.ts",
+      "source_location": "L4",
+      "weight": 1.0,
+      "source": "nativesocialshare_ts",
+      "target": "sharing_mime_socialmimetype",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "nativeSocialShare.ts",
+      "source_location": "L10",
+      "weight": 1.0,
+      "source": "nativesocialshare_ts",
+      "target": "sharing_nativesocialshare_nativesocialsharemodule",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "nativeSocialShare.ts",
+      "source_location": "L18",
+      "weight": 1.0,
+      "source": "nativesocialshare_ts",
+      "target": "sharing_nativesocialshare_socialsharedestination",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "nativeSocialShare.ts",
+      "source_location": "L25",
+      "weight": 1.0,
+      "source": "nativesocialshare_ts",
+      "target": "sharing_nativesocialshare_socialshareresult",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "nativeSocialShare.ts",
+      "source_location": "L31",
+      "weight": 1.0,
+      "source": "nativesocialshare_ts",
+      "target": "sharing_nativesocialshare_getnativesocialshare",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "nativeSocialShare.ts",
+      "source_location": "L35",
+      "weight": 1.0,
+      "source": "nativesocialshare_ts",
+      "target": "sharing_nativesocialshare_isnativesocialshareavailable",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "nativeSocialShare.ts",
+      "source_location": "L39",
+      "weight": 1.0,
+      "source": "nativesocialshare_ts",
+      "target": "sharing_nativesocialshare_resolvemimetype",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "nativeSocialShare.ts",
+      "source_location": "L49",
+      "weight": 1.0,
+      "source": "nativesocialshare_ts",
+      "target": "sharing_nativesocialshare_instagramappid",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "nativeSocialShare.ts",
+      "source_location": "L53",
+      "weight": 1.0,
+      "source": "nativesocialshare_ts",
+      "target": "sharing_nativesocialshare_directcomposerunavailablemessage",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "nativeSocialShare.ts",
+      "source_location": "L68",
+      "weight": 1.0,
+      "source": "nativesocialshare_ts",
+      "target": "sharing_nativesocialshare_opensystemsharesheet",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "nativeSocialShare.ts",
+      "source_location": "L93",
+      "weight": 1.0,
+      "source": "nativesocialshare_ts",
+      "target": "sharing_nativesocialshare_sharewithnativecomposer",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "nativeSocialShare.ts",
+      "source_location": "L118",
+      "weight": 1.0,
+      "source": "nativesocialshare_ts",
+      "target": "sharing_nativesocialshare_sharetoinstagramstory",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "nativeSocialShare.ts",
+      "source_location": "L129",
+      "weight": 1.0,
+      "source": "nativesocialshare_ts",
+      "target": "sharing_nativesocialshare_sharetoinstagramfeed",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "nativeSocialShare.ts",
+      "source_location": "L140",
+      "weight": 1.0,
+      "source": "nativesocialshare_ts",
+      "target": "sharing_nativesocialshare_sharetotiktok",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "nativeSocialShare.ts",
+      "source_location": "L148",
+      "weight": 1.0,
+      "source": "nativesocialshare_ts",
+      "target": "sharing_nativesocialshare_sharetosnapchat",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "nativeSocialShare.ts",
+      "source_location": "L159",
+      "weight": 1.0,
+      "source": "nativesocialshare_ts",
+      "target": "sharing_nativesocialshare_sharetoyoutube",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "nativeSocialShare.ts",
+      "source_location": "L36",
+      "weight": 1.0,
+      "source": "sharing_nativesocialshare_isnativesocialshareavailable",
+      "target": "sharing_nativesocialshare_getnativesocialshare",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "nativeSocialShare.ts",
+      "source_location": "L100",
+      "weight": 1.0,
+      "source": "sharing_nativesocialshare_sharewithnativecomposer",
+      "target": "sharing_nativesocialshare_getnativesocialshare",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "nativeSocialShare.ts",
+      "source_location": "L164",
+      "weight": 1.0,
+      "source": "sharing_nativesocialshare_sharetoyoutube",
+      "target": "sharing_nativesocialshare_getnativesocialshare",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "nativeSocialShare.ts",
+      "source_location": "L79",
+      "weight": 1.0,
+      "source": "sharing_nativesocialshare_opensystemsharesheet",
+      "target": "sharing_nativesocialshare_resolvemimetype",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "nativeSocialShare.ts",
+      "source_location": "L99",
+      "weight": 1.0,
+      "source": "sharing_nativesocialshare_sharewithnativecomposer",
+      "target": "sharing_nativesocialshare_resolvemimetype",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "nativeSocialShare.ts",
+      "source_location": "L42",
+      "weight": 1.0,
+      "source": "sharing_nativesocialshare_resolvemimetype",
+      "target": "sharing_mime_getmimetype"
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "nativeSocialShare.ts",
+      "source_location": "L113",
+      "weight": 1.0,
+      "source": "sharing_nativesocialshare_sharewithnativecomposer",
+      "target": "sharing_nativesocialshare_directcomposerunavailablemessage",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "nativeSocialShare.ts",
+      "source_location": "L176",
+      "weight": 1.0,
+      "source": "sharing_nativesocialshare_sharetoyoutube",
+      "target": "sharing_nativesocialshare_directcomposerunavailablemessage",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "nativeSocialShare.ts",
+      "source_location": "L161",
+      "weight": 1.0,
+      "source": "sharing_nativesocialshare_sharetoyoutube",
+      "target": "sharing_nativesocialshare_opensystemsharesheet",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "nativeSocialShare.ts",
+      "source_location": "L122",
+      "weight": 1.0,
+      "source": "sharing_nativesocialshare_sharetoinstagramstory",
+      "target": "sharing_nativesocialshare_sharewithnativecomposer",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "nativeSocialShare.ts",
+      "source_location": "L133",
+      "weight": 1.0,
+      "source": "sharing_nativesocialshare_sharetoinstagramfeed",
+      "target": "sharing_nativesocialshare_sharewithnativecomposer",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "nativeSocialShare.ts",
+      "source_location": "L141",
+      "weight": 1.0,
+      "source": "sharing_nativesocialshare_sharetotiktok",
+      "target": "sharing_nativesocialshare_sharewithnativecomposer",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "nativeSocialShare.ts",
+      "source_location": "L152",
+      "weight": 1.0,
+      "source": "sharing_nativesocialshare_sharetosnapchat",
+      "target": "sharing_nativesocialshare_sharewithnativecomposer",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "generateShareCard.ts",
+      "source_location": "L4",
+      "weight": 1.0,
+      "source": "generatesharecard_ts",
+      "target": "sharing_generatesharecard_buildsharecaption",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "generateShareCard.ts",
+      "source_location": "L10",
+      "weight": 1.0,
+      "source": "generatesharecard_ts",
+      "target": "sharing_generatesharecard_sharesnaptosocial",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "generateShareCard.ts",
+      "source_location": "L20",
+      "weight": 1.0,
+      "source": "sharing_generatesharecard_sharesnaptosocial",
+      "target": "sharing_generatesharecard_buildsharecaption",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "mime.ts",
+      "source_location": "L1",
+      "weight": 1.0,
+      "source": "mime_ts",
+      "target": "sharing_mime_socialmediatype",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "mime.ts",
+      "source_location": "L3",
+      "weight": 1.0,
+      "source": "mime_ts",
+      "target": "sharing_mime_socialmimetype",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "mime.ts",
+      "source_location": "L5",
+      "weight": 1.0,
+      "source": "mime_ts",
+      "target": "sharing_mime_mime_from_extension",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "mime.ts",
+      "source_location": "L13",
+      "weight": 1.0,
+      "source": "mime_ts",
+      "target": "sharing_mime_stripuridecoration",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "mime.ts",
+      "source_location": "L17",
+      "weight": 1.0,
+      "source": "mime_ts",
+      "target": "sharing_mime_getmimetype",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "mime.ts",
+      "source_location": "L35",
+      "weight": 1.0,
+      "source": "mime_ts",
+      "target": "sharing_mime_getmediatypefrommime",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "mime.ts",
+      "source_location": "L39",
+      "weight": 1.0,
+      "source": "mime_ts",
+      "target": "sharing_mime_getfileextensionformime",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "mime.ts",
+      "source_location": "L45",
+      "weight": 1.0,
+      "source": "mime_ts",
+      "target": "sharing_mime_getwildcardmimetype",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "mime.ts",
+      "source_location": "L25",
+      "weight": 1.0,
+      "source": "sharing_mime_getmimetype",
+      "target": "sharing_mime_stripuridecoration",
+      "confidence_score": 1.0
+    }
+  ],
+  "hyperedges": [],
+  "built_at_commit": "f8e49f380bc144eec2877ce30747d7a6c1711a63"
+}

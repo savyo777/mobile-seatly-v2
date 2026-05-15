@@ -1,0 +1,157 @@
+{
+  "communities": {
+    "0": [
+      "client_ts",
+      "env_ts",
+      "supabase_client_clearpersistedsupabasesession",
+      "supabase_client_clearsupabasestorageonly",
+      "supabase_client_clearunusablepersistedsupabasesession",
+      "supabase_client_getsupabase",
+      "supabase_client_getsupabaseauthstoragekey",
+      "supabase_env_issupabaseconfigured"
+    ],
+    "1": [
+      "fetchrestaurants_ts",
+      "supabase_fetchrestaurants_applymenuderivedpriceranges",
+      "supabase_fetchrestaurants_chunks",
+      "supabase_fetchrestaurants_fetchmenucategoriesbyid",
+      "supabase_fetchrestaurants_fetchmenupricerows",
+      "supabase_fetchrestaurants_fetchrestaurantsfromsupabase",
+      "supabase_fetchrestaurants_menucategoryrow",
+      "supabase_fetchrestaurants_menupricerow"
+    ],
+    "2": [
+      "maprestaurantrow_ts",
+      "supabase_maprestaurantrow_hoursfromjson",
+      "supabase_maprestaurantrow_readsettingslatlng",
+      "supabase_maprestaurantrow_readspecialhours",
+      "supabase_maprestaurantrow_weekday_set"
+    ],
+    "3": [
+      "supabase_maprestaurantrow_boolornull",
+      "supabase_maprestaurantrow_maprestaurantrowtorestaurant",
+      "supabase_maprestaurantrow_num",
+      "supabase_maprestaurantrow_objectornull"
+    ],
+    "4": [
+      "autherrors_ts",
+      "supabase_autherrors_collecterrortext",
+      "supabase_autherrors_isunusablepersistedsupabaseautherror",
+      "supabase_autherrors_valuetotext"
+    ],
+    "5": [
+      "supabase_maprestaurantrow_intornull",
+      "supabase_maprestaurantrow_numornull"
+    ]
+  },
+  "cohesion": {
+    "0": 0.57,
+    "1": 0.43,
+    "2": 0.5,
+    "3": 0.5,
+    "4": 0.67,
+    "5": 1.0
+  },
+  "gods": [
+    {
+      "id": "supabase_maprestaurantrow_maprestaurantrowtorestaurant",
+      "label": "mapRestaurantRowToRestaurant()",
+      "degree": 10
+    },
+    {
+      "id": "supabase_client_getsupabaseauthstoragekey",
+      "label": "getSupabaseAuthStorageKey()",
+      "degree": 6
+    },
+    {
+      "id": "supabase_client_getsupabase",
+      "label": "getSupabase()",
+      "degree": 6
+    },
+    {
+      "id": "supabase_env_issupabaseconfigured",
+      "label": "isSupabaseConfigured()",
+      "degree": 4
+    },
+    {
+      "id": "supabase_fetchrestaurants_fetchmenupricerows",
+      "label": "fetchMenuPriceRows()",
+      "degree": 4
+    },
+    {
+      "id": "supabase_fetchrestaurants_fetchrestaurantsfromsupabase",
+      "label": "fetchRestaurantsFromSupabase()",
+      "degree": 4
+    },
+    {
+      "id": "supabase_maprestaurantrow_numornull",
+      "label": "numOrNull()",
+      "degree": 3
+    },
+    {
+      "id": "supabase_maprestaurantrow_intornull",
+      "label": "intOrNull()",
+      "degree": 3
+    },
+    {
+      "id": "supabase_maprestaurantrow_hoursfromjson",
+      "label": "hoursFromJson()",
+      "degree": 3
+    },
+    {
+      "id": "supabase_client_clearpersistedsupabasesession",
+      "label": "clearPersistedSupabaseSession()",
+      "degree": 3
+    }
+  ],
+  "surprises": [
+    {
+      "source": "fetchRestaurantsFromSupabase()",
+      "target": "mapRestaurantRowToRestaurant()",
+      "source_files": [
+        "fetchRestaurants.ts",
+        "mapRestaurantRow.ts"
+      ],
+      "confidence": "EXTRACTED",
+      "relation": "calls",
+      "why": "connects across different repos/directories; bridges separate communities"
+    },
+    {
+      "source": "fetchRestaurantsFromSupabase()",
+      "target": "getSupabase()",
+      "source_files": [
+        "fetchRestaurants.ts",
+        "client.ts"
+      ],
+      "confidence": "EXTRACTED",
+      "relation": "calls",
+      "why": "connects across different repos/directories; bridges separate communities"
+    },
+    {
+      "source": "getSupabaseAuthStorageKey()",
+      "target": "isSupabaseConfigured()",
+      "source_files": [
+        "client.ts",
+        "env.ts"
+      ],
+      "confidence": "EXTRACTED",
+      "relation": "calls",
+      "why": "connects across different repos/directories"
+    },
+    {
+      "source": "getSupabase()",
+      "target": "isSupabaseConfigured()",
+      "source_files": [
+        "client.ts",
+        "env.ts"
+      ],
+      "confidence": "EXTRACTED",
+      "relation": "calls",
+      "why": "connects across different repos/directories"
+    }
+  ],
+  "tokens": {
+    "input": 0,
+    "output": 0
+  }
+}

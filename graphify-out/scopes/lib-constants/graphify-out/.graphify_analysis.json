@@ -1,0 +1,39 @@
+{
+  "communities": {
+    "0": [
+      "constants_preferencecatalog_suggested_cuisines",
+      "constants_preferencecatalog_suggested_dietary",
+      "constants_preferencecatalog_suggested_vibes",
+      "preferencecatalog_ts"
+    ],
+    "1": [
+      "businesstypes_ts"
+    ]
+  },
+  "cohesion": {
+    "0": 0.5,
+    "1": 1.0
+  },
+  "gods": [
+    {
+      "id": "constants_preferencecatalog_suggested_cuisines",
+      "label": "SUGGESTED_CUISINES",
+      "degree": 1
+    },
+    {
+      "id": "constants_preferencecatalog_suggested_dietary",
+      "label": "SUGGESTED_DIETARY",
+      "degree": 1
+    },
+    {
+      "id": "constants_preferencecatalog_suggested_vibes",
+      "label": "SUGGESTED_VIBES",
+      "degree": 1
+    }
+  ],
+  "surprises": [],
+  "tokens": {
+    "input": 0,
+    "output": 0
+  }
+}

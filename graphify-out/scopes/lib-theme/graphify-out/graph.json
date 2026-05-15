@@ -1,0 +1,514 @@
+{
+  "directed": false,
+  "multigraph": false,
+  "graph": {},
+  "nodes": [
+    {
+      "label": "createStyles.ts",
+      "file_type": "code",
+      "source_file": "createStyles.ts",
+      "source_location": "L1",
+      "id": "createstyles_ts",
+      "community": 1,
+      "norm_label": "createstyles.ts"
+    },
+    {
+      "label": "StyleFactory",
+      "file_type": "code",
+      "source_file": "createStyles.ts",
+      "source_location": "L6",
+      "id": "theme_createstyles_stylefactory",
+      "community": 1,
+      "norm_label": "stylefactory"
+    },
+    {
+      "label": "ownerTheme.ts",
+      "file_type": "code",
+      "source_file": "ownerTheme.ts",
+      "source_location": "L1",
+      "id": "ownertheme_ts",
+      "community": 2,
+      "norm_label": "ownertheme.ts"
+    },
+    {
+      "label": "ownerColorsFromPalette()",
+      "file_type": "code",
+      "source_file": "ownerTheme.ts",
+      "source_location": "L18",
+      "id": "theme_ownertheme_ownercolorsfrompalette",
+      "community": 2,
+      "norm_label": "ownercolorsfrompalette()"
+    },
+    {
+      "label": "useOwnerColors()",
+      "file_type": "code",
+      "source_file": "ownerTheme.ts",
+      "source_location": "L54",
+      "id": "theme_ownertheme_useownercolors",
+      "community": 2,
+      "norm_label": "useownercolors()"
+    },
+    {
+      "label": "ownerColors",
+      "file_type": "code",
+      "source_file": "ownerTheme.ts",
+      "source_location": "L59",
+      "id": "theme_ownertheme_ownercolors",
+      "community": 2,
+      "norm_label": "ownercolors"
+    },
+    {
+      "label": "ownerShadow",
+      "file_type": "code",
+      "source_file": "ownerTheme.ts",
+      "source_location": "L67",
+      "id": "theme_ownertheme_ownershadow",
+      "community": 2,
+      "norm_label": "ownershadow"
+    },
+    {
+      "label": "palettes.ts",
+      "file_type": "code",
+      "source_file": "palettes.ts",
+      "source_location": "L1",
+      "id": "palettes_ts",
+      "community": 1,
+      "norm_label": "palettes.ts"
+    },
+    {
+      "label": "Palette",
+      "file_type": "code",
+      "source_file": "palettes.ts",
+      "source_location": "L8",
+      "id": "theme_palettes_palette",
+      "community": 1,
+      "norm_label": "palette"
+    },
+    {
+      "label": "ThemeProvider.tsx",
+      "file_type": "code",
+      "source_file": "ThemeProvider.tsx",
+      "source_location": "L1",
+      "id": "themeprovider_tsx",
+      "community": 0,
+      "norm_label": "themeprovider.tsx"
+    },
+    {
+      "label": "ThemeMode",
+      "file_type": "code",
+      "source_file": "ThemeProvider.tsx",
+      "source_location": "L7",
+      "id": "theme_themeprovider_thememode",
+      "community": 0,
+      "norm_label": "thememode"
+    },
+    {
+      "label": "ThemeContextValue",
+      "file_type": "code",
+      "source_file": "ThemeProvider.tsx",
+      "source_location": "L9",
+      "id": "theme_themeprovider_themecontextvalue",
+      "community": 0,
+      "norm_label": "themecontextvalue"
+    },
+    {
+      "label": "STORAGE_KEY",
+      "file_type": "code",
+      "source_file": "ThemeProvider.tsx",
+      "source_location": "L16",
+      "id": "theme_themeprovider_storage_key",
+      "community": 0,
+      "norm_label": "storage_key"
+    },
+    {
+      "label": "ThemeContext",
+      "file_type": "code",
+      "source_file": "ThemeProvider.tsx",
+      "source_location": "L18",
+      "id": "theme_themeprovider_themecontext",
+      "community": 0,
+      "norm_label": "themecontext"
+    },
+    {
+      "label": "resolveEffective()",
+      "file_type": "code",
+      "source_file": "ThemeProvider.tsx",
+      "source_location": "L25",
+      "id": "theme_themeprovider_resolveeffective",
+      "community": 0,
+      "norm_label": "resolveeffective()"
+    },
+    {
+      "label": "useTheme()",
+      "file_type": "code",
+      "source_file": "ThemeProvider.tsx",
+      "source_location": "L68",
+      "id": "theme_themeprovider_usetheme",
+      "community": 0,
+      "norm_label": "usetheme()"
+    },
+    {
+      "label": "appPalette.ts",
+      "file_type": "code",
+      "source_file": "appPalette.ts",
+      "source_location": "L1",
+      "id": "apppalette_ts",
+      "community": 4,
+      "norm_label": "apppalette.ts"
+    },
+    {
+      "label": "appPalette",
+      "file_type": "code",
+      "source_file": "appPalette.ts",
+      "source_location": "L5",
+      "id": "theme_apppalette_apppalette",
+      "community": 4,
+      "norm_label": "apppalette"
+    },
+    {
+      "label": "index.ts",
+      "file_type": "code",
+      "source_file": "index.ts",
+      "source_location": "L1",
+      "id": "index_ts",
+      "community": 3,
+      "norm_label": "index.ts"
+    },
+    {
+      "label": "typography",
+      "file_type": "code",
+      "source_file": "index.ts",
+      "source_location": "L11",
+      "id": "theme_index_typography",
+      "community": 3,
+      "norm_label": "typography"
+    },
+    {
+      "label": "shadows",
+      "file_type": "code",
+      "source_file": "index.ts",
+      "source_location": "L40",
+      "id": "theme_index_shadows",
+      "community": 3,
+      "norm_label": "shadows"
+    },
+    {
+      "label": "useColors.ts",
+      "file_type": "code",
+      "source_file": "useColors.ts",
+      "source_location": "L1",
+      "id": "usecolors_ts",
+      "community": 1,
+      "norm_label": "usecolors.ts"
+    }
+  ],
+  "links": [
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "createStyles.ts",
+      "source_location": "L12",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "createstyles_ts",
+      "target": "usecolors_ts"
+    },
+    {
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "createStyles.ts",
+      "source_location": "L4",
+      "weight": 1.0,
+      "source": "createstyles_ts",
+      "target": "palettes_ts",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "createStyles.ts",
+      "source_location": "L4",
+      "weight": 1.0,
+      "source": "createstyles_ts",
+      "target": "theme_palettes_palette",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "createStyles.ts",
+      "source_location": "L6",
+      "weight": 1.0,
+      "source": "createstyles_ts",
+      "target": "theme_createstyles_stylefactory",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "ownerTheme.ts",
+      "source_location": "L2",
+      "weight": 1.0,
+      "source": "ownertheme_ts",
+      "target": "palettes_ts",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "ownerTheme.ts",
+      "source_location": "L1",
+      "weight": 1.0,
+      "source": "ownertheme_ts",
+      "target": "theme_palettes_palette",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "ownerTheme.ts",
+      "source_location": "L3",
+      "weight": 1.0,
+      "source": "ownertheme_ts",
+      "target": "usecolors_ts",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "ownerTheme.ts",
+      "source_location": "L18",
+      "weight": 1.0,
+      "source": "ownertheme_ts",
+      "target": "theme_ownertheme_ownercolorsfrompalette",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "ownerTheme.ts",
+      "source_location": "L54",
+      "weight": 1.0,
+      "source": "ownertheme_ts",
+      "target": "theme_ownertheme_useownercolors",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "ownerTheme.ts",
+      "source_location": "L59",
+      "weight": 1.0,
+      "source": "ownertheme_ts",
+      "target": "theme_ownertheme_ownercolors",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "ownerTheme.ts",
+      "source_location": "L67",
+      "weight": 1.0,
+      "source": "ownertheme_ts",
+      "target": "theme_ownertheme_ownershadow",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "ownerTheme.ts",
+      "source_location": "L55",
+      "weight": 1.0,
+      "source": "theme_ownertheme_useownercolors",
+      "target": "theme_ownertheme_ownercolorsfrompalette",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "ownerTheme.ts",
+      "source_location": "L55",
+      "weight": 1.0,
+      "source": "theme_ownertheme_useownercolors",
+      "target": "usecolors_ts"
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "palettes.ts",
+      "source_location": "L8",
+      "weight": 1.0,
+      "source": "palettes_ts",
+      "target": "theme_palettes_palette",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "ThemeProvider.tsx",
+      "source_location": "L5",
+      "weight": 1.0,
+      "source": "themeprovider_tsx",
+      "target": "palettes_ts",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "useColors.ts",
+      "source_location": "L2",
+      "weight": 1.0,
+      "source": "usecolors_ts",
+      "target": "palettes_ts",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "ThemeProvider.tsx",
+      "source_location": "L5",
+      "weight": 1.0,
+      "source": "themeprovider_tsx",
+      "target": "theme_palettes_palette",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "useColors.ts",
+      "source_location": "L2",
+      "weight": 1.0,
+      "source": "usecolors_ts",
+      "target": "theme_palettes_palette",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "ThemeProvider.tsx",
+      "source_location": "L7",
+      "weight": 1.0,
+      "source": "themeprovider_tsx",
+      "target": "theme_themeprovider_thememode",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "ThemeProvider.tsx",
+      "source_location": "L9",
+      "weight": 1.0,
+      "source": "themeprovider_tsx",
+      "target": "theme_themeprovider_themecontextvalue",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "ThemeProvider.tsx",
+      "source_location": "L16",
+      "weight": 1.0,
+      "source": "themeprovider_tsx",
+      "target": "theme_themeprovider_storage_key",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "ThemeProvider.tsx",
+      "source_location": "L18",
+      "weight": 1.0,
+      "source": "themeprovider_tsx",
+      "target": "theme_themeprovider_themecontext",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "confidence": "EXTRACTED",
+      "source_file": "ThemeProvider.tsx",
+      "source_location": "L57",
+      "weight": 1.0,
+      "context": "call",
+      "source": "themeprovider_tsx",
+      "target": "theme_themeprovider_resolveeffective",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "ThemeProvider.tsx",
+      "source_location": "L68",
+      "weight": 1.0,
+      "source": "themeprovider_tsx",
+      "target": "theme_themeprovider_usetheme",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "useColors.ts",
+      "source_location": "L1",
+      "weight": 1.0,
+      "source": "usecolors_ts",
+      "target": "themeprovider_tsx",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "useColors.ts",
+      "source_location": "L5",
+      "weight": 1.0,
+      "confidence_score": 1.0,
+      "source": "usecolors_ts",
+      "target": "theme_themeprovider_usetheme"
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "appPalette.ts",
+      "source_location": "L5",
+      "weight": 1.0,
+      "source": "apppalette_ts",
+      "target": "theme_apppalette_apppalette",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "index.ts",
+      "source_location": "L11",
+      "weight": 1.0,
+      "source": "index_ts",
+      "target": "theme_index_typography",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "index.ts",
+      "source_location": "L40",
+      "weight": 1.0,
+      "source": "index_ts",
+      "target": "theme_index_shadows",
+      "confidence_score": 1.0
+    }
+  ],
+  "hyperedges": [],
+  "built_at_commit": "f8e49f380bc144eec2877ce30747d7a6c1711a63"
+}

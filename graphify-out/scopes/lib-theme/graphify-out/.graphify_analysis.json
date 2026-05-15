@@ -1,0 +1,100 @@
+{
+  "communities": {
+    "0": [
+      "theme_themeprovider_resolveeffective",
+      "theme_themeprovider_storage_key",
+      "theme_themeprovider_themecontext",
+      "theme_themeprovider_themecontextvalue",
+      "theme_themeprovider_thememode",
+      "theme_themeprovider_usetheme",
+      "themeprovider_tsx"
+    ],
+    "1": [
+      "createstyles_ts",
+      "palettes_ts",
+      "theme_createstyles_stylefactory",
+      "theme_palettes_palette",
+      "usecolors_ts"
+    ],
+    "2": [
+      "ownertheme_ts",
+      "theme_ownertheme_ownercolors",
+      "theme_ownertheme_ownercolorsfrompalette",
+      "theme_ownertheme_ownershadow",
+      "theme_ownertheme_useownercolors"
+    ],
+    "3": [
+      "index_ts",
+      "theme_index_shadows",
+      "theme_index_typography"
+    ],
+    "4": [
+      "apppalette_ts",
+      "theme_apppalette_apppalette"
+    ]
+  },
+  "cohesion": {
+    "0": 0.29,
+    "1": 0.7,
+    "2": 0.5,
+    "3": 0.67,
+    "4": 1.0
+  },
+  "gods": [
+    {
+      "id": "theme_palettes_palette",
+      "label": "Palette",
+      "degree": 5
+    },
+    {
+      "id": "theme_ownertheme_useownercolors",
+      "label": "useOwnerColors()",
+      "degree": 3
+    },
+    {
+      "id": "theme_ownertheme_ownercolorsfrompalette",
+      "label": "ownerColorsFromPalette()",
+      "degree": 2
+    },
+    {
+      "id": "theme_themeprovider_usetheme",
+      "label": "useTheme()",
+      "degree": 2
+    },
+    {
+      "id": "theme_createstyles_stylefactory",
+      "label": "StyleFactory",
+      "degree": 1
+    },
+    {
+      "id": "theme_ownertheme_ownercolors",
+      "label": "ownerColors",
+      "degree": 1
+    },
+    {
+      "id": "theme_ownertheme_ownershadow",
+      "label": "ownerShadow",
+      "degree": 1
+    },
+    {
+      "id": "theme_themeprovider_thememode",
+      "label": "ThemeMode",
+      "degree": 1
+    },
+    {
+      "id": "theme_themeprovider_themecontextvalue",
+      "label": "ThemeContextValue",
+      "degree": 1
+    },
+    {
+      "id": "theme_themeprovider_storage_key",
+      "label": "STORAGE_KEY",
+      "degree": 1
+    }
+  ],
+  "surprises": [],
+  "tokens": {
+    "input": 0,
+    "output": 0
+  }
+}

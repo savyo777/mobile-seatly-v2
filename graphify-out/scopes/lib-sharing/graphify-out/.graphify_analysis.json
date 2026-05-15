@@ -1,0 +1,191 @@
+{
+  "communities": {
+    "0": [
+      "mime_ts",
+      "sharing_mime_getmimetype",
+      "sharing_mime_getwildcardmimetype",
+      "sharing_mime_mime_from_extension",
+      "sharing_mime_socialmediatype",
+      "sharing_mime_socialmimetype",
+      "sharing_mime_stripuridecoration"
+    ],
+    "1": [
+      "mediaexport_ts",
+      "sharing_mediaexport_exportfilteredmedia",
+      "sharing_mediaexport_exportfilteredphoto",
+      "sharing_mediaexport_exportfilteredvideo",
+      "sharing_mediaexport_exportoptions",
+      "sharing_mime_getmediatypefrommime"
+    ],
+    "2": [
+      "sharing_mediaexport_ensuresharedirectory",
+      "sharing_mediaexport_exportdatauri",
+      "sharing_mediaexport_exportmedia",
+      "sharing_mediaexport_normalizelocalfileuri",
+      "sharing_mediaexport_resolveexportmimetype"
+    ],
+    "3": [
+      "sharing_nativesocialshare_sharetoinstagramfeed",
+      "sharing_nativesocialshare_sharetoinstagramstory",
+      "sharing_nativesocialshare_sharetosnapchat",
+      "sharing_nativesocialshare_sharetotiktok",
+      "sharing_nativesocialshare_sharewithnativecomposer"
+    ],
+    "4": [
+      "nativesocialshare_ts",
+      "sharing_nativesocialshare_instagramappid",
+      "sharing_nativesocialshare_nativesocialsharemodule",
+      "sharing_nativesocialshare_socialsharedestination",
+      "sharing_nativesocialshare_socialshareresult"
+    ],
+    "5": [
+      "sharing_nativesocialshare_directcomposerunavailablemessage",
+      "sharing_nativesocialshare_getnativesocialshare",
+      "sharing_nativesocialshare_isnativesocialshareavailable",
+      "sharing_nativesocialshare_sharetoyoutube"
+    ],
+    "6": [
+      "personalsocialapp_ts",
+      "sharing_personalsocialapp_openpersonalsnapchatapp",
+      "sharing_personalsocialapp_openpersonaltiktokapp"
+    ],
+    "7": [
+      "generatesharecard_ts",
+      "sharing_generatesharecard_buildsharecaption",
+      "sharing_generatesharecard_sharesnaptosocial"
+    ],
+    "8": [
+      "sharing_mediaexport_buildoutputuri",
+      "sharing_mime_getfileextensionformime"
+    ],
+    "9": [
+      "sharing_nativesocialshare_opensystemsharesheet",
+      "sharing_nativesocialshare_resolvemimetype"
+    ]
+  },
+  "cohesion": {
+    "0": 0.33,
+    "1": 0.53,
+    "2": 0.4,
+    "3": 0.4,
+    "4": 0.4,
+    "5": 0.5,
+    "6": 0.67,
+    "7": 1.0,
+    "8": 1.0,
+    "9": 1.0
+  },
+  "gods": [
+    {
+      "id": "sharing_mediaexport_exportmedia",
+      "label": "exportMedia()",
+      "degree": 8
+    },
+    {
+      "id": "sharing_nativesocialshare_sharewithnativecomposer",
+      "label": "shareWithNativeComposer()",
+      "degree": 8
+    },
+    {
+      "id": "sharing_mime_getmimetype",
+      "label": "getMimeType()",
+      "degree": 7
+    },
+    {
+      "id": "sharing_mediaexport_exportfilteredmedia",
+      "label": "exportFilteredMedia()",
+      "degree": 5
+    },
+    {
+      "id": "sharing_nativesocialshare_getnativesocialshare",
+      "label": "getNativeSocialShare()",
+      "degree": 4
+    },
+    {
+      "id": "sharing_nativesocialshare_resolvemimetype",
+      "label": "resolveMimeType()",
+      "degree": 4
+    },
+    {
+      "id": "sharing_nativesocialshare_sharetoyoutube",
+      "label": "shareToYouTube()",
+      "degree": 4
+    },
+    {
+      "id": "sharing_mediaexport_buildoutputuri",
+      "label": "buildOutputUri()",
+      "degree": 3
+    },
+    {
+      "id": "sharing_mediaexport_resolveexportmimetype",
+      "label": "resolveExportMimeType()",
+      "degree": 3
+    },
+    {
+      "id": "sharing_mediaexport_exportfilteredphoto",
+      "label": "exportFilteredPhoto()",
+      "degree": 3
+    }
+  ],
+  "surprises": [
+    {
+      "source": "resolveExportMimeType()",
+      "target": "getMimeType()",
+      "source_files": [
+        "mediaExport.ts",
+        "mime.ts"
+      ],
+      "confidence": "EXTRACTED",
+      "relation": "calls",
+      "why": "connects across different repos/directories; bridges separate communities"
+    },
+    {
+      "source": "exportFilteredMedia()",
+      "target": "getMimeType()",
+      "source_files": [
+        "mediaExport.ts",
+        "mime.ts"
+      ],
+      "confidence": "EXTRACTED",
+      "relation": "calls",
+      "why": "connects across different repos/directories; bridges separate communities"
+    },
+    {
+      "source": "resolveMimeType()",
+      "target": "getMimeType()",
+      "source_files": [
+        "nativeSocialShare.ts",
+        "mime.ts"
+      ],
+      "confidence": "EXTRACTED",
+      "relation": "calls",
+      "why": "connects across different repos/directories; bridges separate communities"
+    },
+    {
+      "source": "buildOutputUri()",
+      "target": "getFileExtensionForMime()",
+      "source_files": [
+        "mediaExport.ts",
+        "mime.ts"
+      ],
+      "confidence": "EXTRACTED",
+      "relation": "calls",
+      "why": "connects across different repos/directories"
+    },
+    {
+      "source": "exportFilteredMedia()",
+      "target": "getMediaTypeFromMime()",
+      "source_files": [
+        "mediaExport.ts",
+        "mime.ts"
+      ],
+      "confidence": "EXTRACTED",
+      "relation": "calls",
+      "why": "connects across different repos/directories"
+    }
+  ],
+  "tokens": {
+    "input": 0,
+    "output": 0
+  }
+}

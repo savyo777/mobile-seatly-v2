@@ -1,0 +1,277 @@
+{
+  "communities": {
+    "0": [
+      "booking_publicbookingapi_availabilitycache",
+      "booking_publicbookingapi_availabilityinflight",
+      "booking_publicbookingapi_availabledatescache",
+      "booking_publicbookingapi_bookingprofile",
+      "booking_publicbookingapi_cancelreservationresponse",
+      "booking_publicbookingapi_conflictwindow",
+      "booking_publicbookingapi_depositpayer",
+      "booking_publicbookingapi_fetchactivereservationwindows",
+      "booking_publicbookingapi_fetchbookingprofile",
+      "booking_publicbookingapi_formatslotdisplaytime",
+      "booking_publicbookingapi_getavailabledates",
+      "booking_publicbookingapi_getrestauranttimezone",
+      "booking_publicbookingapi_makebookingcartparam",
+      "booking_publicbookingapi_modify_reason_messages",
+      "booking_publicbookingapi_modifyreservationpayload",
+      "booking_publicbookingapi_parsebookingcartparam",
+      "booking_publicbookingapi_publicbookingcartitem",
+      "booking_publicbookingapi_publicbookingpayload",
+      "booking_publicbookingapi_publicbookingresponse",
+      "booking_publicbookingapi_restauranttimezonecache",
+      "booking_publicbookingapi_selectedslotmatches",
+      "booking_publicbookingapi_slotconflictswithwindows",
+      "publicbookingapi_ts"
+    ],
+    "1": [
+      "booking_hoursschedule_parseclocktime",
+      "booking_publicbookingapi_availabilityresponse",
+      "booking_publicbookingapi_availabilityslot",
+      "booking_slotgenerator_blockedtableids",
+      "booking_slotgenerator_clampturnminutes",
+      "booking_slotgenerator_combinecandidate",
+      "booking_slotgenerator_findavailabletablegroup",
+      "booking_slotgenerator_formatdisplaytime",
+      "booking_slotgenerator_generateavailabilityslots",
+      "booking_slotgenerator_getutcoffsetminutes",
+      "booking_slotgenerator_localdayofweek",
+      "booking_slotgenerator_localtoutc",
+      "booking_slotgenerator_parsetimeofdaytominutes",
+      "booking_slotgenerator_pickcombo",
+      "booking_slotgenerator_picksingletable",
+      "booking_slotgenerator_readfloorcapacity",
+      "booking_slotgenerator_reservationtablerow",
+      "booking_slotgenerator_resolveturnminutes",
+      "booking_slotgenerator_restaurantrow",
+      "booking_slotgenerator_shiftrow",
+      "booking_slotgenerator_tablerow",
+      "slotgenerator_ts"
+    ],
+    "2": [
+      "availabilitytypes_ts",
+      "booking_availabilitytypes_bookingshiftmock",
+      "booking_availabilitytypes_calendarcell",
+      "booking_availabilitytypes_datekey",
+      "booking_availabilitytypes_timeslotoption",
+      "booking_dateutils_pad",
+      "booking_dateutils_parsebookingdateparam",
+      "booking_dateutils_parsedatekeylocal",
+      "booking_dateutils_tolocaldatekey",
+      "booking_getavailability_firstbookabledatekey",
+      "booking_getavailability_getcalendarmonth",
+      "booking_getavailability_getshiftconfig",
+      "booking_getavailability_gettimeslotsfordate",
+      "booking_getavailability_isdatebookable",
+      "booking_getavailability_nextbookabledateafter",
+      "booking_publicbookingapi_cacheavailability",
+      "dateutils_ts",
+      "getavailability_ts"
+    ],
+    "3": [
+      "booking_hoursschedule_bookinghoursjson",
+      "booking_hoursschedule_bookingweekdaykey",
+      "booking_hoursschedule_deriveclosedjsweekdaysfromhoursjson",
+      "booking_hoursschedule_getbookingminuteswindowfordate",
+      "booking_hoursschedule_hoursrange",
+      "booking_hoursschedule_isclosedbookingdate",
+      "booking_hoursschedule_isfinishedservinglocalday",
+      "booking_hoursschedule_minutestohourminute",
+      "booking_hoursschedule_normalizehoursrange",
+      "booking_hoursschedule_parsedclocktime",
+      "booking_hoursschedule_readhoursrange",
+      "booking_hoursschedule_samedayclosingminute",
+      "booking_hoursschedule_specialhoursfordate",
+      "booking_hoursschedule_specialhoursrange",
+      "hoursschedule_ts"
+    ],
+    "4": [
+      "addtocalendar_ts",
+      "booking_addtocalendar_addbookingtocalendar",
+      "booking_addtocalendar_buildgooglecalendarurl",
+      "booking_addtocalendar_buildicscontent",
+      "booking_addtocalendar_calendarbooking",
+      "booking_addtocalendar_escapeicstext",
+      "booking_addtocalendar_toicsutc",
+      "booking_bookingdefaults_noticeoption",
+      "booking_bookingdefaults_slot_duration_options",
+      "bookingdefaults_ts"
+    ],
+    "5": [
+      "booking_publicbookingapi_assertconfigured",
+      "booking_publicbookingapi_cancelreservation",
+      "booking_publicbookingapi_coerceerrormessage",
+      "booking_publicbookingapi_confirmdepositstub",
+      "booking_publicbookingapi_getaccesstoken",
+      "booking_publicbookingapi_isaborterror",
+      "booking_publicbookingapi_isjunkerrorstring",
+      "booking_publicbookingapi_modifyreservation",
+      "booking_publicbookingapi_preparedeposit"
+    ],
+    "6": [
+      "booking_myreservations_fetchmybookingitems",
+      "booking_myreservations_mybookingitem",
+      "booking_myreservations_normalizedepositstatus",
+      "booking_myreservations_normalizestatus",
+      "booking_publicbookingapi_depositstatus",
+      "booking_slotgenerator_reservationrow",
+      "myreservations_ts"
+    ],
+    "7": [
+      "booking_confirmationcode_isvalidconfirmationcode",
+      "booking_confirmationcode_makeconfirmationcode",
+      "booking_publicbookingapi_demoavailabilityfor",
+      "booking_publicbookingapi_demobookingfor",
+      "booking_publicbookingapi_isdemorestaurantkey",
+      "confirmationcode_ts"
+    ],
+    "8": [
+      "availabledates_ts",
+      "booking_availabledates_adddays",
+      "booking_availabledates_daysbetween",
+      "booking_availabledates_findavailabledates",
+      "booking_availabledates_findavailabledatesargs"
+    ],
+    "9": [
+      "booking_deposittiers_previewdepositcents",
+      "booking_deposittiers_readdeposittiers",
+      "deposittiers_ts"
+    ],
+    "10": [
+      "booking_publicbookingapi_cartsubtotal",
+      "booking_publicbookingapi_createpublicbooking",
+      "booking_publicbookingapi_roundmoney"
+    ],
+    "11": [
+      "bookinglimits_ts"
+    ]
+  },
+  "cohesion": {
+    "0": 0.09,
+    "1": 0.15,
+    "2": 0.17,
+    "3": 0.21,
+    "4": 0.31,
+    "5": 0.47,
+    "6": 0.29,
+    "7": 0.33,
+    "8": 0.6,
+    "9": 0.67,
+    "10": 0.67,
+    "11": 1.0
+  },
+  "gods": [
+    {
+      "id": "booking_slotgenerator_generateavailabilityslots",
+      "label": "generateAvailabilitySlots()",
+      "degree": 12
+    },
+    {
+      "id": "booking_hoursschedule_getbookingminuteswindowfordate",
+      "label": "getBookingMinutesWindowForDate()",
+      "degree": 8
+    },
+    {
+      "id": "booking_publicbookingapi_coerceerrormessage",
+      "label": "coerceErrorMessage()",
+      "degree": 7
+    },
+    {
+      "id": "booking_publicbookingapi_createpublicbooking",
+      "label": "createPublicBooking()",
+      "degree": 7
+    },
+    {
+      "id": "booking_publicbookingapi_getaccesstoken",
+      "label": "getAccessToken()",
+      "degree": 6
+    },
+    {
+      "id": "booking_publicbookingapi_assertconfigured",
+      "label": "assertConfigured()",
+      "degree": 6
+    },
+    {
+      "id": "booking_publicbookingapi_isaborterror",
+      "label": "isAbortError()",
+      "degree": 6
+    },
+    {
+      "id": "booking_publicbookingapi_preparedeposit",
+      "label": "prepareDeposit()",
+      "degree": 5
+    },
+    {
+      "id": "booking_publicbookingapi_confirmdepositstub",
+      "label": "confirmDepositStub()",
+      "degree": 5
+    },
+    {
+      "id": "booking_publicbookingapi_modifyreservation",
+      "label": "modifyReservation()",
+      "degree": 5
+    }
+  ],
+  "surprises": [
+    {
+      "source": "toIcsUtc()",
+      "target": "pad()",
+      "source_files": [
+        "addToCalendar.ts",
+        "dateUtils.ts"
+      ],
+      "confidence": "EXTRACTED",
+      "relation": "calls",
+      "why": "connects across different repos/directories; bridges separate communities"
+    },
+    {
+      "source": "generateAvailabilitySlots()",
+      "target": "getBookingMinutesWindowForDate()",
+      "source_files": [
+        "slotGenerator.ts",
+        "hoursSchedule.ts"
+      ],
+      "confidence": "EXTRACTED",
+      "relation": "calls",
+      "why": "connects across different repos/directories; bridges separate communities"
+    },
+    {
+      "source": "findAvailableDates()",
+      "target": "generateAvailabilitySlots()",
+      "source_files": [
+        "availableDates.ts",
+        "slotGenerator.ts"
+      ],
+      "confidence": "EXTRACTED",
+      "relation": "calls",
+      "why": "connects across different repos/directories; bridges separate communities"
+    },
+    {
+      "source": "nextBookableDateAfter()",
+      "target": "parseDateKeyLocal()",
+      "source_files": [
+        "getAvailability.ts",
+        "dateUtils.ts"
+      ],
+      "confidence": "EXTRACTED",
+      "relation": "calls",
+      "why": "connects across different repos/directories"
+    },
+    {
+      "source": "demoBookingFor()",
+      "target": "makeConfirmationCode()",
+      "source_files": [
+        "publicBookingApi.ts",
+        "confirmationCode.ts"
+      ],
+      "confidence": "EXTRACTED",
+      "relation": "calls",
+      "why": "connects across different repos/directories"
+    }
+  ],
+  "tokens": {
+    "input": 0,
+    "output": 0
+  }
+}

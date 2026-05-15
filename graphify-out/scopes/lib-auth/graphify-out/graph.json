@@ -1,0 +1,949 @@
+{
+  "directed": false,
+  "multigraph": false,
+  "graph": {},
+  "nodes": [
+    {
+      "label": "lockoutPolicy.ts",
+      "file_type": "code",
+      "source_file": "lockoutPolicy.ts",
+      "source_location": "L1",
+      "id": "lockoutpolicy_ts",
+      "community": 6,
+      "norm_label": "lockoutpolicy.ts"
+    },
+    {
+      "label": "displayProfile.ts",
+      "file_type": "code",
+      "source_file": "displayProfile.ts",
+      "source_location": "L1",
+      "id": "displayprofile_ts",
+      "community": 1,
+      "norm_label": "displayprofile.ts"
+    },
+    {
+      "label": "DisplayProfileFallback",
+      "file_type": "code",
+      "source_file": "displayProfile.ts",
+      "source_location": "L4",
+      "id": "auth_displayprofile_displayprofilefallback",
+      "community": 1,
+      "norm_label": "displayprofilefallback"
+    },
+    {
+      "label": "metadataString()",
+      "file_type": "code",
+      "source_file": "displayProfile.ts",
+      "source_location": "L20",
+      "id": "auth_displayprofile_metadatastring",
+      "community": 1,
+      "norm_label": "metadatastring()"
+    },
+    {
+      "label": "splitName()",
+      "file_type": "code",
+      "source_file": "displayProfile.ts",
+      "source_location": "L26",
+      "id": "auth_displayprofile_splitname",
+      "community": 1,
+      "norm_label": "splitname()"
+    },
+    {
+      "label": "resolveAuthDisplayProfile()",
+      "file_type": "code",
+      "source_file": "displayProfile.ts",
+      "source_location": "L36",
+      "id": "auth_displayprofile_resolveauthdisplayprofile",
+      "community": 1,
+      "norm_label": "resolveauthdisplayprofile()"
+    },
+    {
+      "label": "initialsFromDisplayName()",
+      "file_type": "code",
+      "source_file": "displayProfile.ts",
+      "source_location": "L73",
+      "id": "auth_displayprofile_initialsfromdisplayname",
+      "community": 1,
+      "norm_label": "initialsfromdisplayname()"
+    },
+    {
+      "label": "compactNameLabel()",
+      "file_type": "code",
+      "source_file": "displayProfile.ts",
+      "source_location": "L82",
+      "id": "auth_displayprofile_compactnamelabel",
+      "community": 1,
+      "norm_label": "compactnamelabel()"
+    },
+    {
+      "label": "recoveryLinks.ts",
+      "file_type": "code",
+      "source_file": "recoveryLinks.ts",
+      "source_location": "L1",
+      "id": "recoverylinks_ts",
+      "community": 0,
+      "norm_label": "recoverylinks.ts"
+    },
+    {
+      "label": "RecoveryTokens",
+      "file_type": "code",
+      "source_file": "recoveryLinks.ts",
+      "source_location": "L1",
+      "id": "auth_recoverylinks_recoverytokens",
+      "community": 0,
+      "norm_label": "recoverytokens"
+    },
+    {
+      "label": "paramsFromUrl()",
+      "file_type": "code",
+      "source_file": "recoveryLinks.ts",
+      "source_location": "L7",
+      "id": "auth_recoverylinks_paramsfromurl",
+      "community": 0,
+      "norm_label": "paramsfromurl()"
+    },
+    {
+      "label": "routePart()",
+      "file_type": "code",
+      "source_file": "recoveryLinks.ts",
+      "source_location": "L22",
+      "id": "auth_recoverylinks_routepart",
+      "community": 0,
+      "norm_label": "routepart()"
+    },
+    {
+      "label": "isRecoveryRoute()",
+      "file_type": "code",
+      "source_file": "recoveryLinks.ts",
+      "source_location": "L31",
+      "id": "auth_recoverylinks_isrecoveryroute",
+      "community": 0,
+      "norm_label": "isrecoveryroute()"
+    },
+    {
+      "label": "getRecoveryTokensFromUrl()",
+      "file_type": "code",
+      "source_file": "recoveryLinks.ts",
+      "source_location": "L36",
+      "id": "auth_recoverylinks_getrecoverytokensfromurl",
+      "community": 0,
+      "norm_label": "getrecoverytokensfromurl()"
+    },
+    {
+      "label": "getRecoveryAuthCodeFromUrl()",
+      "file_type": "code",
+      "source_file": "recoveryLinks.ts",
+      "source_location": "L46",
+      "id": "auth_recoverylinks_getrecoveryauthcodefromurl",
+      "community": 0,
+      "norm_label": "getrecoveryauthcodefromurl()"
+    },
+    {
+      "label": "getRecoveryTokenHashFromUrl()",
+      "file_type": "code",
+      "source_file": "recoveryLinks.ts",
+      "source_location": "L55",
+      "id": "auth_recoverylinks_getrecoverytokenhashfromurl",
+      "community": 0,
+      "norm_label": "getrecoverytokenhashfromurl()"
+    },
+    {
+      "label": "postSignInRouting.ts",
+      "file_type": "code",
+      "source_file": "postSignInRouting.ts",
+      "source_location": "L1",
+      "id": "postsigninrouting_ts",
+      "community": 3,
+      "norm_label": "postsigninrouting.ts"
+    },
+    {
+      "label": "AuthHomeHref",
+      "file_type": "code",
+      "source_file": "postSignInRouting.ts",
+      "source_location": "L6",
+      "id": "auth_postsigninrouting_authhomehref",
+      "community": 3,
+      "norm_label": "authhomehref"
+    },
+    {
+      "label": "normalizeRole()",
+      "file_type": "code",
+      "source_file": "postSignInRouting.ts",
+      "source_location": "L8",
+      "id": "auth_postsigninrouting_normalizerole",
+      "community": 3,
+      "norm_label": "normalizerole()"
+    },
+    {
+      "label": "getMetadataRole()",
+      "file_type": "code",
+      "source_file": "postSignInRouting.ts",
+      "source_location": "L16",
+      "id": "auth_postsigninrouting_getmetadatarole",
+      "community": 3,
+      "norm_label": "getmetadatarole()"
+    },
+    {
+      "label": "getRoleForSignedInUser()",
+      "file_type": "code",
+      "source_file": "postSignInRouting.ts",
+      "source_location": "L23",
+      "id": "auth_postsigninrouting_getroleforsignedinuser",
+      "community": 3,
+      "norm_label": "getroleforsignedinuser()"
+    },
+    {
+      "label": "resolveHomeForSignedInUser()",
+      "file_type": "code",
+      "source_file": "postSignInRouting.ts",
+      "source_location": "L40",
+      "id": "auth_postsigninrouting_resolvehomeforsignedinuser",
+      "community": 3,
+      "norm_label": "resolvehomeforsignedinuser()"
+    },
+    {
+      "label": "AuthContext.tsx",
+      "file_type": "code",
+      "source_file": "AuthContext.tsx",
+      "source_location": "L1",
+      "id": "authcontext_tsx",
+      "community": 2,
+      "norm_label": "authcontext.tsx"
+    },
+    {
+      "label": "AuthCtx",
+      "file_type": "code",
+      "source_file": "AuthContext.tsx",
+      "source_location": "L16",
+      "id": "auth_authcontext_authctx",
+      "community": 2,
+      "norm_label": "authctx"
+    },
+    {
+      "label": "Ctx",
+      "file_type": "code",
+      "source_file": "AuthContext.tsx",
+      "source_location": "L26",
+      "id": "auth_authcontext_ctx",
+      "community": 2,
+      "norm_label": "ctx"
+    },
+    {
+      "label": "resolveRoleFromMetadata()",
+      "file_type": "code",
+      "source_file": "AuthContext.tsx",
+      "source_location": "L38",
+      "id": "auth_authcontext_resolverolefrommetadata",
+      "community": 2,
+      "norm_label": "resolverolefrommetadata()"
+    },
+    {
+      "label": "resolveDefaultProfile()",
+      "file_type": "code",
+      "source_file": "AuthContext.tsx",
+      "source_location": "L50",
+      "id": "auth_authcontext_resolvedefaultprofile",
+      "community": 2,
+      "norm_label": "resolvedefaultprofile()"
+    },
+    {
+      "label": "AuthProvider()",
+      "file_type": "code",
+      "source_file": "AuthContext.tsx",
+      "source_location": "L69",
+      "id": "auth_authcontext_authprovider",
+      "community": 2,
+      "norm_label": "authprovider()"
+    },
+    {
+      "label": "useAuthSession()",
+      "file_type": "code",
+      "source_file": "AuthContext.tsx",
+      "source_location": "L254",
+      "id": "auth_authcontext_useauthsession",
+      "community": 5,
+      "norm_label": "useauthsession()"
+    },
+    {
+      "label": "roles.ts",
+      "file_type": "code",
+      "source_file": "roles.ts",
+      "source_location": "L1",
+      "id": "roles_ts",
+      "community": 4,
+      "norm_label": "roles.ts"
+    },
+    {
+      "label": "AppRoleExpectation",
+      "file_type": "code",
+      "source_file": "roles.ts",
+      "source_location": "L1",
+      "id": "auth_roles_approleexpectation",
+      "community": 4,
+      "norm_label": "approleexpectation"
+    },
+    {
+      "label": "toTokens()",
+      "file_type": "code",
+      "source_file": "roles.ts",
+      "source_location": "L3",
+      "id": "auth_roles_totokens",
+      "community": 4,
+      "norm_label": "totokens()"
+    },
+    {
+      "label": "roleIncludes()",
+      "file_type": "code",
+      "source_file": "roles.ts",
+      "source_location": "L14",
+      "id": "auth_roles_roleincludes",
+      "community": 4,
+      "norm_label": "roleincludes()"
+    },
+    {
+      "label": "mergeRole()",
+      "file_type": "code",
+      "source_file": "roles.ts",
+      "source_location": "L19",
+      "id": "auth_roles_mergerole",
+      "community": 4,
+      "norm_label": "mergerole()"
+    },
+    {
+      "label": "resolveIsStaffLike()",
+      "file_type": "code",
+      "source_file": "roles.ts",
+      "source_location": "L29",
+      "id": "auth_roles_resolveisstafflike",
+      "community": 2,
+      "norm_label": "resolveisstafflike()"
+    },
+    {
+      "label": "currentUserId.ts",
+      "file_type": "code",
+      "source_file": "currentUserId.ts",
+      "source_location": "L1",
+      "id": "currentuserid_ts",
+      "community": 5,
+      "norm_label": "currentuserid.ts"
+    },
+    {
+      "label": "getDemoFallbackUserId()",
+      "file_type": "code",
+      "source_file": "currentUserId.ts",
+      "source_location": "L15",
+      "id": "auth_currentuserid_getdemofallbackuserid",
+      "community": 5,
+      "norm_label": "getdemofallbackuserid()"
+    },
+    {
+      "label": "useCurrentUserId()",
+      "file_type": "code",
+      "source_file": "currentUserId.ts",
+      "source_location": "L25",
+      "id": "auth_currentuserid_usecurrentuserid",
+      "community": 5,
+      "norm_label": "usecurrentuserid()"
+    }
+  ],
+  "links": [
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "displayProfile.ts",
+      "source_location": "L4",
+      "weight": 1.0,
+      "source": "displayprofile_ts",
+      "target": "auth_displayprofile_displayprofilefallback",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "displayProfile.ts",
+      "source_location": "L20",
+      "weight": 1.0,
+      "source": "displayprofile_ts",
+      "target": "auth_displayprofile_metadatastring",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "displayProfile.ts",
+      "source_location": "L26",
+      "weight": 1.0,
+      "source": "displayprofile_ts",
+      "target": "auth_displayprofile_splitname",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "displayProfile.ts",
+      "source_location": "L36",
+      "weight": 1.0,
+      "source": "displayprofile_ts",
+      "target": "auth_displayprofile_resolveauthdisplayprofile",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "displayProfile.ts",
+      "source_location": "L73",
+      "weight": 1.0,
+      "source": "displayprofile_ts",
+      "target": "auth_displayprofile_initialsfromdisplayname",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "displayProfile.ts",
+      "source_location": "L82",
+      "weight": 1.0,
+      "source": "displayprofile_ts",
+      "target": "auth_displayprofile_compactnamelabel",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "displayProfile.ts",
+      "source_location": "L43",
+      "weight": 1.0,
+      "source": "auth_displayprofile_resolveauthdisplayprofile",
+      "target": "auth_displayprofile_metadatastring",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "displayProfile.ts",
+      "source_location": "L61",
+      "weight": 1.0,
+      "source": "auth_displayprofile_resolveauthdisplayprofile",
+      "target": "auth_displayprofile_splitname",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "displayProfile.ts",
+      "source_location": "L83",
+      "weight": 1.0,
+      "source": "auth_displayprofile_compactnamelabel",
+      "target": "auth_displayprofile_splitname",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "recoveryLinks.ts",
+      "source_location": "L1",
+      "weight": 1.0,
+      "source": "recoverylinks_ts",
+      "target": "auth_recoverylinks_recoverytokens",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "recoveryLinks.ts",
+      "source_location": "L7",
+      "weight": 1.0,
+      "source": "recoverylinks_ts",
+      "target": "auth_recoverylinks_paramsfromurl",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "recoveryLinks.ts",
+      "source_location": "L22",
+      "weight": 1.0,
+      "source": "recoverylinks_ts",
+      "target": "auth_recoverylinks_routepart",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "recoveryLinks.ts",
+      "source_location": "L31",
+      "weight": 1.0,
+      "source": "recoverylinks_ts",
+      "target": "auth_recoverylinks_isrecoveryroute",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "recoveryLinks.ts",
+      "source_location": "L36",
+      "weight": 1.0,
+      "source": "recoverylinks_ts",
+      "target": "auth_recoverylinks_getrecoverytokensfromurl",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "recoveryLinks.ts",
+      "source_location": "L46",
+      "weight": 1.0,
+      "source": "recoverylinks_ts",
+      "target": "auth_recoverylinks_getrecoveryauthcodefromurl",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "recoveryLinks.ts",
+      "source_location": "L55",
+      "weight": 1.0,
+      "source": "recoverylinks_ts",
+      "target": "auth_recoverylinks_getrecoverytokenhashfromurl",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "recoveryLinks.ts",
+      "source_location": "L37",
+      "weight": 1.0,
+      "source": "auth_recoverylinks_getrecoverytokensfromurl",
+      "target": "auth_recoverylinks_paramsfromurl",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "recoveryLinks.ts",
+      "source_location": "L48",
+      "weight": 1.0,
+      "source": "auth_recoverylinks_getrecoveryauthcodefromurl",
+      "target": "auth_recoverylinks_paramsfromurl",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "recoveryLinks.ts",
+      "source_location": "L57",
+      "weight": 1.0,
+      "source": "auth_recoverylinks_getrecoverytokenhashfromurl",
+      "target": "auth_recoverylinks_paramsfromurl",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "recoveryLinks.ts",
+      "source_location": "L32",
+      "weight": 1.0,
+      "source": "auth_recoverylinks_isrecoveryroute",
+      "target": "auth_recoverylinks_routepart",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "recoveryLinks.ts",
+      "source_location": "L42",
+      "weight": 1.0,
+      "source": "auth_recoverylinks_getrecoverytokensfromurl",
+      "target": "auth_recoverylinks_isrecoveryroute",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "recoveryLinks.ts",
+      "source_location": "L47",
+      "weight": 1.0,
+      "source": "auth_recoverylinks_getrecoveryauthcodefromurl",
+      "target": "auth_recoverylinks_isrecoveryroute",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "recoveryLinks.ts",
+      "source_location": "L56",
+      "weight": 1.0,
+      "source": "auth_recoverylinks_getrecoverytokenhashfromurl",
+      "target": "auth_recoverylinks_isrecoveryroute",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "postSignInRouting.ts",
+      "source_location": "L4",
+      "weight": 1.0,
+      "source": "postsigninrouting_ts",
+      "target": "roles_ts",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "postSignInRouting.ts",
+      "source_location": "L4",
+      "weight": 1.0,
+      "source": "postsigninrouting_ts",
+      "target": "auth_roles_roleincludes",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "postSignInRouting.ts",
+      "source_location": "L6",
+      "weight": 1.0,
+      "source": "postsigninrouting_ts",
+      "target": "auth_postsigninrouting_authhomehref",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "postSignInRouting.ts",
+      "source_location": "L8",
+      "weight": 1.0,
+      "source": "postsigninrouting_ts",
+      "target": "auth_postsigninrouting_normalizerole",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "postSignInRouting.ts",
+      "source_location": "L16",
+      "weight": 1.0,
+      "source": "postsigninrouting_ts",
+      "target": "auth_postsigninrouting_getmetadatarole",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "postSignInRouting.ts",
+      "source_location": "L23",
+      "weight": 1.0,
+      "source": "postsigninrouting_ts",
+      "target": "auth_postsigninrouting_getroleforsignedinuser",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "postSignInRouting.ts",
+      "source_location": "L40",
+      "weight": 1.0,
+      "source": "postsigninrouting_ts",
+      "target": "auth_postsigninrouting_resolvehomeforsignedinuser",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "postSignInRouting.ts",
+      "source_location": "L20",
+      "weight": 1.0,
+      "source": "auth_postsigninrouting_getmetadatarole",
+      "target": "auth_postsigninrouting_normalizerole",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "postSignInRouting.ts",
+      "source_location": "L36",
+      "weight": 1.0,
+      "source": "auth_postsigninrouting_getroleforsignedinuser",
+      "target": "auth_postsigninrouting_normalizerole",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "postSignInRouting.ts",
+      "source_location": "L28",
+      "weight": 1.0,
+      "source": "auth_postsigninrouting_getroleforsignedinuser",
+      "target": "auth_postsigninrouting_getmetadatarole",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "postSignInRouting.ts",
+      "source_location": "L44",
+      "weight": 1.0,
+      "source": "auth_postsigninrouting_resolvehomeforsignedinuser",
+      "target": "auth_postsigninrouting_getroleforsignedinuser",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "postSignInRouting.ts",
+      "source_location": "L45",
+      "weight": 1.0,
+      "source": "auth_postsigninrouting_resolvehomeforsignedinuser",
+      "target": "auth_roles_roleincludes"
+    },
+    {
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "AuthContext.tsx",
+      "source_location": "L13",
+      "weight": 1.0,
+      "source": "authcontext_tsx",
+      "target": "roles_ts",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "AuthContext.tsx",
+      "source_location": "L13",
+      "weight": 1.0,
+      "source": "authcontext_tsx",
+      "target": "auth_roles_resolveisstafflike",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "AuthContext.tsx",
+      "source_location": "L16",
+      "weight": 1.0,
+      "source": "authcontext_tsx",
+      "target": "auth_authcontext_authctx",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "AuthContext.tsx",
+      "source_location": "L26",
+      "weight": 1.0,
+      "source": "authcontext_tsx",
+      "target": "auth_authcontext_ctx",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "AuthContext.tsx",
+      "source_location": "L38",
+      "weight": 1.0,
+      "source": "authcontext_tsx",
+      "target": "auth_authcontext_resolverolefrommetadata",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "AuthContext.tsx",
+      "source_location": "L50",
+      "weight": 1.0,
+      "source": "authcontext_tsx",
+      "target": "auth_authcontext_resolvedefaultprofile",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "AuthContext.tsx",
+      "source_location": "L69",
+      "weight": 1.0,
+      "source": "authcontext_tsx",
+      "target": "auth_authcontext_authprovider",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "AuthContext.tsx",
+      "source_location": "L254",
+      "weight": 1.0,
+      "source": "authcontext_tsx",
+      "target": "auth_authcontext_useauthsession",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "currentUserId.ts",
+      "source_location": "L11",
+      "weight": 1.0,
+      "source": "currentuserid_ts",
+      "target": "authcontext_tsx",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "AuthContext.tsx",
+      "source_location": "L246",
+      "weight": 1.0,
+      "source": "auth_authcontext_authprovider",
+      "target": "auth_roles_resolveisstafflike"
+    },
+    {
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "currentUserId.ts",
+      "source_location": "L11",
+      "weight": 1.0,
+      "source": "currentuserid_ts",
+      "target": "auth_authcontext_useauthsession",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "currentUserId.ts",
+      "source_location": "L26",
+      "weight": 1.0,
+      "source": "auth_currentuserid_usecurrentuserid",
+      "target": "auth_authcontext_useauthsession"
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "roles.ts",
+      "source_location": "L1",
+      "weight": 1.0,
+      "source": "roles_ts",
+      "target": "auth_roles_approleexpectation",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "roles.ts",
+      "source_location": "L3",
+      "weight": 1.0,
+      "source": "roles_ts",
+      "target": "auth_roles_totokens",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "roles.ts",
+      "source_location": "L14",
+      "weight": 1.0,
+      "source": "roles_ts",
+      "target": "auth_roles_roleincludes",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "roles.ts",
+      "source_location": "L19",
+      "weight": 1.0,
+      "source": "roles_ts",
+      "target": "auth_roles_mergerole",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "roles.ts",
+      "source_location": "L29",
+      "weight": 1.0,
+      "source": "roles_ts",
+      "target": "auth_roles_resolveisstafflike",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "roles.ts",
+      "source_location": "L15",
+      "weight": 1.0,
+      "source": "auth_roles_roleincludes",
+      "target": "auth_roles_totokens",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "roles.ts",
+      "source_location": "L20",
+      "weight": 1.0,
+      "source": "auth_roles_mergerole",
+      "target": "auth_roles_totokens",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "roles.ts",
+      "source_location": "L30",
+      "weight": 1.0,
+      "source": "auth_roles_resolveisstafflike",
+      "target": "auth_roles_roleincludes",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "currentUserId.ts",
+      "source_location": "L15",
+      "weight": 1.0,
+      "source": "currentuserid_ts",
+      "target": "auth_currentuserid_getdemofallbackuserid",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "currentUserId.ts",
+      "source_location": "L25",
+      "weight": 1.0,
+      "source": "currentuserid_ts",
+      "target": "auth_currentuserid_usecurrentuserid",
+      "confidence_score": 1.0
+    }
+  ],
+  "hyperedges": [],
+  "built_at_commit": "f8e49f380bc144eec2877ce30747d7a6c1711a63"
+}

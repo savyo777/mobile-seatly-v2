@@ -1,0 +1,410 @@
+{
+  "directed": false,
+  "multigraph": false,
+  "graph": {},
+  "nodes": [
+    {
+      "label": "contactInfo.ts",
+      "file_type": "code",
+      "source_file": "contactInfo.ts",
+      "source_location": "L1",
+      "id": "contactinfo_ts",
+      "community": 1,
+      "norm_label": "contactinfo.ts"
+    },
+    {
+      "label": "SUPPORT_EMAIL",
+      "file_type": "code",
+      "source_file": "contactInfo.ts",
+      "source_location": "L15",
+      "id": "config_contactinfo_support_email",
+      "community": 1,
+      "norm_label": "support_email"
+    },
+    {
+      "label": "PRIVACY_EMAIL",
+      "file_type": "code",
+      "source_file": "contactInfo.ts",
+      "source_location": "L16",
+      "id": "config_contactinfo_privacy_email",
+      "community": 1,
+      "norm_label": "privacy_email"
+    },
+    {
+      "label": "LEGAL_EMAIL",
+      "file_type": "code",
+      "source_file": "contactInfo.ts",
+      "source_location": "L17",
+      "id": "config_contactinfo_legal_email",
+      "community": 1,
+      "norm_label": "legal_email"
+    },
+    {
+      "label": "mailtoUrl()",
+      "file_type": "code",
+      "source_file": "contactInfo.ts",
+      "source_location": "L19",
+      "id": "config_contactinfo_mailtourl",
+      "community": 1,
+      "norm_label": "mailtourl()"
+    },
+    {
+      "label": "cenaivaSocial.ts",
+      "file_type": "code",
+      "source_file": "cenaivaSocial.ts",
+      "source_location": "L1",
+      "id": "cenaivasocial_ts",
+      "community": 0,
+      "norm_label": "cenaivasocial.ts"
+    },
+    {
+      "label": "CENAIVA_FOLLOW_URLS",
+      "file_type": "code",
+      "source_file": "cenaivaSocial.ts",
+      "source_location": "L4",
+      "id": "config_cenaivasocial_cenaiva_follow_urls",
+      "community": 0,
+      "norm_label": "cenaiva_follow_urls"
+    },
+    {
+      "label": "CenaivaFollowPlatform",
+      "file_type": "code",
+      "source_file": "cenaivaSocial.ts",
+      "source_location": "L11",
+      "id": "config_cenaivasocial_cenaivafollowplatform",
+      "community": 0,
+      "norm_label": "cenaivafollowplatform"
+    },
+    {
+      "label": "UserSocialPlatform",
+      "file_type": "code",
+      "source_file": "cenaivaSocial.ts",
+      "source_location": "L12",
+      "id": "config_cenaivasocial_usersocialplatform",
+      "community": 0,
+      "norm_label": "usersocialplatform"
+    },
+    {
+      "label": "CENAIVA_SOCIAL_URLS",
+      "file_type": "code",
+      "source_file": "cenaivaSocial.ts",
+      "source_location": "L15",
+      "id": "config_cenaivasocial_cenaiva_social_urls",
+      "community": 0,
+      "norm_label": "cenaiva_social_urls"
+    },
+    {
+      "label": "CenaivaSocialPlatform",
+      "file_type": "code",
+      "source_file": "cenaivaSocial.ts",
+      "source_location": "L22",
+      "id": "config_cenaivasocial_cenaivasocialplatform",
+      "community": 0,
+      "norm_label": "cenaivasocialplatform"
+    },
+    {
+      "label": "openCenaivaSocialProfile()",
+      "file_type": "code",
+      "source_file": "cenaivaSocial.ts",
+      "source_location": "L25",
+      "id": "config_cenaivasocial_opencenaivasocialprofile",
+      "community": 0,
+      "norm_label": "opencenaivasocialprofile()"
+    },
+    {
+      "label": "openUserSocialApp()",
+      "file_type": "code",
+      "source_file": "cenaivaSocial.ts",
+      "source_location": "L30",
+      "id": "config_cenaivasocial_openusersocialapp",
+      "community": 0,
+      "norm_label": "openusersocialapp()"
+    },
+    {
+      "label": "demoMode.ts",
+      "file_type": "code",
+      "source_file": "demoMode.ts",
+      "source_location": "L1",
+      "id": "demomode_ts",
+      "community": 3,
+      "norm_label": "demomode.ts"
+    },
+    {
+      "label": "isDemoModeEnabled()",
+      "file_type": "code",
+      "source_file": "demoMode.ts",
+      "source_location": "L1",
+      "id": "config_demomode_isdemomodeenabled",
+      "community": 3,
+      "norm_label": "isdemomodeenabled()"
+    },
+    {
+      "label": "legalLinks.ts",
+      "file_type": "code",
+      "source_file": "legalLinks.ts",
+      "source_location": "L1",
+      "id": "legallinks_ts",
+      "community": 2,
+      "norm_label": "legallinks.ts"
+    },
+    {
+      "label": "envValue()",
+      "file_type": "code",
+      "source_file": "legalLinks.ts",
+      "source_location": "L11",
+      "id": "config_legallinks_envvalue",
+      "community": 1,
+      "norm_label": "envvalue()"
+    },
+    {
+      "label": "BRAND_DOMAIN",
+      "file_type": "code",
+      "source_file": "legalLinks.ts",
+      "source_location": "L18",
+      "id": "config_legallinks_brand_domain",
+      "community": 2,
+      "norm_label": "brand_domain"
+    },
+    {
+      "label": "TERMS_URL",
+      "file_type": "code",
+      "source_file": "legalLinks.ts",
+      "source_location": "L19",
+      "id": "config_legallinks_terms_url",
+      "community": 2,
+      "norm_label": "terms_url"
+    },
+    {
+      "label": "PRIVACY_URL",
+      "file_type": "code",
+      "source_file": "legalLinks.ts",
+      "source_location": "L20",
+      "id": "config_legallinks_privacy_url",
+      "community": 2,
+      "norm_label": "privacy_url"
+    },
+    {
+      "label": "LICENSES_URL",
+      "file_type": "code",
+      "source_file": "legalLinks.ts",
+      "source_location": "L21",
+      "id": "config_legallinks_licenses_url",
+      "community": 2,
+      "norm_label": "licenses_url"
+    },
+    {
+      "label": "ACK_URL",
+      "file_type": "code",
+      "source_file": "legalLinks.ts",
+      "source_location": "L22",
+      "id": "config_legallinks_ack_url",
+      "community": 2,
+      "norm_label": "ack_url"
+    }
+  ],
+  "links": [
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "contactInfo.ts",
+      "source_location": "L8",
+      "weight": 1.0,
+      "source": "contactinfo_ts",
+      "target": "config_legallinks_envvalue",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "contactInfo.ts",
+      "source_location": "L15",
+      "weight": 1.0,
+      "source": "contactinfo_ts",
+      "target": "config_contactinfo_support_email",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "contactInfo.ts",
+      "source_location": "L16",
+      "weight": 1.0,
+      "source": "contactinfo_ts",
+      "target": "config_contactinfo_privacy_email",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "contactInfo.ts",
+      "source_location": "L17",
+      "weight": 1.0,
+      "source": "contactinfo_ts",
+      "target": "config_contactinfo_legal_email",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "contactInfo.ts",
+      "source_location": "L19",
+      "weight": 1.0,
+      "source": "contactinfo_ts",
+      "target": "config_contactinfo_mailtourl",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "cenaivaSocial.ts",
+      "source_location": "L4",
+      "weight": 1.0,
+      "source": "cenaivasocial_ts",
+      "target": "config_cenaivasocial_cenaiva_follow_urls",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "cenaivaSocial.ts",
+      "source_location": "L11",
+      "weight": 1.0,
+      "source": "cenaivasocial_ts",
+      "target": "config_cenaivasocial_cenaivafollowplatform",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "cenaivaSocial.ts",
+      "source_location": "L12",
+      "weight": 1.0,
+      "source": "cenaivasocial_ts",
+      "target": "config_cenaivasocial_usersocialplatform",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "cenaivaSocial.ts",
+      "source_location": "L15",
+      "weight": 1.0,
+      "source": "cenaivasocial_ts",
+      "target": "config_cenaivasocial_cenaiva_social_urls",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "cenaivaSocial.ts",
+      "source_location": "L22",
+      "weight": 1.0,
+      "source": "cenaivasocial_ts",
+      "target": "config_cenaivasocial_cenaivasocialplatform",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "cenaivaSocial.ts",
+      "source_location": "L25",
+      "weight": 1.0,
+      "source": "cenaivasocial_ts",
+      "target": "config_cenaivasocial_opencenaivasocialprofile",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "cenaivaSocial.ts",
+      "source_location": "L30",
+      "weight": 1.0,
+      "source": "cenaivasocial_ts",
+      "target": "config_cenaivasocial_openusersocialapp",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "cenaivaSocial.ts",
+      "source_location": "L31",
+      "weight": 1.0,
+      "source": "config_cenaivasocial_openusersocialapp",
+      "target": "config_cenaivasocial_opencenaivasocialprofile",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "demoMode.ts",
+      "source_location": "L1",
+      "weight": 1.0,
+      "source": "demomode_ts",
+      "target": "config_demomode_isdemomodeenabled",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "legalLinks.ts",
+      "source_location": "L11",
+      "weight": 1.0,
+      "source": "legallinks_ts",
+      "target": "config_legallinks_envvalue",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "legalLinks.ts",
+      "source_location": "L18",
+      "weight": 1.0,
+      "source": "legallinks_ts",
+      "target": "config_legallinks_brand_domain",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "legalLinks.ts",
+      "source_location": "L19",
+      "weight": 1.0,
+      "source": "legallinks_ts",
+      "target": "config_legallinks_terms_url",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "legalLinks.ts",
+      "source_location": "L20",
+      "weight": 1.0,
+      "source": "legallinks_ts",
+      "target": "config_legallinks_privacy_url",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "legalLinks.ts",
+      "source_location": "L21",
+      "weight": 1.0,
+      "source": "legallinks_ts",
+      "target": "config_legallinks_licenses_url",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "legalLinks.ts",
+      "source_location": "L22",
+      "weight": 1.0,
+      "source": "legallinks_ts",
+      "target": "config_legallinks_ack_url",
+      "confidence_score": 1.0
+    }
+  ],
+  "hyperedges": [],
+  "built_at_commit": "f8e49f380bc144eec2877ce30747d7a6c1711a63"
+}

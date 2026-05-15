@@ -1,0 +1,107 @@
+{
+  "directed": false,
+  "multigraph": false,
+  "graph": {},
+  "nodes": [
+    {
+      "label": "index.ts",
+      "file_type": "code",
+      "source_file": "index.ts",
+      "source_location": "L1",
+      "id": "index_ts",
+      "community": 0,
+      "norm_label": "index.ts"
+    },
+    {
+      "label": "webKeyAliases.ts",
+      "file_type": "code",
+      "source_file": "webKeyAliases.ts",
+      "source_location": "L1",
+      "id": "webkeyaliases_ts",
+      "community": 1,
+      "norm_label": "webkeyaliases.ts"
+    },
+    {
+      "label": "WEB_BOOKING_STEP_TITLES",
+      "file_type": "code",
+      "source_file": "webKeyAliases.ts",
+      "source_location": "L6",
+      "id": "i18n_webkeyaliases_web_booking_step_titles",
+      "community": 1,
+      "norm_label": "web_booking_step_titles"
+    },
+    {
+      "label": "MOBILE_BOOKING_STEP_KEYS",
+      "file_type": "code",
+      "source_file": "webKeyAliases.ts",
+      "source_location": "L17",
+      "id": "i18n_webkeyaliases_mobile_booking_step_keys",
+      "community": 1,
+      "norm_label": "mobile_booking_step_keys"
+    },
+    {
+      "label": "en.ts",
+      "file_type": "code",
+      "source_file": "locales/en.ts",
+      "source_location": "L1",
+      "id": "locales_en_ts",
+      "community": 0,
+      "norm_label": "en.ts"
+    },
+    {
+      "label": "fr.ts",
+      "file_type": "code",
+      "source_file": "locales/fr.ts",
+      "source_location": "L1",
+      "id": "locales_fr_ts",
+      "community": 0,
+      "norm_label": "fr.ts"
+    }
+  ],
+  "links": [
+    {
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "index.ts",
+      "source_location": "L3",
+      "weight": 1.0,
+      "source": "index_ts",
+      "target": "locales_en_ts",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "index.ts",
+      "source_location": "L4",
+      "weight": 1.0,
+      "source": "index_ts",
+      "target": "locales_fr_ts",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "webKeyAliases.ts",
+      "source_location": "L6",
+      "weight": 1.0,
+      "source": "webkeyaliases_ts",
+      "target": "i18n_webkeyaliases_web_booking_step_titles",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "webKeyAliases.ts",
+      "source_location": "L17",
+      "weight": 1.0,
+      "source": "webkeyaliases_ts",
+      "target": "i18n_webkeyaliases_mobile_booking_step_keys",
+      "confidence_score": 1.0
+    }
+  ],
+  "hyperedges": [],
+  "built_at_commit": "f8e49f380bc144eec2877ce30747d7a6c1711a63"
+}

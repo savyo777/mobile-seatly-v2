@@ -1,0 +1,2738 @@
+{
+  "directed": false,
+  "multigraph": false,
+  "graph": {},
+  "nodes": [
+    {
+      "label": "closuresSettings.ts",
+      "file_type": "code",
+      "source_file": "closuresSettings.ts",
+      "source_location": "L1",
+      "id": "closuressettings_ts",
+      "community": 8,
+      "norm_label": "closuressettings.ts"
+    },
+    {
+      "label": "ClosureEntry",
+      "file_type": "code",
+      "source_file": "closuresSettings.ts",
+      "source_location": "L15",
+      "id": "owner_closuressettings_closureentry",
+      "community": 8,
+      "norm_label": "closureentry"
+    },
+    {
+      "label": "sanitize()",
+      "file_type": "code",
+      "source_file": "closuresSettings.ts",
+      "source_location": "L22",
+      "id": "owner_closuressettings_sanitize",
+      "community": 8,
+      "norm_label": "sanitize()"
+    },
+    {
+      "label": "dedupe()",
+      "file_type": "code",
+      "source_file": "closuresSettings.ts",
+      "source_location": "L37",
+      "id": "owner_closuressettings_dedupe",
+      "community": 8,
+      "norm_label": "dedupe()"
+    },
+    {
+      "label": "readClosures()",
+      "file_type": "code",
+      "source_file": "closuresSettings.ts",
+      "source_location": "L52",
+      "id": "owner_closuressettings_readclosures",
+      "community": 8,
+      "norm_label": "readclosures()"
+    },
+    {
+      "label": "writeClosures()",
+      "file_type": "code",
+      "source_file": "closuresSettings.ts",
+      "source_location": "L82",
+      "id": "owner_closuressettings_writeclosures",
+      "community": 8,
+      "norm_label": "writeclosures()"
+    },
+    {
+      "label": "uploadRestaurantPhoto.ts",
+      "file_type": "code",
+      "source_file": "uploadRestaurantPhoto.ts",
+      "source_location": "L1",
+      "id": "uploadrestaurantphoto_ts",
+      "community": 11,
+      "norm_label": "uploadrestaurantphoto.ts"
+    },
+    {
+      "label": "Kind",
+      "file_type": "code",
+      "source_file": "uploadRestaurantPhoto.ts",
+      "source_location": "L9",
+      "id": "owner_uploadrestaurantphoto_kind",
+      "community": 11,
+      "norm_label": "kind"
+    },
+    {
+      "label": "BUCKET_FOR",
+      "file_type": "code",
+      "source_file": "uploadRestaurantPhoto.ts",
+      "source_location": "L11",
+      "id": "owner_uploadrestaurantphoto_bucket_for",
+      "community": 11,
+      "norm_label": "bucket_for"
+    },
+    {
+      "label": "PATH_FOR",
+      "file_type": "code",
+      "source_file": "uploadRestaurantPhoto.ts",
+      "source_location": "L16",
+      "id": "owner_uploadrestaurantphoto_path_for",
+      "community": 11,
+      "norm_label": "path_for"
+    },
+    {
+      "label": "saveRestaurantHours.ts",
+      "file_type": "code",
+      "source_file": "saveRestaurantHours.ts",
+      "source_location": "L1",
+      "id": "saverestauranthours_ts",
+      "community": 14,
+      "norm_label": "saverestauranthours.ts"
+    },
+    {
+      "label": "DailyHoursInput",
+      "file_type": "code",
+      "source_file": "saveRestaurantHours.ts",
+      "source_location": "L3",
+      "id": "owner_saverestauranthours_dailyhoursinput",
+      "community": 14,
+      "norm_label": "dailyhoursinput"
+    },
+    {
+      "label": "time12hToDbString()",
+      "file_type": "code",
+      "source_file": "saveRestaurantHours.ts",
+      "source_location": "L71",
+      "id": "owner_saverestauranthours_time12htodbstring",
+      "community": 14,
+      "norm_label": "time12htodbstring()"
+    },
+    {
+      "label": "trialPolicy.ts",
+      "file_type": "code",
+      "source_file": "trialPolicy.ts",
+      "source_location": "L1",
+      "id": "trialpolicy_ts",
+      "community": 12,
+      "norm_label": "trialpolicy.ts"
+    },
+    {
+      "label": "envNumber()",
+      "file_type": "code",
+      "source_file": "trialPolicy.ts",
+      "source_location": "L6",
+      "id": "owner_trialpolicy_envnumber",
+      "community": 12,
+      "norm_label": "envnumber()"
+    },
+    {
+      "label": "OWNER_TRIAL_MONTHS",
+      "file_type": "code",
+      "source_file": "trialPolicy.ts",
+      "source_location": "L13",
+      "id": "owner_trialpolicy_owner_trial_months",
+      "community": 12,
+      "norm_label": "owner_trial_months"
+    },
+    {
+      "label": "ownerTrialLengthLabel()",
+      "file_type": "code",
+      "source_file": "trialPolicy.ts",
+      "source_location": "L18",
+      "id": "owner_trialpolicy_ownertriallengthlabel",
+      "community": 12,
+      "norm_label": "ownertriallengthlabel()"
+    },
+    {
+      "label": "floorCapacity.ts",
+      "file_type": "code",
+      "source_file": "floorCapacity.ts",
+      "source_location": "L1",
+      "id": "floorcapacity_ts",
+      "community": 15,
+      "norm_label": "floorcapacity.ts"
+    },
+    {
+      "label": "fetchFloorCapacity()",
+      "file_type": "code",
+      "source_file": "floorCapacity.ts",
+      "source_location": "L16",
+      "id": "owner_floorcapacity_fetchfloorcapacity",
+      "community": 15,
+      "norm_label": "fetchfloorcapacity()"
+    },
+    {
+      "label": "tonightBriefing.ts",
+      "file_type": "code",
+      "source_file": "tonightBriefing.ts",
+      "source_location": "L1",
+      "id": "tonightbriefing_ts",
+      "community": 0,
+      "norm_label": "tonightbriefing.ts"
+    },
+    {
+      "label": "TonightStatus",
+      "file_type": "code",
+      "source_file": "tonightBriefing.ts",
+      "source_location": "L17",
+      "id": "owner_tonightbriefing_tonightstatus",
+      "community": 0,
+      "norm_label": "tonightstatus"
+    },
+    {
+      "label": "TonightBadge",
+      "file_type": "code",
+      "source_file": "tonightBriefing.ts",
+      "source_location": "L51",
+      "id": "owner_tonightbriefing_tonightbadge",
+      "community": 0,
+      "norm_label": "tonightbadge"
+    },
+    {
+      "label": "TonightGuest",
+      "file_type": "code",
+      "source_file": "tonightBriefing.ts",
+      "source_location": "L53",
+      "id": "owner_tonightbriefing_tonightguest",
+      "community": 0,
+      "norm_label": "tonightguest"
+    },
+    {
+      "label": "restaurantTimezoneCache",
+      "file_type": "code",
+      "source_file": "tonightBriefing.ts",
+      "source_location": "L66",
+      "id": "owner_tonightbriefing_restauranttimezonecache",
+      "community": 0,
+      "norm_label": "restauranttimezonecache"
+    },
+    {
+      "label": "getRestaurantTimezone()",
+      "file_type": "code",
+      "source_file": "tonightBriefing.ts",
+      "source_location": "L68",
+      "id": "owner_tonightbriefing_getrestauranttimezone",
+      "community": 0,
+      "norm_label": "getrestauranttimezone()"
+    },
+    {
+      "label": "todayBoundsInTimezone()",
+      "file_type": "code",
+      "source_file": "tonightBriefing.ts",
+      "source_location": "L93",
+      "id": "owner_tonightbriefing_todayboundsintimezone",
+      "community": 0,
+      "norm_label": "todayboundsintimezone()"
+    },
+    {
+      "label": "localDateKey()",
+      "file_type": "code",
+      "source_file": "tonightBriefing.ts",
+      "source_location": "L136",
+      "id": "owner_tonightbriefing_localdatekey",
+      "community": 0,
+      "norm_label": "localdatekey()"
+    },
+    {
+      "label": "localHour()",
+      "file_type": "code",
+      "source_file": "tonightBriefing.ts",
+      "source_location": "L155",
+      "id": "owner_tonightbriefing_localhour",
+      "community": 0,
+      "norm_label": "localhour()"
+    },
+    {
+      "label": "formatHourShort()",
+      "file_type": "code",
+      "source_file": "tonightBriefing.ts",
+      "source_location": "L170",
+      "id": "owner_tonightbriefing_formathourshort",
+      "community": 0,
+      "norm_label": "formathourshort()"
+    },
+    {
+      "label": "formatHourLong()",
+      "file_type": "code",
+      "source_file": "tonightBriefing.ts",
+      "source_location": "L177",
+      "id": "owner_tonightbriefing_formathourlong",
+      "community": 0,
+      "norm_label": "formathourlong()"
+    },
+    {
+      "label": "formatTimeShort()",
+      "file_type": "code",
+      "source_file": "tonightBriefing.ts",
+      "source_location": "L184",
+      "id": "owner_tonightbriefing_formattimeshort",
+      "community": 0,
+      "norm_label": "formattimeshort()"
+    },
+    {
+      "label": "statusFromCovers()",
+      "file_type": "code",
+      "source_file": "tonightBriefing.ts",
+      "source_location": "L202",
+      "id": "owner_tonightbriefing_statusfromcovers",
+      "community": 0,
+      "norm_label": "statusfromcovers()"
+    },
+    {
+      "label": "statusLabel()",
+      "file_type": "code",
+      "source_file": "tonightBriefing.ts",
+      "source_location": "L220",
+      "id": "owner_tonightbriefing_statuslabel",
+      "community": 0,
+      "norm_label": "statuslabel()"
+    },
+    {
+      "label": "headlineFor()",
+      "file_type": "code",
+      "source_file": "tonightBriefing.ts",
+      "source_location": "L226",
+      "id": "owner_tonightbriefing_headlinefor",
+      "community": 0,
+      "norm_label": "headlinefor()"
+    },
+    {
+      "label": "COUNTED_STATUSES",
+      "file_type": "code",
+      "source_file": "tonightBriefing.ts",
+      "source_location": "L232",
+      "id": "owner_tonightbriefing_counted_statuses",
+      "community": 0,
+      "norm_label": "counted_statuses"
+    },
+    {
+      "label": "isCountedStatus()",
+      "file_type": "code",
+      "source_file": "tonightBriefing.ts",
+      "source_location": "L233",
+      "id": "owner_tonightbriefing_iscountedstatus",
+      "community": 0,
+      "norm_label": "iscountedstatus()"
+    },
+    {
+      "label": "badgeFor()",
+      "file_type": "code",
+      "source_file": "tonightBriefing.ts",
+      "source_location": "L242",
+      "id": "owner_tonightbriefing_badgefor",
+      "community": 0,
+      "norm_label": "badgefor()"
+    },
+    {
+      "label": "ReservationRow",
+      "file_type": "code",
+      "source_file": "tonightBriefing.ts",
+      "source_location": "L257",
+      "id": "owner_tonightbriefing_reservationrow",
+      "community": 0,
+      "norm_label": "reservationrow"
+    },
+    {
+      "label": "AnalyticsRow",
+      "file_type": "code",
+      "source_file": "tonightBriefing.ts",
+      "source_location": "L264",
+      "id": "owner_tonightbriefing_analyticsrow",
+      "community": 0,
+      "norm_label": "analyticsrow"
+    },
+    {
+      "label": "fetchTonightBriefing()",
+      "file_type": "code",
+      "source_file": "tonightBriefing.ts",
+      "source_location": "L269",
+      "id": "owner_tonightbriefing_fetchtonightbriefing",
+      "community": 0,
+      "norm_label": "fetchtonightbriefing()"
+    },
+    {
+      "label": "GuestJoin",
+      "file_type": "code",
+      "source_file": "tonightBriefing.ts",
+      "source_location": "L415",
+      "id": "owner_tonightbriefing_guestjoin",
+      "community": 0,
+      "norm_label": "guestjoin"
+    },
+    {
+      "label": "ReservationGuestRow",
+      "file_type": "code",
+      "source_file": "tonightBriefing.ts",
+      "source_location": "L423",
+      "id": "owner_tonightbriefing_reservationguestrow",
+      "community": 0,
+      "norm_label": "reservationguestrow"
+    },
+    {
+      "label": "hasAllergyData()",
+      "file_type": "code",
+      "source_file": "tonightBriefing.ts",
+      "source_location": "L433",
+      "id": "owner_tonightbriefing_hasallergydata",
+      "community": 0,
+      "norm_label": "hasallergydata()"
+    },
+    {
+      "label": "fetchTonightGuests()",
+      "file_type": "code",
+      "source_file": "tonightBriefing.ts",
+      "source_location": "L440",
+      "id": "owner_tonightbriefing_fetchtonightguests",
+      "community": 0,
+      "norm_label": "fetchtonightguests()"
+    },
+    {
+      "label": "promotionTypes.ts",
+      "file_type": "code",
+      "source_file": "promotionTypes.ts",
+      "source_location": "L1",
+      "id": "promotiontypes_ts",
+      "community": 16,
+      "norm_label": "promotiontypes.ts"
+    },
+    {
+      "label": "PromotionTypeKey",
+      "file_type": "code",
+      "source_file": "promotionTypes.ts",
+      "source_location": "L13",
+      "id": "owner_promotiontypes_promotiontypekey",
+      "community": 16,
+      "norm_label": "promotiontypekey"
+    },
+    {
+      "label": "rolePermissionsSettings.ts",
+      "file_type": "code",
+      "source_file": "rolePermissionsSettings.ts",
+      "source_location": "L1",
+      "id": "rolepermissionssettings_ts",
+      "community": 2,
+      "norm_label": "rolepermissionssettings.ts"
+    },
+    {
+      "label": "RoleId",
+      "file_type": "code",
+      "source_file": "rolePermissionsSettings.ts",
+      "source_location": "L4",
+      "id": "owner_rolepermissionssettings_roleid",
+      "community": 2,
+      "norm_label": "roleid"
+    },
+    {
+      "label": "Role",
+      "file_type": "code",
+      "source_file": "rolePermissionsSettings.ts",
+      "source_location": "L6",
+      "id": "owner_rolepermissionssettings_role",
+      "community": 2,
+      "norm_label": "role"
+    },
+    {
+      "label": "Permission",
+      "file_type": "code",
+      "source_file": "rolePermissionsSettings.ts",
+      "source_location": "L13",
+      "id": "owner_rolepermissionssettings_permission",
+      "community": 2,
+      "norm_label": "permission"
+    },
+    {
+      "label": "RolePermissionMatrix",
+      "file_type": "code",
+      "source_file": "rolePermissionsSettings.ts",
+      "source_location": "L21",
+      "id": "owner_rolepermissionssettings_rolepermissionmatrix",
+      "community": 2,
+      "norm_label": "rolepermissionmatrix"
+    },
+    {
+      "label": "ROLES",
+      "file_type": "code",
+      "source_file": "rolePermissionsSettings.ts",
+      "source_location": "L23",
+      "id": "owner_rolepermissionssettings_roles",
+      "community": 2,
+      "norm_label": "roles"
+    },
+    {
+      "label": "DEFAULT_PERMS",
+      "file_type": "code",
+      "source_file": "rolePermissionsSettings.ts",
+      "source_location": "L39",
+      "id": "owner_rolepermissionssettings_default_perms",
+      "community": 2,
+      "norm_label": "default_perms"
+    },
+    {
+      "label": "isPlainObject()",
+      "file_type": "code",
+      "source_file": "rolePermissionsSettings.ts",
+      "source_location": "L48",
+      "id": "owner_rolepermissionssettings_isplainobject",
+      "community": 2,
+      "norm_label": "isplainobject()"
+    },
+    {
+      "label": "mergeWithDefaults()",
+      "file_type": "code",
+      "source_file": "rolePermissionsSettings.ts",
+      "source_location": "L57",
+      "id": "owner_rolepermissionssettings_mergewithdefaults",
+      "community": 2,
+      "norm_label": "mergewithdefaults()"
+    },
+    {
+      "label": "readRolePermissions()",
+      "file_type": "code",
+      "source_file": "rolePermissionsSettings.ts",
+      "source_location": "L82",
+      "id": "owner_rolepermissionssettings_readrolepermissions",
+      "community": 2,
+      "norm_label": "readrolepermissions()"
+    },
+    {
+      "label": "writeRolePermissions()",
+      "file_type": "code",
+      "source_file": "rolePermissionsSettings.ts",
+      "source_location": "L103",
+      "id": "owner_rolepermissionssettings_writerolepermissions",
+      "community": 2,
+      "norm_label": "writerolepermissions()"
+    },
+    {
+      "label": "uploadEventMedia.ts",
+      "file_type": "code",
+      "source_file": "uploadEventMedia.ts",
+      "source_location": "L1",
+      "id": "uploadeventmedia_ts",
+      "community": 18,
+      "norm_label": "uploadeventmedia.ts"
+    },
+    {
+      "label": "expenseCategories.ts",
+      "file_type": "code",
+      "source_file": "expenseCategories.ts",
+      "source_location": "L1",
+      "id": "expensecategories_ts",
+      "community": 13,
+      "norm_label": "expensecategories.ts"
+    },
+    {
+      "label": "ExpenseCategoryKey",
+      "file_type": "code",
+      "source_file": "expenseCategories.ts",
+      "source_location": "L32",
+      "id": "owner_expensecategories_expensecategorykey",
+      "community": 13,
+      "norm_label": "expensecategorykey"
+    },
+    {
+      "label": "getExpenseCategory()",
+      "file_type": "code",
+      "source_file": "expenseCategories.ts",
+      "source_location": "L37",
+      "id": "owner_expensecategories_getexpensecategory",
+      "community": 13,
+      "norm_label": "getexpensecategory()"
+    },
+    {
+      "label": "isExpenseCategoryKey()",
+      "file_type": "code",
+      "source_file": "expenseCategories.ts",
+      "source_location": "L45",
+      "id": "owner_expensecategories_isexpensecategorykey",
+      "community": 13,
+      "norm_label": "isexpensecategorykey()"
+    },
+    {
+      "label": "createEventOrPromotion.ts",
+      "file_type": "code",
+      "source_file": "createEventOrPromotion.ts",
+      "source_location": "L1",
+      "id": "createeventorpromotion_ts",
+      "community": 10,
+      "norm_label": "createeventorpromotion.ts"
+    },
+    {
+      "label": "EventInput",
+      "file_type": "code",
+      "source_file": "createEventOrPromotion.ts",
+      "source_location": "L3",
+      "id": "owner_createeventorpromotion_eventinput",
+      "community": 10,
+      "norm_label": "eventinput"
+    },
+    {
+      "label": "PromotionInput",
+      "file_type": "code",
+      "source_file": "createEventOrPromotion.ts",
+      "source_location": "L27",
+      "id": "owner_createeventorpromotion_promotioninput",
+      "community": 10,
+      "norm_label": "promotioninput"
+    },
+    {
+      "label": "createEvent()",
+      "file_type": "code",
+      "source_file": "createEventOrPromotion.ts",
+      "source_location": "L61",
+      "id": "owner_createeventorpromotion_createevent",
+      "community": 10,
+      "norm_label": "createevent()"
+    },
+    {
+      "label": "createPromotion()",
+      "file_type": "code",
+      "source_file": "createEventOrPromotion.ts",
+      "source_location": "L73",
+      "id": "owner_createeventorpromotion_createpromotion",
+      "community": 10,
+      "norm_label": "createpromotion()"
+    },
+    {
+      "label": "kdsFeed.ts",
+      "file_type": "code",
+      "source_file": "kdsFeed.ts",
+      "source_location": "L1",
+      "id": "kdsfeed_ts",
+      "community": 1,
+      "norm_label": "kdsfeed.ts"
+    },
+    {
+      "label": "KdsTicket",
+      "file_type": "code",
+      "source_file": "kdsFeed.ts",
+      "source_location": "L10",
+      "id": "owner_kdsfeed_kdsticket",
+      "community": 1,
+      "norm_label": "kdsticket"
+    },
+    {
+      "label": "LiveFeedKind",
+      "file_type": "code",
+      "source_file": "kdsFeed.ts",
+      "source_location": "L25",
+      "id": "owner_kdsfeed_livefeedkind",
+      "community": 1,
+      "norm_label": "livefeedkind"
+    },
+    {
+      "label": "LiveFeedEvent",
+      "file_type": "code",
+      "source_file": "kdsFeed.ts",
+      "source_location": "L28",
+      "id": "owner_kdsfeed_livefeedevent",
+      "community": 1,
+      "norm_label": "livefeedevent"
+    },
+    {
+      "label": "ACTIVE_ORDER_STATUSES",
+      "file_type": "code",
+      "source_file": "kdsFeed.ts",
+      "source_location": "L37",
+      "id": "owner_kdsfeed_active_order_statuses",
+      "community": 1,
+      "norm_label": "active_order_statuses"
+    },
+    {
+      "label": "minutesSince()",
+      "file_type": "code",
+      "source_file": "kdsFeed.ts",
+      "source_location": "L40",
+      "id": "owner_kdsfeed_minutessince",
+      "community": 1,
+      "norm_label": "minutessince()"
+    },
+    {
+      "label": "orderStatusToKds()",
+      "file_type": "code",
+      "source_file": "kdsFeed.ts",
+      "source_location": "L47",
+      "id": "owner_kdsfeed_orderstatustokds",
+      "community": 1,
+      "norm_label": "orderstatustokds()"
+    },
+    {
+      "label": "OrderRowSubset",
+      "file_type": "code",
+      "source_file": "kdsFeed.ts",
+      "source_location": "L61",
+      "id": "owner_kdsfeed_orderrowsubset",
+      "community": 1,
+      "norm_label": "orderrowsubset"
+    },
+    {
+      "label": "fetchKdsTickets()",
+      "file_type": "code",
+      "source_file": "kdsFeed.ts",
+      "source_location": "L74",
+      "id": "owner_kdsfeed_fetchkdstickets",
+      "community": 1,
+      "norm_label": "fetchkdstickets()"
+    },
+    {
+      "label": "ReservationFeedRow",
+      "file_type": "code",
+      "source_file": "kdsFeed.ts",
+      "source_location": "L188",
+      "id": "owner_kdsfeed_reservationfeedrow",
+      "community": 1,
+      "norm_label": "reservationfeedrow"
+    },
+    {
+      "label": "todayStartIso()",
+      "file_type": "code",
+      "source_file": "kdsFeed.ts",
+      "source_location": "L203",
+      "id": "owner_kdsfeed_todaystartiso",
+      "community": 1,
+      "norm_label": "todaystartiso()"
+    },
+    {
+      "label": "tomorrowStartIso()",
+      "file_type": "code",
+      "source_file": "kdsFeed.ts",
+      "source_location": "L209",
+      "id": "owner_kdsfeed_tomorrowstartiso",
+      "community": 1,
+      "norm_label": "tomorrowstartiso()"
+    },
+    {
+      "label": "formatTimeLabel()",
+      "file_type": "code",
+      "source_file": "kdsFeed.ts",
+      "source_location": "L215",
+      "id": "owner_kdsfeed_formattimelabel",
+      "community": 1,
+      "norm_label": "formattimelabel()"
+    },
+    {
+      "label": "partyLabel()",
+      "file_type": "code",
+      "source_file": "kdsFeed.ts",
+      "source_location": "L227",
+      "id": "owner_kdsfeed_partylabel",
+      "community": 1,
+      "norm_label": "partylabel()"
+    },
+    {
+      "label": "kindFor()",
+      "file_type": "code",
+      "source_file": "kdsFeed.ts",
+      "source_location": "L233",
+      "id": "owner_kdsfeed_kindfor",
+      "community": 1,
+      "norm_label": "kindfor()"
+    },
+    {
+      "label": "fetchRecentLiveFeed()",
+      "file_type": "code",
+      "source_file": "kdsFeed.ts",
+      "source_location": "L257",
+      "id": "owner_kdsfeed_fetchrecentlivefeed",
+      "community": 1,
+      "norm_label": "fetchrecentlivefeed()"
+    },
+    {
+      "label": "reservationSettings.ts",
+      "file_type": "code",
+      "source_file": "reservationSettings.ts",
+      "source_location": "L1",
+      "id": "reservationsettings_ts",
+      "community": 5,
+      "norm_label": "reservationsettings.ts"
+    },
+    {
+      "label": "DEFAULT_RESERVATION_SETTINGS",
+      "file_type": "code",
+      "source_file": "reservationSettings.ts",
+      "source_location": "L38",
+      "id": "owner_reservationsettings_default_reservation_settings",
+      "community": 5,
+      "norm_label": "default_reservation_settings"
+    },
+    {
+      "label": "pickNumber()",
+      "file_type": "code",
+      "source_file": "reservationSettings.ts",
+      "source_location": "L47",
+      "id": "owner_reservationsettings_picknumber",
+      "community": 5,
+      "norm_label": "picknumber()"
+    },
+    {
+      "label": "normalize()",
+      "file_type": "code",
+      "source_file": "reservationSettings.ts",
+      "source_location": "L56",
+      "id": "owner_reservationsettings_normalize",
+      "community": 5,
+      "norm_label": "normalize()"
+    },
+    {
+      "label": "readReservationSettings()",
+      "file_type": "code",
+      "source_file": "reservationSettings.ts",
+      "source_location": "L87",
+      "id": "owner_reservationsettings_readreservationsettings",
+      "community": 5,
+      "norm_label": "readreservationsettings()"
+    },
+    {
+      "label": "writeReservationSettings()",
+      "file_type": "code",
+      "source_file": "reservationSettings.ts",
+      "source_location": "L114",
+      "id": "owner_reservationsettings_writereservationsettings",
+      "community": 5,
+      "norm_label": "writereservationsettings()"
+    },
+    {
+      "label": "staffRoster.ts",
+      "file_type": "code",
+      "source_file": "staffRoster.ts",
+      "source_location": "L1",
+      "id": "staffroster_ts",
+      "community": 9,
+      "norm_label": "staffroster.ts"
+    },
+    {
+      "label": "StaffRosterEntry",
+      "file_type": "code",
+      "source_file": "staffRoster.ts",
+      "source_location": "L17",
+      "id": "owner_staffroster_staffrosterentry",
+      "community": 9,
+      "norm_label": "staffrosterentry"
+    },
+    {
+      "label": "UserProfileJoin",
+      "file_type": "code",
+      "source_file": "staffRoster.ts",
+      "source_location": "L32",
+      "id": "owner_staffroster_userprofilejoin",
+      "community": 9,
+      "norm_label": "userprofilejoin"
+    },
+    {
+      "label": "RoleRow",
+      "file_type": "code",
+      "source_file": "staffRoster.ts",
+      "source_location": "L38",
+      "id": "owner_staffroster_rolerow",
+      "community": 9,
+      "norm_label": "rolerow"
+    },
+    {
+      "label": "pickProfile()",
+      "file_type": "code",
+      "source_file": "staffRoster.ts",
+      "source_location": "L51",
+      "id": "owner_staffroster_pickprofile",
+      "community": 9,
+      "norm_label": "pickprofile()"
+    },
+    {
+      "label": "fetchStaffRoster()",
+      "file_type": "code",
+      "source_file": "staffRoster.ts",
+      "source_location": "L64",
+      "id": "owner_staffroster_fetchstaffroster",
+      "community": 9,
+      "norm_label": "fetchstaffroster()"
+    },
+    {
+      "label": "saveRestaurantProfile.ts",
+      "file_type": "code",
+      "source_file": "saveRestaurantProfile.ts",
+      "source_location": "L1",
+      "id": "saverestaurantprofile_ts",
+      "community": 5,
+      "norm_label": "saverestaurantprofile.ts"
+    },
+    {
+      "label": "visitPhotos.ts",
+      "file_type": "code",
+      "source_file": "visitPhotos.ts",
+      "source_location": "L1",
+      "id": "visitphotos_ts",
+      "community": 6,
+      "norm_label": "visitphotos.ts"
+    },
+    {
+      "label": "RestaurantVisitPhoto",
+      "file_type": "code",
+      "source_file": "visitPhotos.ts",
+      "source_location": "L11",
+      "id": "owner_visitphotos_restaurantvisitphoto",
+      "community": 6,
+      "norm_label": "restaurantvisitphoto"
+    },
+    {
+      "label": "VisitPhotoRow",
+      "file_type": "code",
+      "source_file": "visitPhotos.ts",
+      "source_location": "L20",
+      "id": "owner_visitphotos_visitphotorow",
+      "community": 6,
+      "norm_label": "visitphotorow"
+    },
+    {
+      "label": "stringValue()",
+      "file_type": "code",
+      "source_file": "visitPhotos.ts",
+      "source_location": "L29",
+      "id": "owner_visitphotos_stringvalue",
+      "community": 6,
+      "norm_label": "stringvalue()"
+    },
+    {
+      "label": "stringOrNull()",
+      "file_type": "code",
+      "source_file": "visitPhotos.ts",
+      "source_location": "L33",
+      "id": "owner_visitphotos_stringornull",
+      "community": 6,
+      "norm_label": "stringornull()"
+    },
+    {
+      "label": "mapRow()",
+      "file_type": "code",
+      "source_file": "visitPhotos.ts",
+      "source_location": "L37",
+      "id": "owner_visitphotos_maprow",
+      "community": 6,
+      "norm_label": "maprow()"
+    },
+    {
+      "label": "fetchRestaurantVisitPhotos()",
+      "file_type": "code",
+      "source_file": "visitPhotos.ts",
+      "source_location": "L51",
+      "id": "owner_visitphotos_fetchrestaurantvisitphotos",
+      "community": 6,
+      "norm_label": "fetchrestaurantvisitphotos()"
+    },
+    {
+      "label": "businessHoursSettings.ts",
+      "file_type": "code",
+      "source_file": "businessHoursSettings.ts",
+      "source_location": "L1",
+      "id": "businesshourssettings_ts",
+      "community": 3,
+      "norm_label": "businesshourssettings.ts"
+    },
+    {
+      "label": "BusinessHoursDay",
+      "file_type": "code",
+      "source_file": "businessHoursSettings.ts",
+      "source_location": "L15",
+      "id": "owner_businesshourssettings_businesshoursday",
+      "community": 3,
+      "norm_label": "businesshoursday"
+    },
+    {
+      "label": "BusinessHoursSchedule",
+      "file_type": "code",
+      "source_file": "businessHoursSettings.ts",
+      "source_location": "L23",
+      "id": "owner_businesshourssettings_businesshoursschedule",
+      "community": 3,
+      "norm_label": "businesshoursschedule"
+    },
+    {
+      "label": "DEFAULT_BUSINESS_HOURS",
+      "file_type": "code",
+      "source_file": "businessHoursSettings.ts",
+      "source_location": "L40",
+      "id": "owner_businesshourssettings_default_business_hours",
+      "community": 3,
+      "norm_label": "default_business_hours"
+    },
+    {
+      "label": "isObject()",
+      "file_type": "code",
+      "source_file": "businessHoursSettings.ts",
+      "source_location": "L50",
+      "id": "owner_businesshourssettings_isobject",
+      "community": 3,
+      "norm_label": "isobject()"
+    },
+    {
+      "label": "coerceDay()",
+      "file_type": "code",
+      "source_file": "businessHoursSettings.ts",
+      "source_location": "L54",
+      "id": "owner_businesshourssettings_coerceday",
+      "community": 3,
+      "norm_label": "coerceday()"
+    },
+    {
+      "label": "coerceSchedule()",
+      "file_type": "code",
+      "source_file": "businessHoursSettings.ts",
+      "source_location": "L62",
+      "id": "owner_businesshourssettings_coerceschedule",
+      "community": 3,
+      "norm_label": "coerceschedule()"
+    },
+    {
+      "label": "readSettingsJson()",
+      "file_type": "code",
+      "source_file": "businessHoursSettings.ts",
+      "source_location": "L75",
+      "id": "owner_businesshourssettings_readsettingsjson",
+      "community": 3,
+      "norm_label": "readsettingsjson()"
+    },
+    {
+      "label": "readBusinessHours()",
+      "file_type": "code",
+      "source_file": "businessHoursSettings.ts",
+      "source_location": "L95",
+      "id": "owner_businesshourssettings_readbusinesshours",
+      "community": 3,
+      "norm_label": "readbusinesshours()"
+    },
+    {
+      "label": "writeBusinessHours()",
+      "file_type": "code",
+      "source_file": "businessHoursSettings.ts",
+      "source_location": "L108",
+      "id": "owner_businesshourssettings_writebusinesshours",
+      "community": 3,
+      "norm_label": "writebusinesshours()"
+    },
+    {
+      "label": "kdsThresholds.ts",
+      "file_type": "code",
+      "source_file": "kdsThresholds.ts",
+      "source_location": "L1",
+      "id": "kdsthresholds_ts",
+      "community": 19,
+      "norm_label": "kdsthresholds.ts"
+    },
+    {
+      "label": "staffRoles.ts",
+      "file_type": "code",
+      "source_file": "staffRoles.ts",
+      "source_location": "L1",
+      "id": "staffroles_ts",
+      "community": 17,
+      "norm_label": "staffroles.ts"
+    },
+    {
+      "label": "StaffRole",
+      "file_type": "code",
+      "source_file": "staffRoles.ts",
+      "source_location": "L14",
+      "id": "owner_staffroles_staffrole",
+      "community": 17,
+      "norm_label": "staffrole"
+    },
+    {
+      "label": "OwnerRestaurantContext.tsx",
+      "file_type": "code",
+      "source_file": "OwnerRestaurantContext.tsx",
+      "source_location": "L1",
+      "id": "ownerrestaurantcontext_tsx",
+      "community": 7,
+      "norm_label": "ownerrestaurantcontext.tsx"
+    },
+    {
+      "label": "OwnerRestaurantSelection",
+      "file_type": "code",
+      "source_file": "OwnerRestaurantContext.tsx",
+      "source_location": "L25",
+      "id": "owner_ownerrestaurantcontext_ownerrestaurantselection",
+      "community": 7,
+      "norm_label": "ownerrestaurantselection"
+    },
+    {
+      "label": "STORAGE_KEY",
+      "file_type": "code",
+      "source_file": "OwnerRestaurantContext.tsx",
+      "source_location": "L37",
+      "id": "owner_ownerrestaurantcontext_storage_key",
+      "community": 7,
+      "norm_label": "storage_key"
+    },
+    {
+      "label": "NULL_CONTEXT",
+      "file_type": "code",
+      "source_file": "OwnerRestaurantContext.tsx",
+      "source_location": "L45",
+      "id": "owner_ownerrestaurantcontext_null_context",
+      "community": 7,
+      "norm_label": "null_context"
+    },
+    {
+      "label": "pickInitial()",
+      "file_type": "code",
+      "source_file": "OwnerRestaurantContext.tsx",
+      "source_location": "L57",
+      "id": "owner_ownerrestaurantcontext_pickinitial",
+      "community": 7,
+      "norm_label": "pickinitial()"
+    },
+    {
+      "label": "OwnerRestaurantProvider()",
+      "file_type": "code",
+      "source_file": "OwnerRestaurantContext.tsx",
+      "source_location": "L68",
+      "id": "owner_ownerrestaurantcontext_ownerrestaurantprovider",
+      "community": 7,
+      "norm_label": "ownerrestaurantprovider()"
+    },
+    {
+      "label": "useOwnerRestaurantContext()",
+      "file_type": "code",
+      "source_file": "OwnerRestaurantContext.tsx",
+      "source_location": "L154",
+      "id": "owner_ownerrestaurantcontext_useownerrestaurantcontext",
+      "community": 7,
+      "norm_label": "useownerrestaurantcontext()"
+    },
+    {
+      "label": "restaurantShifts.ts",
+      "file_type": "code",
+      "source_file": "restaurantShifts.ts",
+      "source_location": "L1",
+      "id": "restaurantshifts_ts",
+      "community": 4,
+      "norm_label": "restaurantshifts.ts"
+    },
+    {
+      "label": "fetchRestaurantShifts()",
+      "file_type": "code",
+      "source_file": "restaurantShifts.ts",
+      "source_location": "L19",
+      "id": "owner_restaurantshifts_fetchrestaurantshifts",
+      "community": 4,
+      "norm_label": "fetchrestaurantshifts()"
+    },
+    {
+      "label": "formatShiftWindow()",
+      "file_type": "code",
+      "source_file": "restaurantShifts.ts",
+      "source_location": "L48",
+      "id": "owner_restaurantshifts_formatshiftwindow",
+      "community": 4,
+      "norm_label": "formatshiftwindow()"
+    },
+    {
+      "label": "formatTime()",
+      "file_type": "code",
+      "source_file": "restaurantShifts.ts",
+      "source_location": "L55",
+      "id": "owner_restaurantshifts_formattime",
+      "community": 4,
+      "norm_label": "formattime()"
+    },
+    {
+      "label": "DAY_SHORT",
+      "file_type": "code",
+      "source_file": "restaurantShifts.ts",
+      "source_location": "L67",
+      "id": "owner_restaurantshifts_day_short",
+      "community": 4,
+      "norm_label": "day_short"
+    },
+    {
+      "label": "DAY_LONG",
+      "file_type": "code",
+      "source_file": "restaurantShifts.ts",
+      "source_location": "L68",
+      "id": "owner_restaurantshifts_day_long",
+      "community": 4,
+      "norm_label": "day_long"
+    },
+    {
+      "label": "formatDaysOfWeek()",
+      "file_type": "code",
+      "source_file": "restaurantShifts.ts",
+      "source_location": "L71",
+      "id": "owner_restaurantshifts_formatdaysofweek",
+      "community": 4,
+      "norm_label": "formatdaysofweek()"
+    },
+    {
+      "label": "DailyHoursRow",
+      "file_type": "code",
+      "source_file": "restaurantShifts.ts",
+      "source_location": "L81",
+      "id": "owner_restaurantshifts_dailyhoursrow",
+      "community": 4,
+      "norm_label": "dailyhoursrow"
+    },
+    {
+      "label": "buildWeeklyHours()",
+      "file_type": "code",
+      "source_file": "restaurantShifts.ts",
+      "source_location": "L93",
+      "id": "owner_restaurantshifts_buildweeklyhours",
+      "community": 4,
+      "norm_label": "buildweeklyhours()"
+    }
+  ],
+  "links": [
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "closuresSettings.ts",
+      "source_location": "L15",
+      "weight": 1.0,
+      "source": "closuressettings_ts",
+      "target": "owner_closuressettings_closureentry",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "closuresSettings.ts",
+      "source_location": "L22",
+      "weight": 1.0,
+      "source": "closuressettings_ts",
+      "target": "owner_closuressettings_sanitize",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "closuresSettings.ts",
+      "source_location": "L37",
+      "weight": 1.0,
+      "source": "closuressettings_ts",
+      "target": "owner_closuressettings_dedupe",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "closuresSettings.ts",
+      "source_location": "L52",
+      "weight": 1.0,
+      "source": "closuressettings_ts",
+      "target": "owner_closuressettings_readclosures",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "closuresSettings.ts",
+      "source_location": "L82",
+      "weight": 1.0,
+      "source": "closuressettings_ts",
+      "target": "owner_closuressettings_writeclosures",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "closuresSettings.ts",
+      "source_location": "L74",
+      "weight": 1.0,
+      "source": "owner_closuressettings_readclosures",
+      "target": "owner_closuressettings_dedupe",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "closuresSettings.ts",
+      "source_location": "L90",
+      "weight": 1.0,
+      "source": "owner_closuressettings_writeclosures",
+      "target": "owner_closuressettings_dedupe",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "uploadRestaurantPhoto.ts",
+      "source_location": "L9",
+      "weight": 1.0,
+      "source": "uploadrestaurantphoto_ts",
+      "target": "owner_uploadrestaurantphoto_kind",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "uploadRestaurantPhoto.ts",
+      "source_location": "L11",
+      "weight": 1.0,
+      "source": "uploadrestaurantphoto_ts",
+      "target": "owner_uploadrestaurantphoto_bucket_for",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "uploadRestaurantPhoto.ts",
+      "source_location": "L16",
+      "weight": 1.0,
+      "source": "uploadrestaurantphoto_ts",
+      "target": "owner_uploadrestaurantphoto_path_for",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "saveRestaurantHours.ts",
+      "source_location": "L3",
+      "weight": 1.0,
+      "source": "saverestauranthours_ts",
+      "target": "owner_saverestauranthours_dailyhoursinput",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "saveRestaurantHours.ts",
+      "source_location": "L71",
+      "weight": 1.0,
+      "source": "saverestauranthours_ts",
+      "target": "owner_saverestauranthours_time12htodbstring",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "trialPolicy.ts",
+      "source_location": "L6",
+      "weight": 1.0,
+      "source": "trialpolicy_ts",
+      "target": "owner_trialpolicy_envnumber",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "trialPolicy.ts",
+      "source_location": "L13",
+      "weight": 1.0,
+      "source": "trialpolicy_ts",
+      "target": "owner_trialpolicy_owner_trial_months",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "trialPolicy.ts",
+      "source_location": "L18",
+      "weight": 1.0,
+      "source": "trialpolicy_ts",
+      "target": "owner_trialpolicy_ownertriallengthlabel",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "floorCapacity.ts",
+      "source_location": "L16",
+      "weight": 1.0,
+      "source": "floorcapacity_ts",
+      "target": "owner_floorcapacity_fetchfloorcapacity",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "tonightBriefing.ts",
+      "source_location": "L17",
+      "weight": 1.0,
+      "source": "tonightbriefing_ts",
+      "target": "owner_tonightbriefing_tonightstatus",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "tonightBriefing.ts",
+      "source_location": "L51",
+      "weight": 1.0,
+      "source": "tonightbriefing_ts",
+      "target": "owner_tonightbriefing_tonightbadge",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "tonightBriefing.ts",
+      "source_location": "L53",
+      "weight": 1.0,
+      "source": "tonightbriefing_ts",
+      "target": "owner_tonightbriefing_tonightguest",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "tonightBriefing.ts",
+      "source_location": "L66",
+      "weight": 1.0,
+      "source": "tonightbriefing_ts",
+      "target": "owner_tonightbriefing_restauranttimezonecache",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "tonightBriefing.ts",
+      "source_location": "L68",
+      "weight": 1.0,
+      "source": "tonightbriefing_ts",
+      "target": "owner_tonightbriefing_getrestauranttimezone",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "tonightBriefing.ts",
+      "source_location": "L93",
+      "weight": 1.0,
+      "source": "tonightbriefing_ts",
+      "target": "owner_tonightbriefing_todayboundsintimezone",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "tonightBriefing.ts",
+      "source_location": "L136",
+      "weight": 1.0,
+      "source": "tonightbriefing_ts",
+      "target": "owner_tonightbriefing_localdatekey",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "tonightBriefing.ts",
+      "source_location": "L155",
+      "weight": 1.0,
+      "source": "tonightbriefing_ts",
+      "target": "owner_tonightbriefing_localhour",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "tonightBriefing.ts",
+      "source_location": "L170",
+      "weight": 1.0,
+      "source": "tonightbriefing_ts",
+      "target": "owner_tonightbriefing_formathourshort",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "tonightBriefing.ts",
+      "source_location": "L177",
+      "weight": 1.0,
+      "source": "tonightbriefing_ts",
+      "target": "owner_tonightbriefing_formathourlong",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "tonightBriefing.ts",
+      "source_location": "L184",
+      "weight": 1.0,
+      "source": "tonightbriefing_ts",
+      "target": "owner_tonightbriefing_formattimeshort",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "tonightBriefing.ts",
+      "source_location": "L202",
+      "weight": 1.0,
+      "source": "tonightbriefing_ts",
+      "target": "owner_tonightbriefing_statusfromcovers",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "tonightBriefing.ts",
+      "source_location": "L220",
+      "weight": 1.0,
+      "source": "tonightbriefing_ts",
+      "target": "owner_tonightbriefing_statuslabel",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "tonightBriefing.ts",
+      "source_location": "L226",
+      "weight": 1.0,
+      "source": "tonightbriefing_ts",
+      "target": "owner_tonightbriefing_headlinefor",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "tonightBriefing.ts",
+      "source_location": "L232",
+      "weight": 1.0,
+      "source": "tonightbriefing_ts",
+      "target": "owner_tonightbriefing_counted_statuses",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "tonightBriefing.ts",
+      "source_location": "L233",
+      "weight": 1.0,
+      "source": "tonightbriefing_ts",
+      "target": "owner_tonightbriefing_iscountedstatus",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "tonightBriefing.ts",
+      "source_location": "L242",
+      "weight": 1.0,
+      "source": "tonightbriefing_ts",
+      "target": "owner_tonightbriefing_badgefor",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "tonightBriefing.ts",
+      "source_location": "L257",
+      "weight": 1.0,
+      "source": "tonightbriefing_ts",
+      "target": "owner_tonightbriefing_reservationrow",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "tonightBriefing.ts",
+      "source_location": "L264",
+      "weight": 1.0,
+      "source": "tonightbriefing_ts",
+      "target": "owner_tonightbriefing_analyticsrow",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "tonightBriefing.ts",
+      "source_location": "L269",
+      "weight": 1.0,
+      "source": "tonightbriefing_ts",
+      "target": "owner_tonightbriefing_fetchtonightbriefing",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "tonightBriefing.ts",
+      "source_location": "L415",
+      "weight": 1.0,
+      "source": "tonightbriefing_ts",
+      "target": "owner_tonightbriefing_guestjoin",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "tonightBriefing.ts",
+      "source_location": "L423",
+      "weight": 1.0,
+      "source": "tonightbriefing_ts",
+      "target": "owner_tonightbriefing_reservationguestrow",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "tonightBriefing.ts",
+      "source_location": "L433",
+      "weight": 1.0,
+      "source": "tonightbriefing_ts",
+      "target": "owner_tonightbriefing_hasallergydata",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "tonightBriefing.ts",
+      "source_location": "L440",
+      "weight": 1.0,
+      "source": "tonightbriefing_ts",
+      "target": "owner_tonightbriefing_fetchtonightguests",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "tonightBriefing.ts",
+      "source_location": "L276",
+      "weight": 1.0,
+      "source": "owner_tonightbriefing_fetchtonightbriefing",
+      "target": "owner_tonightbriefing_getrestauranttimezone",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "tonightBriefing.ts",
+      "source_location": "L447",
+      "weight": 1.0,
+      "source": "owner_tonightbriefing_fetchtonightguests",
+      "target": "owner_tonightbriefing_getrestauranttimezone",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "tonightBriefing.ts",
+      "source_location": "L277",
+      "weight": 1.0,
+      "source": "owner_tonightbriefing_fetchtonightbriefing",
+      "target": "owner_tonightbriefing_todayboundsintimezone",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "tonightBriefing.ts",
+      "source_location": "L448",
+      "weight": 1.0,
+      "source": "owner_tonightbriefing_fetchtonightguests",
+      "target": "owner_tonightbriefing_todayboundsintimezone",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "tonightBriefing.ts",
+      "source_location": "L288",
+      "weight": 1.0,
+      "source": "owner_tonightbriefing_fetchtonightbriefing",
+      "target": "owner_tonightbriefing_localdatekey",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "tonightBriefing.ts",
+      "source_location": "L460",
+      "weight": 1.0,
+      "source": "owner_tonightbriefing_fetchtonightguests",
+      "target": "owner_tonightbriefing_localdatekey",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "tonightBriefing.ts",
+      "source_location": "L347",
+      "weight": 1.0,
+      "source": "owner_tonightbriefing_fetchtonightbriefing",
+      "target": "owner_tonightbriefing_localhour",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "tonightBriefing.ts",
+      "source_location": "L315",
+      "weight": 1.0,
+      "source": "owner_tonightbriefing_fetchtonightbriefing",
+      "target": "owner_tonightbriefing_formathourshort",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "tonightBriefing.ts",
+      "source_location": "L349",
+      "weight": 1.0,
+      "source": "owner_tonightbriefing_fetchtonightbriefing",
+      "target": "owner_tonightbriefing_formathourlong",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "tonightBriefing.ts",
+      "source_location": "L323",
+      "weight": 1.0,
+      "source": "owner_tonightbriefing_fetchtonightbriefing",
+      "target": "owner_tonightbriefing_formattimeshort",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "tonightBriefing.ts",
+      "source_location": "L388",
+      "weight": 1.0,
+      "source": "owner_tonightbriefing_fetchtonightbriefing",
+      "target": "owner_tonightbriefing_statusfromcovers",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "tonightBriefing.ts",
+      "source_location": "L392",
+      "weight": 1.0,
+      "source": "owner_tonightbriefing_fetchtonightbriefing",
+      "target": "owner_tonightbriefing_statuslabel",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "tonightBriefing.ts",
+      "source_location": "L393",
+      "weight": 1.0,
+      "source": "owner_tonightbriefing_fetchtonightbriefing",
+      "target": "owner_tonightbriefing_headlinefor",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "promotionTypes.ts",
+      "source_location": "L13",
+      "weight": 1.0,
+      "source": "promotiontypes_ts",
+      "target": "owner_promotiontypes_promotiontypekey",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "rolePermissionsSettings.ts",
+      "source_location": "L4",
+      "weight": 1.0,
+      "source": "rolepermissionssettings_ts",
+      "target": "owner_rolepermissionssettings_roleid",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "rolePermissionsSettings.ts",
+      "source_location": "L6",
+      "weight": 1.0,
+      "source": "rolepermissionssettings_ts",
+      "target": "owner_rolepermissionssettings_role",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "rolePermissionsSettings.ts",
+      "source_location": "L30",
+      "weight": 1.0,
+      "source": "rolepermissionssettings_ts",
+      "target": "owner_rolepermissionssettings_permission",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "rolePermissionsSettings.ts",
+      "source_location": "L21",
+      "weight": 1.0,
+      "source": "rolepermissionssettings_ts",
+      "target": "owner_rolepermissionssettings_rolepermissionmatrix",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "rolePermissionsSettings.ts",
+      "source_location": "L23",
+      "weight": 1.0,
+      "source": "rolepermissionssettings_ts",
+      "target": "owner_rolepermissionssettings_roles",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "rolePermissionsSettings.ts",
+      "source_location": "L39",
+      "weight": 1.0,
+      "source": "rolepermissionssettings_ts",
+      "target": "owner_rolepermissionssettings_default_perms",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "rolePermissionsSettings.ts",
+      "source_location": "L48",
+      "weight": 1.0,
+      "source": "rolepermissionssettings_ts",
+      "target": "owner_rolepermissionssettings_isplainobject",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "rolePermissionsSettings.ts",
+      "source_location": "L57",
+      "weight": 1.0,
+      "source": "rolepermissionssettings_ts",
+      "target": "owner_rolepermissionssettings_mergewithdefaults",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "rolePermissionsSettings.ts",
+      "source_location": "L82",
+      "weight": 1.0,
+      "source": "rolepermissionssettings_ts",
+      "target": "owner_rolepermissionssettings_readrolepermissions",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "rolePermissionsSettings.ts",
+      "source_location": "L103",
+      "weight": 1.0,
+      "source": "rolepermissionssettings_ts",
+      "target": "owner_rolepermissionssettings_writerolepermissions",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "rolePermissionsSettings.ts",
+      "source_location": "L62",
+      "weight": 1.0,
+      "source": "owner_rolepermissionssettings_mergewithdefaults",
+      "target": "owner_rolepermissionssettings_isplainobject",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "rolePermissionsSettings.ts",
+      "source_location": "L95",
+      "weight": 1.0,
+      "source": "owner_rolepermissionssettings_readrolepermissions",
+      "target": "owner_rolepermissionssettings_isplainobject",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "rolePermissionsSettings.ts",
+      "source_location": "L117",
+      "weight": 1.0,
+      "source": "owner_rolepermissionssettings_writerolepermissions",
+      "target": "owner_rolepermissionssettings_isplainobject",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "rolePermissionsSettings.ts",
+      "source_location": "L86",
+      "weight": 1.0,
+      "source": "owner_rolepermissionssettings_readrolepermissions",
+      "target": "owner_rolepermissionssettings_mergewithdefaults",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "expenseCategories.ts",
+      "source_location": "L34",
+      "weight": 1.0,
+      "source": "expensecategories_ts",
+      "target": "owner_expensecategories_expensecategorykey",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "expenseCategories.ts",
+      "source_location": "L41",
+      "weight": 1.0,
+      "source": "expensecategories_ts",
+      "target": "owner_expensecategories_getexpensecategory",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "expenseCategories.ts",
+      "source_location": "L45",
+      "weight": 1.0,
+      "source": "expensecategories_ts",
+      "target": "owner_expensecategories_isexpensecategorykey",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "createEventOrPromotion.ts",
+      "source_location": "L3",
+      "weight": 1.0,
+      "source": "createeventorpromotion_ts",
+      "target": "owner_createeventorpromotion_eventinput",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "createEventOrPromotion.ts",
+      "source_location": "L27",
+      "weight": 1.0,
+      "source": "createeventorpromotion_ts",
+      "target": "owner_createeventorpromotion_promotioninput",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "createEventOrPromotion.ts",
+      "source_location": "L61",
+      "weight": 1.0,
+      "source": "createeventorpromotion_ts",
+      "target": "owner_createeventorpromotion_createevent",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "createEventOrPromotion.ts",
+      "source_location": "L73",
+      "weight": 1.0,
+      "source": "createeventorpromotion_ts",
+      "target": "owner_createeventorpromotion_createpromotion",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "kdsFeed.ts",
+      "source_location": "L10",
+      "weight": 1.0,
+      "source": "kdsfeed_ts",
+      "target": "owner_kdsfeed_kdsticket",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "kdsFeed.ts",
+      "source_location": "L25",
+      "weight": 1.0,
+      "source": "kdsfeed_ts",
+      "target": "owner_kdsfeed_livefeedkind",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "kdsFeed.ts",
+      "source_location": "L28",
+      "weight": 1.0,
+      "source": "kdsfeed_ts",
+      "target": "owner_kdsfeed_livefeedevent",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "kdsFeed.ts",
+      "source_location": "L37",
+      "weight": 1.0,
+      "source": "kdsfeed_ts",
+      "target": "owner_kdsfeed_active_order_statuses",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "kdsFeed.ts",
+      "source_location": "L40",
+      "weight": 1.0,
+      "source": "kdsfeed_ts",
+      "target": "owner_kdsfeed_minutessince",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "kdsFeed.ts",
+      "source_location": "L47",
+      "weight": 1.0,
+      "source": "kdsfeed_ts",
+      "target": "owner_kdsfeed_orderstatustokds",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "kdsFeed.ts",
+      "source_location": "L61",
+      "weight": 1.0,
+      "source": "kdsfeed_ts",
+      "target": "owner_kdsfeed_orderrowsubset",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "kdsFeed.ts",
+      "source_location": "L74",
+      "weight": 1.0,
+      "source": "kdsfeed_ts",
+      "target": "owner_kdsfeed_fetchkdstickets",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "kdsFeed.ts",
+      "source_location": "L188",
+      "weight": 1.0,
+      "source": "kdsfeed_ts",
+      "target": "owner_kdsfeed_reservationfeedrow",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "kdsFeed.ts",
+      "source_location": "L203",
+      "weight": 1.0,
+      "source": "kdsfeed_ts",
+      "target": "owner_kdsfeed_todaystartiso",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "kdsFeed.ts",
+      "source_location": "L209",
+      "weight": 1.0,
+      "source": "kdsfeed_ts",
+      "target": "owner_kdsfeed_tomorrowstartiso",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "kdsFeed.ts",
+      "source_location": "L215",
+      "weight": 1.0,
+      "source": "kdsfeed_ts",
+      "target": "owner_kdsfeed_formattimelabel",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "kdsFeed.ts",
+      "source_location": "L227",
+      "weight": 1.0,
+      "source": "kdsfeed_ts",
+      "target": "owner_kdsfeed_partylabel",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "kdsFeed.ts",
+      "source_location": "L233",
+      "weight": 1.0,
+      "source": "kdsfeed_ts",
+      "target": "owner_kdsfeed_kindfor",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "kdsFeed.ts",
+      "source_location": "L257",
+      "weight": 1.0,
+      "source": "kdsfeed_ts",
+      "target": "owner_kdsfeed_fetchrecentlivefeed",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "kdsFeed.ts",
+      "source_location": "L265",
+      "weight": 1.0,
+      "source": "owner_kdsfeed_fetchrecentlivefeed",
+      "target": "owner_kdsfeed_todaystartiso",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "kdsFeed.ts",
+      "source_location": "L266",
+      "weight": 1.0,
+      "source": "owner_kdsfeed_fetchrecentlivefeed",
+      "target": "owner_kdsfeed_tomorrowstartiso",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "kdsFeed.ts",
+      "source_location": "L294",
+      "weight": 1.0,
+      "source": "owner_kdsfeed_fetchrecentlivefeed",
+      "target": "owner_kdsfeed_formattimelabel",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "kdsFeed.ts",
+      "source_location": "L235",
+      "weight": 1.0,
+      "source": "owner_kdsfeed_kindfor",
+      "target": "owner_kdsfeed_partylabel",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "kdsFeed.ts",
+      "source_location": "L286",
+      "weight": 1.0,
+      "source": "owner_kdsfeed_fetchrecentlivefeed",
+      "target": "owner_kdsfeed_kindfor",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "reservationSettings.ts",
+      "source_location": "L38",
+      "weight": 1.0,
+      "source": "reservationsettings_ts",
+      "target": "owner_reservationsettings_default_reservation_settings",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "reservationSettings.ts",
+      "source_location": "L47",
+      "weight": 1.0,
+      "source": "reservationsettings_ts",
+      "target": "owner_reservationsettings_picknumber",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "reservationSettings.ts",
+      "source_location": "L56",
+      "weight": 1.0,
+      "source": "reservationsettings_ts",
+      "target": "owner_reservationsettings_normalize",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "reservationSettings.ts",
+      "source_location": "L87",
+      "weight": 1.0,
+      "source": "reservationsettings_ts",
+      "target": "owner_reservationsettings_readreservationsettings",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "reservationSettings.ts",
+      "source_location": "L114",
+      "weight": 1.0,
+      "source": "reservationsettings_ts",
+      "target": "owner_reservationsettings_writereservationsettings",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "reservationSettings.ts",
+      "source_location": "L64",
+      "weight": 1.0,
+      "source": "owner_reservationsettings_normalize",
+      "target": "owner_reservationsettings_picknumber",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "reservationSettings.ts",
+      "source_location": "L106",
+      "weight": 1.0,
+      "source": "owner_reservationsettings_readreservationsettings",
+      "target": "owner_reservationsettings_normalize",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "reservationSettings.ts",
+      "source_location": "L136",
+      "weight": 1.0,
+      "source": "owner_reservationsettings_writereservationsettings",
+      "target": "owner_reservationsettings_normalize",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "confidence": "EXTRACTED",
+      "source_file": "saveRestaurantProfile.ts",
+      "source_location": "L38",
+      "weight": 1.0,
+      "context": "call",
+      "source": "saverestaurantprofile_ts",
+      "target": "owner_reservationsettings_normalize",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "staffRoster.ts",
+      "source_location": "L17",
+      "weight": 1.0,
+      "source": "staffroster_ts",
+      "target": "owner_staffroster_staffrosterentry",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "staffRoster.ts",
+      "source_location": "L32",
+      "weight": 1.0,
+      "source": "staffroster_ts",
+      "target": "owner_staffroster_userprofilejoin",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "staffRoster.ts",
+      "source_location": "L38",
+      "weight": 1.0,
+      "source": "staffroster_ts",
+      "target": "owner_staffroster_rolerow",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "staffRoster.ts",
+      "source_location": "L51",
+      "weight": 1.0,
+      "source": "staffroster_ts",
+      "target": "owner_staffroster_pickprofile",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "staffRoster.ts",
+      "source_location": "L64",
+      "weight": 1.0,
+      "source": "staffroster_ts",
+      "target": "owner_staffroster_fetchstaffroster",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "visitPhotos.ts",
+      "source_location": "L11",
+      "weight": 1.0,
+      "source": "visitphotos_ts",
+      "target": "owner_visitphotos_restaurantvisitphoto",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "visitPhotos.ts",
+      "source_location": "L20",
+      "weight": 1.0,
+      "source": "visitphotos_ts",
+      "target": "owner_visitphotos_visitphotorow",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "visitPhotos.ts",
+      "source_location": "L29",
+      "weight": 1.0,
+      "source": "visitphotos_ts",
+      "target": "owner_visitphotos_stringvalue",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "visitPhotos.ts",
+      "source_location": "L33",
+      "weight": 1.0,
+      "source": "visitphotos_ts",
+      "target": "owner_visitphotos_stringornull",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "visitPhotos.ts",
+      "source_location": "L37",
+      "weight": 1.0,
+      "source": "visitphotos_ts",
+      "target": "owner_visitphotos_maprow",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "visitPhotos.ts",
+      "source_location": "L51",
+      "weight": 1.0,
+      "source": "visitphotos_ts",
+      "target": "owner_visitphotos_fetchrestaurantvisitphotos",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "visitPhotos.ts",
+      "source_location": "L38",
+      "weight": 1.0,
+      "source": "owner_visitphotos_maprow",
+      "target": "owner_visitphotos_stringvalue",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "visitPhotos.ts",
+      "source_location": "L44",
+      "weight": 1.0,
+      "source": "owner_visitphotos_maprow",
+      "target": "owner_visitphotos_stringornull",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "visitPhotos.ts",
+      "source_location": "L68",
+      "weight": 1.0,
+      "source": "owner_visitphotos_fetchrestaurantvisitphotos",
+      "target": "owner_visitphotos_maprow",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "businessHoursSettings.ts",
+      "source_location": "L26",
+      "weight": 1.0,
+      "source": "businesshourssettings_ts",
+      "target": "owner_businesshourssettings_businesshoursday",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "businessHoursSettings.ts",
+      "source_location": "L23",
+      "weight": 1.0,
+      "source": "businesshourssettings_ts",
+      "target": "owner_businesshourssettings_businesshoursschedule",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "businessHoursSettings.ts",
+      "source_location": "L40",
+      "weight": 1.0,
+      "source": "businesshourssettings_ts",
+      "target": "owner_businesshourssettings_default_business_hours",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "businessHoursSettings.ts",
+      "source_location": "L50",
+      "weight": 1.0,
+      "source": "businesshourssettings_ts",
+      "target": "owner_businesshourssettings_isobject",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "businessHoursSettings.ts",
+      "source_location": "L54",
+      "weight": 1.0,
+      "source": "businesshourssettings_ts",
+      "target": "owner_businesshourssettings_coerceday",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "businessHoursSettings.ts",
+      "source_location": "L62",
+      "weight": 1.0,
+      "source": "businesshourssettings_ts",
+      "target": "owner_businesshourssettings_coerceschedule",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "businessHoursSettings.ts",
+      "source_location": "L75",
+      "weight": 1.0,
+      "source": "businesshourssettings_ts",
+      "target": "owner_businesshourssettings_readsettingsjson",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "businessHoursSettings.ts",
+      "source_location": "L95",
+      "weight": 1.0,
+      "source": "businesshourssettings_ts",
+      "target": "owner_businesshourssettings_readbusinesshours",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "businessHoursSettings.ts",
+      "source_location": "L108",
+      "weight": 1.0,
+      "source": "businesshourssettings_ts",
+      "target": "owner_businesshourssettings_writebusinesshours",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "businessHoursSettings.ts",
+      "source_location": "L55",
+      "weight": 1.0,
+      "source": "owner_businesshourssettings_coerceday",
+      "target": "owner_businesshourssettings_isobject",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "businessHoursSettings.ts",
+      "source_location": "L63",
+      "weight": 1.0,
+      "source": "owner_businesshourssettings_coerceschedule",
+      "target": "owner_businesshourssettings_isobject",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "businessHoursSettings.ts",
+      "source_location": "L87",
+      "weight": 1.0,
+      "source": "owner_businesshourssettings_readsettingsjson",
+      "target": "owner_businesshourssettings_isobject",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "businessHoursSettings.ts",
+      "source_location": "L70",
+      "weight": 1.0,
+      "source": "owner_businesshourssettings_coerceschedule",
+      "target": "owner_businesshourssettings_coerceday",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "businessHoursSettings.ts",
+      "source_location": "L100",
+      "weight": 1.0,
+      "source": "owner_businesshourssettings_readbusinesshours",
+      "target": "owner_businesshourssettings_coerceschedule",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "businessHoursSettings.ts",
+      "source_location": "L99",
+      "weight": 1.0,
+      "source": "owner_businesshourssettings_readbusinesshours",
+      "target": "owner_businesshourssettings_readsettingsjson",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "businessHoursSettings.ts",
+      "source_location": "L119",
+      "weight": 1.0,
+      "source": "owner_businesshourssettings_writebusinesshours",
+      "target": "owner_businesshourssettings_readsettingsjson",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "staffRoles.ts",
+      "source_location": "L14",
+      "weight": 1.0,
+      "source": "staffroles_ts",
+      "target": "owner_staffroles_staffrole",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "OwnerRestaurantContext.tsx",
+      "source_location": "L25",
+      "weight": 1.0,
+      "source": "ownerrestaurantcontext_tsx",
+      "target": "owner_ownerrestaurantcontext_ownerrestaurantselection",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "OwnerRestaurantContext.tsx",
+      "source_location": "L37",
+      "weight": 1.0,
+      "source": "ownerrestaurantcontext_tsx",
+      "target": "owner_ownerrestaurantcontext_storage_key",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "OwnerRestaurantContext.tsx",
+      "source_location": "L45",
+      "weight": 1.0,
+      "source": "ownerrestaurantcontext_tsx",
+      "target": "owner_ownerrestaurantcontext_null_context",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "OwnerRestaurantContext.tsx",
+      "source_location": "L57",
+      "weight": 1.0,
+      "source": "ownerrestaurantcontext_tsx",
+      "target": "owner_ownerrestaurantcontext_pickinitial",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "OwnerRestaurantContext.tsx",
+      "source_location": "L68",
+      "weight": 1.0,
+      "source": "ownerrestaurantcontext_tsx",
+      "target": "owner_ownerrestaurantcontext_ownerrestaurantprovider",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "OwnerRestaurantContext.tsx",
+      "source_location": "L154",
+      "weight": 1.0,
+      "source": "ownerrestaurantcontext_tsx",
+      "target": "owner_ownerrestaurantcontext_useownerrestaurantcontext",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "restaurantShifts.ts",
+      "source_location": "L19",
+      "weight": 1.0,
+      "source": "restaurantshifts_ts",
+      "target": "owner_restaurantshifts_fetchrestaurantshifts",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "restaurantShifts.ts",
+      "source_location": "L48",
+      "weight": 1.0,
+      "source": "restaurantshifts_ts",
+      "target": "owner_restaurantshifts_formatshiftwindow",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "restaurantShifts.ts",
+      "source_location": "L55",
+      "weight": 1.0,
+      "source": "restaurantshifts_ts",
+      "target": "owner_restaurantshifts_formattime",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "restaurantShifts.ts",
+      "source_location": "L67",
+      "weight": 1.0,
+      "source": "restaurantshifts_ts",
+      "target": "owner_restaurantshifts_day_short",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "restaurantShifts.ts",
+      "source_location": "L68",
+      "weight": 1.0,
+      "source": "restaurantshifts_ts",
+      "target": "owner_restaurantshifts_day_long",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "restaurantShifts.ts",
+      "source_location": "L71",
+      "weight": 1.0,
+      "source": "restaurantshifts_ts",
+      "target": "owner_restaurantshifts_formatdaysofweek",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "restaurantShifts.ts",
+      "source_location": "L81",
+      "weight": 1.0,
+      "source": "restaurantshifts_ts",
+      "target": "owner_restaurantshifts_dailyhoursrow",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "restaurantShifts.ts",
+      "source_location": "L93",
+      "weight": 1.0,
+      "source": "restaurantshifts_ts",
+      "target": "owner_restaurantshifts_buildweeklyhours",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "restaurantShifts.ts",
+      "source_location": "L49",
+      "weight": 1.0,
+      "source": "owner_restaurantshifts_formatshiftwindow",
+      "target": "owner_restaurantshifts_formattime",
+      "confidence_score": 1.0
+    }
+  ],
+  "hyperedges": [],
+  "built_at_commit": "f8e49f380bc144eec2877ce30747d7a6c1711a63"
+}

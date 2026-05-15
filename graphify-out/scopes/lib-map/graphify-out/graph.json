@@ -1,0 +1,406 @@
+{
+  "directed": false,
+  "multigraph": false,
+  "graph": {},
+  "nodes": [
+    {
+      "label": "mapFilters.ts",
+      "file_type": "code",
+      "source_file": "mapFilters.ts",
+      "source_location": "L1",
+      "id": "mapfilters_ts",
+      "community": 0,
+      "norm_label": "mapfilters.ts"
+    },
+    {
+      "label": "MapFilterId",
+      "file_type": "code",
+      "source_file": "mapFilters.ts",
+      "source_location": "L5",
+      "id": "map_mapfilters_mapfilterid",
+      "community": 0,
+      "norm_label": "mapfilterid"
+    },
+    {
+      "label": "RestaurantWithDistance",
+      "file_type": "code",
+      "source_file": "mapFilters.ts",
+      "source_location": "L13",
+      "id": "map_mapfilters_restaurantwithdistance",
+      "community": 0,
+      "norm_label": "restaurantwithdistance"
+    },
+    {
+      "label": "envNumber()",
+      "file_type": "code",
+      "source_file": "mapFilters.ts",
+      "source_location": "L20",
+      "id": "map_mapfilters_envnumber",
+      "community": 0,
+      "norm_label": "envnumber()"
+    },
+    {
+      "label": "DEFAULT_MAP_CENTER",
+      "file_type": "code",
+      "source_file": "mapFilters.ts",
+      "source_location": "L27",
+      "id": "map_mapfilters_default_map_center",
+      "community": 0,
+      "norm_label": "default_map_center"
+    },
+    {
+      "label": "isMapLocationInDemoRegion()",
+      "file_type": "code",
+      "source_file": "mapFilters.ts",
+      "source_location": "L34",
+      "id": "map_mapfilters_ismaplocationindemoregion",
+      "community": 1,
+      "norm_label": "ismaplocationindemoregion()"
+    },
+    {
+      "label": "withDistances()",
+      "file_type": "code",
+      "source_file": "mapFilters.ts",
+      "source_location": "L43",
+      "id": "map_mapfilters_withdistances",
+      "community": 0,
+      "norm_label": "withdistances()"
+    },
+    {
+      "label": "hasOutdoorSignals()",
+      "file_type": "code",
+      "source_file": "mapFilters.ts",
+      "source_location": "L58",
+      "id": "map_mapfilters_hasoutdoorsignals",
+      "community": 0,
+      "norm_label": "hasoutdoorsignals()"
+    },
+    {
+      "label": "hasDateNightSignals()",
+      "file_type": "code",
+      "source_file": "mapFilters.ts",
+      "source_location": "L64",
+      "id": "map_mapfilters_hasdatenightsignals",
+      "community": 0,
+      "norm_label": "hasdatenightsignals()"
+    },
+    {
+      "label": "applyMapFilter()",
+      "file_type": "code",
+      "source_file": "mapFilters.ts",
+      "source_location": "L69",
+      "id": "map_mapfilters_applymapfilter",
+      "community": 0,
+      "norm_label": "applymapfilter()"
+    },
+    {
+      "label": "darkMapStyle.ts",
+      "file_type": "code",
+      "source_file": "darkMapStyle.ts",
+      "source_location": "L1",
+      "id": "darkmapstyle_ts",
+      "community": 2,
+      "norm_label": "darkmapstyle.ts"
+    },
+    {
+      "label": "buildGoogleMapStyle()",
+      "file_type": "code",
+      "source_file": "darkMapStyle.ts",
+      "source_location": "L11",
+      "id": "map_darkmapstyle_buildgooglemapstyle",
+      "community": 2,
+      "norm_label": "buildgooglemapstyle()"
+    },
+    {
+      "label": "googleDarkMapStyle",
+      "file_type": "code",
+      "source_file": "darkMapStyle.ts",
+      "source_location": "L46",
+      "id": "map_darkmapstyle_googledarkmapstyle",
+      "community": 2,
+      "norm_label": "googledarkmapstyle"
+    },
+    {
+      "label": "googleLightMapStyle",
+      "file_type": "code",
+      "source_file": "darkMapStyle.ts",
+      "source_location": "L49",
+      "id": "map_darkmapstyle_googlelightmapstyle",
+      "community": 2,
+      "norm_label": "googlelightmapstyle"
+    },
+    {
+      "label": "hours.ts",
+      "file_type": "code",
+      "source_file": "hours.ts",
+      "source_location": "L1",
+      "id": "hours_ts",
+      "community": 3,
+      "norm_label": "hours.ts"
+    },
+    {
+      "label": "isRestaurantOpenNow()",
+      "file_type": "code",
+      "source_file": "hours.ts",
+      "source_location": "L5",
+      "id": "map_hours_isrestaurantopennow",
+      "community": 3,
+      "norm_label": "isrestaurantopennow()"
+    },
+    {
+      "label": "geo.ts",
+      "file_type": "code",
+      "source_file": "geo.ts",
+      "source_location": "L1",
+      "id": "geo_ts",
+      "community": 1,
+      "norm_label": "geo.ts"
+    },
+    {
+      "label": "haversineMeters()",
+      "file_type": "code",
+      "source_file": "geo.ts",
+      "source_location": "L4",
+      "id": "map_geo_haversinemeters",
+      "community": 1,
+      "norm_label": "haversinemeters()"
+    },
+    {
+      "label": "hasFiniteCoords()",
+      "file_type": "code",
+      "source_file": "geo.ts",
+      "source_location": "L21",
+      "id": "map_geo_hasfinitecoords",
+      "community": 1,
+      "norm_label": "hasfinitecoords()"
+    },
+    {
+      "label": "formatDistanceMeters()",
+      "file_type": "code",
+      "source_file": "geo.ts",
+      "source_location": "L34",
+      "id": "map_geo_formatdistancemeters",
+      "community": 1,
+      "norm_label": "formatdistancemeters()"
+    }
+  ],
+  "links": [
+    {
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "mapFilters.ts",
+      "source_location": "L2",
+      "weight": 1.0,
+      "source": "mapfilters_ts",
+      "target": "geo_ts",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "mapFilters.ts",
+      "source_location": "L2",
+      "weight": 1.0,
+      "source": "mapfilters_ts",
+      "target": "map_geo_haversinemeters",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "mapFilters.ts",
+      "source_location": "L3",
+      "weight": 1.0,
+      "source": "mapfilters_ts",
+      "target": "hours_ts",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "mapFilters.ts",
+      "source_location": "L3",
+      "weight": 1.0,
+      "source": "mapfilters_ts",
+      "target": "map_hours_isrestaurantopennow",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "mapFilters.ts",
+      "source_location": "L5",
+      "weight": 1.0,
+      "source": "mapfilters_ts",
+      "target": "map_mapfilters_mapfilterid",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "mapFilters.ts",
+      "source_location": "L13",
+      "weight": 1.0,
+      "source": "mapfilters_ts",
+      "target": "map_mapfilters_restaurantwithdistance",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "mapFilters.ts",
+      "source_location": "L20",
+      "weight": 1.0,
+      "source": "mapfilters_ts",
+      "target": "map_mapfilters_envnumber",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "mapFilters.ts",
+      "source_location": "L27",
+      "weight": 1.0,
+      "source": "mapfilters_ts",
+      "target": "map_mapfilters_default_map_center",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "mapFilters.ts",
+      "source_location": "L34",
+      "weight": 1.0,
+      "source": "mapfilters_ts",
+      "target": "map_mapfilters_ismaplocationindemoregion",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "mapFilters.ts",
+      "source_location": "L43",
+      "weight": 1.0,
+      "source": "mapfilters_ts",
+      "target": "map_mapfilters_withdistances",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "mapFilters.ts",
+      "source_location": "L58",
+      "weight": 1.0,
+      "source": "mapfilters_ts",
+      "target": "map_mapfilters_hasoutdoorsignals",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "mapFilters.ts",
+      "source_location": "L64",
+      "weight": 1.0,
+      "source": "mapfilters_ts",
+      "target": "map_mapfilters_hasdatenightsignals",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "mapFilters.ts",
+      "source_location": "L69",
+      "weight": 1.0,
+      "source": "mapfilters_ts",
+      "target": "map_mapfilters_applymapfilter",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "mapFilters.ts",
+      "source_location": "L38",
+      "weight": 1.0,
+      "source": "map_mapfilters_ismaplocationindemoregion",
+      "target": "map_geo_haversinemeters"
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "darkMapStyle.ts",
+      "source_location": "L11",
+      "weight": 1.0,
+      "source": "darkmapstyle_ts",
+      "target": "map_darkmapstyle_buildgooglemapstyle",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "darkMapStyle.ts",
+      "source_location": "L46",
+      "weight": 1.0,
+      "source": "darkmapstyle_ts",
+      "target": "map_darkmapstyle_googledarkmapstyle",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "darkMapStyle.ts",
+      "source_location": "L49",
+      "weight": 1.0,
+      "source": "darkmapstyle_ts",
+      "target": "map_darkmapstyle_googlelightmapstyle",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "hours.ts",
+      "source_location": "L5",
+      "weight": 1.0,
+      "source": "hours_ts",
+      "target": "map_hours_isrestaurantopennow",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "geo.ts",
+      "source_location": "L4",
+      "weight": 1.0,
+      "source": "geo_ts",
+      "target": "map_geo_haversinemeters",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "geo.ts",
+      "source_location": "L21",
+      "weight": 1.0,
+      "source": "geo_ts",
+      "target": "map_geo_hasfinitecoords",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "geo.ts",
+      "source_location": "L34",
+      "weight": 1.0,
+      "source": "geo_ts",
+      "target": "map_geo_formatdistancemeters",
+      "confidence_score": 1.0
+    }
+  ],
+  "hyperedges": [],
+  "built_at_commit": "f8e49f380bc144eec2877ce30747d7a6c1711a63"
+}

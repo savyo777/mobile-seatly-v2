@@ -1,0 +1,22 @@
+{
+  "/Users/stevengeorgy/mobile-seatly-v2-5/lib/supabase/mapRestaurantRow.ts": {
+    "mtime": 1778615269.435105,
+    "hash": "2a788ce849f723987e542d4080a08817"
+  },
+  "/Users/stevengeorgy/mobile-seatly-v2-5/lib/supabase/client.ts": {
+    "mtime": 1778615269.434712,
+    "hash": "90cc92ec053c9f2de82c8661f74de8b6"
+  },
+  "/Users/stevengeorgy/mobile-seatly-v2-5/lib/supabase/authErrors.ts": {
+    "mtime": 1778615269.4346025,
+    "hash": "ab0e094605b7684500df1763a31d787c"
+  },
+  "/Users/stevengeorgy/mobile-seatly-v2-5/lib/supabase/env.ts": {
+    "mtime": 1778615269.4348257,
+    "hash": "90409ca107fc5a258a56563544b9d36b"
+  },
+  "/Users/stevengeorgy/mobile-seatly-v2-5/lib/supabase/fetchRestaurants.ts": {
+    "mtime": 1778615269.4349697,
+    "hash": "b438cb174111745e23c9f447010bd95a"
+  }
+}

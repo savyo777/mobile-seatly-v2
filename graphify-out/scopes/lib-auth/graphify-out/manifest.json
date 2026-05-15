@@ -1,0 +1,30 @@
+{
+  "/Users/stevengeorgy/mobile-seatly-v2-5/lib/auth/lockoutPolicy.ts": {
+    "mtime": 1778615269.4088814,
+    "hash": "39b4ead52e096d42e853c42087ba345d"
+  },
+  "/Users/stevengeorgy/mobile-seatly-v2-5/lib/auth/displayProfile.ts": {
+    "mtime": 1778615269.4087753,
+    "hash": "51d966ca3a10bfd3c85810b3fdfc1b02"
+  },
+  "/Users/stevengeorgy/mobile-seatly-v2-5/lib/auth/recoveryLinks.ts": {
+    "mtime": 1778615269.409096,
+    "hash": "c4c38c8228239cb30fcf76d75eaed1f6"
+  },
+  "/Users/stevengeorgy/mobile-seatly-v2-5/lib/auth/postSignInRouting.ts": {
+    "mtime": 1778615269.408992,
+    "hash": "8a04927d5508ce0285cfd4dc60287d47"
+  },
+  "/Users/stevengeorgy/mobile-seatly-v2-5/lib/auth/AuthContext.tsx": {
+    "mtime": 1778615269.4085522,
+    "hash": "1139429a41e8a215cd04542ccb735b0a"
+  },
+  "/Users/stevengeorgy/mobile-seatly-v2-5/lib/auth/roles.ts": {
+    "mtime": 1778615269.4091988,
+    "hash": "ca6f53de230807c710494f078e2a5c6e"
+  },
+  "/Users/stevengeorgy/mobile-seatly-v2-5/lib/auth/currentUserId.ts": {
+    "mtime": 1778615269.4086664,
+    "hash": "837e31bdd4d871da3b8cd92b65f4b18b"
+  }
+}

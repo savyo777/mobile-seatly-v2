@@ -1,0 +1,86 @@
+{
+  "directed": false,
+  "multigraph": false,
+  "graph": {},
+  "nodes": [
+    {
+      "label": "businessTypes.ts",
+      "file_type": "code",
+      "source_file": "businessTypes.ts",
+      "source_location": "L1",
+      "id": "businesstypes_ts",
+      "community": 1,
+      "norm_label": "businesstypes.ts"
+    },
+    {
+      "label": "preferenceCatalog.ts",
+      "file_type": "code",
+      "source_file": "preferenceCatalog.ts",
+      "source_location": "L1",
+      "id": "preferencecatalog_ts",
+      "community": 0,
+      "norm_label": "preferencecatalog.ts"
+    },
+    {
+      "label": "SUGGESTED_CUISINES",
+      "file_type": "code",
+      "source_file": "preferenceCatalog.ts",
+      "source_location": "L6",
+      "id": "constants_preferencecatalog_suggested_cuisines",
+      "community": 0,
+      "norm_label": "suggested_cuisines"
+    },
+    {
+      "label": "SUGGESTED_DIETARY",
+      "file_type": "code",
+      "source_file": "preferenceCatalog.ts",
+      "source_location": "L24",
+      "id": "constants_preferencecatalog_suggested_dietary",
+      "community": 0,
+      "norm_label": "suggested_dietary"
+    },
+    {
+      "label": "SUGGESTED_VIBES",
+      "file_type": "code",
+      "source_file": "preferenceCatalog.ts",
+      "source_location": "L40",
+      "id": "constants_preferencecatalog_suggested_vibes",
+      "community": 0,
+      "norm_label": "suggested_vibes"
+    }
+  ],
+  "links": [
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "preferenceCatalog.ts",
+      "source_location": "L6",
+      "weight": 1.0,
+      "source": "preferencecatalog_ts",
+      "target": "constants_preferencecatalog_suggested_cuisines",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "preferenceCatalog.ts",
+      "source_location": "L24",
+      "weight": 1.0,
+      "source": "preferencecatalog_ts",
+      "target": "constants_preferencecatalog_suggested_dietary",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "preferenceCatalog.ts",
+      "source_location": "L40",
+      "weight": 1.0,
+      "source": "preferencecatalog_ts",
+      "target": "constants_preferencecatalog_suggested_vibes",
+      "confidence_score": 1.0
+    }
+  ],
+  "hyperedges": [],
+  "built_at_commit": "f8e49f380bc144eec2877ce30747d7a6c1711a63"
+}

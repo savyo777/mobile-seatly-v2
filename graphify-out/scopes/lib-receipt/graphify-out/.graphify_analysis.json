@@ -1,0 +1,50 @@
+{
+  "communities": {
+    "0": [
+      "buildreceipthtml_ts",
+      "receipt_buildreceipthtml_escapehtml",
+      "receipt_buildreceipthtml_formatmoney",
+      "receipt_buildreceipthtml_formatwhen",
+      "receipt_receipttypes_receiptpayload"
+    ],
+    "1": [
+      "getreceiptpayload_ts",
+      "receipt_getreceiptpayload_maporderitem",
+      "receipt_getreceiptpayload_orderfromreservation",
+      "receipt_getreceiptpayload_receiptstatusorder",
+      "receipt_getreceiptpayload_receiptstatusreservation"
+    ],
+    "2": [
+      "receipt_receipttypes_receiptactivitykind",
+      "receipt_receipttypes_receiptlineitem",
+      "receipttypes_ts"
+    ]
+  },
+  "cohesion": {
+    "0": 0.4,
+    "1": 0.4,
+    "2": 0.67
+  },
+  "gods": [
+    {
+      "id": "receipt_receipttypes_receiptpayload",
+      "label": "ReceiptPayload",
+      "degree": 3
+    },
+    {
+      "id": "receipt_receipttypes_receiptactivitykind",
+      "label": "ReceiptActivityKind",
+      "degree": 2
+    },
+    {
+      "id": "receipt_receipttypes_receiptlineitem",
+      "label": "ReceiptLineItem",
+      "degree": 2
+    }
+  ],
+  "surprises": [],
+  "tokens": {
+    "input": 0,
+    "output": 0
+  }
+}

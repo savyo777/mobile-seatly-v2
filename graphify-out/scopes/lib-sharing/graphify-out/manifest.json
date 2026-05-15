@@ -1,0 +1,22 @@
+{
+  "/Users/stevengeorgy/mobile-seatly-v2-5/lib/sharing/mediaExport.ts": {
+    "mtime": 1778615269.431767,
+    "hash": "120ac133e7dfc197e665a73b846be735"
+  },
+  "/Users/stevengeorgy/mobile-seatly-v2-5/lib/sharing/personalSocialApp.ts": {
+    "mtime": 1778615269.4321043,
+    "hash": "aa6d3208b84efcd8fb4c3b32574c2b21"
+  },
+  "/Users/stevengeorgy/mobile-seatly-v2-5/lib/sharing/nativeSocialShare.ts": {
+    "mtime": 1778615269.4320047,
+    "hash": "b5c0bdd5e8a8ff3b3212920ea89cdd4b"
+  },
+  "/Users/stevengeorgy/mobile-seatly-v2-5/lib/sharing/generateShareCard.ts": {
+    "mtime": 1778615269.4316487,
+    "hash": "10b000dee28a1937801a3290aec69be2"
+  },
+  "/Users/stevengeorgy/mobile-seatly-v2-5/lib/sharing/mime.ts": {
+    "mtime": 1778615269.4318702,
+    "hash": "a7aa88ae90d30b089c0bc59a905fbbd7"
+  }
+}

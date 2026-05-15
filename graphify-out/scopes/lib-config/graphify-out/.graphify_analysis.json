@@ -1,0 +1,97 @@
+{
+  "communities": {
+    "0": [
+      "cenaivasocial_ts",
+      "config_cenaivasocial_cenaiva_follow_urls",
+      "config_cenaivasocial_cenaiva_social_urls",
+      "config_cenaivasocial_cenaivafollowplatform",
+      "config_cenaivasocial_cenaivasocialplatform",
+      "config_cenaivasocial_opencenaivasocialprofile",
+      "config_cenaivasocial_openusersocialapp",
+      "config_cenaivasocial_usersocialplatform"
+    ],
+    "1": [
+      "config_contactinfo_legal_email",
+      "config_contactinfo_mailtourl",
+      "config_contactinfo_privacy_email",
+      "config_contactinfo_support_email",
+      "config_legallinks_envvalue",
+      "contactinfo_ts"
+    ],
+    "2": [
+      "config_legallinks_ack_url",
+      "config_legallinks_brand_domain",
+      "config_legallinks_licenses_url",
+      "config_legallinks_privacy_url",
+      "config_legallinks_terms_url",
+      "legallinks_ts"
+    ],
+    "3": [
+      "config_demomode_isdemomodeenabled",
+      "demomode_ts"
+    ]
+  },
+  "cohesion": {
+    "0": 0.29,
+    "1": 0.33,
+    "2": 0.33,
+    "3": 1.0
+  },
+  "gods": [
+    {
+      "id": "config_cenaivasocial_opencenaivasocialprofile",
+      "label": "openCenaivaSocialProfile()",
+      "degree": 2
+    },
+    {
+      "id": "config_cenaivasocial_openusersocialapp",
+      "label": "openUserSocialApp()",
+      "degree": 2
+    },
+    {
+      "id": "config_legallinks_envvalue",
+      "label": "envValue()",
+      "degree": 2
+    },
+    {
+      "id": "config_contactinfo_support_email",
+      "label": "SUPPORT_EMAIL",
+      "degree": 1
+    },
+    {
+      "id": "config_contactinfo_privacy_email",
+      "label": "PRIVACY_EMAIL",
+      "degree": 1
+    },
+    {
+      "id": "config_contactinfo_legal_email",
+      "label": "LEGAL_EMAIL",
+      "degree": 1
+    },
+    {
+      "id": "config_cenaivasocial_cenaiva_follow_urls",
+      "label": "CENAIVA_FOLLOW_URLS",
+      "degree": 1
+    },
+    {
+      "id": "config_cenaivasocial_cenaivafollowplatform",
+      "label": "CenaivaFollowPlatform",
+      "degree": 1
+    },
+    {
+      "id": "config_cenaivasocial_usersocialplatform",
+      "label": "UserSocialPlatform",
+      "degree": 1
+    },
+    {
+      "id": "config_cenaivasocial_cenaiva_social_urls",
+      "label": "CENAIVA_SOCIAL_URLS",
+      "degree": 1
+    }
+  ],
+  "surprises": [],
+  "tokens": {
+    "input": 0,
+    "output": 0
+  }
+}

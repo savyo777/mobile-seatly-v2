@@ -1,0 +1,3186 @@
+{
+  "directed": false,
+  "multigraph": false,
+  "graph": {},
+  "nodes": [
+    {
+      "label": "getAvailability.ts",
+      "file_type": "code",
+      "source_file": "getAvailability.ts",
+      "source_location": "L1",
+      "id": "getavailability_ts",
+      "community": 2,
+      "norm_label": "getavailability.ts"
+    },
+    {
+      "label": "getShiftConfig()",
+      "file_type": "code",
+      "source_file": "getAvailability.ts",
+      "source_location": "L12",
+      "id": "booking_getavailability_getshiftconfig",
+      "community": 2,
+      "norm_label": "getshiftconfig()"
+    },
+    {
+      "label": "getCalendarMonth()",
+      "file_type": "code",
+      "source_file": "getAvailability.ts",
+      "source_location": "L16",
+      "id": "booking_getavailability_getcalendarmonth",
+      "community": 2,
+      "norm_label": "getcalendarmonth()"
+    },
+    {
+      "label": "getTimeSlotsForDate()",
+      "file_type": "code",
+      "source_file": "getAvailability.ts",
+      "source_location": "L24",
+      "id": "booking_getavailability_gettimeslotsfordate",
+      "community": 2,
+      "norm_label": "gettimeslotsfordate()"
+    },
+    {
+      "label": "isDateBookable()",
+      "file_type": "code",
+      "source_file": "getAvailability.ts",
+      "source_location": "L32",
+      "id": "booking_getavailability_isdatebookable",
+      "community": 2,
+      "norm_label": "isdatebookable()"
+    },
+    {
+      "label": "firstBookableDateKey()",
+      "file_type": "code",
+      "source_file": "getAvailability.ts",
+      "source_location": "L36",
+      "id": "booking_getavailability_firstbookabledatekey",
+      "community": 2,
+      "norm_label": "firstbookabledatekey()"
+    },
+    {
+      "label": "nextBookableDateAfter()",
+      "file_type": "code",
+      "source_file": "getAvailability.ts",
+      "source_location": "L42",
+      "id": "booking_getavailability_nextbookabledateafter",
+      "community": 2,
+      "norm_label": "nextbookabledateafter()"
+    },
+    {
+      "label": "availabilityTypes.ts",
+      "file_type": "code",
+      "source_file": "availabilityTypes.ts",
+      "source_location": "L1",
+      "id": "availabilitytypes_ts",
+      "community": 2,
+      "norm_label": "availabilitytypes.ts"
+    },
+    {
+      "label": "DateKey",
+      "file_type": "code",
+      "source_file": "availabilityTypes.ts",
+      "source_location": "L7",
+      "id": "booking_availabilitytypes_datekey",
+      "community": 2,
+      "norm_label": "datekey"
+    },
+    {
+      "label": "BookingShiftMock",
+      "file_type": "code",
+      "source_file": "availabilityTypes.ts",
+      "source_location": "L9",
+      "id": "booking_availabilitytypes_bookingshiftmock",
+      "community": 2,
+      "norm_label": "bookingshiftmock"
+    },
+    {
+      "label": "CalendarCell",
+      "file_type": "code",
+      "source_file": "availabilityTypes.ts",
+      "source_location": "L21",
+      "id": "booking_availabilitytypes_calendarcell",
+      "community": 2,
+      "norm_label": "calendarcell"
+    },
+    {
+      "label": "TimeSlotOption",
+      "file_type": "code",
+      "source_file": "availabilityTypes.ts",
+      "source_location": "L29",
+      "id": "booking_availabilitytypes_timeslotoption",
+      "community": 2,
+      "norm_label": "timeslotoption"
+    },
+    {
+      "label": "confirmationCode.ts",
+      "file_type": "code",
+      "source_file": "confirmationCode.ts",
+      "source_location": "L1",
+      "id": "confirmationcode_ts",
+      "community": 7,
+      "norm_label": "confirmationcode.ts"
+    },
+    {
+      "label": "makeConfirmationCode()",
+      "file_type": "code",
+      "source_file": "confirmationCode.ts",
+      "source_location": "L11",
+      "id": "booking_confirmationcode_makeconfirmationcode",
+      "community": 7,
+      "norm_label": "makeconfirmationcode()"
+    },
+    {
+      "label": "isValidConfirmationCode()",
+      "file_type": "code",
+      "source_file": "confirmationCode.ts",
+      "source_location": "L19",
+      "id": "booking_confirmationcode_isvalidconfirmationcode",
+      "community": 7,
+      "norm_label": "isvalidconfirmationcode()"
+    },
+    {
+      "label": "addToCalendar.ts",
+      "file_type": "code",
+      "source_file": "addToCalendar.ts",
+      "source_location": "L1",
+      "id": "addtocalendar_ts",
+      "community": 4,
+      "norm_label": "addtocalendar.ts"
+    },
+    {
+      "label": "CalendarBooking",
+      "file_type": "code",
+      "source_file": "addToCalendar.ts",
+      "source_location": "L8",
+      "id": "booking_addtocalendar_calendarbooking",
+      "community": 4,
+      "norm_label": "calendarbooking"
+    },
+    {
+      "label": "toIcsUtc()",
+      "file_type": "code",
+      "source_file": "addToCalendar.ts",
+      "source_location": "L23",
+      "id": "booking_addtocalendar_toicsutc",
+      "community": 4,
+      "norm_label": "toicsutc()"
+    },
+    {
+      "label": "escapeIcsText()",
+      "file_type": "code",
+      "source_file": "addToCalendar.ts",
+      "source_location": "L36",
+      "id": "booking_addtocalendar_escapeicstext",
+      "community": 4,
+      "norm_label": "escapeicstext()"
+    },
+    {
+      "label": "buildIcsContent()",
+      "file_type": "code",
+      "source_file": "addToCalendar.ts",
+      "source_location": "L44",
+      "id": "booking_addtocalendar_buildicscontent",
+      "community": 4,
+      "norm_label": "buildicscontent()"
+    },
+    {
+      "label": "buildGoogleCalendarUrl()",
+      "file_type": "code",
+      "source_file": "addToCalendar.ts",
+      "source_location": "L89",
+      "id": "booking_addtocalendar_buildgooglecalendarurl",
+      "community": 4,
+      "norm_label": "buildgooglecalendarurl()"
+    },
+    {
+      "label": "addBookingToCalendar()",
+      "file_type": "code",
+      "source_file": "addToCalendar.ts",
+      "source_location": "L117",
+      "id": "booking_addtocalendar_addbookingtocalendar",
+      "community": 4,
+      "norm_label": "addbookingtocalendar()"
+    },
+    {
+      "label": "dateUtils.ts",
+      "file_type": "code",
+      "source_file": "dateUtils.ts",
+      "source_location": "L1",
+      "id": "dateutils_ts",
+      "community": 2,
+      "norm_label": "dateutils.ts"
+    },
+    {
+      "label": "pad()",
+      "file_type": "code",
+      "source_file": "dateUtils.ts",
+      "source_location": "L3",
+      "id": "booking_dateutils_pad",
+      "community": 2,
+      "norm_label": "pad()"
+    },
+    {
+      "label": "toLocalDateKey()",
+      "file_type": "code",
+      "source_file": "dateUtils.ts",
+      "source_location": "L7",
+      "id": "booking_dateutils_tolocaldatekey",
+      "community": 2,
+      "norm_label": "tolocaldatekey()"
+    },
+    {
+      "label": "parseDateKeyLocal()",
+      "file_type": "code",
+      "source_file": "dateUtils.ts",
+      "source_location": "L11",
+      "id": "booking_dateutils_parsedatekeylocal",
+      "community": 2,
+      "norm_label": "parsedatekeylocal()"
+    },
+    {
+      "label": "parseBookingDateParam()",
+      "file_type": "code",
+      "source_file": "dateUtils.ts",
+      "source_location": "L17",
+      "id": "booking_dateutils_parsebookingdateparam",
+      "community": 2,
+      "norm_label": "parsebookingdateparam()"
+    },
+    {
+      "label": "bookingLimits.ts",
+      "file_type": "code",
+      "source_file": "bookingLimits.ts",
+      "source_location": "L1",
+      "id": "bookinglimits_ts",
+      "community": 11,
+      "norm_label": "bookinglimits.ts"
+    },
+    {
+      "label": "myReservations.ts",
+      "file_type": "code",
+      "source_file": "myReservations.ts",
+      "source_location": "L1",
+      "id": "myreservations_ts",
+      "community": 6,
+      "norm_label": "myreservations.ts"
+    },
+    {
+      "label": "MyBookingItem",
+      "file_type": "code",
+      "source_file": "myReservations.ts",
+      "source_location": "L6",
+      "id": "booking_myreservations_mybookingitem",
+      "community": 6,
+      "norm_label": "mybookingitem"
+    },
+    {
+      "label": "normalizeDepositStatus()",
+      "file_type": "code",
+      "source_file": "myReservations.ts",
+      "source_location": "L51",
+      "id": "booking_myreservations_normalizedepositstatus",
+      "community": 6,
+      "norm_label": "normalizedepositstatus()"
+    },
+    {
+      "label": "normalizeStatus()",
+      "file_type": "code",
+      "source_file": "myReservations.ts",
+      "source_location": "L64",
+      "id": "booking_myreservations_normalizestatus",
+      "community": 6,
+      "norm_label": "normalizestatus()"
+    },
+    {
+      "label": "fetchMyBookingItems()",
+      "file_type": "code",
+      "source_file": "myReservations.ts",
+      "source_location": "L78",
+      "id": "booking_myreservations_fetchmybookingitems",
+      "community": 6,
+      "norm_label": "fetchmybookingitems()"
+    },
+    {
+      "label": "hoursSchedule.ts",
+      "file_type": "code",
+      "source_file": "hoursSchedule.ts",
+      "source_location": "L1",
+      "id": "hoursschedule_ts",
+      "community": 3,
+      "norm_label": "hoursschedule.ts"
+    },
+    {
+      "label": "BookingWeekdayKey",
+      "file_type": "code",
+      "source_file": "hoursSchedule.ts",
+      "source_location": "L16",
+      "id": "booking_hoursschedule_bookingweekdaykey",
+      "community": 3,
+      "norm_label": "bookingweekdaykey"
+    },
+    {
+      "label": "HoursRange",
+      "file_type": "code",
+      "source_file": "hoursSchedule.ts",
+      "source_location": "L17",
+      "id": "booking_hoursschedule_hoursrange",
+      "community": 3,
+      "norm_label": "hoursrange"
+    },
+    {
+      "label": "SpecialHoursRange",
+      "file_type": "code",
+      "source_file": "hoursSchedule.ts",
+      "source_location": "L18",
+      "id": "booking_hoursschedule_specialhoursrange",
+      "community": 3,
+      "norm_label": "specialhoursrange"
+    },
+    {
+      "label": "BookingHoursJson",
+      "file_type": "code",
+      "source_file": "hoursSchedule.ts",
+      "source_location": "L26",
+      "id": "booking_hoursschedule_bookinghoursjson",
+      "community": 3,
+      "norm_label": "bookinghoursjson"
+    },
+    {
+      "label": "ParsedClockTime",
+      "file_type": "code",
+      "source_file": "hoursSchedule.ts",
+      "source_location": "L30",
+      "id": "booking_hoursschedule_parsedclocktime",
+      "community": 3,
+      "norm_label": "parsedclocktime"
+    },
+    {
+      "label": "parseClockTime()",
+      "file_type": "code",
+      "source_file": "hoursSchedule.ts",
+      "source_location": "L37",
+      "id": "booking_hoursschedule_parseclocktime",
+      "community": 1,
+      "norm_label": "parseclocktime()"
+    },
+    {
+      "label": "normalizeHoursRange()",
+      "file_type": "code",
+      "source_file": "hoursSchedule.ts",
+      "source_location": "L64",
+      "id": "booking_hoursschedule_normalizehoursrange",
+      "community": 3,
+      "norm_label": "normalizehoursrange()"
+    },
+    {
+      "label": "readHoursRange()",
+      "file_type": "code",
+      "source_file": "hoursSchedule.ts",
+      "source_location": "L81",
+      "id": "booking_hoursschedule_readhoursrange",
+      "community": 3,
+      "norm_label": "readhoursrange()"
+    },
+    {
+      "label": "specialHoursForDate()",
+      "file_type": "code",
+      "source_file": "hoursSchedule.ts",
+      "source_location": "L91",
+      "id": "booking_hoursschedule_specialhoursfordate",
+      "community": 3,
+      "norm_label": "specialhoursfordate()"
+    },
+    {
+      "label": "getBookingMinutesWindowForDate()",
+      "file_type": "code",
+      "source_file": "hoursSchedule.ts",
+      "source_location": "L99",
+      "id": "booking_hoursschedule_getbookingminuteswindowfordate",
+      "community": 3,
+      "norm_label": "getbookingminuteswindowfordate()"
+    },
+    {
+      "label": "isClosedBookingDate()",
+      "file_type": "code",
+      "source_file": "hoursSchedule.ts",
+      "source_location": "L110",
+      "id": "booking_hoursschedule_isclosedbookingdate",
+      "community": 3,
+      "norm_label": "isclosedbookingdate()"
+    },
+    {
+      "label": "deriveClosedJsWeekdaysFromHoursJson()",
+      "file_type": "code",
+      "source_file": "hoursSchedule.ts",
+      "source_location": "L119",
+      "id": "booking_hoursschedule_deriveclosedjsweekdaysfromhoursjson",
+      "community": 3,
+      "norm_label": "deriveclosedjsweekdaysfromhoursjson()"
+    },
+    {
+      "label": "minutesToHourMinute()",
+      "file_type": "code",
+      "source_file": "hoursSchedule.ts",
+      "source_location": "L142",
+      "id": "booking_hoursschedule_minutestohourminute",
+      "community": 3,
+      "norm_label": "minutestohourminute()"
+    },
+    {
+      "label": "sameDayClosingMinute()",
+      "file_type": "code",
+      "source_file": "hoursSchedule.ts",
+      "source_location": "L151",
+      "id": "booking_hoursschedule_samedayclosingminute",
+      "community": 3,
+      "norm_label": "samedayclosingminute()"
+    },
+    {
+      "label": "isFinishedServingLocalDay()",
+      "file_type": "code",
+      "source_file": "hoursSchedule.ts",
+      "source_location": "L160",
+      "id": "booking_hoursschedule_isfinishedservinglocalday",
+      "community": 3,
+      "norm_label": "isfinishedservinglocalday()"
+    },
+    {
+      "label": "slotGenerator.ts",
+      "file_type": "code",
+      "source_file": "slotGenerator.ts",
+      "source_location": "L1",
+      "id": "slotgenerator_ts",
+      "community": 1,
+      "norm_label": "slotgenerator.ts"
+    },
+    {
+      "label": "ShiftRow",
+      "file_type": "code",
+      "source_file": "slotGenerator.ts",
+      "source_location": "L68",
+      "id": "booking_slotgenerator_shiftrow",
+      "community": 1,
+      "norm_label": "shiftrow"
+    },
+    {
+      "label": "TableRow",
+      "file_type": "code",
+      "source_file": "slotGenerator.ts",
+      "source_location": "L81",
+      "id": "booking_slotgenerator_tablerow",
+      "community": 1,
+      "norm_label": "tablerow"
+    },
+    {
+      "label": "ReservationRow",
+      "file_type": "code",
+      "source_file": "slotGenerator.ts",
+      "source_location": "L95",
+      "id": "booking_slotgenerator_reservationrow",
+      "community": 6,
+      "norm_label": "reservationrow"
+    },
+    {
+      "label": "ReservationTableRow",
+      "file_type": "code",
+      "source_file": "slotGenerator.ts",
+      "source_location": "L105",
+      "id": "booking_slotgenerator_reservationtablerow",
+      "community": 1,
+      "norm_label": "reservationtablerow"
+    },
+    {
+      "label": "RestaurantRow",
+      "file_type": "code",
+      "source_file": "slotGenerator.ts",
+      "source_location": "L111",
+      "id": "booking_slotgenerator_restaurantrow",
+      "community": 1,
+      "norm_label": "restaurantrow"
+    },
+    {
+      "label": "getUTCOffsetMinutes()",
+      "file_type": "code",
+      "source_file": "slotGenerator.ts",
+      "source_location": "L126",
+      "id": "booking_slotgenerator_getutcoffsetminutes",
+      "community": 1,
+      "norm_label": "getutcoffsetminutes()"
+    },
+    {
+      "label": "localToUTC()",
+      "file_type": "code",
+      "source_file": "slotGenerator.ts",
+      "source_location": "L133",
+      "id": "booking_slotgenerator_localtoutc",
+      "community": 1,
+      "norm_label": "localtoutc()"
+    },
+    {
+      "label": "localDayOfWeek()",
+      "file_type": "code",
+      "source_file": "slotGenerator.ts",
+      "source_location": "L140",
+      "id": "booking_slotgenerator_localdayofweek",
+      "community": 1,
+      "norm_label": "localdayofweek()"
+    },
+    {
+      "label": "parseTimeOfDayToMinutes()",
+      "file_type": "code",
+      "source_file": "slotGenerator.ts",
+      "source_location": "L149",
+      "id": "booking_slotgenerator_parsetimeofdaytominutes",
+      "community": 1,
+      "norm_label": "parsetimeofdaytominutes()"
+    },
+    {
+      "label": "clampTurnMinutes()",
+      "file_type": "code",
+      "source_file": "slotGenerator.ts",
+      "source_location": "L162",
+      "id": "booking_slotgenerator_clampturnminutes",
+      "community": 1,
+      "norm_label": "clampturnminutes()"
+    },
+    {
+      "label": "resolveTurnMinutes()",
+      "file_type": "code",
+      "source_file": "slotGenerator.ts",
+      "source_location": "L168",
+      "id": "booking_slotgenerator_resolveturnminutes",
+      "community": 1,
+      "norm_label": "resolveturnminutes()"
+    },
+    {
+      "label": "formatDisplayTime()",
+      "file_type": "code",
+      "source_file": "slotGenerator.ts",
+      "source_location": "L177",
+      "id": "booking_slotgenerator_formatdisplaytime",
+      "community": 1,
+      "norm_label": "formatdisplaytime()"
+    },
+    {
+      "label": "pickSingleTable()",
+      "file_type": "code",
+      "source_file": "slotGenerator.ts",
+      "source_location": "L195",
+      "id": "booking_slotgenerator_picksingletable",
+      "community": 1,
+      "norm_label": "picksingletable()"
+    },
+    {
+      "label": "CombineCandidate",
+      "file_type": "code",
+      "source_file": "slotGenerator.ts",
+      "source_location": "L212",
+      "id": "booking_slotgenerator_combinecandidate",
+      "community": 1,
+      "norm_label": "combinecandidate"
+    },
+    {
+      "label": "pickCombo()",
+      "file_type": "code",
+      "source_file": "slotGenerator.ts",
+      "source_location": "L232",
+      "id": "booking_slotgenerator_pickcombo",
+      "community": 1,
+      "norm_label": "pickcombo()"
+    },
+    {
+      "label": "findAvailableTableGroup()",
+      "file_type": "code",
+      "source_file": "slotGenerator.ts",
+      "source_location": "L343",
+      "id": "booking_slotgenerator_findavailabletablegroup",
+      "community": 1,
+      "norm_label": "findavailabletablegroup()"
+    },
+    {
+      "label": "blockedTableIds()",
+      "file_type": "code",
+      "source_file": "slotGenerator.ts",
+      "source_location": "L358",
+      "id": "booking_slotgenerator_blockedtableids",
+      "community": 1,
+      "norm_label": "blockedtableids()"
+    },
+    {
+      "label": "generateAvailabilitySlots()",
+      "file_type": "code",
+      "source_file": "slotGenerator.ts",
+      "source_location": "L392",
+      "id": "booking_slotgenerator_generateavailabilityslots",
+      "community": 1,
+      "norm_label": "generateavailabilityslots()"
+    },
+    {
+      "label": "readFloorCapacity()",
+      "file_type": "code",
+      "source_file": "slotGenerator.ts",
+      "source_location": "L573",
+      "id": "booking_slotgenerator_readfloorcapacity",
+      "community": 1,
+      "norm_label": "readfloorcapacity()"
+    },
+    {
+      "label": "availableDates.ts",
+      "file_type": "code",
+      "source_file": "availableDates.ts",
+      "source_location": "L1",
+      "id": "availabledates_ts",
+      "community": 8,
+      "norm_label": "availabledates.ts"
+    },
+    {
+      "label": "FindAvailableDatesArgs",
+      "file_type": "code",
+      "source_file": "availableDates.ts",
+      "source_location": "L30",
+      "id": "booking_availabledates_findavailabledatesargs",
+      "community": 8,
+      "norm_label": "findavailabledatesargs"
+    },
+    {
+      "label": "addDays()",
+      "file_type": "code",
+      "source_file": "availableDates.ts",
+      "source_location": "L37",
+      "id": "booking_availabledates_adddays",
+      "community": 8,
+      "norm_label": "adddays()"
+    },
+    {
+      "label": "daysBetween()",
+      "file_type": "code",
+      "source_file": "availableDates.ts",
+      "source_location": "L44",
+      "id": "booking_availabledates_daysbetween",
+      "community": 8,
+      "norm_label": "daysbetween()"
+    },
+    {
+      "label": "findAvailableDates()",
+      "file_type": "code",
+      "source_file": "availableDates.ts",
+      "source_location": "L69",
+      "id": "booking_availabledates_findavailabledates",
+      "community": 8,
+      "norm_label": "findavailabledates()"
+    },
+    {
+      "label": "depositTiers.ts",
+      "file_type": "code",
+      "source_file": "depositTiers.ts",
+      "source_location": "L1",
+      "id": "deposittiers_ts",
+      "community": 9,
+      "norm_label": "deposittiers.ts"
+    },
+    {
+      "label": "readDepositTiers()",
+      "file_type": "code",
+      "source_file": "depositTiers.ts",
+      "source_location": "L6",
+      "id": "booking_deposittiers_readdeposittiers",
+      "community": 9,
+      "norm_label": "readdeposittiers()"
+    },
+    {
+      "label": "previewDepositCents()",
+      "file_type": "code",
+      "source_file": "depositTiers.ts",
+      "source_location": "L26",
+      "id": "booking_deposittiers_previewdepositcents",
+      "community": 9,
+      "norm_label": "previewdepositcents()"
+    },
+    {
+      "label": "bookingDefaults.ts",
+      "file_type": "code",
+      "source_file": "bookingDefaults.ts",
+      "source_location": "L1",
+      "id": "bookingdefaults_ts",
+      "community": 4,
+      "norm_label": "bookingdefaults.ts"
+    },
+    {
+      "label": "SLOT_DURATION_OPTIONS",
+      "file_type": "code",
+      "source_file": "bookingDefaults.ts",
+      "source_location": "L28",
+      "id": "booking_bookingdefaults_slot_duration_options",
+      "community": 4,
+      "norm_label": "slot_duration_options"
+    },
+    {
+      "label": "NoticeOption",
+      "file_type": "code",
+      "source_file": "bookingDefaults.ts",
+      "source_location": "L43",
+      "id": "booking_bookingdefaults_noticeoption",
+      "community": 4,
+      "norm_label": "noticeoption"
+    },
+    {
+      "label": "publicBookingApi.ts",
+      "file_type": "code",
+      "source_file": "publicBookingApi.ts",
+      "source_location": "L1",
+      "id": "publicbookingapi_ts",
+      "community": 0,
+      "norm_label": "publicbookingapi.ts"
+    },
+    {
+      "label": "AvailabilitySlot",
+      "file_type": "code",
+      "source_file": "publicBookingApi.ts",
+      "source_location": "L8",
+      "id": "booking_publicbookingapi_availabilityslot",
+      "community": 1,
+      "norm_label": "availabilityslot"
+    },
+    {
+      "label": "AvailabilityResponse",
+      "file_type": "code",
+      "source_file": "publicBookingApi.ts",
+      "source_location": "L18",
+      "id": "booking_publicbookingapi_availabilityresponse",
+      "community": 1,
+      "norm_label": "availabilityresponse"
+    },
+    {
+      "label": "PublicBookingCartItem",
+      "file_type": "code",
+      "source_file": "publicBookingApi.ts",
+      "source_location": "L23",
+      "id": "booking_publicbookingapi_publicbookingcartitem",
+      "community": 0,
+      "norm_label": "publicbookingcartitem"
+    },
+    {
+      "label": "PublicBookingPayload",
+      "file_type": "code",
+      "source_file": "publicBookingApi.ts",
+      "source_location": "L30",
+      "id": "booking_publicbookingapi_publicbookingpayload",
+      "community": 0,
+      "norm_label": "publicbookingpayload"
+    },
+    {
+      "label": "PublicBookingResponse",
+      "file_type": "code",
+      "source_file": "publicBookingApi.ts",
+      "source_location": "L52",
+      "id": "booking_publicbookingapi_publicbookingresponse",
+      "community": 0,
+      "norm_label": "publicbookingresponse"
+    },
+    {
+      "label": "DepositStatus",
+      "file_type": "code",
+      "source_file": "publicBookingApi.ts",
+      "source_location": "L67",
+      "id": "booking_publicbookingapi_depositstatus",
+      "community": 6,
+      "norm_label": "depositstatus"
+    },
+    {
+      "label": "DepositPayer",
+      "file_type": "code",
+      "source_file": "publicBookingApi.ts",
+      "source_location": "L69",
+      "id": "booking_publicbookingapi_depositpayer",
+      "community": 0,
+      "norm_label": "depositpayer"
+    },
+    {
+      "label": "BookingProfile",
+      "file_type": "code",
+      "source_file": "publicBookingApi.ts",
+      "source_location": "L79",
+      "id": "booking_publicbookingapi_bookingprofile",
+      "community": 0,
+      "norm_label": "bookingprofile"
+    },
+    {
+      "label": "availabilityCache",
+      "file_type": "code",
+      "source_file": "publicBookingApi.ts",
+      "source_location": "L93",
+      "id": "booking_publicbookingapi_availabilitycache",
+      "community": 0,
+      "norm_label": "availabilitycache"
+    },
+    {
+      "label": "availabilityInflight",
+      "file_type": "code",
+      "source_file": "publicBookingApi.ts",
+      "source_location": "L94",
+      "id": "booking_publicbookingapi_availabilityinflight",
+      "community": 0,
+      "norm_label": "availabilityinflight"
+    },
+    {
+      "label": "restaurantTimezoneCache",
+      "file_type": "code",
+      "source_file": "publicBookingApi.ts",
+      "source_location": "L95",
+      "id": "booking_publicbookingapi_restauranttimezonecache",
+      "community": 0,
+      "norm_label": "restauranttimezonecache"
+    },
+    {
+      "label": "getRestaurantTimezone()",
+      "file_type": "code",
+      "source_file": "publicBookingApi.ts",
+      "source_location": "L97",
+      "id": "booking_publicbookingapi_getrestauranttimezone",
+      "community": 0,
+      "norm_label": "getrestauranttimezone()"
+    },
+    {
+      "label": "formatSlotDisplayTime()",
+      "file_type": "code",
+      "source_file": "publicBookingApi.ts",
+      "source_location": "L117",
+      "id": "booking_publicbookingapi_formatslotdisplaytime",
+      "community": 0,
+      "norm_label": "formatslotdisplaytime()"
+    },
+    {
+      "label": "isDemoRestaurantKey()",
+      "file_type": "code",
+      "source_file": "publicBookingApi.ts",
+      "source_location": "L131",
+      "id": "booking_publicbookingapi_isdemorestaurantkey",
+      "community": 7,
+      "norm_label": "isdemorestaurantkey()"
+    },
+    {
+      "label": "cacheAvailability()",
+      "file_type": "code",
+      "source_file": "publicBookingApi.ts",
+      "source_location": "L138",
+      "id": "booking_publicbookingapi_cacheavailability",
+      "community": 2,
+      "norm_label": "cacheavailability()"
+    },
+    {
+      "label": "demoAvailabilityFor()",
+      "file_type": "code",
+      "source_file": "publicBookingApi.ts",
+      "source_location": "L146",
+      "id": "booking_publicbookingapi_demoavailabilityfor",
+      "community": 7,
+      "norm_label": "demoavailabilityfor()"
+    },
+    {
+      "label": "demoBookingFor()",
+      "file_type": "code",
+      "source_file": "publicBookingApi.ts",
+      "source_location": "L182",
+      "id": "booking_publicbookingapi_demobookingfor",
+      "community": 7,
+      "norm_label": "demobookingfor()"
+    },
+    {
+      "label": "roundMoney()",
+      "file_type": "code",
+      "source_file": "publicBookingApi.ts",
+      "source_location": "L203",
+      "id": "booking_publicbookingapi_roundmoney",
+      "community": 10,
+      "norm_label": "roundmoney()"
+    },
+    {
+      "label": "getAccessToken()",
+      "file_type": "code",
+      "source_file": "publicBookingApi.ts",
+      "source_location": "L207",
+      "id": "booking_publicbookingapi_getaccesstoken",
+      "community": 5,
+      "norm_label": "getaccesstoken()"
+    },
+    {
+      "label": "assertConfigured()",
+      "file_type": "code",
+      "source_file": "publicBookingApi.ts",
+      "source_location": "L214",
+      "id": "booking_publicbookingapi_assertconfigured",
+      "community": 5,
+      "norm_label": "assertconfigured()"
+    },
+    {
+      "label": "isAbortError()",
+      "file_type": "code",
+      "source_file": "publicBookingApi.ts",
+      "source_location": "L221",
+      "id": "booking_publicbookingapi_isaborterror",
+      "community": 5,
+      "norm_label": "isaborterror()"
+    },
+    {
+      "label": "isJunkErrorString()",
+      "file_type": "code",
+      "source_file": "publicBookingApi.ts",
+      "source_location": "L228",
+      "id": "booking_publicbookingapi_isjunkerrorstring",
+      "community": 5,
+      "norm_label": "isjunkerrorstring()"
+    },
+    {
+      "label": "coerceErrorMessage()",
+      "file_type": "code",
+      "source_file": "publicBookingApi.ts",
+      "source_location": "L240",
+      "id": "booking_publicbookingapi_coerceerrormessage",
+      "community": 5,
+      "norm_label": "coerceerrormessage()"
+    },
+    {
+      "label": "createPublicBooking()",
+      "file_type": "code",
+      "source_file": "publicBookingApi.ts",
+      "source_location": "L358",
+      "id": "booking_publicbookingapi_createpublicbooking",
+      "community": 10,
+      "norm_label": "createpublicbooking()"
+    },
+    {
+      "label": "prepareDeposit()",
+      "file_type": "code",
+      "source_file": "publicBookingApi.ts",
+      "source_location": "L413",
+      "id": "booking_publicbookingapi_preparedeposit",
+      "community": 5,
+      "norm_label": "preparedeposit()"
+    },
+    {
+      "label": "confirmDepositStub()",
+      "file_type": "code",
+      "source_file": "publicBookingApi.ts",
+      "source_location": "L451",
+      "id": "booking_publicbookingapi_confirmdepositstub",
+      "community": 5,
+      "norm_label": "confirmdepositstub()"
+    },
+    {
+      "label": "availableDatesCache",
+      "file_type": "code",
+      "source_file": "publicBookingApi.ts",
+      "source_location": "L489",
+      "id": "booking_publicbookingapi_availabledatescache",
+      "community": 0,
+      "norm_label": "availabledatescache"
+    },
+    {
+      "label": "getAvailableDates()",
+      "file_type": "code",
+      "source_file": "publicBookingApi.ts",
+      "source_location": "L491",
+      "id": "booking_publicbookingapi_getavailabledates",
+      "community": 0,
+      "norm_label": "getavailabledates()"
+    },
+    {
+      "label": "ModifyReservationPayload",
+      "file_type": "code",
+      "source_file": "publicBookingApi.ts",
+      "source_location": "L526",
+      "id": "booking_publicbookingapi_modifyreservationpayload",
+      "community": 0,
+      "norm_label": "modifyreservationpayload"
+    },
+    {
+      "label": "MODIFY_REASON_MESSAGES",
+      "file_type": "code",
+      "source_file": "publicBookingApi.ts",
+      "source_location": "L546",
+      "id": "booking_publicbookingapi_modify_reason_messages",
+      "community": 0,
+      "norm_label": "modify_reason_messages"
+    },
+    {
+      "label": "modifyReservation()",
+      "file_type": "code",
+      "source_file": "publicBookingApi.ts",
+      "source_location": "L559",
+      "id": "booking_publicbookingapi_modifyreservation",
+      "community": 5,
+      "norm_label": "modifyreservation()"
+    },
+    {
+      "label": "ConflictWindow",
+      "file_type": "code",
+      "source_file": "publicBookingApi.ts",
+      "source_location": "L630",
+      "id": "booking_publicbookingapi_conflictwindow",
+      "community": 0,
+      "norm_label": "conflictwindow"
+    },
+    {
+      "label": "fetchActiveReservationWindows()",
+      "file_type": "code",
+      "source_file": "publicBookingApi.ts",
+      "source_location": "L632",
+      "id": "booking_publicbookingapi_fetchactivereservationwindows",
+      "community": 0,
+      "norm_label": "fetchactivereservationwindows()"
+    },
+    {
+      "label": "slotConflictsWithWindows()",
+      "file_type": "code",
+      "source_file": "publicBookingApi.ts",
+      "source_location": "L659",
+      "id": "booking_publicbookingapi_slotconflictswithwindows",
+      "community": 0,
+      "norm_label": "slotconflictswithwindows()"
+    },
+    {
+      "label": "CancelReservationResponse",
+      "file_type": "code",
+      "source_file": "publicBookingApi.ts",
+      "source_location": "L675",
+      "id": "booking_publicbookingapi_cancelreservationresponse",
+      "community": 0,
+      "norm_label": "cancelreservationresponse"
+    },
+    {
+      "label": "cancelReservation()",
+      "file_type": "code",
+      "source_file": "publicBookingApi.ts",
+      "source_location": "L683",
+      "id": "booking_publicbookingapi_cancelreservation",
+      "community": 5,
+      "norm_label": "cancelreservation()"
+    },
+    {
+      "label": "fetchBookingProfile()",
+      "file_type": "code",
+      "source_file": "publicBookingApi.ts",
+      "source_location": "L746",
+      "id": "booking_publicbookingapi_fetchbookingprofile",
+      "community": 0,
+      "norm_label": "fetchbookingprofile()"
+    },
+    {
+      "label": "makeBookingCartParam()",
+      "file_type": "code",
+      "source_file": "publicBookingApi.ts",
+      "source_location": "L763",
+      "id": "booking_publicbookingapi_makebookingcartparam",
+      "community": 0,
+      "norm_label": "makebookingcartparam()"
+    },
+    {
+      "label": "parseBookingCartParam()",
+      "file_type": "code",
+      "source_file": "publicBookingApi.ts",
+      "source_location": "L768",
+      "id": "booking_publicbookingapi_parsebookingcartparam",
+      "community": 0,
+      "norm_label": "parsebookingcartparam()"
+    },
+    {
+      "label": "cartSubtotal()",
+      "file_type": "code",
+      "source_file": "publicBookingApi.ts",
+      "source_location": "L798",
+      "id": "booking_publicbookingapi_cartsubtotal",
+      "community": 10,
+      "norm_label": "cartsubtotal()"
+    },
+    {
+      "label": "selectedSlotMatches()",
+      "file_type": "code",
+      "source_file": "publicBookingApi.ts",
+      "source_location": "L802",
+      "id": "booking_publicbookingapi_selectedslotmatches",
+      "community": 0,
+      "norm_label": "selectedslotmatches()"
+    }
+  ],
+  "links": [
+    {
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "getAvailability.ts",
+      "source_location": "L1",
+      "weight": 1.0,
+      "source": "getavailability_ts",
+      "target": "availabilitytypes_ts",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "getAvailability.ts",
+      "source_location": "L1",
+      "weight": 1.0,
+      "source": "getavailability_ts",
+      "target": "booking_availabilitytypes_calendarcell",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "getAvailability.ts",
+      "source_location": "L1",
+      "weight": 1.0,
+      "source": "getavailability_ts",
+      "target": "booking_availabilitytypes_datekey",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "getAvailability.ts",
+      "source_location": "L1",
+      "weight": 1.0,
+      "source": "getavailability_ts",
+      "target": "booking_availabilitytypes_timeslotoption",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "getAvailability.ts",
+      "source_location": "L10",
+      "weight": 1.0,
+      "source": "getavailability_ts",
+      "target": "dateutils_ts",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "getAvailability.ts",
+      "source_location": "L10",
+      "weight": 1.0,
+      "source": "getavailability_ts",
+      "target": "booking_dateutils_parsedatekeylocal",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "getAvailability.ts",
+      "source_location": "L12",
+      "weight": 1.0,
+      "source": "getavailability_ts",
+      "target": "booking_getavailability_getshiftconfig",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "getAvailability.ts",
+      "source_location": "L16",
+      "weight": 1.0,
+      "source": "getavailability_ts",
+      "target": "booking_getavailability_getcalendarmonth",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "getAvailability.ts",
+      "source_location": "L24",
+      "weight": 1.0,
+      "source": "getavailability_ts",
+      "target": "booking_getavailability_gettimeslotsfordate",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "getAvailability.ts",
+      "source_location": "L32",
+      "weight": 1.0,
+      "source": "getavailability_ts",
+      "target": "booking_getavailability_isdatebookable",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "getAvailability.ts",
+      "source_location": "L36",
+      "weight": 1.0,
+      "source": "getavailability_ts",
+      "target": "booking_getavailability_firstbookabledatekey",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "getAvailability.ts",
+      "source_location": "L42",
+      "weight": 1.0,
+      "source": "getavailability_ts",
+      "target": "booking_getavailability_nextbookabledateafter",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "publicBookingApi.ts",
+      "source_location": "L256",
+      "weight": 1.0,
+      "source": "publicbookingapi_ts",
+      "target": "getavailability_ts",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "publicBookingApi.ts",
+      "source_location": "L269",
+      "weight": 1.0,
+      "source": "getavailability_ts",
+      "target": "booking_publicbookingapi_demoavailabilityfor",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "publicBookingApi.ts",
+      "source_location": "L271",
+      "weight": 1.0,
+      "source": "getavailability_ts",
+      "target": "booking_publicbookingapi_cacheavailability",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "getAvailability.ts",
+      "source_location": "L43",
+      "weight": 1.0,
+      "source": "booking_getavailability_nextbookabledateafter",
+      "target": "booking_dateutils_parsedatekeylocal"
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "availabilityTypes.ts",
+      "source_location": "L7",
+      "weight": 1.0,
+      "source": "availabilitytypes_ts",
+      "target": "booking_availabilitytypes_datekey",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "availabilityTypes.ts",
+      "source_location": "L9",
+      "weight": 1.0,
+      "source": "availabilitytypes_ts",
+      "target": "booking_availabilitytypes_bookingshiftmock",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "availabilityTypes.ts",
+      "source_location": "L21",
+      "weight": 1.0,
+      "source": "availabilitytypes_ts",
+      "target": "booking_availabilitytypes_calendarcell",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "availabilityTypes.ts",
+      "source_location": "L29",
+      "weight": 1.0,
+      "source": "availabilitytypes_ts",
+      "target": "booking_availabilitytypes_timeslotoption",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "dateUtils.ts",
+      "source_location": "L1",
+      "weight": 1.0,
+      "source": "dateutils_ts",
+      "target": "availabilitytypes_ts",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "dateUtils.ts",
+      "source_location": "L1",
+      "weight": 1.0,
+      "source": "dateutils_ts",
+      "target": "booking_availabilitytypes_datekey",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "confirmationCode.ts",
+      "source_location": "L11",
+      "weight": 1.0,
+      "source": "confirmationcode_ts",
+      "target": "booking_confirmationcode_makeconfirmationcode",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "confirmationCode.ts",
+      "source_location": "L19",
+      "weight": 1.0,
+      "source": "confirmationcode_ts",
+      "target": "booking_confirmationcode_isvalidconfirmationcode",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "publicBookingApi.ts",
+      "source_location": "L6",
+      "weight": 1.0,
+      "source": "publicbookingapi_ts",
+      "target": "confirmationcode_ts",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "publicBookingApi.ts",
+      "source_location": "L6",
+      "weight": 1.0,
+      "source": "publicbookingapi_ts",
+      "target": "booking_confirmationcode_makeconfirmationcode",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "publicBookingApi.ts",
+      "source_location": "L195",
+      "weight": 1.0,
+      "source": "booking_publicbookingapi_demobookingfor",
+      "target": "booking_confirmationcode_makeconfirmationcode"
+    },
+    {
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "addToCalendar.ts",
+      "source_location": "L5",
+      "weight": 1.0,
+      "source": "addtocalendar_ts",
+      "target": "bookingdefaults_ts",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "addToCalendar.ts",
+      "source_location": "L8",
+      "weight": 1.0,
+      "source": "addtocalendar_ts",
+      "target": "booking_addtocalendar_calendarbooking",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "addToCalendar.ts",
+      "source_location": "L19",
+      "weight": 1.0,
+      "source": "addtocalendar_ts",
+      "target": "booking_dateutils_pad",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "addToCalendar.ts",
+      "source_location": "L23",
+      "weight": 1.0,
+      "source": "addtocalendar_ts",
+      "target": "booking_addtocalendar_toicsutc",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "addToCalendar.ts",
+      "source_location": "L36",
+      "weight": 1.0,
+      "source": "addtocalendar_ts",
+      "target": "booking_addtocalendar_escapeicstext",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "addToCalendar.ts",
+      "source_location": "L44",
+      "weight": 1.0,
+      "source": "addtocalendar_ts",
+      "target": "booking_addtocalendar_buildicscontent",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "addToCalendar.ts",
+      "source_location": "L89",
+      "weight": 1.0,
+      "source": "addtocalendar_ts",
+      "target": "booking_addtocalendar_buildgooglecalendarurl",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "addToCalendar.ts",
+      "source_location": "L117",
+      "weight": 1.0,
+      "source": "addtocalendar_ts",
+      "target": "booking_addtocalendar_addbookingtocalendar",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "addToCalendar.ts",
+      "source_location": "L26",
+      "weight": 1.0,
+      "source": "booking_addtocalendar_toicsutc",
+      "target": "booking_dateutils_pad",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "addToCalendar.ts",
+      "source_location": "L71",
+      "weight": 1.0,
+      "source": "booking_addtocalendar_buildicscontent",
+      "target": "booking_addtocalendar_toicsutc",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "addToCalendar.ts",
+      "source_location": "L108",
+      "weight": 1.0,
+      "source": "booking_addtocalendar_buildgooglecalendarurl",
+      "target": "booking_addtocalendar_toicsutc",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "addToCalendar.ts",
+      "source_location": "L52",
+      "weight": 1.0,
+      "source": "booking_addtocalendar_buildicscontent",
+      "target": "booking_addtocalendar_escapeicstext",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "addToCalendar.ts",
+      "source_location": "L138",
+      "weight": 1.0,
+      "source": "booking_addtocalendar_addbookingtocalendar",
+      "target": "booking_addtocalendar_buildicscontent",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "addToCalendar.ts",
+      "source_location": "L123",
+      "weight": 1.0,
+      "source": "booking_addtocalendar_addbookingtocalendar",
+      "target": "booking_addtocalendar_buildgooglecalendarurl",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "dateUtils.ts",
+      "source_location": "L3",
+      "weight": 1.0,
+      "source": "dateutils_ts",
+      "target": "booking_dateutils_pad",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "dateUtils.ts",
+      "source_location": "L7",
+      "weight": 1.0,
+      "source": "dateutils_ts",
+      "target": "booking_dateutils_tolocaldatekey",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "dateUtils.ts",
+      "source_location": "L11",
+      "weight": 1.0,
+      "source": "dateutils_ts",
+      "target": "booking_dateutils_parsedatekeylocal",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "dateUtils.ts",
+      "source_location": "L17",
+      "weight": 1.0,
+      "source": "dateutils_ts",
+      "target": "booking_dateutils_parsebookingdateparam",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "dateUtils.ts",
+      "source_location": "L8",
+      "weight": 1.0,
+      "source": "booking_dateutils_tolocaldatekey",
+      "target": "booking_dateutils_pad",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "dateUtils.ts",
+      "source_location": "L23",
+      "weight": 1.0,
+      "source": "booking_dateutils_parsebookingdateparam",
+      "target": "booking_dateutils_tolocaldatekey",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "myReservations.ts",
+      "source_location": "L3",
+      "weight": 1.0,
+      "source": "myreservations_ts",
+      "target": "publicbookingapi_ts",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "myReservations.ts",
+      "source_location": "L3",
+      "weight": 1.0,
+      "source": "myreservations_ts",
+      "target": "booking_publicbookingapi_depositstatus",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "myReservations.ts",
+      "source_location": "L6",
+      "weight": 1.0,
+      "source": "myreservations_ts",
+      "target": "booking_myreservations_mybookingitem",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "myReservations.ts",
+      "source_location": "L22",
+      "weight": 1.0,
+      "source": "myreservations_ts",
+      "target": "booking_slotgenerator_reservationrow",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "myReservations.ts",
+      "source_location": "L51",
+      "weight": 1.0,
+      "source": "myreservations_ts",
+      "target": "booking_myreservations_normalizedepositstatus",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "myReservations.ts",
+      "source_location": "L64",
+      "weight": 1.0,
+      "source": "myreservations_ts",
+      "target": "booking_myreservations_normalizestatus",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "myReservations.ts",
+      "source_location": "L78",
+      "weight": 1.0,
+      "source": "myreservations_ts",
+      "target": "booking_myreservations_fetchmybookingitems",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "hoursSchedule.ts",
+      "source_location": "L16",
+      "weight": 1.0,
+      "source": "hoursschedule_ts",
+      "target": "booking_hoursschedule_bookingweekdaykey",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "hoursSchedule.ts",
+      "source_location": "L17",
+      "weight": 1.0,
+      "source": "hoursschedule_ts",
+      "target": "booking_hoursschedule_hoursrange",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "hoursSchedule.ts",
+      "source_location": "L18",
+      "weight": 1.0,
+      "source": "hoursschedule_ts",
+      "target": "booking_hoursschedule_specialhoursrange",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "hoursSchedule.ts",
+      "source_location": "L26",
+      "weight": 1.0,
+      "source": "hoursschedule_ts",
+      "target": "booking_hoursschedule_bookinghoursjson",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "hoursSchedule.ts",
+      "source_location": "L30",
+      "weight": 1.0,
+      "source": "hoursschedule_ts",
+      "target": "booking_hoursschedule_parsedclocktime",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "hoursSchedule.ts",
+      "source_location": "L37",
+      "weight": 1.0,
+      "source": "hoursschedule_ts",
+      "target": "booking_hoursschedule_parseclocktime",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "hoursSchedule.ts",
+      "source_location": "L64",
+      "weight": 1.0,
+      "source": "hoursschedule_ts",
+      "target": "booking_hoursschedule_normalizehoursrange",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "hoursSchedule.ts",
+      "source_location": "L81",
+      "weight": 1.0,
+      "source": "hoursschedule_ts",
+      "target": "booking_hoursschedule_readhoursrange",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "hoursSchedule.ts",
+      "source_location": "L91",
+      "weight": 1.0,
+      "source": "hoursschedule_ts",
+      "target": "booking_hoursschedule_specialhoursfordate",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "hoursSchedule.ts",
+      "source_location": "L133",
+      "weight": 1.0,
+      "source": "hoursschedule_ts",
+      "target": "booking_hoursschedule_getbookingminuteswindowfordate",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "hoursSchedule.ts",
+      "source_location": "L110",
+      "weight": 1.0,
+      "source": "hoursschedule_ts",
+      "target": "booking_hoursschedule_isclosedbookingdate",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "hoursSchedule.ts",
+      "source_location": "L119",
+      "weight": 1.0,
+      "source": "hoursschedule_ts",
+      "target": "booking_hoursschedule_deriveclosedjsweekdaysfromhoursjson",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "hoursSchedule.ts",
+      "source_location": "L142",
+      "weight": 1.0,
+      "source": "hoursschedule_ts",
+      "target": "booking_hoursschedule_minutestohourminute",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "hoursSchedule.ts",
+      "source_location": "L151",
+      "weight": 1.0,
+      "source": "hoursschedule_ts",
+      "target": "booking_hoursschedule_samedayclosingminute",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "hoursSchedule.ts",
+      "source_location": "L160",
+      "weight": 1.0,
+      "source": "hoursschedule_ts",
+      "target": "booking_hoursschedule_isfinishedservinglocalday",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "slotGenerator.ts",
+      "source_location": "L54",
+      "weight": 1.0,
+      "source": "slotgenerator_ts",
+      "target": "hoursschedule_ts",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "slotGenerator.ts",
+      "source_location": "L54",
+      "weight": 1.0,
+      "source": "slotgenerator_ts",
+      "target": "booking_hoursschedule_bookinghoursjson",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "hoursSchedule.ts",
+      "source_location": "L66",
+      "weight": 1.0,
+      "source": "booking_hoursschedule_normalizehoursrange",
+      "target": "booking_hoursschedule_parseclocktime",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "slotGenerator.ts",
+      "source_location": "L54",
+      "weight": 1.0,
+      "source": "slotgenerator_ts",
+      "target": "booking_hoursschedule_parseclocktime",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "slotGenerator.ts",
+      "source_location": "L153",
+      "weight": 1.0,
+      "source": "booking_slotgenerator_parsetimeofdaytominutes",
+      "target": "booking_hoursschedule_parseclocktime"
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "hoursSchedule.ts",
+      "source_location": "L139",
+      "weight": 1.0,
+      "source": "booking_hoursschedule_getbookingminuteswindowfordate",
+      "target": "booking_hoursschedule_normalizehoursrange",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "hoursSchedule.ts",
+      "source_location": "L127",
+      "weight": 1.0,
+      "source": "booking_hoursschedule_deriveclosedjsweekdaysfromhoursjson",
+      "target": "booking_hoursschedule_normalizehoursrange",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "hoursSchedule.ts",
+      "source_location": "L139",
+      "weight": 1.0,
+      "source": "booking_hoursschedule_getbookingminuteswindowfordate",
+      "target": "booking_hoursschedule_readhoursrange",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "hoursSchedule.ts",
+      "source_location": "L126",
+      "weight": 1.0,
+      "source": "booking_hoursschedule_deriveclosedjsweekdaysfromhoursjson",
+      "target": "booking_hoursschedule_readhoursrange",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "hoursSchedule.ts",
+      "source_location": "L105",
+      "weight": 1.0,
+      "source": "booking_hoursschedule_getbookingminuteswindowfordate",
+      "target": "booking_hoursschedule_specialhoursfordate",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "hoursSchedule.ts",
+      "source_location": "L116",
+      "weight": 1.0,
+      "source": "booking_hoursschedule_isclosedbookingdate",
+      "target": "booking_hoursschedule_getbookingminuteswindowfordate",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "hoursSchedule.ts",
+      "source_location": "L167",
+      "weight": 1.0,
+      "source": "booking_hoursschedule_isfinishedservinglocalday",
+      "target": "booking_hoursschedule_getbookingminuteswindowfordate",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "slotGenerator.ts",
+      "source_location": "L54",
+      "weight": 1.0,
+      "source": "slotgenerator_ts",
+      "target": "booking_hoursschedule_getbookingminuteswindowfordate",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "slotGenerator.ts",
+      "source_location": "L412",
+      "weight": 1.0,
+      "source": "booking_slotgenerator_generateavailabilityslots",
+      "target": "booking_hoursschedule_getbookingminuteswindowfordate"
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "hoursSchedule.ts",
+      "source_location": "L170",
+      "weight": 1.0,
+      "source": "booking_hoursschedule_isfinishedservinglocalday",
+      "target": "booking_hoursschedule_samedayclosingminute",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "slotGenerator.ts",
+      "source_location": "L49",
+      "weight": 1.0,
+      "source": "slotgenerator_ts",
+      "target": "bookingdefaults_ts",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "slotGenerator.ts",
+      "source_location": "L59",
+      "weight": 1.0,
+      "source": "slotgenerator_ts",
+      "target": "publicbookingapi_ts",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "slotGenerator.ts",
+      "source_location": "L59",
+      "weight": 1.0,
+      "source": "slotgenerator_ts",
+      "target": "booking_publicbookingapi_availabilityresponse",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "slotGenerator.ts",
+      "source_location": "L59",
+      "weight": 1.0,
+      "source": "slotgenerator_ts",
+      "target": "booking_publicbookingapi_availabilityslot",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "slotGenerator.ts",
+      "source_location": "L68",
+      "weight": 1.0,
+      "source": "slotgenerator_ts",
+      "target": "booking_slotgenerator_shiftrow",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "slotGenerator.ts",
+      "source_location": "L81",
+      "weight": 1.0,
+      "source": "slotgenerator_ts",
+      "target": "booking_slotgenerator_tablerow",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "slotGenerator.ts",
+      "source_location": "L95",
+      "weight": 1.0,
+      "source": "slotgenerator_ts",
+      "target": "booking_slotgenerator_reservationrow",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "slotGenerator.ts",
+      "source_location": "L105",
+      "weight": 1.0,
+      "source": "slotgenerator_ts",
+      "target": "booking_slotgenerator_reservationtablerow",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "slotGenerator.ts",
+      "source_location": "L111",
+      "weight": 1.0,
+      "source": "slotgenerator_ts",
+      "target": "booking_slotgenerator_restaurantrow",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "slotGenerator.ts",
+      "source_location": "L392",
+      "weight": 1.0,
+      "source": "slotgenerator_ts",
+      "target": "booking_slotgenerator_generateavailabilityslots",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "slotGenerator.ts",
+      "source_location": "L126",
+      "weight": 1.0,
+      "source": "slotgenerator_ts",
+      "target": "booking_slotgenerator_getutcoffsetminutes",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "slotGenerator.ts",
+      "source_location": "L133",
+      "weight": 1.0,
+      "source": "slotgenerator_ts",
+      "target": "booking_slotgenerator_localtoutc",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "slotGenerator.ts",
+      "source_location": "L140",
+      "weight": 1.0,
+      "source": "slotgenerator_ts",
+      "target": "booking_slotgenerator_localdayofweek",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "slotGenerator.ts",
+      "source_location": "L149",
+      "weight": 1.0,
+      "source": "slotgenerator_ts",
+      "target": "booking_slotgenerator_parsetimeofdaytominutes",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "slotGenerator.ts",
+      "source_location": "L162",
+      "weight": 1.0,
+      "source": "slotgenerator_ts",
+      "target": "booking_slotgenerator_clampturnminutes",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "slotGenerator.ts",
+      "source_location": "L168",
+      "weight": 1.0,
+      "source": "slotgenerator_ts",
+      "target": "booking_slotgenerator_resolveturnminutes",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "slotGenerator.ts",
+      "source_location": "L177",
+      "weight": 1.0,
+      "source": "slotgenerator_ts",
+      "target": "booking_slotgenerator_formatdisplaytime",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "slotGenerator.ts",
+      "source_location": "L195",
+      "weight": 1.0,
+      "source": "slotgenerator_ts",
+      "target": "booking_slotgenerator_picksingletable",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "slotGenerator.ts",
+      "source_location": "L212",
+      "weight": 1.0,
+      "source": "slotgenerator_ts",
+      "target": "booking_slotgenerator_combinecandidate",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "slotGenerator.ts",
+      "source_location": "L232",
+      "weight": 1.0,
+      "source": "slotgenerator_ts",
+      "target": "booking_slotgenerator_pickcombo",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "slotGenerator.ts",
+      "source_location": "L343",
+      "weight": 1.0,
+      "source": "slotgenerator_ts",
+      "target": "booking_slotgenerator_findavailabletablegroup",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "slotGenerator.ts",
+      "source_location": "L358",
+      "weight": 1.0,
+      "source": "slotgenerator_ts",
+      "target": "booking_slotgenerator_blockedtableids",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "slotGenerator.ts",
+      "source_location": "L573",
+      "weight": 1.0,
+      "source": "slotgenerator_ts",
+      "target": "booking_slotgenerator_readfloorcapacity",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "availableDates.ts",
+      "source_location": "L26",
+      "weight": 1.0,
+      "source": "availabledates_ts",
+      "target": "slotgenerator_ts",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "slotGenerator.ts",
+      "source_location": "L135",
+      "weight": 1.0,
+      "source": "booking_slotgenerator_localtoutc",
+      "target": "booking_slotgenerator_getutcoffsetminutes",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "slotGenerator.ts",
+      "source_location": "L465",
+      "weight": 1.0,
+      "source": "booking_slotgenerator_generateavailabilityslots",
+      "target": "booking_slotgenerator_localtoutc",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "slotGenerator.ts",
+      "source_location": "L409",
+      "weight": 1.0,
+      "source": "booking_slotgenerator_generateavailabilityslots",
+      "target": "booking_slotgenerator_localdayofweek",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "slotGenerator.ts",
+      "source_location": "L507",
+      "weight": 1.0,
+      "source": "booking_slotgenerator_generateavailabilityslots",
+      "target": "booking_slotgenerator_parsetimeofdaytominutes",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "slotGenerator.ts",
+      "source_location": "L172",
+      "weight": 1.0,
+      "source": "booking_slotgenerator_resolveturnminutes",
+      "target": "booking_slotgenerator_clampturnminutes",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "slotGenerator.ts",
+      "source_location": "L503",
+      "weight": 1.0,
+      "source": "booking_slotgenerator_generateavailabilityslots",
+      "target": "booking_slotgenerator_resolveturnminutes",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "slotGenerator.ts",
+      "source_location": "L555",
+      "weight": 1.0,
+      "source": "booking_slotgenerator_generateavailabilityslots",
+      "target": "booking_slotgenerator_formatdisplaytime",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "slotGenerator.ts",
+      "source_location": "L349",
+      "weight": 1.0,
+      "source": "booking_slotgenerator_findavailabletablegroup",
+      "target": "booking_slotgenerator_picksingletable",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "slotGenerator.ts",
+      "source_location": "L351",
+      "weight": 1.0,
+      "source": "booking_slotgenerator_findavailabletablegroup",
+      "target": "booking_slotgenerator_pickcombo",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "slotGenerator.ts",
+      "source_location": "L549",
+      "weight": 1.0,
+      "source": "booking_slotgenerator_generateavailabilityslots",
+      "target": "booking_slotgenerator_findavailabletablegroup",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "slotGenerator.ts",
+      "source_location": "L542",
+      "weight": 1.0,
+      "source": "booking_slotgenerator_generateavailabilityslots",
+      "target": "booking_slotgenerator_blockedtableids",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "slotGenerator.ts",
+      "source_location": "L420",
+      "weight": 1.0,
+      "source": "booking_slotgenerator_generateavailabilityslots",
+      "target": "booking_slotgenerator_readfloorcapacity",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "availableDates.ts",
+      "source_location": "L26",
+      "weight": 1.0,
+      "source": "availabledates_ts",
+      "target": "booking_slotgenerator_generateavailabilityslots",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "availableDates.ts",
+      "source_location": "L81",
+      "weight": 1.0,
+      "source": "booking_availabledates_findavailabledates",
+      "target": "booking_slotgenerator_generateavailabilityslots"
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "availableDates.ts",
+      "source_location": "L30",
+      "weight": 1.0,
+      "source": "availabledates_ts",
+      "target": "booking_availabledates_findavailabledatesargs",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "availableDates.ts",
+      "source_location": "L37",
+      "weight": 1.0,
+      "source": "availabledates_ts",
+      "target": "booking_availabledates_adddays",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "availableDates.ts",
+      "source_location": "L44",
+      "weight": 1.0,
+      "source": "availabledates_ts",
+      "target": "booking_availabledates_daysbetween",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "availableDates.ts",
+      "source_location": "L69",
+      "weight": 1.0,
+      "source": "availabledates_ts",
+      "target": "booking_availabledates_findavailabledates",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "availableDates.ts",
+      "source_location": "L80",
+      "weight": 1.0,
+      "source": "booking_availabledates_findavailabledates",
+      "target": "booking_availabledates_adddays",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "availableDates.ts",
+      "source_location": "L73",
+      "weight": 1.0,
+      "source": "booking_availabledates_findavailabledates",
+      "target": "booking_availabledates_daysbetween",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "depositTiers.ts",
+      "source_location": "L6",
+      "weight": 1.0,
+      "source": "deposittiers_ts",
+      "target": "booking_deposittiers_readdeposittiers",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "depositTiers.ts",
+      "source_location": "L26",
+      "weight": 1.0,
+      "source": "deposittiers_ts",
+      "target": "booking_deposittiers_previewdepositcents",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "bookingDefaults.ts",
+      "source_location": "L28",
+      "weight": 1.0,
+      "source": "bookingdefaults_ts",
+      "target": "booking_bookingdefaults_slot_duration_options",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "bookingDefaults.ts",
+      "source_location": "L43",
+      "weight": 1.0,
+      "source": "bookingdefaults_ts",
+      "target": "booking_bookingdefaults_noticeoption",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "publicBookingApi.ts",
+      "source_location": "L8",
+      "weight": 1.0,
+      "source": "publicbookingapi_ts",
+      "target": "booking_publicbookingapi_availabilityslot",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "publicBookingApi.ts",
+      "source_location": "L18",
+      "weight": 1.0,
+      "source": "publicbookingapi_ts",
+      "target": "booking_publicbookingapi_availabilityresponse",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "publicBookingApi.ts",
+      "source_location": "L23",
+      "weight": 1.0,
+      "source": "publicbookingapi_ts",
+      "target": "booking_publicbookingapi_publicbookingcartitem",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "publicBookingApi.ts",
+      "source_location": "L30",
+      "weight": 1.0,
+      "source": "publicbookingapi_ts",
+      "target": "booking_publicbookingapi_publicbookingpayload",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "publicBookingApi.ts",
+      "source_location": "L52",
+      "weight": 1.0,
+      "source": "publicbookingapi_ts",
+      "target": "booking_publicbookingapi_publicbookingresponse",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "publicBookingApi.ts",
+      "source_location": "L67",
+      "weight": 1.0,
+      "source": "publicbookingapi_ts",
+      "target": "booking_publicbookingapi_depositstatus",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "publicBookingApi.ts",
+      "source_location": "L69",
+      "weight": 1.0,
+      "source": "publicbookingapi_ts",
+      "target": "booking_publicbookingapi_depositpayer",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "publicBookingApi.ts",
+      "source_location": "L413",
+      "weight": 1.0,
+      "source": "publicbookingapi_ts",
+      "target": "booking_publicbookingapi_preparedeposit",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "publicBookingApi.ts",
+      "source_location": "L79",
+      "weight": 1.0,
+      "source": "publicbookingapi_ts",
+      "target": "booking_publicbookingapi_bookingprofile",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "publicBookingApi.ts",
+      "source_location": "L93",
+      "weight": 1.0,
+      "source": "publicbookingapi_ts",
+      "target": "booking_publicbookingapi_availabilitycache",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "publicBookingApi.ts",
+      "source_location": "L94",
+      "weight": 1.0,
+      "source": "publicbookingapi_ts",
+      "target": "booking_publicbookingapi_availabilityinflight",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "publicBookingApi.ts",
+      "source_location": "L95",
+      "weight": 1.0,
+      "source": "publicbookingapi_ts",
+      "target": "booking_publicbookingapi_restauranttimezonecache",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "publicBookingApi.ts",
+      "source_location": "L97",
+      "weight": 1.0,
+      "source": "publicbookingapi_ts",
+      "target": "booking_publicbookingapi_getrestauranttimezone",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "publicBookingApi.ts",
+      "source_location": "L117",
+      "weight": 1.0,
+      "source": "publicbookingapi_ts",
+      "target": "booking_publicbookingapi_formatslotdisplaytime",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "publicBookingApi.ts",
+      "source_location": "L131",
+      "weight": 1.0,
+      "source": "publicbookingapi_ts",
+      "target": "booking_publicbookingapi_isdemorestaurantkey",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "publicBookingApi.ts",
+      "source_location": "L138",
+      "weight": 1.0,
+      "source": "publicbookingapi_ts",
+      "target": "booking_publicbookingapi_cacheavailability",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "publicBookingApi.ts",
+      "source_location": "L146",
+      "weight": 1.0,
+      "source": "publicbookingapi_ts",
+      "target": "booking_publicbookingapi_demoavailabilityfor",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "publicBookingApi.ts",
+      "source_location": "L182",
+      "weight": 1.0,
+      "source": "publicbookingapi_ts",
+      "target": "booking_publicbookingapi_demobookingfor",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "publicBookingApi.ts",
+      "source_location": "L203",
+      "weight": 1.0,
+      "source": "publicbookingapi_ts",
+      "target": "booking_publicbookingapi_roundmoney",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "publicBookingApi.ts",
+      "source_location": "L207",
+      "weight": 1.0,
+      "source": "publicbookingapi_ts",
+      "target": "booking_publicbookingapi_getaccesstoken",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "publicBookingApi.ts",
+      "source_location": "L214",
+      "weight": 1.0,
+      "source": "publicbookingapi_ts",
+      "target": "booking_publicbookingapi_assertconfigured",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "publicBookingApi.ts",
+      "source_location": "L221",
+      "weight": 1.0,
+      "source": "publicbookingapi_ts",
+      "target": "booking_publicbookingapi_isaborterror",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "publicBookingApi.ts",
+      "source_location": "L228",
+      "weight": 1.0,
+      "source": "publicbookingapi_ts",
+      "target": "booking_publicbookingapi_isjunkerrorstring",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "publicBookingApi.ts",
+      "source_location": "L240",
+      "weight": 1.0,
+      "source": "publicbookingapi_ts",
+      "target": "booking_publicbookingapi_coerceerrormessage",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "publicBookingApi.ts",
+      "source_location": "L358",
+      "weight": 1.0,
+      "source": "publicbookingapi_ts",
+      "target": "booking_publicbookingapi_createpublicbooking",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "publicBookingApi.ts",
+      "source_location": "L451",
+      "weight": 1.0,
+      "source": "publicbookingapi_ts",
+      "target": "booking_publicbookingapi_confirmdepositstub",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "publicBookingApi.ts",
+      "source_location": "L489",
+      "weight": 1.0,
+      "source": "publicbookingapi_ts",
+      "target": "booking_publicbookingapi_availabledatescache",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "publicBookingApi.ts",
+      "source_location": "L491",
+      "weight": 1.0,
+      "source": "publicbookingapi_ts",
+      "target": "booking_publicbookingapi_getavailabledates",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "publicBookingApi.ts",
+      "source_location": "L526",
+      "weight": 1.0,
+      "source": "publicbookingapi_ts",
+      "target": "booking_publicbookingapi_modifyreservationpayload",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "publicBookingApi.ts",
+      "source_location": "L559",
+      "weight": 1.0,
+      "source": "publicbookingapi_ts",
+      "target": "booking_publicbookingapi_modifyreservation",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "publicBookingApi.ts",
+      "source_location": "L546",
+      "weight": 1.0,
+      "source": "publicbookingapi_ts",
+      "target": "booking_publicbookingapi_modify_reason_messages",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "publicBookingApi.ts",
+      "source_location": "L630",
+      "weight": 1.0,
+      "source": "publicbookingapi_ts",
+      "target": "booking_publicbookingapi_conflictwindow",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "publicBookingApi.ts",
+      "source_location": "L632",
+      "weight": 1.0,
+      "source": "publicbookingapi_ts",
+      "target": "booking_publicbookingapi_fetchactivereservationwindows",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "publicBookingApi.ts",
+      "source_location": "L659",
+      "weight": 1.0,
+      "source": "publicbookingapi_ts",
+      "target": "booking_publicbookingapi_slotconflictswithwindows",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "publicBookingApi.ts",
+      "source_location": "L683",
+      "weight": 1.0,
+      "source": "publicbookingapi_ts",
+      "target": "booking_publicbookingapi_cancelreservation",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "publicBookingApi.ts",
+      "source_location": "L675",
+      "weight": 1.0,
+      "source": "publicbookingapi_ts",
+      "target": "booking_publicbookingapi_cancelreservationresponse",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "publicBookingApi.ts",
+      "source_location": "L746",
+      "weight": 1.0,
+      "source": "publicbookingapi_ts",
+      "target": "booking_publicbookingapi_fetchbookingprofile",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "publicBookingApi.ts",
+      "source_location": "L763",
+      "weight": 1.0,
+      "source": "publicbookingapi_ts",
+      "target": "booking_publicbookingapi_makebookingcartparam",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "publicBookingApi.ts",
+      "source_location": "L768",
+      "weight": 1.0,
+      "source": "publicbookingapi_ts",
+      "target": "booking_publicbookingapi_parsebookingcartparam",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "publicBookingApi.ts",
+      "source_location": "L798",
+      "weight": 1.0,
+      "source": "publicbookingapi_ts",
+      "target": "booking_publicbookingapi_cartsubtotal",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "publicBookingApi.ts",
+      "source_location": "L802",
+      "weight": 1.0,
+      "source": "publicbookingapi_ts",
+      "target": "booking_publicbookingapi_selectedslotmatches",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "publicBookingApi.ts",
+      "source_location": "L155",
+      "weight": 1.0,
+      "source": "booking_publicbookingapi_demoavailabilityfor",
+      "target": "booking_publicbookingapi_isdemorestaurantkey",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "publicBookingApi.ts",
+      "source_location": "L185",
+      "weight": 1.0,
+      "source": "booking_publicbookingapi_demobookingfor",
+      "target": "booking_publicbookingapi_isdemorestaurantkey",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "publicBookingApi.ts",
+      "source_location": "L361",
+      "weight": 1.0,
+      "source": "booking_publicbookingapi_createpublicbooking",
+      "target": "booking_publicbookingapi_demobookingfor",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "publicBookingApi.ts",
+      "source_location": "L380",
+      "weight": 1.0,
+      "source": "booking_publicbookingapi_createpublicbooking",
+      "target": "booking_publicbookingapi_roundmoney",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "publicBookingApi.ts",
+      "source_location": "L799",
+      "weight": 1.0,
+      "source": "booking_publicbookingapi_cartsubtotal",
+      "target": "booking_publicbookingapi_roundmoney",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "publicBookingApi.ts",
+      "source_location": "L365",
+      "weight": 1.0,
+      "source": "booking_publicbookingapi_createpublicbooking",
+      "target": "booking_publicbookingapi_getaccesstoken",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "publicBookingApi.ts",
+      "source_location": "L418",
+      "weight": 1.0,
+      "source": "booking_publicbookingapi_preparedeposit",
+      "target": "booking_publicbookingapi_getaccesstoken",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "publicBookingApi.ts",
+      "source_location": "L455",
+      "weight": 1.0,
+      "source": "booking_publicbookingapi_confirmdepositstub",
+      "target": "booking_publicbookingapi_getaccesstoken",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "publicBookingApi.ts",
+      "source_location": "L563",
+      "weight": 1.0,
+      "source": "booking_publicbookingapi_modifyreservation",
+      "target": "booking_publicbookingapi_getaccesstoken",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "publicBookingApi.ts",
+      "source_location": "L687",
+      "weight": 1.0,
+      "source": "booking_publicbookingapi_cancelreservation",
+      "target": "booking_publicbookingapi_getaccesstoken",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "publicBookingApi.ts",
+      "source_location": "L364",
+      "weight": 1.0,
+      "source": "booking_publicbookingapi_createpublicbooking",
+      "target": "booking_publicbookingapi_assertconfigured",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "publicBookingApi.ts",
+      "source_location": "L417",
+      "weight": 1.0,
+      "source": "booking_publicbookingapi_preparedeposit",
+      "target": "booking_publicbookingapi_assertconfigured",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "publicBookingApi.ts",
+      "source_location": "L454",
+      "weight": 1.0,
+      "source": "booking_publicbookingapi_confirmdepositstub",
+      "target": "booking_publicbookingapi_assertconfigured",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "publicBookingApi.ts",
+      "source_location": "L562",
+      "weight": 1.0,
+      "source": "booking_publicbookingapi_modifyreservation",
+      "target": "booking_publicbookingapi_assertconfigured",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "publicBookingApi.ts",
+      "source_location": "L686",
+      "weight": 1.0,
+      "source": "booking_publicbookingapi_cancelreservation",
+      "target": "booking_publicbookingapi_assertconfigured",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "publicBookingApi.ts",
+      "source_location": "L394",
+      "weight": 1.0,
+      "source": "booking_publicbookingapi_createpublicbooking",
+      "target": "booking_publicbookingapi_isaborterror",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "publicBookingApi.ts",
+      "source_location": "L434",
+      "weight": 1.0,
+      "source": "booking_publicbookingapi_preparedeposit",
+      "target": "booking_publicbookingapi_isaborterror",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "publicBookingApi.ts",
+      "source_location": "L471",
+      "weight": 1.0,
+      "source": "booking_publicbookingapi_confirmdepositstub",
+      "target": "booking_publicbookingapi_isaborterror",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "publicBookingApi.ts",
+      "source_location": "L585",
+      "weight": 1.0,
+      "source": "booking_publicbookingapi_modifyreservation",
+      "target": "booking_publicbookingapi_isaborterror",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "publicBookingApi.ts",
+      "source_location": "L709",
+      "weight": 1.0,
+      "source": "booking_publicbookingapi_cancelreservation",
+      "target": "booking_publicbookingapi_isaborterror",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "publicBookingApi.ts",
+      "source_location": "L241",
+      "weight": 1.0,
+      "source": "booking_publicbookingapi_coerceerrormessage",
+      "target": "booking_publicbookingapi_isjunkerrorstring",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "publicBookingApi.ts",
+      "source_location": "L405",
+      "weight": 1.0,
+      "source": "booking_publicbookingapi_createpublicbooking",
+      "target": "booking_publicbookingapi_coerceerrormessage",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "publicBookingApi.ts",
+      "source_location": "L444",
+      "weight": 1.0,
+      "source": "booking_publicbookingapi_preparedeposit",
+      "target": "booking_publicbookingapi_coerceerrormessage",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "publicBookingApi.ts",
+      "source_location": "L481",
+      "weight": 1.0,
+      "source": "booking_publicbookingapi_confirmdepositstub",
+      "target": "booking_publicbookingapi_coerceerrormessage",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "publicBookingApi.ts",
+      "source_location": "L608",
+      "weight": 1.0,
+      "source": "booking_publicbookingapi_modifyreservation",
+      "target": "booking_publicbookingapi_coerceerrormessage",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "publicBookingApi.ts",
+      "source_location": "L729",
+      "weight": 1.0,
+      "source": "booking_publicbookingapi_cancelreservation",
+      "target": "booking_publicbookingapi_coerceerrormessage",
+      "confidence_score": 1.0
+    }
+  ],
+  "hyperedges": [],
+  "built_at_commit": "f8e49f380bc144eec2877ce30747d7a6c1711a63"
+}

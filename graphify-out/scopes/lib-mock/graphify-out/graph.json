@@ -1,0 +1,6522 @@
+{
+  "directed": false,
+  "multigraph": false,
+  "graph": {},
+  "nodes": [
+    {
+      "label": "menuItems.ts",
+      "file_type": "code",
+      "source_file": "menuItems.ts",
+      "source_location": "L1",
+      "id": "menuitems_ts",
+      "community": 11,
+      "norm_label": "menuitems.ts"
+    },
+    {
+      "label": "MenuItem",
+      "file_type": "code",
+      "source_file": "menuItems.ts",
+      "source_location": "L1",
+      "id": "mock_menuitems_menuitem",
+      "community": 11,
+      "norm_label": "menuitem"
+    },
+    {
+      "label": "mockMenuItems",
+      "file_type": "code",
+      "source_file": "menuItems.ts",
+      "source_location": "L18",
+      "id": "mock_menuitems_mockmenuitems",
+      "community": 11,
+      "norm_label": "mockmenuitems"
+    },
+    {
+      "label": "menuCategories",
+      "file_type": "code",
+      "source_file": "menuItems.ts",
+      "source_location": "L47",
+      "id": "mock_menuitems_menucategories",
+      "community": 11,
+      "norm_label": "menucategories"
+    },
+    {
+      "label": "feedCollections.ts",
+      "file_type": "code",
+      "source_file": "feedCollections.ts",
+      "source_location": "L1",
+      "id": "feedcollections_ts",
+      "community": 15,
+      "norm_label": "feedcollections.ts"
+    },
+    {
+      "label": "profileScreens.ts",
+      "file_type": "code",
+      "source_file": "profileScreens.ts",
+      "source_location": "L1",
+      "id": "profilescreens_ts",
+      "community": 4,
+      "norm_label": "profilescreens.ts"
+    },
+    {
+      "label": "SAVED_RESTAURANT_IDS",
+      "file_type": "code",
+      "source_file": "profileScreens.ts",
+      "source_location": "L5",
+      "id": "mock_profilescreens_saved_restaurant_ids",
+      "community": 4,
+      "norm_label": "saved_restaurant_ids"
+    },
+    {
+      "label": "getSavedRestaurants()",
+      "file_type": "code",
+      "source_file": "profileScreens.ts",
+      "source_location": "L7",
+      "id": "mock_profilescreens_getsavedrestaurants",
+      "community": 4,
+      "norm_label": "getsavedrestaurants()"
+    },
+    {
+      "label": "PaymentMethod",
+      "file_type": "code",
+      "source_file": "profileScreens.ts",
+      "source_location": "L12",
+      "id": "mock_profilescreens_paymentmethod",
+      "community": 4,
+      "norm_label": "paymentmethod"
+    },
+    {
+      "label": "mockPaymentMethods",
+      "file_type": "code",
+      "source_file": "profileScreens.ts",
+      "source_location": "L21",
+      "id": "mock_profilescreens_mockpaymentmethods",
+      "community": 4,
+      "norm_label": "mockpaymentmethods"
+    },
+    {
+      "label": "NotificationPref",
+      "file_type": "code",
+      "source_file": "profileScreens.ts",
+      "source_location": "L26",
+      "id": "mock_profilescreens_notificationpref",
+      "community": 4,
+      "norm_label": "notificationpref"
+    },
+    {
+      "label": "PromotionOffer",
+      "file_type": "code",
+      "source_file": "profileScreens.ts",
+      "source_location": "L44",
+      "id": "mock_profilescreens_promotionoffer",
+      "community": 4,
+      "norm_label": "promotionoffer"
+    },
+    {
+      "label": "mockPromotions",
+      "file_type": "code",
+      "source_file": "profileScreens.ts",
+      "source_location": "L53",
+      "id": "mock_profilescreens_mockpromotions",
+      "community": 4,
+      "norm_label": "mockpromotions"
+    },
+    {
+      "label": "HelpTopic",
+      "file_type": "code",
+      "source_file": "profileScreens.ts",
+      "source_location": "L86",
+      "id": "mock_profilescreens_helptopic",
+      "community": 4,
+      "norm_label": "helptopic"
+    },
+    {
+      "label": "mockHelpTopics",
+      "file_type": "code",
+      "source_file": "profileScreens.ts",
+      "source_location": "L93",
+      "id": "mock_profilescreens_mockhelptopics",
+      "community": 4,
+      "norm_label": "mockhelptopics"
+    },
+    {
+      "label": "FaqItem",
+      "file_type": "code",
+      "source_file": "profileScreens.ts",
+      "source_location": "L100",
+      "id": "mock_profilescreens_faqitem",
+      "community": 4,
+      "norm_label": "faqitem"
+    },
+    {
+      "label": "mockFaqs",
+      "file_type": "code",
+      "source_file": "profileScreens.ts",
+      "source_location": "L106",
+      "id": "mock_profilescreens_mockfaqs",
+      "community": 4,
+      "norm_label": "mockfaqs"
+    },
+    {
+      "label": "WalletGiftCard",
+      "file_type": "code",
+      "source_file": "profileScreens.ts",
+      "source_location": "L159",
+      "id": "mock_profilescreens_walletgiftcard",
+      "community": 4,
+      "norm_label": "walletgiftcard"
+    },
+    {
+      "label": "mockGiftCards",
+      "file_type": "code",
+      "source_file": "profileScreens.ts",
+      "source_location": "L160",
+      "id": "mock_profilescreens_mockgiftcards",
+      "community": 4,
+      "norm_label": "mockgiftcards"
+    },
+    {
+      "label": "WalletCredit",
+      "file_type": "code",
+      "source_file": "profileScreens.ts",
+      "source_location": "L165",
+      "id": "mock_profilescreens_walletcredit",
+      "community": 4,
+      "norm_label": "walletcredit"
+    },
+    {
+      "label": "mockWalletCredits",
+      "file_type": "code",
+      "source_file": "profileScreens.ts",
+      "source_location": "L166",
+      "id": "mock_profilescreens_mockwalletcredits",
+      "community": 4,
+      "norm_label": "mockwalletcredits"
+    },
+    {
+      "label": "InviteRecord",
+      "file_type": "code",
+      "source_file": "profileScreens.ts",
+      "source_location": "L171",
+      "id": "mock_profilescreens_inviterecord",
+      "community": 4,
+      "norm_label": "inviterecord"
+    },
+    {
+      "label": "mockInviteRecords",
+      "file_type": "code",
+      "source_file": "profileScreens.ts",
+      "source_location": "L180",
+      "id": "mock_profilescreens_mockinviterecords",
+      "community": 4,
+      "norm_label": "mockinviterecords"
+    },
+    {
+      "label": "DietaryPreferenceOption",
+      "file_type": "code",
+      "source_file": "profileScreens.ts",
+      "source_location": "L193",
+      "id": "mock_profilescreens_dietarypreferenceoption",
+      "community": 4,
+      "norm_label": "dietarypreferenceoption"
+    },
+    {
+      "label": "mockDietaryPreferenceOptions",
+      "file_type": "code",
+      "source_file": "profileScreens.ts",
+      "source_location": "L194",
+      "id": "mock_profilescreens_mockdietarypreferenceoptions",
+      "community": 4,
+      "norm_label": "mockdietarypreferenceoptions"
+    },
+    {
+      "label": "RestrictionOption",
+      "file_type": "code",
+      "source_file": "profileScreens.ts",
+      "source_location": "L204",
+      "id": "mock_profilescreens_restrictionoption",
+      "community": 4,
+      "norm_label": "restrictionoption"
+    },
+    {
+      "label": "mockRestrictionOptions",
+      "file_type": "code",
+      "source_file": "profileScreens.ts",
+      "source_location": "L205",
+      "id": "mock_profilescreens_mockrestrictionoptions",
+      "community": 4,
+      "norm_label": "mockrestrictionoptions"
+    },
+    {
+      "label": "DateNightOption",
+      "file_type": "code",
+      "source_file": "profileScreens.ts",
+      "source_location": "L214",
+      "id": "mock_profilescreens_datenightoption",
+      "community": 4,
+      "norm_label": "datenightoption"
+    },
+    {
+      "label": "mockDateNightOptions",
+      "file_type": "code",
+      "source_file": "profileScreens.ts",
+      "source_location": "L215",
+      "id": "mock_profilescreens_mockdatenightoptions",
+      "community": 4,
+      "norm_label": "mockdatenightoptions"
+    },
+    {
+      "label": "SeatingOption",
+      "file_type": "code",
+      "source_file": "profileScreens.ts",
+      "source_location": "L225",
+      "id": "mock_profilescreens_seatingoption",
+      "community": 4,
+      "norm_label": "seatingoption"
+    },
+    {
+      "label": "mockSeatingOptions",
+      "file_type": "code",
+      "source_file": "profileScreens.ts",
+      "source_location": "L226",
+      "id": "mock_profilescreens_mockseatingoptions",
+      "community": 4,
+      "norm_label": "mockseatingoptions"
+    },
+    {
+      "label": "comments.ts",
+      "file_type": "code",
+      "source_file": "comments.ts",
+      "source_location": "L1",
+      "id": "comments_ts",
+      "community": 1,
+      "norm_label": "comments.ts"
+    },
+    {
+      "label": "Comment",
+      "file_type": "code",
+      "source_file": "comments.ts",
+      "source_location": "L4",
+      "id": "mock_comments_comment",
+      "community": 1,
+      "norm_label": "comment"
+    },
+    {
+      "label": "commentPool",
+      "file_type": "code",
+      "source_file": "comments.ts",
+      "source_location": "L12",
+      "id": "mock_comments_commentpool",
+      "community": 1,
+      "norm_label": "commentpool"
+    },
+    {
+      "label": "store",
+      "file_type": "code",
+      "source_file": "comments.ts",
+      "source_location": "L25",
+      "id": "mock_comments_store",
+      "community": 1,
+      "norm_label": "store"
+    },
+    {
+      "label": "seedFor()",
+      "file_type": "code",
+      "source_file": "comments.ts",
+      "source_location": "L28",
+      "id": "mock_comments_seedfor",
+      "community": 1,
+      "norm_label": "seedfor()"
+    },
+    {
+      "label": "listCommentsForPost()",
+      "file_type": "code",
+      "source_file": "comments.ts",
+      "source_location": "L47",
+      "id": "mock_comments_listcommentsforpost",
+      "community": 1,
+      "norm_label": "listcommentsforpost()"
+    },
+    {
+      "label": "addComment()",
+      "file_type": "code",
+      "source_file": "comments.ts",
+      "source_location": "L53",
+      "id": "mock_comments_addcomment",
+      "community": 1,
+      "norm_label": "addcomment()"
+    },
+    {
+      "label": "getCommentCountForPost()",
+      "file_type": "code",
+      "source_file": "comments.ts",
+      "source_location": "L66",
+      "id": "mock_comments_getcommentcountforpost",
+      "community": 1,
+      "norm_label": "getcommentcountforpost()"
+    },
+    {
+      "label": "getCommentAuthor()",
+      "file_type": "code",
+      "source_file": "comments.ts",
+      "source_location": "L70",
+      "id": "mock_comments_getcommentauthor",
+      "community": 1,
+      "norm_label": "getcommentauthor()"
+    },
+    {
+      "label": "reservations.ts",
+      "file_type": "code",
+      "source_file": "reservations.ts",
+      "source_location": "L1",
+      "id": "reservations_ts",
+      "community": 5,
+      "norm_label": "reservations.ts"
+    },
+    {
+      "label": "daysFromNow()",
+      "file_type": "code",
+      "source_file": "reservations.ts",
+      "source_location": "L23",
+      "id": "mock_reservations_daysfromnow",
+      "community": 5,
+      "norm_label": "daysfromnow()"
+    },
+    {
+      "label": "mockReservations",
+      "file_type": "code",
+      "source_file": "reservations.ts",
+      "source_location": "L30",
+      "id": "mock_reservations_mockreservations",
+      "community": 5,
+      "norm_label": "mockreservations"
+    },
+    {
+      "label": "getMockReservationsVersion()",
+      "file_type": "code",
+      "source_file": "reservations.ts",
+      "source_location": "L186",
+      "id": "mock_reservations_getmockreservationsversion",
+      "community": 5,
+      "norm_label": "getmockreservationsversion()"
+    },
+    {
+      "label": "cancelReservationByIdAsync()",
+      "file_type": "code",
+      "source_file": "reservations.ts",
+      "source_location": "L205",
+      "id": "mock_reservations_cancelreservationbyidasync",
+      "community": 5,
+      "norm_label": "cancelreservationbyidasync()"
+    },
+    {
+      "label": "modifyMockReservation()",
+      "file_type": "code",
+      "source_file": "reservations.ts",
+      "source_location": "L233",
+      "id": "mock_reservations_modifymockreservation",
+      "community": 5,
+      "norm_label": "modifymockreservation()"
+    },
+    {
+      "label": "loyalty.ts",
+      "file_type": "code",
+      "source_file": "loyalty.ts",
+      "source_location": "L1",
+      "id": "loyalty_ts",
+      "community": 10,
+      "norm_label": "loyalty.ts"
+    },
+    {
+      "label": "LoyaltyTransaction",
+      "file_type": "code",
+      "source_file": "loyalty.ts",
+      "source_location": "L1",
+      "id": "mock_loyalty_loyaltytransaction",
+      "community": 10,
+      "norm_label": "loyaltytransaction"
+    },
+    {
+      "label": "LoyaltyReward",
+      "file_type": "code",
+      "source_file": "loyalty.ts",
+      "source_location": "L10",
+      "id": "mock_loyalty_loyaltyreward",
+      "community": 10,
+      "norm_label": "loyaltyreward"
+    },
+    {
+      "label": "mockLoyaltyTransactions",
+      "file_type": "code",
+      "source_file": "loyalty.ts",
+      "source_location": "L18",
+      "id": "mock_loyalty_mockloyaltytransactions",
+      "community": 10,
+      "norm_label": "mockloyaltytransactions"
+    },
+    {
+      "label": "mockRewards",
+      "file_type": "code",
+      "source_file": "loyalty.ts",
+      "source_location": "L26",
+      "id": "mock_loyalty_mockrewards",
+      "community": 10,
+      "norm_label": "mockrewards"
+    },
+    {
+      "label": "aiChat.ts",
+      "file_type": "code",
+      "source_file": "aiChat.ts",
+      "source_location": "L1",
+      "id": "aichat_ts",
+      "community": 3,
+      "norm_label": "aichat.ts"
+    },
+    {
+      "label": "AiChatRestaurant",
+      "file_type": "code",
+      "source_file": "aiChat.ts",
+      "source_location": "L3",
+      "id": "mock_aichat_aichatrestaurant",
+      "community": 3,
+      "norm_label": "aichatrestaurant"
+    },
+    {
+      "label": "EventPlan",
+      "file_type": "code",
+      "source_file": "aiChat.ts",
+      "source_location": "L11",
+      "id": "mock_aichat_eventplan",
+      "community": 3,
+      "norm_label": "eventplan"
+    },
+    {
+      "label": "restaurantToChatCard()",
+      "file_type": "code",
+      "source_file": "aiChat.ts",
+      "source_location": "L18",
+      "id": "mock_aichat_restauranttochatcard",
+      "community": 3,
+      "norm_label": "restauranttochatcard()"
+    },
+    {
+      "label": "extractPartySize()",
+      "file_type": "code",
+      "source_file": "aiChat.ts",
+      "source_location": "L28",
+      "id": "mock_aichat_extractpartysize",
+      "community": 3,
+      "norm_label": "extractpartysize()"
+    },
+    {
+      "label": "extractOccasion()",
+      "file_type": "code",
+      "source_file": "aiChat.ts",
+      "source_location": "L36",
+      "id": "mock_aichat_extractoccasion",
+      "community": 3,
+      "norm_label": "extractoccasion()"
+    },
+    {
+      "label": "suggestedTime()",
+      "file_type": "code",
+      "source_file": "aiChat.ts",
+      "source_location": "L48",
+      "id": "mock_aichat_suggestedtime",
+      "community": 3,
+      "norm_label": "suggestedtime()"
+    },
+    {
+      "label": "pickEventPlan()",
+      "file_type": "code",
+      "source_file": "aiChat.ts",
+      "source_location": "L55",
+      "id": "mock_aichat_pickeventplan",
+      "community": 3,
+      "norm_label": "pickeventplan()"
+    },
+    {
+      "label": "pickRestaurantsForQuery()",
+      "file_type": "code",
+      "source_file": "aiChat.ts",
+      "source_location": "L82",
+      "id": "mock_aichat_pickrestaurantsforquery",
+      "community": 3,
+      "norm_label": "pickrestaurantsforquery()"
+    },
+    {
+      "label": "profileDisplayUser.ts",
+      "file_type": "code",
+      "source_file": "profileDisplayUser.ts",
+      "source_location": "L1",
+      "id": "profiledisplayuser_ts",
+      "community": 1,
+      "norm_label": "profiledisplayuser.ts"
+    },
+    {
+      "label": "snaps.ts",
+      "file_type": "code",
+      "source_file": "snaps.ts",
+      "source_location": "L1",
+      "id": "snaps_ts",
+      "community": 1,
+      "norm_label": "snaps.ts"
+    },
+    {
+      "label": "SnapUser",
+      "file_type": "code",
+      "source_file": "snaps.ts",
+      "source_location": "L5",
+      "id": "mock_snaps_snapuser",
+      "community": 1,
+      "norm_label": "snapuser"
+    },
+    {
+      "label": "SnapPost",
+      "file_type": "code",
+      "source_file": "snaps.ts",
+      "source_location": "L13",
+      "id": "mock_snaps_snappost",
+      "community": 1,
+      "norm_label": "snappost"
+    },
+    {
+      "label": "TAG_POOL",
+      "file_type": "code",
+      "source_file": "snaps.ts",
+      "source_location": "L30",
+      "id": "mock_snaps_tag_pool",
+      "community": 1,
+      "norm_label": "tag_pool"
+    },
+    {
+      "label": "dishPool",
+      "file_type": "code",
+      "source_file": "snaps.ts",
+      "source_location": "L43",
+      "id": "mock_snaps_dishpool",
+      "community": 1,
+      "norm_label": "dishpool"
+    },
+    {
+      "label": "snapRestaurants",
+      "file_type": "code",
+      "source_file": "snaps.ts",
+      "source_location": "L70",
+      "id": "mock_snaps_snaprestaurants",
+      "community": 1,
+      "norm_label": "snaprestaurants"
+    },
+    {
+      "label": "foodImages",
+      "file_type": "code",
+      "source_file": "snaps.ts",
+      "source_location": "L74",
+      "id": "mock_snaps_foodimages",
+      "community": 1,
+      "norm_label": "foodimages"
+    },
+    {
+      "label": "captionPool",
+      "file_type": "code",
+      "source_file": "snaps.ts",
+      "source_location": "L85",
+      "id": "mock_snaps_captionpool",
+      "community": 1,
+      "norm_label": "captionpool"
+    },
+    {
+      "label": "hourOffsets",
+      "file_type": "code",
+      "source_file": "snaps.ts",
+      "source_location": "L96",
+      "id": "mock_snaps_houroffsets",
+      "community": 1,
+      "norm_label": "houroffsets"
+    },
+    {
+      "label": "pickTags()",
+      "file_type": "code",
+      "source_file": "snaps.ts",
+      "source_location": "L101",
+      "id": "mock_snaps_picktags",
+      "community": 1,
+      "norm_label": "picktags()"
+    },
+    {
+      "label": "initialMockPosts",
+      "file_type": "code",
+      "source_file": "snaps.ts",
+      "source_location": "L110",
+      "id": "mock_snaps_initialmockposts",
+      "community": 1,
+      "norm_label": "initialmockposts"
+    },
+    {
+      "label": "snapPosts",
+      "file_type": "code",
+      "source_file": "snaps.ts",
+      "source_location": "L131",
+      "id": "mock_snaps_snapposts",
+      "community": 1,
+      "norm_label": "snapposts"
+    },
+    {
+      "label": "listSnapPosts()",
+      "file_type": "code",
+      "source_file": "snaps.ts",
+      "source_location": "L134",
+      "id": "mock_snaps_listsnapposts",
+      "community": 2,
+      "norm_label": "listsnapposts()"
+    },
+    {
+      "label": "listSnapPostsByUser()",
+      "file_type": "code",
+      "source_file": "snaps.ts",
+      "source_location": "L138",
+      "id": "mock_snaps_listsnappostsbyuser",
+      "community": 2,
+      "norm_label": "listsnappostsbyuser()"
+    },
+    {
+      "label": "listSnapPostsByRestaurant()",
+      "file_type": "code",
+      "source_file": "snaps.ts",
+      "source_location": "L142",
+      "id": "mock_snaps_listsnappostsbyrestaurant",
+      "community": 1,
+      "norm_label": "listsnappostsbyrestaurant()"
+    },
+    {
+      "label": "createSnapPost()",
+      "file_type": "code",
+      "source_file": "snaps.ts",
+      "source_location": "L146",
+      "id": "mock_snaps_createsnappost",
+      "community": 1,
+      "norm_label": "createsnappost()"
+    },
+    {
+      "label": "listFeedPosts()",
+      "file_type": "code",
+      "source_file": "snaps.ts",
+      "source_location": "L162",
+      "id": "mock_snaps_listfeedposts",
+      "community": 3,
+      "norm_label": "listfeedposts()"
+    },
+    {
+      "label": "getRestaurantForPost()",
+      "file_type": "code",
+      "source_file": "snaps.ts",
+      "source_location": "L184",
+      "id": "mock_snaps_getrestaurantforpost",
+      "community": 3,
+      "norm_label": "getrestaurantforpost()"
+    },
+    {
+      "label": "getSnapUser()",
+      "file_type": "code",
+      "source_file": "snaps.ts",
+      "source_location": "L189",
+      "id": "mock_snaps_getsnapuser",
+      "community": 1,
+      "norm_label": "getsnapuser()"
+    },
+    {
+      "label": "getSnapRestaurantName()",
+      "file_type": "code",
+      "source_file": "snaps.ts",
+      "source_location": "L193",
+      "id": "mock_snaps_getsnaprestaurantname",
+      "community": 1,
+      "norm_label": "getsnaprestaurantname()"
+    },
+    {
+      "label": "getSnapPostById()",
+      "file_type": "code",
+      "source_file": "snaps.ts",
+      "source_location": "L197",
+      "id": "mock_snaps_getsnappostbyid",
+      "community": 7,
+      "norm_label": "getsnappostbyid()"
+    },
+    {
+      "label": "deleteSnapPost()",
+      "file_type": "code",
+      "source_file": "snaps.ts",
+      "source_location": "L201",
+      "id": "mock_snaps_deletesnappost",
+      "community": 1,
+      "norm_label": "deletesnappost()"
+    },
+    {
+      "label": "timeAgoLabel()",
+      "file_type": "code",
+      "source_file": "snaps.ts",
+      "source_location": "L208",
+      "id": "mock_snaps_timeagolabel",
+      "community": 1,
+      "norm_label": "timeagolabel()"
+    },
+    {
+      "label": "tables.ts",
+      "file_type": "code",
+      "source_file": "tables.ts",
+      "source_location": "L1",
+      "id": "tables_ts",
+      "community": 13,
+      "norm_label": "tables.ts"
+    },
+    {
+      "label": "Table",
+      "file_type": "code",
+      "source_file": "tables.ts",
+      "source_location": "L1",
+      "id": "mock_tables_table",
+      "community": 13,
+      "norm_label": "table"
+    },
+    {
+      "label": "mockTables",
+      "file_type": "code",
+      "source_file": "tables.ts",
+      "source_location": "L17",
+      "id": "mock_tables_mocktables",
+      "community": 13,
+      "norm_label": "mocktables"
+    },
+    {
+      "label": "notifications.ts",
+      "file_type": "code",
+      "source_file": "notifications.ts",
+      "source_location": "L1",
+      "id": "notifications_ts",
+      "community": 1,
+      "norm_label": "notifications.ts"
+    },
+    {
+      "label": "AppNotification",
+      "file_type": "code",
+      "source_file": "notifications.ts",
+      "source_location": "L8",
+      "id": "mock_notifications_appnotification",
+      "community": 1,
+      "norm_label": "appnotification"
+    },
+    {
+      "label": "mockNotifications",
+      "file_type": "code",
+      "source_file": "notifications.ts",
+      "source_location": "L26",
+      "id": "mock_notifications_mocknotifications",
+      "community": 1,
+      "norm_label": "mocknotifications"
+    },
+    {
+      "label": "mockStaffNotifications",
+      "file_type": "code",
+      "source_file": "notifications.ts",
+      "source_location": "L34",
+      "id": "mock_notifications_mockstaffnotifications",
+      "community": 1,
+      "norm_label": "mockstaffnotifications"
+    },
+    {
+      "label": "SocialNotification",
+      "file_type": "code",
+      "source_file": "notifications.ts",
+      "source_location": "L47",
+      "id": "mock_notifications_socialnotification",
+      "community": 1,
+      "norm_label": "socialnotification"
+    },
+    {
+      "label": "hoursAgo()",
+      "file_type": "code",
+      "source_file": "notifications.ts",
+      "source_location": "L60",
+      "id": "mock_notifications_hoursago",
+      "community": 1,
+      "norm_label": "hoursago()"
+    },
+    {
+      "label": "myPosts",
+      "file_type": "code",
+      "source_file": "notifications.ts",
+      "source_location": "L64",
+      "id": "mock_notifications_myposts",
+      "community": 1,
+      "norm_label": "myposts"
+    },
+    {
+      "label": "seed",
+      "file_type": "code",
+      "source_file": "notifications.ts",
+      "source_location": "L68",
+      "id": "mock_notifications_seed",
+      "community": 1,
+      "norm_label": "seed"
+    },
+    {
+      "label": "listNotifications()",
+      "file_type": "code",
+      "source_file": "notifications.ts",
+      "source_location": "L85",
+      "id": "mock_notifications_listnotifications",
+      "community": 1,
+      "norm_label": "listnotifications()"
+    },
+    {
+      "label": "getUnreadCount()",
+      "file_type": "code",
+      "source_file": "notifications.ts",
+      "source_location": "L91",
+      "id": "mock_notifications_getunreadcount",
+      "community": 1,
+      "norm_label": "getunreadcount()"
+    },
+    {
+      "label": "markAllRead()",
+      "file_type": "code",
+      "source_file": "notifications.ts",
+      "source_location": "L95",
+      "id": "mock_notifications_markallread",
+      "community": 1,
+      "norm_label": "markallread()"
+    },
+    {
+      "label": "getNotificationActor()",
+      "file_type": "code",
+      "source_file": "notifications.ts",
+      "source_location": "L103",
+      "id": "mock_notifications_getnotificationactor",
+      "community": 1,
+      "norm_label": "getnotificationactor()"
+    },
+    {
+      "label": "NotificationBucket",
+      "file_type": "code",
+      "source_file": "notifications.ts",
+      "source_location": "L107",
+      "id": "mock_notifications_notificationbucket",
+      "community": 1,
+      "norm_label": "notificationbucket"
+    },
+    {
+      "label": "bucketNotifications()",
+      "file_type": "code",
+      "source_file": "notifications.ts",
+      "source_location": "L109",
+      "id": "mock_notifications_bucketnotifications",
+      "community": 1,
+      "norm_label": "bucketnotifications()"
+    },
+    {
+      "label": "bookingAvailability.ts",
+      "file_type": "code",
+      "source_file": "bookingAvailability.ts",
+      "source_location": "L1",
+      "id": "bookingavailability_ts",
+      "community": 5,
+      "norm_label": "bookingavailability.ts"
+    },
+    {
+      "label": "DEFAULT_SHIFT",
+      "file_type": "code",
+      "source_file": "bookingAvailability.ts",
+      "source_location": "L19",
+      "id": "mock_bookingavailability_default_shift",
+      "community": 5,
+      "norm_label": "default_shift"
+    },
+    {
+      "label": "MOCK_SHIFTS",
+      "file_type": "code",
+      "source_file": "bookingAvailability.ts",
+      "source_location": "L29",
+      "id": "mock_bookingavailability_mock_shifts",
+      "community": 5,
+      "norm_label": "mock_shifts"
+    },
+    {
+      "label": "getMockShiftConfig()",
+      "file_type": "code",
+      "source_file": "bookingAvailability.ts",
+      "source_location": "L35",
+      "id": "mock_bookingavailability_getmockshiftconfig",
+      "community": 5,
+      "norm_label": "getmockshiftconfig()"
+    },
+    {
+      "label": "pad()",
+      "file_type": "code",
+      "source_file": "bookingAvailability.ts",
+      "source_location": "L55",
+      "id": "mock_bookingavailability_pad",
+      "community": 5,
+      "norm_label": "pad()"
+    },
+    {
+      "label": "startOfDay()",
+      "file_type": "code",
+      "source_file": "bookingAvailability.ts",
+      "source_location": "L59",
+      "id": "mock_bookingavailability_startofday",
+      "community": 5,
+      "norm_label": "startofday()"
+    },
+    {
+      "label": "hash33()",
+      "file_type": "code",
+      "source_file": "bookingAvailability.ts",
+      "source_location": "L72",
+      "id": "mock_bookingavailability_hash33",
+      "community": 5,
+      "norm_label": "hash33()"
+    },
+    {
+      "label": "effectiveBlackouts()",
+      "file_type": "code",
+      "source_file": "bookingAvailability.ts",
+      "source_location": "L79",
+      "id": "mock_bookingavailability_effectiveblackouts",
+      "community": 5,
+      "norm_label": "effectiveblackouts()"
+    },
+    {
+      "label": "getMockCalendarMonth()",
+      "file_type": "code",
+      "source_file": "bookingAvailability.ts",
+      "source_location": "L88",
+      "id": "mock_bookingavailability_getmockcalendarmonth",
+      "community": 5,
+      "norm_label": "getmockcalendarmonth()"
+    },
+    {
+      "label": "isDateSelectable()",
+      "file_type": "code",
+      "source_file": "bookingAvailability.ts",
+      "source_location": "L150",
+      "id": "mock_bookingavailability_isdateselectable",
+      "community": 5,
+      "norm_label": "isdateselectable()"
+    },
+    {
+      "label": "isMockDateBookable()",
+      "file_type": "code",
+      "source_file": "bookingAvailability.ts",
+      "source_location": "L167",
+      "id": "mock_bookingavailability_ismockdatebookable",
+      "community": 5,
+      "norm_label": "ismockdatebookable()"
+    },
+    {
+      "label": "nextMockBookableDateKey()",
+      "file_type": "code",
+      "source_file": "bookingAvailability.ts",
+      "source_location": "L179",
+      "id": "mock_bookingavailability_nextmockbookabledatekey",
+      "community": 5,
+      "norm_label": "nextmockbookabledatekey()"
+    },
+    {
+      "label": "coerceBookableDateKey()",
+      "file_type": "code",
+      "source_file": "bookingAvailability.ts",
+      "source_location": "L192",
+      "id": "mock_bookingavailability_coercebookabledatekey",
+      "community": 5,
+      "norm_label": "coercebookabledatekey()"
+    },
+    {
+      "label": "formatSlotLabel()",
+      "file_type": "code",
+      "source_file": "bookingAvailability.ts",
+      "source_location": "L197",
+      "id": "mock_bookingavailability_formatslotlabel",
+      "community": 5,
+      "norm_label": "formatslotlabel()"
+    },
+    {
+      "label": "getMockTimeSlots()",
+      "file_type": "code",
+      "source_file": "bookingAvailability.ts",
+      "source_location": "L205",
+      "id": "mock_bookingavailability_getmocktimeslots",
+      "community": 5,
+      "norm_label": "getmocktimeslots()"
+    },
+    {
+      "label": "mapRestaurants.ts",
+      "file_type": "code",
+      "source_file": "mapRestaurants.ts",
+      "source_location": "L1",
+      "id": "maprestaurants_ts",
+      "community": 3,
+      "norm_label": "maprestaurants.ts"
+    },
+    {
+      "label": "MILTON_HOME",
+      "file_type": "code",
+      "source_file": "mapRestaurants.ts",
+      "source_location": "L5",
+      "id": "mock_maprestaurants_milton_home",
+      "community": 3,
+      "norm_label": "milton_home"
+    },
+    {
+      "label": "MILTON_AREAS",
+      "file_type": "code",
+      "source_file": "mapRestaurants.ts",
+      "source_location": "L10",
+      "id": "mock_maprestaurants_milton_areas",
+      "community": 3,
+      "norm_label": "milton_areas"
+    },
+    {
+      "label": "MILTON_ADDRESSES",
+      "file_type": "code",
+      "source_file": "mapRestaurants.ts",
+      "source_location": "L28",
+      "id": "mock_maprestaurants_milton_addresses",
+      "community": 3,
+      "norm_label": "milton_addresses"
+    },
+    {
+      "label": "OFFSETS",
+      "file_type": "code",
+      "source_file": "mapRestaurants.ts",
+      "source_location": "L46",
+      "id": "mock_maprestaurants_offsets",
+      "community": 3,
+      "norm_label": "offsets"
+    },
+    {
+      "label": "mockMapRestaurants",
+      "file_type": "code",
+      "source_file": "mapRestaurants.ts",
+      "source_location": "L64",
+      "id": "mock_maprestaurants_mockmaprestaurants",
+      "community": 3,
+      "norm_label": "mockmaprestaurants"
+    },
+    {
+      "label": "collections.ts",
+      "file_type": "code",
+      "source_file": "collections.ts",
+      "source_location": "L1",
+      "id": "collections_ts",
+      "community": 7,
+      "norm_label": "collections.ts"
+    },
+    {
+      "label": "seedCollections",
+      "file_type": "code",
+      "source_file": "collections.ts",
+      "source_location": "L15",
+      "id": "mock_collections_seedcollections",
+      "community": 7,
+      "norm_label": "seedcollections"
+    },
+    {
+      "label": "collectionsByOwner",
+      "file_type": "code",
+      "source_file": "collections.ts",
+      "source_location": "L34",
+      "id": "mock_collections_collectionsbyowner",
+      "community": 7,
+      "norm_label": "collectionsbyowner"
+    },
+    {
+      "label": "getOrInit()",
+      "file_type": "code",
+      "source_file": "collections.ts",
+      "source_location": "L37",
+      "id": "mock_collections_getorinit",
+      "community": 7,
+      "norm_label": "getorinit()"
+    },
+    {
+      "label": "listCollections()",
+      "file_type": "code",
+      "source_file": "collections.ts",
+      "source_location": "L42",
+      "id": "mock_collections_listcollections",
+      "community": 7,
+      "norm_label": "listcollections()"
+    },
+    {
+      "label": "getCollectionById()",
+      "file_type": "code",
+      "source_file": "collections.ts",
+      "source_location": "L48",
+      "id": "mock_collections_getcollectionbyid",
+      "community": 7,
+      "norm_label": "getcollectionbyid()"
+    },
+    {
+      "label": "createCollection()",
+      "file_type": "code",
+      "source_file": "collections.ts",
+      "source_location": "L52",
+      "id": "mock_collections_createcollection",
+      "community": 7,
+      "norm_label": "createcollection()"
+    },
+    {
+      "label": "addPostToCollection()",
+      "file_type": "code",
+      "source_file": "collections.ts",
+      "source_location": "L64",
+      "id": "mock_collections_addposttocollection",
+      "community": 7,
+      "norm_label": "addposttocollection()"
+    },
+    {
+      "label": "removePostFromCollection()",
+      "file_type": "code",
+      "source_file": "collections.ts",
+      "source_location": "L74",
+      "id": "mock_collections_removepostfromcollection",
+      "community": 7,
+      "norm_label": "removepostfromcollection()"
+    },
+    {
+      "label": "isPostInAnyCollection()",
+      "file_type": "code",
+      "source_file": "collections.ts",
+      "source_location": "L83",
+      "id": "mock_collections_ispostinanycollection",
+      "community": 7,
+      "norm_label": "ispostinanycollection()"
+    },
+    {
+      "label": "getCollectionsContainingPost()",
+      "file_type": "code",
+      "source_file": "collections.ts",
+      "source_location": "L87",
+      "id": "mock_collections_getcollectionscontainingpost",
+      "community": 7,
+      "norm_label": "getcollectionscontainingpost()"
+    },
+    {
+      "label": "getCollectionPosts()",
+      "file_type": "code",
+      "source_file": "collections.ts",
+      "source_location": "L91",
+      "id": "mock_collections_getcollectionposts",
+      "community": 7,
+      "norm_label": "getcollectionposts()"
+    },
+    {
+      "label": "discoverPresentation.ts",
+      "file_type": "code",
+      "source_file": "discoverPresentation.ts",
+      "source_location": "L1",
+      "id": "discoverpresentation_ts",
+      "community": 3,
+      "norm_label": "discoverpresentation.ts"
+    },
+    {
+      "label": "DiscoverBadgeKind",
+      "file_type": "code",
+      "source_file": "discoverPresentation.ts",
+      "source_location": "L4",
+      "id": "mock_discoverpresentation_discoverbadgekind",
+      "community": 3,
+      "norm_label": "discoverbadgekind"
+    },
+    {
+      "label": "pickFeaturedRestaurant()",
+      "file_type": "code",
+      "source_file": "discoverPresentation.ts",
+      "source_location": "L7",
+      "id": "mock_discoverpresentation_pickfeaturedrestaurant",
+      "community": 3,
+      "norm_label": "pickfeaturedrestaurant()"
+    },
+    {
+      "label": "SLOT_TIMES",
+      "file_type": "code",
+      "source_file": "discoverPresentation.ts",
+      "source_location": "L14",
+      "id": "mock_discoverpresentation_slot_times",
+      "community": 3,
+      "norm_label": "slot_times"
+    },
+    {
+      "label": "getUrgencyCopy()",
+      "file_type": "code",
+      "source_file": "discoverPresentation.ts",
+      "source_location": "L17",
+      "id": "mock_discoverpresentation_geturgencycopy",
+      "community": 6,
+      "norm_label": "geturgencycopy()"
+    },
+    {
+      "label": "getDiscoverBadges()",
+      "file_type": "code",
+      "source_file": "discoverPresentation.ts",
+      "source_location": "L38",
+      "id": "mock_discoverpresentation_getdiscoverbadges",
+      "community": 3,
+      "norm_label": "getdiscoverbadges()"
+    },
+    {
+      "label": "shortTagLine()",
+      "file_type": "code",
+      "source_file": "discoverPresentation.ts",
+      "source_location": "L46",
+      "id": "mock_discoverpresentation_shorttagline",
+      "community": 3,
+      "norm_label": "shorttagline()"
+    },
+    {
+      "label": "orders.ts",
+      "file_type": "code",
+      "source_file": "orders.ts",
+      "source_location": "L1",
+      "id": "orders_ts",
+      "community": 12,
+      "norm_label": "orders.ts"
+    },
+    {
+      "label": "OrderItem",
+      "file_type": "code",
+      "source_file": "orders.ts",
+      "source_location": "L1",
+      "id": "mock_orders_orderitem",
+      "community": 12,
+      "norm_label": "orderitem"
+    },
+    {
+      "label": "Order",
+      "file_type": "code",
+      "source_file": "orders.ts",
+      "source_location": "L13",
+      "id": "mock_orders_order",
+      "community": 12,
+      "norm_label": "order"
+    },
+    {
+      "label": "mockOrders",
+      "file_type": "code",
+      "source_file": "orders.ts",
+      "source_location": "L29",
+      "id": "mock_orders_mockorders",
+      "community": 12,
+      "norm_label": "mockorders"
+    },
+    {
+      "label": "events.ts",
+      "file_type": "code",
+      "source_file": "events.ts",
+      "source_location": "L1",
+      "id": "events_ts",
+      "community": 6,
+      "norm_label": "events.ts"
+    },
+    {
+      "label": "EventType",
+      "file_type": "code",
+      "source_file": "events.ts",
+      "source_location": "L3",
+      "id": "mock_events_eventtype",
+      "community": 6,
+      "norm_label": "eventtype"
+    },
+    {
+      "label": "DiningEvent",
+      "file_type": "code",
+      "source_file": "events.ts",
+      "source_location": "L5",
+      "id": "mock_events_diningevent",
+      "community": 6,
+      "norm_label": "diningevent"
+    },
+    {
+      "label": "dateKeyForOffset()",
+      "file_type": "code",
+      "source_file": "events.ts",
+      "source_location": "L21",
+      "id": "mock_events_datekeyforoffset",
+      "community": 6,
+      "norm_label": "datekeyforoffset()"
+    },
+    {
+      "label": "nextWeekdayOffset()",
+      "file_type": "code",
+      "source_file": "events.ts",
+      "source_location": "L31",
+      "id": "mock_events_nextweekdayoffset",
+      "community": 6,
+      "norm_label": "nextweekdayoffset()"
+    },
+    {
+      "label": "T",
+      "file_type": "code",
+      "source_file": "events.ts",
+      "source_location": "L37",
+      "id": "mock_events_t",
+      "community": 6,
+      "norm_label": "t"
+    },
+    {
+      "label": "FRI",
+      "file_type": "code",
+      "source_file": "events.ts",
+      "source_location": "L38",
+      "id": "mock_events_fri",
+      "community": 6,
+      "norm_label": "fri"
+    },
+    {
+      "label": "SAT",
+      "file_type": "code",
+      "source_file": "events.ts",
+      "source_location": "L39",
+      "id": "mock_events_sat",
+      "community": 6,
+      "norm_label": "sat"
+    },
+    {
+      "label": "SUN",
+      "file_type": "code",
+      "source_file": "events.ts",
+      "source_location": "L40",
+      "id": "mock_events_sun",
+      "community": 6,
+      "norm_label": "sun"
+    },
+    {
+      "label": "MON",
+      "file_type": "code",
+      "source_file": "events.ts",
+      "source_location": "L41",
+      "id": "mock_events_mon",
+      "community": 6,
+      "norm_label": "mon"
+    },
+    {
+      "label": "listEvents()",
+      "file_type": "code",
+      "source_file": "events.ts",
+      "source_location": "L226",
+      "id": "mock_events_listevents",
+      "community": 6,
+      "norm_label": "listevents()"
+    },
+    {
+      "label": "getEventById()",
+      "file_type": "code",
+      "source_file": "events.ts",
+      "source_location": "L230",
+      "id": "mock_events_geteventbyid",
+      "community": 6,
+      "norm_label": "geteventbyid()"
+    },
+    {
+      "label": "isEventSaved()",
+      "file_type": "code",
+      "source_file": "events.ts",
+      "source_location": "L234",
+      "id": "mock_events_iseventsaved",
+      "community": 6,
+      "norm_label": "iseventsaved()"
+    },
+    {
+      "label": "toggleSaveEvent()",
+      "file_type": "code",
+      "source_file": "events.ts",
+      "source_location": "L239",
+      "id": "mock_events_togglesaveevent",
+      "community": 6,
+      "norm_label": "togglesaveevent()"
+    },
+    {
+      "label": "getRestaurantForEvent()",
+      "file_type": "code",
+      "source_file": "events.ts",
+      "source_location": "L250",
+      "id": "mock_events_getrestaurantforevent",
+      "community": 6,
+      "norm_label": "getrestaurantforevent()"
+    },
+    {
+      "label": "DateFilter",
+      "file_type": "code",
+      "source_file": "events.ts",
+      "source_location": "L254",
+      "id": "mock_events_datefilter",
+      "community": 6,
+      "norm_label": "datefilter"
+    },
+    {
+      "label": "filterEvents()",
+      "file_type": "code",
+      "source_file": "events.ts",
+      "source_location": "L256",
+      "id": "mock_events_filterevents",
+      "community": 6,
+      "norm_label": "filterevents()"
+    },
+    {
+      "label": "reviewSnap.ts",
+      "file_type": "code",
+      "source_file": "reviewSnap.ts",
+      "source_location": "L1",
+      "id": "reviewsnap_ts",
+      "community": 9,
+      "norm_label": "reviewsnap.ts"
+    },
+    {
+      "label": "RestaurantVisitStatus",
+      "file_type": "code",
+      "source_file": "reviewSnap.ts",
+      "source_location": "L1",
+      "id": "mock_reviewsnap_restaurantvisitstatus",
+      "community": 9,
+      "norm_label": "restaurantvisitstatus"
+    },
+    {
+      "label": "ReviewRestaurantOption",
+      "file_type": "code",
+      "source_file": "reviewSnap.ts",
+      "source_location": "L3",
+      "id": "mock_reviewsnap_reviewrestaurantoption",
+      "community": 9,
+      "norm_label": "reviewrestaurantoption"
+    },
+    {
+      "label": "snapRewardPoints",
+      "file_type": "code",
+      "source_file": "reviewSnap.ts",
+      "source_location": "L12",
+      "id": "mock_reviewsnap_snaprewardpoints",
+      "community": 9,
+      "norm_label": "snaprewardpoints"
+    },
+    {
+      "label": "currentRestaurants",
+      "file_type": "code",
+      "source_file": "reviewSnap.ts",
+      "source_location": "L16",
+      "id": "mock_reviewsnap_currentrestaurants",
+      "community": 9,
+      "norm_label": "currentrestaurants"
+    },
+    {
+      "label": "pastRestaurants",
+      "file_type": "code",
+      "source_file": "reviewSnap.ts",
+      "source_location": "L35",
+      "id": "mock_reviewsnap_pastrestaurants",
+      "community": 9,
+      "norm_label": "pastrestaurants"
+    },
+    {
+      "label": "restaurants.ts",
+      "file_type": "code",
+      "source_file": "restaurants.ts",
+      "source_location": "L1",
+      "id": "restaurants_ts",
+      "community": 3,
+      "norm_label": "restaurants.ts"
+    },
+    {
+      "label": "DiscoverSectionKey",
+      "file_type": "code",
+      "source_file": "restaurants.ts",
+      "source_location": "L4",
+      "id": "mock_restaurants_discoversectionkey",
+      "community": 3,
+      "norm_label": "discoversectionkey"
+    },
+    {
+      "label": "RestaurantWeekdayKey",
+      "file_type": "code",
+      "source_file": "restaurants.ts",
+      "source_location": "L22",
+      "id": "mock_restaurants_restaurantweekdaykey",
+      "community": 3,
+      "norm_label": "restaurantweekdaykey"
+    },
+    {
+      "label": "RestaurantHoursRange",
+      "file_type": "code",
+      "source_file": "restaurants.ts",
+      "source_location": "L23",
+      "id": "mock_restaurants_restauranthoursrange",
+      "community": 3,
+      "norm_label": "restauranthoursrange"
+    },
+    {
+      "label": "RestaurantSpecialHours",
+      "file_type": "code",
+      "source_file": "restaurants.ts",
+      "source_location": "L24",
+      "id": "mock_restaurants_restaurantspecialhours",
+      "community": 3,
+      "norm_label": "restaurantspecialhours"
+    },
+    {
+      "label": "RestaurantHoursJson",
+      "file_type": "code",
+      "source_file": "restaurants.ts",
+      "source_location": "L32",
+      "id": "mock_restaurants_restauranthoursjson",
+      "community": 3,
+      "norm_label": "restauranthoursjson"
+    },
+    {
+      "label": "Restaurant",
+      "file_type": "code",
+      "source_file": "restaurants.ts",
+      "source_location": "L36",
+      "id": "mock_restaurants_restaurant",
+      "community": 3,
+      "norm_label": "restaurant"
+    },
+    {
+      "label": "defaultHours",
+      "file_type": "code",
+      "source_file": "restaurants.ts",
+      "source_location": "L73",
+      "id": "mock_restaurants_defaulthours",
+      "community": 3,
+      "norm_label": "defaulthours"
+    },
+    {
+      "label": "mockRestaurants",
+      "file_type": "code",
+      "source_file": "restaurants.ts",
+      "source_location": "L83",
+      "id": "mock_restaurants_mockrestaurants",
+      "community": 3,
+      "norm_label": "mockrestaurants"
+    },
+    {
+      "label": "users.ts",
+      "file_type": "code",
+      "source_file": "users.ts",
+      "source_location": "L1",
+      "id": "users_ts",
+      "community": 1,
+      "norm_label": "users.ts"
+    },
+    {
+      "label": "UserRole",
+      "file_type": "code",
+      "source_file": "users.ts",
+      "source_location": "L1",
+      "id": "mock_users_userrole",
+      "community": 1,
+      "norm_label": "userrole"
+    },
+    {
+      "label": "UserProfile",
+      "file_type": "code",
+      "source_file": "users.ts",
+      "source_location": "L3",
+      "id": "mock_users_userprofile",
+      "community": 1,
+      "norm_label": "userprofile"
+    },
+    {
+      "label": "mockCustomer",
+      "file_type": "code",
+      "source_file": "users.ts",
+      "source_location": "L26",
+      "id": "mock_users_mockcustomer",
+      "community": 1,
+      "norm_label": "mockcustomer"
+    },
+    {
+      "label": "mockOwner",
+      "file_type": "code",
+      "source_file": "users.ts",
+      "source_location": "L47",
+      "id": "mock_users_mockowner",
+      "community": 1,
+      "norm_label": "mockowner"
+    },
+    {
+      "label": "social.ts",
+      "file_type": "code",
+      "source_file": "social.ts",
+      "source_location": "L1",
+      "id": "social_ts",
+      "community": 2,
+      "norm_label": "social.ts"
+    },
+    {
+      "label": "followGraph",
+      "file_type": "code",
+      "source_file": "social.ts",
+      "source_location": "L13",
+      "id": "mock_social_followgraph",
+      "community": 2,
+      "norm_label": "followgraph"
+    },
+    {
+      "label": "likedPosts",
+      "file_type": "code",
+      "source_file": "social.ts",
+      "source_location": "L27",
+      "id": "mock_social_likedposts",
+      "community": 2,
+      "norm_label": "likedposts"
+    },
+    {
+      "label": "savedPosts",
+      "file_type": "code",
+      "source_file": "social.ts",
+      "source_location": "L32",
+      "id": "mock_social_savedposts",
+      "community": 2,
+      "norm_label": "savedposts"
+    },
+    {
+      "label": "getOrCreate()",
+      "file_type": "code",
+      "source_file": "social.ts",
+      "source_location": "L36",
+      "id": "mock_social_getorcreate",
+      "community": 2,
+      "norm_label": "getorcreate()"
+    },
+    {
+      "label": "isFollowing()",
+      "file_type": "code",
+      "source_file": "social.ts",
+      "source_location": "L41",
+      "id": "mock_social_isfollowing",
+      "community": 2,
+      "norm_label": "isfollowing()"
+    },
+    {
+      "label": "follow()",
+      "file_type": "code",
+      "source_file": "social.ts",
+      "source_location": "L45",
+      "id": "mock_social_follow",
+      "community": 2,
+      "norm_label": "follow()"
+    },
+    {
+      "label": "unfollow()",
+      "file_type": "code",
+      "source_file": "social.ts",
+      "source_location": "L49",
+      "id": "mock_social_unfollow",
+      "community": 2,
+      "norm_label": "unfollow()"
+    },
+    {
+      "label": "getFollowingIds()",
+      "file_type": "code",
+      "source_file": "social.ts",
+      "source_location": "L53",
+      "id": "mock_social_getfollowingids",
+      "community": 2,
+      "norm_label": "getfollowingids()"
+    },
+    {
+      "label": "getFollowerIds()",
+      "file_type": "code",
+      "source_file": "social.ts",
+      "source_location": "L57",
+      "id": "mock_social_getfollowerids",
+      "community": 2,
+      "norm_label": "getfollowerids()"
+    },
+    {
+      "label": "getFollowingCount()",
+      "file_type": "code",
+      "source_file": "social.ts",
+      "source_location": "L63",
+      "id": "mock_social_getfollowingcount",
+      "community": 2,
+      "norm_label": "getfollowingcount()"
+    },
+    {
+      "label": "getFollowerCount()",
+      "file_type": "code",
+      "source_file": "social.ts",
+      "source_location": "L67",
+      "id": "mock_social_getfollowercount",
+      "community": 2,
+      "norm_label": "getfollowercount()"
+    },
+    {
+      "label": "toggleLike()",
+      "file_type": "code",
+      "source_file": "social.ts",
+      "source_location": "L71",
+      "id": "mock_social_togglelike",
+      "community": 2,
+      "norm_label": "togglelike()"
+    },
+    {
+      "label": "isLiked()",
+      "file_type": "code",
+      "source_file": "social.ts",
+      "source_location": "L78",
+      "id": "mock_social_isliked",
+      "community": 2,
+      "norm_label": "isliked()"
+    },
+    {
+      "label": "toggleSave()",
+      "file_type": "code",
+      "source_file": "social.ts",
+      "source_location": "L82",
+      "id": "mock_social_togglesave",
+      "community": 2,
+      "norm_label": "togglesave()"
+    },
+    {
+      "label": "isSaved()",
+      "file_type": "code",
+      "source_file": "social.ts",
+      "source_location": "L89",
+      "id": "mock_social_issaved",
+      "community": 2,
+      "norm_label": "issaved()"
+    },
+    {
+      "label": "getLikedPosts()",
+      "file_type": "code",
+      "source_file": "social.ts",
+      "source_location": "L93",
+      "id": "mock_social_getlikedposts",
+      "community": 2,
+      "norm_label": "getlikedposts()"
+    },
+    {
+      "label": "getSavedPosts()",
+      "file_type": "code",
+      "source_file": "social.ts",
+      "source_location": "L99",
+      "id": "mock_social_getsavedposts",
+      "community": 2,
+      "norm_label": "getsavedposts()"
+    },
+    {
+      "label": "listFollowingPosts()",
+      "file_type": "code",
+      "source_file": "social.ts",
+      "source_location": "L105",
+      "id": "mock_social_listfollowingposts",
+      "community": 2,
+      "norm_label": "listfollowingposts()"
+    },
+    {
+      "label": "searchUsers()",
+      "file_type": "code",
+      "source_file": "social.ts",
+      "source_location": "L112",
+      "id": "mock_social_searchusers",
+      "community": 2,
+      "norm_label": "searchusers()"
+    },
+    {
+      "label": "getAllUsers()",
+      "file_type": "code",
+      "source_file": "social.ts",
+      "source_location": "L118",
+      "id": "mock_social_getallusers",
+      "community": 2,
+      "norm_label": "getallusers()"
+    },
+    {
+      "label": "postsWithinDays()",
+      "file_type": "code",
+      "source_file": "social.ts",
+      "source_location": "L122",
+      "id": "mock_social_postswithindays",
+      "community": 2,
+      "norm_label": "postswithindays()"
+    },
+    {
+      "label": "engagementScore()",
+      "file_type": "code",
+      "source_file": "social.ts",
+      "source_location": "L127",
+      "id": "mock_social_engagementscore",
+      "community": 2,
+      "norm_label": "engagementscore()"
+    },
+    {
+      "label": "listTrendingPosts()",
+      "file_type": "code",
+      "source_file": "social.ts",
+      "source_location": "L131",
+      "id": "mock_social_listtrendingposts",
+      "community": 2,
+      "norm_label": "listtrendingposts()"
+    },
+    {
+      "label": "TrendingRestaurant",
+      "file_type": "code",
+      "source_file": "social.ts",
+      "source_location": "L137",
+      "id": "mock_social_trendingrestaurant",
+      "community": 2,
+      "norm_label": "trendingrestaurant"
+    },
+    {
+      "label": "listTrendingRestaurants()",
+      "file_type": "code",
+      "source_file": "social.ts",
+      "source_location": "L144",
+      "id": "mock_social_listtrendingrestaurants",
+      "community": 2,
+      "norm_label": "listtrendingrestaurants()"
+    },
+    {
+      "label": "TrendingDish",
+      "file_type": "code",
+      "source_file": "social.ts",
+      "source_location": "L165",
+      "id": "mock_social_trendingdish",
+      "community": 2,
+      "norm_label": "trendingdish"
+    },
+    {
+      "label": "listTrendingDishes()",
+      "file_type": "code",
+      "source_file": "social.ts",
+      "source_location": "L172",
+      "id": "mock_social_listtrendingdishes",
+      "community": 2,
+      "norm_label": "listtrendingdishes()"
+    },
+    {
+      "label": "normalizeTag()",
+      "file_type": "code",
+      "source_file": "social.ts",
+      "source_location": "L194",
+      "id": "mock_social_normalizetag",
+      "community": 2,
+      "norm_label": "normalizetag()"
+    },
+    {
+      "label": "listPostsByTag()",
+      "file_type": "code",
+      "source_file": "social.ts",
+      "source_location": "L199",
+      "id": "mock_social_listpostsbytag",
+      "community": 2,
+      "norm_label": "listpostsbytag()"
+    },
+    {
+      "label": "listTopTags()",
+      "file_type": "code",
+      "source_file": "social.ts",
+      "source_location": "L204",
+      "id": "mock_social_listtoptags",
+      "community": 2,
+      "norm_label": "listtoptags()"
+    },
+    {
+      "label": "sessions.ts",
+      "file_type": "code",
+      "source_file": "sessions.ts",
+      "source_location": "L1",
+      "id": "sessions_ts",
+      "community": 14,
+      "norm_label": "sessions.ts"
+    },
+    {
+      "label": "Session",
+      "file_type": "code",
+      "source_file": "sessions.ts",
+      "source_location": "L1",
+      "id": "mock_sessions_session",
+      "community": 14,
+      "norm_label": "session"
+    },
+    {
+      "label": "mockSessions",
+      "file_type": "code",
+      "source_file": "sessions.ts",
+      "source_location": "L10",
+      "id": "mock_sessions_mocksessions",
+      "community": 14,
+      "norm_label": "mocksessions"
+    },
+    {
+      "label": "guests.ts",
+      "file_type": "code",
+      "source_file": "guests.ts",
+      "source_location": "L1",
+      "id": "guests_ts",
+      "community": 8,
+      "norm_label": "guests.ts"
+    },
+    {
+      "label": "LoyaltyTier",
+      "file_type": "code",
+      "source_file": "guests.ts",
+      "source_location": "L4",
+      "id": "mock_guests_loyaltytier",
+      "community": 8,
+      "norm_label": "loyaltytier"
+    },
+    {
+      "label": "GuestLoyaltyTx",
+      "file_type": "code",
+      "source_file": "guests.ts",
+      "source_location": "L6",
+      "id": "mock_guests_guestloyaltytx",
+      "community": 8,
+      "norm_label": "guestloyaltytx"
+    },
+    {
+      "label": "GuestNote",
+      "file_type": "code",
+      "source_file": "guests.ts",
+      "source_location": "L14",
+      "id": "mock_guests_guestnote",
+      "community": 8,
+      "norm_label": "guestnote"
+    },
+    {
+      "label": "GuestSurvey",
+      "file_type": "code",
+      "source_file": "guests.ts",
+      "source_location": "L23",
+      "id": "mock_guests_guestsurvey",
+      "community": 8,
+      "norm_label": "guestsurvey"
+    },
+    {
+      "label": "GuestAllergyIncident",
+      "file_type": "code",
+      "source_file": "guests.ts",
+      "source_location": "L33",
+      "id": "mock_guests_guestallergyincident",
+      "community": 8,
+      "norm_label": "guestallergyincident"
+    },
+    {
+      "label": "GuestCommLog",
+      "file_type": "code",
+      "source_file": "guests.ts",
+      "source_location": "L42",
+      "id": "mock_guests_guestcommlog",
+      "community": 8,
+      "norm_label": "guestcommlog"
+    },
+    {
+      "label": "OwnerGuest",
+      "file_type": "code",
+      "source_file": "guests.ts",
+      "source_location": "L53",
+      "id": "mock_guests_ownerguest",
+      "community": 8,
+      "norm_label": "ownerguest"
+    },
+    {
+      "label": "findGuest()",
+      "file_type": "code",
+      "source_file": "guests.ts",
+      "source_location": "L475",
+      "id": "mock_guests_findguest",
+      "community": 8,
+      "norm_label": "findguest()"
+    },
+    {
+      "label": "isAtRisk()",
+      "file_type": "code",
+      "source_file": "guests.ts",
+      "source_location": "L479",
+      "id": "mock_guests_isatrisk",
+      "community": 8,
+      "norm_label": "isatrisk()"
+    },
+    {
+      "label": "isNewGuest()",
+      "file_type": "code",
+      "source_file": "guests.ts",
+      "source_location": "L483",
+      "id": "mock_guests_isnewguest",
+      "community": 8,
+      "norm_label": "isnewguest()"
+    },
+    {
+      "label": "isRegular()",
+      "file_type": "code",
+      "source_file": "guests.ts",
+      "source_location": "L489",
+      "id": "mock_guests_isregular",
+      "community": 8,
+      "norm_label": "isregular()"
+    },
+    {
+      "label": "ownerApp.ts",
+      "file_type": "code",
+      "source_file": "ownerApp.ts",
+      "source_location": "L1",
+      "id": "ownerapp_ts",
+      "community": 0,
+      "norm_label": "ownerapp.ts"
+    },
+    {
+      "label": "RevenuePeriod",
+      "file_type": "code",
+      "source_file": "ownerApp.ts",
+      "source_location": "L3",
+      "id": "mock_ownerapp_revenueperiod",
+      "community": 0,
+      "norm_label": "revenueperiod"
+    },
+    {
+      "label": "TONIGHT_SUMMARY",
+      "file_type": "code",
+      "source_file": "ownerApp.ts",
+      "source_location": "L7",
+      "id": "mock_ownerapp_tonight_summary",
+      "community": 0,
+      "norm_label": "tonight_summary"
+    },
+    {
+      "label": "LIVE_METRICS",
+      "file_type": "code",
+      "source_file": "ownerApp.ts",
+      "source_location": "L14",
+      "id": "mock_ownerapp_live_metrics",
+      "community": 0,
+      "norm_label": "live_metrics"
+    },
+    {
+      "label": "LiveFeedKind",
+      "file_type": "code",
+      "source_file": "ownerApp.ts",
+      "source_location": "L21",
+      "id": "mock_ownerapp_livefeedkind",
+      "community": 0,
+      "norm_label": "livefeedkind"
+    },
+    {
+      "label": "LiveFeedItem",
+      "file_type": "code",
+      "source_file": "ownerApp.ts",
+      "source_location": "L23",
+      "id": "mock_ownerapp_livefeeditem",
+      "community": 0,
+      "norm_label": "livefeeditem"
+    },
+    {
+      "label": "LIVE_FEED",
+      "file_type": "code",
+      "source_file": "ownerApp.ts",
+      "source_location": "L30",
+      "id": "mock_ownerapp_live_feed",
+      "community": 0,
+      "norm_label": "live_feed"
+    },
+    {
+      "label": "OwnerAlert",
+      "file_type": "code",
+      "source_file": "ownerApp.ts",
+      "source_location": "L38",
+      "id": "mock_ownerapp_owneralert",
+      "community": 0,
+      "norm_label": "owneralert"
+    },
+    {
+      "label": "OWNER_ALERTS_STRIP",
+      "file_type": "code",
+      "source_file": "ownerApp.ts",
+      "source_location": "L44",
+      "id": "mock_ownerapp_owner_alerts_strip",
+      "community": 0,
+      "norm_label": "owner_alerts_strip"
+    },
+    {
+      "label": "OperationPulse",
+      "file_type": "code",
+      "source_file": "ownerApp.ts",
+      "source_location": "L50",
+      "id": "mock_ownerapp_operationpulse",
+      "community": 0,
+      "norm_label": "operationpulse"
+    },
+    {
+      "label": "MarketingPromo",
+      "file_type": "code",
+      "source_file": "ownerApp.ts",
+      "source_location": "L60",
+      "id": "mock_ownerapp_marketingpromo",
+      "community": 0,
+      "norm_label": "marketingpromo"
+    },
+    {
+      "label": "MARKETING_ACTIVE",
+      "file_type": "code",
+      "source_file": "ownerApp.ts",
+      "source_location": "L66",
+      "id": "mock_ownerapp_marketing_active",
+      "community": 0,
+      "norm_label": "marketing_active"
+    },
+    {
+      "label": "BOOKING_TREND_WEEK",
+      "file_type": "code",
+      "source_file": "ownerApp.ts",
+      "source_location": "L75",
+      "id": "mock_ownerapp_booking_trend_week",
+      "community": 0,
+      "norm_label": "booking_trend_week"
+    },
+    {
+      "label": "REVENUE_DATA",
+      "file_type": "code",
+      "source_file": "ownerApp.ts",
+      "source_location": "L86",
+      "id": "mock_ownerapp_revenue_data",
+      "community": 0,
+      "norm_label": "revenue_data"
+    },
+    {
+      "label": "AI_INSIGHTS_HOME",
+      "file_type": "code",
+      "source_file": "ownerApp.ts",
+      "source_location": "L99",
+      "id": "mock_ownerapp_ai_insights_home",
+      "community": 0,
+      "norm_label": "ai_insights_home"
+    },
+    {
+      "label": "TimelineStatus",
+      "file_type": "code",
+      "source_file": "ownerApp.ts",
+      "source_location": "L106",
+      "id": "mock_ownerapp_timelinestatus",
+      "community": 0,
+      "norm_label": "timelinestatus"
+    },
+    {
+      "label": "LiveTimelineEntry",
+      "file_type": "code",
+      "source_file": "ownerApp.ts",
+      "source_location": "L108",
+      "id": "mock_ownerapp_livetimelineentry",
+      "community": 0,
+      "norm_label": "livetimelineentry"
+    },
+    {
+      "label": "LIVE_TIMELINE",
+      "file_type": "code",
+      "source_file": "ownerApp.ts",
+      "source_location": "L118",
+      "id": "mock_ownerapp_live_timeline",
+      "community": 0,
+      "norm_label": "live_timeline"
+    },
+    {
+      "label": "OwnerFloorTable",
+      "file_type": "code",
+      "source_file": "ownerApp.ts",
+      "source_location": "L148",
+      "id": "mock_ownerapp_ownerfloortable",
+      "community": 0,
+      "norm_label": "ownerfloortable"
+    },
+    {
+      "label": "ResFilter",
+      "file_type": "code",
+      "source_file": "ownerApp.ts",
+      "source_location": "L177",
+      "id": "mock_ownerapp_resfilter",
+      "community": 0,
+      "norm_label": "resfilter"
+    },
+    {
+      "label": "WalkInQueueItem",
+      "file_type": "code",
+      "source_file": "ownerApp.ts",
+      "source_location": "L193",
+      "id": "mock_ownerapp_walkinqueueitem",
+      "community": 0,
+      "norm_label": "walkinqueueitem"
+    },
+    {
+      "label": "WALKIN_QUEUE",
+      "file_type": "code",
+      "source_file": "ownerApp.ts",
+      "source_location": "L200",
+      "id": "mock_ownerapp_walkin_queue",
+      "community": 0,
+      "norm_label": "walkin_queue"
+    },
+    {
+      "label": "WaitlistEntryStatus",
+      "file_type": "code",
+      "source_file": "ownerApp.ts",
+      "source_location": "L207",
+      "id": "mock_ownerapp_waitlistentrystatus",
+      "community": 0,
+      "norm_label": "waitlistentrystatus"
+    },
+    {
+      "label": "WaitlistEntry",
+      "file_type": "code",
+      "source_file": "ownerApp.ts",
+      "source_location": "L209",
+      "id": "mock_ownerapp_waitlistentry",
+      "community": 0,
+      "norm_label": "waitlistentry"
+    },
+    {
+      "label": "WAITLIST_ENTRIES",
+      "file_type": "code",
+      "source_file": "ownerApp.ts",
+      "source_location": "L218",
+      "id": "mock_ownerapp_waitlist_entries",
+      "community": 0,
+      "norm_label": "waitlist_entries"
+    },
+    {
+      "label": "OWNER_RESERVATIONS",
+      "file_type": "code",
+      "source_file": "ownerApp.ts",
+      "source_location": "L224",
+      "id": "mock_ownerapp_owner_reservations",
+      "community": 0,
+      "norm_label": "owner_reservations"
+    },
+    {
+      "label": "ANALYTICS_METRICS",
+      "file_type": "code",
+      "source_file": "ownerApp.ts",
+      "source_location": "L235",
+      "id": "mock_ownerapp_analytics_metrics",
+      "community": 0,
+      "norm_label": "analytics_metrics"
+    },
+    {
+      "label": "ANALYTICS_INSIGHTS",
+      "file_type": "code",
+      "source_file": "ownerApp.ts",
+      "source_location": "L247",
+      "id": "mock_ownerapp_analytics_insights",
+      "community": 0,
+      "norm_label": "analytics_insights"
+    },
+    {
+      "label": "BUSY_HEATMAP",
+      "file_type": "code",
+      "source_file": "ownerApp.ts",
+      "source_location": "L254",
+      "id": "mock_ownerapp_busy_heatmap",
+      "community": 0,
+      "norm_label": "busy_heatmap"
+    },
+    {
+      "label": "CrmGuest",
+      "file_type": "code",
+      "source_file": "ownerApp.ts",
+      "source_location": "L257",
+      "id": "mock_ownerapp_crmguest",
+      "community": 0,
+      "norm_label": "crmguest"
+    },
+    {
+      "label": "CrmGuestRow",
+      "file_type": "code",
+      "source_file": "ownerApp.ts",
+      "source_location": "L290",
+      "id": "mock_ownerapp_crmguestrow",
+      "community": 0,
+      "norm_label": "crmguestrow"
+    },
+    {
+      "label": "CRM_AI_INSIGHTS",
+      "file_type": "code",
+      "source_file": "ownerApp.ts",
+      "source_location": "L292",
+      "id": "mock_ownerapp_crm_ai_insights",
+      "community": 0,
+      "norm_label": "crm_ai_insights"
+    },
+    {
+      "label": "CRM_SPOTLIGHT",
+      "file_type": "code",
+      "source_file": "ownerApp.ts",
+      "source_location": "L320",
+      "id": "mock_ownerapp_crm_spotlight",
+      "community": 0,
+      "norm_label": "crm_spotlight"
+    },
+    {
+      "label": "AI_OPPORTUNITIES",
+      "file_type": "code",
+      "source_file": "ownerApp.ts",
+      "source_location": "L499",
+      "id": "mock_ownerapp_ai_opportunities",
+      "community": 0,
+      "norm_label": "ai_opportunities"
+    },
+    {
+      "label": "AI_ALERTS",
+      "file_type": "code",
+      "source_file": "ownerApp.ts",
+      "source_location": "L504",
+      "id": "mock_ownerapp_ai_alerts",
+      "community": 0,
+      "norm_label": "ai_alerts"
+    },
+    {
+      "label": "AI_SUGGESTIONS",
+      "file_type": "code",
+      "source_file": "ownerApp.ts",
+      "source_location": "L506",
+      "id": "mock_ownerapp_ai_suggestions",
+      "community": 0,
+      "norm_label": "ai_suggestions"
+    },
+    {
+      "label": "KdsTicket",
+      "file_type": "code",
+      "source_file": "ownerApp.ts",
+      "source_location": "L512",
+      "id": "mock_ownerapp_kdsticket",
+      "community": 0,
+      "norm_label": "kdsticket"
+    },
+    {
+      "label": "StaffRosterMember",
+      "file_type": "code",
+      "source_file": "ownerApp.ts",
+      "source_location": "L533",
+      "id": "mock_ownerapp_staffrostermember",
+      "community": 0,
+      "norm_label": "staffrostermember"
+    },
+    {
+      "label": "STAFF_ROSTER",
+      "file_type": "code",
+      "source_file": "ownerApp.ts",
+      "source_location": "L541",
+      "id": "mock_ownerapp_staff_roster",
+      "community": 0,
+      "norm_label": "staff_roster"
+    },
+    {
+      "label": "ExpenseLine",
+      "file_type": "code",
+      "source_file": "ownerApp.ts",
+      "source_location": "L548",
+      "id": "mock_ownerapp_expenseline",
+      "community": 0,
+      "norm_label": "expenseline"
+    },
+    {
+      "label": "today",
+      "file_type": "code",
+      "source_file": "ownerApp.ts",
+      "source_location": "L568",
+      "id": "mock_ownerapp_today",
+      "community": 0,
+      "norm_label": "today"
+    },
+    {
+      "label": "offsetISODate()",
+      "file_type": "code",
+      "source_file": "ownerApp.ts",
+      "source_location": "L569",
+      "id": "mock_ownerapp_offsetisodate",
+      "community": 0,
+      "norm_label": "offsetisodate()"
+    },
+    {
+      "label": "makeDemoExpense()",
+      "file_type": "code",
+      "source_file": "ownerApp.ts",
+      "source_location": "L575",
+      "id": "mock_ownerapp_makedemoexpense",
+      "community": 0,
+      "norm_label": "makedemoexpense()"
+    },
+    {
+      "label": "DEMO_EXPENSES",
+      "file_type": "code",
+      "source_file": "ownerApp.ts",
+      "source_location": "L597",
+      "id": "mock_ownerapp_demo_expenses",
+      "community": 0,
+      "norm_label": "demo_expenses"
+    },
+    {
+      "label": "OWNER_EVENTS",
+      "file_type": "code",
+      "source_file": "ownerApp.ts",
+      "source_location": "L666",
+      "id": "mock_ownerapp_owner_events",
+      "community": 0,
+      "norm_label": "owner_events"
+    },
+    {
+      "label": "ExportOptionRow",
+      "file_type": "code",
+      "source_file": "ownerApp.ts",
+      "source_location": "L672",
+      "id": "mock_ownerapp_exportoptionrow",
+      "community": 0,
+      "norm_label": "exportoptionrow"
+    },
+    {
+      "label": "EXPORT_OPTIONS",
+      "file_type": "code",
+      "source_file": "ownerApp.ts",
+      "source_location": "L678",
+      "id": "mock_ownerapp_export_options",
+      "community": 0,
+      "norm_label": "export_options"
+    },
+    {
+      "label": "PromoStatus",
+      "file_type": "code",
+      "source_file": "ownerApp.ts",
+      "source_location": "L686",
+      "id": "mock_ownerapp_promostatus",
+      "community": 0,
+      "norm_label": "promostatus"
+    },
+    {
+      "label": "PromoAttentionReason",
+      "file_type": "code",
+      "source_file": "ownerApp.ts",
+      "source_location": "L689",
+      "id": "mock_ownerapp_promoattentionreason",
+      "community": 0,
+      "norm_label": "promoattentionreason"
+    },
+    {
+      "label": "PromoType",
+      "file_type": "code",
+      "source_file": "ownerApp.ts",
+      "source_location": "L695",
+      "id": "mock_ownerapp_promotype",
+      "community": 0,
+      "norm_label": "promotype"
+    },
+    {
+      "label": "OwnerPromoRow",
+      "file_type": "code",
+      "source_file": "ownerApp.ts",
+      "source_location": "L1048",
+      "id": "mock_ownerapp_ownerpromorow",
+      "community": 0,
+      "norm_label": "ownerpromorow"
+    },
+    {
+      "label": "BusinessHoursRow",
+      "file_type": "code",
+      "source_file": "ownerApp.ts",
+      "source_location": "L1062",
+      "id": "mock_ownerapp_businesshoursrow",
+      "community": 0,
+      "norm_label": "businesshoursrow"
+    },
+    {
+      "label": "OWNER_BUSINESS_HOURS",
+      "file_type": "code",
+      "source_file": "ownerApp.ts",
+      "source_location": "L1071",
+      "id": "mock_ownerapp_owner_business_hours",
+      "community": 0,
+      "norm_label": "owner_business_hours"
+    },
+    {
+      "label": "OwnerBusinessProfile",
+      "file_type": "code",
+      "source_file": "ownerApp.ts",
+      "source_location": "L1081",
+      "id": "mock_ownerapp_ownerbusinessprofile",
+      "community": 0,
+      "norm_label": "ownerbusinessprofile"
+    },
+    {
+      "label": "BOOKINGS_BY_HOUR",
+      "file_type": "code",
+      "source_file": "ownerApp.ts",
+      "source_location": "L1116",
+      "id": "mock_ownerapp_bookings_by_hour",
+      "community": 0,
+      "norm_label": "bookings_by_hour"
+    },
+    {
+      "label": "SCHEDULE_WEEK_DAYS",
+      "file_type": "code",
+      "source_file": "ownerApp.ts",
+      "source_location": "L1132",
+      "id": "mock_ownerapp_schedule_week_days",
+      "community": 0,
+      "norm_label": "schedule_week_days"
+    },
+    {
+      "label": "ShiftStaff",
+      "file_type": "code",
+      "source_file": "ownerApp.ts",
+      "source_location": "L1142",
+      "id": "mock_ownerapp_shiftstaff",
+      "community": 0,
+      "norm_label": "shiftstaff"
+    },
+    {
+      "label": "SHIFT_STAFF",
+      "file_type": "code",
+      "source_file": "ownerApp.ts",
+      "source_location": "L1154",
+      "id": "mock_ownerapp_shift_staff",
+      "community": 0,
+      "norm_label": "shift_staff"
+    },
+    {
+      "label": "RESTAURANT_SERVICE_HOURS",
+      "file_type": "code",
+      "source_file": "ownerApp.ts",
+      "source_location": "L1162",
+      "id": "mock_ownerapp_restaurant_service_hours",
+      "community": 0,
+      "norm_label": "restaurant_service_hours"
+    },
+    {
+      "label": "TONIGHT_BRIEFING",
+      "file_type": "code",
+      "source_file": "ownerApp.ts",
+      "source_location": "L1171",
+      "id": "mock_ownerapp_tonight_briefing",
+      "community": 0,
+      "norm_label": "tonight_briefing"
+    },
+    {
+      "label": "TonightBadge",
+      "file_type": "code",
+      "source_file": "ownerApp.ts",
+      "source_location": "L1190",
+      "id": "mock_ownerapp_tonightbadge",
+      "community": 0,
+      "norm_label": "tonightbadge"
+    },
+    {
+      "label": "TonightGuest",
+      "file_type": "code",
+      "source_file": "ownerApp.ts",
+      "source_location": "L1192",
+      "id": "mock_ownerapp_tonightguest",
+      "community": 0,
+      "norm_label": "tonightguest"
+    },
+    {
+      "label": "HOME_ATTENTION_ITEMS",
+      "file_type": "code",
+      "source_file": "ownerApp.ts",
+      "source_location": "L1212",
+      "id": "mock_ownerapp_home_attention_items",
+      "community": 0,
+      "norm_label": "home_attention_items"
+    },
+    {
+      "label": "HOME_RESERVATION_FLOW",
+      "file_type": "code",
+      "source_file": "ownerApp.ts",
+      "source_location": "L1219",
+      "id": "mock_ownerapp_home_reservation_flow",
+      "community": 0,
+      "norm_label": "home_reservation_flow"
+    },
+    {
+      "label": "isBusinessOpenNow()",
+      "file_type": "code",
+      "source_file": "ownerApp.ts",
+      "source_location": "L1227",
+      "id": "mock_ownerapp_isbusinessopennow",
+      "community": 0,
+      "norm_label": "isbusinessopennow()"
+    }
+  ],
+  "links": [
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "menuItems.ts",
+      "source_location": "L1",
+      "weight": 1.0,
+      "source": "menuitems_ts",
+      "target": "mock_menuitems_menuitem",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "menuItems.ts",
+      "source_location": "L18",
+      "weight": 1.0,
+      "source": "menuitems_ts",
+      "target": "mock_menuitems_mockmenuitems",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "menuItems.ts",
+      "source_location": "L47",
+      "weight": 1.0,
+      "source": "menuitems_ts",
+      "target": "mock_menuitems_menucategories",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "profileScreens.ts",
+      "source_location": "L2",
+      "weight": 1.0,
+      "source": "profilescreens_ts",
+      "target": "restaurants_ts",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "profileScreens.ts",
+      "source_location": "L1",
+      "weight": 1.0,
+      "source": "profilescreens_ts",
+      "target": "mock_restaurants_restaurant",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "profileScreens.ts",
+      "source_location": "L2",
+      "weight": 1.0,
+      "source": "profilescreens_ts",
+      "target": "mock_restaurants_mockrestaurants",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "profileScreens.ts",
+      "source_location": "L5",
+      "weight": 1.0,
+      "source": "profilescreens_ts",
+      "target": "mock_profilescreens_saved_restaurant_ids",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "profileScreens.ts",
+      "source_location": "L7",
+      "weight": 1.0,
+      "source": "profilescreens_ts",
+      "target": "mock_profilescreens_getsavedrestaurants",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "profileScreens.ts",
+      "source_location": "L12",
+      "weight": 1.0,
+      "source": "profilescreens_ts",
+      "target": "mock_profilescreens_paymentmethod",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "profileScreens.ts",
+      "source_location": "L21",
+      "weight": 1.0,
+      "source": "profilescreens_ts",
+      "target": "mock_profilescreens_mockpaymentmethods",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "profileScreens.ts",
+      "source_location": "L26",
+      "weight": 1.0,
+      "source": "profilescreens_ts",
+      "target": "mock_profilescreens_notificationpref",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "profileScreens.ts",
+      "source_location": "L33",
+      "weight": 1.0,
+      "source": "profilescreens_ts",
+      "target": "mock_notifications_mocknotifications",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "profileScreens.ts",
+      "source_location": "L44",
+      "weight": 1.0,
+      "source": "profilescreens_ts",
+      "target": "mock_profilescreens_promotionoffer",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "profileScreens.ts",
+      "source_location": "L53",
+      "weight": 1.0,
+      "source": "profilescreens_ts",
+      "target": "mock_profilescreens_mockpromotions",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "profileScreens.ts",
+      "source_location": "L86",
+      "weight": 1.0,
+      "source": "profilescreens_ts",
+      "target": "mock_profilescreens_helptopic",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "profileScreens.ts",
+      "source_location": "L93",
+      "weight": 1.0,
+      "source": "profilescreens_ts",
+      "target": "mock_profilescreens_mockhelptopics",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "profileScreens.ts",
+      "source_location": "L100",
+      "weight": 1.0,
+      "source": "profilescreens_ts",
+      "target": "mock_profilescreens_faqitem",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "profileScreens.ts",
+      "source_location": "L106",
+      "weight": 1.0,
+      "source": "profilescreens_ts",
+      "target": "mock_profilescreens_mockfaqs",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "profileScreens.ts",
+      "source_location": "L159",
+      "weight": 1.0,
+      "source": "profilescreens_ts",
+      "target": "mock_profilescreens_walletgiftcard",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "profileScreens.ts",
+      "source_location": "L160",
+      "weight": 1.0,
+      "source": "profilescreens_ts",
+      "target": "mock_profilescreens_mockgiftcards",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "profileScreens.ts",
+      "source_location": "L165",
+      "weight": 1.0,
+      "source": "profilescreens_ts",
+      "target": "mock_profilescreens_walletcredit",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "profileScreens.ts",
+      "source_location": "L166",
+      "weight": 1.0,
+      "source": "profilescreens_ts",
+      "target": "mock_profilescreens_mockwalletcredits",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "profileScreens.ts",
+      "source_location": "L171",
+      "weight": 1.0,
+      "source": "profilescreens_ts",
+      "target": "mock_profilescreens_inviterecord",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "profileScreens.ts",
+      "source_location": "L180",
+      "weight": 1.0,
+      "source": "profilescreens_ts",
+      "target": "mock_profilescreens_mockinviterecords",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "profileScreens.ts",
+      "source_location": "L193",
+      "weight": 1.0,
+      "source": "profilescreens_ts",
+      "target": "mock_profilescreens_dietarypreferenceoption",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "profileScreens.ts",
+      "source_location": "L194",
+      "weight": 1.0,
+      "source": "profilescreens_ts",
+      "target": "mock_profilescreens_mockdietarypreferenceoptions",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "profileScreens.ts",
+      "source_location": "L204",
+      "weight": 1.0,
+      "source": "profilescreens_ts",
+      "target": "mock_profilescreens_restrictionoption",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "profileScreens.ts",
+      "source_location": "L205",
+      "weight": 1.0,
+      "source": "profilescreens_ts",
+      "target": "mock_profilescreens_mockrestrictionoptions",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "profileScreens.ts",
+      "source_location": "L214",
+      "weight": 1.0,
+      "source": "profilescreens_ts",
+      "target": "mock_profilescreens_datenightoption",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "profileScreens.ts",
+      "source_location": "L215",
+      "weight": 1.0,
+      "source": "profilescreens_ts",
+      "target": "mock_profilescreens_mockdatenightoptions",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "profileScreens.ts",
+      "source_location": "L225",
+      "weight": 1.0,
+      "source": "profilescreens_ts",
+      "target": "mock_profilescreens_seatingoption",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "profileScreens.ts",
+      "source_location": "L226",
+      "weight": 1.0,
+      "source": "profilescreens_ts",
+      "target": "mock_profilescreens_mockseatingoptions",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "comments.ts",
+      "source_location": "L1",
+      "weight": 1.0,
+      "source": "comments_ts",
+      "target": "snaps_ts",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "comments.ts",
+      "source_location": "L1",
+      "weight": 1.0,
+      "source": "comments_ts",
+      "target": "mock_snaps_snapuser",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "comments.ts",
+      "source_location": "L2",
+      "weight": 1.0,
+      "source": "comments_ts",
+      "target": "users_ts",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "comments.ts",
+      "source_location": "L2",
+      "weight": 1.0,
+      "source": "comments_ts",
+      "target": "mock_users_mockcustomer",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "comments.ts",
+      "source_location": "L4",
+      "weight": 1.0,
+      "source": "comments_ts",
+      "target": "mock_comments_comment",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "comments.ts",
+      "source_location": "L12",
+      "weight": 1.0,
+      "source": "comments_ts",
+      "target": "mock_comments_commentpool",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "comments.ts",
+      "source_location": "L25",
+      "weight": 1.0,
+      "source": "comments_ts",
+      "target": "mock_comments_store",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "comments.ts",
+      "source_location": "L28",
+      "weight": 1.0,
+      "source": "comments_ts",
+      "target": "mock_comments_seedfor",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "comments.ts",
+      "source_location": "L47",
+      "weight": 1.0,
+      "source": "comments_ts",
+      "target": "mock_comments_listcommentsforpost",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "comments.ts",
+      "source_location": "L53",
+      "weight": 1.0,
+      "source": "comments_ts",
+      "target": "mock_comments_addcomment",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "comments.ts",
+      "source_location": "L66",
+      "weight": 1.0,
+      "source": "comments_ts",
+      "target": "mock_comments_getcommentcountforpost",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "comments.ts",
+      "source_location": "L70",
+      "weight": 1.0,
+      "source": "comments_ts",
+      "target": "mock_comments_getcommentauthor",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "comments.ts",
+      "source_location": "L48",
+      "weight": 1.0,
+      "source": "mock_comments_listcommentsforpost",
+      "target": "mock_comments_seedfor",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "comments.ts",
+      "source_location": "L54",
+      "weight": 1.0,
+      "source": "mock_comments_addcomment",
+      "target": "mock_comments_seedfor",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "comments.ts",
+      "source_location": "L67",
+      "weight": 1.0,
+      "source": "mock_comments_getcommentcountforpost",
+      "target": "mock_comments_seedfor",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "reservations.ts",
+      "source_location": "L23",
+      "weight": 1.0,
+      "source": "reservations_ts",
+      "target": "mock_reservations_daysfromnow",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "reservations.ts",
+      "source_location": "L190",
+      "weight": 1.0,
+      "source": "reservations_ts",
+      "target": "mock_reservations_mockreservations",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "reservations.ts",
+      "source_location": "L186",
+      "weight": 1.0,
+      "source": "reservations_ts",
+      "target": "mock_reservations_getmockreservationsversion",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "reservations.ts",
+      "source_location": "L205",
+      "weight": 1.0,
+      "source": "reservations_ts",
+      "target": "mock_reservations_cancelreservationbyidasync",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "reservations.ts",
+      "source_location": "L233",
+      "weight": 1.0,
+      "source": "reservations_ts",
+      "target": "mock_reservations_modifymockreservation",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "bookingAvailability.ts",
+      "source_location": "L65",
+      "weight": 1.0,
+      "source": "bookingavailability_ts",
+      "target": "mock_reservations_daysfromnow",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "bookingAvailability.ts",
+      "source_location": "L83",
+      "weight": 1.0,
+      "source": "mock_bookingavailability_effectiveblackouts",
+      "target": "mock_reservations_daysfromnow",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "bookingAvailability.ts",
+      "source_location": "L171",
+      "weight": 1.0,
+      "source": "mock_bookingavailability_ismockdatebookable",
+      "target": "mock_reservations_daysfromnow",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "bookingAvailability.ts",
+      "source_location": "L213",
+      "weight": 1.0,
+      "source": "mock_bookingavailability_getmocktimeslots",
+      "target": "mock_reservations_daysfromnow",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "loyalty.ts",
+      "source_location": "L1",
+      "weight": 1.0,
+      "source": "loyalty_ts",
+      "target": "mock_loyalty_loyaltytransaction",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "loyalty.ts",
+      "source_location": "L10",
+      "weight": 1.0,
+      "source": "loyalty_ts",
+      "target": "mock_loyalty_loyaltyreward",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "loyalty.ts",
+      "source_location": "L18",
+      "weight": 1.0,
+      "source": "loyalty_ts",
+      "target": "mock_loyalty_mockloyaltytransactions",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "loyalty.ts",
+      "source_location": "L26",
+      "weight": 1.0,
+      "source": "loyalty_ts",
+      "target": "mock_loyalty_mockrewards",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "aiChat.ts",
+      "source_location": "L1",
+      "weight": 1.0,
+      "source": "aichat_ts",
+      "target": "restaurants_ts",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "aiChat.ts",
+      "source_location": "L1",
+      "weight": 1.0,
+      "source": "aichat_ts",
+      "target": "mock_restaurants_mockrestaurants",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "aiChat.ts",
+      "source_location": "L1",
+      "weight": 1.0,
+      "source": "aichat_ts",
+      "target": "mock_restaurants_restaurant",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "aiChat.ts",
+      "source_location": "L3",
+      "weight": 1.0,
+      "source": "aichat_ts",
+      "target": "mock_aichat_aichatrestaurant",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "aiChat.ts",
+      "source_location": "L11",
+      "weight": 1.0,
+      "source": "aichat_ts",
+      "target": "mock_aichat_eventplan",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "aiChat.ts",
+      "source_location": "L18",
+      "weight": 1.0,
+      "source": "aichat_ts",
+      "target": "mock_aichat_restauranttochatcard",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "aiChat.ts",
+      "source_location": "L28",
+      "weight": 1.0,
+      "source": "aichat_ts",
+      "target": "mock_aichat_extractpartysize",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "aiChat.ts",
+      "source_location": "L36",
+      "weight": 1.0,
+      "source": "aichat_ts",
+      "target": "mock_aichat_extractoccasion",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "aiChat.ts",
+      "source_location": "L48",
+      "weight": 1.0,
+      "source": "aichat_ts",
+      "target": "mock_aichat_suggestedtime",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "aiChat.ts",
+      "source_location": "L55",
+      "weight": 1.0,
+      "source": "aichat_ts",
+      "target": "mock_aichat_pickeventplan",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "aiChat.ts",
+      "source_location": "L82",
+      "weight": 1.0,
+      "source": "aichat_ts",
+      "target": "mock_aichat_pickrestaurantsforquery",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "aiChat.ts",
+      "source_location": "L74",
+      "weight": 1.0,
+      "source": "mock_aichat_pickeventplan",
+      "target": "mock_aichat_restauranttochatcard",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "aiChat.ts",
+      "source_location": "L59",
+      "weight": 1.0,
+      "source": "mock_aichat_pickeventplan",
+      "target": "mock_aichat_extractpartysize",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "aiChat.ts",
+      "source_location": "L56",
+      "weight": 1.0,
+      "source": "mock_aichat_pickeventplan",
+      "target": "mock_aichat_extractoccasion",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "aiChat.ts",
+      "source_location": "L77",
+      "weight": 1.0,
+      "source": "mock_aichat_pickeventplan",
+      "target": "mock_aichat_suggestedtime",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "profileDisplayUser.ts",
+      "source_location": "L1",
+      "weight": 1.0,
+      "source": "profiledisplayuser_ts",
+      "target": "users_ts",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "profileDisplayUser.ts",
+      "source_location": "L1",
+      "weight": 1.0,
+      "source": "profiledisplayuser_ts",
+      "target": "mock_users_mockcustomer",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "snaps.ts",
+      "source_location": "L1",
+      "weight": 1.0,
+      "source": "snaps_ts",
+      "target": "users_ts",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "snaps.ts",
+      "source_location": "L1",
+      "weight": 1.0,
+      "source": "snaps_ts",
+      "target": "mock_users_mockcustomer",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "snaps.ts",
+      "source_location": "L2",
+      "weight": 1.0,
+      "source": "snaps_ts",
+      "target": "restaurants_ts",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "snaps.ts",
+      "source_location": "L2",
+      "weight": 1.0,
+      "source": "snaps_ts",
+      "target": "mock_restaurants_mockrestaurants",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "snaps.ts",
+      "source_location": "L56",
+      "weight": 1.0,
+      "source": "snaps_ts",
+      "target": "mock_snaps_snapuser",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "snaps.ts",
+      "source_location": "L13",
+      "weight": 1.0,
+      "source": "snaps_ts",
+      "target": "mock_snaps_snappost",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "snaps.ts",
+      "source_location": "L30",
+      "weight": 1.0,
+      "source": "snaps_ts",
+      "target": "mock_snaps_tag_pool",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "snaps.ts",
+      "source_location": "L43",
+      "weight": 1.0,
+      "source": "snaps_ts",
+      "target": "mock_snaps_dishpool",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "snaps.ts",
+      "source_location": "L70",
+      "weight": 1.0,
+      "source": "snaps_ts",
+      "target": "mock_snaps_snaprestaurants",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "snaps.ts",
+      "source_location": "L74",
+      "weight": 1.0,
+      "source": "snaps_ts",
+      "target": "mock_snaps_foodimages",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "snaps.ts",
+      "source_location": "L85",
+      "weight": 1.0,
+      "source": "snaps_ts",
+      "target": "mock_snaps_captionpool",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "snaps.ts",
+      "source_location": "L96",
+      "weight": 1.0,
+      "source": "snaps_ts",
+      "target": "mock_snaps_houroffsets",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "snaps.ts",
+      "source_location": "L101",
+      "weight": 1.0,
+      "source": "snaps_ts",
+      "target": "mock_snaps_picktags",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "snaps.ts",
+      "source_location": "L110",
+      "weight": 1.0,
+      "source": "snaps_ts",
+      "target": "mock_snaps_initialmockposts",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "snaps.ts",
+      "source_location": "L131",
+      "weight": 1.0,
+      "source": "snaps_ts",
+      "target": "mock_snaps_snapposts",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "snaps.ts",
+      "source_location": "L134",
+      "weight": 1.0,
+      "source": "snaps_ts",
+      "target": "mock_snaps_listsnapposts",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "snaps.ts",
+      "source_location": "L138",
+      "weight": 1.0,
+      "source": "snaps_ts",
+      "target": "mock_snaps_listsnappostsbyuser",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "snaps.ts",
+      "source_location": "L142",
+      "weight": 1.0,
+      "source": "snaps_ts",
+      "target": "mock_snaps_listsnappostsbyrestaurant",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "snaps.ts",
+      "source_location": "L146",
+      "weight": 1.0,
+      "source": "snaps_ts",
+      "target": "mock_snaps_createsnappost",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "snaps.ts",
+      "source_location": "L162",
+      "weight": 1.0,
+      "source": "snaps_ts",
+      "target": "mock_snaps_listfeedposts",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "snaps.ts",
+      "source_location": "L184",
+      "weight": 1.0,
+      "source": "snaps_ts",
+      "target": "mock_snaps_getrestaurantforpost",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "snaps.ts",
+      "source_location": "L189",
+      "weight": 1.0,
+      "source": "snaps_ts",
+      "target": "mock_snaps_getsnapuser",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "snaps.ts",
+      "source_location": "L193",
+      "weight": 1.0,
+      "source": "snaps_ts",
+      "target": "mock_snaps_getsnaprestaurantname",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "snaps.ts",
+      "source_location": "L197",
+      "weight": 1.0,
+      "source": "snaps_ts",
+      "target": "mock_snaps_getsnappostbyid",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "snaps.ts",
+      "source_location": "L201",
+      "weight": 1.0,
+      "source": "snaps_ts",
+      "target": "mock_snaps_deletesnappost",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "snaps.ts",
+      "source_location": "L208",
+      "weight": 1.0,
+      "source": "snaps_ts",
+      "target": "mock_snaps_timeagolabel",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "notifications.ts",
+      "source_location": "L2",
+      "weight": 1.0,
+      "source": "notifications_ts",
+      "target": "snaps_ts",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "collections.ts",
+      "source_location": "L2",
+      "weight": 1.0,
+      "source": "collections_ts",
+      "target": "snaps_ts",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "social.ts",
+      "source_location": "L1",
+      "weight": 1.0,
+      "source": "social_ts",
+      "target": "snaps_ts",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "notifications.ts",
+      "source_location": "L2",
+      "weight": 1.0,
+      "source": "notifications_ts",
+      "target": "mock_snaps_snapuser",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "social.ts",
+      "source_location": "L1",
+      "weight": 1.0,
+      "source": "social_ts",
+      "target": "mock_snaps_snapuser",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "social.ts",
+      "source_location": "L1",
+      "weight": 1.0,
+      "source": "social_ts",
+      "target": "mock_snaps_snappost",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "snaps.ts",
+      "source_location": "L139",
+      "weight": 1.0,
+      "source": "mock_snaps_listsnappostsbyuser",
+      "target": "mock_snaps_listsnapposts",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "snaps.ts",
+      "source_location": "L143",
+      "weight": 1.0,
+      "source": "mock_snaps_listsnappostsbyrestaurant",
+      "target": "mock_snaps_listsnapposts",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "social.ts",
+      "source_location": "L1",
+      "weight": 1.0,
+      "source": "social_ts",
+      "target": "mock_snaps_listsnapposts",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "social.ts",
+      "source_location": "L124",
+      "weight": 1.0,
+      "source": "mock_social_postswithindays",
+      "target": "mock_snaps_listsnapposts"
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "social.ts",
+      "source_location": "L133",
+      "weight": 1.0,
+      "source": "mock_social_listtrendingposts",
+      "target": "mock_snaps_listsnapposts"
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "social.ts",
+      "source_location": "L146",
+      "weight": 1.0,
+      "source": "mock_social_listtrendingrestaurants",
+      "target": "mock_snaps_listsnapposts"
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "social.ts",
+      "source_location": "L174",
+      "weight": 1.0,
+      "source": "mock_social_listtrendingdishes",
+      "target": "mock_snaps_listsnapposts"
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "social.ts",
+      "source_location": "L201",
+      "weight": 1.0,
+      "source": "mock_social_listpostsbytag",
+      "target": "mock_snaps_listsnapposts"
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "social.ts",
+      "source_location": "L206",
+      "weight": 1.0,
+      "source": "mock_social_listtoptags",
+      "target": "mock_snaps_listsnapposts"
+    },
+    {
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "notifications.ts",
+      "source_location": "L2",
+      "weight": 1.0,
+      "source": "notifications_ts",
+      "target": "mock_snaps_listsnappostsbyuser",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "social.ts",
+      "source_location": "L1",
+      "weight": 1.0,
+      "source": "social_ts",
+      "target": "mock_snaps_listsnappostsbyuser",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports_from",
+      "confidence": "EXTRACTED",
+      "source_file": "snaps.ts",
+      "source_location": "L171",
+      "weight": 1.0,
+      "source": "mock_snaps_listfeedposts",
+      "target": "restaurants_ts",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports_from",
+      "confidence": "EXTRACTED",
+      "source_file": "snaps.ts",
+      "source_location": "L185",
+      "weight": 1.0,
+      "source": "mock_snaps_getrestaurantforpost",
+      "target": "restaurants_ts",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "social.ts",
+      "source_location": "L1",
+      "weight": 1.0,
+      "source": "social_ts",
+      "target": "mock_snaps_getrestaurantforpost",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "collections.ts",
+      "source_location": "L2",
+      "weight": 1.0,
+      "source": "collections_ts",
+      "target": "mock_snaps_getsnappostbyid",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "social.ts",
+      "source_location": "L1",
+      "weight": 1.0,
+      "source": "social_ts",
+      "target": "mock_snaps_getsnappostbyid",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "tables.ts",
+      "source_location": "L1",
+      "weight": 1.0,
+      "source": "tables_ts",
+      "target": "mock_tables_table",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "tables.ts",
+      "source_location": "L17",
+      "weight": 1.0,
+      "source": "tables_ts",
+      "target": "mock_tables_mocktables",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "ownerApp.ts",
+      "source_location": "L1",
+      "weight": 1.0,
+      "source": "ownerapp_ts",
+      "target": "tables_ts",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "ownerApp.ts",
+      "source_location": "L1",
+      "weight": 1.0,
+      "source": "ownerapp_ts",
+      "target": "mock_tables_table",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "notifications.ts",
+      "source_location": "L1",
+      "weight": 1.0,
+      "source": "notifications_ts",
+      "target": "users_ts",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "notifications.ts",
+      "source_location": "L1",
+      "weight": 1.0,
+      "source": "notifications_ts",
+      "target": "mock_users_mockcustomer",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "notifications.ts",
+      "source_location": "L8",
+      "weight": 1.0,
+      "source": "notifications_ts",
+      "target": "mock_notifications_appnotification",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "notifications.ts",
+      "source_location": "L26",
+      "weight": 1.0,
+      "source": "notifications_ts",
+      "target": "mock_notifications_mocknotifications",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "notifications.ts",
+      "source_location": "L34",
+      "weight": 1.0,
+      "source": "notifications_ts",
+      "target": "mock_notifications_mockstaffnotifications",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "notifications.ts",
+      "source_location": "L83",
+      "weight": 1.0,
+      "source": "notifications_ts",
+      "target": "mock_notifications_socialnotification",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "notifications.ts",
+      "source_location": "L60",
+      "weight": 1.0,
+      "source": "notifications_ts",
+      "target": "mock_notifications_hoursago",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "notifications.ts",
+      "source_location": "L64",
+      "weight": 1.0,
+      "source": "notifications_ts",
+      "target": "mock_notifications_myposts",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "notifications.ts",
+      "source_location": "L68",
+      "weight": 1.0,
+      "source": "notifications_ts",
+      "target": "mock_notifications_seed",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "notifications.ts",
+      "source_location": "L85",
+      "weight": 1.0,
+      "source": "notifications_ts",
+      "target": "mock_notifications_listnotifications",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "notifications.ts",
+      "source_location": "L91",
+      "weight": 1.0,
+      "source": "notifications_ts",
+      "target": "mock_notifications_getunreadcount",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "notifications.ts",
+      "source_location": "L95",
+      "weight": 1.0,
+      "source": "notifications_ts",
+      "target": "mock_notifications_markallread",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "notifications.ts",
+      "source_location": "L103",
+      "weight": 1.0,
+      "source": "notifications_ts",
+      "target": "mock_notifications_getnotificationactor",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "notifications.ts",
+      "source_location": "L107",
+      "weight": 1.0,
+      "source": "notifications_ts",
+      "target": "mock_notifications_notificationbucket",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "notifications.ts",
+      "source_location": "L109",
+      "weight": 1.0,
+      "source": "notifications_ts",
+      "target": "mock_notifications_bucketnotifications",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "bookingAvailability.ts",
+      "source_location": "L19",
+      "weight": 1.0,
+      "source": "bookingavailability_ts",
+      "target": "mock_bookingavailability_default_shift",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "bookingAvailability.ts",
+      "source_location": "L29",
+      "weight": 1.0,
+      "source": "bookingavailability_ts",
+      "target": "mock_bookingavailability_mock_shifts",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "bookingAvailability.ts",
+      "source_location": "L35",
+      "weight": 1.0,
+      "source": "bookingavailability_ts",
+      "target": "mock_bookingavailability_getmockshiftconfig",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "bookingAvailability.ts",
+      "source_location": "L55",
+      "weight": 1.0,
+      "source": "bookingavailability_ts",
+      "target": "mock_bookingavailability_pad",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "bookingAvailability.ts",
+      "source_location": "L59",
+      "weight": 1.0,
+      "source": "bookingavailability_ts",
+      "target": "mock_bookingavailability_startofday",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "bookingAvailability.ts",
+      "source_location": "L72",
+      "weight": 1.0,
+      "source": "bookingavailability_ts",
+      "target": "mock_bookingavailability_hash33",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "bookingAvailability.ts",
+      "source_location": "L79",
+      "weight": 1.0,
+      "source": "bookingavailability_ts",
+      "target": "mock_bookingavailability_effectiveblackouts",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "bookingAvailability.ts",
+      "source_location": "L88",
+      "weight": 1.0,
+      "source": "bookingavailability_ts",
+      "target": "mock_bookingavailability_getmockcalendarmonth",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "bookingAvailability.ts",
+      "source_location": "L150",
+      "weight": 1.0,
+      "source": "bookingavailability_ts",
+      "target": "mock_bookingavailability_isdateselectable",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "bookingAvailability.ts",
+      "source_location": "L167",
+      "weight": 1.0,
+      "source": "bookingavailability_ts",
+      "target": "mock_bookingavailability_ismockdatebookable",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "bookingAvailability.ts",
+      "source_location": "L179",
+      "weight": 1.0,
+      "source": "bookingavailability_ts",
+      "target": "mock_bookingavailability_nextmockbookabledatekey",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "bookingAvailability.ts",
+      "source_location": "L192",
+      "weight": 1.0,
+      "source": "bookingavailability_ts",
+      "target": "mock_bookingavailability_coercebookabledatekey",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "bookingAvailability.ts",
+      "source_location": "L197",
+      "weight": 1.0,
+      "source": "bookingavailability_ts",
+      "target": "mock_bookingavailability_formatslotlabel",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "bookingAvailability.ts",
+      "source_location": "L205",
+      "weight": 1.0,
+      "source": "bookingavailability_ts",
+      "target": "mock_bookingavailability_getmocktimeslots",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "bookingAvailability.ts",
+      "source_location": "L93",
+      "weight": 1.0,
+      "source": "mock_bookingavailability_getmockcalendarmonth",
+      "target": "mock_bookingavailability_getmockshiftconfig",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "bookingAvailability.ts",
+      "source_location": "L168",
+      "weight": 1.0,
+      "source": "mock_bookingavailability_ismockdatebookable",
+      "target": "mock_bookingavailability_getmockshiftconfig",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "bookingAvailability.ts",
+      "source_location": "L210",
+      "weight": 1.0,
+      "source": "mock_bookingavailability_getmocktimeslots",
+      "target": "mock_bookingavailability_getmockshiftconfig",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "bookingAvailability.ts",
+      "source_location": "L256",
+      "weight": 1.0,
+      "source": "mock_bookingavailability_getmocktimeslots",
+      "target": "mock_bookingavailability_pad",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "bookingAvailability.ts",
+      "source_location": "L95",
+      "weight": 1.0,
+      "source": "mock_bookingavailability_getmockcalendarmonth",
+      "target": "mock_bookingavailability_startofday",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "bookingAvailability.ts",
+      "source_location": "L156",
+      "weight": 1.0,
+      "source": "mock_bookingavailability_isdateselectable",
+      "target": "mock_bookingavailability_startofday",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "bookingAvailability.ts",
+      "source_location": "L82",
+      "weight": 1.0,
+      "source": "mock_bookingavailability_effectiveblackouts",
+      "target": "mock_bookingavailability_hash33",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "bookingAvailability.ts",
+      "source_location": "L258",
+      "weight": 1.0,
+      "source": "mock_bookingavailability_getmocktimeslots",
+      "target": "mock_bookingavailability_hash33",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "bookingAvailability.ts",
+      "source_location": "L169",
+      "weight": 1.0,
+      "source": "mock_bookingavailability_ismockdatebookable",
+      "target": "mock_bookingavailability_effectiveblackouts",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "bookingAvailability.ts",
+      "source_location": "L211",
+      "weight": 1.0,
+      "source": "mock_bookingavailability_getmocktimeslots",
+      "target": "mock_bookingavailability_effectiveblackouts",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "bookingAvailability.ts",
+      "source_location": "L115",
+      "weight": 1.0,
+      "source": "mock_bookingavailability_getmockcalendarmonth",
+      "target": "mock_bookingavailability_ismockdatebookable",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "bookingAvailability.ts",
+      "source_location": "L172",
+      "weight": 1.0,
+      "source": "mock_bookingavailability_ismockdatebookable",
+      "target": "mock_bookingavailability_isdateselectable",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "bookingAvailability.ts",
+      "source_location": "L214",
+      "weight": 1.0,
+      "source": "mock_bookingavailability_getmocktimeslots",
+      "target": "mock_bookingavailability_isdateselectable",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "bookingAvailability.ts",
+      "source_location": "L186",
+      "weight": 1.0,
+      "source": "mock_bookingavailability_nextmockbookabledatekey",
+      "target": "mock_bookingavailability_ismockdatebookable",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "bookingAvailability.ts",
+      "source_location": "L193",
+      "weight": 1.0,
+      "source": "mock_bookingavailability_coercebookabledatekey",
+      "target": "mock_bookingavailability_ismockdatebookable",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "bookingAvailability.ts",
+      "source_location": "L194",
+      "weight": 1.0,
+      "source": "mock_bookingavailability_coercebookabledatekey",
+      "target": "mock_bookingavailability_nextmockbookabledatekey",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "bookingAvailability.ts",
+      "source_location": "L257",
+      "weight": 1.0,
+      "source": "mock_bookingavailability_getmocktimeslots",
+      "target": "mock_bookingavailability_formatslotlabel",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "mapRestaurants.ts",
+      "source_location": "L2",
+      "weight": 1.0,
+      "source": "maprestaurants_ts",
+      "target": "restaurants_ts",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "mapRestaurants.ts",
+      "source_location": "L1",
+      "weight": 1.0,
+      "source": "maprestaurants_ts",
+      "target": "mock_restaurants_restaurant",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "mapRestaurants.ts",
+      "source_location": "L2",
+      "weight": 1.0,
+      "source": "maprestaurants_ts",
+      "target": "mock_restaurants_mockrestaurants",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "mapRestaurants.ts",
+      "source_location": "L5",
+      "weight": 1.0,
+      "source": "maprestaurants_ts",
+      "target": "mock_maprestaurants_milton_home",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "mapRestaurants.ts",
+      "source_location": "L10",
+      "weight": 1.0,
+      "source": "maprestaurants_ts",
+      "target": "mock_maprestaurants_milton_areas",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "mapRestaurants.ts",
+      "source_location": "L28",
+      "weight": 1.0,
+      "source": "maprestaurants_ts",
+      "target": "mock_maprestaurants_milton_addresses",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "mapRestaurants.ts",
+      "source_location": "L46",
+      "weight": 1.0,
+      "source": "maprestaurants_ts",
+      "target": "mock_maprestaurants_offsets",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "mapRestaurants.ts",
+      "source_location": "L64",
+      "weight": 1.0,
+      "source": "maprestaurants_ts",
+      "target": "mock_maprestaurants_mockmaprestaurants",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "collections.ts",
+      "source_location": "L1",
+      "weight": 1.0,
+      "source": "collections_ts",
+      "target": "users_ts",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "collections.ts",
+      "source_location": "L1",
+      "weight": 1.0,
+      "source": "collections_ts",
+      "target": "mock_users_mockcustomer",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "collections.ts",
+      "source_location": "L15",
+      "weight": 1.0,
+      "source": "collections_ts",
+      "target": "mock_collections_seedcollections",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "collections.ts",
+      "source_location": "L34",
+      "weight": 1.0,
+      "source": "collections_ts",
+      "target": "mock_collections_collectionsbyowner",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "collections.ts",
+      "source_location": "L37",
+      "weight": 1.0,
+      "source": "collections_ts",
+      "target": "mock_collections_getorinit",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "collections.ts",
+      "source_location": "L42",
+      "weight": 1.0,
+      "source": "collections_ts",
+      "target": "mock_collections_listcollections",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "collections.ts",
+      "source_location": "L48",
+      "weight": 1.0,
+      "source": "collections_ts",
+      "target": "mock_collections_getcollectionbyid",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "collections.ts",
+      "source_location": "L52",
+      "weight": 1.0,
+      "source": "collections_ts",
+      "target": "mock_collections_createcollection",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "collections.ts",
+      "source_location": "L64",
+      "weight": 1.0,
+      "source": "collections_ts",
+      "target": "mock_collections_addposttocollection",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "collections.ts",
+      "source_location": "L74",
+      "weight": 1.0,
+      "source": "collections_ts",
+      "target": "mock_collections_removepostfromcollection",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "collections.ts",
+      "source_location": "L83",
+      "weight": 1.0,
+      "source": "collections_ts",
+      "target": "mock_collections_ispostinanycollection",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "collections.ts",
+      "source_location": "L87",
+      "weight": 1.0,
+      "source": "collections_ts",
+      "target": "mock_collections_getcollectionscontainingpost",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "collections.ts",
+      "source_location": "L91",
+      "weight": 1.0,
+      "source": "collections_ts",
+      "target": "mock_collections_getcollectionposts",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "collections.ts",
+      "source_location": "L43",
+      "weight": 1.0,
+      "source": "mock_collections_listcollections",
+      "target": "mock_collections_getorinit",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "collections.ts",
+      "source_location": "L49",
+      "weight": 1.0,
+      "source": "mock_collections_getcollectionbyid",
+      "target": "mock_collections_getorinit",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "collections.ts",
+      "source_location": "L60",
+      "weight": 1.0,
+      "source": "mock_collections_createcollection",
+      "target": "mock_collections_getorinit",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "collections.ts",
+      "source_location": "L65",
+      "weight": 1.0,
+      "source": "mock_collections_addposttocollection",
+      "target": "mock_collections_getorinit",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "collections.ts",
+      "source_location": "L75",
+      "weight": 1.0,
+      "source": "mock_collections_removepostfromcollection",
+      "target": "mock_collections_getorinit",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "collections.ts",
+      "source_location": "L84",
+      "weight": 1.0,
+      "source": "mock_collections_ispostinanycollection",
+      "target": "mock_collections_getorinit",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "collections.ts",
+      "source_location": "L88",
+      "weight": 1.0,
+      "source": "mock_collections_getcollectionscontainingpost",
+      "target": "mock_collections_getorinit",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "collections.ts",
+      "source_location": "L92",
+      "weight": 1.0,
+      "source": "mock_collections_getcollectionposts",
+      "target": "mock_collections_getcollectionbyid",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "discoverPresentation.ts",
+      "source_location": "L2",
+      "weight": 1.0,
+      "source": "discoverpresentation_ts",
+      "target": "restaurants_ts",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "discoverPresentation.ts",
+      "source_location": "L2",
+      "weight": 1.0,
+      "source": "discoverpresentation_ts",
+      "target": "mock_restaurants_restaurant",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "discoverPresentation.ts",
+      "source_location": "L4",
+      "weight": 1.0,
+      "source": "discoverpresentation_ts",
+      "target": "mock_discoverpresentation_discoverbadgekind",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "discoverPresentation.ts",
+      "source_location": "L7",
+      "weight": 1.0,
+      "source": "discoverpresentation_ts",
+      "target": "mock_discoverpresentation_pickfeaturedrestaurant",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "discoverPresentation.ts",
+      "source_location": "L14",
+      "weight": 1.0,
+      "source": "discoverpresentation_ts",
+      "target": "mock_discoverpresentation_slot_times",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "discoverPresentation.ts",
+      "source_location": "L17",
+      "weight": 1.0,
+      "source": "discoverpresentation_ts",
+      "target": "mock_discoverpresentation_geturgencycopy",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "discoverPresentation.ts",
+      "source_location": "L38",
+      "weight": 1.0,
+      "source": "discoverpresentation_ts",
+      "target": "mock_discoverpresentation_getdiscoverbadges",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "discoverPresentation.ts",
+      "source_location": "L46",
+      "weight": 1.0,
+      "source": "discoverpresentation_ts",
+      "target": "mock_discoverpresentation_shorttagline",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "INFERRED",
+      "confidence_score": 0.8,
+      "source_file": "discoverPresentation.ts",
+      "source_location": "L21",
+      "weight": 1.0,
+      "source": "mock_discoverpresentation_geturgencycopy",
+      "target": "mock_events_t"
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "orders.ts",
+      "source_location": "L1",
+      "weight": 1.0,
+      "source": "orders_ts",
+      "target": "mock_orders_orderitem",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "orders.ts",
+      "source_location": "L13",
+      "weight": 1.0,
+      "source": "orders_ts",
+      "target": "mock_orders_order",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "orders.ts",
+      "source_location": "L29",
+      "weight": 1.0,
+      "source": "orders_ts",
+      "target": "mock_orders_mockorders",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "events.ts",
+      "source_location": "L1",
+      "weight": 1.0,
+      "source": "events_ts",
+      "target": "restaurants_ts",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "events.ts",
+      "source_location": "L1",
+      "weight": 1.0,
+      "source": "events_ts",
+      "target": "mock_restaurants_mockrestaurants",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "events.ts",
+      "source_location": "L3",
+      "weight": 1.0,
+      "source": "events_ts",
+      "target": "mock_events_eventtype",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "events.ts",
+      "source_location": "L43",
+      "weight": 1.0,
+      "source": "events_ts",
+      "target": "mock_events_diningevent",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "events.ts",
+      "source_location": "L21",
+      "weight": 1.0,
+      "source": "events_ts",
+      "target": "mock_events_datekeyforoffset",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "events.ts",
+      "source_location": "L31",
+      "weight": 1.0,
+      "source": "events_ts",
+      "target": "mock_events_nextweekdayoffset",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "events.ts",
+      "source_location": "L37",
+      "weight": 1.0,
+      "source": "events_ts",
+      "target": "mock_events_t",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "events.ts",
+      "source_location": "L38",
+      "weight": 1.0,
+      "source": "events_ts",
+      "target": "mock_events_fri",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "events.ts",
+      "source_location": "L39",
+      "weight": 1.0,
+      "source": "events_ts",
+      "target": "mock_events_sat",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "events.ts",
+      "source_location": "L40",
+      "weight": 1.0,
+      "source": "events_ts",
+      "target": "mock_events_sun",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "events.ts",
+      "source_location": "L41",
+      "weight": 1.0,
+      "source": "events_ts",
+      "target": "mock_events_mon",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "events.ts",
+      "source_location": "L226",
+      "weight": 1.0,
+      "source": "events_ts",
+      "target": "mock_events_listevents",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "events.ts",
+      "source_location": "L230",
+      "weight": 1.0,
+      "source": "events_ts",
+      "target": "mock_events_geteventbyid",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "events.ts",
+      "source_location": "L234",
+      "weight": 1.0,
+      "source": "events_ts",
+      "target": "mock_events_iseventsaved",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "events.ts",
+      "source_location": "L239",
+      "weight": 1.0,
+      "source": "events_ts",
+      "target": "mock_events_togglesaveevent",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "events.ts",
+      "source_location": "L250",
+      "weight": 1.0,
+      "source": "events_ts",
+      "target": "mock_events_getrestaurantforevent",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "events.ts",
+      "source_location": "L254",
+      "weight": 1.0,
+      "source": "events_ts",
+      "target": "mock_events_datefilter",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "events.ts",
+      "source_location": "L256",
+      "weight": 1.0,
+      "source": "events_ts",
+      "target": "mock_events_filterevents",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "reviewSnap.ts",
+      "source_location": "L1",
+      "weight": 1.0,
+      "source": "reviewsnap_ts",
+      "target": "mock_reviewsnap_restaurantvisitstatus",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "reviewSnap.ts",
+      "source_location": "L3",
+      "weight": 1.0,
+      "source": "reviewsnap_ts",
+      "target": "mock_reviewsnap_reviewrestaurantoption",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "reviewSnap.ts",
+      "source_location": "L12",
+      "weight": 1.0,
+      "source": "reviewsnap_ts",
+      "target": "mock_reviewsnap_snaprewardpoints",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "reviewSnap.ts",
+      "source_location": "L16",
+      "weight": 1.0,
+      "source": "reviewsnap_ts",
+      "target": "mock_reviewsnap_currentrestaurants",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "reviewSnap.ts",
+      "source_location": "L35",
+      "weight": 1.0,
+      "source": "reviewsnap_ts",
+      "target": "mock_reviewsnap_pastrestaurants",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "restaurants.ts",
+      "source_location": "L4",
+      "weight": 1.0,
+      "source": "restaurants_ts",
+      "target": "mock_restaurants_discoversectionkey",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "restaurants.ts",
+      "source_location": "L22",
+      "weight": 1.0,
+      "source": "restaurants_ts",
+      "target": "mock_restaurants_restaurantweekdaykey",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "restaurants.ts",
+      "source_location": "L23",
+      "weight": 1.0,
+      "source": "restaurants_ts",
+      "target": "mock_restaurants_restauranthoursrange",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "restaurants.ts",
+      "source_location": "L24",
+      "weight": 1.0,
+      "source": "restaurants_ts",
+      "target": "mock_restaurants_restaurantspecialhours",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "restaurants.ts",
+      "source_location": "L32",
+      "weight": 1.0,
+      "source": "restaurants_ts",
+      "target": "mock_restaurants_restauranthoursjson",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "restaurants.ts",
+      "source_location": "L36",
+      "weight": 1.0,
+      "source": "restaurants_ts",
+      "target": "mock_restaurants_restaurant",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "restaurants.ts",
+      "source_location": "L73",
+      "weight": 1.0,
+      "source": "restaurants_ts",
+      "target": "mock_restaurants_defaulthours",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "restaurants.ts",
+      "source_location": "L83",
+      "weight": 1.0,
+      "source": "restaurants_ts",
+      "target": "mock_restaurants_mockrestaurants",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "users.ts",
+      "source_location": "L1",
+      "weight": 1.0,
+      "source": "users_ts",
+      "target": "mock_users_userrole",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "users.ts",
+      "source_location": "L3",
+      "weight": 1.0,
+      "source": "users_ts",
+      "target": "mock_users_userprofile",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "users.ts",
+      "source_location": "L26",
+      "weight": 1.0,
+      "source": "users_ts",
+      "target": "mock_users_mockcustomer",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "users.ts",
+      "source_location": "L47",
+      "weight": 1.0,
+      "source": "users_ts",
+      "target": "mock_users_mockowner",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "social.ts",
+      "source_location": "L10",
+      "weight": 1.0,
+      "source": "social_ts",
+      "target": "users_ts",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "social.ts",
+      "source_location": "L10",
+      "weight": 1.0,
+      "source": "social_ts",
+      "target": "mock_users_mockcustomer",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "social.ts",
+      "source_location": "L13",
+      "weight": 1.0,
+      "source": "social_ts",
+      "target": "mock_social_followgraph",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "social.ts",
+      "source_location": "L27",
+      "weight": 1.0,
+      "source": "social_ts",
+      "target": "mock_social_likedposts",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "social.ts",
+      "source_location": "L32",
+      "weight": 1.0,
+      "source": "social_ts",
+      "target": "mock_social_savedposts",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "social.ts",
+      "source_location": "L36",
+      "weight": 1.0,
+      "source": "social_ts",
+      "target": "mock_social_getorcreate",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "social.ts",
+      "source_location": "L41",
+      "weight": 1.0,
+      "source": "social_ts",
+      "target": "mock_social_isfollowing",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "social.ts",
+      "source_location": "L45",
+      "weight": 1.0,
+      "source": "social_ts",
+      "target": "mock_social_follow",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "social.ts",
+      "source_location": "L49",
+      "weight": 1.0,
+      "source": "social_ts",
+      "target": "mock_social_unfollow",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "social.ts",
+      "source_location": "L53",
+      "weight": 1.0,
+      "source": "social_ts",
+      "target": "mock_social_getfollowingids",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "social.ts",
+      "source_location": "L57",
+      "weight": 1.0,
+      "source": "social_ts",
+      "target": "mock_social_getfollowerids",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "social.ts",
+      "source_location": "L63",
+      "weight": 1.0,
+      "source": "social_ts",
+      "target": "mock_social_getfollowingcount",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "social.ts",
+      "source_location": "L67",
+      "weight": 1.0,
+      "source": "social_ts",
+      "target": "mock_social_getfollowercount",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "social.ts",
+      "source_location": "L71",
+      "weight": 1.0,
+      "source": "social_ts",
+      "target": "mock_social_togglelike",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "social.ts",
+      "source_location": "L78",
+      "weight": 1.0,
+      "source": "social_ts",
+      "target": "mock_social_isliked",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "social.ts",
+      "source_location": "L82",
+      "weight": 1.0,
+      "source": "social_ts",
+      "target": "mock_social_togglesave",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "social.ts",
+      "source_location": "L89",
+      "weight": 1.0,
+      "source": "social_ts",
+      "target": "mock_social_issaved",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "social.ts",
+      "source_location": "L93",
+      "weight": 1.0,
+      "source": "social_ts",
+      "target": "mock_social_getlikedposts",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "social.ts",
+      "source_location": "L99",
+      "weight": 1.0,
+      "source": "social_ts",
+      "target": "mock_social_getsavedposts",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "social.ts",
+      "source_location": "L105",
+      "weight": 1.0,
+      "source": "social_ts",
+      "target": "mock_social_listfollowingposts",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "social.ts",
+      "source_location": "L112",
+      "weight": 1.0,
+      "source": "social_ts",
+      "target": "mock_social_searchusers",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "social.ts",
+      "source_location": "L118",
+      "weight": 1.0,
+      "source": "social_ts",
+      "target": "mock_social_getallusers",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "social.ts",
+      "source_location": "L122",
+      "weight": 1.0,
+      "source": "social_ts",
+      "target": "mock_social_postswithindays",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "social.ts",
+      "source_location": "L127",
+      "weight": 1.0,
+      "source": "social_ts",
+      "target": "mock_social_engagementscore",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "social.ts",
+      "source_location": "L131",
+      "weight": 1.0,
+      "source": "social_ts",
+      "target": "mock_social_listtrendingposts",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "social.ts",
+      "source_location": "L137",
+      "weight": 1.0,
+      "source": "social_ts",
+      "target": "mock_social_trendingrestaurant",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "social.ts",
+      "source_location": "L144",
+      "weight": 1.0,
+      "source": "social_ts",
+      "target": "mock_social_listtrendingrestaurants",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "social.ts",
+      "source_location": "L165",
+      "weight": 1.0,
+      "source": "social_ts",
+      "target": "mock_social_trendingdish",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "social.ts",
+      "source_location": "L172",
+      "weight": 1.0,
+      "source": "social_ts",
+      "target": "mock_social_listtrendingdishes",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "social.ts",
+      "source_location": "L194",
+      "weight": 1.0,
+      "source": "social_ts",
+      "target": "mock_social_normalizetag",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "social.ts",
+      "source_location": "L199",
+      "weight": 1.0,
+      "source": "social_ts",
+      "target": "mock_social_listpostsbytag",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "social.ts",
+      "source_location": "L204",
+      "weight": 1.0,
+      "source": "social_ts",
+      "target": "mock_social_listtoptags",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "social.ts",
+      "source_location": "L42",
+      "weight": 1.0,
+      "source": "mock_social_isfollowing",
+      "target": "mock_social_getorcreate",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "social.ts",
+      "source_location": "L46",
+      "weight": 1.0,
+      "source": "mock_social_follow",
+      "target": "mock_social_getorcreate",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "social.ts",
+      "source_location": "L50",
+      "weight": 1.0,
+      "source": "mock_social_unfollow",
+      "target": "mock_social_getorcreate",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "social.ts",
+      "source_location": "L54",
+      "weight": 1.0,
+      "source": "mock_social_getfollowingids",
+      "target": "mock_social_getorcreate",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "social.ts",
+      "source_location": "L72",
+      "weight": 1.0,
+      "source": "mock_social_togglelike",
+      "target": "mock_social_getorcreate",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "social.ts",
+      "source_location": "L79",
+      "weight": 1.0,
+      "source": "mock_social_isliked",
+      "target": "mock_social_getorcreate",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "social.ts",
+      "source_location": "L83",
+      "weight": 1.0,
+      "source": "mock_social_togglesave",
+      "target": "mock_social_getorcreate",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "social.ts",
+      "source_location": "L90",
+      "weight": 1.0,
+      "source": "mock_social_issaved",
+      "target": "mock_social_getorcreate",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "social.ts",
+      "source_location": "L94",
+      "weight": 1.0,
+      "source": "mock_social_getlikedposts",
+      "target": "mock_social_getorcreate",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "social.ts",
+      "source_location": "L100",
+      "weight": 1.0,
+      "source": "mock_social_getsavedposts",
+      "target": "mock_social_getorcreate",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "social.ts",
+      "source_location": "L64",
+      "weight": 1.0,
+      "source": "mock_social_getfollowingcount",
+      "target": "mock_social_getfollowingids",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "social.ts",
+      "source_location": "L106",
+      "weight": 1.0,
+      "source": "mock_social_listfollowingposts",
+      "target": "mock_social_getfollowingids",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "social.ts",
+      "source_location": "L68",
+      "weight": 1.0,
+      "source": "mock_social_getfollowercount",
+      "target": "mock_social_getfollowerids",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "social.ts",
+      "source_location": "L132",
+      "weight": 1.0,
+      "source": "mock_social_listtrendingposts",
+      "target": "mock_social_postswithindays",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "social.ts",
+      "source_location": "L145",
+      "weight": 1.0,
+      "source": "mock_social_listtrendingrestaurants",
+      "target": "mock_social_postswithindays",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "social.ts",
+      "source_location": "L173",
+      "weight": 1.0,
+      "source": "mock_social_listtrendingdishes",
+      "target": "mock_social_postswithindays",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "social.ts",
+      "source_location": "L200",
+      "weight": 1.0,
+      "source": "mock_social_listpostsbytag",
+      "target": "mock_social_normalizetag",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "sessions.ts",
+      "source_location": "L1",
+      "weight": 1.0,
+      "source": "sessions_ts",
+      "target": "mock_sessions_session",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "sessions.ts",
+      "source_location": "L10",
+      "weight": 1.0,
+      "source": "sessions_ts",
+      "target": "mock_sessions_mocksessions",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "guests.ts",
+      "source_location": "L4",
+      "weight": 1.0,
+      "source": "guests_ts",
+      "target": "mock_guests_loyaltytier",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "guests.ts",
+      "source_location": "L6",
+      "weight": 1.0,
+      "source": "guests_ts",
+      "target": "mock_guests_guestloyaltytx",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "guests.ts",
+      "source_location": "L14",
+      "weight": 1.0,
+      "source": "guests_ts",
+      "target": "mock_guests_guestnote",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "guests.ts",
+      "source_location": "L23",
+      "weight": 1.0,
+      "source": "guests_ts",
+      "target": "mock_guests_guestsurvey",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "guests.ts",
+      "source_location": "L33",
+      "weight": 1.0,
+      "source": "guests_ts",
+      "target": "mock_guests_guestallergyincident",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "guests.ts",
+      "source_location": "L42",
+      "weight": 1.0,
+      "source": "guests_ts",
+      "target": "mock_guests_guestcommlog",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "guests.ts",
+      "source_location": "L112",
+      "weight": 1.0,
+      "source": "guests_ts",
+      "target": "mock_guests_ownerguest",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "guests.ts",
+      "source_location": "L475",
+      "weight": 1.0,
+      "source": "guests_ts",
+      "target": "mock_guests_findguest",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "guests.ts",
+      "source_location": "L479",
+      "weight": 1.0,
+      "source": "guests_ts",
+      "target": "mock_guests_isatrisk",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "guests.ts",
+      "source_location": "L483",
+      "weight": 1.0,
+      "source": "guests_ts",
+      "target": "mock_guests_isnewguest",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "guests.ts",
+      "source_location": "L489",
+      "weight": 1.0,
+      "source": "guests_ts",
+      "target": "mock_guests_isregular",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "ownerApp.ts",
+      "source_location": "L3",
+      "weight": 1.0,
+      "source": "ownerapp_ts",
+      "target": "mock_ownerapp_revenueperiod",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "ownerApp.ts",
+      "source_location": "L7",
+      "weight": 1.0,
+      "source": "ownerapp_ts",
+      "target": "mock_ownerapp_tonight_summary",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "ownerApp.ts",
+      "source_location": "L14",
+      "weight": 1.0,
+      "source": "ownerapp_ts",
+      "target": "mock_ownerapp_live_metrics",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "ownerApp.ts",
+      "source_location": "L21",
+      "weight": 1.0,
+      "source": "ownerapp_ts",
+      "target": "mock_ownerapp_livefeedkind",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "ownerApp.ts",
+      "source_location": "L23",
+      "weight": 1.0,
+      "source": "ownerapp_ts",
+      "target": "mock_ownerapp_livefeeditem",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "ownerApp.ts",
+      "source_location": "L30",
+      "weight": 1.0,
+      "source": "ownerapp_ts",
+      "target": "mock_ownerapp_live_feed",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "ownerApp.ts",
+      "source_location": "L38",
+      "weight": 1.0,
+      "source": "ownerapp_ts",
+      "target": "mock_ownerapp_owneralert",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "ownerApp.ts",
+      "source_location": "L44",
+      "weight": 1.0,
+      "source": "ownerapp_ts",
+      "target": "mock_ownerapp_owner_alerts_strip",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "ownerApp.ts",
+      "source_location": "L55",
+      "weight": 1.0,
+      "source": "ownerapp_ts",
+      "target": "mock_ownerapp_operationpulse",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "ownerApp.ts",
+      "source_location": "L60",
+      "weight": 1.0,
+      "source": "ownerapp_ts",
+      "target": "mock_ownerapp_marketingpromo",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "ownerApp.ts",
+      "source_location": "L66",
+      "weight": 1.0,
+      "source": "ownerapp_ts",
+      "target": "mock_ownerapp_marketing_active",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "ownerApp.ts",
+      "source_location": "L75",
+      "weight": 1.0,
+      "source": "ownerapp_ts",
+      "target": "mock_ownerapp_booking_trend_week",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "ownerApp.ts",
+      "source_location": "L86",
+      "weight": 1.0,
+      "source": "ownerapp_ts",
+      "target": "mock_ownerapp_revenue_data",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "ownerApp.ts",
+      "source_location": "L99",
+      "weight": 1.0,
+      "source": "ownerapp_ts",
+      "target": "mock_ownerapp_ai_insights_home",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "ownerApp.ts",
+      "source_location": "L106",
+      "weight": 1.0,
+      "source": "ownerapp_ts",
+      "target": "mock_ownerapp_timelinestatus",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "ownerApp.ts",
+      "source_location": "L108",
+      "weight": 1.0,
+      "source": "ownerapp_ts",
+      "target": "mock_ownerapp_livetimelineentry",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "ownerApp.ts",
+      "source_location": "L118",
+      "weight": 1.0,
+      "source": "ownerapp_ts",
+      "target": "mock_ownerapp_live_timeline",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "ownerApp.ts",
+      "source_location": "L163",
+      "weight": 1.0,
+      "source": "ownerapp_ts",
+      "target": "mock_ownerapp_ownerfloortable",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "ownerApp.ts",
+      "source_location": "L177",
+      "weight": 1.0,
+      "source": "ownerapp_ts",
+      "target": "mock_ownerapp_resfilter",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "ownerApp.ts",
+      "source_location": "L224",
+      "weight": 1.0,
+      "source": "ownerapp_ts",
+      "target": "mock_ownerapp_owner_reservations",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "ownerApp.ts",
+      "source_location": "L193",
+      "weight": 1.0,
+      "source": "ownerapp_ts",
+      "target": "mock_ownerapp_walkinqueueitem",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "ownerApp.ts",
+      "source_location": "L200",
+      "weight": 1.0,
+      "source": "ownerapp_ts",
+      "target": "mock_ownerapp_walkin_queue",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "ownerApp.ts",
+      "source_location": "L207",
+      "weight": 1.0,
+      "source": "ownerapp_ts",
+      "target": "mock_ownerapp_waitlistentrystatus",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "ownerApp.ts",
+      "source_location": "L209",
+      "weight": 1.0,
+      "source": "ownerapp_ts",
+      "target": "mock_ownerapp_waitlistentry",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "ownerApp.ts",
+      "source_location": "L218",
+      "weight": 1.0,
+      "source": "ownerapp_ts",
+      "target": "mock_ownerapp_waitlist_entries",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "ownerApp.ts",
+      "source_location": "L235",
+      "weight": 1.0,
+      "source": "ownerapp_ts",
+      "target": "mock_ownerapp_analytics_metrics",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "ownerApp.ts",
+      "source_location": "L247",
+      "weight": 1.0,
+      "source": "ownerapp_ts",
+      "target": "mock_ownerapp_analytics_insights",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "ownerApp.ts",
+      "source_location": "L254",
+      "weight": 1.0,
+      "source": "ownerapp_ts",
+      "target": "mock_ownerapp_busy_heatmap",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "ownerApp.ts",
+      "source_location": "L257",
+      "weight": 1.0,
+      "source": "ownerapp_ts",
+      "target": "mock_ownerapp_crmguest",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "ownerApp.ts",
+      "source_location": "L290",
+      "weight": 1.0,
+      "source": "ownerapp_ts",
+      "target": "mock_ownerapp_crmguestrow",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "ownerApp.ts",
+      "source_location": "L292",
+      "weight": 1.0,
+      "source": "ownerapp_ts",
+      "target": "mock_ownerapp_crm_ai_insights",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "ownerApp.ts",
+      "source_location": "L320",
+      "weight": 1.0,
+      "source": "ownerapp_ts",
+      "target": "mock_ownerapp_crm_spotlight",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "ownerApp.ts",
+      "source_location": "L499",
+      "weight": 1.0,
+      "source": "ownerapp_ts",
+      "target": "mock_ownerapp_ai_opportunities",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "ownerApp.ts",
+      "source_location": "L504",
+      "weight": 1.0,
+      "source": "ownerapp_ts",
+      "target": "mock_ownerapp_ai_alerts",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "ownerApp.ts",
+      "source_location": "L506",
+      "weight": 1.0,
+      "source": "ownerapp_ts",
+      "target": "mock_ownerapp_ai_suggestions",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "ownerApp.ts",
+      "source_location": "L524",
+      "weight": 1.0,
+      "source": "ownerapp_ts",
+      "target": "mock_ownerapp_kdsticket",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "ownerApp.ts",
+      "source_location": "L533",
+      "weight": 1.0,
+      "source": "ownerapp_ts",
+      "target": "mock_ownerapp_staffrostermember",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "ownerApp.ts",
+      "source_location": "L541",
+      "weight": 1.0,
+      "source": "ownerapp_ts",
+      "target": "mock_ownerapp_staff_roster",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "ownerApp.ts",
+      "source_location": "L555",
+      "weight": 1.0,
+      "source": "ownerapp_ts",
+      "target": "mock_ownerapp_expenseline",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "ownerApp.ts",
+      "source_location": "L568",
+      "weight": 1.0,
+      "source": "ownerapp_ts",
+      "target": "mock_ownerapp_today",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "ownerApp.ts",
+      "source_location": "L569",
+      "weight": 1.0,
+      "source": "ownerapp_ts",
+      "target": "mock_ownerapp_offsetisodate",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "ownerApp.ts",
+      "source_location": "L575",
+      "weight": 1.0,
+      "source": "ownerapp_ts",
+      "target": "mock_ownerapp_makedemoexpense",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "ownerApp.ts",
+      "source_location": "L597",
+      "weight": 1.0,
+      "source": "ownerapp_ts",
+      "target": "mock_ownerapp_demo_expenses",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "ownerApp.ts",
+      "source_location": "L666",
+      "weight": 1.0,
+      "source": "ownerapp_ts",
+      "target": "mock_ownerapp_owner_events",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "ownerApp.ts",
+      "source_location": "L672",
+      "weight": 1.0,
+      "source": "ownerapp_ts",
+      "target": "mock_ownerapp_exportoptionrow",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "ownerApp.ts",
+      "source_location": "L678",
+      "weight": 1.0,
+      "source": "ownerapp_ts",
+      "target": "mock_ownerapp_export_options",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "ownerApp.ts",
+      "source_location": "L686",
+      "weight": 1.0,
+      "source": "ownerapp_ts",
+      "target": "mock_ownerapp_promostatus",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "ownerApp.ts",
+      "source_location": "L689",
+      "weight": 1.0,
+      "source": "ownerapp_ts",
+      "target": "mock_ownerapp_promoattentionreason",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "ownerApp.ts",
+      "source_location": "L695",
+      "weight": 1.0,
+      "source": "ownerapp_ts",
+      "target": "mock_ownerapp_promotype",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "ownerApp.ts",
+      "source_location": "L1055",
+      "weight": 1.0,
+      "source": "ownerapp_ts",
+      "target": "mock_ownerapp_ownerpromorow",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "ownerApp.ts",
+      "source_location": "L1062",
+      "weight": 1.0,
+      "source": "ownerapp_ts",
+      "target": "mock_ownerapp_businesshoursrow",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "ownerApp.ts",
+      "source_location": "L1071",
+      "weight": 1.0,
+      "source": "ownerapp_ts",
+      "target": "mock_ownerapp_owner_business_hours",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "ownerApp.ts",
+      "source_location": "L1096",
+      "weight": 1.0,
+      "source": "ownerapp_ts",
+      "target": "mock_ownerapp_ownerbusinessprofile",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "ownerApp.ts",
+      "source_location": "L1116",
+      "weight": 1.0,
+      "source": "ownerapp_ts",
+      "target": "mock_ownerapp_bookings_by_hour",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "ownerApp.ts",
+      "source_location": "L1132",
+      "weight": 1.0,
+      "source": "ownerapp_ts",
+      "target": "mock_ownerapp_schedule_week_days",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "ownerApp.ts",
+      "source_location": "L1142",
+      "weight": 1.0,
+      "source": "ownerapp_ts",
+      "target": "mock_ownerapp_shiftstaff",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "ownerApp.ts",
+      "source_location": "L1154",
+      "weight": 1.0,
+      "source": "ownerapp_ts",
+      "target": "mock_ownerapp_shift_staff",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "ownerApp.ts",
+      "source_location": "L1162",
+      "weight": 1.0,
+      "source": "ownerapp_ts",
+      "target": "mock_ownerapp_restaurant_service_hours",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "ownerApp.ts",
+      "source_location": "L1171",
+      "weight": 1.0,
+      "source": "ownerapp_ts",
+      "target": "mock_ownerapp_tonight_briefing",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "ownerApp.ts",
+      "source_location": "L1190",
+      "weight": 1.0,
+      "source": "ownerapp_ts",
+      "target": "mock_ownerapp_tonightbadge",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "ownerApp.ts",
+      "source_location": "L1202",
+      "weight": 1.0,
+      "source": "ownerapp_ts",
+      "target": "mock_ownerapp_tonightguest",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "ownerApp.ts",
+      "source_location": "L1212",
+      "weight": 1.0,
+      "source": "ownerapp_ts",
+      "target": "mock_ownerapp_home_attention_items",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "ownerApp.ts",
+      "source_location": "L1219",
+      "weight": 1.0,
+      "source": "ownerapp_ts",
+      "target": "mock_ownerapp_home_reservation_flow",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "ownerApp.ts",
+      "source_location": "L1227",
+      "weight": 1.0,
+      "source": "ownerapp_ts",
+      "target": "mock_ownerapp_isbusinessopennow",
+      "confidence_score": 1.0
+    }
+  ],
+  "hyperedges": [],
+  "built_at_commit": "f8e49f380bc144eec2877ce30747d7a6c1711a63"
+}

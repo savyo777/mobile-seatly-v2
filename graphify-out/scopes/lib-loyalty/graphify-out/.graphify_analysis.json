@@ -1,0 +1,81 @@
+{
+  "communities": {
+    "0": [
+      "loyalty_tiers_getloyaltytier",
+      "loyalty_tiers_getnextloyaltytier",
+      "loyalty_tiers_loyaltytier",
+      "loyalty_tiers_loyaltytierprogress",
+      "loyalty_tiers_pointstonextloyaltytier",
+      "tiers_ts"
+    ],
+    "1": [
+      "dinertiers_ts",
+      "loyalty_dinertiers_dinerstonexttier",
+      "loyalty_dinertiers_dinertier",
+      "loyalty_dinertiers_getdinertier",
+      "loyalty_dinertiers_getnextdinertier"
+    ],
+    "2": [
+      "getloyaltytransactions_ts",
+      "loyalty_getloyaltytransactions_fetchloyaltytransactionsforuser",
+      "loyalty_getloyaltytransactions_loyaltytransactionrow"
+    ]
+  },
+  "cohesion": {
+    "0": 0.53,
+    "1": 0.5,
+    "2": 0.67
+  },
+  "gods": [
+    {
+      "id": "loyalty_tiers_getnextloyaltytier",
+      "label": "getNextLoyaltyTier()",
+      "degree": 3
+    },
+    {
+      "id": "loyalty_tiers_loyaltytierprogress",
+      "label": "loyaltyTierProgress()",
+      "degree": 3
+    },
+    {
+      "id": "loyalty_tiers_getloyaltytier",
+      "label": "getLoyaltyTier()",
+      "degree": 2
+    },
+    {
+      "id": "loyalty_tiers_pointstonextloyaltytier",
+      "label": "pointsToNextLoyaltyTier()",
+      "degree": 2
+    },
+    {
+      "id": "loyalty_dinertiers_getnextdinertier",
+      "label": "getNextDinerTier()",
+      "degree": 2
+    },
+    {
+      "id": "loyalty_dinertiers_dinerstonexttier",
+      "label": "dinersToNextTier()",
+      "degree": 2
+    },
+    {
+      "id": "loyalty_tiers_loyaltytier",
+      "label": "LoyaltyTier",
+      "degree": 1
+    },
+    {
+      "id": "loyalty_dinertiers_dinertier",
+      "label": "DinerTier",
+      "degree": 1
+    },
+    {
+      "id": "loyalty_getloyaltytransactions_loyaltytransactionrow",
+      "label": "LoyaltyTransactionRow",
+      "degree": 1
+    }
+  ],
+  "surprises": [],
+  "tokens": {
+    "input": 0,
+    "output": 0
+  }
+}
