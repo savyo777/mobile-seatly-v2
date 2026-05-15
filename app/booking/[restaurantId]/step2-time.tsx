@@ -226,9 +226,10 @@ const useStyles = createStyles((c) => ({
     opacity: 0.3,
   },
   slotText: {
-    fontSize: 14,
+    fontSize: 13,
     fontWeight: '600',
     color: c.textPrimary,
+    textAlign: 'center',
   },
   slotTextSelected: {
     color: c.bgBase,
@@ -665,11 +666,14 @@ export default function Step2Time() {
                     conflict && styles.slotPillUnavailable,
                   ]}
                 >
-                  <Text style={[
-                    styles.slotText,
-                    isSelected && styles.slotTextSelected,
-                    conflict && styles.slotTextUnavailable,
-                  ]}>
+                  <Text
+                    numberOfLines={1}
+                    style={[
+                      styles.slotText,
+                      isSelected && styles.slotTextSelected,
+                      conflict && styles.slotTextUnavailable,
+                    ]}
+                  >
                     {slot.display_time}
                   </Text>
                 </Pressable>
