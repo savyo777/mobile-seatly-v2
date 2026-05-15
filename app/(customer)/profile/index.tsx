@@ -18,6 +18,7 @@ import { useColors, useTheme, createStyles, spacing, borderRadius } from '@/lib/
 import { useAuthSession } from '@/lib/auth/AuthContext';
 import { fetchMyBookingItems, type MyBookingItem } from '@/lib/booking/myReservations';
 import { isDemoModeEnabled } from '@/lib/config/demoMode';
+import { isLoyaltyEnabled } from '@/lib/config/loyaltyFeature';
 import { DINER_TIERS, getDinerTier, getNextDinerTier } from '@/lib/loyalty/dinerTiers';
 import {
   fetchCurrentUserProfile,
@@ -711,15 +712,17 @@ export default function ProfileScreen() {
             <Text style={styles.userLocation}>
               {locationLabel} · since {memberSince}
             </Text>
-            <View style={styles.tierBadge}>
-              <Ionicons name="star" size={11} color={c.gold} />
-              <Text style={styles.tierBadgeText}>{currentTier.name}</Text>
-            </View>
+            {isLoyaltyEnabled() && (
+              <View style={styles.tierBadge}>
+                <Ionicons name="star" size={11} color={c.gold} />
+                <Text style={styles.tierBadgeText}>{currentTier.name}</Text>
+              </View>
+            )}
           </View>
         </View>
 
         {/* Progress toward next tier */}
-        {nextTier && (
+        {isLoyaltyEnabled() && nextTier && (
           <View style={styles.progressCard}>
             <View style={styles.progressRow}>
               <Text style={styles.progressLabel}>
@@ -744,10 +747,12 @@ export default function ProfileScreen() {
             <Text style={styles.statValue}>{citiesCount}</Text>
             <Text style={styles.statLabel}>Cities</Text>
           </View>
-          <View style={styles.statCard}>
-            <Text style={styles.statValue}>{points.toLocaleString()}</Text>
-            <Text style={styles.statLabel}>Points</Text>
-          </View>
+          {isLoyaltyEnabled() && (
+            <View style={styles.statCard}>
+              <Text style={styles.statValue}>{points.toLocaleString()}</Text>
+              <Text style={styles.statLabel}>Points</Text>
+            </View>
+          )}
         </View>
 
         {/* Saved Places */}

@@ -1,6 +1,7 @@
 import React from 'react';
 import { Pressable, Text, View } from 'react-native';
 import { borderRadius, createStyles, shadows, spacing, typography } from '@/lib/theme';
+import { isLoyaltyEnabled } from '@/lib/config/loyaltyFeature';
 
 interface SnapEntryButtonProps {
   onPress: () => void;
@@ -39,16 +40,17 @@ const useStyles = createStyles((c) => ({
 
 export function SnapEntryButton({ onPress }: SnapEntryButtonProps) {
   const styles = useStyles();
+  const loyalty = isLoyaltyEnabled();
   return (
     <Pressable
       accessibilityRole="button"
-      accessibilityLabel="Post a food photo and earn points"
+      accessibilityLabel={loyalty ? 'Post a food photo and earn points' : 'Post a food photo'}
       hitSlop={12}
       onPress={onPress}
       style={({ pressed }) => [styles.button, pressed && styles.pressed]}
     >
       <View style={styles.spark} />
-      <Text style={styles.text}>Snap · earn points</Text>
+      <Text style={styles.text}>{loyalty ? 'Snap · earn points' : 'Snap a meal'}</Text>
     </Pressable>
   );
 }

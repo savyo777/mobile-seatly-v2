@@ -8,6 +8,7 @@ import { Card } from '@/components/ui';
 import { useColors, createStyles, spacing, typography, borderRadius, shadows } from '@/lib/theme';
 import { TERMS_URL, PRIVACY_URL, ACK_URL } from '@/lib/config/legalLinks';
 import { LEGAL_EMAIL } from '@/lib/config/contactInfo';
+import { isLoyaltyEnabled } from '@/lib/config/loyaltyFeature';
 
 const APP_VERSION = Constants.expoConfig?.version ?? '1.0.0';
 
@@ -96,8 +97,9 @@ export default function AboutScreen() {
 
       <Card style={styles.aboutCard}>
         <Text style={styles.aboutText}>
-          Cenaiva connects diners with exceptional restaurants — from last-minute tables to loyalty rewards. Built in
-          Toronto for food lovers everywhere (demo company copy).
+          {isLoyaltyEnabled()
+            ? 'Cenaiva connects diners with exceptional restaurants — from last-minute tables to loyalty rewards. Built in Toronto for food lovers everywhere (demo company copy).'
+            : 'Cenaiva connects diners with exceptional restaurants — from last-minute tables to unforgettable nights out. Built in Toronto for food lovers everywhere (demo company copy).'}
         </Text>
       </Card>
 

@@ -8,6 +8,7 @@ import { SectionCard } from '@/components/owner/SectionCard';
 import { useColors, createStyles, spacing, borderRadius } from '@/lib/theme';
 import { findGuest as DEMO_findGuest, type OwnerGuest } from '@/lib/mock/guests';
 import { isDemoModeEnabled } from '@/lib/config/demoMode';
+import { isLoyaltyEnabled } from '@/lib/config/loyaltyFeature';
 import { getSupabase } from '@/lib/supabase/client';
 import { fetchOwnerGuests, hydrateGuestRelations } from './index';
 
@@ -555,8 +556,9 @@ export default function GuestDetailScreen() {
             ) : null}
           </View>
           <Text style={styles.heroMeta}>
-            {g.loyaltyTier.charAt(0).toUpperCase() + g.loyaltyTier.slice(1)} member ·{' '}
-            {g.totalVisits} visits
+            {isLoyaltyEnabled()
+              ? `${g.loyaltyTier.charAt(0).toUpperCase() + g.loyaltyTier.slice(1)} member · ${g.totalVisits} visits`
+              : `${g.totalVisits} visits`}
           </Text>
 
           <View style={styles.quickActions}>
@@ -644,31 +646,33 @@ export default function GuestDetailScreen() {
           ) : null}
         </SectionCard>
 
-        <SectionCard sectionTitle="Loyalty">
-          <KV
-            label="Tier"
-            value={g.loyaltyTier.charAt(0).toUpperCase() + g.loyaltyTier.slice(1)}
-            styles={styles}
-            isFirst
-          />
-          <KV
-            label="Points balance"
-            value={g.loyaltyPointsBalance.toLocaleString()}
-            styles={styles}
-          />
-          <KV
-            label="Earned total"
-            value={g.loyaltyPointsEarnedTotal.toLocaleString()}
-            styles={styles}
-          />
-          <KV
-            label="Redeemed"
-            value={g.loyaltyPointsRedeemedTotal.toLocaleString()}
-            styles={styles}
-          />
-        </SectionCard>
+        {isLoyaltyEnabled() && (
+          <SectionCard sectionTitle="Loyalty">
+            <KV
+              label="Tier"
+              value={g.loyaltyTier.charAt(0).toUpperCase() + g.loyaltyTier.slice(1)}
+              styles={styles}
+              isFirst
+            />
+            <KV
+              label="Points balance"
+              value={g.loyaltyPointsBalance.toLocaleString()}
+              styles={styles}
+            />
+            <KV
+              label="Earned total"
+              value={g.loyaltyPointsEarnedTotal.toLocaleString()}
+              styles={styles}
+            />
+            <KV
+              label="Redeemed"
+              value={g.loyaltyPointsRedeemedTotal.toLocaleString()}
+              styles={styles}
+            />
+          </SectionCard>
+        )}
 
-        {g.loyaltyTx.length > 0 ? (
+        {isLoyaltyEnabled() && g.loyaltyTx.length > 0 ? (
           <SectionCard sectionTitle="Recent activity">
             {g.loyaltyTx.map((tx, i) => (
               <View key={tx.id} style={[styles.ltRow, i > 0 && styles.kvDivider]}>

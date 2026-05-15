@@ -12,6 +12,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useColors, createStyles, spacing, borderRadius, typography } from '@/lib/theme';
+import { isLoyaltyEnabled } from '@/lib/config/loyaltyFeature';
 
 const { width: W, height: H } = Dimensions.get('window');
 
@@ -119,12 +120,57 @@ function RewardsIllustration({ c }: { c: ReturnType<typeof useColors> }) {
   );
 }
 
+// Loyalty-free version of slide 3 used while isLoyaltyEnabled() is false.
+// Same post card as RewardsIllustration but without the +points badge or
+// the loyalty progress bar — keeps the social/community theme intact.
+function SocialIllustration({ c }: { c: ReturnType<typeof useColors> }) {
+  return (
+    <View style={ill.wrap}>
+      <View style={[ill.postCard, { backgroundColor: c.bgSurface, borderColor: c.border }]}>
+        <View style={[ill.postImg, { backgroundColor: 'rgba(201,168,76,0.18)' }]} />
+        <View style={ill.postFooter}>
+          <View style={ill.postUser}>
+            <View style={[ill.postAvatar, { backgroundColor: c.bgElevated, borderColor: c.gold }]} />
+            <View>
+              <View style={[ill.pill, { width: 60, backgroundColor: c.bgElevated }]} />
+              <View style={[ill.pill, { width: 90, marginTop: 4, backgroundColor: c.bgElevated }]} />
+            </View>
+          </View>
+          <View style={ill.postActions}>
+            <Ionicons name="heart" size={16} color="#EF4444" />
+            <Ionicons name="bookmark" size={16} color={c.gold} style={{ marginLeft: 8 }} />
+          </View>
+        </View>
+      </View>
+    </View>
+  );
+}
+
 type Slide = {
   id: string;
   bg: string;
-  IllustrationKey: 'discover' | 'book' | 'rewards';
+  IllustrationKey: 'discover' | 'book' | 'rewards' | 'social';
   title: string;
   subtitle: string;
+};
+
+// Slide 3 has two source-of-truth variants. We keep both so flipping the
+// loyalty feature flag at lib/config/loyaltyFeature.ts re-selects the
+// rewards version without a rewrite.
+const LOYALTY_SLIDE_3: Slide = {
+  id: '3',
+  bg: 'rgba(201,168,76,0.08)',
+  IllustrationKey: 'rewards',
+  title: 'Post meals, earn rewards',
+  subtitle: 'Share your food, follow friends, and collect loyalty points with every visit.',
+};
+
+const DEFAULT_SLIDE_3: Slide = {
+  id: '3',
+  bg: 'rgba(201,168,76,0.08)',
+  IllustrationKey: 'social',
+  title: 'Post meals, share moments',
+  subtitle: 'Share your favourite dishes, follow friends, and discover what they love.',
 };
 
 const SLIDES: Slide[] = [
@@ -142,13 +188,7 @@ const SLIDES: Slide[] = [
     title: 'Book a table in seconds',
     subtitle: 'Pick a date, choose your table, and confirm — your reservation is instant.',
   },
-  {
-    id: '3',
-    bg: 'rgba(201,168,76,0.08)',
-    IllustrationKey: 'rewards',
-    title: 'Post meals, earn rewards',
-    subtitle: 'Share your food, follow friends, and collect loyalty points with every visit.',
-  },
+  isLoyaltyEnabled() ? LOYALTY_SLIDE_3 : DEFAULT_SLIDE_3,
 ];
 
 const useStyles = createStyles((c) => ({
@@ -279,6 +319,7 @@ export default function OnboardingScreen() {
         {item.IllustrationKey === 'discover' && <DiscoverIllustration c={c} />}
         {item.IllustrationKey === 'book' && <BookIllustration c={c} />}
         {item.IllustrationKey === 'rewards' && <RewardsIllustration c={c} />}
+        {item.IllustrationKey === 'social' && <SocialIllustration c={c} />}
       </View>
     </View>
   );

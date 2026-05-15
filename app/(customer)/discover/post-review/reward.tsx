@@ -6,6 +6,7 @@ import { SnapShareSheet } from '@/components/snaps/SnapShareSheet';
 import { createStyles, borderRadius, spacing, typography } from '@/lib/theme';
 import { mockRestaurants as DEMO_RESTAURANTS } from '@/lib/mock/restaurants';
 import { isDemoModeEnabled } from '@/lib/config/demoMode';
+import { isLoyaltyEnabled } from '@/lib/config/loyaltyFeature';
 
 const mockRestaurants: typeof DEMO_RESTAURANTS = isDemoModeEnabled() ? DEMO_RESTAURANTS : [];
 import { STORY_FILTERS } from '@/lib/storyFilters/registry';
@@ -123,10 +124,16 @@ export default function ReviewRewardScreen() {
         contentContainerStyle={styles.scroll}
       >
         <View style={styles.badgeWrap}>
-          <Animated.View style={[styles.badge, { transform: [{ scale: pulse }] }]}>
-            <Text style={styles.badgeText}>+{numericPoints}</Text>
-          </Animated.View>
-          <Text style={styles.title}>+{numericPoints} points earned</Text>
+          {isLoyaltyEnabled() ? (
+            <>
+              <Animated.View style={[styles.badge, { transform: [{ scale: pulse }] }]}>
+                <Text style={styles.badgeText}>+{numericPoints}</Text>
+              </Animated.View>
+              <Text style={styles.title}>+{numericPoints} points earned</Text>
+            </>
+          ) : (
+            <Text style={styles.title}>Thanks for sharing!</Text>
+          )}
           <Text style={styles.subtitle}>
             Your snap at {decodedName} is now live on the restaurant page.
           </Text>

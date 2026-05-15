@@ -25,6 +25,7 @@ import {
   type AppShellPreference,
 } from '@/lib/navigation/appShellPreference';
 import { CENAIVA_FOLLOW_URLS } from '@/lib/config/cenaivaSocial';
+import { isLoyaltyEnabled } from '@/lib/config/loyaltyFeature';
 import { LOYALTY_TIERS, getLoyaltyTier } from '@/lib/loyalty/tiers';
 
 const TIERS = LOYALTY_TIERS;
@@ -547,7 +548,7 @@ export default function SettingsScreen() {
         <View style={styles.headerCenter}>
           <Text style={styles.headerTitle}>Settings</Text>
           <Text style={styles.headerSub}>
-            {displayProfile.fullName} · {tier.name} Member
+            {isLoyaltyEnabled() ? `${displayProfile.fullName} · ${tier.name} Member` : displayProfile.fullName}
           </Text>
         </View>
         <View style={{ width: 32 }} />
@@ -573,7 +574,9 @@ export default function SettingsScreen() {
           </View>
           <View style={styles.profileInfo}>
             <Text style={styles.profileName}>{displayProfile.fullName}</Text>
-            <Text style={styles.profileHandle}>Member since {memberSince} · {tier.name}</Text>
+            <Text style={styles.profileHandle}>
+              {isLoyaltyEnabled() ? `Member since ${memberSince} · ${tier.name}` : `Member since ${memberSince}`}
+            </Text>
           </View>
           <ChevronGlyph color={c.textMuted} size={16} />
         </Pressable>

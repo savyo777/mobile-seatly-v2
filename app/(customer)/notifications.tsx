@@ -11,6 +11,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useColors, createStyles, borderRadius, spacing } from '@/lib/theme';
 import { isDemoModeEnabled } from '@/lib/config/demoMode';
+import { isLoyaltyEnabled } from '@/lib/config/loyaltyFeature';
 import { mockReservations } from '@/lib/mock/reservations';
 import { mockRestaurants } from '@/lib/mock/restaurants';
 import { mockCustomer } from '@/lib/mock/users';
@@ -431,7 +432,12 @@ export default function NotificationsScreen() {
           ...supa.notifications,
           ...postTurn,
           ...(isDemoModeEnabled() ? buildMockNotifications() : []),
-        ].sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
+        ]
+          // Drop loyalty milestone notifications while the loyalty feature
+          // is hidden — see lib/config/loyaltyFeature.ts. Records remain in
+          // Supabase; they just don't render until the flag flips.
+          .filter((n) => isLoyaltyEnabled() || n.type !== 'loyalty_milestone')
+          .sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
         if (!cancelled) setAllNotifs(merged);
       };
       void load();
@@ -575,7 +581,9 @@ export default function NotificationsScreen() {
             </View>
             <Text style={styles.emptyTitle}>No activity yet</Text>
             <Text style={styles.emptyBody}>
-              Booking confirmations, reminders, and loyalty updates will appear here.
+              {isLoyaltyEnabled()
+                ? 'Booking confirmations, reminders, and loyalty updates will appear here.'
+                : 'Booking confirmations and reminders will appear here.'}
             </Text>
           </View>
         ) : (

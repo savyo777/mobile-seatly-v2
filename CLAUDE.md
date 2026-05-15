@@ -36,6 +36,14 @@ npx tsc --noEmit 2>&1 | grep -v "mobile-seatly-v2-2"
 
 If the filtered output is empty, typecheck is clean. The unfiltered command prints ~100 unrelated errors from the stale subfolder — ignore them.
 
+## Loyalty feature flag
+
+The loyalty / rewards system is **hidden but preserved** across the app. Every surface is gated behind `isLoyaltyEnabled()` from `lib/config/loyaltyFeature.ts`, which currently returns `false`.
+
+- All `lib/loyalty/*`, `lib/mock/loyalty.ts`, the `loyalty_*` columns on user/guest profiles, the i18n `loyalty.*` keys, and `loyaltyTierColors` in theme tokens are intentionally left in place so flipping the flag restores the feature.
+- When re-integrating loyalty as a future update: change `lib/config/loyaltyFeature.ts` to return `true` (or wire it to an env var) and smoke-test profile home, wallet, notifications, onboarding slide 3, post-snap reward, and the two staff guest screens.
+- New loyalty UI added during this hidden period must also be wrapped in `isLoyaltyEnabled()` — do not surface loyalty without going through the flag.
+
 ## Demo mode
 
 The app uses `EXPO_PUBLIC_CENAIVA_DEMO_MODE=true|false` (helper: `isDemoModeEnabled()` in `lib/config/demoMode.ts`).

@@ -21,6 +21,7 @@ import {
   type OwnerGuest,
 } from '@/lib/mock/guests';
 import { isDemoModeEnabled } from '@/lib/config/demoMode';
+import { isLoyaltyEnabled } from '@/lib/config/loyaltyFeature';
 import { getSupabase } from '@/lib/supabase/client';
 import { fetchCurrentUserProfile } from '@/lib/services/userProfile';
 import { fetchLoyaltyTransactionsForGuests } from '@/lib/loyalty/getLoyaltyTransactions';
@@ -117,7 +118,12 @@ export async function hydrateGuestRelations(guest: OwnerGuest): Promise<OwnerGue
         .eq('guest_id', guest.id)
         .order('sent_at', { ascending: false })
         .limit(50),
-      fetchLoyaltyTransactionsForGuests([guest.id], { limit: 50 }),
+      // Skip the loyalty transactions query while the feature is hidden —
+      // saves a round-trip; the UI doesn't render the data anyway. See
+      // lib/config/loyaltyFeature.ts.
+      isLoyaltyEnabled()
+        ? fetchLoyaltyTransactionsForGuests([guest.id], { limit: 50 })
+        : Promise.resolve([] as Awaited<ReturnType<typeof fetchLoyaltyTransactionsForGuests>>),
     ]);
     const notes = ((notesRes.data ?? []) as Array<Record<string, unknown>>).map((n) => ({
       id: String(n.id ?? ''),
@@ -468,7 +474,9 @@ export default function OwnerGuestsScreen() {
                     {isAtRisk(g) ? <View style={styles.riskDot} /> : null}
                   </View>
                   <Text style={styles.meta} numberOfLines={1}>
-                    Last visit {daysSince(g.lastVisitAt)} · {g.loyaltyTier}
+                    {isLoyaltyEnabled()
+                      ? `Last visit ${daysSince(g.lastVisitAt)} · ${g.loyaltyTier}`
+                      : `Last visit ${daysSince(g.lastVisitAt)}`}
                   </Text>
                 </View>
                 <View style={styles.right}>

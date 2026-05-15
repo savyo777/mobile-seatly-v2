@@ -4,19 +4,27 @@ import { Ionicons } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
 import { useColors, createStyles, spacing, typography, borderRadius } from '@/lib/theme';
 import type { Href } from 'expo-router';
+import { isLoyaltyEnabled } from '@/lib/config/loyaltyFeature';
 
-/** Order: Payments, Saved Places, Rewards, Activity — compact shortcuts */
-const ACTIONS: {
+type ActionItem = {
   key: string;
   labelKey: keyof typeof import('@/lib/i18n/locales/en').default.profile;
   icon: keyof typeof Ionicons.glyphMap;
   href: Href;
-}[] = [
+};
+
+/** Order: Payments, Saved Places, Rewards (loyalty-gated), Activity — compact shortcuts */
+const ALL_ACTIONS: ActionItem[] = [
   { key: 'pay', labelKey: 'quickPayments', icon: 'wallet-outline', href: '/(customer)/profile/wallet' },
   { key: 'saved', labelKey: 'quickSavedPlaces', icon: 'bookmark-outline', href: '/(customer)/profile/favorites' },
   { key: 'rew', labelKey: 'quickRewardsHub', icon: 'gift-outline', href: '/(customer)/profile/loyalty' },
   { key: 'hist', labelKey: 'quickHistory', icon: 'time-outline', href: '/(customer)/activity' },
 ];
+
+function getActions(): ActionItem[] {
+  if (isLoyaltyEnabled()) return ALL_ACTIONS;
+  return ALL_ACTIONS.filter((a) => a.key !== 'rew');
+}
 
 type Props = {
   onNavigate: (href: Href) => void;
@@ -67,10 +75,11 @@ export function ProfileQuickActions({ onNavigate }: Props) {
   const c = useColors();
   const styles = useStyles();
   const { t } = useTranslation();
+  const actions = getActions();
 
   return (
     <View style={styles.grid}>
-      {ACTIONS.map((a) => (
+      {actions.map((a) => (
         <Pressable
           key={a.key}
           onPress={() => onNavigate(a.href)}

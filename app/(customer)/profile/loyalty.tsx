@@ -1,9 +1,10 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { View, Text, StyleSheet, FlatList, ListRenderItem, Pressable } from 'react-native';
 import { useTranslation } from 'react-i18next';
-import { useRouter } from 'expo-router';
+import { useRouter, Redirect } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { ScreenWrapper, Card, Button, Badge } from '@/components/ui';
+import { isLoyaltyEnabled } from '@/lib/config/loyaltyFeature';
 import { useColors, createStyles, spacing, borderRadius, typography, shadows } from '@/lib/theme';
 import {
   mockLoyaltyTransactions as MOCK_LOYALTY_TRANSACTIONS,
@@ -238,6 +239,17 @@ function EarnBullet({ text, isLast }: { text: string; isLast?: boolean }) {
 }
 
 export default function ProfileLoyaltyScreen() {
+  // Loyalty feature is currently disabled — the original screen below is
+  // preserved in source so flipping the flag at lib/config/loyaltyFeature.ts
+  // restores it without a rewrite. The inner component holds the real
+  // implementation; this outer fn just gates it to keep hook order stable.
+  if (!isLoyaltyEnabled()) {
+    return <Redirect href="/(customer)/profile" />;
+  }
+  return <ProfileLoyaltyScreenInner />;
+}
+
+function ProfileLoyaltyScreenInner() {
   const { t, i18n } = useTranslation();
   const c = useColors();
   const styles = useStyles();

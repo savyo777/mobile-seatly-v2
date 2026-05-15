@@ -5,6 +5,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { mockReservations, type Reservation } from '@/lib/mock/reservations';
 import { mockCustomer } from '@/lib/mock/users';
 import { isDemoModeEnabled } from '@/lib/config/demoMode';
+import { isLoyaltyEnabled } from '@/lib/config/loyaltyFeature';
 import { borderRadius, createStyles, shadows, spacing, typography, useColors } from '@/lib/theme';
 
 const WINDOW_MS = 8 * 60 * 60 * 1000; // 8 hours
@@ -102,9 +103,14 @@ export function PostVisitPrompt() {
   const heading = isSeated
     ? `Enjoying ${reservation.restaurantName}?`
     : `How was ${reservation.restaurantName}?`;
+  const loyalty = isLoyaltyEnabled();
   const subtext = isSeated
-    ? 'Snap your meal and share it — earn 25 points.'
-    : 'Share a snap from your visit and earn 25 points.';
+    ? loyalty
+      ? 'Snap your meal and share it — earn 25 points.'
+      : 'Snap your meal and share it with the community.'
+    : loyalty
+      ? 'Share a snap from your visit and earn 25 points.'
+      : 'Share a snap from your visit with the community.';
 
   const handleSnap = () => {
     router.push(

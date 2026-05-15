@@ -14,6 +14,7 @@ import {
 } from '@/lib/mock/profileScreens';
 import { mockCustomer } from '@/lib/mock/users';
 import { isDemoModeEnabled } from '@/lib/config/demoMode';
+import { isLoyaltyEnabled } from '@/lib/config/loyaltyFeature';
 import { formatCurrency } from '@/lib/utils/formatCurrency';
 import { useColors, createStyles, spacing, typography, borderRadius, shadows } from '@/lib/theme';
 
@@ -186,14 +187,16 @@ export default function WalletScreen() {
 
   return (
     <ProfileStackScreen title={t('profile.quickWallet')}>
-      <Card style={{ ...styles.hero, ...shadows.goldGlow }}>
-        <Text style={styles.heroLabel}>Reward balance</Text>
-        <Text style={styles.heroPoints}>
-          {loyaltyPointsBalance.toLocaleString()} pts
-        </Text>
-        <Text style={styles.heroSub}>Tap through to redeem perks and track tier progress</Text>
-        <Button title="View rewards" variant="outlined" size="sm" fullWidth onPress={() => router.push('/(customer)/profile/loyalty')} />
-      </Card>
+      {isLoyaltyEnabled() && (
+        <Card style={{ ...styles.hero, ...shadows.goldGlow }}>
+          <Text style={styles.heroLabel}>Reward balance</Text>
+          <Text style={styles.heroPoints}>
+            {loyaltyPointsBalance.toLocaleString()} pts
+          </Text>
+          <Text style={styles.heroSub}>Tap through to redeem perks and track tier progress</Text>
+          <Button title="View rewards" variant="outlined" size="sm" fullWidth onPress={() => router.push('/(customer)/profile/loyalty')} />
+        </Card>
+      )}
 
       <ProfileSectionTitle>Cenaiva credits</ProfileSectionTitle>
       <Card style={styles.card}>
