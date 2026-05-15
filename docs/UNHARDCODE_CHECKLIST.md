@@ -4,6 +4,8 @@ Phased plan to finish removing hardcoded values from the codebase. Each phase is
 
 Tick items off as you land them. Most have file paths so an LLM (or you) can pick up exactly where this leaves off.
 
+For the broader mobile app backend-readiness inventory - what is fully backend-backed, partially mock/placeholder, and fully mock/placeholder - see [`docs/MOBILE_BACKEND_READINESS_AUDIT.md`](./MOBILE_BACKEND_READINESS_AUDIT.md). That audit is the source of truth for turning the entire customer and staff mobile app into live Supabase/Stripe/Storage/Edge-Function behavior while keeping demo data behind `EXPO_PUBLIC_CENAIVA_DEMO_MODE`.
+
 **Already done in earlier batches** (see git log on `main`): centralized client + server constants, dropped PII fallbacks, gated wallet/loyalty/billing-year/analytics/receipt mock data, replaced `mockCustomer.id` with real auth, env-overridable Deepgram/map/voice IDs, ICS brand, full `.env.example`. Don't redo.
 
 ---
