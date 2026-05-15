@@ -9,7 +9,7 @@ import { borderRadius, createStyles, spacing, typography, useColors } from '@/li
 import { getSupabase } from '@/lib/supabase/client';
 import { setAppShellPreference } from '@/lib/navigation/appShellPreference';
 import { sendPasswordResetEmail } from '@/lib/services/accountSecurity';
-import { signInWithGoogle } from '@/lib/services/oauth';
+import { signInWithApple, signInWithGoogle } from '@/lib/services/oauth';
 import { normalizePhoneToE164, sendPhoneOtp } from '@/lib/services/phoneAuth';
 import { roleIncludes } from '@/lib/auth/roles';
 import { LOCKOUT_MS, MAX_FAILED_ATTEMPTS } from '@/lib/auth/lockoutPolicy';
@@ -335,6 +335,25 @@ export default function OwnerLoginScreen() {
     }
   };
 
+  const handleApple = async () => {
+    if (submitting) return;
+    setSubmitting(true);
+    try {
+      const result = await signInWithApple();
+      if (result.status === 'cancelled') return;
+      if (result.status === 'error') {
+        Alert.alert('Apple sign in failed', result.message);
+        return;
+      }
+      const allowed = await enforceOwnerRole(result.session.user.id);
+      if (!allowed) return;
+      await setAppShellPreference('staff');
+      router.replace('/(staff)');
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
   return (
     <ScreenWrapper withKeyboardAvoiding padded scrollable>
       <View style={[styles.inner, { paddingBottom: Math.max(insets.bottom, spacing.lg) }]}>
@@ -441,13 +460,7 @@ export default function OwnerLoginScreen() {
           <View style={styles.dividerLine} />
         </View>
 
-        <SocialAuthButtons
-          onApple={async () => {
-            await setAppShellPreference('staff');
-            router.replace('/(staff)');
-          }}
-          onGoogle={handleGoogle}
-        />
+        <SocialAuthButtons onApple={handleApple} onGoogle={handleGoogle} />
 
         <View style={styles.spacer} />
 

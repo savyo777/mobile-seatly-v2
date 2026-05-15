@@ -9,6 +9,8 @@ export type GoogleSignInResult =
   | { status: 'cancelled' }
   | { status: 'error'; message: string };
 
+export type AppleSignInResult = GoogleSignInResult;
+
 WebBrowser.maybeCompleteAuthSession();
 
 function parseTokensFromUrl(url: string): { accessToken: string; refreshToken: string } | null {
@@ -71,6 +73,62 @@ export async function signInWithGoogle(): Promise<GoogleSignInResult> {
 
   if (result.type !== 'success' || !result.url) {
     return { status: 'error', message: 'Google sign in did not complete.' };
+  }
+
+  const tokens = parseTokensFromUrl(result.url);
+  if (tokens) {
+    const { data: setData, error: setErr } = await supabase.auth.setSession({
+      access_token: tokens.accessToken,
+      refresh_token: tokens.refreshToken,
+    });
+    if (setErr || !setData?.session) {
+      return { status: 'error', message: setErr?.message ?? 'Failed to establish session.' };
+    }
+    return { status: 'success', session: setData.session };
+  }
+
+  const code = parseAuthCodeFromUrl(result.url);
+  if (code) {
+    const { data: exData, error: exErr } = await supabase.auth.exchangeCodeForSession(code);
+    if (exErr || !exData?.session) {
+      return { status: 'error', message: exErr?.message ?? 'Failed to establish session.' };
+    }
+    return { status: 'success', session: exData.session };
+  }
+
+  return { status: 'error', message: 'Missing tokens in OAuth callback URL.' };
+}
+
+export async function signInWithApple(): Promise<AppleSignInResult> {
+  const supabase = getSupabase();
+  if (!supabase) {
+    return { status: 'error', message: 'Supabase is not configured.' };
+  }
+
+  const redirectTo = makeRedirectUri({ scheme: 'cenaiva', path: 'auth-callback' });
+
+  const { data, error } = await supabase.auth.signInWithOAuth({
+    provider: 'apple',
+    options: {
+      redirectTo,
+      skipBrowserRedirect: true,
+    },
+  });
+
+  if (error || !data?.url) {
+    return { status: 'error', message: error?.message ?? 'Failed to start Apple sign in.' };
+  }
+
+  const result = await WebBrowser.openAuthSessionAsync(data.url, redirectTo, {
+    showInRecents: true,
+  });
+
+  if (result.type === 'cancel' || result.type === 'dismiss') {
+    return { status: 'cancelled' };
+  }
+
+  if (result.type !== 'success' || !result.url) {
+    return { status: 'error', message: 'Apple sign in did not complete.' };
   }
 
   const tokens = parseTokensFromUrl(result.url);

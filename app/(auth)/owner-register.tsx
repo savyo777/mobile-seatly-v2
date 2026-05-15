@@ -7,7 +7,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useColors, createStyles, spacing, typography, borderRadius } from '@/lib/theme';
 import { getSupabase } from '@/lib/supabase/client';
 import { setAppShellPreference } from '@/lib/navigation/appShellPreference';
-import { ensureOwnerProfile, signInWithGoogle } from '@/lib/services/oauth';
+import { ensureOwnerProfile, signInWithApple, signInWithGoogle } from '@/lib/services/oauth';
 import { normalizePhoneToE164, sendPhoneOtp } from '@/lib/services/phoneAuth';
 import { Input, Button, SocialAuthButtons, TermsFooter, Checkbox } from '@/components/ui';
 
@@ -394,6 +394,37 @@ export default function OwnerRegisterScreen() {
     }
   };
 
+  const handleApple = async () => {
+    if (submitting) return;
+    if (!agree) {
+      Alert.alert(
+        'Agreement required',
+        'Please agree to the Terms of Service and Privacy Policy before continuing.',
+      );
+      return;
+    }
+    setSubmitting(true);
+    try {
+      const result = await signInWithApple();
+      if (result.status === 'cancelled') return;
+      if (result.status === 'error') {
+        Alert.alert('Apple sign in failed', result.message);
+        return;
+      }
+      try {
+        await ensureOwnerProfile(result.session, {
+          fullNameOverride: fullName.trim() || undefined,
+        });
+      } catch {
+        // best-effort
+      }
+      await setAppShellPreference('staff');
+      router.replace('/(staff)');
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
   return (
     <View style={[styles.root, { paddingTop: insets.top }]}>
       <ScrollView
@@ -579,13 +610,7 @@ export default function OwnerRegisterScreen() {
           <View style={styles.dividerLine} />
         </View>
 
-        <SocialAuthButtons
-          onApple={async () => {
-            await setAppShellPreference('staff');
-            router.replace('/(staff)');
-          }}
-          onGoogle={handleGoogle}
-        />
+        <SocialAuthButtons onApple={handleApple} onGoogle={handleGoogle} />
 
         <View style={styles.footerRow}>
           <Text style={styles.footerMuted}>{t('auth.alreadyHaveAccount')} </Text>

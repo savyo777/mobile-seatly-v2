@@ -9,7 +9,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { borderRadius, createStyles, spacing, typography, useColors } from '@/lib/theme';
 import { getSupabase } from '@/lib/supabase/client';
 import { sendPasswordResetEmail } from '@/lib/services/accountSecurity';
-import { ensureCustomerProfile, signInWithGoogle } from '@/lib/services/oauth';
+import { ensureCustomerProfile, signInWithApple, signInWithGoogle } from '@/lib/services/oauth';
 import { normalizePhoneToE164, sendPhoneOtp } from '@/lib/services/phoneAuth';
 import { getRoleForSignedInUser } from '@/lib/auth/postSignInRouting';
 import { LOCKOUT_MS, MAX_FAILED_ATTEMPTS } from '@/lib/auth/lockoutPolicy';
@@ -329,6 +329,22 @@ export default function LoginScreen() {
     }
   };
 
+  const handleApple = async () => {
+    if (submitting) return;
+    setSubmitting(true);
+    try {
+      const result = await signInWithApple();
+      if (result.status === 'cancelled') return;
+      if (result.status === 'error') {
+        Alert.alert('Apple sign in failed', result.message);
+        return;
+      }
+      await routeSignedInSession(result.session);
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
   return (
     <>
     <ScreenWrapper withKeyboardAvoiding padded scrollable>
@@ -436,10 +452,9 @@ export default function LoginScreen() {
           <View style={styles.dividerLine} />
         </View>
 
-        <SocialAuthButtons
-          onApple={() => Alert.alert('Apple sign in', 'Apple sign in is not configured yet. Use email, phone, or Google to sign in.')}
-          onGoogle={handleGoogle}
-        />
+        <SocialAuthButtons onApple={handleApple} onGoogle={handleGoogle} />
+
+        <TermsFooter />
 
         <View style={styles.spacer} />
 
@@ -450,7 +465,6 @@ export default function LoginScreen() {
               <Text style={styles.footerLink}>{t('auth.welcomeSignUpCta')}</Text>
             </TouchableOpacity>
           </View>
-          <TermsFooter />
         </View>
       </View>
     </ScreenWrapper>

@@ -12,7 +12,7 @@ type Props = {
 
 export function SocialAuthButtons({ onApple, onGoogle, layout = 'stack' }: Props) {
   const styles = useStyles();
-  const showApple = Platform.OS === 'ios';
+  const showApple = Platform.OS === 'ios' && typeof onApple === 'function';
   const containerStyle = layout === 'row' ? styles.row : styles.stack;
   const btnStyle = layout === 'row' ? styles.btnRow : styles.btnStack;
   const appleLabel = layout === 'row' ? 'Apple' : 'Continue with Apple';

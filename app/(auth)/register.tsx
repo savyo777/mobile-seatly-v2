@@ -6,7 +6,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { borderRadius, createStyles, spacing, typography, useColors } from '@/lib/theme';
 import { getSupabase } from '@/lib/supabase/client';
-import { ensureCustomerProfile, signInWithGoogle } from '@/lib/services/oauth';
+import { ensureCustomerProfile, signInWithApple, signInWithGoogle } from '@/lib/services/oauth';
 import { normalizePhoneToE164 } from '@/lib/services/phoneAuth';
 import {
   ScreenWrapper,
@@ -186,6 +186,23 @@ const useStyles = createStyles((c) => ({
     color: c.textMuted,
     textTransform: 'lowercase',
   },
+  phoneBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    height: 50,
+    borderRadius: 14,
+    backgroundColor: c.bgSurface,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: c.border,
+    marginTop: spacing.sm,
+  },
+  phoneBtnIcon: { marginRight: 8 },
+  phoneBtnText: {
+    color: c.textPrimary,
+    fontSize: 15,
+    fontWeight: '700',
+  },
   spacer: { flex: 1, minHeight: spacing.lg },
   footerRow: {
     flexDirection: 'row',
@@ -314,6 +331,11 @@ export default function RegisterScreen() {
     }
   };
 
+  const handleContinueWithPhone = () => {
+    if (submitting) return;
+    router.push('/(auth)/phone-register' as never);
+  };
+
   const handleGoogle = async () => {
     if (submitting) return;
     if (!agree) {
@@ -335,6 +357,34 @@ export default function RegisterScreen() {
         await ensureCustomerProfile(result.session);
       } catch {
         // ignore: profile creation is best-effort and can be retried later
+      }
+      router.replace('/(customer)/discover' as never);
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const handleApple = async () => {
+    if (submitting) return;
+    if (!agree) {
+      Alert.alert(
+        'Agreement required',
+        'Please agree to the Terms of Service and Privacy Policy before continuing.',
+      );
+      return;
+    }
+    setSubmitting(true);
+    try {
+      const result = await signInWithApple();
+      if (result.status === 'cancelled') return;
+      if (result.status === 'error') {
+        Alert.alert('Apple sign in failed', result.message);
+        return;
+      }
+      try {
+        await ensureCustomerProfile(result.session);
+      } catch {
+        // best-effort
       }
       router.replace('/(customer)/discover' as never);
     } finally {
@@ -463,7 +513,19 @@ export default function RegisterScreen() {
           <View style={styles.dividerLine} />
         </View>
 
-        <SocialAuthButtons onApple={onSuccess} onGoogle={handleGoogle} />
+        <SocialAuthButtons onApple={handleApple} onGoogle={handleGoogle} />
+
+        <TouchableOpacity
+          onPress={handleContinueWithPhone}
+          disabled={submitting}
+          activeOpacity={0.85}
+          style={styles.phoneBtn}
+          accessibilityRole="button"
+          accessibilityLabel="Continue with phone number"
+        >
+          <Ionicons name="call-outline" size={18} color={c.textPrimary} style={styles.phoneBtnIcon} />
+          <Text style={styles.phoneBtnText}>Continue with phone number</Text>
+        </TouchableOpacity>
 
         <View style={styles.spacer} />
 
