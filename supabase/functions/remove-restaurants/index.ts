@@ -5,6 +5,7 @@ import {
   InputValidationError,
   asUuid,
   readJsonObject,
+  stripUnsafeControlChars,
   validationResponse,
 } from "../_shared/input-validation.ts";
 import { resolveOwnedRestaurantScope } from "../_shared/owner-restaurants.ts";
@@ -35,6 +36,11 @@ type RemovalResult = {
   error?: string;
 };
 
+type RemovalConfirmation = {
+  phrase: string | null;
+  names: Map<string, string>;
+};
+
 function json(req: Request, body: Record<string, unknown>, status = 200): Response {
   return new Response(JSON.stringify(body), {
     status,
@@ -57,6 +63,35 @@ function numberOrNull(value: unknown): number | null {
 
 function booleanValue(value: unknown): boolean {
   return value === true;
+}
+
+function asConfirmationName(value: unknown, field: string): string {
+  if (typeof value !== "string") {
+    throw new InputValidationError(
+      "confirmation_required",
+      "Type the restaurant name exactly as shown before removing it.",
+      field,
+    );
+  }
+  const cleaned = stripUnsafeControlChars(value)
+    .replace(/\r\n?/g, "\n")
+    .replace(/[\n\t]+/g, " ")
+    .trim();
+  if (!cleaned) {
+    throw new InputValidationError(
+      "confirmation_required",
+      "Type the restaurant name exactly as shown before removing it.",
+      field,
+    );
+  }
+  if (cleaned.length > 160) {
+    throw new InputValidationError(
+      "too_long",
+      "Restaurant confirmation must be 160 characters or fewer.",
+      field,
+    );
+  }
+  return cleaned;
 }
 
 function settingsObject(value: unknown): Record<string, unknown> {
@@ -97,6 +132,88 @@ function parseRestaurantIds(body: Record<string, unknown>): string[] {
   return Array.from(new Set(rawIds.map((value, index) =>
     asUuid(value, `restaurant_ids.${index}`, { required: true })!
   )));
+}
+
+function parseRemovalConfirmation(
+  body: Record<string, unknown>,
+  restaurantIds: string[],
+): RemovalConfirmation {
+  const rawPhrase = body.confirmation_phrase
+    ?? body.confirmationPhrase
+    ?? body.confirmationName
+    ?? body.confirmation_name;
+  if (rawPhrase != null) {
+    return {
+      phrase: asConfirmationName(rawPhrase, "confirmationName"),
+      names: new Map(),
+    };
+  }
+
+  const rawNames = body.confirmation_names;
+  const names = new Map<string, string>();
+
+  if (rawNames && typeof rawNames === "object" && !Array.isArray(rawNames)) {
+    const record = rawNames as Record<string, unknown>;
+    for (const restaurantId of restaurantIds) {
+      names.set(
+        restaurantId,
+        asConfirmationName(record[restaurantId], `confirmation_names.${restaurantId}`),
+      );
+    }
+    return { phrase: null, names };
+  }
+
+  throw new InputValidationError(
+    "confirmation_required",
+    "Type each selected restaurant name exactly as shown before removing restaurants.",
+    "confirmation_names",
+  );
+}
+
+function assertConfirmationNamesMatch(
+  restaurantIds: string[],
+  restaurants: Map<string, RestaurantRow>,
+  confirmation: RemovalConfirmation,
+): void {
+  const expectedNames: string[] = [];
+  for (const restaurantId of restaurantIds) {
+    const restaurant = restaurants.get(restaurantId);
+    if (!restaurant) continue;
+    const expectedName = restaurant.name?.trim();
+    if (!expectedName) {
+      throw new InputValidationError(
+        "confirmation_mismatch",
+        "Type the restaurant name exactly as shown before removing it.",
+        `confirmation_names.${restaurantId}`,
+      );
+    }
+    expectedNames.push(expectedName);
+  }
+
+  if (confirmation.phrase != null) {
+    if (confirmation.phrase !== expectedNames.join(", ")) {
+      throw new InputValidationError(
+        "confirmation_mismatch",
+        "Type the restaurant name exactly as shown before removing it.",
+        "confirmationName",
+      );
+    }
+    return;
+  }
+
+  for (const restaurantId of restaurantIds) {
+    const restaurant = restaurants.get(restaurantId);
+    if (!restaurant) continue;
+    const expectedName = restaurant.name?.trim();
+    const confirmationName = confirmation.names.get(restaurantId);
+    if (!expectedName || confirmationName !== expectedName) {
+      throw new InputValidationError(
+        "confirmation_mismatch",
+        "Type the restaurant name exactly as shown before removing it.",
+        `confirmation_names.${restaurantId}`,
+      );
+    }
+  }
 }
 
 async function getAuthenticatedUser(req: Request): Promise<UserRecord | Response> {
@@ -225,6 +342,7 @@ Deno.serve(async (req) => {
 
     const body = await readJsonObject(req);
     const restaurantIds = parseRestaurantIds(body);
+    const confirmation = parseRemovalConfirmation(body, restaurantIds);
     const scope = await resolveOwnedRestaurantScope(userOrResponse.id);
     const ownedSet = new Set(scope.ownedRestaurantIds);
     const unauthorizedIds = restaurantIds.filter((id) => !ownedSet.has(id));
@@ -237,6 +355,7 @@ Deno.serve(async (req) => {
     }
 
     const restaurants = await fetchRestaurantsById(restaurantIds);
+    assertConfirmationNamesMatch(restaurantIds, restaurants, confirmation);
     const results: RemovalResult[] = [];
     const successfulIds: string[] = [];
     const now = new Date().toISOString();

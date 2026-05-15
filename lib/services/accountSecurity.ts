@@ -72,6 +72,9 @@ function friendlyRestaurantRemovalError(rawMessage?: string, code?: string): str
   if (code === 'unauthorized_restaurants') {
     return 'You can only remove restaurants that you own.';
   }
+  if (code === 'confirmation_mismatch' || code === 'confirmation_required') {
+    return 'Type the restaurant name exactly as shown before removing it.';
+  }
   if (code === 'missing_config') {
     return 'Restaurant removal is not available yet. Please try again shortly.';
   }
@@ -220,18 +223,26 @@ export async function deleteAccount(): Promise<void> {
   }
 }
 
-export async function removeRestaurants(restaurantIds: string[]): Promise<RemoveRestaurantsResponse> {
+export async function removeRestaurants(
+  restaurantIds: string[],
+  confirmationName: string,
+): Promise<RemoveRestaurantsResponse> {
   const supabase = requireSupabase();
   const ids = Array.from(new Set(restaurantIds.map((id) => id.trim()).filter(Boolean)));
   if (ids.length === 0) {
     throw new Error('Choose at least one restaurant to remove.');
   }
+  const confirmation = confirmationName.trim();
 
   const { data, error: invokeError, response } = await supabase.functions.invoke<RemoveRestaurantsResponse>(
     'remove-restaurants',
     {
       method: 'POST',
-      body: { restaurant_ids: ids },
+      body: {
+        restaurant_ids: ids,
+        confirmationName: confirmation,
+        confirmation_phrase: confirmation,
+      },
     },
   );
   if (invokeError || data?.error || !data) {

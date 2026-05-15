@@ -8,13 +8,14 @@ import {
   StyleSheet,
   Switch,
   Text,
+  TextInput,
   View,
 } from 'react-native';
 import { useFocusEffect, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { OwnerScreen } from '@/components/owner/OwnerScreen';
 import { SubpageHeader } from '@/components/owner/SubpageHeader';
-import { useColors, useTheme, createStyles, spacing, borderRadius, type ThemeMode } from '@/lib/theme';
+import { useColors, useTheme, createStyles, spacing, borderRadius, withAlpha, type ThemeMode } from '@/lib/theme';
 import { useAuthSession } from '@/lib/auth/AuthContext';
 import { compactNameLabel, resolveAuthDisplayProfile } from '@/lib/auth/displayProfile';
 import { deleteAccount, removeRestaurants, signOutAllDevices } from '@/lib/services/accountSecurity';
@@ -59,6 +60,10 @@ function themeLabel(mode: ThemeMode): string {
   if (mode === 'light') return 'Light';
   if (mode === 'dark') return 'Dark';
   return 'System';
+}
+
+function normalizeConfirmationName(value: string): string {
+  return value.replace(/[\u0000-\u001F\u007F-\u009F]/g, '').trim();
 }
 
 // ── Styles ─────────────────────────────────────────────────────────────────
@@ -227,6 +232,44 @@ const useStyles = createStyles((c) => ({
     fontSize: 13,
     color: c.textMuted,
   },
+  confirmationPanel: {
+    marginHorizontal: spacing.lg,
+    marginTop: spacing.md,
+    padding: spacing.md,
+    borderRadius: borderRadius.lg,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: c.danger,
+    backgroundColor: withAlpha(c.danger, 0.1),
+  },
+  confirmationLabel: {
+    fontSize: 13,
+    fontWeight: '700',
+    color: c.textPrimary,
+  },
+  confirmationTarget: {
+    marginTop: 8,
+    fontSize: 14,
+    fontWeight: '800',
+    color: c.danger,
+  },
+  confirmationInput: {
+    minHeight: 44,
+    marginTop: spacing.sm,
+    borderRadius: 8,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: c.border,
+    backgroundColor: c.bgSurface,
+    paddingHorizontal: spacing.md,
+    color: c.textPrimary,
+    fontSize: 15,
+    fontWeight: '600',
+  },
+  confirmationHint: {
+    marginTop: 8,
+    fontSize: 12,
+    lineHeight: 17,
+    color: c.textMuted,
+  },
   modalActions: {
     flexDirection: 'row',
     justifyContent: 'flex-end',
@@ -347,22 +390,32 @@ function RestaurantRemovalModal({
   visible,
   restaurants,
   selectedIds,
+  confirmationValue,
+  confirmationTarget,
+  confirmationMatches,
   removing,
   onCancel,
   onConfirm,
   onToggle,
+  onConfirmationChange,
 }: {
   visible: boolean;
   restaurants: OwnerRestaurant[];
   selectedIds: string[];
+  confirmationValue: string;
+  confirmationTarget: string;
+  confirmationMatches: boolean;
   removing: boolean;
   onCancel: () => void;
   onConfirm: () => void;
   onToggle: (id: string) => void;
+  onConfirmationChange: (value: string) => void;
 }) {
   const c = useColors();
   const styles = useStyles();
   const selected = React.useMemo(() => new Set(selectedIds), [selectedIds]);
+  const selectedCount = selectedIds.length;
+  const disabled = removing || selectedCount === 0 || !confirmationMatches;
 
   return (
     <Modal
@@ -420,6 +473,32 @@ function RestaurantRemovalModal({
               );
             })}
           </ScrollView>
+          <View style={styles.confirmationPanel}>
+            <Text style={styles.confirmationLabel}>
+              {selectedCount <= 1
+                ? 'Type the restaurant name to confirm.'
+                : 'Type the selected restaurant names exactly as shown to confirm.'}
+            </Text>
+            {confirmationTarget ? (
+              <Text style={styles.confirmationTarget} selectable>
+                {confirmationTarget}
+              </Text>
+            ) : null}
+            <TextInput
+              value={confirmationValue}
+              onChangeText={onConfirmationChange}
+              placeholder={confirmationTarget || 'Restaurant name'}
+              placeholderTextColor={c.textMuted}
+              editable={!removing && selectedCount > 0}
+              autoCapitalize="none"
+              autoCorrect={false}
+              style={styles.confirmationInput}
+              accessibilityLabel="Restaurant removal confirmation name"
+            />
+            <Text style={styles.confirmationHint}>
+              The name must match exactly before the restaurant and its subscription can be removed.
+            </Text>
+          </View>
           <View style={styles.modalActions}>
             <Pressable
               onPress={onCancel}
@@ -431,11 +510,11 @@ function RestaurantRemovalModal({
             </Pressable>
             <Pressable
               onPress={onConfirm}
-              disabled={removing || selectedIds.length === 0}
+              disabled={disabled}
               style={[
                 styles.modalAction,
                 styles.modalActionDestructive,
-                (removing || selectedIds.length === 0) && styles.modalActionDisabled,
+                disabled && styles.modalActionDisabled,
               ]}
               accessibilityRole="button"
             >
@@ -598,17 +677,37 @@ export default function OwnerSettingsScreen() {
   const { selectedRestaurantId, restaurants } = useOwnerScope();
   const [restaurantRemovalOpen, setRestaurantRemovalOpen] = React.useState(false);
   const [restaurantRemovalIds, setRestaurantRemovalIds] = React.useState<string[]>([]);
+  const [restaurantRemovalConfirmation, setRestaurantRemovalConfirmation] = React.useState('');
   const [removingRestaurants, setRemovingRestaurants] = React.useState(false);
+
+  const restaurantById = React.useMemo(
+    () => new Map(restaurants.map((restaurant) => [restaurant.id, restaurant])),
+    [restaurants],
+  );
+  const selectedRemovalRestaurants = React.useMemo(
+    () => restaurantRemovalIds
+      .map((restaurantId) => restaurantById.get(restaurantId))
+      .filter((restaurant): restaurant is OwnerRestaurant => Boolean(restaurant)),
+    [restaurantById, restaurantRemovalIds],
+  );
+  const removalConfirmationTarget = React.useMemo(
+    () => selectedRemovalRestaurants.map((restaurant) => restaurant.name.trim()).join(', '),
+    [selectedRemovalRestaurants],
+  );
+  const removalConfirmationMatches = removalConfirmationTarget.length > 0
+    && normalizeConfirmationName(restaurantRemovalConfirmation) === removalConfirmationTarget;
 
   const openRestaurantRemoval = React.useCallback(() => {
     const firstSelected = selectedRestaurantId && restaurants.some((restaurant) => restaurant.id === selectedRestaurantId)
       ? selectedRestaurantId
       : restaurants[0]?.id;
     setRestaurantRemovalIds(firstSelected ? [firstSelected] : []);
+    setRestaurantRemovalConfirmation('');
     setRestaurantRemovalOpen(true);
   }, [restaurants, selectedRestaurantId]);
 
   const toggleRestaurantRemoval = React.useCallback((restaurantId: string) => {
+    setRestaurantRemovalConfirmation('');
     setRestaurantRemovalIds((current) =>
       current.includes(restaurantId)
         ? current.filter((id) => id !== restaurantId)
@@ -621,14 +720,22 @@ export default function OwnerSettingsScreen() {
       Alert.alert('Choose restaurants', 'Choose at least one restaurant to remove.');
       return;
     }
+    if (!removalConfirmationMatches) {
+      Alert.alert('Type the restaurant name', 'Type the restaurant name exactly as shown before removing it.');
+      return;
+    }
     setRemovingRestaurants(true);
     try {
-      const result = await removeRestaurants(restaurantRemovalIds);
+      const result = await removeRestaurants(
+        restaurantRemovalIds,
+        normalizeConfirmationName(restaurantRemovalConfirmation),
+      );
       await refreshOwnerRestaurants();
       const failed = result.results.filter((row) => !row.removed);
       const removed = result.results.filter((row) => row.removed);
       if (removed.length > 0) {
         setRestaurantRemovalOpen(false);
+        setRestaurantRemovalConfirmation('');
       }
 
       if (failed.length > 0) {
@@ -661,12 +768,22 @@ export default function OwnerSettingsScreen() {
     } finally {
       setRemovingRestaurants(false);
     }
-  }, [refreshOwnerRestaurants, restaurantRemovalIds, router]);
+  }, [
+    refreshOwnerRestaurants,
+    removalConfirmationMatches,
+    restaurantRemovalConfirmation,
+    restaurantRemovalIds,
+    router,
+  ]);
 
   const confirmRestaurantRemoval = React.useCallback(() => {
     const count = restaurantRemovalIds.length;
     if (count === 0) {
       Alert.alert('Choose restaurants', 'Choose at least one restaurant to remove.');
+      return;
+    }
+    if (!removalConfirmationMatches) {
+      Alert.alert('Type the restaurant name', 'Type the restaurant name exactly as shown before removing it.');
       return;
     }
     Alert.alert(
@@ -677,7 +794,7 @@ export default function OwnerSettingsScreen() {
         { text: 'Remove', style: 'destructive', onPress: performRestaurantRemoval },
       ],
     );
-  }, [performRestaurantRemoval, restaurantRemovalIds.length]);
+  }, [performRestaurantRemoval, removalConfirmationMatches, restaurantRemovalIds.length]);
 
   useFocusEffect(
     React.useCallback(() => {
@@ -904,12 +1021,19 @@ export default function OwnerSettingsScreen() {
         visible={restaurantRemovalOpen}
         restaurants={restaurants}
         selectedIds={restaurantRemovalIds}
+        confirmationValue={restaurantRemovalConfirmation}
+        confirmationTarget={removalConfirmationTarget}
+        confirmationMatches={removalConfirmationMatches}
         removing={removingRestaurants}
         onCancel={() => {
-          if (!removingRestaurants) setRestaurantRemovalOpen(false);
+          if (!removingRestaurants) {
+            setRestaurantRemovalOpen(false);
+            setRestaurantRemovalConfirmation('');
+          }
         }}
         onConfirm={confirmRestaurantRemoval}
         onToggle={toggleRestaurantRemoval}
+        onConfirmationChange={setRestaurantRemovalConfirmation}
       />
     </OwnerScreen>
   );
