@@ -43,44 +43,44 @@
       "type_id_receiptscreen"
     ],
     "1": [
+      "auth_phone_register_phoneregisterscreen",
       "auth_verify_phone_otp_tsx",
       "auth_verify_phone_otp_verifyphoneotpscreen",
       "auth_welcome_tsx",
       "auth_welcome_welcomescreen",
       "booking_restaurantid_step3_table_tsx",
       "booking_restaurantid_step7_confirmation_tsx",
+      "booking_restaurantid_step_prepay_offer_tsx",
       "category_category_discovercategoryscreen",
       "customer_discover_category_category_tsx",
-      "customer_discover_post_review_restaurant_tsx",
-      "customer_profile_cenaiva_voice_tsx",
-      "customer_profile_invite_tsx",
-      "customer_profile_privacy_tsx",
+      "customer_post_reward_tsx",
+      "customer_profile_about_tsx",
+      "customer_profile_register_restaurant_success_tsx",
+      "customer_profile_register_restaurant_tsx",
+      "customer_profile_security_change_phone_tsx",
       "customer_profile_security_tsx",
       "menu_id_usestyles",
-      "post_review_restaurant_createsnappost",
-      "post_review_restaurant_snaprestaurantscreen",
-      "profile_cenaiva_voice_cenaivavoicescreen",
-      "profile_invite_invitescreen",
-      "profile_privacy_privacyscreen",
+      "phone_register_tsx",
+      "post_review_reward_reviewrewardscreen",
+      "post_reward_postrewardredirect",
+      "profile_about_aboutscreen",
+      "profile_register_restaurant_registerrestaurantscreen",
       "profile_security_securityscreen",
       "restaurantid_step3_table_step3tableredirect",
+      "restaurantid_step_prepay_offer_stepprepayofferscreen",
+      "security_change_phone_changephonescreen",
       "staff_ai_owneraiscreen",
       "staff_ai_tsx",
-      "staff_biometric_biometricscreen",
-      "staff_biometric_tsx",
       "staff_legal_legalscreen",
       "staff_legal_tsx",
-      "staff_menu_categories_menucategoriesscreen",
-      "staff_menu_categories_tsx",
-      "staff_menu_item_edit_menuitemeditscreen",
-      "staff_menu_item_edit_tsx",
       "staff_menu_manage_edititemsheet",
       "staff_menu_manage_menumanagescreen",
       "staff_menu_manage_tsx",
       "staff_personal_details_personaldetailsscreen",
       "staff_personal_details_tsx",
-      "staff_roles_permissions_rolespermissionsscreen",
-      "staff_roles_permissions_tsx"
+      "staff_support_faq_items",
+      "staff_support_supportscreen",
+      "staff_support_tsx"
     ],
     "2": [
       "activity_index_activityscreen",
@@ -363,6 +363,26 @@
       "staff_insights_zero_revenue"
     ],
     "12": [
+      "app_auth_callback_authcallbackscreen",
+      "auth_callback_tsx",
+      "checkout_orderid_cenaivacheckoutscreen",
+      "checkout_orderid_checkoutitem",
+      "checkout_orderid_checkoutorder",
+      "customer_checkout_orderid_tsx",
+      "customer_discover_post_review_styles_tsx",
+      "post_review_styles_card_frame_style",
+      "post_review_styles_snapstylesscreen",
+      "staff_expense_scan_expensescanscreen",
+      "staff_expense_scan_tsx",
+      "staff_expense_scan_withtimeout",
+      "staff_floor_normalizestatus",
+      "staff_floor_num",
+      "staff_floor_ownerfloorscreen",
+      "staff_floor_rowtofloortable",
+      "staff_floor_styles",
+      "staff_floor_tsx"
+    ],
+    "13": [
       "staff_billing_history_billinghistoryscreen",
       "staff_billing_history_category",
       "staff_billing_history_cycleactivity",
@@ -382,7 +402,7 @@
       "staff_billing_year_tsx",
       "staff_billing_year_yearinvoice"
     ],
-    "13": [
+    "14": [
       "profile_edit_clampturntime",
       "profile_edit_editbusinessprofilescreen",
       "profile_edit_editprofilescreen",
@@ -401,26 +421,6 @@
       "staff_profile_edit_tsx",
       "staff_quiet_hours_quiethoursscreen",
       "staff_quiet_hours_tsx"
-    ],
-    "14": [
-      "app_auth_callback_authcallbackscreen",
-      "auth_callback_tsx",
-      "checkout_orderid_cenaivacheckoutscreen",
-      "checkout_orderid_checkoutitem",
-      "checkout_orderid_checkoutorder",
-      "customer_checkout_orderid_tsx",
-      "customer_discover_post_review_styles_tsx",
-      "post_review_styles_card_frame_style",
-      "post_review_styles_snapstylesscreen",
-      "staff_expense_scan_expensescanscreen",
-      "staff_expense_scan_tsx",
-      "staff_expense_scan_withtimeout",
-      "staff_floor_normalizestatus",
-      "staff_floor_num",
-      "staff_floor_ownerfloorscreen",
-      "staff_floor_rowtofloortable",
-      "staff_floor_styles",
-      "staff_floor_tsx"
     ],
     "15": [
       "customer_discover_explore_tsx",
@@ -538,6 +538,14 @@
       "staff_invite_team_member_tsx"
     ],
     "24": [
+      "auth_login_failureskey",
+      "auth_login_lockoutkey",
+      "auth_login_loginscreen",
+      "auth_owner_login_ownerloginscreen",
+      "login_tsx",
+      "owner_login_tsx"
+    ],
+    "25": [
       "staff_subscription_plan_midcyclecancelnote",
       "staff_subscription_plan_month_names",
       "staff_subscription_plan_nextbilldatelabel",
@@ -545,53 +553,45 @@
       "staff_subscription_plan_subscriptionplanscreen",
       "staff_subscription_plan_tsx"
     ],
-    "25": [
-      "auth_login_failureskey",
-      "auth_login_lockoutkey",
-      "auth_login_loginscreen",
-      "auth_login_tsx",
-      "auth_owner_login_ownerloginscreen",
-      "auth_owner_login_tsx"
-    ],
     "26": [
-      "staff_menu_chunk",
-      "staff_menu_filteritems",
-      "staff_menu_menubackdrop",
-      "staff_menu_ownermenuscreen",
-      "staff_menu_tsx"
-    ],
-    "27": [
       "auth_owner_register_ownerregisterscreen",
-      "auth_owner_register_tsx",
       "auth_register_passwordchecks",
       "auth_register_registerscreen",
-      "auth_register_tsx"
+      "owner_register_tsx",
+      "register_tsx"
     ],
-    "28": [
+    "27": [
       "staff_expenses_choicerow",
       "staff_expenses_choicestyles",
       "staff_expenses_mimefromname",
       "staff_expenses_ownerexpensesscreen",
       "staff_expenses_tsx"
     ],
-    "29": [
+    "28": [
       "booking_restaurantid_step6_payment_tsx",
       "staff_payment_method_card",
       "staff_payment_method_fundinglabel",
       "staff_payment_method_initial_cards",
       "staff_payment_method_tsx"
     ],
-    "30": [
-      "profile_index_galleryphoto",
-      "profile_index_ownerbusinessscreen",
-      "staff_business_restaurantsettings",
-      "staff_business_tsx"
+    "29": [
+      "staff_menu_chunk",
+      "staff_menu_filteritems",
+      "staff_menu_menubackdrop",
+      "staff_menu_ownermenuscreen",
+      "staff_menu_tsx"
     ],
-    "31": [
+    "30": [
       "events_index_buildeventdateiso",
       "events_index_buildeventendsatiso",
       "events_index_infereventtype",
       "events_index_mapeventrowtodining"
+    ],
+    "31": [
+      "profile_index_galleryphoto",
+      "profile_index_ownerbusinessscreen",
+      "staff_business_restaurantsettings",
+      "staff_business_tsx"
     ],
     "32": [
       "customer_profile_language_tsx",
@@ -600,28 +600,28 @@
       "profile_language_languagescreen"
     ],
     "33": [
+      "booking_restaurantid_step2_time_tsx",
+      "restaurantid_step2_time_availabilityslotkey",
+      "restaurantid_step2_time_geteventbyid",
+      "restaurantid_step2_time_step2time"
+    ],
+    "34": [
       "staff_reservation_settings_reservationsettingsscreen",
       "staff_reservation_settings_stepper",
       "staff_reservation_settings_stepperprops",
       "staff_reservation_settings_tsx"
     ],
-    "34": [
+    "35": [
       "customer_profile_help_tsx",
       "profile_help_helpscreen",
       "profile_help_opensupportemail",
       "profile_help_topic_subjects"
     ],
-    "35": [
+    "36": [
       "staff_team_cards",
       "staff_team_teamcard",
       "staff_team_teamoverviewscreen",
       "staff_team_tsx"
-    ],
-    "36": [
-      "booking_restaurantid_step2_time_tsx",
-      "restaurantid_step2_time_availabilityslotkey",
-      "restaurantid_step2_time_geteventbyid",
-      "restaurantid_step2_time_step2time"
     ],
     "37": [
       "events_index_formatpromobadge",
@@ -629,14 +629,14 @@
       "events_index_todayisodate"
     ],
     "38": [
-      "staff_two_factor_method",
-      "staff_two_factor_tsx",
-      "staff_two_factor_twofactorscreen"
+      "customer_profile_appearance_tsx",
+      "profile_appearance_appearancescreen",
+      "profile_appearance_option"
     ],
     "39": [
-      "staff_export_formatdaterange",
-      "staff_export_ownerexportscreen",
-      "staff_export_tsx"
+      "customer_discover_post_review_restaurant_tsx",
+      "post_review_restaurant_createsnappost",
+      "post_review_restaurant_snaprestaurantscreen"
     ],
     "40": [
       "staff_rate_cenaiva_rateseatlyscreen",
@@ -644,108 +644,114 @@
       "staff_rate_cenaiva_tsx"
     ],
     "41": [
-      "customer_profile_register_restaurant_success_tsx",
-      "customer_profile_register_restaurant_tsx",
-      "profile_register_restaurant_registerrestaurantscreen"
+      "staff_export_formatdaterange",
+      "staff_export_ownerexportscreen",
+      "staff_export_tsx"
     ],
     "42": [
-      "customer_discover_post_review_connect_tsx",
-      "customer_discover_post_review_details_tsx",
-      "post_review_connect_snapcaptionscreen"
-    ],
-    "43": [
-      "staff_support_faq_items",
-      "staff_support_supportscreen",
-      "staff_support_tsx"
-    ],
-    "44": [
       "staff_billing_address_billingaddressscreen",
       "staff_billing_address_fielderrors",
       "staff_billing_address_tsx"
     ],
+    "43": [
+      "customer_discover_post_review_connect_tsx",
+      "customer_discover_post_review_details_tsx",
+      "post_review_connect_snapcaptionscreen"
+    ],
+    "44": [
+      "staff_two_factor_method",
+      "staff_two_factor_tsx",
+      "staff_two_factor_twofactorscreen"
+    ],
     "45": [
-      "customer_post_reward_tsx",
-      "post_review_reward_reviewrewardscreen",
-      "post_reward_postrewardredirect"
-    ],
-    "46": [
-      "customer_profile_appearance_tsx",
-      "profile_appearance_appearancescreen",
-      "profile_appearance_option"
-    ],
-    "47": [
-      "activity_index_bucketof",
-      "activity_index_isupcomingitem"
-    ],
-    "48": [
-      "promotions_index_mappromostatus",
-      "promotions_index_mappromotionrowtoownerpromotion"
-    ],
-    "49": [
-      "events_index_formateventdatelabel",
-      "events_index_mapeventrowtoownerevent"
-    ],
-    "50": [
-      "profile_index_initialsfromname",
-      "profile_index_profilescreen"
-    ],
-    "51": [
-      "profile_index_parsepreferenceinput",
-      "profile_index_togglecommapreference"
-    ],
-    "52": [
       "discover_index_peopleresults",
       "discover_index_usepeoplestyles"
     ],
-    "53": [
+    "46": [
+      "profile_index_initialsfromname",
+      "profile_index_profilescreen"
+    ],
+    "47": [
+      "profile_index_parsepreferenceinput",
+      "profile_index_togglecommapreference"
+    ],
+    "48": [
+      "activity_index_bucketof",
+      "activity_index_isupcomingitem"
+    ],
+    "49": [
       "events_index_getrestaurantforevent",
       "events_index_matchesquery"
     ],
-    "54": [
+    "50": [
+      "promotions_index_mappromostatus",
+      "promotions_index_mappromotionrowtoownerpromotion"
+    ],
+    "51": [
+      "events_index_formateventdatelabel",
+      "events_index_mapeventrowtoownerevent"
+    ],
+    "52": [
       "staff_dashboard_staffdashboardredirect",
       "staff_dashboard_tsx"
     ],
+    "53": [
+      "staff_menu_item_edit_menuitemeditscreen",
+      "staff_menu_item_edit_tsx"
+    ],
+    "54": [
+      "staff_menu_categories_menucategoriesscreen",
+      "staff_menu_categories_tsx"
+    ],
     "55": [
+      "customer_profile_privacy_tsx",
+      "profile_privacy_privacyscreen"
+    ],
+    "56": [
+      "customer_profile_cenaiva_voice_tsx",
+      "profile_cenaiva_voice_cenaivavoicescreen"
+    ],
+    "57": [
+      "customer_profile_invite_tsx",
+      "profile_invite_invitescreen"
+    ],
+    "58": [
+      "staff_biometric_biometricscreen",
+      "staff_biometric_tsx"
+    ],
+    "59": [
+      "staff_roles_permissions_rolespermissionsscreen",
+      "staff_roles_permissions_tsx"
+    ],
+    "60": [
       "customer_post_postplaceholder",
       "customer_post_tsx"
     ],
-    "56": [
+    "61": [
       "customer_ai_chat_aichatscreen",
       "customer_ai_chat_tsx"
     ],
-    "57": [
+    "62": [
       "customer_post_caption_tsx",
       "post_caption_postcaptionredirect"
     ],
-    "58": [
+    "63": [
       "customer_profile_favorites_tsx",
       "profile_favorites_favoritesscreen"
     ],
-    "59": [
+    "64": [
       "customer_profile_legal_terms_tsx",
       "legal_terms_termsscreen"
     ],
-    "60": [
+    "65": [
       "customer_profile_legal_licenses_tsx",
       "legal_licenses_licensesscreen"
     ],
-    "61": [
+    "66": [
       "customer_profile_legal_privacy_policy_tsx",
       "legal_privacy_policy_privacypolicyscreen"
     ],
-    "62": [
-      "customer_profile_about_tsx",
-      "profile_about_aboutscreen"
-    ],
-    "63": [
-      "customer_profile_security_change_phone_tsx",
-      "security_change_phone_changephonescreen"
-    ],
-    "64": [
-      "booking_restaurantid_step_prepay_offer_tsx",
-      "restaurantid_step_prepay_offer_stepprepayofferscreen"
-    ],
-    "65": [
+    "67": [
       "restaurantid_step1_date_step1date"
     ]
   },
@@ -762,9 +768,9 @@
     "9": 0.11,
     "10": 0.12,
     "11": 0.13,
-    "12": 0.15,
-    "13": 0.13,
-    "14": 0.12,
+    "12": 0.12,
+    "13": 0.15,
+    "14": 0.13,
     "15": 0.13,
     "16": 0.15,
     "17": 0.18,
@@ -774,14 +780,14 @@
     "21": 0.29,
     "22": 0.25,
     "23": 0.38,
-    "24": 0.47,
-    "25": 0.4,
-    "26": 0.5,
+    "24": 0.4,
+    "25": 0.47,
+    "26": 0.4,
     "27": 0.4,
     "28": 0.4,
-    "29": 0.4,
-    "30": 0.5,
-    "31": 0.67,
+    "29": 0.5,
+    "30": 0.67,
+    "31": 0.5,
     "32": 0.5,
     "33": 0.5,
     "34": 0.5,
@@ -795,8 +801,8 @@
     "42": 0.67,
     "43": 0.67,
     "44": 0.67,
-    "45": 0.67,
-    "46": 0.67,
+    "45": 1.0,
+    "46": 1.0,
     "47": 1.0,
     "48": 1.0,
     "49": 1.0,
@@ -815,13 +821,15 @@
     "62": 1.0,
     "63": 1.0,
     "64": 1.0,
-    "65": 1.0
+    "65": 1.0,
+    "66": 1.0,
+    "67": 1.0
   },
   "gods": [
     {
       "id": "menu_id_usestyles",
       "label": "useStyles",
-      "degree": 226
+      "degree": 228
     },
     {
       "id": "guests_id_initials",

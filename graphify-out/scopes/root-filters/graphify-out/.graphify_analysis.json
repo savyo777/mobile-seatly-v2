@@ -1,0 +1,27 @@
+{
+  "communities": {
+    "0": [
+      "filters_jsx",
+      "mobile_seatly_v2_5_filters_accent",
+      "mobile_seatly_v2_5_filters_filters"
+    ]
+  },
+  "cohesion": {
+    "0": 0.67
+  },
+  "gods": [
+    {
+      "id": "mobile_seatly_v2_5_filters_filters",
+      "label": "FILTERS",
+      "degree": 1
+    }
+  ],
+  "surprises": [],
+  "questions": [
+    {
+      "type": "isolated_nodes",
+      "question": "What connects `FILTERS` to the rest of the system?",
+      "why": "1 weakly-connected nodes found - possible documentation gaps or missing edges."
+    }
+  ]
+}

@@ -59,6 +59,18 @@
       "services_userprofile_stringvalue"
     ],
     "4": [
+      "oauth_ts",
+      "services_oauth_applesigninresult",
+      "services_oauth_ensurecustomerprofile",
+      "services_oauth_ensureownerprofile",
+      "services_oauth_ensureprofilewithrole",
+      "services_oauth_googlesigninresult",
+      "services_oauth_parseauthcodefromurl",
+      "services_oauth_parsetokensfromurl",
+      "services_oauth_signinwithapple",
+      "services_oauth_signinwithgoogle"
+    ],
+    "5": [
       "phoneauth_ts",
       "services_phoneauth_friendlyphoneautherror",
       "services_phoneauth_prepareprofilelinkedphonelogin",
@@ -68,16 +80,6 @@
       "services_phoneauth_sendsupabasephoneotp",
       "services_phoneauth_shouldattemptprofilephonelink",
       "services_phoneauth_verifyphoneotp"
-    ],
-    "5": [
-      "oauth_ts",
-      "services_oauth_ensurecustomerprofile",
-      "services_oauth_ensureownerprofile",
-      "services_oauth_ensureprofilewithrole",
-      "services_oauth_googlesigninresult",
-      "services_oauth_parseauthcodefromurl",
-      "services_oauth_parsetokensfromurl",
-      "services_oauth_signinwithgoogle"
     ],
     "6": [
       "cookieconsent_ts",
@@ -91,8 +93,8 @@
     "1": 0.24,
     "2": 0.27,
     "3": 0.35,
-    "4": 0.42,
-    "5": 0.39,
+    "4": 0.33,
+    "5": 0.42,
     "6": 0.5
   },
   "gods": [

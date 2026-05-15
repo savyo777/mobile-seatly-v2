@@ -592,24 +592,24 @@
     "hash": "0fc1a4002a7a3545f026fd3a9d4a13fe"
   },
   "/Users/stevengeorgy/mobile-seatly-v2-5/app/(auth)/login.tsx": {
-    "mtime": 1778615269.3544636,
-    "hash": "144e3e32d731421e5b917b139caa0e50"
+    "mtime": 1778872977.3131013,
+    "hash": "9c47acf7357bb63ff612ea91562b2723"
   },
   "/Users/stevengeorgy/mobile-seatly-v2-5/app/(auth)/verify-phone-otp.tsx": {
     "mtime": 1778615269.3553312,
     "hash": "235f78f2396dc9384d1595b6e88fc84b"
   },
   "/Users/stevengeorgy/mobile-seatly-v2-5/app/(auth)/owner-register.tsx": {
-    "mtime": 1778615269.3547661,
-    "hash": "45f079c552ad548bb355e4ee42e3a44f"
+    "mtime": 1778872977.3137293,
+    "hash": "a891a9d1c916fff70c7034408ab557ef"
   },
   "/Users/stevengeorgy/mobile-seatly-v2-5/app/(auth)/register.tsx": {
-    "mtime": 1778615269.3549707,
-    "hash": "4766be2ed8c40fcb820f5990fa504fa7"
+    "mtime": 1778872977.3141787,
+    "hash": "01928cd989467151b5349e54db55990a"
   },
   "/Users/stevengeorgy/mobile-seatly-v2-5/app/(auth)/owner-login.tsx": {
-    "mtime": 1778615269.3546398,
-    "hash": "24b7e3af8b7e59baf0b6f8cecdf03995"
+    "mtime": 1778872977.3133109,
+    "hash": "7fc420cc5e9d2f0e1426c855924268f8"
   },
   "/Users/stevengeorgy/mobile-seatly-v2-5/app/(auth)/_layout.tsx": {
     "mtime": 1778615269.3540044,
@@ -618,5 +618,9 @@
   "/Users/stevengeorgy/mobile-seatly-v2-5/app/(auth)/welcome.tsx": {
     "mtime": 1778615269.3555262,
     "hash": "b92da57e4dcac96bcb9d2963e695444f"
+  },
+  "/Users/stevengeorgy/mobile-seatly-v2-5/app/(auth)/phone-register.tsx": {
+    "mtime": 1778872977.3138666,
+    "hash": "b8d103760189a15119dc3dbf3675c99c"
   }
 }

@@ -1,0 +1,89 @@
+{
+  "communities": {
+    "0": [
+      "generate_apple_jwt_mjs",
+      "scripts_generate_apple_jwt_args",
+      "scripts_generate_apple_jwt_base64url",
+      "scripts_generate_apple_jwt_die",
+      "scripts_generate_apple_jwt_expandtilde",
+      "scripts_generate_apple_jwt_header",
+      "scripts_generate_apple_jwt_now",
+      "scripts_generate_apple_jwt_parseargs",
+      "scripts_generate_apple_jwt_payload",
+      "scripts_generate_apple_jwt_signature",
+      "scripts_generate_apple_jwt_signer",
+      "scripts_generate_apple_jwt_usage"
+    ],
+    "1": [
+      "qa_mobile_click_smoke_default_bundle_ids",
+      "qa_mobile_click_smoke_default_routes",
+      "qa_mobile_click_smoke_fatalpatterns",
+      "qa_mobile_click_smoke_main",
+      "qa_mobile_click_smoke_mjs",
+      "qa_mobile_click_smoke_routetourl",
+      "qa_mobile_click_smoke_run",
+      "qa_mobile_click_smoke_wait"
+    ]
+  },
+  "cohesion": {
+    "0": 0.17,
+    "1": 0.36
+  },
+  "gods": [
+    {
+      "id": "qa_mobile_click_smoke_main",
+      "label": "main()",
+      "degree": 4
+    },
+    {
+      "id": "qa_mobile_click_smoke_routetourl",
+      "label": "routeToUrl()",
+      "degree": 2
+    },
+    {
+      "id": "qa_mobile_click_smoke_run",
+      "label": "run()",
+      "degree": 2
+    },
+    {
+      "id": "qa_mobile_click_smoke_wait",
+      "label": "wait()",
+      "degree": 2
+    },
+    {
+      "id": "scripts_generate_apple_jwt_args",
+      "label": "args",
+      "degree": 1
+    },
+    {
+      "id": "scripts_generate_apple_jwt_now",
+      "label": "now",
+      "degree": 1
+    },
+    {
+      "id": "scripts_generate_apple_jwt_header",
+      "label": "header",
+      "degree": 1
+    },
+    {
+      "id": "scripts_generate_apple_jwt_payload",
+      "label": "payload",
+      "degree": 1
+    },
+    {
+      "id": "scripts_generate_apple_jwt_signer",
+      "label": "signer",
+      "degree": 1
+    },
+    {
+      "id": "scripts_generate_apple_jwt_signature",
+      "label": "signature",
+      "degree": 1
+    }
+  ],
+  "surprises": [],
+  "tokens": {
+    "input": 0,
+    "output": 0
+  }
+}

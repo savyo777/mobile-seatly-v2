@@ -1,0 +1,404 @@
+{
+  "directed": false,
+  "multigraph": false,
+  "graph": {},
+  "nodes": [
+    {
+      "label": "generate-apple-jwt.mjs",
+      "file_type": "code",
+      "source_file": "generate-apple-jwt.mjs",
+      "source_location": "L1",
+      "id": "generate_apple_jwt_mjs",
+      "community": 0,
+      "norm_label": "generate-apple-jwt.mjs"
+    },
+    {
+      "label": "parseArgs()",
+      "file_type": "code",
+      "source_file": "generate-apple-jwt.mjs",
+      "source_location": "L24",
+      "id": "scripts_generate_apple_jwt_parseargs",
+      "community": 0,
+      "norm_label": "parseargs()"
+    },
+    {
+      "label": "base64url()",
+      "file_type": "code",
+      "source_file": "generate-apple-jwt.mjs",
+      "source_location": "L38",
+      "id": "scripts_generate_apple_jwt_base64url",
+      "community": 0,
+      "norm_label": "base64url()"
+    },
+    {
+      "label": "expandTilde()",
+      "file_type": "code",
+      "source_file": "generate-apple-jwt.mjs",
+      "source_location": "L42",
+      "id": "scripts_generate_apple_jwt_expandtilde",
+      "community": 0,
+      "norm_label": "expandtilde()"
+    },
+    {
+      "label": "die()",
+      "file_type": "code",
+      "source_file": "generate-apple-jwt.mjs",
+      "source_location": "L48",
+      "id": "scripts_generate_apple_jwt_die",
+      "community": 0,
+      "norm_label": "die()"
+    },
+    {
+      "label": "usage()",
+      "file_type": "code",
+      "source_file": "generate-apple-jwt.mjs",
+      "source_location": "L53",
+      "id": "scripts_generate_apple_jwt_usage",
+      "community": 0,
+      "norm_label": "usage()"
+    },
+    {
+      "label": "args",
+      "file_type": "code",
+      "source_file": "generate-apple-jwt.mjs",
+      "source_location": "L60",
+      "id": "scripts_generate_apple_jwt_args",
+      "community": 0,
+      "norm_label": "args"
+    },
+    {
+      "label": "now",
+      "file_type": "code",
+      "source_file": "generate-apple-jwt.mjs",
+      "source_location": "L81",
+      "id": "scripts_generate_apple_jwt_now",
+      "community": 0,
+      "norm_label": "now"
+    },
+    {
+      "label": "header",
+      "file_type": "code",
+      "source_file": "generate-apple-jwt.mjs",
+      "source_location": "L85",
+      "id": "scripts_generate_apple_jwt_header",
+      "community": 0,
+      "norm_label": "header"
+    },
+    {
+      "label": "payload",
+      "file_type": "code",
+      "source_file": "generate-apple-jwt.mjs",
+      "source_location": "L86",
+      "id": "scripts_generate_apple_jwt_payload",
+      "community": 0,
+      "norm_label": "payload"
+    },
+    {
+      "label": "signer",
+      "file_type": "code",
+      "source_file": "generate-apple-jwt.mjs",
+      "source_location": "L96",
+      "id": "scripts_generate_apple_jwt_signer",
+      "community": 0,
+      "norm_label": "signer"
+    },
+    {
+      "label": "signature",
+      "file_type": "code",
+      "source_file": "generate-apple-jwt.mjs",
+      "source_location": "L99",
+      "id": "scripts_generate_apple_jwt_signature",
+      "community": 0,
+      "norm_label": "signature"
+    },
+    {
+      "label": "mobile-click-smoke.mjs",
+      "file_type": "code",
+      "source_file": "qa/mobile-click-smoke.mjs",
+      "source_location": "L1",
+      "id": "qa_mobile_click_smoke_mjs",
+      "community": 1,
+      "norm_label": "mobile-click-smoke.mjs"
+    },
+    {
+      "label": "DEFAULT_ROUTES",
+      "file_type": "code",
+      "source_file": "qa/mobile-click-smoke.mjs",
+      "source_location": "L4",
+      "id": "qa_mobile_click_smoke_default_routes",
+      "community": 1,
+      "norm_label": "default_routes"
+    },
+    {
+      "label": "DEFAULT_BUNDLE_IDS",
+      "file_type": "code",
+      "source_file": "qa/mobile-click-smoke.mjs",
+      "source_location": "L22",
+      "id": "qa_mobile_click_smoke_default_bundle_ids",
+      "community": 1,
+      "norm_label": "default_bundle_ids"
+    },
+    {
+      "label": "fatalPatterns",
+      "file_type": "code",
+      "source_file": "qa/mobile-click-smoke.mjs",
+      "source_location": "L27",
+      "id": "qa_mobile_click_smoke_fatalpatterns",
+      "community": 1,
+      "norm_label": "fatalpatterns"
+    },
+    {
+      "label": "routeToUrl()",
+      "file_type": "code",
+      "source_file": "qa/mobile-click-smoke.mjs",
+      "source_location": "L35",
+      "id": "qa_mobile_click_smoke_routetourl",
+      "community": 1,
+      "norm_label": "routetourl()"
+    },
+    {
+      "label": "run()",
+      "file_type": "code",
+      "source_file": "qa/mobile-click-smoke.mjs",
+      "source_location": "L39",
+      "id": "qa_mobile_click_smoke_run",
+      "community": 1,
+      "norm_label": "run()"
+    },
+    {
+      "label": "wait()",
+      "file_type": "code",
+      "source_file": "qa/mobile-click-smoke.mjs",
+      "source_location": "L58",
+      "id": "qa_mobile_click_smoke_wait",
+      "community": 1,
+      "norm_label": "wait()"
+    },
+    {
+      "label": "main()",
+      "file_type": "code",
+      "source_file": "qa/mobile-click-smoke.mjs",
+      "source_location": "L62",
+      "id": "qa_mobile_click_smoke_main",
+      "community": 1,
+      "norm_label": "main()"
+    }
+  ],
+  "links": [
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "generate-apple-jwt.mjs",
+      "source_location": "L24",
+      "weight": 1.0,
+      "source": "generate_apple_jwt_mjs",
+      "target": "scripts_generate_apple_jwt_parseargs",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "generate-apple-jwt.mjs",
+      "source_location": "L38",
+      "weight": 1.0,
+      "source": "generate_apple_jwt_mjs",
+      "target": "scripts_generate_apple_jwt_base64url",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "generate-apple-jwt.mjs",
+      "source_location": "L42",
+      "weight": 1.0,
+      "source": "generate_apple_jwt_mjs",
+      "target": "scripts_generate_apple_jwt_expandtilde",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "generate-apple-jwt.mjs",
+      "source_location": "L48",
+      "weight": 1.0,
+      "source": "generate_apple_jwt_mjs",
+      "target": "scripts_generate_apple_jwt_die",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "generate-apple-jwt.mjs",
+      "source_location": "L53",
+      "weight": 1.0,
+      "source": "generate_apple_jwt_mjs",
+      "target": "scripts_generate_apple_jwt_usage",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "generate-apple-jwt.mjs",
+      "source_location": "L60",
+      "weight": 1.0,
+      "source": "generate_apple_jwt_mjs",
+      "target": "scripts_generate_apple_jwt_args",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "generate-apple-jwt.mjs",
+      "source_location": "L81",
+      "weight": 1.0,
+      "source": "generate_apple_jwt_mjs",
+      "target": "scripts_generate_apple_jwt_now",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "generate-apple-jwt.mjs",
+      "source_location": "L85",
+      "weight": 1.0,
+      "source": "generate_apple_jwt_mjs",
+      "target": "scripts_generate_apple_jwt_header",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "generate-apple-jwt.mjs",
+      "source_location": "L86",
+      "weight": 1.0,
+      "source": "generate_apple_jwt_mjs",
+      "target": "scripts_generate_apple_jwt_payload",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "generate-apple-jwt.mjs",
+      "source_location": "L96",
+      "weight": 1.0,
+      "source": "generate_apple_jwt_mjs",
+      "target": "scripts_generate_apple_jwt_signer",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "generate-apple-jwt.mjs",
+      "source_location": "L99",
+      "weight": 1.0,
+      "source": "generate_apple_jwt_mjs",
+      "target": "scripts_generate_apple_jwt_signature",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "qa/mobile-click-smoke.mjs",
+      "source_location": "L4",
+      "weight": 1.0,
+      "source": "qa_mobile_click_smoke_mjs",
+      "target": "qa_mobile_click_smoke_default_routes",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "qa/mobile-click-smoke.mjs",
+      "source_location": "L22",
+      "weight": 1.0,
+      "source": "qa_mobile_click_smoke_mjs",
+      "target": "qa_mobile_click_smoke_default_bundle_ids",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "qa/mobile-click-smoke.mjs",
+      "source_location": "L27",
+      "weight": 1.0,
+      "source": "qa_mobile_click_smoke_mjs",
+      "target": "qa_mobile_click_smoke_fatalpatterns",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "qa/mobile-click-smoke.mjs",
+      "source_location": "L35",
+      "weight": 1.0,
+      "source": "qa_mobile_click_smoke_mjs",
+      "target": "qa_mobile_click_smoke_routetourl",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "qa/mobile-click-smoke.mjs",
+      "source_location": "L39",
+      "weight": 1.0,
+      "source": "qa_mobile_click_smoke_mjs",
+      "target": "qa_mobile_click_smoke_run",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "qa/mobile-click-smoke.mjs",
+      "source_location": "L58",
+      "weight": 1.0,
+      "source": "qa_mobile_click_smoke_mjs",
+      "target": "qa_mobile_click_smoke_wait",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "qa/mobile-click-smoke.mjs",
+      "source_location": "L62",
+      "weight": 1.0,
+      "source": "qa_mobile_click_smoke_mjs",
+      "target": "qa_mobile_click_smoke_main",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "qa/mobile-click-smoke.mjs",
+      "source_location": "L107",
+      "weight": 1.0,
+      "source": "qa_mobile_click_smoke_main",
+      "target": "qa_mobile_click_smoke_routetourl",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "qa/mobile-click-smoke.mjs",
+      "source_location": "L89",
+      "weight": 1.0,
+      "source": "qa_mobile_click_smoke_main",
+      "target": "qa_mobile_click_smoke_run",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "qa/mobile-click-smoke.mjs",
+      "source_location": "L110",
+      "weight": 1.0,
+      "source": "qa_mobile_click_smoke_main",
+      "target": "qa_mobile_click_smoke_wait",
+      "confidence_score": 1.0
+    }
+  ],
+  "hyperedges": [],
+  "built_at_commit": "0dfcadfac3e3b5754e3e94f92062ceed35891ee4"
+}

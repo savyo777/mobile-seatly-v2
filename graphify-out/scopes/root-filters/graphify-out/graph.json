@@ -1,0 +1,58 @@
+{
+  "directed": false,
+  "multigraph": false,
+  "graph": {},
+  "nodes": [
+    {
+      "label": "filters.jsx",
+      "file_type": "code",
+      "source_file": "filters.jsx",
+      "source_location": "L1",
+      "id": "filters_jsx",
+      "community": 0,
+      "norm_label": "filters.jsx"
+    },
+    {
+      "label": "FILTERS",
+      "file_type": "code",
+      "source_file": "filters.jsx",
+      "source_location": "L7",
+      "id": "mobile_seatly_v2_5_filters_filters",
+      "community": 0,
+      "norm_label": "filters"
+    },
+    {
+      "label": "Accent()",
+      "file_type": "code",
+      "source_file": "filters.jsx",
+      "source_location": "L309",
+      "id": "mobile_seatly_v2_5_filters_accent",
+      "community": 0,
+      "norm_label": "accent()"
+    }
+  ],
+  "links": [
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "filters.jsx",
+      "source_location": "L7",
+      "weight": 1.0,
+      "source": "filters_jsx",
+      "target": "mobile_seatly_v2_5_filters_filters",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "filters.jsx",
+      "source_location": "L309",
+      "weight": 1.0,
+      "source": "filters_jsx",
+      "target": "mobile_seatly_v2_5_filters_accent",
+      "confidence_score": 1.0
+    }
+  ],
+  "hyperedges": [],
+  "built_at_commit": "0dfcadfac3e3b5754e3e94f92062ceed35891ee4"
+}
