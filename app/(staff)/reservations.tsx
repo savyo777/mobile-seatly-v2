@@ -8,10 +8,20 @@ import {
   Modal,
   ScrollView,
   Alert,
+  Dimensions,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
+import { Gesture, GestureDetector } from 'react-native-gesture-handler';
+import Animated, {
+  useSharedValue,
+  useAnimatedStyle,
+  withSpring,
+  withTiming,
+  runOnJS,
+  Easing,
+} from 'react-native-reanimated';
 import { useColors, createStyles, spacing, borderRadius } from '@/lib/theme';
 import { useOwnerTabScrollPadding } from '@/hooks/useOwnerTabScrollPadding';
 import {
@@ -91,6 +101,148 @@ const STATUS_SORT_WEIGHT: Record<OwnerReservationSlot['status'], number> = {
   confirmed: 2,
   seated: 3,
 };
+
+const SCREEN_HEIGHT = Dimensions.get('window').height;
+const SHEET_DISMISS_DRAG_PX = 120;
+const SHEET_DISMISS_VELOCITY = 600;
+
+type ReservationDetailSheetProps = {
+  visible: boolean;
+  onClose: () => void;
+  /** The visible-area drag handle: rendered with the pan gesture attached.
+   *  Use this for the grabber + title so swiping down on the header dismisses
+   *  the sheet without fighting the ScrollView in the body. */
+  handle: React.ReactNode;
+  children: React.ReactNode;
+  sheetStyle: any;
+};
+
+/**
+ * Bottom sheet that:
+ *   - slides up on open with a spring,
+ *   - slides down on close with a timed cubic-out,
+ *   - dismisses on backdrop press (animated, not abrupt),
+ *   - dismisses on swipe down from the handle area (≥120px drag or fast flick).
+ *
+ * Implemented inline because it's only used in one place; promote to a
+ * shared component if a second screen needs the same behaviour.
+ */
+function ReservationDetailSheet({
+  visible,
+  onClose,
+  handle,
+  children,
+  sheetStyle,
+}: ReservationDetailSheetProps) {
+  const [rendered, setRendered] = useState(false);
+  const translateY = useSharedValue(SCREEN_HEIGHT);
+  const backdropOpacity = useSharedValue(0);
+
+  const finishClose = useCallback(() => {
+    setRendered(false);
+    onClose();
+  }, [onClose]);
+
+  // Mount when asked to be visible. When `visible` flips back to false,
+  // play the slide-down before unmounting so the backdrop tap (which sets
+  // visible=false externally) animates smoothly instead of cutting.
+  useEffect(() => {
+    if (visible && !rendered) {
+      setRendered(true);
+    } else if (!visible && rendered) {
+      translateY.value = withTiming(
+        SCREEN_HEIGHT,
+        { duration: 240, easing: Easing.out(Easing.cubic) },
+        (finished) => {
+          if (finished) runOnJS(setRendered)(false);
+        },
+      );
+      backdropOpacity.value = withTiming(0, { duration: 220 });
+    }
+  }, [visible, rendered, translateY, backdropOpacity]);
+
+  // When we first render, animate in.
+  useEffect(() => {
+    if (rendered && visible) {
+      translateY.value = withSpring(0, { damping: 22, stiffness: 240, mass: 0.9 });
+      backdropOpacity.value = withTiming(1, { duration: 220 });
+    }
+  }, [rendered, visible, translateY, backdropOpacity]);
+
+  const animateOutAndClose = useCallback(() => {
+    translateY.value = withTiming(
+      SCREEN_HEIGHT,
+      { duration: 220, easing: Easing.out(Easing.cubic) },
+      (finished) => {
+        if (finished) runOnJS(finishClose)();
+      },
+    );
+    backdropOpacity.value = withTiming(0, { duration: 200 });
+  }, [finishClose, translateY, backdropOpacity]);
+
+  const panGesture = Gesture.Pan()
+    // Only activate after a clear downward drag — keeps small taps from
+    // hijacking the gesture, and lets nested ScrollView take over for upward
+    // scrolls when the handle isn't being dragged.
+    .activeOffsetY([15, 9999])
+    .onUpdate((e) => {
+      translateY.value = Math.max(0, e.translationY);
+    })
+    .onEnd((e) => {
+      const shouldDismiss =
+        e.translationY > SHEET_DISMISS_DRAG_PX || e.velocityY > SHEET_DISMISS_VELOCITY;
+      if (shouldDismiss) {
+        translateY.value = withTiming(
+          SCREEN_HEIGHT,
+          { duration: 200, easing: Easing.out(Easing.cubic) },
+          (finished) => {
+            if (finished) runOnJS(finishClose)();
+          },
+        );
+        backdropOpacity.value = withTiming(0, { duration: 180 });
+      } else {
+        translateY.value = withSpring(0, { damping: 22, stiffness: 240, mass: 0.9 });
+      }
+    });
+
+  const sheetAnimStyle = useAnimatedStyle(() => ({
+    transform: [{ translateY: translateY.value }],
+  }));
+
+  const backdropAnimStyle = useAnimatedStyle(() => ({
+    opacity: backdropOpacity.value,
+  }));
+
+  if (!rendered) return null;
+
+  return (
+    <Modal visible transparent animationType="none" onRequestClose={animateOutAndClose}>
+      <View style={sheetHostStyles.host}>
+        <Animated.View
+          style={[StyleSheet.absoluteFill, sheetHostStyles.backdrop, backdropAnimStyle]}
+        >
+          <Pressable style={StyleSheet.absoluteFill} onPress={animateOutAndClose} />
+        </Animated.View>
+        <Animated.View style={[sheetStyle, sheetAnimStyle]}>
+          <GestureDetector gesture={panGesture}>
+            <View>{handle}</View>
+          </GestureDetector>
+          {children}
+        </Animated.View>
+      </View>
+    </Modal>
+  );
+}
+
+const sheetHostStyles = StyleSheet.create({
+  host: {
+    flex: 1,
+    justifyContent: 'flex-end',
+  },
+  backdrop: {
+    backgroundColor: 'rgba(0,0,0,0.55)',
+  },
+});
 
 function initials(name: string): string {
   const parts = name.split(/\s+/).filter(Boolean);
@@ -1496,21 +1648,31 @@ export default function OwnerReservationsScreen() {
         </Pressable>
       </Modal>
 
-      <Modal visible={selected !== null} transparent animationType="slide">
-        <Pressable style={styles.modalOverlay} onPress={() => setSelected(null)}>
-          <Pressable style={styles.modalSheet} onPress={(e) => e.stopPropagation()}>
+      <ReservationDetailSheet
+        visible={selected !== null}
+        onClose={() => setSelected(null)}
+        sheetStyle={styles.modalSheet}
+        handle={
+          <>
             <View style={styles.grabber} />
-            <ScrollView showsVerticalScrollIndicator={false}>
-              {selected ? (
-                <>
-                  <Text style={styles.modalTitle} numberOfLines={1}>
-                    {selected.guestName}
-                    {selected.vip ? ' · VIP' : ''}
-                  </Text>
-                  <Text style={styles.modalSubtitle}>
-                    {selected.startTime} · {selected.partySize} guests
-                    {selected.table ? ` · Table ${selected.table}` : ''}
-                  </Text>
+            {selected ? (
+              <>
+                <Text style={styles.modalTitle} numberOfLines={1}>
+                  {selected.guestName}
+                  {selected.vip ? ' · VIP' : ''}
+                </Text>
+                <Text style={styles.modalSubtitle}>
+                  {selected.startTime} · {selected.partySize} guests
+                  {selected.table ? ` · Table ${selected.table}` : ''}
+                </Text>
+              </>
+            ) : null}
+          </>
+        }
+      >
+          <ScrollView showsVerticalScrollIndicator={false}>
+            {selected ? (
+              <>
                   {(() => {
                     const ex = reservationExtras[selected.id];
                     const risk = ex?.noShowRisk ?? null;
@@ -1645,13 +1807,11 @@ export default function OwnerReservationsScreen() {
                   </View>
                 </>
               ) : null}
-            </ScrollView>
-            <Pressable style={styles.modalClose} onPress={() => setSelected(null)}>
-              <Text style={styles.modalCloseText}>Close</Text>
-            </Pressable>
+          </ScrollView>
+          <Pressable style={styles.modalClose} onPress={() => setSelected(null)}>
+            <Text style={styles.modalCloseText}>Close</Text>
           </Pressable>
-        </Pressable>
-      </Modal>
+      </ReservationDetailSheet>
     </View>
   );
 }
