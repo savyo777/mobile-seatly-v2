@@ -4,6 +4,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { OwnerScreen } from '@/components/owner/OwnerScreen';
 import { SubpageHeader } from '@/components/owner/SubpageHeader';
 import { borderRadius, createStyles, spacing, typography, useColors } from '@/lib/theme';
+import { normalizeTextInput, sanitizeTextInput } from '@/lib/validation/input';
 
 const REASONS = [
   'Easy to use',
@@ -181,7 +182,9 @@ export default function RateSeatlyScreen() {
     Alert.alert(
       'Thanks for the feedback',
       `You rated Seatly ${rating}/5.\n\nReasons: ${selectedReasons.length ? selectedReasons.join(', ') : 'none'}${
-        message.trim() ? `\n\nNote: ${message.trim()}` : ''
+        normalizeTextInput(message, { maxLength: 500, multiline: true })
+          ? `\n\nNote: ${normalizeTextInput(message, { maxLength: 500, multiline: true })}`
+          : ''
       }`,
     );
   };
@@ -252,7 +255,7 @@ export default function RateSeatlyScreen() {
       <Text style={styles.sectionLabel}>OPTIONAL NOTE</Text>
       <TextInput
         value={message}
-        onChangeText={setMessage}
+        onChangeText={(value) => setMessage(sanitizeTextInput(value, { maxLength: 500, multiline: true }))}
         placeholder="Tell us what would make Seatly better for your restaurant."
         placeholderTextColor={c.textMuted}
         style={styles.textArea}

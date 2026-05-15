@@ -27,14 +27,21 @@ import { coerceBookableDateKey } from '@/lib/booking/getAvailability';
 import { fetchBookingProfile } from '@/lib/booking/publicBookingApi';
 import { useColors, createStyles, spacing, borderRadius } from '@/lib/theme';
 import type { DateKey } from '@/lib/booking/availabilityTypes';
+import {
+  isValidEmail,
+  normalizeEmail,
+  normalizeName,
+  normalizePhoneInput,
+  normalizeTextInput,
+  sanitizeEmailInput,
+  sanitizeNameInput,
+  sanitizePhoneInput,
+  sanitizeTextInput,
+} from '@/lib/validation/input';
 
 const OCCASIONS = ['Birthday', 'Anniversary', 'Date Night', 'Business', 'Celebration'];
 
 const SEATING_OPTIONS = ['Window', 'Booth', 'Outdoor', 'Bar', 'Quiet'];
-
-function isValidEmail(value: string) {
-  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value.trim());
-}
 
 const useStyles = createStyles((c) => ({
   container: { flex: 1, backgroundColor: c.bgBase },
@@ -343,18 +350,22 @@ export default function ConfirmScreen() {
       );
       return;
     }
-    if (!name.trim()) {
+    const cleanedName = normalizeName(name);
+    const cleanedEmail = normalizeEmail(email);
+    const cleanedPhone = normalizePhoneInput(phone) ?? normalizeTextInput(phone, { maxLength: 32 });
+    const cleanedNotes = normalizeTextInput(notes, { maxLength: 1000, multiline: true });
+    if (!cleanedName) {
       setContactError('Enter the guest name.');
       return;
     }
-    if (!isValidEmail(email)) {
+    if (!cleanedEmail || !isValidEmail(cleanedEmail)) {
       setContactError('Enter a valid email address.');
       return;
     }
     setContactError('');
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     router.push(
-      `/booking/${restaurantId}/step4-preorder?date=${encodeURIComponent(dateKey)}&time=${encodeURIComponent(time ?? '')}&partySize=${guests}&shiftId=${encodeURIComponent(shiftId)}&slotDateTime=${encodeURIComponent(slotDateTime)}&name=${encodeURIComponent(name.trim())}&email=${encodeURIComponent(email.trim())}&phone=${encodeURIComponent(phone.trim())}&occasion=${encodeURIComponent(occasion)}&seatingPreference=${encodeURIComponent(seatingPreference)}&notes=${encodeURIComponent(notes)}`,
+      `/booking/${restaurantId}/step4-preorder?date=${encodeURIComponent(dateKey)}&time=${encodeURIComponent(time ?? '')}&partySize=${guests}&shiftId=${encodeURIComponent(shiftId)}&slotDateTime=${encodeURIComponent(slotDateTime)}&name=${encodeURIComponent(cleanedName)}&email=${encodeURIComponent(cleanedEmail)}&phone=${encodeURIComponent(cleanedPhone)}&occasion=${encodeURIComponent(normalizeTextInput(occasion, { maxLength: 80 }))}&seatingPreference=${encodeURIComponent(normalizeTextInput(seatingPreference, { maxLength: 80 }))}&notes=${encodeURIComponent(cleanedNotes)}`,
     );
   }, [restaurantReady, guestError, guestInput, slotDateTime, shiftId, name, email, router, restaurantId, dateKey, time, guests, phone, occasion, seatingPreference, notes]);
 
@@ -477,28 +488,31 @@ export default function ConfirmScreen() {
             placeholder="Full name"
             placeholderTextColor={c.textMuted}
             value={name}
-            onChangeText={setName}
+            onChangeText={(value) => setName(sanitizeNameInput(value, 80))}
             autoCapitalize="words"
             textContentType="name"
+            maxLength={80}
           />
           <TextInput
             style={[styles.fieldInput, contactError && !isValidEmail(email) ? styles.fieldInputError : null]}
             placeholder="Email"
             placeholderTextColor={c.textMuted}
             value={email}
-            onChangeText={setEmail}
+            onChangeText={(value) => setEmail(sanitizeEmailInput(value))}
             autoCapitalize="none"
             keyboardType="email-address"
             textContentType="emailAddress"
+            maxLength={254}
           />
           <TextInput
             style={styles.fieldInput}
             placeholder="Phone (optional)"
             placeholderTextColor={c.textMuted}
             value={phone}
-            onChangeText={setPhone}
+            onChangeText={(value) => setPhone(sanitizePhoneInput(value))}
             keyboardType="phone-pad"
             textContentType="telephoneNumber"
+            maxLength={32}
           />
         </View>
         {contactError ? <Text style={styles.fieldError}>{contactError}</Text> : null}
@@ -545,7 +559,8 @@ export default function ConfirmScreen() {
           multiline
           numberOfLines={3}
           value={notes}
-          onChangeText={setNotes}
+          onChangeText={(value) => setNotes(sanitizeTextInput(value, { maxLength: 1000, multiline: true }))}
+          maxLength={1000}
           textAlignVertical="top"
         />
 

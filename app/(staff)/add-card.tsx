@@ -12,6 +12,15 @@ import {
   saveRestaurantPaymentCard,
   type CardFunding,
 } from '@/lib/storage/restaurantPaymentMethod';
+import {
+  normalizeName,
+  sanitizeCardNumberInput,
+  sanitizeCvcInput,
+  sanitizeDigitsInput,
+  sanitizeExpiryInput,
+  sanitizeNameInput,
+  sanitizePostalCodeInput,
+} from '@/lib/validation/input';
 
 type CardBrandKey = 'Visa' | 'Mastercard' | 'Amex' | 'Discover' | 'Other';
 
@@ -232,18 +241,15 @@ const useStyles = createStyles((c) => ({
 }));
 
 function sanitizeDigits(value: string): string {
-  return value.replace(/\D/g, '');
+  return sanitizeDigitsInput(value);
 }
 
 function formatCardNumber(value: string): string {
-  const d = sanitizeDigits(value).slice(0, 19);
-  return d.replace(/(\d{4})(?=\d)/g, '$1 ').trim();
+  return sanitizeCardNumberInput(value);
 }
 
 function formatExpiry(value: string): string {
-  const d = sanitizeDigits(value).slice(0, 4);
-  if (d.length < 3) return d;
-  return `${d.slice(0, 2)}/${d.slice(2)}`;
+  return sanitizeExpiryInput(value);
 }
 
 export default function AddCardScreen() {
@@ -293,11 +299,13 @@ export default function AddCardScreen() {
     const expMatch = expiry.trim().match(/^(\d{2})\s*\/\s*(\d{2}|\d{4})$/);
 
     const next: typeof errors = {};
-    if (!cardholder.trim()) next.cardholder = 'Cardholder name is required.';
+    const cleanedCardholder = normalizeName(cardholder);
+    const cleanedPostal = sanitizePostalCodeInput(postal);
+    if (!cleanedCardholder) next.cardholder = 'Cardholder name is required.';
     if (digits.length < 13 || digits.length > 19) next.number = 'Enter a valid card number.';
     if (!expMatch) next.expiry = 'Use MM/YY for the expiration date.';
     if (cvcDigits.length < 3 || cvcDigits.length > 4) next.cvc = 'Enter a 3 or 4 digit CVC.';
-    if (!postal.trim()) next.postal = 'Billing postal code is required.';
+    if (!cleanedPostal) next.postal = 'Billing postal code is required.';
     setErrors(next);
     if (Object.keys(next).length > 0) return;
 
@@ -308,7 +316,7 @@ export default function AddCardScreen() {
         funding,
         last4: digits.slice(-4),
         expiry,
-        cardholder: cardholder.trim(),
+        cardholder: cleanedCardholder,
         isDefault: makeDefault,
         source: 'manual',
       });
@@ -425,7 +433,7 @@ export default function AddCardScreen() {
               <TextInput
                 value={cardholder}
                 onChangeText={(v) => {
-                  setCardholder(v);
+                  setCardholder(sanitizeNameInput(v, 80));
                   if (errors.cardholder) setErrors((p) => ({ ...p, cardholder: undefined }));
                 }}
                 placeholder={profile.fullName}
@@ -482,7 +490,7 @@ export default function AddCardScreen() {
                 <TextInput
                   value={cvc}
                   onChangeText={(v) => {
-                    setCvc(sanitizeDigits(v).slice(0, 4));
+                    setCvc(sanitizeCvcInput(v));
                     if (errors.cvc) setErrors((p) => ({ ...p, cvc: undefined }));
                   }}
                   placeholder="123"
@@ -503,7 +511,7 @@ export default function AddCardScreen() {
               <TextInput
                 value={postal}
                 onChangeText={(v) => {
-                  setPostal(v.toUpperCase());
+                  setPostal(sanitizePostalCodeInput(v));
                   if (errors.postal) setErrors((p) => ({ ...p, postal: undefined }));
                 }}
                 placeholder="M5V 2T6"

@@ -24,6 +24,7 @@ import {
 } from '@/lib/mock/collections';
 import { getSnapPostById as DEMO_getSnapPostById } from '@/lib/mock/snaps';
 import { isDemoModeEnabled } from '@/lib/config/demoMode';
+import { normalizeTextInput, sanitizeTextInput } from '@/lib/validation/input';
 
 const listCollections: typeof DEMO_listCollections = (ownerId) =>
   isDemoModeEnabled() ? DEMO_listCollections(ownerId) : [];
@@ -231,8 +232,9 @@ export function SaveToCollectionSheet({ visible, postId, onClose, onSaved }: Pro
   };
 
   const handleCreate = () => {
-    if (!newName.trim() || !postId || !me) return;
-    const col = createCollection(me, newName.trim());
+    const cleanName = normalizeTextInput(newName, { maxLength: 80 });
+    if (!cleanName || !postId || !me) return;
+    const col = createCollection(me, cleanName);
     addPostToCollection(me, col.id, postId);
     setNewName('');
     setCreating(false);
@@ -262,7 +264,7 @@ export function SaveToCollectionSheet({ visible, postId, onClose, onSaved }: Pro
               <View style={styles.createRow}>
                 <TextInput
                   value={newName}
-                  onChangeText={setNewName}
+                  onChangeText={(value) => setNewName(sanitizeTextInput(value, { maxLength: 80 }))}
                   placeholder={t('collections.newNamePlaceholder')}
                   placeholderTextColor={c.textMuted}
                   style={styles.input}

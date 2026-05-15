@@ -6,6 +6,12 @@ import { getAvailability } from "../_shared/availability.ts";
 import { localBookingParts } from "../_shared/hours.ts";
 import { supabaseAdmin } from "../_shared/supabase.ts";
 import { DEFAULT_TURN_MINUTES, DEFAULT_TIMEZONE } from "../_shared/booking-defaults.ts";
+import {
+  validationResponse,
+  asText as validatedText,
+  asIsoDate,
+  asInteger,
+} from "../_shared/input-validation.ts";
 
 type PublicAvailabilitySlot = {
   shift_id: string;
@@ -96,9 +102,15 @@ Deno.serve(async (req) => {
 
   try {
     const url = new URL(req.url);
-    const restaurantId = url.searchParams.get("restaurant_id")?.trim();
-    const date = url.searchParams.get("date")?.trim();
-    const partySize = Math.max(1, Math.floor(numberParam(url.searchParams.get("party_size"), 2)));
+    const restaurantId = validatedText(url.searchParams.get("restaurant_id"), "restaurant_id", {
+      required: true,
+      maxLength: 80,
+    });
+    const date = asIsoDate(url.searchParams.get("date"), "date", { required: true });
+    const partySize = asInteger(url.searchParams.get("party_size") ?? "2", "party_size", {
+      min: 1,
+      max: 30,
+    }) ?? 2;
 
     if (!restaurantId || !date) {
       return jsonRes({ error: "restaurant_id and date required" }, 400);
@@ -160,6 +172,8 @@ Deno.serve(async (req) => {
         : availability.message ?? null,
     });
   } catch (error) {
+    const validation = validationResponse(error, corsHeaders);
+    if (validation) return validation;
     let message = "availability_failed";
     if (error instanceof Error && error.message) {
       message = error.message;

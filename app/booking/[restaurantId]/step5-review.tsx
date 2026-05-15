@@ -11,6 +11,7 @@ import { previewDepositCents } from '@/lib/booking/depositTiers';
 import { BOOKING_STEPS_TOTAL } from '@/lib/booking/bookingDefaults';
 import { formatCurrency } from '@/lib/utils/formatCurrency';
 import { useColors, createStyles, borderRadius } from '@/lib/theme';
+import { sanitizeTextInput } from '@/lib/validation/input';
 
 const OCCASIONS = ['None', 'Birthday', 'Anniversary', 'Date Night', 'Business Dinner', 'Celebration', 'Other'];
 
@@ -215,7 +216,8 @@ export default function Step5Review() {
           numberOfLines={4}
           textAlignVertical="top"
           value={specialRequest}
-          onChangeText={setSpecialRequest}
+          onChangeText={(value) => setSpecialRequest(sanitizeTextInput(value, { maxLength: 1000, multiline: true }))}
+          maxLength={1000}
         />
       </ScrollView>
 

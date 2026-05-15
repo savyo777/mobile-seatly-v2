@@ -7,6 +7,12 @@ import {
   stripeRequest,
   stripeRequestWithVersion,
 } from '../_shared/stripe.ts';
+import {
+  readJsonObject,
+  validationResponse,
+  asText as validatedText,
+  normalizePhoneToE164 as validatedPhone,
+} from '../_shared/input-validation.ts';
 
 type RegisterPayload = {
   action?: 'init_payment_sheet' | 'preview_payment_method' | 'finalize_registration' | 'register_no_billing';
@@ -77,8 +83,21 @@ Deno.serve(async (req) => {
     } = await userClient.auth.getUser();
     if (userError || !user?.id) return json(401, { error: 'Unauthorized.' });
 
-    const payload = (await req.json()) as RegisterPayload;
-    const action = payload.action ?? 'finalize_registration';
+    const rawPayload = await readJsonObject(req);
+    const actionRaw = validatedText(rawPayload.action, 'action', { maxLength: 32 }) ?? 'finalize_registration';
+    const action = (
+      ['init_payment_sheet', 'preview_payment_method', 'finalize_registration', 'register_no_billing'].includes(actionRaw)
+        ? actionRaw
+        : 'finalize_registration'
+    ) as RegisterPayload['action'];
+    const payload: RegisterPayload = {
+      action,
+      business_name: validatedText(rawPayload.business_name, 'business_name', { maxLength: 120 }) ?? '',
+      address: validatedText(rawPayload.address, 'address', { maxLength: 240 }) ?? '',
+      owner_phone: rawPayload.owner_phone == null ? '' : validatedPhone(rawPayload.owner_phone, 'owner_phone') ?? '',
+      payment_method_id: validatedText(rawPayload.payment_method_id, 'payment_method_id', { maxLength: 120 }) ?? undefined,
+      setup_intent_id: validatedText(rawPayload.setup_intent_id, 'setup_intent_id', { maxLength: 120 }) ?? undefined,
+    };
 
     if (action === 'preview_payment_method') {
       if (!payload.setup_intent_id) return json(400, { error: 'Missing setup intent id.' });
@@ -287,6 +306,8 @@ Deno.serve(async (req) => {
       trialEndsAt,
     });
   } catch (error) {
+    const validation = validationResponse(error, corsHeaders);
+    if (validation) return validation;
     const message = error instanceof Error ? error.message : 'Unexpected registration error.';
     // Surface in function logs so future failures don't have to be diagnosed
     // by re-reading the source. The mobile client only sees `error.message`

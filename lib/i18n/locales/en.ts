@@ -22,6 +22,16 @@ export default {
     fallbackNewUser: 'New user',
     fallbackRestaurant: 'Restaurant',
   },
+  validation: {
+    required: 'This field is required.',
+    nameRequired: 'Enter a name.',
+    emailInvalid: 'Enter a valid email address.',
+    phoneInvalid: 'Enter a valid phone number.',
+    passwordRequired: 'Enter your password.',
+    numberInvalid: 'Enter a valid number.',
+    moneyInvalid: 'Enter a valid amount.',
+    maxLength: 'Keep this under {{count}} characters.',
+  },
   calendar: {
     eventTitle: 'Reservation at {{name}}',
     confirmationCode: 'Confirmation code: {{code}}',

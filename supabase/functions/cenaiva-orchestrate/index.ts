@@ -38,6 +38,10 @@ import {
   prewarmOpenAI,
   SMALL_PROMPT_MODEL,
 } from "../_shared/openai.ts";
+import {
+  readJsonObject,
+  asText as validatedText,
+} from "../_shared/input-validation.ts";
 
 const stripeSecretKey = Deno.env.get("STRIPE_SECRET_KEY") ?? "";
 const LATENCY_DEBUG = Deno.env.get("CENAIVA_LATENCY_DEBUG") === "1";
@@ -3826,7 +3830,7 @@ Deno.serve(async (req) => {
     const firstName = userName.split(" ")[0];
 
     // Parse body
-    const body = await req.json() as {
+    let body: {
       transcript?: string;
       screen?: string;
       booking_state?: Record<string, unknown>;
@@ -3843,10 +3847,53 @@ Deno.serve(async (req) => {
       recommendation_mode?: RecommendationMode | null;
       assistant_memory?: AssistantMemory | null;
     };
+    try {
+      body = await readJsonObject(req) as {
+        transcript?: string;
+        screen?: string;
+        booking_state?: Record<string, unknown>;
+        map_state?: Record<string, unknown>;
+        filters?: Record<string, unknown>;
+        visible_restaurant_ids?: string[];
+        selected_restaurant_id?: string | null;
+        user_location?: { lat: number; lng: number } | null;
+        timezone?: string;
+        conversation_id?: string;
+        has_saved_card?: boolean;
+        guest_id?: string | null;
+        reservation_id?: string | null;
+        recommendation_mode?: RecommendationMode | null;
+        assistant_memory?: AssistantMemory | null;
+      };
+    } catch (error) {
+      send({
+        type: "error",
+        message: error instanceof Error ? error.message : "Invalid request body",
+        status: 400,
+      });
+      latency.done({ path: "invalid_body" });
+      return;
+    }
+
+    let sanitizedTranscript = "";
+    let sanitizedScreen = "discover";
+    try {
+      sanitizedTranscript = validatedText(body.transcript, "transcript", {
+        maxLength: 2000,
+        multiline: true,
+      }) ?? "";
+      sanitizedScreen = validatedText(body.screen, "screen", { maxLength: 80 }) ?? "discover";
+    } catch (error) {
+      send({
+        type: "error",
+        message: error instanceof Error ? error.message : "Invalid request body",
+        status: 400,
+      });
+      latency.done({ path: "invalid_input" });
+      return;
+    }
 
     const {
-      transcript = "",
-      screen = "discover",
       booking_state = {},
       visible_restaurant_ids = [],
       selected_restaurant_id: bodySelectedRestaurantId = null,
@@ -3857,6 +3904,8 @@ Deno.serve(async (req) => {
       recommendation_mode: rawRecommendationMode = null,
       assistant_memory: rawAssistantMemory = null,
     } = body;
+    const transcript = sanitizedTranscript;
+    const screen = sanitizedScreen;
     const recommendationMode = parseRecommendationMode(rawRecommendationMode);
     const requestAssistantMemory = parseAssistantMemory(rawAssistantMemory);
     let assistantMemory = requestAssistantMemory;

@@ -9,6 +9,14 @@ import {
   findClosedSpecialDayForDate,
   localDateForDateTime,
 } from "../_shared/closures.ts";
+import {
+  readJsonObject,
+  validationResponse,
+  asText as validatedText,
+  asEmail as validatedEmail,
+  asUuid as validatedUuid,
+  normalizePhoneToE164 as validatedPhone,
+} from "../_shared/input-validation.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -54,18 +62,15 @@ function jsonResponse(body: Record<string, unknown>, status = 200): Response {
 }
 
 function asText(value: unknown): string | null {
-  return typeof value === "string" && value.trim() ? value.trim() : null;
+  return validatedText(value, "text", { maxLength: 1000, multiline: true });
 }
 
 function normalizeEmail(value: string | null): string | null {
-  return value ? value.trim().toLowerCase() : null;
+  return value ? validatedEmail(value, "email") : null;
 }
 
 function asUuid(value: unknown): string | null {
-  const text = asText(value);
-  return text && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(text)
-    ? text
-    : null;
+  return validatedUuid(value, "id");
 }
 
 function asNumber(value: unknown, fallback = 0): number {
@@ -111,12 +116,7 @@ function formatReservationDate(date: Date): string {
 }
 
 function normalizeNorthAmericanPhone(phone: string | null): string | null {
-  if (!phone) return null;
-  if (phone.trim().startsWith("+")) return phone.trim();
-  const digits = phone.replace(/\D/g, "");
-  if (digits.length === 10) return `+1${digits}`;
-  if (digits.length === 11 && digits.startsWith("1")) return `+${digits}`;
-  return phone.trim();
+  return phone ? validatedPhone(phone, "phone") : null;
 }
 
 Deno.serve(async (req: Request) => {
@@ -124,13 +124,13 @@ Deno.serve(async (req: Request) => {
   if (req.method !== "POST") return jsonResponse({ error: "POST required" }, 405);
 
   try {
-    const payload = (await req.json().catch(() => ({}))) as BookingPayload;
+    const payload = (await readJsonObject(req)) as BookingPayload;
     const restaurantId = asUuid(payload.restaurant_id);
     const shiftId = asUuid(payload.shift_id);
     const dateTime = asText(payload.date_time);
     const guestName = asText(payload.guest_name);
     const guestEmail = normalizeEmail(asText(payload.guest_email));
-    const guestPhone = asText(payload.guest_phone);
+    const guestPhone = validatedPhone(payload.guest_phone, "guest_phone") ?? asText(payload.guest_phone);
     const allergies = asText(payload.allergies);
     const seatingPreference = asText(payload.seating_preference);
     const occasion = asText(payload.occasion);
@@ -657,6 +657,8 @@ Deno.serve(async (req: Request) => {
       deposit_required: depositAmountCents > 0,
     });
   } catch (err) {
+    const validation = validationResponse(err, corsHeaders);
+    if (validation) return validation;
     return jsonResponse({ error: err instanceof Error ? err.message : String(err) }, 500);
   }
 });

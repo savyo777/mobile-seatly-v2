@@ -22,6 +22,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useMenu } from '@/lib/context/MenuContext';
 import { createStyles } from '@/lib/theme';
 import { ownerColorsFromPalette, ownerRadii, ownerSpace, useOwnerColors } from '@/lib/theme/ownerTheme';
+import { normalizeTextInput, sanitizeSearchInput, sanitizeTextInput } from '@/lib/validation/input';
 
 export default function MenuCategoriesScreen() {
   const { t } = useTranslation();
@@ -56,7 +57,7 @@ export default function MenuCategoriesScreen() {
   }, []);
 
   const handleAdd = useCallback(() => {
-    const trimmed = newCategoryName.trim();
+    const trimmed = normalizeTextInput(newCategoryName, { maxLength: 80 });
     const result = addCategory(trimmed);
     if (!result.ok) {
       setCategoryError(
@@ -78,7 +79,7 @@ export default function MenuCategoriesScreen() {
 
   const saveRename = useCallback(() => {
     if (!renamingCategory) return;
-    const result = renameCategory(renamingCategory, renamingValue);
+    const result = renameCategory(renamingCategory, normalizeTextInput(renamingValue, { maxLength: 80 }));
     if (!result.ok) {
       Alert.alert(
         t('common.error'),
@@ -121,7 +122,7 @@ export default function MenuCategoriesScreen() {
             <>
               <TextInput
                 value={renamingValue}
-                onChangeText={setRenamingValue}
+                onChangeText={(value) => setRenamingValue(sanitizeTextInput(value, { maxLength: 80 }))}
                 style={[styles.input, styles.categoryRenameInput]}
                 placeholder={t('owner.menuCategoryNamePlaceholder')}
                 placeholderTextColor={ownerColors.textMuted}
@@ -209,7 +210,7 @@ export default function MenuCategoriesScreen() {
                 <Ionicons name="search-outline" size={18} color={ownerColors.textMuted} style={styles.searchIcon} />
                 <TextInput
                   value={searchQuery}
-                  onChangeText={setSearchQuery}
+                  onChangeText={(value) => setSearchQuery(sanitizeSearchInput(value))}
                   style={styles.searchInput}
                   placeholder={t('owner.menuCategorySearchPlaceholder')}
                   placeholderTextColor={ownerColors.textMuted}
@@ -253,7 +254,7 @@ export default function MenuCategoriesScreen() {
                 <TextInput
                   value={newCategoryName}
                   onChangeText={(value) => {
-                    setNewCategoryName(value);
+                    setNewCategoryName(sanitizeTextInput(value, { maxLength: 80 }));
                     if (categoryError) setCategoryError('');
                   }}
                   style={styles.input}

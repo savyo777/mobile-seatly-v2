@@ -27,6 +27,7 @@ import {
   useOwnerColors,
 } from '@/lib/theme/ownerTheme';
 import { brandGold, withAlpha } from '@/lib/theme/tokens';
+import { sanitizeMoneyInput, sanitizeSearchInput } from '@/lib/validation/input';
 
 type Props = {
   value: ExpenseFilter;
@@ -114,7 +115,7 @@ export function ExpenseFilterBar({ value, onChange }: Props) {
         <Ionicons name="search-outline" size={16} color={ownerColors.textMuted} />
         <TextInput
           value={value.query}
-          onChangeText={(q) => onChange({ ...value, query: q })}
+          onChangeText={(q) => onChange({ ...value, query: sanitizeSearchInput(q) })}
           placeholder="Search receipts"
           placeholderTextColor={ownerColors.textMuted}
           style={styles.searchInput}
@@ -252,7 +253,7 @@ export function ExpenseFilterBar({ value, onChange }: Props) {
                 <Text style={[styles.amountLabel, { color: ownerColors.text }]}>Min</Text>
                 <TextInput
                   value={amountMinDraft}
-                  onChangeText={setAmountMinDraft}
+                  onChangeText={(amount) => setAmountMinDraft(sanitizeMoneyInput(amount))}
                   placeholder="0.00"
                   placeholderTextColor={ownerColors.textMuted}
                   style={styles.amountInput}
@@ -263,7 +264,7 @@ export function ExpenseFilterBar({ value, onChange }: Props) {
                 <Text style={[styles.amountLabel, { color: ownerColors.text }]}>Max</Text>
                 <TextInput
                   value={amountMaxDraft}
-                  onChangeText={setAmountMaxDraft}
+                  onChangeText={(amount) => setAmountMaxDraft(sanitizeMoneyInput(amount))}
                   placeholder="No max"
                   placeholderTextColor={ownerColors.textMuted}
                   style={styles.amountInput}

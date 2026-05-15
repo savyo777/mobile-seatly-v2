@@ -5,6 +5,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { OwnerScreen } from '@/components/owner/OwnerScreen';
 import { SubpageHeader } from '@/components/owner/SubpageHeader';
 import { borderRadius, createStyles, spacing, typography, useColors } from '@/lib/theme';
+import { normalizeEmail, normalizeName, sanitizeEmailInput, sanitizeNameInput } from '@/lib/validation/input';
 
 const ROLES = ['Manager', 'Host', 'Server', 'Kitchen'] as const;
 type Role = (typeof ROLES)[number];
@@ -142,7 +143,7 @@ export default function InviteTeamMemberScreen() {
   const [email, setEmail] = useState('');
   const [role, setRole] = useState<Role>('Manager');
 
-  const canSave = useMemo(() => name.trim().length > 0 && email.trim().length > 0, [name, email]);
+  const canSave = useMemo(() => normalizeName(name).length > 0 && normalizeEmail(email) !== null, [name, email]);
 
   const onSave = () => {
     if (!canSave) {
@@ -151,7 +152,7 @@ export default function InviteTeamMemberScreen() {
     }
     Alert.alert(
       'Invite sent',
-      `${name.trim()} will receive an invite for the ${role} role.`,
+      `${normalizeName(name)} will receive an invite for the ${role} role.`,
       [{ text: 'OK', onPress: () => router.back() }],
     );
   };
@@ -186,7 +187,7 @@ export default function InviteTeamMemberScreen() {
               <Ionicons name="person-outline" size={16} color={c.textMuted} />
               <TextInput
                 value={name}
-                onChangeText={setName}
+                onChangeText={(value) => setName(sanitizeNameInput(value, 80))}
                 placeholder="Alex Johnson"
                 placeholderTextColor={c.textMuted}
                 style={styles.fieldInput}
@@ -200,7 +201,7 @@ export default function InviteTeamMemberScreen() {
               <Ionicons name="mail-outline" size={16} color={c.textMuted} />
               <TextInput
                 value={email}
-                onChangeText={setEmail}
+                onChangeText={(value) => setEmail(sanitizeEmailInput(value))}
                 placeholder="alex@example.com"
                 placeholderTextColor={c.textMuted}
                 style={styles.fieldInput}

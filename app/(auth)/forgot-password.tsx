@@ -7,6 +7,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useColors, createStyles, spacing, typography } from '@/lib/theme';
 import { ScreenWrapper, Input, Button } from '@/components/ui';
 import { getSupabase } from '@/lib/supabase/client';
+import { normalizeEmail } from '@/lib/validation/input';
 
 const RESET_PASSWORD_REDIRECT = 'cenaiva://reset-password';
 
@@ -76,9 +77,9 @@ export default function ForgotPasswordScreen() {
 
   const onSend = async () => {
     if (submitting) return;
-    const trimmedEmail = email.trim().toLowerCase();
+    const trimmedEmail = normalizeEmail(email);
     if (!trimmedEmail) {
-      Alert.alert('Missing email', 'Please enter your email address.');
+      Alert.alert('Invalid email', t('validation.emailInvalid'));
       return;
     }
     const supabase = getSupabase();

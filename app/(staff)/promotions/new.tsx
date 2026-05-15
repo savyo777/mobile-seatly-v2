@@ -28,6 +28,13 @@ import {
 import { useOwnerScope } from '@/hooks/useOwnerScope';
 import { uploadEventMedia } from '@/lib/owner/uploadEventMedia';
 import { createPromotion } from '@/lib/owner/createEventOrPromotion';
+import {
+  normalizeTextInput,
+  sanitizeIntegerInput,
+  sanitizeMoneyInput,
+  sanitizePromoCodeInput,
+  sanitizeTextInput,
+} from '@/lib/validation/input';
 
 type PromoType = 'percent' | 'amount' | 'bogo' | 'free_item';
 type AppliesTo = 'all' | 'items';
@@ -265,10 +272,14 @@ export default function NewPromotionScreen() {
         mediaName = videoUri.split('/').pop() ?? null;
       }
 
+      const cleanedTitle = normalizeTextInput(title, { maxLength: 120 });
+      const cleanedDescription = normalizeTextInput(description, { maxLength: 2000, multiline: true });
+      const cleanedPromoCode = sanitizePromoCodeInput(promoCode);
+
       await createPromotion({
         restaurant_id: selectedRestaurant.id,
-        title: title.trim(),
-        description: description.trim() || null,
+        title: cleanedTitle,
+        description: cleanedDescription || null,
         promo_type: promoType,
         discount_value: discountValue ? Number(discountValue) : null,
         discount_unit: promoType === 'percent' ? 'percent' : promoType === 'amount' ? 'amount' : null,
@@ -277,7 +288,7 @@ export default function NewPromotionScreen() {
         min_order_amount: minOrderAmount ? Number(minOrderAmount) : null,
         starts_at: combineDateAndTime(startDate, startTime) ?? new Date().toISOString(),
         ends_at: combineDateAndTime(endDate, endTime),
-        promo_code: promoCode.trim() || null,
+        promo_code: cleanedPromoCode || null,
         max_uses: maxUses ? Number(maxUses) : null,
         badge_color: badgeColor,
         bogo_item_ids: promoType === 'bogo' ? bogoItemIds : [],
@@ -302,7 +313,7 @@ export default function NewPromotionScreen() {
       });
 
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
-      Alert.alert('Promotion posted', `"${title.trim()}" is now live.`, [
+      Alert.alert('Promotion posted', `"${cleanedTitle}" is now live.`, [
         { text: 'OK', onPress: () => router.back() },
       ]);
     } catch (err) {
@@ -359,16 +370,16 @@ export default function NewPromotionScreen() {
             <Text style={styles.sectionLabel}>BASICS</Text>
             <View style={styles.fieldRow}>
               <Text style={styles.fieldLabel}>Title *</Text>
-              <TextInput value={title} onChangeText={setTitle}
+              <TextInput value={title} onChangeText={(value) => setTitle(sanitizeTextInput(value, { maxLength: 120 }))}
                 placeholder="20% off all pasta" placeholderTextColor={c.textMuted}
-                style={styles.input}/>
+                style={styles.input} maxLength={120}/>
             </View>
             <View style={[styles.fieldRow, styles.fieldDivider]}>
               <Text style={styles.fieldLabel}>Description</Text>
-              <TextInput value={description} onChangeText={setDescription}
+              <TextInput value={description} onChangeText={(value) => setDescription(sanitizeTextInput(value, { maxLength: 2000, multiline: true }))}
                 placeholder="Details guests see when redeeming"
                 placeholderTextColor={c.textMuted}
-                style={styles.inputMultiline} multiline textAlignVertical="top"/>
+                style={styles.inputMultiline} multiline textAlignVertical="top" maxLength={2000}/>
             </View>
           </View>
 
@@ -392,10 +403,10 @@ export default function NewPromotionScreen() {
                 <Text style={styles.fieldLabel}>
                   {promoType === 'percent' ? 'Percent off' : 'Amount off ($)'} *
                 </Text>
-                <TextInput value={discountValue} onChangeText={setDiscountValue}
+                <TextInput value={discountValue} onChangeText={(value) => setDiscountValue(sanitizeMoneyInput(value))}
                   placeholder={promoType === 'percent' ? '15' : '5.00'}
                   placeholderTextColor={c.textMuted}
-                  keyboardType="decimal-pad" style={styles.input}/>
+                  keyboardType="decimal-pad" style={styles.input} maxLength={14}/>
               </View>
             )}
             {promoType === 'bogo' && (
@@ -404,16 +415,16 @@ export default function NewPromotionScreen() {
                   <View style={styles.rowPairField}>
                     <View style={styles.fieldRow}>
                       <Text style={styles.fieldLabel}>Buy qty</Text>
-                      <TextInput value={buyQuantity} onChangeText={setBuyQuantity}
-                        keyboardType="number-pad" style={styles.input}/>
+                      <TextInput value={buyQuantity} onChangeText={(value) => setBuyQuantity(sanitizeIntegerInput(value, 3))}
+                        keyboardType="number-pad" style={styles.input} maxLength={3}/>
                     </View>
                   </View>
                   <View style={styles.rowPairDivider}/>
                   <View style={styles.rowPairField}>
                     <View style={styles.fieldRow}>
                       <Text style={styles.fieldLabel}>Get qty</Text>
-                      <TextInput value={getQuantity} onChangeText={setGetQuantity}
-                        keyboardType="number-pad" style={styles.input}/>
+                      <TextInput value={getQuantity} onChangeText={(value) => setGetQuantity(sanitizeIntegerInput(value, 3))}
+                        keyboardType="number-pad" style={styles.input} maxLength={3}/>
                     </View>
                   </View>
                 </View>
@@ -469,9 +480,9 @@ export default function NewPromotionScreen() {
             )}
             <View style={[styles.fieldRow, styles.fieldDivider]}>
               <Text style={styles.fieldLabel}>Minimum order ($)</Text>
-              <TextInput value={minOrderAmount} onChangeText={setMinOrderAmount}
+              <TextInput value={minOrderAmount} onChangeText={(value) => setMinOrderAmount(sanitizeMoneyInput(value))}
                 placeholder="0 = no minimum" placeholderTextColor={c.textMuted}
-                keyboardType="decimal-pad" style={styles.input}/>
+                keyboardType="decimal-pad" style={styles.input} maxLength={14}/>
             </View>
           </View>
 
@@ -534,8 +545,8 @@ export default function NewPromotionScreen() {
                 </View>
                 <View style={[styles.fieldRow, styles.fieldDivider]}>
                   <Text style={styles.fieldLabel}>Every N {recurFreq === 'daily' ? 'days' : recurFreq === 'weekly' ? 'weeks' : 'months'}</Text>
-                  <TextInput value={recurInterval} onChangeText={setRecurInterval}
-                    keyboardType="number-pad" style={styles.input}/>
+                  <TextInput value={recurInterval} onChangeText={(value) => setRecurInterval(sanitizeIntegerInput(value, 3))}
+                    keyboardType="number-pad" style={styles.input} maxLength={3}/>
                 </View>
                 {recurFreq === 'weekly' && (
                   <View style={[styles.chipRow, styles.fieldDivider]}>
@@ -564,19 +575,19 @@ export default function NewPromotionScreen() {
               <View style={styles.rowPairField}>
                 <View style={styles.fieldRow}>
                   <Text style={styles.fieldLabel}>Promo code</Text>
-                  <TextInput value={promoCode} onChangeText={setPromoCode}
+                  <TextInput value={promoCode} onChangeText={(value) => setPromoCode(sanitizePromoCodeInput(value))}
                     placeholder="SAVE10" placeholderTextColor={c.textMuted}
                     autoCapitalize="characters" autoCorrect={false}
-                    style={styles.input}/>
+                    style={styles.input} maxLength={32}/>
                 </View>
               </View>
               <View style={styles.rowPairDivider}/>
               <View style={styles.rowPairField}>
                 <View style={styles.fieldRow}>
                   <Text style={styles.fieldLabel}>Max uses</Text>
-                  <TextInput value={maxUses} onChangeText={setMaxUses}
+                  <TextInput value={maxUses} onChangeText={(value) => setMaxUses(sanitizeIntegerInput(value, 6))}
                     placeholder="No cap" placeholderTextColor={c.textMuted}
-                    keyboardType="number-pad" style={styles.input}/>
+                    keyboardType="number-pad" style={styles.input} maxLength={6}/>
                 </View>
               </View>
             </View>

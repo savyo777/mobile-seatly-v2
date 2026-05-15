@@ -3,7 +3,11 @@ import { corsHeaders } from "../_shared/cors.ts";
 import { jsonRes } from "../_shared/json-response.ts";
 import { supabaseAdmin } from "../_shared/supabase.ts";
 import { checkRateLimit, getClientIp } from "../_shared/rateLimit.ts";
-import { normalizePhoneToE164 } from "../_shared/phone.ts";
+import {
+  normalizePhoneToE164,
+  readJsonObject,
+  validationResponse,
+} from "../_shared/input-validation.ts";
 
 // Anonymous endpoint, prime SMS-bombing target. Cap each IP to 10 lookups
 // per minute — legit users typically need 1-2 attempts at most; this is
@@ -12,7 +16,11 @@ const RATE_LIMIT_PER_MINUTE = 10;
 const RATE_LIMIT_WINDOW_SECONDS = 60;
 
 function normalizeMetadataPhone(value: unknown): string | null {
-  return typeof value === "string" ? normalizePhoneToE164(value) : null;
+  try {
+    return typeof value === "string" ? normalizePhoneToE164(value) : null;
+  } catch {
+    return null;
+  }
 }
 
 async function findProfileUserIdByPhone(phone: string): Promise<{
@@ -126,8 +134,8 @@ Deno.serve(async (req) => {
   }
 
   try {
-    const body = await req.json().catch(() => ({}));
-    const phone = normalizePhoneToE164(String(body.phone ?? ""));
+    const body = await readJsonObject(req);
+    const phone = normalizePhoneToE164(body.phone, "phone", { required: true });
     if (!phone) {
       return jsonRes({ linked: false, error: "Invalid phone number.", code: "invalid_phone" });
     }
@@ -177,6 +185,8 @@ Deno.serve(async (req) => {
 
     return jsonRes({ linked: true });
   } catch (error) {
+    const validation = validationResponse(error, corsHeaders);
+    if (validation) return validation;
     const message = error instanceof Error ? error.message : "Could not prepare SMS login.";
     return jsonRes({ linked: false, error: message, code: "phone_login_setup_failed" });
   }

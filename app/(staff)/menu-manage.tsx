@@ -21,6 +21,7 @@ import { OwnerScreen } from '@/components/owner/OwnerScreen';
 import { SubpageHeader } from '@/components/owner/SubpageHeader';
 import { useMenu } from '@/lib/context/MenuContext';
 import type { MenuItem } from '@/lib/mock/menuItems';
+import { normalizeMoneyInput, normalizeTextInput, sanitizeMoneyInput, sanitizeTextInput } from '@/lib/validation/input';
 
 // ── Styles ──────────────────────────────────────────────────────────────────
 
@@ -265,10 +266,13 @@ function EditItemSheet({
   };
 
   const handleSave = () => {
-    const parsedPrice = parseFloat(price);
-    if (!name.trim()) return Alert.alert('Name required');
-    if (isNaN(parsedPrice) || parsedPrice < 0) return Alert.alert('Enter a valid price');
-    onSave({ name: name.trim(), price: parsedPrice, description, category, photoUrl });
+    const parsedPrice = normalizeMoneyInput(price);
+    const cleanName = normalizeTextInput(name, { maxLength: 120 });
+    const cleanDescription = normalizeTextInput(description, { maxLength: 500, multiline: true });
+    const cleanCategory = normalizeTextInput(category, { maxLength: 80 });
+    if (!cleanName) return Alert.alert('Name required');
+    if (parsedPrice === null || parsedPrice < 0) return Alert.alert('Enter a valid price');
+    onSave({ name: cleanName, price: parsedPrice, description: cleanDescription, category: cleanCategory, photoUrl });
     onClose();
   };
 
@@ -302,7 +306,7 @@ function EditItemSheet({
               <TextInput
                 style={styles.input}
                 value={name}
-                onChangeText={setName}
+                onChangeText={(value) => setName(sanitizeTextInput(value, { maxLength: 120 }))}
                 placeholder="e.g. Tagliatelle al Ragù"
                 placeholderTextColor={c.textMuted}
               />
@@ -312,7 +316,7 @@ function EditItemSheet({
               <TextInput
                 style={styles.input}
                 value={price}
-                onChangeText={setPrice}
+                onChangeText={(value) => setPrice(sanitizeMoneyInput(value))}
                 placeholder="0.00"
                 placeholderTextColor={c.textMuted}
                 keyboardType="decimal-pad"
@@ -323,7 +327,7 @@ function EditItemSheet({
               <TextInput
                 style={styles.input}
                 value={category}
-                onChangeText={setCategory}
+                onChangeText={(value) => setCategory(sanitizeTextInput(value, { maxLength: 80 }))}
                 placeholder="e.g. Mains, Desserts, Drinks"
                 placeholderTextColor={c.textMuted}
               />
@@ -333,7 +337,7 @@ function EditItemSheet({
               <TextInput
                 style={styles.inputMultiline}
                 value={description}
-                onChangeText={setDescription}
+                onChangeText={(value) => setDescription(sanitizeTextInput(value, { maxLength: 500, multiline: true }))}
                 placeholder="Short description of the dish"
                 placeholderTextColor={c.textMuted}
                 multiline

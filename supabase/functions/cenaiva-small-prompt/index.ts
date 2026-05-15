@@ -15,6 +15,11 @@ import {
   SMALL_PROMPT_TEMPERATURE,
 } from "../_shared/openai.ts";
 import { checkAuth } from "../_shared/auth.ts";
+import {
+  readJsonObject,
+  validationResponse,
+  asText as validatedText,
+} from "../_shared/input-validation.ts";
 
 const DEFAULT_VOICE_ID = Deno.env.get("ELEVENLABS_VOICE_ID") ?? SHARED_DEFAULT_VOICE_ID;
 const TTS_OUTPUT_FORMAT = Deno.env.get("ELEVENLABS_OUTPUT_FORMAT") ?? DEFAULT_OUTPUT_FORMAT;
@@ -146,8 +151,12 @@ Deno.serve(async (req) => {
   }
 
   try {
-    const body = await req.json() as Body;
-    const transcript = stringOrNull(body.transcript);
+    const body = await readJsonObject(req) as Body;
+    const transcript = validatedText(body.transcript, "transcript", {
+      required: true,
+      maxLength: 1200,
+      multiline: true,
+    });
     if (!transcript) return jsonRes({ error: "transcript is required" }, 400);
 
     const missing = nextMissing(body.booking);
@@ -175,6 +184,8 @@ Deno.serve(async (req) => {
       audio,
     });
   } catch (error) {
+    const validation = validationResponse(error, corsHeaders);
+    if (validation) return validation;
     const message = error instanceof Error ? error.message : String(error);
     console.error("cenaiva-small-prompt error:", message);
     return jsonRes({ error: message || "small_prompt_failed" }, 500);

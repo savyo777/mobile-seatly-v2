@@ -7,6 +7,7 @@ import { ProfileStackScreen } from '@/components/profile/ProfileStackScreen';
 import { useColors, createStyles, spacing, borderRadius, typography } from '@/lib/theme';
 import { changeEmail, resendVerificationEmail } from '@/lib/services/accountSecurity';
 import { useAuthSession } from '@/lib/auth/AuthContext';
+import { normalizeEmail, sanitizeEmailInput } from '@/lib/validation/input';
 
 const useStyles = createStyles((c) => ({
   currentLabel: {
@@ -96,21 +97,20 @@ export default function ChangeEmailScreen() {
   const [emailError, setEmailError] = useState('');
   const currentEmail = user?.email ?? '';
 
-  const isValidEmail = (v: string) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v);
-
   const handleSubmit = async () => {
-    if (!isValidEmail(newEmail)) { setEmailError('Enter a valid email address'); return; }
+    const cleanEmail = normalizeEmail(newEmail);
+    if (!cleanEmail) { setEmailError('Enter a valid email address'); return; }
     if (!password) return;
     setLoading(true);
     try {
-      await changeEmail(newEmail, password);
-      Alert.alert('Check your inbox', t('profile.emailVerificationSent', { email: newEmail }), [
+      await changeEmail(cleanEmail, password);
+      Alert.alert('Check your inbox', t('profile.emailVerificationSent', { email: cleanEmail }), [
         {
           text: 'Resend',
           onPress: async () => {
             try {
-              await resendVerificationEmail(newEmail);
-              Alert.alert('Sent', `Verification email resent to ${newEmail}.`);
+              await resendVerificationEmail(cleanEmail);
+              Alert.alert('Sent', `Verification email resent to ${cleanEmail}.`);
             } catch (resendErr: any) {
               Alert.alert('Error', resendErr?.message ?? 'Failed to resend verification email.');
             }
@@ -125,7 +125,7 @@ export default function ChangeEmailScreen() {
     }
   };
 
-  const ready = isValidEmail(newEmail) && password.length > 0;
+  const ready = normalizeEmail(newEmail) !== null && password.length > 0;
 
   return (
     <ProfileStackScreen title={t('profile.changeEmail')}>
@@ -137,7 +137,7 @@ export default function ChangeEmailScreen() {
         <View style={[styles.inputRow, focusedField === 'email' && styles.inputRowFocused]}>
           <TextInput
             value={newEmail}
-            onChangeText={(v) => { setNewEmail(v); setEmailError(''); }}
+            onChangeText={(v) => { setNewEmail(sanitizeEmailInput(v)); setEmailError(''); }}
             onFocus={() => setFocusedField('email')}
             onBlur={() => setFocusedField(null)}
             placeholder="you@example.com"

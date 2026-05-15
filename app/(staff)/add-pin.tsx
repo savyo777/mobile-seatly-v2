@@ -5,12 +5,13 @@ import { Ionicons } from '@expo/vector-icons';
 import { OwnerScreen } from '@/components/owner/OwnerScreen';
 import { SubpageHeader } from '@/components/owner/SubpageHeader';
 import { borderRadius, createStyles, spacing, typography, useColors } from '@/lib/theme';
+import { normalizeName, sanitizeNameInput, sanitizeOtpInput } from '@/lib/validation/input';
 
 const ROLES = ['Owner', 'Manager', 'Host', 'Server', 'Kitchen'] as const;
 type Role = (typeof ROLES)[number];
 
 function sanitizePin(value: string): string {
-  return value.replace(/\D/g, '').slice(0, 4);
+  return sanitizeOtpInput(value).slice(0, 4);
 }
 
 const useStyles = createStyles((c) => ({
@@ -151,7 +152,7 @@ export default function AddPinScreen() {
   const [pin, setPin] = useState(typeof params.pin === 'string' ? params.pin : '');
 
   const editing = useMemo(() => typeof params.pinId === 'string' && params.pinId.length > 0, [params.pinId]);
-  const canSave = name.trim().length > 0 && sanitizePin(pin).length === 4;
+  const canSave = normalizeName(name).length > 0 && sanitizePin(pin).length === 4;
 
   const onSave = () => {
     if (!canSave) {
@@ -160,7 +161,7 @@ export default function AddPinScreen() {
     }
     Alert.alert(
       editing ? 'PIN updated' : 'PIN added',
-      `${name.trim()} is now set to ${sanitizePin(pin)} for the ${role} role.`,
+      `${normalizeName(name)} is now set to ${sanitizePin(pin)} for the ${role} role.`,
       [{ text: 'OK', onPress: () => router.back() }],
     );
   };
@@ -197,7 +198,7 @@ export default function AddPinScreen() {
               <Ionicons name="person-outline" size={16} color={c.textMuted} />
               <TextInput
                 value={name}
-                onChangeText={setName}
+                onChangeText={(value) => setName(sanitizeNameInput(value, 80))}
                 placeholder="Alex Johnson"
                 placeholderTextColor={c.textMuted}
                 style={styles.fieldInput}

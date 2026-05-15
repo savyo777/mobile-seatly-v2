@@ -24,6 +24,12 @@ import { TimeField } from '@/components/owner/forms/TimeField';
 import { useOwnerScope } from '@/hooks/useOwnerScope';
 import { uploadEventMedia } from '@/lib/owner/uploadEventMedia';
 import { createEvent } from '@/lib/owner/createEventOrPromotion';
+import {
+  normalizeTextInput,
+  sanitizeIntegerInput,
+  sanitizeMoneyInput,
+  sanitizeTextInput,
+} from '@/lib/validation/input';
 
 const DAY_CHIPS = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
 const FREQ_OPTS: { value: 'daily'|'weekly'|'monthly'; label: string }[] = [
@@ -258,12 +264,18 @@ export default function NewEventScreen() {
         mediaName = videoUri.split('/').pop() ?? null;
       }
 
+      const cleanedName = normalizeTextInput(name, { maxLength: 120 });
+      const cleanedDescription = normalizeTextInput(description, { maxLength: 2000, multiline: true });
+      const cleanedTheme = normalizeTextInput(theme, { maxLength: 80 });
+      const cleanedDressCode = normalizeTextInput(dressCode, { maxLength: 80 });
+      const cleanedMenuId = normalizeTextInput(menuId, { maxLength: 80 });
+
       await createEvent({
         restaurant_id: selectedRestaurant.id,
-        name: name.trim(),
-        description: description.trim() || null,
-        theme: theme.trim() || null,
-        dress_code: dressCode.trim() || null,
+        name: cleanedName,
+        description: cleanedDescription || null,
+        theme: cleanedTheme || null,
+        dress_code: cleanedDressCode || null,
         min_age: minAge ? Number(minAge) : null,
         date,
         end_date: endDate,
@@ -273,7 +285,7 @@ export default function NewEventScreen() {
         price_per_person: price ? Number(price) : null,
         capacity: capacity ? Number(capacity) : null,
         is_private: isPrivate,
-        menu_id: menuId.trim() || null,
+        menu_id: cleanedMenuId || null,
         is_recurring: isRecurring,
         recurrence_rule: isRecurring
           ? buildRRule(recurFreq, Math.max(1, Number(recurInterval) || 1), recurDays)
@@ -285,7 +297,7 @@ export default function NewEventScreen() {
       });
 
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
-      Alert.alert('Event posted', `"${name.trim()}" is now live.`, [
+      Alert.alert('Event posted', `"${cleanedName}" is now live.`, [
         { text: 'OK', onPress: () => router.back() },
       ]);
     } catch (err) {
@@ -343,28 +355,31 @@ export default function NewEventScreen() {
             <View style={styles.fieldRow}>
               <Text style={styles.fieldLabel}>Name *</Text>
               <TextInput
-                value={name} onChangeText={setName}
+                value={name} onChangeText={(value) => setName(sanitizeTextInput(value, { maxLength: 120 }))}
                 placeholder="Truffle & Barolo Tasting Night"
                 placeholderTextColor={c.textMuted}
                 style={styles.input}
+                maxLength={120}
               />
             </View>
             <View style={[styles.fieldRow, styles.fieldDivider]}>
               <Text style={styles.fieldLabel}>Description</Text>
               <TextInput
-                value={description} onChangeText={setDescription}
+                value={description} onChangeText={(value) => setDescription(sanitizeTextInput(value, { maxLength: 2000, multiline: true }))}
                 placeholder="What guests will see"
                 placeholderTextColor={c.textMuted}
                 style={styles.inputMultiline} multiline textAlignVertical="top"
+                maxLength={2000}
               />
             </View>
             <View style={[styles.fieldRow, styles.fieldDivider]}>
               <Text style={styles.fieldLabel}>Theme</Text>
               <TextInput
-                value={theme} onChangeText={setTheme}
+                value={theme} onChangeText={(value) => setTheme(sanitizeTextInput(value, { maxLength: 80 }))}
                 placeholder="e.g. 1920s Speakeasy"
                 placeholderTextColor={c.textMuted}
                 style={styles.input}
+                maxLength={80}
               />
             </View>
           </View>
@@ -427,9 +442,9 @@ export default function NewEventScreen() {
                 </View>
                 <View style={[styles.fieldRow, styles.fieldDivider]}>
                   <Text style={styles.fieldLabel}>Every N {recurFreq === 'daily' ? 'days' : recurFreq === 'weekly' ? 'weeks' : 'months'}</Text>
-                  <TextInput value={recurInterval} onChangeText={setRecurInterval}
+                  <TextInput value={recurInterval} onChangeText={(value) => setRecurInterval(sanitizeIntegerInput(value, 3))}
                     keyboardType="number-pad" style={styles.input} placeholder="1"
-                    placeholderTextColor={c.textMuted}/>
+                    placeholderTextColor={c.textMuted} maxLength={3}/>
                 </View>
                 {recurFreq === 'weekly' && (
                   <View style={[styles.chipRow, styles.fieldDivider]}>
@@ -455,18 +470,18 @@ export default function NewEventScreen() {
               <View style={styles.rowPairField}>
                 <View style={styles.fieldRow}>
                   <Text style={styles.fieldLabel}>Price per person</Text>
-                  <TextInput value={price} onChangeText={setPrice}
+                  <TextInput value={price} onChangeText={(value) => setPrice(sanitizeMoneyInput(value))}
                     placeholder="$0 = free" placeholderTextColor={c.textMuted}
-                    keyboardType="decimal-pad" style={styles.input}/>
+                    keyboardType="decimal-pad" style={styles.input} maxLength={14}/>
                 </View>
               </View>
               <View style={styles.rowPairDivider} />
               <View style={styles.rowPairField}>
                 <View style={styles.fieldRow}>
                   <Text style={styles.fieldLabel}>Capacity</Text>
-                  <TextInput value={capacity} onChangeText={setCapacity}
+                  <TextInput value={capacity} onChangeText={(value) => setCapacity(sanitizeIntegerInput(value, 5))}
                     placeholder="e.g. 40" placeholderTextColor={c.textMuted}
-                    keyboardType="number-pad" style={styles.input}/>
+                    keyboardType="number-pad" style={styles.input} maxLength={5}/>
                 </View>
               </View>
             </View>
@@ -479,18 +494,18 @@ export default function NewEventScreen() {
               <View style={styles.rowPairField}>
                 <View style={styles.fieldRow}>
                   <Text style={styles.fieldLabel}>Dress code</Text>
-                  <TextInput value={dressCode} onChangeText={setDressCode}
+                  <TextInput value={dressCode} onChangeText={(value) => setDressCode(sanitizeTextInput(value, { maxLength: 80 }))}
                     placeholder="Smart casual" placeholderTextColor={c.textMuted}
-                    style={styles.input}/>
+                    style={styles.input} maxLength={80}/>
                 </View>
               </View>
               <View style={styles.rowPairDivider} />
               <View style={styles.rowPairField}>
                 <View style={styles.fieldRow}>
                   <Text style={styles.fieldLabel}>Minimum age</Text>
-                  <TextInput value={minAge} onChangeText={setMinAge}
+                  <TextInput value={minAge} onChangeText={(value) => setMinAge(sanitizeIntegerInput(value, 3))}
                     placeholder="e.g. 21" placeholderTextColor={c.textMuted}
-                    keyboardType="number-pad" style={styles.input}/>
+                    keyboardType="number-pad" style={styles.input} maxLength={3}/>
                 </View>
               </View>
             </View>
@@ -501,10 +516,11 @@ export default function NewEventScreen() {
             <Text style={styles.sectionLabel}>TASTING MENU (OPTIONAL)</Text>
             <View style={styles.fieldRow}>
               <Text style={styles.fieldLabel}>Menu ID</Text>
-              <TextInput value={menuId} onChangeText={setMenuId}
+              <TextInput value={menuId} onChangeText={(value) => setMenuId(sanitizeTextInput(value, { maxLength: 80 }))}
                 placeholder="Internal menu reference (UUID)"
                 placeholderTextColor={c.textMuted}
                 style={styles.input}
+                maxLength={80}
                 autoCapitalize="none" autoCorrect={false}/>
             </View>
           </View>

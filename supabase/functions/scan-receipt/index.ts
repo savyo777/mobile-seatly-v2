@@ -8,6 +8,11 @@ import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { buildCorsHeaders } from "../_shared/cors.ts";
 import { checkAuth } from "../_shared/auth.ts";
 import { callOpenAIVision } from "../_shared/openai.ts";
+import {
+  readJsonObject,
+  validationResponse,
+  asText as validatedText,
+} from "../_shared/input-validation.ts";
 
 type Body = {
   image_base64?: unknown;
@@ -132,22 +137,23 @@ Deno.serve(async (req) => {
     return jsonResWithCors(req, { error: "unauthorized", reason: auth.reason }, 401);
   }
 
-  let body: Body;
   try {
-    body = (await req.json()) as Body;
-  } catch {
-    return jsonResWithCors(req, { error: "invalid_json" }, 400);
-  }
+    const body = (await readJsonObject(req, { maxBytes: 8 * 1024 * 1024 })) as Body;
 
-  const imageBase64 =
-    typeof body.image_base64 === "string" ? body.image_base64 : "";
-  if (!imageBase64) {
-    return jsonResWithCors(req, { error: "missing_image_base64" }, 400);
-  }
-  const imageMimeType =
-    typeof body.image_mime_type === "string" ? body.image_mime_type : "image/jpeg";
+    const imageBase64 = validatedText(body.image_base64, "image_base64", {
+      required: true,
+      maxLength: 7_500_000,
+    }) ?? "";
+    if (!imageBase64) {
+      return jsonResWithCors(req, { error: "missing_image_base64" }, 400);
+    }
+    const imageMimeType = validatedText(body.image_mime_type, "image_mime_type", {
+      maxLength: 64,
+    }) ?? "image/jpeg";
+    if (!/^image\/(?:jpeg|jpg|png|webp|heic|heif)$/i.test(imageMimeType)) {
+      return jsonResWithCors(req, { error: "invalid_image_mime_type" }, 400);
+    }
 
-  try {
     const { parsed, raw } = await callOpenAIVision<ReceiptModelOutput>({
       imageBase64,
       imageMimeType,
@@ -185,6 +191,8 @@ Deno.serve(async (req) => {
       aiRaw: raw,
     });
   } catch (err) {
+    const validation = validationResponse(err, buildCorsHeaders(req));
+    if (validation) return validation;
     console.error("scan-receipt: vision call failed", err);
     return jsonResWithCors(
       req,

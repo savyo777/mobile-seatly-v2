@@ -33,6 +33,7 @@ const mockMapRestaurants: typeof DEMO_MAP_RESTAURANTS = isDemoModeEnabled() ? DE
 import { applyMapFilter, DEFAULT_MAP_CENTER, withDistances } from '@/lib/map/mapFilters';
 import { haversineMeters } from '@/lib/map/geo';
 import { restaurantPriceLabel } from '@/lib/restaurants/pricing';
+import { normalizeTextInput, sanitizeTextInput } from '@/lib/validation/input';
 import type { CenaivaTtsVoice } from '@/lib/cenaiva/voice/voicePreference';
 import { createStyles, borderRadius, spacing, typography } from '@/lib/theme';
 
@@ -913,7 +914,7 @@ export function CenaivaVoiceShell({ onClose }: { onClose?: () => void }) {
   }, [assistant, inManualMenu, state.voiceStatus, textMode]);
 
   const submit = useCallback(async () => {
-    const text = input.trim();
+    const text = normalizeTextInput(input, { maxLength: 2000, multiline: true });
     if (!text || state.voiceStatus === 'processing') return;
     setInput('');
     Keyboard.dismiss();
@@ -1279,8 +1280,9 @@ export function CenaivaVoiceShell({ onClose }: { onClose?: () => void }) {
                 placeholder="Type a message..."
                 placeholderTextColor="rgba(255,255,255,0.30)"
                 value={input}
-                onChangeText={setInput}
+                onChangeText={(value) => setInput(sanitizeTextInput(value, { maxLength: 2000, multiline: true }))}
                 multiline
+                maxLength={2000}
                 returnKeyType="send"
                 onSubmitEditing={submit}
               />

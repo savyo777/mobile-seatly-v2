@@ -7,6 +7,7 @@ import { useColors, createStyles, spacing, borderRadius, typography } from '@/li
 import { startChangePhone, confirmChangePhone } from '@/lib/services/accountSecurity';
 import { normalizePhoneToE164, resolveDisplayPhone } from '@/lib/services/phoneAuth';
 import { useAuthSession } from '@/lib/auth/AuthContext';
+import { sanitizeOtpInput, sanitizePhoneInput } from '@/lib/validation/input';
 
 const useStyles = createStyles((c) => ({
   currentLabel: {
@@ -172,7 +173,7 @@ export default function ChangePhoneScreen() {
               <TextInput
                 value={newPhone}
                 onChangeText={(v) => {
-                  setNewPhone(v);
+                  setNewPhone(sanitizePhoneInput(v));
                   setPhoneError('');
                 }}
                 onFocus={() => setFocusedField('phone')}
@@ -213,7 +214,7 @@ export default function ChangePhoneScreen() {
               <TextInput
                 value={code}
                 onChangeText={(v) => {
-                  setCode(v);
+                  setCode(sanitizeOtpInput(v));
                   setCodeError('');
                 }}
                 onFocus={() => setFocusedField('code')}

@@ -13,6 +13,7 @@ import { signInWithApple, signInWithGoogle } from '@/lib/services/oauth';
 import { normalizePhoneToE164, sendPhoneOtp } from '@/lib/services/phoneAuth';
 import { roleIncludes } from '@/lib/auth/roles';
 import { LOCKOUT_MS, MAX_FAILED_ATTEMPTS } from '@/lib/auth/lockoutPolicy';
+import { normalizeEmail } from '@/lib/validation/input';
 import {
   ScreenWrapper,
   Input,
@@ -168,7 +169,7 @@ export default function OwnerLoginScreen() {
   const [submitting, setSubmitting] = useState(false);
   const [lockoutUntilMs, setLockoutUntilMs] = useState<number | null>(null);
 
-  const trimmedEmail = email.trim().toLowerCase();
+  const trimmedEmail = normalizeEmail(email) ?? '';
   const [nowMs, setNowMs] = useState<number>(Date.now());
   const isLockedOut = lockoutUntilMs !== null && nowMs < lockoutUntilMs;
   const lockoutMsRemaining = isLockedOut && lockoutUntilMs !== null ? lockoutUntilMs - nowMs : 0;

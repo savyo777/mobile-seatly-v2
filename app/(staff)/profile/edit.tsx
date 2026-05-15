@@ -20,6 +20,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import * as ImagePicker from 'expo-image-picker';
 import { useColors, createStyles, spacing, borderRadius } from '@/lib/theme';
+import { sanitizeInputByKind } from '@/lib/validation/input';
 import {
   OWNER_BUSINESS_PROFILE as DEMO_OWNER_BUSINESS_PROFILE,
   OWNER_BUSINESS_HOURS as DEMO_OWNER_BUSINESS_HOURS,
@@ -669,18 +670,20 @@ function FieldInput({
 }) {
   const c = useColors();
   const styles = useStyles();
+  const inputKind = keyboardType === 'email-address' ? 'email' : keyboardType === 'phone-pad' ? 'phone' : multiline ? 'multiline' : 'text';
   return (
     <View style={[styles.fieldRow, divider && styles.fieldDivider]}>
       <Text style={styles.fieldLabel}>{label}</Text>
       <TextInput
         value={value}
-        onChangeText={onChangeText}
+        onChangeText={(next) => onChangeText(sanitizeInputByKind(next, inputKind, { maxLength: multiline ? 1000 : 180, multiline }))}
         placeholder={placeholder}
         placeholderTextColor={c.textMuted}
         style={multiline ? styles.inputMultiline : styles.input}
         multiline={multiline}
         keyboardType={keyboardType}
         autoCapitalize={autoCapitalize ?? 'sentences'}
+        maxLength={multiline ? 1000 : 180}
       />
     </View>
   );

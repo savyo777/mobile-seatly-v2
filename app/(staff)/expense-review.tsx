@@ -45,6 +45,7 @@ import type {
 import { createStyles } from '@/lib/theme';
 import { ownerColorsFromPalette, ownerRadii, ownerSpace, useOwnerColors } from '@/lib/theme/ownerTheme';
 import { brandGold, withAlpha } from '@/lib/theme/tokens';
+import { normalizeTextInput, sanitizeMoneyInput, sanitizeTextInput } from '@/lib/validation/input';
 
 const TRANSACTION_TYPE_OPTIONS: Array<{ value: TransactionType; label: string }> = [
   { value: 'expense', label: 'Expense' },
@@ -368,8 +369,8 @@ export default function ExpenseReviewScreen() {
           restaurantId: ownerRestaurantId ?? 'r1',
           createdBy: 'u1',
           createdAt: new Date().toISOString(),
-          vendorName: vendor.trim(),
-          description: description.trim() || null,
+          vendorName: normalizeTextInput(vendor, { maxLength: 120 }),
+          description: normalizeTextInput(description, { maxLength: 500 }) || null,
           expenseDate: expenseDate || todayISO(),
           amount,
           taxAmount: null,
@@ -383,8 +384,8 @@ export default function ExpenseReviewScreen() {
           receiptType: scan ? 'image' : null,
           aiCategorized: extractedFields.size > 0,
           aiExtractedData,
-          notes: notes.trim() || null,
-          paymentMethod: paymentMethod.trim() || null,
+          notes: normalizeTextInput(notes, { maxLength: 1000, multiline: true }) || null,
+          paymentMethod: normalizeTextInput(paymentMethod, { maxLength: 80 }) || null,
         };
         addLocalExpense(localExpense);
         void Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
@@ -423,8 +424,8 @@ export default function ExpenseReviewScreen() {
       const created = await addExpense({
         restaurantId,
         createdBy: profileId,
-        vendorName: vendor.trim(),
-        description: description.trim() || null,
+        vendorName: normalizeTextInput(vendor, { maxLength: 120 }),
+        description: normalizeTextInput(description, { maxLength: 500 }) || null,
         expenseDate: expenseDate || todayISO(),
         amount,
         taxAmount: null,
@@ -436,8 +437,8 @@ export default function ExpenseReviewScreen() {
         transactionType,
         receiptUrl: null,
         receiptType: scan ? 'image' : null,
-        notes: notes.trim() || null,
-        paymentMethod: paymentMethod.trim() || null,
+        notes: normalizeTextInput(notes, { maxLength: 1000, multiline: true }) || null,
+        paymentMethod: normalizeTextInput(paymentMethod, { maxLength: 80 }) || null,
         aiCategorized: extractedFields.size > 0,
         aiExtractedData,
       });
@@ -593,7 +594,7 @@ export default function ExpenseReviewScreen() {
             <TextInput
               value={vendor}
               onChangeText={(v) => {
-                setVendor(v);
+                setVendor(sanitizeTextInput(v, { maxLength: 120 }));
                 clearExtracted('vendor');
               }}
               placeholder={transactionType === 'income' ? 'DoorDash, event tickets, catering client' : 'Toronto Hydro'}
@@ -606,7 +607,7 @@ export default function ExpenseReviewScreen() {
             <TextInput
               value={subtotal}
               onChangeText={(v) => {
-                setSubtotal(v);
+                setSubtotal(sanitizeMoneyInput(v));
                 clearExtracted('amount');
                 // Manual edits invalidate the auto-conversion banner: the
                 // owner has overridden the converted value.
@@ -662,7 +663,7 @@ export default function ExpenseReviewScreen() {
                 <Text style={styles.fieldLabel}>Description</Text>
                 <TextInput
                   value={description}
-                  onChangeText={setDescription}
+                  onChangeText={(value) => setDescription(sanitizeTextInput(value, { maxLength: 500 }))}
                   placeholder={
                     transactionType === 'income'
                       ? 'Weekend pre-orders, private event deposit, catering invoice...'
@@ -722,7 +723,7 @@ export default function ExpenseReviewScreen() {
             <TextInput
               value={paymentMethod}
               onChangeText={(v) => {
-                setPaymentMethod(v);
+                setPaymentMethod(sanitizeTextInput(v, { maxLength: 80 }));
                 clearExtracted('paymentMethod');
               }}
               placeholder="Visa ****4242, cash, interac"
@@ -734,7 +735,7 @@ export default function ExpenseReviewScreen() {
             <Text style={styles.fieldLabel}>Notes</Text>
             <TextInput
               value={notes}
-              onChangeText={setNotes}
+              onChangeText={(value) => setNotes(sanitizeTextInput(value, { maxLength: 1000, multiline: true }))}
               placeholder={isManual ? 'Internal notes for your team or accountant.' : 'Optional'}
               placeholderTextColor={ownerColors.textMuted}
               style={[styles.input, styles.inputMultiline]}

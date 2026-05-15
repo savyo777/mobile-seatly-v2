@@ -30,6 +30,7 @@ import { formatCurrency } from '@/lib/utils/formatCurrency';
 import { createStyles } from '@/lib/theme';
 import { ownerColorsFromPalette, ownerRadii, ownerSpace, useOwnerColors } from '@/lib/theme/ownerTheme';
 import { brandGold, withAlpha } from '@/lib/theme/tokens';
+import { normalizeTextInput, sanitizeMoneyInput, sanitizeTextInput } from '@/lib/validation/input';
 
 const TRANSACTION_TYPES: Array<{ value: TransactionType; label: string }> = [
   { value: 'expense', label: 'Expense' },
@@ -239,8 +240,8 @@ export default function ExpenseDetailScreen() {
     setSaving(true);
     try {
       const patch = {
-        vendorName: vendor.trim(),
-        description: description.trim() || null,
+        vendorName: normalizeTextInput(vendor, { maxLength: 120 }),
+        description: normalizeTextInput(description, { maxLength: 500 }) || null,
         expenseDate,
         amount: parsedAmount,
         taxAmount: null as number | null,
@@ -249,8 +250,8 @@ export default function ExpenseDetailScreen() {
         paymentStatus,
         paidAt,
         transactionType,
-        notes: notes.trim() || null,
-        paymentMethod: paymentMethod.trim() || null,
+        notes: normalizeTextInput(notes, { maxLength: 1000, multiline: true }) || null,
+        paymentMethod: normalizeTextInput(paymentMethod, { maxLength: 80 }) || null,
       };
       if (expense.id.startsWith('local-')) {
         const updated: Expense = {
@@ -506,7 +507,7 @@ function EditForm({
       <Text style={styles.fieldLabel}>{transactionType === 'income' ? 'Source' : 'Vendor'}</Text>
       <TextInput
         value={vendor}
-        onChangeText={setVendor}
+        onChangeText={(value) => setVendor(sanitizeTextInput(value, { maxLength: 120 }))}
         placeholder={transactionType === 'income' ? 'DoorDash, event tickets, catering client' : 'Toronto Hydro'}
         placeholderTextColor={ownerColors.textMuted}
         style={styles.input}
@@ -515,7 +516,7 @@ function EditForm({
       <Text style={styles.fieldLabel}>Amount</Text>
       <TextInput
         value={amount}
-        onChangeText={setAmount}
+        onChangeText={(value) => setAmount(sanitizeMoneyInput(value))}
         placeholder="0.00"
         placeholderTextColor={ownerColors.textMuted}
         style={[styles.input, styles.inputTotal]}
@@ -542,7 +543,7 @@ function EditForm({
       <Text style={styles.fieldLabel}>Description</Text>
       <TextInput
         value={description}
-        onChangeText={setDescription}
+        onChangeText={(value) => setDescription(sanitizeTextInput(value, { maxLength: 500 }))}
         placeholder={transactionType === 'income' ? 'Weekend pre-orders, private event deposit...' : 'May rent, weekly produce, annual insurance...'}
         placeholderTextColor={ownerColors.textMuted}
         style={styles.input}
@@ -576,7 +577,7 @@ function EditForm({
       <Text style={styles.fieldLabel}>Payment method (optional)</Text>
       <TextInput
         value={paymentMethod}
-        onChangeText={setPaymentMethod}
+        onChangeText={(value) => setPaymentMethod(sanitizeTextInput(value, { maxLength: 80 }))}
         placeholder="Visa ****4242, cash, interac"
         placeholderTextColor={ownerColors.textMuted}
         style={styles.input}
@@ -586,7 +587,7 @@ function EditForm({
       <Text style={styles.fieldLabel}>Notes</Text>
       <TextInput
         value={notes}
-        onChangeText={setNotes}
+        onChangeText={(value) => setNotes(sanitizeTextInput(value, { maxLength: 1000, multiline: true }))}
         placeholder="Internal notes for your team or accountant."
         placeholderTextColor={ownerColors.textMuted}
         style={[styles.input, styles.inputMultiline]}

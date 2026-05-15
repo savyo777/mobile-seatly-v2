@@ -12,6 +12,7 @@ import {
   saveBillingAddress,
   type RestaurantBillingAddress,
 } from '@/lib/storage/restaurantBillingAddress';
+import { normalizeTextInput, sanitizePostalCodeInput, sanitizeTextInput } from '@/lib/validation/input';
 
 const useStyles = createStyles((c) => ({
   scroll: { flex: 1 },
@@ -132,7 +133,13 @@ export default function BillingAddressScreen() {
   }, []);
 
   const update = (key: keyof RestaurantBillingAddress, value: string) => {
-    setAddress((prev) => ({ ...prev, [key]: value }));
+    const next =
+      key === 'postalCode'
+        ? sanitizePostalCodeInput(value)
+        : key === 'region' || key === 'country'
+          ? sanitizeTextInput(value, { maxLength: 3 }).toUpperCase().replace(/[^A-Z]/g, '')
+          : sanitizeTextInput(value, { maxLength: 120 });
+    setAddress((prev) => ({ ...prev, [key]: next }));
     if (errors[key]) setErrors((prev) => ({ ...prev, [key]: undefined }));
   };
 
@@ -148,12 +155,12 @@ export default function BillingAddressScreen() {
 
     void (async () => {
       await saveBillingAddress({
-        line1: address.line1.trim(),
-        line2: address.line2.trim(),
-        city: address.city.trim(),
-        region: address.region.trim().toUpperCase(),
-        postalCode: address.postalCode.trim().toUpperCase(),
-        country: address.country.trim().toUpperCase(),
+        line1: normalizeTextInput(address.line1, { maxLength: 120 }),
+        line2: normalizeTextInput(address.line2, { maxLength: 120 }),
+        city: normalizeTextInput(address.city, { maxLength: 80 }),
+        region: normalizeTextInput(address.region, { maxLength: 3 }).toUpperCase(),
+        postalCode: sanitizePostalCodeInput(address.postalCode),
+        country: normalizeTextInput(address.country, { maxLength: 3 }).toUpperCase(),
       });
       Alert.alert('Billing address saved', 'Your billing address is now on file.', [
         {

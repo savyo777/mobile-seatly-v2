@@ -39,6 +39,7 @@ import {
   getSnapPreviewLayout,
 } from '@/lib/storyFilters/previewLayout';
 import type { StoryFilterId } from '@/lib/storyFilters/types';
+import { normalizeTextInput, sanitizeTextInput } from '@/lib/validation/input';
 
 const H_PAD = 18;
 
@@ -385,7 +386,7 @@ export default function SnapCaptionScreen() {
     let navigated = false;
 
     try {
-      const cleanCaption = caption.trim();
+      const cleanCaption = normalizeTextInput(caption, { maxLength: 220, multiline: true });
       const userId = me;
       if (!userId) {
         setPosting(false);
@@ -576,7 +577,7 @@ export default function SnapCaptionScreen() {
           <View style={styles.inputSection}>
             <TextInput
               value={caption}
-              onChangeText={setCaption}
+              onChangeText={(value) => setCaption(sanitizeTextInput(value, { maxLength: 220, multiline: true }))}
               placeholder="How was it?"
               placeholderTextColor={c.textMuted}
               multiline

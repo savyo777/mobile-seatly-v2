@@ -5,6 +5,11 @@ import { supabaseAdmin } from "../_shared/supabase.ts";
 import { jsonRes } from "../_shared/json-response.ts";
 import { decodeJwtPayload } from "../_shared/jwt.ts";
 import {
+  readJsonObject,
+  validationResponse,
+  asText as validatedText,
+} from "../_shared/input-validation.ts";
+import {
   ELEVENLABS_BASE,
   DEFAULT_VOICE_ID as SHARED_DEFAULT_VOICE_ID,
   ELEVENLABS_MODEL,
@@ -51,12 +56,12 @@ Deno.serve(async (req) => {
     const queryText = url.searchParams.get("text");
     const body = queryText != null
       ? { text: queryText, voice_id: url.searchParams.get("voice_id") ?? undefined }
-      : await req.json() as { text?: string; voice_id?: string };
-    const rawText = (body.text ?? "").trim();
+      : await readJsonObject(req) as { text?: string; voice_id?: string };
+    const rawText = validatedText(body.text, "text", { required: true, maxLength: 1200, multiline: true }) ?? "";
     if (!rawText) return jsonRes({ error: "text is required" }, 400);
 
     const text = applyPronunciation(rawText);
-    const voiceId = body.voice_id ?? DEFAULT_VOICE_ID;
+    const voiceId = validatedText(body.voice_id, "voice_id", { maxLength: 120 }) ?? DEFAULT_VOICE_ID;
 
     // Call ElevenLabs with one automatic retry on transient failures. Without
     // this, any 5xx / network blip drops us to Web Speech for that single turn,
@@ -104,6 +109,8 @@ Deno.serve(async (req) => {
       },
     });
   } catch (err) {
+    const validation = validationResponse(err, corsHeaders);
+    if (validation) return validation;
     return jsonRes({ error: String(err) }, 500);
   }
 });

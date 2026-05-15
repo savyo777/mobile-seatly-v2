@@ -21,6 +21,7 @@ import {
   type ClosureEntry,
 } from '@/lib/owner/closuresSettings';
 import { borderRadius, createStyles, spacing, typography, useColors } from '@/lib/theme';
+import { sanitizeTextInput } from '@/lib/validation/input';
 
 type Closure = {
   id: string;
@@ -660,7 +661,7 @@ export default function ClosuresScreen() {
 
             <TextInput
               value={reason}
-              onChangeText={setReason}
+              onChangeText={(value) => setReason(sanitizeTextInput(value, { maxLength: 120 }))}
               placeholder="Reason (e.g. Christmas Day, staff training)"
               placeholderTextColor={c.textMuted}
               style={styles.reasonInput}

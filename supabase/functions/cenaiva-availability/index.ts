@@ -7,6 +7,12 @@ import {
   type FlexibleAvailabilityMode,
 } from "../_shared/availability.ts";
 import { checkAuth } from "../_shared/auth.ts";
+import {
+  readJsonObject,
+  validationResponse,
+  asText as validatedText,
+  asInteger,
+} from "../_shared/input-validation.ts";
 
 type AvailabilityBody = {
   restaurant_id?: unknown;
@@ -118,10 +124,13 @@ Deno.serve(async (req) => {
   }
 
   try {
-    const body = await req.json() as AvailabilityBody;
-    const restaurantId = stringOrNull(body.restaurant_id);
-    const partySize = numberOrNull(body.party_size);
-    const mode = stringOrNull(body.mode) as FlexibleAvailabilityMode | null;
+    const body = await readJsonObject(req) as AvailabilityBody;
+    const restaurantId = validatedText(body.restaurant_id, "restaurant_id", {
+      required: true,
+      maxLength: 80,
+    });
+    const partySize = asInteger(body.party_size, "party_size", { required: true, min: 1, max: 30 });
+    const mode = validatedText(body.mode, "mode", { required: true, maxLength: 32 }) as FlexibleAvailabilityMode | null;
 
     if (!restaurantId) return jsonRes({ error: "restaurant_id is required" }, 400);
     if (partySize == null || partySize < 1) {
@@ -137,11 +146,11 @@ Deno.serve(async (req) => {
       mode,
       date: stringOrNull(body.date),
       time: stringOrNull(body.time),
-      weekday: numberOrNull(body.weekday),
-      timezone: stringOrNull(body.timezone),
-      search_days: numberOrNull(body.search_days) ?? undefined,
-      nearest_count: numberOrNull(body.nearest_count) ?? undefined,
-      split_at: stringOrNull(body.split_at) ?? undefined,
+      weekday: asInteger(body.weekday, "weekday", { min: 0, max: 6 }),
+      timezone: validatedText(body.timezone, "timezone", { maxLength: 80 }),
+      search_days: asInteger(body.search_days, "search_days", { min: 1, max: 60 }) ?? undefined,
+      nearest_count: asInteger(body.nearest_count, "nearest_count", { min: 1, max: 10 }) ?? undefined,
+      split_at: validatedText(body.split_at, "split_at", { maxLength: 16 }) ?? undefined,
     });
 
     const requestedDate = stringOrNull(body.date);
@@ -164,6 +173,8 @@ Deno.serve(async (req) => {
 
     return jsonRes(normalizeResultHours(result));
   } catch (error) {
+    const validation = validationResponse(error, corsHeaders);
+    if (validation) return validation;
     const message = error instanceof Error ? error.message : String(error);
     console.error("cenaiva-availability error:", message);
     return jsonRes({ error: message || "availability_failed" }, 500);

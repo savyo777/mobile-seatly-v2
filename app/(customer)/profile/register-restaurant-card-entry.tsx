@@ -19,6 +19,13 @@ import { useColors } from '@/lib/theme';
 import { OWNER_TRIAL_MONTHS } from '@/lib/owner/trialPolicy';
 import { registerRestaurantNoBilling } from '@/lib/services/restaurantRegistration';
 import { getSupabase } from '@/lib/supabase/client';
+import {
+  normalizeTextInput,
+  sanitizeCardNumberInput,
+  sanitizeCvcInput,
+  sanitizeExpiryInput,
+  sanitizeTextInput,
+} from '@/lib/validation/input';
 
 const SF = Platform.OS === 'ios' ? 'System' : undefined;
 const SERIF = Platform.OS === 'ios' ? 'Georgia' : 'serif';
@@ -35,15 +42,11 @@ const MONTHLY_FEE_SHORT = '$200';
 // ─────────────────────────────────────────────────────────────────────────────
 
 function formatCardNumber(input: string): string {
-  const digits = input.replace(/\D/g, '').slice(0, 19);
-  const groups = digits.match(/.{1,4}/g);
-  return groups ? groups.join(' ') : '';
+  return sanitizeCardNumberInput(input);
 }
 
 function formatExpiry(input: string): string {
-  const digits = input.replace(/\D/g, '').slice(0, 4);
-  if (digits.length <= 2) return digits;
-  return `${digits.slice(0, 2)} / ${digits.slice(2)}`;
+  return sanitizeExpiryInput(input).replace('/', ' / ');
 }
 
 function parseExpiry(formatted: string): { month: number; year: number } | null {
@@ -123,9 +126,11 @@ export default function RegisterRestaurantCardEntryScreen() {
 
   const input = useMemo(
     () => ({
-      businessName: typeof params.businessName === 'string' ? params.businessName : '',
-      address: typeof params.address === 'string' ? params.address : '',
-      ownerPhone: typeof params.ownerPhone === 'string' ? params.ownerPhone : '',
+      businessName: typeof params.businessName === 'string'
+        ? normalizeTextInput(params.businessName, { maxLength: 120 })
+        : '',
+      address: typeof params.address === 'string' ? normalizeTextInput(params.address, { maxLength: 180 }) : '',
+      ownerPhone: typeof params.ownerPhone === 'string' ? normalizeTextInput(params.ownerPhone, { maxLength: 32 }) : '',
     }),
     [params.address, params.businessName, params.ownerPhone],
   );
@@ -169,7 +174,7 @@ export default function RegisterRestaurantCardEntryScreen() {
     void (async () => {
       try {
         const result = await registerRestaurantNoBilling({
-          businessName: input.businessName,
+          businessName: normalizeTextInput(restaurantName, { maxLength: 120 }) || input.businessName,
           address: input.address,
           ownerPhone: input.ownerPhone,
         });
@@ -281,7 +286,7 @@ export default function RegisterRestaurantCardEntryScreen() {
                     <Text style={[s.fieldLabel, { color: c.textMuted }]}>RESTAURANT NAME</Text>
                     <TextInput
                       value={restaurantName}
-                      onChangeText={setRestaurantName}
+                      onChangeText={(value) => setRestaurantName(sanitizeTextInput(value, { maxLength: 120 }))}
                       placeholder="Your restaurant's name"
                       placeholderTextColor={c.textMuted}
                       style={[s.fieldInput, { color: c.textPrimary }]}
@@ -352,7 +357,7 @@ export default function RegisterRestaurantCardEntryScreen() {
                     <TextInput
                       ref={cvcRef}
                       value={cvc}
-                      onChangeText={(t) => setCvc(t.replace(/\D/g, '').slice(0, expectedCvc))}
+                      onChangeText={(t) => setCvc(sanitizeCvcInput(t, expectedCvc))}
                       placeholder={expectedCvc === 4 ? '••••' : '•••'}
                       placeholderTextColor={c.textMuted}
                       style={[s.fieldInputMono, { color: c.textPrimary }]}

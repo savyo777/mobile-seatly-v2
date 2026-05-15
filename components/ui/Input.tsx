@@ -2,12 +2,17 @@ import React, { useState } from 'react';
 import { TextInput, View, Text, StyleSheet, TextInputProps, TouchableOpacity } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useColors, createStyles, borderRadius } from '@/lib/theme';
+import { sanitizeInputByKind, type TextInputKind } from '@/lib/validation/input';
 
 interface InputProps extends TextInputProps {
   label?: string;
   error?: string;
+  helperText?: string;
   icon?: keyof typeof Ionicons.glyphMap;
   isPassword?: boolean;
+  inputKind?: TextInputKind;
+  sanitizeOnChange?: boolean;
+  onSanitizedChangeText?: (value: string) => void;
 }
 
 const useStyles = createStyles((c) => ({
@@ -52,13 +57,58 @@ const useStyles = createStyles((c) => ({
     fontSize: 12,
     marginTop: 4,
   },
+  helper: {
+    color: c.textMuted,
+    fontSize: 12,
+    marginTop: 4,
+  },
 }));
 
-export function Input({ label, error, icon, isPassword, style, ...props }: InputProps) {
+export function Input({
+  label,
+  error,
+  helperText,
+  icon,
+  isPassword,
+  inputKind,
+  sanitizeOnChange = true,
+  onSanitizedChangeText,
+  style,
+  onChangeText,
+  maxLength,
+  multiline,
+  keyboardType,
+  ...props
+}: InputProps) {
   const c = useColors();
   const styles = useStyles();
   const [focused, setFocused] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+  const helper = error || helperText;
+  const resolvedInputKind =
+    inputKind ??
+    (isPassword
+      ? 'password'
+      : keyboardType === 'email-address'
+        ? 'email'
+        : keyboardType === 'phone-pad'
+          ? 'phone'
+          : keyboardType === 'numeric' || keyboardType === 'number-pad'
+            ? 'digits'
+            : multiline
+              ? 'multiline'
+              : 'text');
+
+  const handleChangeText = (value: string) => {
+    const next = sanitizeOnChange
+      ? sanitizeInputByKind(value, resolvedInputKind, {
+          maxLength,
+          multiline,
+        })
+      : value;
+    onSanitizedChangeText?.(next);
+    onChangeText?.(next);
+  };
 
   return (
     <View style={styles.container}>
@@ -72,6 +122,10 @@ export function Input({ label, error, icon, isPassword, style, ...props }: Input
           placeholderTextColor={c.textMuted}
           onFocus={() => setFocused(true)}
           onBlur={() => setFocused(false)}
+          onChangeText={handleChangeText}
+          maxLength={maxLength}
+          multiline={multiline}
+          keyboardType={keyboardType}
           secureTextEntry={isPassword && !showPassword}
           {...props}
         />
@@ -81,7 +135,7 @@ export function Input({ label, error, icon, isPassword, style, ...props }: Input
           </TouchableOpacity>
         )}
       </View>
-      {error && <Text style={styles.error}>{error}</Text>}
+      {helper ? <Text style={error ? styles.error : styles.helper}>{helper}</Text> : null}
     </View>
   );
 }

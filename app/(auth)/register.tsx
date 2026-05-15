@@ -15,6 +15,7 @@ import {
   SocialAuthButtons,
   Checkbox,
 } from '@/components/ui';
+import { normalizeEmail, normalizeName } from '@/lib/validation/input';
 
 import { TERMS_URL, PRIVACY_URL } from '@/lib/config/legalLinks';
 
@@ -237,8 +238,8 @@ export default function RegisterScreen() {
 
   const onSuccess = async () => {
     if (submitting) return;
-    const trimmedEmail = email.trim().toLowerCase();
-    const trimmedName = fullName.trim();
+    const trimmedEmail = normalizeEmail(email);
+    const trimmedName = normalizeName(fullName);
     if (!trimmedName || !trimmedEmail || !password) {
       Alert.alert('Missing info', 'Please fill out your name, email, and password.');
       return;

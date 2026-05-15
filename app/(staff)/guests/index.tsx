@@ -25,6 +25,7 @@ import { isLoyaltyEnabled } from '@/lib/config/loyaltyFeature';
 import { getSupabase } from '@/lib/supabase/client';
 import { fetchCurrentUserProfile } from '@/lib/services/userProfile';
 import { fetchLoyaltyTransactionsForGuests } from '@/lib/loyalty/getLoyaltyTransactions';
+import { sanitizeSearchInput } from '@/lib/validation/input';
 
 function mapDbGuestRow(row: Record<string, unknown>): OwnerGuest {
   const tier = (typeof row.loyalty_tier === 'string'
@@ -410,7 +411,7 @@ export default function OwnerGuestsScreen() {
           <Ionicons name="search-outline" size={18} color={c.textMuted} />
           <TextInput
             value={query}
-            onChangeText={setQuery}
+            onChangeText={(value) => setQuery(sanitizeSearchInput(value))}
             placeholder="Search name, email, or phone"
             placeholderTextColor={c.textMuted}
             style={styles.searchInput}

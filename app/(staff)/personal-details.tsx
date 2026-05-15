@@ -6,6 +6,7 @@ import { SubpageHeader } from '@/components/owner/SubpageHeader';
 import { useAuthSession } from '@/lib/auth/AuthContext';
 import { resolveAuthDisplayProfile } from '@/lib/auth/displayProfile';
 import { borderRadius, createStyles, spacing, typography, useColors } from '@/lib/theme';
+import { sanitizeEmailInput, sanitizeNameInput, sanitizePhoneInput, sanitizeTextInput } from '@/lib/validation/input';
 
 const useStyles = createStyles((c) => ({
   /* Avatar block */
@@ -166,7 +167,7 @@ export default function PersonalDetailsScreen() {
             <Text style={styles.fieldLabel}>FIRST NAME</Text>
             <TextInput
               value={firstName}
-              onChangeText={setFirstName}
+              onChangeText={(value) => setFirstName(sanitizeNameInput(value, 60))}
               style={styles.fieldInput}
               autoCapitalize="words"
               placeholderTextColor={c.textMuted}
@@ -176,7 +177,7 @@ export default function PersonalDetailsScreen() {
             <Text style={styles.fieldLabel}>LAST NAME</Text>
             <TextInput
               value={lastName}
-              onChangeText={setLastName}
+              onChangeText={(value) => setLastName(sanitizeNameInput(value, 60))}
               style={styles.fieldInput}
               autoCapitalize="words"
               placeholderTextColor={c.textMuted}
@@ -186,7 +187,7 @@ export default function PersonalDetailsScreen() {
             <Text style={styles.fieldLabel}>PRONOUNS</Text>
             <TextInput
               value={pronouns}
-              onChangeText={setPronouns}
+              onChangeText={(value) => setPronouns(sanitizeTextInput(value, { maxLength: 40 }))}
               style={styles.fieldInputMulti}
               placeholder="optional"
               placeholderTextColor={c.textMuted}
@@ -200,7 +201,7 @@ export default function PersonalDetailsScreen() {
             <Text style={styles.fieldLabel}>EMAIL</Text>
             <TextInput
               value={email}
-              onChangeText={setEmail}
+              onChangeText={(value) => setEmail(sanitizeEmailInput(value))}
               style={styles.fieldInput}
               autoCapitalize="none"
               keyboardType="email-address"
@@ -211,7 +212,7 @@ export default function PersonalDetailsScreen() {
             <Text style={styles.fieldLabel}>PHONE</Text>
             <TextInput
               value={phone}
-              onChangeText={setPhone}
+              onChangeText={(value) => setPhone(sanitizePhoneInput(value))}
               style={styles.fieldInput}
               keyboardType="phone-pad"
               placeholderTextColor={c.textMuted}
@@ -225,7 +226,7 @@ export default function PersonalDetailsScreen() {
             <Text style={styles.fieldLabel}>ROLE</Text>
             <TextInput
               value={role}
-              onChangeText={setRole}
+              onChangeText={(value) => setRole(sanitizeTextInput(value, { maxLength: 80 }))}
               style={styles.fieldInput}
               placeholder="Owner, Manager, GM…"
               placeholderTextColor={c.textMuted}

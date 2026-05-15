@@ -22,6 +22,7 @@ import {
   type PostTurnRequest,
 } from '@/lib/postVisit/postTurn';
 import { borderRadius, createStyles, shadows, spacing, typography, useColors } from '@/lib/theme';
+import { normalizeTextInput, sanitizeTextInput } from '@/lib/validation/input';
 
 const SYNC_INTERVAL_MS = 60_000;
 
@@ -190,12 +191,13 @@ export function PostTurnPromptHost() {
     if (!active || !user?.id || active.type !== 'review') return;
     setBusy(true);
     try {
+      const cleanedBody = normalizeTextInput(body, { maxLength: 1000, multiline: true });
       await submitPostTurnReview({
         userId: user.id,
         bookingId: active.bookingId,
         restaurantId: active.restaurantId,
         rating,
-        body,
+        body: cleanedBody,
       });
       await refresh();
     } finally {
@@ -258,10 +260,11 @@ export function PostTurnPromptHost() {
               </View>
               <TextInput
                 value={body}
-                onChangeText={setBody}
+                onChangeText={(value) => setBody(sanitizeTextInput(value, { maxLength: 1000, multiline: true }))}
                 placeholder="Optional review"
                 placeholderTextColor={c.textMuted}
                 multiline
+                maxLength={1000}
                 style={styles.input}
                 returnKeyType="done"
                 blurOnSubmit

@@ -21,6 +21,7 @@ import { useMenu } from '@/lib/context/MenuContext';
 import { type MenuItem } from '@/lib/mock/menuItems';
 import { createStyles } from '@/lib/theme';
 import { ownerColorsFromPalette, ownerRadii, ownerSpace, useOwnerColors } from '@/lib/theme/ownerTheme';
+import { normalizeMoneyInput, normalizeTextInput, sanitizeMoneyInput, sanitizeTextInput } from '@/lib/validation/input';
 
 export default function MenuItemEditScreen() {
   const { t } = useTranslation();
@@ -58,16 +59,19 @@ export default function MenuItemEditScreen() {
   }, [t]);
 
   const save = useCallback(() => {
-    const price = parseFloat(formPrice.replace(',', '.'));
-    if (!formName.trim() || Number.isNaN(price) || price < 0) {
+    const price = normalizeMoneyInput(formPrice);
+    const cleanName = normalizeTextInput(formName, { maxLength: 120 });
+    const cleanDescription = normalizeTextInput(formDesc, { maxLength: 500, multiline: true });
+    const cleanCategory = normalizeTextInput(formCategory, { maxLength: 80 });
+    if (!cleanName || price === null || price < 0) {
       Alert.alert(t('common.error'), 'Enter a valid name and price.');
       return;
     }
     const changes: Pick<MenuItem, 'name' | 'description' | 'price' | 'category' | 'photoUrl' | 'isAvailable'> = {
-      name: formName.trim(),
-      description: formDesc.trim() || '—',
+      name: cleanName,
+      description: cleanDescription || '—',
       price,
-      category: formCategory.trim() || 'Mains',
+      category: cleanCategory || 'Mains',
       photoUrl: formPhotoUri ?? editingItem?.photoUrl ?? '',
       isAvailable: formAvailable,
     };
@@ -160,7 +164,7 @@ export default function MenuItemEditScreen() {
             <Text style={styles.fieldLabel}>{t('owner.menuItemName')}</Text>
             <TextInput
               value={formName}
-              onChangeText={setFormName}
+              onChangeText={(value) => setFormName(sanitizeTextInput(value, { maxLength: 120 }))}
               style={styles.input}
               placeholderTextColor={ownerColors.textMuted}
             />
@@ -168,7 +172,7 @@ export default function MenuItemEditScreen() {
             <Text style={styles.fieldLabel}>{t('owner.menuItemPrice')}</Text>
             <TextInput
               value={formPrice}
-              onChangeText={setFormPrice}
+              onChangeText={(value) => setFormPrice(sanitizeMoneyInput(value))}
               keyboardType="decimal-pad"
               style={styles.input}
               placeholder="0.00"
@@ -191,7 +195,7 @@ export default function MenuItemEditScreen() {
             <Text style={styles.fieldLabel}>{t('owner.menuItemDescription')}</Text>
             <TextInput
               value={formDesc}
-              onChangeText={setFormDesc}
+              onChangeText={(value) => setFormDesc(sanitizeTextInput(value, { maxLength: 500, multiline: true }))}
               style={[styles.input, styles.inputMultiline]}
               multiline
               placeholderTextColor={ownerColors.textMuted}

@@ -35,6 +35,7 @@ import {
 import { getUnreadCount } from '@/lib/mock/notifications';
 import type { SnapUser } from '@/lib/mock/snaps';
 import { useColors, createStyles, spacing, borderRadius, typography } from '@/lib/theme';
+import { sanitizeSearchInput } from '@/lib/validation/input';
 
 const FILTER_KEYS = ['all', 'italian', 'japanese', 'french', 'seafood'] as const;
 type FilterKey = (typeof FILTER_KEYS)[number];
@@ -462,8 +463,9 @@ export default function DiscoverScreen() {
   }, [router]);
 
   const onSearchChange = useCallback((text: string) => {
-    setQuery(text);
-    if (text.trim()) setQuickFilter(null);
+    const queryText = sanitizeSearchInput(text);
+    setQuery(queryText);
+    if (queryText.trim()) setQuickFilter(null);
   }, []);
 
   const peopleResults = useMemo(

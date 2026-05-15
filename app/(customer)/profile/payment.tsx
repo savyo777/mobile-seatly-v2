@@ -17,6 +17,15 @@ import {
   type CustomerPaymentMethod as PaymentMethod,
 } from '@/lib/storage/customerPaymentMethods';
 import { useColors, createStyles, spacing, typography, borderRadius, shadows } from '@/lib/theme';
+import {
+  normalizeName,
+  sanitizeCardNumberInput,
+  sanitizeCvcInput,
+  sanitizeDigitsInput,
+  sanitizeExpiryInput,
+  sanitizeNameInput,
+  sanitizePostalCodeInput,
+} from '@/lib/validation/input';
 
 const useStyles = createStyles((c) => ({
   card: {
@@ -177,18 +186,15 @@ function brandLabel(brand: PaymentMethod['brand']): string {
 }
 
 function sanitizeDigits(value: string): string {
-  return value.replace(/\D/g, '');
+  return sanitizeDigitsInput(value);
 }
 
 function formatCardNumber(value: string): string {
-  const digits = sanitizeDigits(value).slice(0, 19);
-  return digits.replace(/(\d{4})(?=\d)/g, '$1 ').trim();
+  return sanitizeCardNumberInput(value);
 }
 
 function formatExpiry(value: string): string {
-  const digits = sanitizeDigits(value).slice(0, 4);
-  if (digits.length < 3) return digits;
-  return `${digits.slice(0, 2)}/${digits.slice(2)}`;
+  return sanitizeExpiryInput(value);
 }
 
 export default function PaymentScreen() {
@@ -267,13 +273,15 @@ export default function PaymentScreen() {
     const digits = sanitizeDigits(cardNumber);
     const cvcDigits = sanitizeDigits(cvc);
     const expMatch = expiry.trim().match(/^(\d{2})\s*\/\s*(\d{2}|\d{4})$/);
+    const cleanCardholder = normalizeName(cardholder, 80);
+    const cleanPostalCode = sanitizePostalCodeInput(postalCode).trim();
     const nextErrors: typeof errors = {};
 
-    if (!cardholder.trim()) nextErrors.cardholder = 'Cardholder name is required.';
+    if (!cleanCardholder) nextErrors.cardholder = 'Cardholder name is required.';
     if (digits.length < 13 || digits.length > 19) nextErrors.cardNumber = 'Enter a valid card number.';
     if (!expMatch) nextErrors.expiry = 'Use MM/YY for the expiration date.';
     if (cvcDigits.length < 3 || cvcDigits.length > 4) nextErrors.cvc = 'Enter a 3 or 4 digit CVC.';
-    if (!postalCode.trim()) nextErrors.postalCode = 'Billing postal code is required.';
+    if (!cleanPostalCode) nextErrors.postalCode = 'Billing postal code is required.';
 
     setErrors(nextErrors);
     if (Object.keys(nextErrors).length > 0) return;
@@ -285,7 +293,7 @@ export default function PaymentScreen() {
             brand: inferCardBrand(digits),
             last4: digits.slice(-4),
             expiry: expiry.trim(),
-            cardholder: cardholder.trim(),
+            cardholder: cleanCardholder,
             isDefault: true,
           },
           profile.fullName,
@@ -363,7 +371,7 @@ export default function PaymentScreen() {
             <TextInput
               value={cardholder}
               onChangeText={(value) => {
-                setCardholder(value);
+                setCardholder(sanitizeNameInput(value, 80));
                 if (errors.cardholder) setErrors((prev) => ({ ...prev, cardholder: undefined }));
               }}
               placeholder={profile.fullName}
@@ -409,7 +417,7 @@ export default function PaymentScreen() {
               <TextInput
                 value={cvc}
                 onChangeText={(value) => {
-                  setCvc(sanitizeDigits(value).slice(0, 4));
+                  setCvc(sanitizeCvcInput(value));
                   if (errors.cvc) setErrors((prev) => ({ ...prev, cvc: undefined }));
                 }}
                 placeholder="123"
@@ -426,7 +434,7 @@ export default function PaymentScreen() {
             <TextInput
               value={postalCode}
               onChangeText={(value) => {
-                setPostalCode(value.toUpperCase());
+                setPostalCode(sanitizePostalCodeInput(value));
                 if (errors.postalCode) setErrors((prev) => ({ ...prev, postalCode: undefined }));
               }}
               placeholder="M5V 2T6"

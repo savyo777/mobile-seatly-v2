@@ -29,6 +29,7 @@ import { type MenuItem } from '@/lib/mock/menuItems';
 import { formatCurrency } from '@/lib/utils/formatCurrency';
 import { createStyles, useTheme } from '@/lib/theme';
 import { ownerColorsFromPalette, ownerRadii, ownerSpace, useOwnerColors } from '@/lib/theme/ownerTheme';
+import { sanitizeSearchInput } from '@/lib/validation/input';
 
 const PLACEHOLDER_PHOTO =
   'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=600&q=80';
@@ -179,7 +180,7 @@ export default function OwnerMenuScreen() {
             <Ionicons name="search-outline" size={18} color={ownerColors.textMuted} style={styles.searchIcon} />
             <TextInput
               value={query}
-              onChangeText={setQuery}
+              onChangeText={(value) => setQuery(sanitizeSearchInput(value))}
               placeholder={t('owner.menuSearchPlaceholder')}
               placeholderTextColor={ownerColors.textMuted}
               style={styles.searchInput}

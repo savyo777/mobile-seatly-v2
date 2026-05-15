@@ -13,6 +13,7 @@ import { ensureCustomerProfile, signInWithApple, signInWithGoogle } from '@/lib/
 import { normalizePhoneToE164, sendPhoneOtp } from '@/lib/services/phoneAuth';
 import { getRoleForSignedInUser } from '@/lib/auth/postSignInRouting';
 import { LOCKOUT_MS, MAX_FAILED_ATTEMPTS } from '@/lib/auth/lockoutPolicy';
+import { normalizeEmail } from '@/lib/validation/input';
 import {
   ScreenWrapper,
   Input,
@@ -171,7 +172,7 @@ export default function LoginScreen() {
   const [submitting, setSubmitting] = useState(false);
   const [lockoutUntilMs, setLockoutUntilMs] = useState<number | null>(null);
 
-  const trimmedEmail = email.trim().toLowerCase();
+  const trimmedEmail = normalizeEmail(email) ?? '';
   const [nowMs, setNowMs] = useState<number>(Date.now());
   const isLockedOut = lockoutUntilMs !== null && nowMs < lockoutUntilMs;
   const lockoutMsRemaining = isLockedOut && lockoutUntilMs !== null ? lockoutUntilMs - nowMs : 0;

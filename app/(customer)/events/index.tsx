@@ -25,6 +25,7 @@ import {
 import { isDemoModeEnabled } from '@/lib/config/demoMode';
 import { fetchUpcomingEvents, type EventRow } from '@/lib/events/getEvents';
 import { fetchActivePromotions, type PromotionRow } from '@/lib/promotions/getPromotions';
+import { sanitizeSearchInput } from '@/lib/validation/input';
 
 const listEvents: typeof DEMO_listEvents = (...args) =>
   isDemoModeEnabled() ? DEMO_listEvents(...args) : [];
@@ -374,7 +375,7 @@ export default function EventsScreen() {
             <TextInput
               ref={inputRef}
               value={query}
-              onChangeText={setQuery}
+              onChangeText={(value) => setQuery(sanitizeSearchInput(value))}
               placeholder="Events, restaurants, tags…"
               placeholderTextColor={c.textMuted}
               style={styles.searchInput}

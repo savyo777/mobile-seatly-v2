@@ -10,6 +10,7 @@ import { setAppShellPreference } from '@/lib/navigation/appShellPreference';
 import { ensureOwnerProfile, signInWithApple, signInWithGoogle } from '@/lib/services/oauth';
 import { normalizePhoneToE164, sendPhoneOtp } from '@/lib/services/phoneAuth';
 import { Input, Button, SocialAuthButtons, TermsFooter, Checkbox } from '@/components/ui';
+import { normalizeEmail, normalizeName, normalizeTextInput } from '@/lib/validation/input';
 
 import { TERMS_URL, PRIVACY_URL } from '@/lib/config/legalLinks';
 
@@ -228,8 +229,10 @@ export default function OwnerRegisterScreen() {
 
   const onSuccess = async () => {
     if (submitting) return;
-    const trimmedEmail = email.trim().toLowerCase();
-    const trimmedName = fullName.trim();
+    const trimmedEmail = normalizeEmail(email);
+    const trimmedName = normalizeName(fullName);
+    const trimmedRestaurantName = normalizeTextInput(restaurantName, { maxLength: 120 });
+    const trimmedCuisineType = normalizeTextInput(cuisineType, { maxLength: 80 });
     if (!trimmedName || !trimmedEmail || !password) {
       Alert.alert('Missing info', 'Please fill out your name, email, and password.');
       return;
@@ -259,8 +262,8 @@ export default function OwnerRegisterScreen() {
             full_name: trimmedName,
             role: 'owner',
             phone: phone.trim(),
-            restaurant_name: restaurantName.trim(),
-            cuisine_type: cuisineType.trim(),
+            restaurant_name: trimmedRestaurantName,
+            cuisine_type: trimmedCuisineType,
           },
         },
       });

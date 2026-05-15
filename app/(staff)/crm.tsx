@@ -43,6 +43,7 @@ import {
 import { formatCurrency } from '@/lib/utils/formatCurrency';
 import { createStyles, useTheme } from '@/lib/theme';
 import { ownerColorsFromPalette, ownerRadii, ownerSpace, useOwnerColors } from '@/lib/theme/ownerTheme';
+import { sanitizeSearchInput, sanitizeTextInput } from '@/lib/validation/input';
 
 if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental) {
   UIManager.setLayoutAnimationEnabledExperimental(true);
@@ -567,7 +568,7 @@ export default function OwnerCrmScreen() {
         <Ionicons name="search-outline" size={18} color={ownerColors.textMuted} />
         <TextInput
           value={query}
-          onChangeText={setQuery}
+          onChangeText={(value) => setQuery(sanitizeSearchInput(value))}
           placeholder={t('owner.crmSearchPlaceholder')}
           placeholderTextColor={ownerColors.textMuted}
           style={styles.searchInput}
@@ -787,7 +788,7 @@ export default function OwnerCrmScreen() {
             </Text>
             <TextInput
               value={messageBody}
-              onChangeText={setMessageBody}
+              onChangeText={(value) => setMessageBody(sanitizeTextInput(value, { maxLength: 1000, multiline: true }))}
               placeholder={t('owner.crmMessagePlaceholder')}
               placeholderTextColor={ownerColors.textMuted}
               style={styles.msgInput}
@@ -815,7 +816,7 @@ export default function OwnerCrmScreen() {
             </Text>
             <TextInput
               value={noteDraft}
-              onChangeText={setNoteDraft}
+              onChangeText={(value) => setNoteDraft(sanitizeTextInput(value, { maxLength: 1000, multiline: true }))}
               placeholder={t('owner.crmNotePlaceholder')}
               placeholderTextColor={ownerColors.textMuted}
               style={styles.msgInput}

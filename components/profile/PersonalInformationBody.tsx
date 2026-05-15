@@ -27,6 +27,13 @@ const EMPTY_CUSTOMER: typeof DEMO_CUSTOMER = {
 const mockCustomer: typeof DEMO_CUSTOMER = isDemoModeEnabled() ? DEMO_CUSTOMER : EMPTY_CUSTOMER;
 import { useColors, createStyles, spacing, borderRadius, typography } from '@/lib/theme';
 import { openAppPhotoSettings } from '@/lib/device/openAppPhotoSettings';
+import {
+  normalizeName,
+  normalizePhoneInput,
+  normalizeTextInput,
+  sanitizeInputByKind,
+  sanitizeTextInput,
+} from '@/lib/validation/input';
 
 const BIO_LIMIT = 150;
 
@@ -240,9 +247,11 @@ export function PersonalInformationBody() {
       return;
     }
     setIsSaving(true);
+    const cleanedName = normalizeName(values.displayName);
+    const cleanedPhone = normalizePhoneInput(values.phone) ?? normalizeTextInput(values.phone, { maxLength: 32 });
     const { error } = await updateCurrentUserProfile({
-      full_name: values.displayName.trim() || null,
-      phone: values.phone.trim() || null,
+      full_name: cleanedName || null,
+      phone: cleanedPhone || null,
     });
     setIsSaving(false);
     if (error) {
@@ -345,7 +354,7 @@ export function PersonalInformationBody() {
             <Text style={styles.fieldLabel}>Bio</Text>
             <TextInput
               value={values.bio}
-              onChangeText={(v) => v.length <= BIO_LIMIT && set('bio')(v)}
+              onChangeText={(v) => set('bio')(sanitizeTextInput(v, { maxLength: BIO_LIMIT, multiline: true }))}
               placeholder="Write something about yourself…"
               placeholderTextColor={c.textMuted}
               style={styles.bioInput}
@@ -412,6 +421,7 @@ function Field({ label, value, onChangeText, placeholder, prefix, isLast, autoCa
   const c = useColors();
   const styles = useStyles();
   const [focused, setFocused] = useState(false);
+  const inputKind = keyboardType === 'email-address' ? 'email' : keyboardType === 'phone-pad' ? 'phone' : 'text';
   return (
     <View style={[styles.fieldWrap, !isLast && styles.fieldBorder]}>
       <Text style={styles.fieldLabel}>{label}</Text>
@@ -419,12 +429,13 @@ function Field({ label, value, onChangeText, placeholder, prefix, isLast, autoCa
         {prefix ? <Text style={styles.fieldPrefix}>{prefix}</Text> : null}
         <TextInput
           value={value}
-          onChangeText={onChangeText}
+          onChangeText={(next) => onChangeText(sanitizeInputByKind(next, inputKind, { maxLength: 160 }))}
           placeholder={placeholder}
           placeholderTextColor={c.textMuted}
           style={[styles.fieldInput, focused && styles.fieldInputFocused]}
           autoCapitalize={autoCapitalize ?? 'sentences'}
           keyboardType={keyboardType ?? 'default'}
+          maxLength={160}
           onFocus={() => setFocused(true)}
           onBlur={() => setFocused(false)}
         />

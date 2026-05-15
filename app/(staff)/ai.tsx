@@ -25,6 +25,7 @@ import { getSupabase } from '@/lib/supabase/client';
 import { fetchCurrentUserProfile } from '@/lib/services/userProfile';
 import { createStyles } from '@/lib/theme';
 import { ownerColorsFromPalette, ownerRadii, useOwnerColors } from '@/lib/theme/ownerTheme';
+import { sanitizeTextInput } from '@/lib/validation/input';
 
 export default function OwnerAiScreen() {
   const { t } = useTranslation();
@@ -195,7 +196,7 @@ export default function OwnerAiScreen() {
             placeholder={micActive ? 'Listening…' : 'Ask me anything about dining…'}
             placeholderTextColor={micActive ? ownerColors.gold : ownerColors.textMuted}
             value={input}
-            onChangeText={setInput}
+            onChangeText={(value) => setInput(sanitizeTextInput(value, { maxLength: 1000 }))}
             returnKeyType="send"
             onSubmitEditing={handleSend}
             blurOnSubmit={false}

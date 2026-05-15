@@ -8,6 +8,7 @@ import { createStyles, spacing, typography, useColors } from '@/lib/theme';
 import { ScreenWrapper, Input, Button, Checkbox } from '@/components/ui';
 import { normalizePhoneToE164, sendPhoneOtp } from '@/lib/services/phoneAuth';
 import { TERMS_URL, PRIVACY_URL } from '@/lib/config/legalLinks';
+import { normalizeName } from '@/lib/validation/input';
 
 const useStyles = createStyles((c) => ({
   inner: {
@@ -105,7 +106,7 @@ export default function PhoneRegisterScreen() {
       );
       return;
     }
-    const trimmedName = fullName.trim();
+    const trimmedName = normalizeName(fullName);
     setSubmitting(true);
     try {
       const { error } = await sendPhoneOtp(e164, {

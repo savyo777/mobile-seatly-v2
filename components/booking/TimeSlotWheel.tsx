@@ -42,7 +42,8 @@ const useStyles = createStyles((c) => ({
     opacity: 0.3,
   },
   pillText: {
-    fontSize: 13,
+    fontSize: 12,
+    lineHeight: 16,
     fontWeight: '600',
     color: c.textPrimary,
   },
@@ -129,6 +130,9 @@ export function TimeSlotWheel({ slots, selectedSlotId, onSelect, onNextDate }: P
             ]}
           >
             <Text
+              numberOfLines={1}
+              adjustsFontSizeToFit
+              minimumFontScale={0.9}
               style={[
                 styles.pillText,
                 selected && styles.pillTextSelected,

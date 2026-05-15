@@ -26,6 +26,12 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { buildCorsHeaders } from "../_shared/cors.ts";
 import { checkAuth } from "../_shared/auth.ts";
+import {
+  readJsonObject,
+  validationResponse,
+  asMoney,
+  asIsoDate,
+} from "../_shared/input-validation.ts";
 
 const DEFAULT_PROVIDER_URL =
   "https://api.exchangerate.host/convert?from={from}&to={to}&amount=1";
@@ -142,51 +148,46 @@ Deno.serve(async (req) => {
     return jsonResWithCors(req, { error: "unauthorized", reason: auth.reason }, 401);
   }
 
-  let body: Body;
   try {
-    body = (await req.json()) as Body;
-  } catch {
-    return jsonResWithCors(req, { error: "invalid_json" }, 400);
-  }
+    const body = (await readJsonObject(req)) as Body;
 
-  const amount = normalizeAmount(body.amount);
-  const from = normalizeCurrency(body.from);
-  const to = normalizeCurrency(body.to);
-  const date = normalizeDate(body.date);
+    const amount = asMoney(body.amount, "amount", { required: true, min: 0 });
+    const from = normalizeCurrency(body.from);
+    const to = normalizeCurrency(body.to);
+    const date = body.date == null || body.date === "" ? null : asIsoDate(body.date, "date");
 
-  if (amount == null || amount < 0) {
-    return jsonResWithCors(req, { error: "invalid_amount" }, 400);
-  }
-  if (!from || !to) {
-    return jsonResWithCors(req, { error: "invalid_currency" }, 400);
-  }
+    if (amount == null || amount < 0) {
+      return jsonResWithCors(req, { error: "invalid_amount" }, 400);
+    }
+    if (!from || !to) {
+      return jsonResWithCors(req, { error: "invalid_currency" }, 400);
+    }
 
-  // Same-currency short-circuit. Skip the upstream call entirely so we
-  // never burn an API request or risk a network failure for a no-op.
-  if (from === to) {
-    return jsonResWithCors(req, {
-      convertedAmount: Math.round(amount * 100) / 100,
-      rate: 1,
-      sourceCurrency: from.toLowerCase(),
-      targetCurrency: to.toLowerCase(),
-      provider: "identity",
-      quotedAt: new Date().toISOString(),
-    });
-  }
+    // Same-currency short-circuit. Skip the upstream call entirely so we
+    // never burn an API request or risk a network failure for a no-op.
+    if (from === to) {
+      return jsonResWithCors(req, {
+        convertedAmount: Math.round(amount * 100) / 100,
+        rate: 1,
+        sourceCurrency: from.toLowerCase(),
+        targetCurrency: to.toLowerCase(),
+        provider: "identity",
+        quotedAt: new Date().toISOString(),
+      });
+    }
 
-  const providerTemplate = (Deno.env.get("FX_PROVIDER_URL") ?? "").trim() || DEFAULT_PROVIDER_URL;
-  const providerUrl = buildProviderUrl(providerTemplate, from, to, date);
+    const providerTemplate = (Deno.env.get("FX_PROVIDER_URL") ?? "").trim() || DEFAULT_PROVIDER_URL;
+    const providerUrl = buildProviderUrl(providerTemplate, from, to, date);
 
-  const headers: Record<string, string> = { "Accept": "application/json" };
-  const authHeader = (Deno.env.get("FX_PROVIDER_AUTH_HEADER") ?? "").trim();
-  if (authHeader.includes(":")) {
-    const idx = authHeader.indexOf(":");
-    const name = authHeader.slice(0, idx).trim();
-    const value = authHeader.slice(idx + 1).trim();
-    if (name && value) headers[name] = value;
-  }
+    const headers: Record<string, string> = { "Accept": "application/json" };
+    const authHeader = (Deno.env.get("FX_PROVIDER_AUTH_HEADER") ?? "").trim();
+    if (authHeader.includes(":")) {
+      const idx = authHeader.indexOf(":");
+      const name = authHeader.slice(0, idx).trim();
+      const value = authHeader.slice(idx + 1).trim();
+      if (name && value) headers[name] = value;
+    }
 
-  try {
     const response = await fetchWithTimeout(providerUrl, { method: "GET", headers }, FX_TIMEOUT_MS);
     if (!response.ok) {
       return jsonResWithCors(
@@ -211,6 +212,8 @@ Deno.serve(async (req) => {
       quotedAt: new Date().toISOString(),
     });
   } catch (err) {
+    const validation = validationResponse(err, buildCorsHeaders(req));
+    if (validation) return validation;
     console.error("convert-currency: fx lookup failed", err);
     return jsonResWithCors(
       req,

@@ -212,7 +212,7 @@ export default function ReviewRestaurantSelectScreen() {
           <Text style={styles.subtitle}>Choose the restaurant this snap is for</Text>
         </View>
 
-        <Input placeholder="Search restaurants" value={query} onChangeText={setQuery} />
+        <Input placeholder="Search restaurants" value={query} onChangeText={setQuery} inputKind="search" />
 
         {loading ? (
           <View style={styles.centered}>

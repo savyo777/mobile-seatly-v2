@@ -5,6 +5,7 @@ import { OwnerScreen } from '@/components/owner/OwnerScreen';
 import { SubpageHeader } from '@/components/owner/SubpageHeader';
 import { borderRadius, createStyles, spacing, typography, useColors } from '@/lib/theme';
 import { useAuthSession } from '@/lib/auth/AuthContext';
+import { sanitizeOtpInput } from '@/lib/validation/input';
 
 type Method = 'sms' | 'email';
 
@@ -392,7 +393,7 @@ export default function TwoFactorScreen() {
           <TextInput
             value={codeInput}
             onChangeText={(value) => {
-              setCodeInput(value.replace(/\D/g, '').slice(0, 6));
+              setCodeInput(sanitizeOtpInput(value));
               if (codeError) setCodeError('');
             }}
             keyboardType="number-pad"

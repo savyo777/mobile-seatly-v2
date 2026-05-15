@@ -20,6 +20,7 @@ const getSnapRestaurantName: typeof DEMO_getSnapRestaurantName = (id) =>
   isDemoModeEnabled() ? DEMO_getSnapRestaurantName(id) : '';
 import { submitPostTurnReview } from '@/lib/postVisit/postTurn';
 import { borderRadius, createStyles, spacing, typography, useColors } from '@/lib/theme';
+import { normalizeTextInput, sanitizeTextInput } from '@/lib/validation/input';
 
 const useStyles = createStyles((c) => ({
   root: {
@@ -130,12 +131,13 @@ export default function BookingReviewScreen() {
     }
     setBusy(true);
     try {
+      const cleanedBody = normalizeTextInput(body, { maxLength: 1000, multiline: true });
       await submitPostTurnReview({
         userId: user.id,
         bookingId,
         restaurantId,
         rating,
-        body,
+        body: cleanedBody,
       });
       router.replace('/(customer)/notifications');
     } finally {
@@ -194,10 +196,11 @@ export default function BookingReviewScreen() {
 
           <TextInput
             value={body}
-            onChangeText={setBody}
+            onChangeText={(value) => setBody(sanitizeTextInput(value, { maxLength: 1000, multiline: true }))}
             placeholder="Optional written review"
             placeholderTextColor={c.textMuted}
             multiline
+            maxLength={1000}
             style={styles.input}
             returnKeyType="done"
             blurOnSubmit
