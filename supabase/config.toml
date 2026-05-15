@@ -39,3 +39,13 @@ verify_jwt = false
 
 [functions.register-restaurant-owner]
 verify_jwt = false
+
+# send-reservation-reminders is invoked by pg_cron (no JWT available) and
+# gates itself with the X-Cron-Secret header against
+# RESERVATION_REMINDER_CRON_SECRET. send-waitlist-ready-sms requires a
+# signed-in staff/owner JWT to reach the row through RLS.
+[functions.send-reservation-reminders]
+verify_jwt = false
+
+[functions.send-waitlist-ready-sms]
+verify_jwt = true

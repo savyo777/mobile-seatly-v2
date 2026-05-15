@@ -2,8 +2,7 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "npm:@supabase/supabase-js@2";
 import { enforceRateLimit, rateLimitIdentifier, RateLimitError } from "../_shared/rate-limit.ts";
-import { Resend } from "npm:resend@4.0.0";
-import twilio from "npm:twilio@5.0.0";
+import { sendSmsOrEmail, logCommunication } from "../_shared/sms.ts";
 import {
   closureUnavailableMessage,
   findClosedSpecialDayForDate,
@@ -115,10 +114,6 @@ function formatReservationDate(date: Date): string {
   }).format(date);
 }
 
-function normalizeNorthAmericanPhone(phone: string | null): string | null {
-  return phone ? validatedPhone(phone, "phone") : null;
-}
-
 Deno.serve(async (req: Request) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
   if (req.method !== "POST") return jsonResponse({ error: "POST required" }, 405);
@@ -152,13 +147,6 @@ Deno.serve(async (req: Request) => {
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
       { auth: { autoRefreshToken: false, persistSession: false } },
     );
-
-    const resendKey = Deno.env.get("RESEND_API_KEY");
-    const resend = resendKey ? new Resend(resendKey) : null;
-    const twilioSid = Deno.env.get("TWILIO_ACCOUNT_SID");
-    const twilioToken = Deno.env.get("TWILIO_AUTH_TOKEN");
-    const twilioFromPhone = Deno.env.get("TWILIO_PHONE_NUMBER");
-    const twilioClient = twilioSid && twilioToken ? twilio(twilioSid, twilioToken) : null;
 
     let userProfileId: string | null = null;
     const authorization = req.headers.get("authorization");
@@ -594,45 +582,19 @@ Deno.serve(async (req: Request) => {
       `${partySize === 1 ? "guest" : "guests"} on ${reservationDateLabel}. ` +
       `Confirmation code: ${savedConfirmationCode}.` +
       (manageLink ? ` Manage: ${manageLink}` : "");
-    let confirmationChannel: "email" | "sms" | null = null;
-    let confirmationStatus: "sent" | "skipped" | "failed" = "skipped";
-
-    const smsToPhone = normalizeNorthAmericanPhone(guestPhone);
-    if (smsToPhone && twilioClient && twilioFromPhone) {
-      try {
-        await twilioClient.messages.create({
-          body: confirmationBody,
-          from: twilioFromPhone,
-          to: smsToPhone,
-        });
-        confirmationChannel = "sms";
-        confirmationStatus = "sent";
-      } catch (err) {
-        console.error("Reservation confirmation SMS failed", err);
-        confirmationChannel = "sms";
-        confirmationStatus = "failed";
-      }
-    }
-
-    if (confirmationStatus !== "sent" && guestEmail && resend) {
-      try {
-        await resend.emails.send({
-          from: Deno.env.get("RESEND_FROM_EMAIL") ?? "Cenaiva <noreply@cenaiva.com>",
-          to: guestEmail,
-          subject: confirmationSubject,
-          text: confirmationBody,
-        });
-        confirmationChannel = "email";
-        confirmationStatus = "sent";
-      } catch (err) {
-        console.error("Reservation confirmation email failed", err);
-        confirmationChannel = "email";
-        confirmationStatus = "failed";
-      }
-    }
+    const confirmationResult = await sendSmsOrEmail({
+      phone: guestPhone,
+      email: guestEmail,
+      smsBody: confirmationBody,
+      emailSubject: confirmationSubject,
+      emailBody: confirmationBody,
+    });
+    const confirmationChannel = confirmationResult.channel;
+    const confirmationStatus = confirmationResult.status;
 
     if (confirmationChannel) {
-      await supabase.from("communication_log").insert({
+      await logCommunication({
+        supabase,
         guest_id: guestId,
         restaurant_id: restaurantId,
         channel: confirmationChannel,
@@ -640,7 +602,6 @@ Deno.serve(async (req: Request) => {
         subject: confirmationSubject,
         body: confirmationBody,
         status: confirmationStatus,
-        sent_at: confirmationStatus === "sent" ? new Date().toISOString() : null,
         campaign_id: reservationId,
       });
     }

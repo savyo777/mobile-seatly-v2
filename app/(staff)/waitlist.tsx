@@ -203,6 +203,43 @@ export default function OwnerWaitlistScreen() {
     Alert.alert(t('owner.waitlistDetailSeat'), t('owner.waitlistComingSoon'));
   }, [t]);
 
+  const onNotifyReady = useCallback(async () => {
+    if (!detail) return;
+    const id = detail.item.id;
+    if (isDemoModeEnabled()) {
+      setDetail(null);
+      Alert.alert('Notify ready', t('owner.waitlistComingSoon'));
+      return;
+    }
+    const supabase = getSupabase();
+    if (!supabase) {
+      setDetail(null);
+      return;
+    }
+    try {
+      const { data, error } = await supabase.functions.invoke('send-waitlist-ready-sms', {
+        body: { waitlist_id: id },
+      });
+      setDetail(null);
+      if (error) {
+        Alert.alert('Notify failed', error.message ?? 'Could not notify guest.');
+        return;
+      }
+      const result = (data ?? {}) as { channel?: string | null; status?: string };
+      if (result.status === 'sent') {
+        const channelLabel = result.channel === 'sms' ? 'SMS sent.' : 'Email sent.';
+        Alert.alert('Guest notified', channelLabel);
+      } else if (result.status === 'skipped') {
+        Alert.alert('No contact on file', 'Add a phone or email to this waitlist entry first.');
+      } else {
+        Alert.alert('Notify failed', 'The notification provider rejected the message.');
+      }
+    } catch (err) {
+      setDetail(null);
+      Alert.alert('Notify failed', err instanceof Error ? err.message : 'Network error.');
+    }
+  }, [detail, t]);
+
   const onEditTime = useCallback(() => {
     setDetail(null);
     Alert.alert(t('owner.waitlistDetailEditTime'), t('owner.waitlistComingSoon'));
@@ -357,6 +394,13 @@ export default function OwnerWaitlistScreen() {
               <Pressable onPress={onSeat} style={({ pressed }) => [styles.actionBtn, pressed && styles.actionBtnPressed]}>
                 <Ionicons name="restaurant-outline" size={20} color={ownerColors.gold} />
                 <Text style={styles.actionBtnText}>{t('owner.waitlistDetailSeat')}</Text>
+              </Pressable>
+              <Pressable
+                onPress={onNotifyReady}
+                style={({ pressed }) => [styles.actionBtn, pressed && styles.actionBtnPressed]}
+              >
+                <Ionicons name="notifications-outline" size={20} color={ownerColors.gold} />
+                <Text style={styles.actionBtnText}>Notify ready</Text>
               </Pressable>
               <Pressable
                 onPress={onEditTime}
