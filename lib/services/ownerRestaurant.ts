@@ -184,6 +184,7 @@ export async function fetchOwnerRestaurants(): Promise<OwnerRestaurant[]> {
     .from('restaurants')
     .select('*')
     .in('id', Array.from(idSet))
+    .is('removed_at', null)
     .order('created_at', { ascending: false });
   if (error) throw error;
   return ((data ?? []) as Array<Record<string, unknown>>).map(mapOwnerRestaurantRow);

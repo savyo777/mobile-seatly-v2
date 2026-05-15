@@ -3,6 +3,7 @@ import { createClient } from "npm:@supabase/supabase-js@2";
 import { corsHeaders } from "../_shared/cors.ts";
 import { decodeJwtPayload } from "../_shared/jwt.ts";
 import { jsonRes } from "../_shared/json-response.ts";
+import { resolveOwnedRestaurantScope } from "../_shared/owner-restaurants.ts";
 import { supabaseAdmin } from "../_shared/supabase.ts";
 
 const supabaseUrl = Deno.env.get("SUPABASE_URL") ?? "";
@@ -31,7 +32,7 @@ function isMaybeErrorResult(value: unknown): value is MaybeErrorResult {
   return Boolean(value && typeof value === "object" && "error" in value);
 }
 
-async function bestEffort(label: string, action: () => Promise<unknown>): Promise<void> {
+async function bestEffort(label: string, action: () => PromiseLike<unknown> | unknown): Promise<void> {
   try {
     const result = await action();
     if (isMaybeErrorResult(result) && result.error) {
@@ -68,6 +69,21 @@ async function deleteRows(table: string, column: string, values: string[]): Prom
     supabaseAdmin
       .from(table)
       .delete()
+      .in(column, values)
+  );
+}
+
+async function updateRows(
+  table: string,
+  column: string,
+  values: string[],
+  patch: Record<string, unknown>,
+): Promise<void> {
+  if (!values.length) return;
+  await bestEffort(`${table} cleanup`, () =>
+    supabaseAdmin
+      .from(table)
+      .update(patch)
       .in(column, values)
   );
 }
@@ -109,9 +125,17 @@ async function cleanupProfileData(profileIds: string[], authUserId: string): Pro
   const conversationIds = await selectIds("chat_conversations", "user_profile_id", profileIds);
   await deleteRows("chat_messages", "conversation_id", conversationIds);
   await deleteRows("chat_conversations", "id", conversationIds);
+  await deleteRows("ai_conversations", "user_id", [authUserId]);
 
   await deleteRows("saved_cards", "user_profile_id", profileIds);
   await deleteRows("payments", "user_profile_id", profileIds);
+  await deleteRows("notifications", "user_profile_id", profileIds);
+  await deleteRows("availability_alerts", "user_profile_id", profileIds);
+  await deleteRows("waitlist", "user_profile_id", profileIds);
+  await deleteRows("user_restaurant_roles", "user_id", profileIds);
+  await updateRows("expenses", "created_by", profileIds, { created_by: null });
+  await updateRows("accountant_exports", "created_by", profileIds, { created_by: null });
+  await updateRows("guests", "preferred_server_id", profileIds, { preferred_server_id: null });
 
   const guestIds = await selectIds("guests", "user_profile_id", profileIds);
   const orderIds = await selectIds("orders", "guest_id", guestIds);
@@ -120,6 +144,9 @@ async function cleanupProfileData(profileIds: string[], authUserId: string): Pro
   await deleteRows("orders", "id", orderIds);
   await deleteRows("reservations", "guest_id", guestIds);
   await deleteRows("guests", "id", guestIds);
+  await deleteRows("visit_photos", "user_id", [authUserId]);
+  await deleteRows("post_turn_visit_requests", "user_id", [authUserId]);
+  await deleteRows("cenaiva_feedback", "user_id", [authUserId]);
 
   await scrubProfiles(profileIds, authUserId);
   await deleteRows("user_profiles", "id", profileIds);
@@ -196,6 +223,16 @@ Deno.serve(async (req) => {
   try {
     const userOrResponse = await getAuthenticatedUser(req);
     if (userOrResponse instanceof Response) return userOrResponse;
+
+    const ownerScope = await resolveOwnedRestaurantScope(userOrResponse.id);
+    if (ownerScope.ownedRestaurantIds.length > 0) {
+      return jsonRes({
+        deleted: false,
+        error: "Remove your restaurants before deleting this owner account.",
+        code: "restaurants_remaining",
+        restaurant_ids: ownerScope.ownedRestaurantIds,
+      }, 409);
+    }
 
     const cleanupScope = resolveCleanupScope(userOrResponse.id);
 

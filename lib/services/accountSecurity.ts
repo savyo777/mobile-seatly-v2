@@ -9,12 +9,32 @@ function requireSupabase() {
   return supabase;
 }
 
-async function readFunctionErrorBody(response: unknown): Promise<{ error?: string; code?: string } | null> {
+export type RestaurantRemovalRowResult = {
+  restaurant_id: string;
+  name?: string | null;
+  removed: boolean;
+  subscription_cancel_at_period_end?: boolean;
+  subscription_current_period_end?: string | null;
+  error?: string;
+};
+
+export type RemoveRestaurantsResponse = {
+  removed: number;
+  failed: number;
+  results: RestaurantRemovalRowResult[];
+  remaining_restaurant_ids: string[];
+  error?: string;
+  code?: string;
+};
+
+async function readFunctionErrorBody(
+  response: unknown,
+): Promise<{ error?: string; message?: string; code?: string } | null> {
   if (!response || typeof response !== 'object' || !('json' in response)) return null;
   try {
     const data = await (response as Response).json();
     return data && typeof data === 'object'
-      ? (data as { error?: string; code?: string })
+      ? (data as { error?: string; message?: string; code?: string })
       : null;
   } catch {
     return null;
@@ -28,6 +48,9 @@ function friendlyDeleteAccountError(rawMessage?: string, code?: string): string 
   if (code === 'missing_config') {
     return 'Account deletion is not available yet. Please try again shortly.';
   }
+  if (code === 'restaurants_remaining') {
+    return 'Remove your restaurants before deleting this owner account.';
+  }
 
   const message = rawMessage ?? '';
   const normalized = message.toLowerCase();
@@ -40,6 +63,30 @@ function friendlyDeleteAccountError(rawMessage?: string, code?: string): string 
   }
 
   return message || 'Failed to delete account.';
+}
+
+function friendlyRestaurantRemovalError(rawMessage?: string, code?: string): string {
+  if (code === 'unauthorized') {
+    return 'Please sign in again before removing restaurants.';
+  }
+  if (code === 'unauthorized_restaurants') {
+    return 'You can only remove restaurants that you own.';
+  }
+  if (code === 'missing_config') {
+    return 'Restaurant removal is not available yet. Please try again shortly.';
+  }
+
+  const message = rawMessage ?? '';
+  const normalized = message.toLowerCase();
+  if (
+    normalized.includes('non-2xx') ||
+    normalized.includes('function not found') ||
+    normalized.includes('failed to send a request')
+  ) {
+    return 'Restaurant removal is not available yet. Please try again shortly.';
+  }
+
+  return message || 'Failed to remove restaurants.';
 }
 
 export async function changePassword(current: string, next: string): Promise<void> {
@@ -171,6 +218,33 @@ export async function deleteAccount(): Promise<void> {
       // best-effort
     }
   }
+}
+
+export async function removeRestaurants(restaurantIds: string[]): Promise<RemoveRestaurantsResponse> {
+  const supabase = requireSupabase();
+  const ids = Array.from(new Set(restaurantIds.map((id) => id.trim()).filter(Boolean)));
+  if (ids.length === 0) {
+    throw new Error('Choose at least one restaurant to remove.');
+  }
+
+  const { data, error: invokeError, response } = await supabase.functions.invoke<RemoveRestaurantsResponse>(
+    'remove-restaurants',
+    {
+      method: 'POST',
+      body: { restaurant_ids: ids },
+    },
+  );
+  if (invokeError || data?.error || !data) {
+    const errorBody = data ?? await readFunctionErrorBody(response ?? invokeError?.context);
+    const message = errorBody && 'message' in errorBody ? errorBody.message : undefined;
+    throw new Error(
+      friendlyRestaurantRemovalError(
+        message ?? errorBody?.error ?? invokeError?.message,
+        errorBody?.code,
+      ),
+    );
+  }
+  return data;
 }
 
 // TODO(supabase): call supabase.auth.signOut({ scope: 'others' })

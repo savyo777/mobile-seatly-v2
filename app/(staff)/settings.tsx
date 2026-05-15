@@ -1,5 +1,15 @@
 import React from 'react';
-import { View, Text, Switch, Pressable, StyleSheet, Alert } from 'react-native';
+import {
+  ActivityIndicator,
+  Alert,
+  Modal,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  Switch,
+  Text,
+  View,
+} from 'react-native';
 import { useFocusEffect, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { OwnerScreen } from '@/components/owner/OwnerScreen';
@@ -7,11 +17,13 @@ import { SubpageHeader } from '@/components/owner/SubpageHeader';
 import { useColors, useTheme, createStyles, spacing, borderRadius, type ThemeMode } from '@/lib/theme';
 import { useAuthSession } from '@/lib/auth/AuthContext';
 import { compactNameLabel, resolveAuthDisplayProfile } from '@/lib/auth/displayProfile';
-import { deleteAccount, signOutAllDevices } from '@/lib/services/accountSecurity';
+import { deleteAccount, removeRestaurants, signOutAllDevices } from '@/lib/services/accountSecurity';
 import { setAppShellPreference } from '@/lib/navigation/appShellPreference';
 import { withOwnerReturnTarget } from '@/lib/navigation/ownerReturnTargets';
 import { getStoredRestaurantPaymentCards } from '@/lib/storage/restaurantPaymentMethod';
 import { useOwnerScope } from '@/hooks/useOwnerScope';
+import { useOwnerRestaurantContext } from '@/lib/owner/OwnerRestaurantContext';
+import type { OwnerRestaurant } from '@/lib/services/ownerRestaurant';
 import { readBusinessHours, BUSINESS_HOURS_DAY_KEYS } from '@/lib/owner/businessHoursSettings';
 import { readClosures } from '@/lib/owner/closuresSettings';
 import { fetchStaffRoster } from '@/lib/owner/staffRoster';
@@ -31,7 +43,7 @@ type RowItem =
       icon: string;
       route?: string;
       danger?: boolean;
-      action?: 'switch_to_customer';
+      action?: 'switch_to_customer' | 'remove_restaurants' | 'delete_account';
     }
   | { kind: 'toggle'; label: string; icon: string; value: boolean; onChange: (v: boolean) => void };
 
@@ -133,6 +145,119 @@ const useStyles = createStyles((c) => ({
     fontWeight: '700',
     color: c.textPrimary,
   },
+  modalBackdrop: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.48)',
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: spacing.lg,
+  },
+  modalCard: {
+    width: '100%',
+    maxWidth: 460,
+    maxHeight: '86%',
+    borderRadius: borderRadius.xl,
+    backgroundColor: c.bgSurface,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: c.border,
+    overflow: 'hidden',
+  },
+  modalHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: spacing.lg,
+    paddingTop: spacing.lg,
+    paddingBottom: spacing.sm,
+    gap: spacing.md,
+  },
+  modalTitle: {
+    flex: 1,
+    fontSize: 18,
+    fontWeight: '800',
+    color: c.textPrimary,
+  },
+  modalClose: {
+    width: 34,
+    height: 34,
+    borderRadius: 8,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: c.bgElevated,
+  },
+  modalBody: {
+    paddingHorizontal: spacing.lg,
+    paddingBottom: spacing.md,
+    fontSize: 14,
+    lineHeight: 20,
+    color: c.textSecondary,
+  },
+  modalList: {
+    maxHeight: 320,
+    borderTopWidth: StyleSheet.hairlineWidth,
+    borderTopColor: c.border,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: c.border,
+  },
+  restaurantChoice: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    minHeight: 62,
+    paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.sm,
+    gap: spacing.md,
+  },
+  restaurantChoicePressed: {
+    backgroundColor: c.bgElevated,
+  },
+  restaurantChoiceDivider: {
+    borderTopWidth: StyleSheet.hairlineWidth,
+    borderTopColor: c.border,
+  },
+  restaurantChoiceText: {
+    flex: 1,
+    minWidth: 0,
+  },
+  restaurantChoiceName: {
+    fontSize: 15,
+    fontWeight: '800',
+    color: c.textPrimary,
+  },
+  restaurantChoiceMeta: {
+    marginTop: 3,
+    fontSize: 13,
+    color: c.textMuted,
+  },
+  modalActions: {
+    flexDirection: 'row',
+    justifyContent: 'flex-end',
+    gap: spacing.sm,
+    padding: spacing.lg,
+  },
+  modalAction: {
+    minHeight: 42,
+    minWidth: 104,
+    borderRadius: 8,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: spacing.md,
+  },
+  modalActionSecondary: {
+    backgroundColor: c.bgElevated,
+  },
+  modalActionDestructive: {
+    backgroundColor: c.danger,
+  },
+  modalActionDisabled: {
+    opacity: 0.55,
+  },
+  modalActionText: {
+    fontSize: 14,
+    fontWeight: '800',
+    color: c.textPrimary,
+  },
+  modalActionDestructiveText: {
+    color: '#fff',
+  },
 }));
 
 // ── Row components ─────────────────────────────────────────────────────────
@@ -218,7 +343,124 @@ function AppearancePicker() {
   );
 }
 
-function SettingsSection({ section }: { section: Section }) {
+function RestaurantRemovalModal({
+  visible,
+  restaurants,
+  selectedIds,
+  removing,
+  onCancel,
+  onConfirm,
+  onToggle,
+}: {
+  visible: boolean;
+  restaurants: OwnerRestaurant[];
+  selectedIds: string[];
+  removing: boolean;
+  onCancel: () => void;
+  onConfirm: () => void;
+  onToggle: (id: string) => void;
+}) {
+  const c = useColors();
+  const styles = useStyles();
+  const selected = React.useMemo(() => new Set(selectedIds), [selectedIds]);
+
+  return (
+    <Modal
+      animationType="fade"
+      transparent
+      visible={visible}
+      onRequestClose={removing ? undefined : onCancel}
+    >
+      <View style={styles.modalBackdrop}>
+        <View style={styles.modalCard}>
+          <View style={styles.modalHeader}>
+            <Text style={styles.modalTitle}>Remove restaurants</Text>
+            <Pressable
+              onPress={onCancel}
+              disabled={removing}
+              style={styles.modalClose}
+              accessibilityRole="button"
+              accessibilityLabel="Close restaurant removal"
+            >
+              <Ionicons name="close" size={18} color={c.textSecondary} />
+            </Pressable>
+          </View>
+          <Text style={styles.modalBody}>
+            Selected restaurants will be unpublished immediately and their subscriptions will stop renewing at the end of the current billing period.
+          </Text>
+          <ScrollView style={styles.modalList} contentContainerStyle={{ paddingVertical: 2 }}>
+            {restaurants.map((restaurant, index) => {
+              const active = selected.has(restaurant.id);
+              return (
+                <Pressable
+                  key={restaurant.id}
+                  onPress={() => onToggle(restaurant.id)}
+                  disabled={removing}
+                  style={({ pressed }) => [
+                    styles.restaurantChoice,
+                    index > 0 && styles.restaurantChoiceDivider,
+                    pressed && styles.restaurantChoicePressed,
+                  ]}
+                  accessibilityRole="checkbox"
+                  accessibilityState={{ checked: active, disabled: removing }}
+                  accessibilityLabel={`Remove ${restaurant.name}`}
+                >
+                  <Ionicons
+                    name={active ? 'checkmark-circle' : 'ellipse-outline'}
+                    size={22}
+                    color={active ? c.danger : c.textMuted}
+                  />
+                  <View style={styles.restaurantChoiceText}>
+                    <Text style={styles.restaurantChoiceName} numberOfLines={1}>{restaurant.name}</Text>
+                    <Text style={styles.restaurantChoiceMeta} numberOfLines={1}>
+                      {restaurant.address || restaurant.city || 'Restaurant'}
+                    </Text>
+                  </View>
+                </Pressable>
+              );
+            })}
+          </ScrollView>
+          <View style={styles.modalActions}>
+            <Pressable
+              onPress={onCancel}
+              disabled={removing}
+              style={[styles.modalAction, styles.modalActionSecondary, removing && styles.modalActionDisabled]}
+              accessibilityRole="button"
+            >
+              <Text style={styles.modalActionText}>Cancel</Text>
+            </Pressable>
+            <Pressable
+              onPress={onConfirm}
+              disabled={removing || selectedIds.length === 0}
+              style={[
+                styles.modalAction,
+                styles.modalActionDestructive,
+                (removing || selectedIds.length === 0) && styles.modalActionDisabled,
+              ]}
+              accessibilityRole="button"
+            >
+              {removing ? (
+                <ActivityIndicator color="#fff" />
+              ) : (
+                <Text style={[styles.modalActionText, styles.modalActionDestructiveText]}>Remove</Text>
+              )}
+            </Pressable>
+          </View>
+        </View>
+      </View>
+    </Modal>
+  );
+}
+
+function SettingsSection({
+  section,
+  restaurantCount,
+  onOpenRestaurantRemoval,
+}: {
+  section: Section;
+  restaurantCount: number;
+  onOpenRestaurantRemoval: () => void;
+}) {
   const styles = useStyles();
   const router = useRouter();
   const [appearanceOpen, setAppearanceOpen] = React.useState(false);
@@ -264,7 +506,20 @@ function SettingsSection({ section }: { section: Section }) {
           },
         ],
       );
-    } else if (item.label === 'Delete account') {
+    } else if (item.action === 'remove_restaurants') {
+      onOpenRestaurantRemoval();
+    } else if (item.action === 'delete_account') {
+      if (restaurantCount > 0) {
+        Alert.alert(
+          'Remove restaurants first',
+          'Remove every restaurant from this account before deleting the owner account. This prevents active subscriptions from being left behind.',
+          [
+            { text: 'Cancel', style: 'cancel' },
+            { text: 'Remove restaurants', style: 'destructive', onPress: onOpenRestaurantRemoval },
+          ],
+        );
+        return;
+      }
       Alert.alert(
         'Delete account',
         'This action is permanent and cannot be undone. Your account and data will be deleted.',
@@ -339,7 +594,90 @@ export default function OwnerSettingsScreen() {
   const [businessHoursLabel, setBusinessHoursLabel] = React.useState('');
   const [closuresLabel, setClosuresLabel] = React.useState('');
   const [staffMembersLabel, setStaffMembersLabel] = React.useState('');
-  const { selectedRestaurantId } = useOwnerScope();
+  const { refresh: refreshOwnerRestaurants } = useOwnerRestaurantContext();
+  const { selectedRestaurantId, restaurants } = useOwnerScope();
+  const [restaurantRemovalOpen, setRestaurantRemovalOpen] = React.useState(false);
+  const [restaurantRemovalIds, setRestaurantRemovalIds] = React.useState<string[]>([]);
+  const [removingRestaurants, setRemovingRestaurants] = React.useState(false);
+
+  const openRestaurantRemoval = React.useCallback(() => {
+    const firstSelected = selectedRestaurantId && restaurants.some((restaurant) => restaurant.id === selectedRestaurantId)
+      ? selectedRestaurantId
+      : restaurants[0]?.id;
+    setRestaurantRemovalIds(firstSelected ? [firstSelected] : []);
+    setRestaurantRemovalOpen(true);
+  }, [restaurants, selectedRestaurantId]);
+
+  const toggleRestaurantRemoval = React.useCallback((restaurantId: string) => {
+    setRestaurantRemovalIds((current) =>
+      current.includes(restaurantId)
+        ? current.filter((id) => id !== restaurantId)
+        : [...current, restaurantId],
+    );
+  }, []);
+
+  const performRestaurantRemoval = React.useCallback(async () => {
+    if (restaurantRemovalIds.length === 0) {
+      Alert.alert('Choose restaurants', 'Choose at least one restaurant to remove.');
+      return;
+    }
+    setRemovingRestaurants(true);
+    try {
+      const result = await removeRestaurants(restaurantRemovalIds);
+      await refreshOwnerRestaurants();
+      const failed = result.results.filter((row) => !row.removed);
+      const removed = result.results.filter((row) => row.removed);
+      if (removed.length > 0) {
+        setRestaurantRemovalOpen(false);
+      }
+
+      if (failed.length > 0) {
+        Alert.alert(
+          'Some restaurants were not removed',
+          `${removed.length} removed, ${failed.length} failed. ${failed[0]?.error ?? 'Please try again.'}`,
+        );
+        return;
+      }
+
+      const message = removed.length === 1
+        ? 'The restaurant was removed. Its subscription will stop renewing at the end of the current billing period.'
+        : `${removed.length} restaurants were removed. Their subscriptions will stop renewing at the end of the current billing period.`;
+
+      if (result.remaining_restaurant_ids.length === 0) {
+        Alert.alert('Restaurants removed', message, [
+          {
+            text: 'OK',
+            onPress: async () => {
+              await setAppShellPreference('customer');
+              router.replace('/(customer)' as never);
+            },
+          },
+        ]);
+      } else {
+        Alert.alert('Restaurants removed', message);
+      }
+    } catch (e: any) {
+      Alert.alert('Removal failed', e?.message ?? 'Could not remove restaurants. Please try again.');
+    } finally {
+      setRemovingRestaurants(false);
+    }
+  }, [refreshOwnerRestaurants, restaurantRemovalIds, router]);
+
+  const confirmRestaurantRemoval = React.useCallback(() => {
+    const count = restaurantRemovalIds.length;
+    if (count === 0) {
+      Alert.alert('Choose restaurants', 'Choose at least one restaurant to remove.');
+      return;
+    }
+    Alert.alert(
+      count === 1 ? 'Remove restaurant?' : `Remove ${count} restaurants?`,
+      'Selected restaurants will be unpublished immediately. Subscriptions for those restaurants will stop renewing at the end of the current billing period.',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        { text: 'Remove', style: 'destructive', onPress: performRestaurantRemoval },
+      ],
+    );
+  }, [performRestaurantRemoval, restaurantRemovalIds.length]);
 
   useFocusEffect(
     React.useCallback(() => {
@@ -523,7 +861,22 @@ export default function OwnerSettingsScreen() {
       title: 'Danger Zone',
       rows: [
         { kind: 'nav', label: 'Log out', icon: 'log-out-outline', danger: true },
-        { kind: 'nav', label: 'Delete account', icon: 'trash-outline', danger: true },
+        ...(restaurants.length > 0
+          ? [{
+              kind: 'nav' as const,
+              label: 'Remove restaurants',
+              icon: 'business-outline',
+              danger: true,
+              action: 'remove_restaurants' as const,
+            }]
+          : []),
+        {
+          kind: 'nav',
+          label: 'Delete account',
+          icon: 'trash-outline',
+          danger: true,
+          action: 'delete_account',
+        },
       ],
     },
   ];
@@ -539,9 +892,25 @@ export default function OwnerSettingsScreen() {
       }
     >
       {sections.map((s) => (
-        <SettingsSection key={s.title} section={s} />
+        <SettingsSection
+          key={s.title}
+          section={s}
+          restaurantCount={restaurants.length}
+          onOpenRestaurantRemoval={openRestaurantRemoval}
+        />
       ))}
 
+      <RestaurantRemovalModal
+        visible={restaurantRemovalOpen}
+        restaurants={restaurants}
+        selectedIds={restaurantRemovalIds}
+        removing={removingRestaurants}
+        onCancel={() => {
+          if (!removingRestaurants) setRestaurantRemovalOpen(false);
+        }}
+        onConfirm={confirmRestaurantRemoval}
+        onToggle={toggleRestaurantRemoval}
+      />
     </OwnerScreen>
   );
 }

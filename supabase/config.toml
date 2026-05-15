@@ -18,6 +18,9 @@ verify_jwt = true
 [functions.delete-account]
 verify_jwt = true
 
+[functions.remove-restaurants]
+verify_jwt = true
+
 # Anonymous-by-design endpoints. Each one is reachable without a session
 # because the flow it serves runs before sign-in:
 #   - get-availability + create-public-booking power the public booking
