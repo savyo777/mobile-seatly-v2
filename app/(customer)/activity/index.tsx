@@ -215,7 +215,7 @@ const useStyles = createStyles((c) => ({
     gap: 5,
   },
   dateText: {
-    fontSize: 16,
+    fontSize: 15,
     fontWeight: '700',
     color: c.textPrimary,
     letterSpacing: -0.1,
@@ -535,7 +535,12 @@ export default function ActivityScreen() {
 
           {/* Info */}
           <View style={styles.info}>
-            <Text style={[styles.dateText, isPast && styles.dimPrimary]}>{primary}  ·  {sub}</Text>
+            <Text
+              style={[styles.dateText, isPast && styles.dimPrimary]}
+              numberOfLines={1}
+              adjustsFontSizeToFit
+              minimumFontScale={0.85}
+            >{primary}  ·  {sub}</Text>
             <Text style={[styles.detailText, isPast && styles.dimSecondary]}>{detailLine}</Text>
             {item.confirmationCode ? (
               <View style={styles.codeRow}>
