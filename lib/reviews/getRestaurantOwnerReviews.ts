@@ -28,14 +28,39 @@ export type OwnerReviewRow = {
   photoUrls: string[];
 };
 
-type ReviewRow = {
-  id: string;
-  rating: number;
-  body: string | null;
-  created_at: string | null;
-  user_id: string | null;
-  booking_id: string | null;
-};
+// Loose row shape — the live schema's review-text column has drifted from
+// the mobile migration's `body text`. The web team's authoritative
+// definition uses `review_text` (the customer side reads `body` and quietly
+// returns an empty string when that column doesn't exist). We index the
+// row as Record<string, unknown> and probe a small allowlist of candidate
+// column names so this works whether the live column is `body`,
+// `review_text`, `comment`, or `content`.
+type ReviewRowLoose = Record<string, unknown>;
+
+const REVIEW_TEXT_COLUMNS = ['review_text', 'body', 'comment', 'content', 'review_body'] as const;
+
+function pickReviewText(row: ReviewRowLoose): string | null {
+  for (const key of REVIEW_TEXT_COLUMNS) {
+    const value = row[key];
+    if (typeof value === 'string' && value.trim()) return value;
+  }
+  return null;
+}
+
+function pickString(row: ReviewRowLoose, key: string): string | null {
+  const value = row[key];
+  return typeof value === 'string' ? value : null;
+}
+
+function pickNumber(row: ReviewRowLoose, key: string): number {
+  const value = row[key];
+  if (typeof value === 'number' && Number.isFinite(value)) return value;
+  if (typeof value === 'string') {
+    const parsed = Number(value);
+    if (Number.isFinite(parsed)) return parsed;
+  }
+  return 0;
+}
 
 type ProfileRow = {
   id: string;
@@ -94,9 +119,12 @@ export async function fetchRestaurantOwnerReviews(
   const supabase = getSupabase();
   if (!supabase || !restaurantId) return [];
 
+  // SELECT * because the review-text column name varies between the
+  // mobile-migration schema (`body`) and the live shared-DB schema (`review_text`).
+  // We probe both in pickReviewText() below.
   let reviewsQuery = supabase
     .from('restaurant_reviews')
-    .select('id, rating, body, created_at, user_id, booking_id')
+    .select('*')
     .eq('restaurant_id', restaurantId)
     .order('created_at', { ascending: false });
   if (typeof limit === 'number' && limit > 0) {
@@ -107,14 +135,14 @@ export async function fetchRestaurantOwnerReviews(
   if (reviewErr) {
     throw new Error(supabaseErrorMessage(reviewErr, 'Could not load reviews.'));
   }
-  const reviews = (reviewData ?? []) as ReviewRow[];
+  const reviews = (reviewData ?? []) as ReviewRowLoose[];
   if (reviews.length === 0) return [];
 
   // Secondary lookup: reviewer display names. RLS may block reads of other
   // users' profiles from the owner context, in which case we just fall back
   // to the anonymous label per-row.
   const userIds = Array.from(
-    new Set(reviews.map((r) => r.user_id).filter((id): id is string => typeof id === 'string')),
+    new Set(reviews.map((r) => pickString(r, 'user_id')).filter((id): id is string => typeof id === 'string')),
   );
   const profilesById = new Map<string, ProfileRow>();
   if (userIds.length > 0) {
@@ -165,18 +193,22 @@ export async function fetchRestaurantOwnerReviews(
   }
 
   return reviews.map((review) => {
-    const profileName =
-      review.user_id ? profilesById.get(review.user_id)?.full_name?.trim() : null;
+    const userId = pickString(review, 'user_id');
+    const bookingId = pickString(review, 'booking_id');
+    const createdAt = pickString(review, 'created_at');
+    const reviewId = pickString(review, 'id') ?? '';
+
+    const profileName = userId ? profilesById.get(userId)?.full_name?.trim() : null;
     const reviewerName = profileName || anonymousLabel;
 
     let matched: PhotoRow[] = [];
-    if (review.booking_id) {
-      matched = photosByBooking.get(review.booking_id) ?? [];
+    if (bookingId) {
+      matched = photosByBooking.get(bookingId) ?? [];
     }
-    if (matched.length === 0 && review.user_id && review.created_at) {
-      const reviewMs = Date.parse(review.created_at);
+    if (matched.length === 0 && userId && createdAt) {
+      const reviewMs = Date.parse(createdAt);
       if (Number.isFinite(reviewMs)) {
-        const candidates = photosByUser.get(review.user_id) ?? [];
+        const candidates = photosByUser.get(userId) ?? [];
         matched = candidates.filter((p) => {
           if (!p.created_at) return false;
           const delta = Math.abs(Date.parse(p.created_at) - reviewMs);
@@ -190,12 +222,12 @@ export async function fetchRestaurantOwnerReviews(
       .filter((url): url is string => typeof url === 'string' && url.length > 0);
 
     return {
-      id: review.id,
-      rating: review.rating,
-      body: review.body,
-      createdAt: review.created_at,
+      id: reviewId,
+      rating: pickNumber(review, 'rating'),
+      body: pickReviewText(review),
+      createdAt,
       reviewerName,
-      bookingId: review.booking_id,
+      bookingId,
       photoUrls,
     };
   });
