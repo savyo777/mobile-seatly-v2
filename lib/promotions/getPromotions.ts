@@ -17,6 +17,9 @@ export type PromotionRow = {
   promo_code: string | null;
   max_uses: number | null;
   current_uses: number | null;
+  // Aggregate tap count, incremented via the increment_promotion_clicks RPC.
+  // Added by migration 20260516000000; older rows backfill to 0.
+  clicks: number | null;
   badge_color: string | null;
   cover_image_url: string | null;
   media_url: string | null;
@@ -37,7 +40,7 @@ export type PromotionRow = {
 };
 
 const PROMOTION_FIELDS =
-  'id,restaurant_id,title,description,promo_type,discount_value,discount_unit,applies_to,min_order_amount,starts_at,ends_at,is_active,is_private,promo_code,max_uses,current_uses,badge_color,cover_image_url,media_url,media_type,media_name,bogo_item_ids,free_item_id,free_item_name,eligible_item_ids,buy_quantity,get_quantity,is_recurring,recurrence_frequency,recurrence_interval,recurrence_days,recurrence_end_at,created_at';
+  'id,restaurant_id,title,description,promo_type,discount_value,discount_unit,applies_to,min_order_amount,starts_at,ends_at,is_active,is_private,promo_code,max_uses,current_uses,clicks,badge_color,cover_image_url,media_url,media_type,media_name,bogo_item_ids,free_item_id,free_item_name,eligible_item_ids,buy_quantity,get_quantity,is_recurring,recurrence_frequency,recurrence_interval,recurrence_days,recurrence_end_at,created_at';
 
 export async function fetchActivePromotions(options: {
   restaurantId?: string;
