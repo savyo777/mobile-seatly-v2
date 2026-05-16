@@ -321,6 +321,7 @@ export default function OwnerTabsLayout() {
         <Tabs.Screen name="schedule"    options={{ href: null }} />
         <Tabs.Screen name="promote"     options={{ href: null }} />
         <Tabs.Screen name="analytics"   options={{ href: null }} />
+        <Tabs.Screen name="reviews"     options={{ href: null, tabBarStyle: { display: 'none' } }} />
         <Tabs.Screen name="guests"      options={{ href: null, tabBarStyle: { display: 'none' } }} />
         <Tabs.Screen name="staff"       options={{ href: null }} />
         <Tabs.Screen name="floor"       options={{ href: null }} />
