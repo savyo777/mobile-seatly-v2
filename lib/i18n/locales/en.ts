@@ -667,6 +667,12 @@ export default {
     statusCancelled: 'Cancelled',
     statusNoShow: 'No-show',
   },
+  ownerReviews: {
+    title: 'Reviews',
+    empty: "No reviews yet. They'll show up here as diners review your restaurant.",
+    anonymous: 'Anonymous diner',
+    photosLabel: 'Photos',
+  },
   owner: {
     tabHome: 'Overview',
     tabFloor: 'Floor',

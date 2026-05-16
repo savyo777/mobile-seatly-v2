@@ -663,6 +663,12 @@ export default {
     statusCancelled: 'Annulé',
     statusNoShow: 'Non présenté',
   },
+  ownerReviews: {
+    title: 'Avis',
+    empty: "Aucun avis pour l'instant. Ils apparaîtront ici dès que des clients laisseront un avis sur votre restaurant.",
+    anonymous: 'Client anonyme',
+    photosLabel: 'Photos',
+  },
   owner: {
     tabHome: 'Aperçu',
     tabFloor: 'Salle',

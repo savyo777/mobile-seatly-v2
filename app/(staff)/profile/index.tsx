@@ -113,6 +113,15 @@ const useStyles = createStyles((c) => ({
     fontWeight: '500',
   },
   heroMetaDot: { color: 'rgba(255,255,255,0.5)', fontSize: 13 },
+  heroMetaPressable: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+  },
+  heroMetaChevron: {
+    marginLeft: 2,
+    opacity: 0.85,
+  },
   addressRow: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -557,11 +566,35 @@ export default function OwnerBusinessScreen() {
                 <Text style={styles.heroTitle}>{profileName}</Text>
               </View>
             </View>
+            {/*
+              Rating pill. The star + rating + review-count portion is
+              tappable when there's at least one review — it deep-links
+              into the All Reviews screen at app/(staff)/reviews.tsx.
+              Zero-review case stays static (no chevron, no press) so we
+              don't open an empty list.
+            */}
             <View style={styles.heroMeta}>
-              <Ionicons name="star" size={13} color={c.gold} />
-              <Text style={styles.heroMetaText}>{avgRating ? avgRating.toFixed(1) : 'New'}</Text>
-              <Text style={styles.heroMetaDot}>·</Text>
-              <Text style={styles.heroMetaText}>{profileReviewCount ?? 0} reviews</Text>
+              {(profileReviewCount ?? 0) > 0 && ownerRestaurant?.id ? (
+                <Pressable
+                  style={({ pressed }) => [styles.heroMetaPressable, pressed && styles.btnPressed]}
+                  onPress={() => router.push(`/(staff)/reviews?restaurantId=${ownerRestaurant.id}` as never)}
+                  accessibilityRole="button"
+                  accessibilityLabel={`View ${profileReviewCount} reviews`}
+                >
+                  <Ionicons name="star" size={13} color={c.gold} />
+                  <Text style={styles.heroMetaText}>{avgRating ? avgRating.toFixed(1) : 'New'}</Text>
+                  <Text style={styles.heroMetaDot}>·</Text>
+                  <Text style={styles.heroMetaText}>{profileReviewCount ?? 0} reviews</Text>
+                  <Ionicons name="chevron-forward" size={12} color={c.textMuted} style={styles.heroMetaChevron} />
+                </Pressable>
+              ) : (
+                <View style={styles.heroMetaPressable}>
+                  <Ionicons name="star" size={13} color={c.gold} />
+                  <Text style={styles.heroMetaText}>{avgRating ? avgRating.toFixed(1) : 'New'}</Text>
+                  <Text style={styles.heroMetaDot}>·</Text>
+                  <Text style={styles.heroMetaText}>{profileReviewCount ?? 0} reviews</Text>
+                </View>
+              )}
               <Text style={styles.heroMetaDot}>·</Text>
               <Text style={styles.heroMetaText}>{profileCuisine || 'Restaurant'}</Text>
             </View>
