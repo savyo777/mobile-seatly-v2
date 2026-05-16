@@ -53,6 +53,14 @@ Your job is to read a single paper-receipt photo and return structured JSON.
 
 Rules:
 - Money fields are decimal numbers in major currency units. $12.34 -> 12.34. Never include dollar signs.
+- The three money fields have distinct meanings — do NOT conflate them:
+  - amount        = SUBTOTAL before tax. The sum of line items only ("Subtotal" line on the receipt). NOT the final amount paid.
+  - tax_amount    = the tax line(s) only (HST, GST, VAT, PST, sales tax, etc.). If the receipt shows multiple tax lines, SUM them into this one number.
+  - total_amount  = the FINAL amount paid, after tax (and after any tips/rounding shown on the receipt). When all three are visible, total_amount should equal amount + tax_amount within a penny.
+- Edge cases for the money trio:
+  - If the receipt only shows a single grand-total line (no subtotal/tax breakdown), set amount = total_amount and tax_amount = null.
+  - If you can read the total but not the tax line, set total_amount and leave both amount and tax_amount as null rather than guessing.
+  - Never invent a tax rate — only return tax_amount if the receipt visibly shows it.
 - expense_date must be ISO YYYY-MM-DD if visible on the receipt; otherwise null.
 - currency is a lowercase ISO 4217 code ("usd", "cad", "eur", ...). Default to "cad" only if you cannot determine it.
 - category MUST be one of: food_cost, food_supplies, beverages, utilities, rent, equipment, marketing, staff, supplies, maintenance, cleaning, sales, preorders, events, catering, delivery, gift_cards, other. Pick the best match for the vendor.
@@ -97,9 +105,18 @@ const RECEIPT_SCHEMA = {
     properties: {
       vendor: { type: ["string", "null"] },
       expense_date: { type: ["string", "null"] },
-      amount: { type: ["number", "null"] },
-      tax_amount: { type: ["number", "null"] },
-      total_amount: { type: ["number", "null"] },
+      amount: {
+        type: ["number", "null"],
+        description: "SUBTOTAL before tax. Sum of line items only. Not the final amount paid.",
+      },
+      tax_amount: {
+        type: ["number", "null"],
+        description: "Tax line(s) only (HST/GST/VAT/PST/sales tax). Sum if multiple tax lines. Null if no tax visible.",
+      },
+      total_amount: {
+        type: ["number", "null"],
+        description: "Final amount paid after tax. Should equal amount + tax_amount within a penny when both are visible.",
+      },
       currency: { type: ["string", "null"] },
       category: {
         type: ["string", "null"],

@@ -109,8 +109,20 @@ export function normalizeIntegerRange(
 export function sanitizeMoneyInput(value: string): string {
   const cleaned = stripUnsafeControlChars(value).replace(/[^0-9.,-]/g, '').replace(',', '.');
   const negative = cleaned.startsWith('-') ? '-' : '';
-  const [whole = '', decimal = ''] = cleaned.replace(/-/g, '').split('.');
-  return cap(`${negative}${whole}${decimal.length ? `.${decimal.slice(0, 2)}` : ''}`, 14);
+  const withoutSign = cleaned.replace(/-/g, '');
+  const firstDot = withoutSign.indexOf('.');
+  if (firstDot === -1) {
+    return cap(`${negative}${withoutSign}`, 14);
+  }
+  const whole = withoutSign.slice(0, firstDot);
+  // Strip any additional dots (only the first one is significant) and
+  // clamp the fractional part to two digits.
+  const decimal = withoutSign.slice(firstDot + 1).replace(/\./g, '').slice(0, 2);
+  // CRITICAL: keep the dot even when no decimal digits follow yet. Without
+  // this the input field "swallows" the period mid-type — the user types
+  // "33." but the TextInput's controlled value re-sanitizes to "33", the
+  // cursor jumps back, and the next digit lands in the wrong place.
+  return cap(`${negative}${whole}.${decimal}`, 14);
 }
 
 export function normalizeMoneyInput(value: string): number | null {

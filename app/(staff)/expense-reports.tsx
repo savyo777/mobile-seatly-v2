@@ -194,6 +194,18 @@ export default function ExpenseReportsScreen() {
               }
               accent
             />
+            {/* Tax paid is sourced from the same summarizeExpenses() call —
+                no extra computation. Useful for quarterly remittance and
+                accountant handoffs. */}
+            <HeadlineTile
+              label="Tax paid"
+              value={formatCurrency(summary.totalTax, 'cad')}
+              subtitle={
+                summary.totalTax > 0
+                  ? `across ${summary.count} ${summary.count === 1 ? 'expense' : 'expenses'}`
+                  : 'no tax recorded'
+              }
+            />
           </View>
 
           <Text style={styles.sectionLabel}>By category</Text>

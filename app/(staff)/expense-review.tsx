@@ -152,6 +152,12 @@ export default function ExpenseReviewScreen() {
   const [description, setDescription] = useState('');
   const [expenseDate, setExpenseDate] = useState(todayISO());
   const [subtotal, setSubtotal] = useState(isManual ? '0' : '');
+  const [taxAmount, setTaxAmount] = useState('');
+  const [totalAmount, setTotalAmount] = useState(isManual ? '0' : '');
+  // True once the owner types directly into the Total field. After that,
+  // editing Subtotal or Tax stops auto-updating Total — the owner's value
+  // is treated as source-of-truth (covers penny rounding on real receipts).
+  const [totalManuallyEdited, setTotalManuallyEdited] = useState(false);
   const [currency, setCurrency] = useState('cad');
   const [category, setCategory] = useState<ExpenseCategoryKey>('food_cost');
   const [paymentStatus, setPaymentStatus] = useState<PaymentStatus>('paid');
@@ -184,6 +190,9 @@ export default function ExpenseReviewScreen() {
       setDescription('');
       setExpenseDate(todayISO());
       setSubtotal(isManual ? '0' : '');
+      setTaxAmount('');
+      setTotalAmount(isManual ? '0' : '');
+      setTotalManuallyEdited(false);
       setCurrency('cad');
       setCategory('food_cost');
       setPaymentStatus('paid');
@@ -220,30 +229,45 @@ export default function ExpenseReviewScreen() {
         const draft = result.draft;
         if (draft.vendor) setVendor(draft.vendor);
         if (draft.expenseDate) setExpenseDate(draft.expenseDate);
-        // Single "Subtotal" field captures the all-in amount. Prefer the AI's
-        // totalAmount (the bottom-line on the receipt); fall back to amount
-        // if the model only returned the pre-tax number.
-        const headlineAmount = draft.totalAmount ?? draft.amount;
+
+        // Seed the money trio from the AI. Two rules keep the Subtotal
+        // field from confusing the owner:
+        //   1. Only fill Subtotal when the AI extracted a real breakdown
+        //      (tax_amount is non-null). Receipts with just a single total
+        //      line should show that total in Total only — putting it in
+        //      Subtotal too is misleading.
+        //   2. Lock Total (via totalManuallyEdited) the moment AI sets it,
+        //      so a later edit to Subtotal/Tax doesn't overwrite the
+        //      verified bottom-line via smart auto-fill.
+        const aiSubtotal = draft.amount;
+        const aiTax = draft.taxAmount;
+        const aiTotal = draft.totalAmount;
+        const headlineAmount = aiTotal ?? aiSubtotal;
+        const hasRealBreakdown = aiTax != null;
         const detectedCurrency = draft.currency ? draft.currency.toLowerCase() : null;
-        if (headlineAmount != null) setSubtotal(dollarsToInputString(headlineAmount));
+        if (hasRealBreakdown && aiSubtotal != null) {
+          setSubtotal(dollarsToInputString(aiSubtotal));
+        }
+        if (aiTax != null) setTaxAmount(dollarsToInputString(aiTax));
+        if (aiTotal != null) {
+          setTotalAmount(dollarsToInputString(aiTotal));
+          setTotalManuallyEdited(true);
+        } else if (aiSubtotal != null) {
+          // No total on the receipt — derive it.
+          setTotalAmount(dollarsToInputString(aiSubtotal + (aiTax ?? 0)));
+          setTotalManuallyEdited(true);
+        }
+
         if (detectedCurrency) setCurrency(detectedCurrency);
         if (draft.category && isExpenseCategoryKey(draft.category)) setCategory(draft.category);
         if (draft.paymentMethod) setPaymentMethod(draft.paymentMethod);
-        // Collapse the AI-extraction tracking to match the simplified form.
-        const collapsed = new Set<ExpenseDraftFieldKey>();
-        for (const f of result.extractedFields) {
-          if (f === 'totalAmount' || f === 'taxAmount') {
-            collapsed.add('amount');
-          } else {
-            collapsed.add(f);
-          }
-        }
-        setExtractedFields(collapsed);
+        setExtractedFields(new Set<ExpenseDraftFieldKey>(result.extractedFields));
 
         // FX conversion: if the receipt is in a currency other than the
-        // restaurant's currency, convert the headline amount before the
-        // owner saves. Skips silently when no target currency is known
-        // (e.g. all-mode) or the currencies match.
+        // restaurant's currency, convert before the owner saves. We do ONE
+        // conversion call (using the total as the reference amount) and
+        // then apply the same rate to subtotal and tax — keeps the trio
+        // mathematically consistent and avoids three round-trips.
         const targetCurrency = ownerRestaurantCurrency;
         if (
           targetCurrency &&
@@ -263,7 +287,16 @@ export default function ExpenseReviewScreen() {
           if (cancelled) return;
           if (conv.ok) {
             setConversion(conv);
-            setSubtotal(dollarsToInputString(conv.convertedAmount));
+            const rate = conv.rate;
+            if (hasRealBreakdown && aiSubtotal != null) setSubtotal(dollarsToInputString(aiSubtotal * rate));
+            if (aiTax != null) setTaxAmount(dollarsToInputString(aiTax * rate));
+            if (aiTotal != null) {
+              setTotalAmount(dollarsToInputString(conv.convertedAmount));
+              setTotalManuallyEdited(true);
+            } else if (aiSubtotal != null) {
+              setTotalAmount(dollarsToInputString((aiSubtotal + (aiTax ?? 0)) * rate));
+              setTotalManuallyEdited(true);
+            }
             setCurrency(conv.targetCurrency);
           } else if (conv.reason !== 'same_currency') {
             setConversionFailed(conv.reason);
@@ -333,23 +366,32 @@ export default function ExpenseReviewScreen() {
       );
       return;
     }
-    const amount = parseDollarsInput(subtotal);
-    if (amount == null || amount < 0) {
-      Alert.alert('Missing amount', 'Enter how much the expense was for.');
+    // Total is the source-of-truth for "amount paid". Subtotal and tax are
+    // optional — when only total is provided, subtotal mirrors it and tax
+    // stays null (matches single-line receipts without a tax breakdown).
+    const totalNum = parseDollarsInput(totalAmount);
+    if (totalNum == null || totalNum < 0) {
+      Alert.alert('Missing total', 'Enter the total amount paid before saving.');
       return;
     }
+    const subtotalNum = parseDollarsInput(subtotal);
+    const taxNum = parseDollarsInput(taxAmount);
+    const amount = subtotalNum != null && subtotalNum >= 0 ? subtotalNum : totalNum;
+    const taxToPersist = taxNum != null && taxNum > 0 ? taxNum : null;
     const paidAt = isManual && paymentStatus === 'paid' ? new Date().toISOString() : null;
 
     // Build the structured AI-extracted blob the rest of the app reads
     // from `expenses.ai_extracted_data`. When the receipt was converted
     // from another currency we record the originals + rate + provider so
-    // the detail screen can show "Converted from X at rate Y".
+    // the detail screen can show "Converted from X at rate Y". The
+    // converted-total in the blob references totalNum so the detail
+    // screen's original-amount math matches what we just saved.
     const aiExtractedData: Record<string, unknown> | null = conversion
       ? {
           conversion: {
-            originalAmount: Math.round((conversion.convertedAmount / conversion.rate) * 100) / 100,
+            originalAmount: Math.round((totalNum / conversion.rate) * 100) / 100,
             originalCurrency: conversion.sourceCurrency,
-            convertedAmount: conversion.convertedAmount,
+            convertedAmount: totalNum,
             convertedCurrency: conversion.targetCurrency,
             rate: conversion.rate,
             provider: conversion.provider,
@@ -373,8 +415,8 @@ export default function ExpenseReviewScreen() {
           description: normalizeTextInput(description, { maxLength: 500 }) || null,
           expenseDate: expenseDate || todayISO(),
           amount,
-          taxAmount: null,
-          totalAmount: amount,
+          taxAmount: taxToPersist,
+          totalAmount: totalNum,
           currency: (currency || 'cad').toLowerCase(),
           category,
           paymentStatus,
@@ -428,8 +470,8 @@ export default function ExpenseReviewScreen() {
         description: normalizeTextInput(description, { maxLength: 500 }) || null,
         expenseDate: expenseDate || todayISO(),
         amount,
-        taxAmount: null,
-        totalAmount: amount,
+        taxAmount: taxToPersist,
+        totalAmount: totalNum,
         currency: (currency || 'cad').toLowerCase(),
         category,
         paymentStatus,
@@ -476,6 +518,8 @@ export default function ExpenseReviewScreen() {
     saving,
     vendor,
     subtotal,
+    taxAmount,
+    totalAmount,
     isManual,
     paymentStatus,
     transactionType,
@@ -603,14 +647,59 @@ export default function ExpenseReviewScreen() {
               autoCapitalize="words"
             />
 
-            {fieldLabel('Amount', 'amount')}
+            {fieldLabel('Subtotal (before tax)', 'amount')}
             <TextInput
               value={subtotal}
               onChangeText={(v) => {
-                setSubtotal(sanitizeMoneyInput(v));
+                const sanitized = sanitizeMoneyInput(v);
+                setSubtotal(sanitized);
                 clearExtracted('amount');
+                // Smart auto-fill: keep Total in sync with Subtotal + Tax
+                // until the owner manually edits the Total field.
+                if (!totalManuallyEdited) {
+                  const s = parseDollarsInput(sanitized) ?? 0;
+                  const t = parseDollarsInput(taxAmount) ?? 0;
+                  setTotalAmount(dollarsToInputString(s + t));
+                }
                 // Manual edits invalidate the auto-conversion banner: the
                 // owner has overridden the converted value.
+                if (conversion) setConversion(null);
+                if (conversionFailed) setConversionFailed(null);
+              }}
+              placeholder="0.00"
+              placeholderTextColor={ownerColors.textMuted}
+              style={styles.input}
+              keyboardType="decimal-pad"
+            />
+
+            {fieldLabel('Tax', 'taxAmount')}
+            <TextInput
+              value={taxAmount}
+              onChangeText={(v) => {
+                const sanitized = sanitizeMoneyInput(v);
+                setTaxAmount(sanitized);
+                clearExtracted('taxAmount');
+                if (!totalManuallyEdited) {
+                  const s = parseDollarsInput(subtotal) ?? 0;
+                  const t = parseDollarsInput(sanitized) ?? 0;
+                  setTotalAmount(dollarsToInputString(s + t));
+                }
+                if (conversion) setConversion(null);
+                if (conversionFailed) setConversionFailed(null);
+              }}
+              placeholder="0.00"
+              placeholderTextColor={ownerColors.textMuted}
+              style={styles.input}
+              keyboardType="decimal-pad"
+            />
+
+            {fieldLabel('Total', 'totalAmount')}
+            <TextInput
+              value={totalAmount}
+              onChangeText={(v) => {
+                setTotalAmount(sanitizeMoneyInput(v));
+                setTotalManuallyEdited(true);
+                clearExtracted('totalAmount');
                 if (conversion) setConversion(null);
                 if (conversionFailed) setConversionFailed(null);
               }}

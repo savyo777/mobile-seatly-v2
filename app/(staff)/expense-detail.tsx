@@ -135,7 +135,13 @@ export default function ExpenseDetailScreen() {
   const [vendor, setVendor] = useState('');
   const [description, setDescription] = useState('');
   const [expenseDate, setExpenseDate] = useState('');
-  const [amount, setAmount] = useState('');
+  // Three-field money model: subtotal + tax = total. Smart auto-fill keeps
+  // the total in sync until the owner types directly into it (penny rounding
+  // override).
+  const [subtotal, setSubtotal] = useState('');
+  const [taxAmount, setTaxAmount] = useState('');
+  const [totalAmount, setTotalAmount] = useState('');
+  const [totalManuallyEdited, setTotalManuallyEdited] = useState(false);
   const [category, setCategory] = useState<ExpenseCategoryKey>('other');
   const [paymentStatus, setPaymentStatus] = useState<PaymentStatus>('paid');
   const [notes, setNotes] = useState('');
@@ -176,7 +182,16 @@ export default function ExpenseDetailScreen() {
     setVendor(expense.vendorName ?? '');
     setDescription(expense.description ?? '');
     setExpenseDate(expense.expenseDate);
-    setAmount(dollarsToInputString(expense.amount));
+    // Hide Subtotal when the saved row has no tax breakdown — same UX
+    // rule as expense-review: a single-line receipt shouldn't duplicate
+    // the total into the Subtotal field.
+    const hasRealBreakdown = expense.taxAmount != null;
+    setSubtotal(hasRealBreakdown ? dollarsToInputString(expense.amount) : '');
+    setTaxAmount(dollarsToInputString(expense.taxAmount));
+    setTotalAmount(dollarsToInputString(expense.totalAmount));
+    // Saved total is source-of-truth — lock it so smart auto-fill in
+    // edit mode doesn't overwrite the verified bottom-line.
+    setTotalManuallyEdited(true);
     setCategory(expense.category);
     setPaymentStatus(expense.paymentStatus);
     setNotes(expense.notes ?? '');
@@ -212,13 +227,45 @@ export default function ExpenseDetailScreen() {
     setVendor(expense.vendorName ?? '');
     setDescription(expense.description ?? '');
     setExpenseDate(expense.expenseDate);
-    setAmount(dollarsToInputString(expense.amount));
+    const hasRealBreakdown = expense.taxAmount != null;
+    setSubtotal(hasRealBreakdown ? dollarsToInputString(expense.amount) : '');
+    setTaxAmount(dollarsToInputString(expense.taxAmount));
+    setTotalAmount(dollarsToInputString(expense.totalAmount));
+    setTotalManuallyEdited(true);
     setCategory(expense.category);
     setPaymentStatus(expense.paymentStatus);
     setNotes(expense.notes ?? '');
     setPaymentMethod(expense.paymentMethod ?? '');
     setEditing(false);
   }, [expense]);
+
+  // Smart auto-fill handlers for the money trio. Editing subtotal or tax
+  // updates total until the owner types directly into total (then their
+  // value wins, matching real receipts with penny-rounding tolerance).
+  const handleSubtotalChange = useCallback((value: string) => {
+    const sanitized = sanitizeMoneyInput(value);
+    setSubtotal(sanitized);
+    if (!totalManuallyEdited) {
+      const s = parseDollarsInput(sanitized) ?? 0;
+      const t = parseDollarsInput(taxAmount) ?? 0;
+      setTotalAmount(dollarsToInputString(s + t));
+    }
+  }, [taxAmount, totalManuallyEdited]);
+
+  const handleTaxChange = useCallback((value: string) => {
+    const sanitized = sanitizeMoneyInput(value);
+    setTaxAmount(sanitized);
+    if (!totalManuallyEdited) {
+      const s = parseDollarsInput(subtotal) ?? 0;
+      const t = parseDollarsInput(sanitized) ?? 0;
+      setTotalAmount(dollarsToInputString(s + t));
+    }
+  }, [subtotal, totalManuallyEdited]);
+
+  const handleTotalChange = useCallback((value: string) => {
+    setTotalAmount(sanitizeMoneyInput(value));
+    setTotalManuallyEdited(true);
+  }, []);
 
   const handleSaveEdit = useCallback(async () => {
     if (!expense || saving) return;
@@ -229,12 +276,17 @@ export default function ExpenseDetailScreen() {
       );
       return;
     }
-    const parsedAmount = parseDollarsInput(amount);
-    if (parsedAmount == null || parsedAmount < 0) {
-      Alert.alert('Missing amount', 'Enter how much the entry was for.');
+    // Total is source-of-truth for "amount paid". Subtotal mirrors total when
+    // empty (single-line receipts). Tax is optional — null when not provided.
+    const totalNum = parseDollarsInput(totalAmount);
+    if (totalNum == null || totalNum < 0) {
+      Alert.alert('Missing total', 'Enter the total amount before saving.');
       return;
     }
-    const totalAmount = parsedAmount;
+    const subtotalNum = parseDollarsInput(subtotal);
+    const taxNum = parseDollarsInput(taxAmount);
+    const persistedAmount = subtotalNum != null && subtotalNum >= 0 ? subtotalNum : totalNum;
+    const persistedTax = taxNum != null && taxNum > 0 ? taxNum : null;
     const paidAt = paymentStatus === 'paid' ? (expense.paidAt ?? new Date().toISOString()) : null;
 
     setSaving(true);
@@ -243,9 +295,9 @@ export default function ExpenseDetailScreen() {
         vendorName: normalizeTextInput(vendor, { maxLength: 120 }),
         description: normalizeTextInput(description, { maxLength: 500 }) || null,
         expenseDate,
-        amount: parsedAmount,
-        taxAmount: null as number | null,
-        totalAmount,
+        amount: persistedAmount,
+        taxAmount: persistedTax,
+        totalAmount: totalNum,
         category,
         paymentStatus,
         paidAt,
@@ -284,7 +336,9 @@ export default function ExpenseDetailScreen() {
     saving,
     vendor,
     transactionType,
-    amount,
+    subtotal,
+    taxAmount,
+    totalAmount,
     paymentStatus,
     description,
     expenseDate,
@@ -368,8 +422,12 @@ export default function ExpenseDetailScreen() {
               setDescription={setDescription}
               expenseDate={expenseDate}
               openDatePicker={() => setDatePickerOpen(true)}
-              amount={amount}
-              setAmount={setAmount}
+              subtotal={subtotal}
+              onSubtotalChange={handleSubtotalChange}
+              taxAmount={taxAmount}
+              onTaxChange={handleTaxChange}
+              totalAmount={totalAmount}
+              onTotalChange={handleTotalChange}
               category={category}
               setCategory={setCategory}
               paymentStatus={paymentStatus}
@@ -387,6 +445,25 @@ export default function ExpenseDetailScreen() {
             <>
 
           <GlassCard variant="secondary" style={styles.totalCard}>
+            {/* Subtotal + Tax breakdown shown only when the row carries a
+                tax_amount; legacy rows (saved before this feature) skip the
+                breakdown and show just the total so old data stays clean. */}
+            {expense.taxAmount != null ? (
+              <View style={styles.breakdownRows}>
+                <View style={styles.breakdownRow}>
+                  <Text style={styles.breakdownLabel}>Subtotal</Text>
+                  <Text style={styles.breakdownValue}>
+                    {formatCurrency(expense.amount, expense.currency)}
+                  </Text>
+                </View>
+                <View style={styles.breakdownRow}>
+                  <Text style={styles.breakdownLabel}>Tax</Text>
+                  <Text style={styles.breakdownValue}>
+                    {formatCurrency(expense.taxAmount, expense.currency)}
+                  </Text>
+                </View>
+              </View>
+            ) : null}
             <Text style={styles.totalLabel}>Total</Text>
             <Text style={styles.totalAmount}>
               {formatCurrency(expense.totalAmount, expense.currency)}
@@ -449,8 +526,12 @@ function EditForm({
   setDescription,
   expenseDate,
   openDatePicker,
-  amount,
-  setAmount,
+  subtotal,
+  onSubtotalChange,
+  taxAmount,
+  onTaxChange,
+  totalAmount,
+  onTotalChange,
   category,
   setCategory,
   paymentStatus,
@@ -472,8 +553,12 @@ function EditForm({
   setDescription: (value: string) => void;
   expenseDate: string;
   openDatePicker: () => void;
-  amount: string;
-  setAmount: (value: string) => void;
+  subtotal: string;
+  onSubtotalChange: (value: string) => void;
+  taxAmount: string;
+  onTaxChange: (value: string) => void;
+  totalAmount: string;
+  onTotalChange: (value: string) => void;
   category: ExpenseCategoryKey;
   setCategory: (value: ExpenseCategoryKey) => void;
   paymentStatus: PaymentStatus;
@@ -513,10 +598,30 @@ function EditForm({
         style={styles.input}
       />
 
-      <Text style={styles.fieldLabel}>Amount</Text>
+      <Text style={styles.fieldLabel}>Subtotal (before tax)</Text>
       <TextInput
-        value={amount}
-        onChangeText={(value) => setAmount(sanitizeMoneyInput(value))}
+        value={subtotal}
+        onChangeText={onSubtotalChange}
+        placeholder="0.00"
+        placeholderTextColor={ownerColors.textMuted}
+        style={styles.input}
+        keyboardType="decimal-pad"
+      />
+
+      <Text style={styles.fieldLabel}>Tax</Text>
+      <TextInput
+        value={taxAmount}
+        onChangeText={onTaxChange}
+        placeholder="0.00"
+        placeholderTextColor={ownerColors.textMuted}
+        style={styles.input}
+        keyboardType="decimal-pad"
+      />
+
+      <Text style={styles.fieldLabel}>Total</Text>
+      <TextInput
+        value={totalAmount}
+        onChangeText={onTotalChange}
         placeholder="0.00"
         placeholderTextColor={ownerColors.textMuted}
         style={[styles.input, styles.inputTotal]}
@@ -757,6 +862,28 @@ const useStyles = createStyles((c) => {
       marginBottom: ownerSpace.md,
       backgroundColor: withAlpha(brandGold.dark, 0.08),
       borderColor: withAlpha(brandGold.dark, 0.22),
+    },
+    breakdownRows: {
+      marginBottom: ownerSpace.sm,
+      paddingBottom: ownerSpace.sm,
+      borderBottomWidth: StyleSheet.hairlineWidth,
+      borderBottomColor: withAlpha(brandGold.dark, 0.18),
+      gap: 4,
+    },
+    breakdownRow: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'baseline',
+    },
+    breakdownLabel: {
+      color: ownerColors.textMuted,
+      fontSize: 13,
+      fontWeight: '600',
+    },
+    breakdownValue: {
+      color: ownerColors.text,
+      fontSize: 14,
+      fontWeight: '700',
     },
     totalLabel: {
       color: ownerColors.textMuted,

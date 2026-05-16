@@ -39,7 +39,7 @@ function inMonth(iso: string, monthStart: Date): boolean {
 export function ExpenseSummaryCard({ expenses }: Props) {
   const ownerColors = useOwnerColors();
 
-  const { thisMonthSpent, thisMonthEarned, deltaPercent, currency, topCategories } = useMemo(() => {
+  const { thisMonthSpent, thisMonthEarned, thisMonthTax, deltaPercent, currency, topCategories } = useMemo(() => {
     const now = new Date();
     const thisMonthStart = startOfMonth(now);
     const prevMonthStart = startOfPrevMonth(now);
@@ -48,8 +48,11 @@ export function ExpenseSummaryCard({ expenses }: Props) {
     // the card can label them clearly. Mixing them produced a confusing
     // number — e.g. $2000 expense + $4000 income reading as "$6000 this
     // month" with no way to tell the owner whether that's good or bad.
+    // Also sum tax (from expense rows only) so the card surfaces how much
+    // is owed/remittable separately — owners care about this for HST/GST.
     let thisSpent = 0;
     let thisEarned = 0;
+    let thisTax = 0;
     let prevSpent = 0;
     const byCategory = new Map<ExpenseCategoryKey, number>();
     const currencyCounts = new Map<string, number>();
@@ -62,6 +65,7 @@ export function ExpenseSummaryCard({ expenses }: Props) {
           thisEarned += exp.totalAmount;
         } else {
           thisSpent += exp.totalAmount;
+          if (exp.taxAmount != null) thisTax += exp.taxAmount;
           byCategory.set(exp.category, (byCategory.get(exp.category) ?? 0) + exp.totalAmount);
         }
       } else if (inMonth(exp.expenseDate, prevMonthStart) && !isIncome) {
@@ -88,6 +92,7 @@ export function ExpenseSummaryCard({ expenses }: Props) {
     return {
       thisMonthSpent: thisSpent,
       thisMonthEarned: thisEarned,
+      thisMonthTax: Math.round(thisTax * 100) / 100,
       deltaPercent: delta,
       currency: dominantCurrency,
       topCategories: cats,
@@ -144,6 +149,15 @@ export function ExpenseSummaryCard({ expenses }: Props) {
           </Text>
         </View>
       </View>
+
+      {thisMonthTax > 0 ? (
+        <Text style={[styles.taxLine, { color: ownerColors.textMuted }]}>
+          Tax paid this month: {' '}
+          <Text style={[styles.taxLineValue, { color: ownerColors.text }]}>
+            {formatCurrency(thisMonthTax, currency)}
+          </Text>
+        </Text>
+      ) : null}
 
       {topCategories.length > 0 ? (
         <View style={styles.bars}>
@@ -297,5 +311,16 @@ const styles = StyleSheet.create({
   emptyHint: {
     fontSize: 13,
     fontStyle: 'italic',
+  },
+  taxLine: {
+    fontSize: 12,
+    fontWeight: '600',
+    marginTop: -4,
+    marginBottom: 10,
+    letterSpacing: 0.2,
+  },
+  taxLineValue: {
+    fontWeight: '800',
+    fontVariant: ['tabular-nums'],
   },
 });
