@@ -50,6 +50,7 @@ type BookingPayload = {
   discount_amount?: unknown;
   discount_reason?: unknown;
   promotion_id?: unknown;
+  applied_promo_code?: unknown;
   payment_method?: unknown;
 };
 
@@ -129,6 +130,8 @@ Deno.serve(async (req: Request) => {
     const allergies = asText(payload.allergies);
     const seatingPreference = asText(payload.seating_preference);
     const occasion = asText(payload.occasion);
+    const promotionId = asUuid(payload.promotion_id);
+    const appliedPromoCode = asText(payload.applied_promo_code);
     const confirmationCode =
       asText(payload.confirmation_code) ?? `SEAT-${Math.random().toString(36).slice(2, 6).toUpperCase()}`;
     const partySize = Math.max(1, Math.floor(asNumber(payload.party_size, 1)));
@@ -432,6 +435,9 @@ Deno.serve(async (req: Request) => {
       p_guest_full_name: guestName,
       p_guest_email: guestEmail,
       p_guest_phone: guestPhone,
+      p_event_id: null,
+      p_promotion_id: promotionId,
+      p_applied_promo_code: appliedPromoCode,
     });
 
     if (bookingError) {
@@ -534,7 +540,7 @@ Deno.serve(async (req: Request) => {
           total_amount: roundMoney(payload.total_amount),
           discount_amount: roundMoney(payload.discount_amount) > 0 ? roundMoney(payload.discount_amount) : null,
           discount_reason: asText(payload.discount_reason),
-          promotion_id: asUuid(payload.promotion_id),
+          promotion_id: promotionId,
           payment_method: asText(payload.payment_method) ?? "card",
           confirmation_code: savedConfirmationCode,
           source: "web",
@@ -556,7 +562,6 @@ Deno.serve(async (req: Request) => {
       }
     }
 
-    const promotionId = asUuid(payload.promotion_id);
     if (promotionId) {
       const { data: promo } = await supabase
         .from("promotions")

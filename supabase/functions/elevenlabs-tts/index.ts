@@ -3,7 +3,13 @@ import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { corsHeaders } from "../_shared/cors.ts";
 import { supabaseAdmin } from "../_shared/supabase.ts";
 import { jsonRes } from "../_shared/json-response.ts";
-import { decodeJwtPayload } from "../_shared/jwt.ts";
+import { checkAuth } from "../_shared/auth.ts";
+import {
+  enforceRateLimit,
+  RateLimitError,
+  rateLimitIdentifier,
+} from "../_shared/rate-limit.ts";
+import { CENAIVA_LIMITS, CENAIVA_RATE_LIMIT_CODES } from "../_shared/cenaiva-limits.ts";
 import {
   readJsonObject,
   validationResponse,
@@ -38,26 +44,57 @@ Deno.serve(async (req) => {
   }
 
   try {
-    // Auth — require valid JWT so this endpoint isn't open to the world
-    const authHeader = req.headers.get("Authorization") ?? "";
-    const token = authHeader.replace(/^Bearer\s+/i, "");
-    const payload = decodeJwtPayload(token);
-    if (!payload?.sub) return jsonRes({ error: "Unauthorized" }, 401);
+    // Auth — require valid JWT so this endpoint isn't open to the world.
+    // checkAuth() does the JWT decode; the previous explicit user_profiles
+    // lookup was redundant for auth (the rate limiter and downstream code
+    // don't need the profile row), so it's been removed.
+    const auth = checkAuth(req);
+    if (!auth.ok) return jsonRes({ error: "Unauthorized", code: auth.reason }, 401);
 
-    // Lightweight user check
-    const { error: profileErr } = await supabaseAdmin
-      .from("user_profiles")
-      .select("id")
-      .eq("auth_user_id", payload.sub as string)
-      .single();
-    if (profileErr) return jsonRes({ error: "Unauthorized" }, 401);
+    // Per-user rate-limit gate. Pairs ~1:1 with cenaiva-small-prompt, so
+    // limits mirror that bucket. Env-overridable via _shared/cenaiva-limits.ts.
+    const rateIdent = rateLimitIdentifier(req, auth.authUserId);
+    try {
+      await enforceRateLimit(supabaseAdmin, CENAIVA_LIMITS.elevenlabsTts.minute.scope, rateIdent, {
+        limit: CENAIVA_LIMITS.elevenlabsTts.minute.limit,
+        windowSeconds: CENAIVA_LIMITS.elevenlabsTts.minute.windowSeconds,
+      });
+    } catch (rlErr) {
+      if (rlErr instanceof RateLimitError) {
+        return jsonRes(
+          { error: CENAIVA_RATE_LIMIT_CODES.minute, retry_after: CENAIVA_LIMITS.elevenlabsTts.minute.windowSeconds },
+          429,
+        );
+      }
+      throw rlErr;
+    }
+    try {
+      await enforceRateLimit(supabaseAdmin, CENAIVA_LIMITS.elevenlabsTts.day.scope, rateIdent, {
+        limit: CENAIVA_LIMITS.elevenlabsTts.day.limit,
+        windowSeconds: CENAIVA_LIMITS.elevenlabsTts.day.windowSeconds,
+      });
+    } catch (rlErr) {
+      if (rlErr instanceof RateLimitError) {
+        return jsonRes(
+          { error: CENAIVA_RATE_LIMIT_CODES.day, retry_after: CENAIVA_LIMITS.elevenlabsTts.day.windowSeconds },
+          429,
+        );
+      }
+      throw rlErr;
+    }
 
     const url = new URL(req.url);
     const queryText = url.searchParams.get("text");
     const body = queryText != null
       ? { text: queryText, voice_id: url.searchParams.get("voice_id") ?? undefined }
       : await readJsonObject(req) as { text?: string; voice_id?: string };
-    const rawText = validatedText(body.text, "text", { required: true, maxLength: 1200, multiline: true }) ?? "";
+    // 300-char cap aligns with real AI booking-reply length (typical
+    // response is 100–200 chars) while preventing crafted long-text
+    // payloads that previously made the per-call cost up to $0.12.
+    // At 300 chars per call * 25 calls/day this caps worst-case TTS
+    // spend per user at ~$0.75/day. Bump via env if a future flow
+    // genuinely needs longer single utterances.
+    const rawText = validatedText(body.text, "text", { required: true, maxLength: 300, multiline: true }) ?? "";
     if (!rawText) return jsonRes({ error: "text is required" }, 400);
 
     const text = applyPronunciation(rawText);

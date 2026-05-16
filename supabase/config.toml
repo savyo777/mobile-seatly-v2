@@ -15,6 +15,9 @@ verify_jwt = true
 [functions.elevenlabs-tts]
 verify_jwt = true
 
+[functions.deepgram-live-token]
+verify_jwt = true
+
 [functions.delete-account]
 verify_jwt = true
 
@@ -26,7 +29,7 @@ verify_jwt = true
 #   - get-availability + create-public-booking power the public booking
 #     widget on restaurant pages.
 #   - prepare-phone-login looks up an account by phone before SMS OTP.
-#     Rate-limited per IP via _shared/rateLimit.ts.
+#     Rate-limited per IP via _shared/rate-limit.ts.
 #   - register-restaurant-owner is the owner sign-up flow.
 [functions.get-availability]
 verify_jwt = false

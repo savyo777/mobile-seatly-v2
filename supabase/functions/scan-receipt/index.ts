@@ -8,6 +8,13 @@ import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { buildCorsHeaders } from "../_shared/cors.ts";
 import { checkAuth } from "../_shared/auth.ts";
 import { callOpenAIVision } from "../_shared/openai.ts";
+import { supabaseAdmin } from "../_shared/supabase.ts";
+import {
+  enforceRateLimit,
+  RateLimitError,
+  rateLimitIdentifier,
+} from "../_shared/rate-limit.ts";
+import { CENAIVA_LIMITS, CENAIVA_RATE_LIMIT_CODES } from "../_shared/cenaiva-limits.ts";
 import {
   readJsonObject,
   validationResponse,
@@ -135,6 +142,40 @@ Deno.serve(async (req) => {
   const auth = checkAuth(req);
   if (!auth.ok) {
     return jsonResWithCors(req, { error: "unauthorized", reason: auth.reason }, 401);
+  }
+
+  // Per-user rate-limit gate. Vision is the most expensive call we make;
+  // these defaults are env-overridable via _shared/cenaiva-limits.ts.
+  const rateIdent = rateLimitIdentifier(req, auth.authUserId);
+  try {
+    await enforceRateLimit(supabaseAdmin, CENAIVA_LIMITS.scanReceipt.minute.scope, rateIdent, {
+      limit: CENAIVA_LIMITS.scanReceipt.minute.limit,
+      windowSeconds: CENAIVA_LIMITS.scanReceipt.minute.windowSeconds,
+    });
+  } catch (rlErr) {
+    if (rlErr instanceof RateLimitError) {
+      return jsonResWithCors(
+        req,
+        { error: CENAIVA_RATE_LIMIT_CODES.minute, retry_after: CENAIVA_LIMITS.scanReceipt.minute.windowSeconds },
+        429,
+      );
+    }
+    throw rlErr;
+  }
+  try {
+    await enforceRateLimit(supabaseAdmin, CENAIVA_LIMITS.scanReceipt.day.scope, rateIdent, {
+      limit: CENAIVA_LIMITS.scanReceipt.day.limit,
+      windowSeconds: CENAIVA_LIMITS.scanReceipt.day.windowSeconds,
+    });
+  } catch (rlErr) {
+    if (rlErr instanceof RateLimitError) {
+      return jsonResWithCors(
+        req,
+        { error: CENAIVA_RATE_LIMIT_CODES.day, retry_after: CENAIVA_LIMITS.scanReceipt.day.windowSeconds },
+        429,
+      );
+    }
+    throw rlErr;
   }
 
   try {
