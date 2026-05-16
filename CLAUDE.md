@@ -46,7 +46,7 @@ Per-user limits on every paid AI/voice edge function. All limits live in `supaba
 - `elevenlabs-tts`: 4/min, 12/day, **220 chars max per call** (the char cap is the biggest cost lever, not the request count)
 - `deepgram-live-token`: 6/min, 44/day (room for no-speech/cancelled transcripts without letting STT run away)
 
-Per-minute caps are burst brakes; per-day caps are the request ceiling. `paid_usage_buckets` adds the real cost ceiling with `CENAIVA_USER_DAILY_AI_BUDGET_USD=0.50` and `CENAIVA_PLATFORM_DAILY_AI_BUDGET_USD=5000` defaults. Keep audio-bearing daily caps tight first, because ElevenLabs dominates Hey Cenaiva spend.
+Per-minute caps are burst brakes; per-day caps are the request ceiling. `paid_usage_buckets` adds the real per-user cost ceiling with `CENAIVA_USER_DAILY_AI_BUDGET_USD=0.50`. Keep audio-bearing daily caps tight first, because ElevenLabs dominates Hey Cenaiva spend.
 
 429 responses use stable codes `rate_limit_minute` / `rate_limit_day` — the mobile `friendlyError()` already maps them. New paid AI endpoints MUST add a bucket here and use `enforceRateLimit()` + `rateLimitIdentifier()` from `_shared/rate-limit.ts`.
 

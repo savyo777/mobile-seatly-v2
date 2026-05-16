@@ -2,8 +2,7 @@
 // Estimated paid API budget guard for Hey Cenaiva.
 //
 // This is intentionally separate from request rate limits: rate limits stop
-// burst abuse, while this guard caps the estimated daily vendor spend per user
-// and for the platform as a whole.
+// burst abuse, while this guard caps the estimated daily vendor spend per user.
 
 import type { SupabaseClient } from "npm:@supabase/supabase-js@2";
 
@@ -15,7 +14,6 @@ function envNumber(name: string, fallback: number): number {
 
 export const PAID_USAGE_BUDGETS = {
   userDailyUsd: envNumber("CENAIVA_USER_DAILY_AI_BUDGET_USD", 0.5),
-  platformDailyUsd: envNumber("CENAIVA_PLATFORM_DAILY_AI_BUDGET_USD", 5000),
   costs: {
     orchestrate: envNumber("CENAIVA_COST_ORCHESTRATE_USD", 0.001),
     smallPrompt: envNumber("CENAIVA_COST_SMALL_PROMPT_USD", 0.018),
@@ -46,7 +44,6 @@ export async function enforcePaidUsageBudget(
     service: string;
     estimatedCostUsd: number;
     userDailyBudgetUsd?: number;
-    platformDailyBudgetUsd?: number;
   },
 ): Promise<void> {
   if (!params.userKey) {
@@ -58,7 +55,6 @@ export async function enforcePaidUsageBudget(
     p_service: params.service,
     p_estimated_cost_usd: params.estimatedCostUsd,
     p_user_daily_budget_usd: params.userDailyBudgetUsd ?? PAID_USAGE_BUDGETS.userDailyUsd,
-    p_platform_daily_budget_usd: params.platformDailyBudgetUsd ?? PAID_USAGE_BUDGETS.platformDailyUsd,
   });
 
   if (error) {
