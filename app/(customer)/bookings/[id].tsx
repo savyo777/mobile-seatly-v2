@@ -424,7 +424,7 @@ export default function BookingDetailScreen() {
           </View>
           <View style={styles.detailRow}>
             <Ionicons name="time-outline" size={18} color={c.textSecondary} />
-            <Text style={styles.detailValue}>{time}</Text>
+            <Text style={styles.detailValue} numberOfLines={1}>{time}</Text>
           </View>
           <View style={styles.detailRow}>
             <Ionicons name="people-outline" size={18} color={c.textSecondary} />

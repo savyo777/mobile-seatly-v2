@@ -215,10 +215,23 @@ const useStyles = createStyles((c) => ({
     gap: 5,
   },
   dateText: {
-    fontSize: 15,
+    fontSize: 16,
     fontWeight: '700',
     color: c.textPrimary,
     letterSpacing: -0.1,
+  },
+  dateRow: {
+    flexDirection: 'row',
+    alignItems: 'baseline',
+  },
+  // The date can shrink/ellipsize when space is tight.
+  dateRowDate: {
+    flexShrink: 1,
+    minWidth: 0,
+  },
+  // The time NEVER shrinks — keeps "11:00 AM" intact on one line.
+  dateRowTime: {
+    flexShrink: 0,
   },
   detailText: {
     fontSize: 13,
@@ -535,12 +548,29 @@ export default function ActivityScreen() {
 
           {/* Info */}
           <View style={styles.info}>
-            <Text
-              style={[styles.dateText, isPast && styles.dimPrimary]}
-              numberOfLines={1}
-              adjustsFontSizeToFit
-              minimumFontScale={0.85}
-            >{primary}  ·  {sub}</Text>
+            {/*
+              Split the date and the time into two Text nodes inside a row.
+              The time has flexShrink: 0 so it always renders in full — if
+              there's not enough width the date truncates with ellipsis,
+              never the time (the bug was "11:00" wrapping to "11:0" + "0"
+              on narrow screens because RN was breaking the unbreakable
+              "11:00 AM" run by character).
+            */}
+            <View style={styles.dateRow}>
+              <Text
+                style={[styles.dateText, isPast && styles.dimPrimary, styles.dateRowDate]}
+                numberOfLines={1}
+                ellipsizeMode="tail"
+              >
+                {primary}  ·{' '}
+              </Text>
+              <Text
+                style={[styles.dateText, isPast && styles.dimPrimary, styles.dateRowTime]}
+                numberOfLines={1}
+              >
+                {sub}
+              </Text>
+            </View>
             <Text style={[styles.detailText, isPast && styles.dimSecondary]}>{detailLine}</Text>
             {item.confirmationCode ? (
               <View style={styles.codeRow}>
