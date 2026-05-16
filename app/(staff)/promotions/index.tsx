@@ -5,19 +5,18 @@ import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context'
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import { useColors, createStyles, spacing, borderRadius } from '@/lib/theme';
+// We import the OwnerPromotion / PromoStatus / PromoType types from the
+// mock module because that's still where the shared shape lives — but no
+// mock DATA is used here anymore. The Promos tab renders strictly from
+// the live promotions row, mapped via mapPromotionRowToOwnerPromotion.
 import {
-  OWNER_PROMOTIONS as DEMO_OWNER_PROMOTIONS,
   type OwnerPromotion,
   type PromoStatus,
   type PromoType,
 } from '@/lib/mock/ownerApp';
-import { isDemoModeEnabled } from '@/lib/config/demoMode';
 import { fetchActivePromotions, type PromotionRow } from '@/lib/promotions/getPromotions';
+import { incrementPromotionClicks } from '@/lib/promotions/incrementPromotionClicks';
 import { useOwnerScope } from '@/hooks/useOwnerScope';
-
-const INITIAL_OWNER_PROMOTIONS: typeof DEMO_OWNER_PROMOTIONS = isDemoModeEnabled()
-  ? DEMO_OWNER_PROMOTIONS
-  : [];
 
 const PROMO_TYPE_MAP: Record<string, PromoType> = {
   percentage: 'percent_off',
@@ -51,7 +50,12 @@ function mapPromotionRowToOwnerPromotion(row: PromotionRow): OwnerPromotion {
       ? d.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true })
       : '';
   const uses = row.current_uses ?? 0;
-  const max = row.max_uses ?? 0;
+  // Only `current_uses` and `clicks` are real DB columns. Everything else
+  // that used to come back from this mapper (guestsReached, revenueGenerated,
+  // newGuests, returningGuests, bestTimeLabel, estimatedLiftPct) was being
+  // fabricated from max_uses or hardcoded to 0. We zero them out here and
+  // hide the UI that displayed them — better to show no number than a
+  // fake one. Bring them back when the DB starts capturing the data.
   return {
     id: row.id,
     name: row.title,
@@ -76,14 +80,14 @@ function mapPromotionRowToOwnerPromotion(row: PromotionRow): OwnerPromotion {
     whereApplies: row.applies_to ?? 'Dine-in',
     analytics: {
       redemptions: uses,
-      guestsReached: max > 0 ? max : uses,
+      guestsReached: 0,
       revenueGenerated: 0,
     },
     estimatedLiftPct: 0,
-    clicks: max > 0 ? max : uses,
+    clicks: row.clicks ?? 0,
     newGuests: 0,
-    returningGuests: uses,
-    bestTimeLabel: 'No data yet',
+    returningGuests: 0,
+    bestTimeLabel: '',
     scheduleLabel:
       startsAt && endsAt
         ? `${startsAt.toLocaleDateString(undefined, { month: 'short', day: 'numeric' })} – ${endsAt.toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}`
@@ -488,12 +492,14 @@ export default function PromosScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const [tab, setTab] = useState<Tab>('active');
-  const [promotions, setPromotions] = useState<typeof DEMO_OWNER_PROMOTIONS>(INITIAL_OWNER_PROMOTIONS);
+  // Live-data only. No mock fallback even in demo mode — the Promos tab
+  // is the surface owners evaluate the app on, so misleading them with
+  // hardcoded numbers is worse than showing an empty state.
+  const [promotions, setPromotions] = useState<OwnerPromotion[]>([]);
   const { restaurantIds } = useOwnerScope();
   const restaurantIdsKey = restaurantIds.join('|');
 
   useEffect(() => {
-    if (isDemoModeEnabled()) return;
     if (restaurantIds.length === 0) {
       setPromotions([]);
       return;
@@ -511,6 +517,17 @@ export default function PromosScreen() {
     };
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [restaurantIdsKey]);
+
+  const handlePromoPress = (promoId: string) => {
+    // Optimistic +1 on the card's Clicks value so the UI feels responsive,
+    // then fire the RPC. The helper swallows failures (logs in __DEV__).
+    setPromotions((prev) =>
+      prev.map((p) =>
+        p.id === promoId ? { ...p, clicks: (p.clicks ?? 0) + 1 } : p,
+      ),
+    );
+    void incrementPromotionClicks(promoId);
+  };
 
   const activeList = useMemo(() => promotions.filter(isActive), [promotions]);
   const pastList = useMemo(() => promotions.filter(isPast), [promotions]);
@@ -561,14 +578,13 @@ export default function PromosScreen() {
           </View>
         ) : (
           list.map((promo) => {
-            const clicks = promo.clicks ?? promo.views ?? promo.analytics.guestsReached;
+            // Only show real DB-backed values: Used (current_uses) and
+            // Clicks (the new clicks column). All the prior guest-mix /
+            // best-time / conversion-rate fabrications are removed below.
+            const clicks = promo.clicks ?? 0;
             const used = promo.analytics.redemptions;
             const conversionRate = clicks > 0 ? Math.round((used / clicks) * 100) : 0;
             const remainingClicks = Math.max(clicks - used, 0);
-            const newGuests = promo.newGuests ?? 0;
-            const returningGuests = promo.returningGuests ?? 0;
-            const totalGuestMix = newGuests + returningGuests;
-            const newGuestShare = totalGuestMix > 0 ? Math.round((newGuests / totalGuestMix) * 100) : 0;
             const statusTint =
               promo.status === 'live'
                 ? { bg: 'rgba(34,197,94,0.18)', border: 'rgba(34,197,94,0.32)', text: '#86EFAC' }
@@ -581,7 +597,13 @@ export default function PromosScreen() {
                       : { bg: 'rgba(168,133,48,0.18)', border: 'rgba(168,133,48,0.32)', text: '#FDE68A' };
 
             return (
-              <View key={promo.id} style={styles.card}>
+              <Pressable
+                key={promo.id}
+                onPress={() => handlePromoPress(promo.id)}
+                style={({ pressed }) => [styles.card, pressed && { opacity: 0.85 }]}
+                accessibilityRole="button"
+                accessibilityLabel={`${promo.name}, tap to register a click`}
+              >
                 <View style={styles.banner}>
                   <Image
                     source={{ uri: promo.coverImage ?? FALLBACK_IMAGE }}
@@ -678,50 +700,14 @@ export default function PromosScreen() {
                     </View>
                   </View>
 
-                  <View style={styles.guestMixCard}>
-                    <View style={styles.guestMixHeader}>
-                      <Text style={styles.guestMixTitle}>Guest mix</Text>
-                      <Text style={styles.guestMixSummary}>
-                        {totalGuestMix > 0 ? `${newGuestShare}% new` : 'No guest data yet'}
-                      </Text>
-                    </View>
-                    <View style={styles.guestMixValues}>
-                      <View style={styles.guestMixCol}>
-                        <Text style={styles.guestMixValue}>{formatCount(newGuests)}</Text>
-                        <Text style={styles.guestMixSub}>New guests</Text>
-                      </View>
-                      <View style={styles.guestMixCol}>
-                        <Text style={styles.guestMixValue}>{formatCount(returningGuests)}</Text>
-                        <Text style={styles.guestMixSub}>Returning guests</Text>
-                      </View>
-                    </View>
-                    <View style={styles.guestMixBar}>
-                      <View
-                        style={[
-                          styles.guestMixBarSegment,
-                          styles.guestMixBarNew,
-                          { flex: totalGuestMix > 0 ? newGuests : 1 },
-                        ]}
-                      />
-                      <View
-                        style={[
-                          styles.guestMixBarSegment,
-                          styles.guestMixBarReturning,
-                          { flex: totalGuestMix > 0 ? returningGuests : 1 },
-                        ]}
-                      />
-                    </View>
-                  </View>
-
-                  <View style={styles.bestTimeCard}>
-                    <View style={styles.bestTimeIcon}>
-                      <Ionicons name="time-outline" size={15} color={c.gold} />
-                    </View>
-                    <View style={styles.bestTimeText}>
-                      <Text style={styles.bestTimeLabel}>Top time slot</Text>
-                      <Text style={styles.bestTimeValue}>{promo.bestTimeLabel ?? 'No data yet'}</Text>
-                    </View>
-                  </View>
+                  {/*
+                    Guest Mix + Top Time Slot sections used to live here.
+                    Both were fabricated client-side (new/returning guest
+                    splits were hardcoded zeros, best-time was always
+                    "No data yet"). Hidden until the DB starts capturing
+                    those numbers. The Performance card above only shows
+                    real Used / Clicks values now.
+                  */}
 
                   {promo.status === 'expired' && (
                     <View style={styles.actionRow}>
@@ -735,7 +721,7 @@ export default function PromosScreen() {
                     </View>
                   )}
                 </View>
-              </View>
+              </Pressable>
             );
           })
         )}

@@ -3,13 +3,10 @@ import { View, Text, ScrollView, Pressable, StyleSheet } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useColors, createStyles, spacing, borderRadius } from '@/lib/theme';
-import {
-  OWNER_EVENTS as DEMO_OWNER_EVENTS,
-  OWNER_PROMOTIONS as DEMO_OWNER_PROMOTIONS,
-  type OwnerEventRow,
-  type OwnerPromotion,
-} from '@/lib/mock/ownerApp';
-import { isDemoModeEnabled } from '@/lib/config/demoMode';
+// Importing only the shared types from the mock module — no mock data on
+// the Promote screen anymore. Lists render from the live promotions /
+// events queries, or stay empty.
+import { type OwnerEventRow, type OwnerPromotion } from '@/lib/mock/ownerApp';
 import { useOwnerScope } from '@/hooks/useOwnerScope';
 import { fetchUpcomingEvents, type EventRow } from '@/lib/events/getEvents';
 import { fetchActivePromotions, type PromotionRow } from '@/lib/promotions/getPromotions';
@@ -184,18 +181,15 @@ export default function OwnerPromoteScreen() {
   const insets = useSafeAreaInsets();
   const { restaurantIds } = useOwnerScope();
   const restaurantIdsKey = restaurantIds.join('|');
-  const [liveEvents, setLiveEvents] = useState<OwnerEventRow[]>(
-    isDemoModeEnabled() ? DEMO_OWNER_EVENTS : [],
-  );
-  const [livePromos, setLivePromos] = useState<OwnerPromotion[]>(
-    isDemoModeEnabled() ? DEMO_OWNER_PROMOTIONS : [],
-  );
+  // Live-only data. No demo fallback — empty state when nothing has been
+  // created. Matches the Promos tab in app/(staff)/promotions/index.tsx.
+  const [events, setEvents] = useState<OwnerEventRow[]>([]);
+  const [promos, setPromos] = useState<OwnerPromotion[]>([]);
 
   useEffect(() => {
-    if (isDemoModeEnabled()) return;
     if (restaurantIds.length === 0) {
-      setLiveEvents([]);
-      setLivePromos([]);
+      setEvents([]);
+      setPromos([]);
       return;
     }
     let active = true;
@@ -205,17 +199,14 @@ export default function OwnerPromoteScreen() {
         fetchActivePromotions({ restaurantIds, includePrivate: true }).catch(() => [] as PromotionRow[]),
       ]);
       if (!active) return;
-      setLiveEvents(evRows.map(mapEventRow));
-      setLivePromos(prRows.map(mapPromotionRow));
+      setEvents(evRows.map(mapEventRow));
+      setPromos(prRows.map(mapPromotionRow));
     })();
     return () => {
       active = false;
     };
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [restaurantIdsKey]);
-
-  const events = isDemoModeEnabled() ? DEMO_OWNER_EVENTS : liveEvents;
-  const promos = isDemoModeEnabled() ? DEMO_OWNER_PROMOTIONS : livePromos;
 
   return (
     <View style={styles.root}>
