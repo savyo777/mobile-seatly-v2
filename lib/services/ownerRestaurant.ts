@@ -1,5 +1,7 @@
 import { getSupabase } from '@/lib/supabase/client';
 import { DEFAULT_CURRENCY, DEFAULT_TAX_RATE_FALLBACK } from '@/lib/booking/bookingDefaults';
+import { hoursFromJson } from '@/lib/supabase/mapRestaurantRow';
+import type { RestaurantHoursJson } from '@/lib/mock/restaurants';
 
 export type OwnerRestaurant = {
   id: string;
@@ -18,6 +20,12 @@ export type OwnerRestaurant = {
   reviewCount: number | null;
   priceRange: string | null;
   instagram: string | null;
+  // Canonical opening-hours blob (top-level `hours_json` column). Same shape
+  // the customer side renders and the web app writes — keys are full weekday
+  // names ("monday".."sunday") and times are 24h "HH:MM" strings, with null
+  // meaning "closed that day". Owner-side hours editor reads/writes through
+  // this same column via lib/owner/businessHoursSettings.ts.
+  hoursJson: RestaurantHoursJson | null;
   stripeCustomerId: string | null;
   stripeSubscriptionId: string | null;
   stripePaymentMethodId: string | null;
@@ -109,7 +117,19 @@ export function mapOwnerRestaurantRow(row: Record<string, unknown>): OwnerRestau
       stringOrNull(row.hero_image_url),
     logoUrl: stringOrNull(row.logo_url),
     rating: numberOrNull(row.avg_rating) ?? numberOrNull(s.avg_rating),
-    reviewCount: numberOrNull(row.review_count) ?? numberOrNull(s.total_reviews),
+    // Live DB column is `total_reviews` (what the customer side reads and
+    // the web app updates when a diner submits a review). The older
+    // `review_count` column is kept as a fallback for legacy rows that
+    // were never migrated.
+    reviewCount:
+      numberOrNull(row.total_reviews) ??
+      numberOrNull(row.review_count) ??
+      numberOrNull(s.total_reviews),
+    hoursJson: hoursFromJson(
+      (row.hours_json && typeof row.hours_json === 'object' && !Array.isArray(row.hours_json))
+        ? (row.hours_json as Record<string, unknown>)
+        : null,
+    ),
     priceRange: priceRangeToString(row.price_range) ?? priceRangeToString(s.price_range),
     instagram:
       stringOrNull(row.instagram) ||

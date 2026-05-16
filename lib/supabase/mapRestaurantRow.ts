@@ -70,7 +70,11 @@ function readSpecialHours(raw: unknown): RestaurantSpecialHours[] {
   });
 }
 
-function hoursFromJson(raw: Record<string, unknown> | null): RestaurantHoursJson {
+// Exported so the owner-side mapper at lib/services/ownerRestaurant.ts can
+// read the same hours_json column the web app + customer side use as the
+// canonical source of truth (vs the older mobile-only nested
+// settings_json.business_hours location).
+export function hoursFromJson(raw: Record<string, unknown> | null): RestaurantHoursJson {
   if (!raw || typeof raw !== 'object') {
     return {};
   }
