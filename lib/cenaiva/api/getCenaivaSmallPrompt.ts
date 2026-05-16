@@ -80,6 +80,17 @@ export async function postCenaivaSmallPrompt(
   });
 
   if (!response.ok) {
+    try {
+      const body = await response.json();
+      if (body && typeof body === 'object') {
+        const errField = (body as { error?: unknown }).error;
+        if (typeof errField === 'string' && errField.trim()) {
+          return { data: null, error: errField };
+        }
+      }
+    } catch {
+      // Body wasn't JSON or already consumed; fall through.
+    }
     return { data: null, error: `http_${response.status}` };
   }
   return { data: parseSmallPromptResponse(await response.json()), error: null };

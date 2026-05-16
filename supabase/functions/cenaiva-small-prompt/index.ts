@@ -20,6 +20,9 @@ import {
   validationResponse,
   asText as validatedText,
 } from "../_shared/input-validation.ts";
+import { enforceRateLimit, rateLimitIdentifier, RateLimitError } from "../_shared/rate-limit.ts";
+import { supabaseAdmin } from "../_shared/supabase.ts";
+import { CENAIVA_LIMITS, CENAIVA_RATE_LIMIT_CODES } from "../_shared/cenaiva-limits.ts";
 
 const DEFAULT_VOICE_ID = Deno.env.get("ELEVENLABS_VOICE_ID") ?? SHARED_DEFAULT_VOICE_ID;
 const TTS_OUTPUT_FORMAT = Deno.env.get("ELEVENLABS_OUTPUT_FORMAT") ?? DEFAULT_OUTPUT_FORMAT;
@@ -149,6 +152,41 @@ Deno.serve(async (req) => {
   if (!auth.ok) {
     return jsonRes({ error: "Unauthorized", code: auth.reason }, 401);
   }
+
+  // ── Rate-limit gates ────────────────────────────────────────────────────
+  // Per-minute brake (friendlier message), then per-day cap. Returned as
+  // HTTP 429 so the mobile small-prompt caller's existing `!response.ok`
+  // path picks up body.error and surfaces it via friendlyError().
+  const rateIdent = rateLimitIdentifier(req, auth.authUserId);
+  try {
+    await enforceRateLimit(supabaseAdmin, CENAIVA_LIMITS.smallPrompt.minute.scope, rateIdent, {
+      limit: CENAIVA_LIMITS.smallPrompt.minute.limit,
+      windowSeconds: CENAIVA_LIMITS.smallPrompt.minute.windowSeconds,
+    });
+  } catch (rlErr) {
+    if (rlErr instanceof RateLimitError) {
+      return jsonRes(
+        { error: CENAIVA_RATE_LIMIT_CODES.minute, retry_after: CENAIVA_LIMITS.smallPrompt.minute.windowSeconds },
+        429,
+      );
+    }
+    throw rlErr;
+  }
+  try {
+    await enforceRateLimit(supabaseAdmin, CENAIVA_LIMITS.smallPrompt.day.scope, rateIdent, {
+      limit: CENAIVA_LIMITS.smallPrompt.day.limit,
+      windowSeconds: CENAIVA_LIMITS.smallPrompt.day.windowSeconds,
+    });
+  } catch (rlErr) {
+    if (rlErr instanceof RateLimitError) {
+      return jsonRes(
+        { error: CENAIVA_RATE_LIMIT_CODES.day, retry_after: CENAIVA_LIMITS.smallPrompt.day.windowSeconds },
+        429,
+      );
+    }
+    throw rlErr;
+  }
+  // ── End rate-limit gates ────────────────────────────────────────────────
 
   try {
     const body = await readJsonObject(req) as Body;

@@ -42,6 +42,8 @@ import {
   readJsonObject,
   asText as validatedText,
 } from "../_shared/input-validation.ts";
+import { enforceRateLimit, rateLimitIdentifier, RateLimitError } from "../_shared/rate-limit.ts";
+import { CENAIVA_LIMITS, MAX_OUTPUT_TOKENS_ORCHESTRATE, CENAIVA_RATE_LIMIT_CODES } from "../_shared/cenaiva-limits.ts";
 
 const stripeSecretKey = Deno.env.get("STRIPE_SECRET_KEY") ?? "";
 const LATENCY_DEBUG = Deno.env.get("CENAIVA_LATENCY_DEBUG") === "1";
@@ -3829,6 +3831,40 @@ Deno.serve(async (req) => {
     const userName: string = userProfile.full_name ?? "there";
     const firstName = userName.split(" ")[0];
 
+    // ── Rate-limit gates ──────────────────────────────────────────────────
+    // Per-minute brake first (friendlier message), then per-day cap.
+    // Both run before any OpenAI work so a rate-limited request costs
+    // nothing in token spend. Fails open on RPC error (existing helper
+    // behaviour) — the DB-level constraints remain the real safety net.
+    const rateIdent = rateLimitIdentifier(req, payload.sub as string);
+    try {
+      await enforceRateLimit(supabaseAdmin, CENAIVA_LIMITS.orchestrate.minute.scope, rateIdent, {
+        limit: CENAIVA_LIMITS.orchestrate.minute.limit,
+        windowSeconds: CENAIVA_LIMITS.orchestrate.minute.windowSeconds,
+      });
+    } catch (rlErr) {
+      if (rlErr instanceof RateLimitError) {
+        send({ type: "error", message: CENAIVA_RATE_LIMIT_CODES.minute, status: 429 });
+        latency.done({ path: "rate_limited_minute" });
+        return;
+      }
+      throw rlErr;
+    }
+    try {
+      await enforceRateLimit(supabaseAdmin, CENAIVA_LIMITS.orchestrate.day.scope, rateIdent, {
+        limit: CENAIVA_LIMITS.orchestrate.day.limit,
+        windowSeconds: CENAIVA_LIMITS.orchestrate.day.windowSeconds,
+      });
+    } catch (rlErr) {
+      if (rlErr instanceof RateLimitError) {
+        send({ type: "error", message: CENAIVA_RATE_LIMIT_CODES.day, status: 429 });
+        latency.done({ path: "rate_limited_day" });
+        return;
+      }
+      throw rlErr;
+    }
+    // ── End rate-limit gates ──────────────────────────────────────────────
+
     // Parse body
     let body: {
       transcript?: string;
@@ -4576,7 +4612,7 @@ Deno.serve(async (req) => {
       const chatParams: OpenAI.Chat.ChatCompletionCreateParamsStreaming = {
         model: smallPromptNoTool || fastConversational ? SMALL_PROMPT_MODEL : ORCHESTRATOR_MODEL,
         temperature: smallPromptNoTool || fastConversational ? 0.2 : undefined,
-        max_tokens: smallPromptNoTool || fastConversational ? 35 : 600,
+        max_tokens: smallPromptNoTool || fastConversational ? 35 : MAX_OUTPUT_TOKENS_ORCHESTRATE,
         messages: [{ role: "system", content: effectiveSystemPrompt }, ...messages],
         stream: true,
       };

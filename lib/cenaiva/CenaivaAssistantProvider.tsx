@@ -108,6 +108,8 @@ export function useCenaivaAssistant(): CenaivaAssistant {
 function friendlyError(cause: string | null) {
   if (cause === 'not_authenticated') return 'Please sign in to continue.';
   if (cause === 'timeout') return 'The assistant is taking a while. Try again.';
+  if (cause === 'rate_limit_minute') return 'Slow down for a moment and try again.';
+  if (cause === 'rate_limit_day') return "You've used Hey Cenaiva a lot today. Try again tomorrow.";
   return 'Something went wrong. Try again.';
 }
 
