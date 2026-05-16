@@ -447,7 +447,11 @@ const useStyles = createStyles((c) => ({
     gap: spacing.md,
     minHeight: 76,
   },
-  timeBlock: { width: 52 },
+  // 64px fits "12:00" / "11:00" at fontSize 22 bold without wrapping mid-
+  // character. The old 52px clipped two-digit hours so "11:00" rendered as
+  // "11:0\n0" on every booking row. Adjacent column (bookingMain) has
+  // flex: 1, so widening here just takes a few pixels off its share.
+  timeBlock: { width: 64 },
   timeClock: {
     fontSize: 22,
     fontWeight: '800',
@@ -1514,8 +1518,8 @@ export default function OwnerReservationsScreen() {
               <View style={[styles.statusAccent, { backgroundColor: pres.rail }]} />
               <View style={styles.bookingInner}>
                 <View style={styles.timeBlock}>
-                  <Text style={styles.timeClock}>{clock}</Text>
-                  {ap ? <Text style={styles.timeMeridiem}>{ap}</Text> : null}
+                  <Text style={styles.timeClock} numberOfLines={1}>{clock}</Text>
+                  {ap ? <Text style={styles.timeMeridiem} numberOfLines={1}>{ap}</Text> : null}
                 </View>
                 <View style={styles.bookingMain}>
                   <View style={styles.bookingTopRow}>
