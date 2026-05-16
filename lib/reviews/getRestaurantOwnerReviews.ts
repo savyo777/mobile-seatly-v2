@@ -5,6 +5,12 @@ import { getSupabase } from '@/lib/supabase/client';
  * pairing strategy in `listMyReviews.ts` but runs in the opposite
  * direction: every review for ONE restaurant, with any photos the
  * reviewer attached. Used by `app/(staff)/reviews.tsx`.
+ *
+ * Resilience: the reviewer-name join and the visit_photos pairing are
+ * both treated as best-effort. If either fails (RLS, missing column,
+ * etc.), reviews still render — name falls back to the localized
+ * `anonymousLabel` and photos array stays empty. Only a hard failure on
+ * the primary restaurant_reviews query raises an error to the caller.
  */
 export type OwnerReviewRow = {
   /** `restaurant_reviews.id` */
@@ -29,7 +35,11 @@ type ReviewRow = {
   created_at: string | null;
   user_id: string | null;
   booking_id: string | null;
-  user_profiles: { full_name: string | null } | { full_name: string | null }[] | null;
+};
+
+type ProfileRow = {
+  id: string;
+  full_name: string | null;
 };
 
 type PhotoRow = {
@@ -42,6 +52,19 @@ type PhotoRow = {
 
 const FIVE_MIN_MS = 5 * 60 * 1000;
 
+function supabaseErrorMessage(err: unknown, fallback: string): string {
+  if (!err) return fallback;
+  if (typeof err === 'string' && err.trim()) return err;
+  if (err && typeof err === 'object') {
+    const e = err as { message?: unknown; details?: unknown; hint?: unknown; code?: unknown };
+    const parts = [e.message, e.details, e.hint, e.code]
+      .filter((v): v is string => typeof v === 'string' && v.trim().length > 0);
+    if (parts.length) return parts.join(' · ');
+  }
+  if (err instanceof Error) return err.message;
+  return fallback;
+}
+
 /**
  * Fetches all reviews for `restaurantId` newest-first and pairs each one
  * with any photos the reviewer uploaded.
@@ -52,7 +75,10 @@ const FIVE_MIN_MS = 5 * 60 * 1000;
  *      of the review timestamp.
  *
  * Returns an empty array when `restaurantId` is falsy or Supabase isn't
- * configured. Throws on a Supabase error so the caller can surface a retry.
+ * configured. Throws on a Supabase error against `restaurant_reviews` so
+ * the caller can surface a retry. Errors against the secondary
+ * `user_profiles` and `visit_photos` queries are swallowed (logged in
+ * dev) — the reviews still render without names / photos.
  *
  * @param restaurantId  The restaurant whose reviews to load.
  * @param anonymousLabel  Localized display name for reviewers with no
@@ -70,7 +96,7 @@ export async function fetchRestaurantOwnerReviews(
 
   let reviewsQuery = supabase
     .from('restaurant_reviews')
-    .select('id, rating, body, created_at, user_id, booking_id, user_profiles!user_id(full_name)')
+    .select('id, rating, body, created_at, user_id, booking_id')
     .eq('restaurant_id', restaurantId)
     .order('created_at', { ascending: false });
   if (typeof limit === 'number' && limit > 0) {
@@ -78,21 +104,51 @@ export async function fetchRestaurantOwnerReviews(
   }
 
   const { data: reviewData, error: reviewErr } = await reviewsQuery;
-  if (reviewErr) throw reviewErr;
+  if (reviewErr) {
+    throw new Error(supabaseErrorMessage(reviewErr, 'Could not load reviews.'));
+  }
   const reviews = (reviewData ?? []) as ReviewRow[];
   if (reviews.length === 0) return [];
 
-  // One query for every photo on the restaurant. The dataset stays small
-  // (~tens to low hundreds typically); we'll do the pairing in memory.
-  const { data: photoData, error: photoErr } = await supabase
-    .from('visit_photos')
-    .select('id, user_id, booking_id, image_url, created_at')
-    .eq('restaurant_id', restaurantId);
-  if (photoErr) throw photoErr;
-  const photos = (photoData ?? []) as PhotoRow[];
+  // Secondary lookup: reviewer display names. RLS may block reads of other
+  // users' profiles from the owner context, in which case we just fall back
+  // to the anonymous label per-row.
+  const userIds = Array.from(
+    new Set(reviews.map((r) => r.user_id).filter((id): id is string => typeof id === 'string')),
+  );
+  const profilesById = new Map<string, ProfileRow>();
+  if (userIds.length > 0) {
+    const { data: profileData, error: profileErr } = await supabase
+      .from('user_profiles')
+      .select('id, full_name')
+      .in('id', userIds);
+    if (profileErr) {
+      if (__DEV__) console.warn('[ownerReviews] profiles fetch failed', profileErr);
+    } else {
+      for (const row of (profileData ?? []) as ProfileRow[]) {
+        if (row?.id) profilesById.set(row.id, row);
+      }
+    }
+  }
 
-  // Index photos by booking_id for the primary pair, and by user_id for
-  // the proximity-pair fallback.
+  // Tertiary lookup: visit photos paired by booking_id or ±5min proximity.
+  // Best-effort. Owners may not have RLS access to photos posted by other
+  // diners; if the query fails we still render reviews without photos.
+  let photos: PhotoRow[] = [];
+  try {
+    const { data: photoData, error: photoErr } = await supabase
+      .from('visit_photos')
+      .select('id, user_id, booking_id, image_url, created_at')
+      .eq('restaurant_id', restaurantId);
+    if (photoErr) {
+      if (__DEV__) console.warn('[ownerReviews] visit_photos fetch failed', photoErr);
+    } else {
+      photos = (photoData ?? []) as PhotoRow[];
+    }
+  } catch (err) {
+    if (__DEV__) console.warn('[ownerReviews] visit_photos fetch threw', err);
+  }
+
   const photosByBooking = new Map<string, PhotoRow[]>();
   const photosByUser = new Map<string, PhotoRow[]>();
   for (const p of photos) {
@@ -109,10 +165,9 @@ export async function fetchRestaurantOwnerReviews(
   }
 
   return reviews.map((review) => {
-    const profile = Array.isArray(review.user_profiles)
-      ? review.user_profiles[0] ?? null
-      : review.user_profiles;
-    const reviewerName = profile?.full_name?.trim() || anonymousLabel;
+    const profileName =
+      review.user_id ? profilesById.get(review.user_id)?.full_name?.trim() : null;
+    const reviewerName = profileName || anonymousLabel;
 
     let matched: PhotoRow[] = [];
     if (review.booking_id) {

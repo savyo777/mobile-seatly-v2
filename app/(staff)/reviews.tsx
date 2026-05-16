@@ -67,7 +67,23 @@ export default function OwnerReviewsScreen() {
         if (active) setReviews(rows);
       })
       .catch((err) => {
-        if (active) setError(err instanceof Error ? err.message : 'Could not load reviews.');
+        // Supabase errors are plain objects with {message,details,hint,code},
+        // not Error instances — extract every readable field so the surface
+        // shows the actual reason instead of a generic fallback.
+        const messageParts: string[] = [];
+        if (err && typeof err === 'object') {
+          const e = err as { message?: unknown; details?: unknown; hint?: unknown; code?: unknown };
+          for (const v of [e.message, e.details, e.hint, e.code]) {
+            if (typeof v === 'string' && v.trim()) messageParts.push(v);
+          }
+        }
+        if (messageParts.length === 0 && err instanceof Error && err.message) {
+          messageParts.push(err.message);
+        }
+        if (__DEV__) console.warn('[ownerReviews] load failed', err);
+        if (active) {
+          setError(messageParts.length ? messageParts.join(' · ') : 'Could not load reviews.');
+        }
       })
       .finally(() => {
         if (active) setLoading(false);
