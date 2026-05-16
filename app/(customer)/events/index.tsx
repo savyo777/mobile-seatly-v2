@@ -25,6 +25,7 @@ import {
 import { isDemoModeEnabled } from '@/lib/config/demoMode';
 import { fetchUpcomingEvents, type EventRow } from '@/lib/events/getEvents';
 import { fetchActivePromotions, type PromotionRow } from '@/lib/promotions/getPromotions';
+import { incrementPromotionClicks } from '@/lib/promotions/incrementPromotionClicks';
 import { sanitizeSearchInput } from '@/lib/validation/input';
 
 const listEvents: typeof DEMO_listEvents = (...args) =>
@@ -338,11 +339,25 @@ export default function EventsScreen() {
     return filtered.filter((ev) => matchesQuery(ev, query));
   }, [allEvents, dateFilter, typeFilter, query]);
 
+  // Diner taps on a promo-type card in the Events feed count toward the
+  // promotion's `clicks` analytic. Dedupe per-mount via a ref so a single
+  // session doesn't pump the counter from scrolling back and forth.
+  const countedPromoIdsRef = useRef<Set<string>>(new Set());
+  const handleCardPressed = useCallback((event: DiningEvent) => {
+    if (event.type !== 'promotion') return;
+    if (!event.id.startsWith('promo:')) return;
+    const promotionId = event.id.slice('promo:'.length);
+    if (!promotionId) return;
+    if (countedPromoIdsRef.current.has(promotionId)) return;
+    countedPromoIdsRef.current.add(promotionId);
+    void incrementPromotionClicks(promotionId);
+  }, []);
+
   const renderEvent = useCallback(
     ({ item, index }: { item: DiningEvent; index: number }) => (
-      <EventCard event={item} isHero={index === 0 && !query} />
+      <EventCard event={item} isHero={index === 0 && !query} onPressed={handleCardPressed} />
     ),
-    [dateFilter, query],
+    [handleCardPressed, query],
   );
 
   const titleOpacity = slideAnim.interpolate({ inputRange: [0, 0.4], outputRange: [1, 0], extrapolate: 'clamp' });

@@ -15,7 +15,6 @@ import {
   type PromoType,
 } from '@/lib/mock/ownerApp';
 import { fetchActivePromotions, type PromotionRow } from '@/lib/promotions/getPromotions';
-import { incrementPromotionClicks } from '@/lib/promotions/incrementPromotionClicks';
 import { useOwnerScope } from '@/hooks/useOwnerScope';
 
 const PROMO_TYPE_MAP: Record<string, PromoType> = {
@@ -518,16 +517,10 @@ export default function PromosScreen() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [restaurantIdsKey]);
 
-  const handlePromoPress = (promoId: string) => {
-    // Optimistic +1 on the card's Clicks value so the UI feels responsive,
-    // then fire the RPC. The helper swallows failures (logs in __DEV__).
-    setPromotions((prev) =>
-      prev.map((p) =>
-        p.id === promoId ? { ...p, clicks: (p.clicks ?? 0) + 1 } : p,
-      ),
-    );
-    void incrementPromotionClicks(promoId);
-  };
+  // No owner-side tap handler. Clicks are a diner-only signal — they
+  // count when a diner views a promo from the customer surfaces
+  // (app/(customer)/profile/promotions.tsx + app/(customer)/events/index.tsx).
+  // Owners viewing their own promos doesn't inflate the analytics.
 
   const activeList = useMemo(() => promotions.filter(isActive), [promotions]);
   const pastList = useMemo(() => promotions.filter(isPast), [promotions]);
@@ -597,13 +590,7 @@ export default function PromosScreen() {
                       : { bg: 'rgba(168,133,48,0.18)', border: 'rgba(168,133,48,0.32)', text: '#FDE68A' };
 
             return (
-              <Pressable
-                key={promo.id}
-                onPress={() => handlePromoPress(promo.id)}
-                style={({ pressed }) => [styles.card, pressed && { opacity: 0.85 }]}
-                accessibilityRole="button"
-                accessibilityLabel={`${promo.name}, tap to register a click`}
-              >
+              <View key={promo.id} style={styles.card}>
                 <View style={styles.banner}>
                   <Image
                     source={{ uri: promo.coverImage ?? FALLBACK_IMAGE }}
@@ -721,7 +708,7 @@ export default function PromosScreen() {
                     </View>
                   )}
                 </View>
-              </Pressable>
+              </View>
             );
           })
         )}

@@ -1,11 +1,12 @@
-import React, { useEffect, useState } from 'react';
-import { View, StyleSheet } from 'react-native';
+import React, { useEffect, useRef, useState } from 'react';
+import { Pressable, StyleSheet, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { ProfileStackScreen } from '@/components/profile/ProfileStackScreen';
 import { PromotionOfferCard } from '@/components/profile/PromotionOfferCard';
 import { mockPromotions as DEMO_PROMOTIONS, type PromotionOffer } from '@/lib/mock/profileScreens';
 import { isDemoModeEnabled } from '@/lib/config/demoMode';
 import { fetchActivePromotions, type PromotionRow } from '@/lib/promotions/getPromotions';
+import { incrementPromotionClicks } from '@/lib/promotions/incrementPromotionClicks';
 
 const initialPromotions: PromotionOffer[] = isDemoModeEnabled() ? DEMO_PROMOTIONS : [];
 
@@ -50,6 +51,10 @@ function mapPromotionRow(row: PromotionRow): PromotionOffer {
 export default function PromotionsScreen() {
   const { t } = useTranslation();
   const [promotions, setPromotions] = useState<PromotionOffer[]>(initialPromotions);
+  // Track which promo ids we've already counted a click for this mount so a
+  // diner scrolling back and forth doesn't pump the counter (we still record
+  // genuine repeat-session views — the set resets when the screen remounts).
+  const countedRef = useRef<Set<string>>(new Set());
 
   useEffect(() => {
     if (isDemoModeEnabled()) return;
@@ -68,11 +73,28 @@ export default function PromotionsScreen() {
     };
   }, []);
 
+  const handleView = (promotionId: string) => {
+    if (countedRef.current.has(promotionId)) return;
+    countedRef.current.add(promotionId);
+    void incrementPromotionClicks(promotionId);
+  };
+
   return (
     <ProfileStackScreen title={t('profile.promotions')}>
       <View style={styles.list}>
         {promotions.map((o) => (
-          <PromotionOfferCard key={o.id} offer={o} />
+          // Pressable wraps the existing card so a diner tap on anywhere
+          // outside the inner Claim/Remove buttons still registers a view
+          // for the owner's analytics. The wrapper has no visual press
+          // state — the inner buttons handle their own affordance.
+          <Pressable
+            key={o.id}
+            onPress={() => handleView(o.id)}
+            accessibilityRole="button"
+            accessibilityLabel={`View promotion ${o.headline}`}
+          >
+            <PromotionOfferCard offer={o} />
+          </Pressable>
         ))}
       </View>
     </ProfileStackScreen>

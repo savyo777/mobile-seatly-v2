@@ -183,9 +183,16 @@ const useStyles = createStyles((c) => ({
 type Props = {
   event: DiningEvent;
   isHero?: boolean;
+  /**
+   * Side-effect fired whenever the diner taps this card (including the
+   * sold-out case where no navigation happens). The parent screen uses
+   * this to bump promotion click analytics — see
+   * app/(customer)/events/index.tsx.
+   */
+  onPressed?: (event: DiningEvent) => void;
 };
 
-export function EventCard({ event, isHero = false }: Props) {
+export function EventCard({ event, isHero = false, onPressed }: Props) {
   const router = useRouter();
   const c = useColors();
   const styles = useStyles();
@@ -210,11 +217,12 @@ export function EventCard({ event, isHero = false }: Props) {
   }, [event.id, me]);
 
   const handleBook = useCallback(() => {
+    onPressed?.(event);
     const eventDateKey = event.date.slice(0, 10);
     router.push(
       `/booking/${event.restaurantId}/step2-time?date=${encodeURIComponent(eventDateKey)}&eventId=${encodeURIComponent(event.id)}` as Href,
     );
-  }, [event.date, event.id, event.restaurantId, router]);
+  }, [event, onPressed, router]);
 
   const isUrgent = event.spotsLeft !== undefined && event.spotsLeft <= 6;
   const isSoldOut = event.spotsLeft !== undefined && event.spotsLeft <= 0;
