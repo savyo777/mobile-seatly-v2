@@ -1,9 +1,10 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, TouchableOpacity, ScrollView, Platform } from 'react-native';
+import { Alert, View, Text, TouchableOpacity, ScrollView, Platform } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTranslation } from 'react-i18next';
+import { useStripe } from '@stripe/stripe-react-native';
 import { Button, Card } from '@/components/ui';
 import { cartSubtotal, parseBookingCartParam } from '@/lib/booking/publicBookingApi';
 import { previewDepositCents, type DepositTier } from '@/lib/booking/depositTiers';
@@ -12,6 +13,13 @@ import { loadRestaurantForBooking } from '@/lib/data/restaurantCatalog';
 import { getStoredCustomerPaymentMethods, type CustomerPaymentMethod } from '@/lib/storage/customerPaymentMethods';
 import { formatCurrency } from '@/lib/utils/formatCurrency';
 import { useColors, createStyles, borderRadius } from '@/lib/theme';
+import { useReservationHoldContext } from '@/lib/booking/ReservationHoldProvider';
+import { isHoldsEnabled } from '@/lib/config/holdsFeature';
+import {
+  HoldApiError,
+  createHoldPaymentIntent,
+  refundPaymentIntent,
+} from '@/lib/booking/holdApi';
 
 type PaymentMethod = 'card' | 'apple_pay' | 'google_pay';
 
@@ -92,6 +100,9 @@ export default function Step6Payment() {
   const [taxRate, setTaxRate] = useState(0);
   const [depositTiers, setDepositTiers] = useState<DepositTier[] | undefined>(undefined);
   const [defaultCard, setDefaultCard] = useState<CustomerPaymentMethod | null>(null);
+  const [paying, setPaying] = useState(false);
+  const hold = useReservationHoldContext();
+  const { initPaymentSheet, presentPaymentSheet } = useStripe();
   const BOOKING_STEPS = BOOKING_STEPS_TOTAL;
   const STEP = 5;
   const progress = STEP / BOOKING_STEPS;
@@ -152,6 +163,99 @@ export default function Step6Payment() {
       active = false;
     };
   }, [name]);
+
+  const goToConfirmation = (extraQp: string = '') => {
+    router.push(`/booking/${restaurantId}/step7-confirmation?${qpBase}${extraQp ? `&${extraQp}` : ''}`);
+  };
+
+  const handleConfirmBooking = async () => {
+    if (paying) return;
+
+    // No money owed (and either the feature is off, or the diner is on a
+    // no-deposit / no-preorder path). The confirmation step will run the
+    // create-public-booking call with the hold_id attached.
+    if (totalDue <= 0) {
+      goToConfirmation();
+      return;
+    }
+
+    // Holds disabled — fall through to the legacy stubbed flow handled by
+    // step7-confirmation (which uses prepareDeposit + confirmDepositStub).
+    if (!isHoldsEnabled() || hold.state.status !== 'active' || !restaurantId) {
+      goToConfirmation();
+      return;
+    }
+
+    setPaying(true);
+    let createdPaymentIntentId: string | null = null;
+    try {
+      const totalCents = Math.max(50, Math.round(totalDue * 100));
+      const intent = await createHoldPaymentIntent({
+        hold_id: hold.state.holdId,
+        restaurant_id: restaurantId,
+        amount_cents: totalCents,
+        currency: 'cad',
+        customer_email: email || null,
+        customer_name: name || null,
+      });
+      createdPaymentIntentId = intent.payment_intent_id;
+
+      const initResult = await initPaymentSheet({
+        paymentIntentClientSecret: intent.client_secret,
+        merchantDisplayName: 'Cenaiva',
+        returnURL: 'cenaiva://stripe-redirect',
+        applePay: { merchantCountryCode: 'CA' },
+        googlePay: { merchantCountryCode: 'CA', testEnv: __DEV__ },
+        allowsDelayedPaymentMethods: false,
+        defaultBillingDetails: {
+          name: name || undefined,
+          email: email || undefined,
+          phone: phone || undefined,
+        },
+      });
+      if (initResult.error) throw new Error(initResult.error.message);
+
+      const presentResult = await presentPaymentSheet();
+      if (presentResult.error) {
+        if (presentResult.error.code === 'Canceled') {
+          // User cancelled — stay on screen, nothing to refund yet.
+          return;
+        }
+        throw new Error(presentResult.error.message);
+      }
+
+      const conversion = await hold.confirmHoldPayment(intent.payment_intent_id);
+      if (!conversion) {
+        // The hook already moved into 'expired' or 'error' state and the
+        // HoldExpiredDialog (or the error banner) will surface to the user.
+        // Best-effort refund — the webhook usually beats us to it.
+        if (createdPaymentIntentId) {
+          await refundPaymentIntent(createdPaymentIntentId).catch(() => {});
+        }
+        return;
+      }
+
+      const tableIdsParam = encodeURIComponent(conversion.table_ids.join(','));
+      goToConfirmation(
+        `paid=1&reservationId=${encodeURIComponent(conversion.reservation_id)}` +
+          `&confirmationCode=${encodeURIComponent(conversion.confirmation_code)}` +
+          `&tableIds=${tableIdsParam}&durationMinutes=${conversion.duration_minutes}`,
+      );
+    } catch (error) {
+      if (createdPaymentIntentId) {
+        await refundPaymentIntent(createdPaymentIntentId).catch(() => {});
+      }
+      const message =
+        error instanceof HoldApiError
+          ? error.message
+          : error instanceof Error
+            ? error.message
+            : 'Could not complete payment.';
+      Alert.alert(t('booking.holdExpiredTitle'), message);
+    } finally {
+      setPaying(false);
+    }
+  };
 
   return (
     <View style={[styles.container, { paddingTop: insets.top }]}>
@@ -246,8 +350,9 @@ export default function Step6Payment() {
 
       <View style={[styles.footer, { paddingBottom: insets.bottom + 16 }]}>
         <Button
-          title={`${t('booking.confirmBooking')} · ${formatCurrency(totalDue)}`}
-          onPress={() => router.push(`/booking/${restaurantId}/step7-confirmation?${qpBase}`)}
+          title={paying ? t('common.loading', 'Please wait…') as string : `${t('booking.confirmBooking')} · ${formatCurrency(totalDue)}`}
+          onPress={handleConfirmBooking}
+          disabled={paying}
         />
       </View>
     </View>

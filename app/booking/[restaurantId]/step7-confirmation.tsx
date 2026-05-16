@@ -32,6 +32,8 @@ import { addBookingToCalendar } from '@/lib/booking/addToCalendar';
 import { formatCurrency } from '@/lib/utils/formatCurrency';
 import { useColors, createStyles, spacing, borderRadius, shadows } from '@/lib/theme';
 import type { DateKey } from '@/lib/booking/availabilityTypes';
+import { useReservationHoldContext } from '@/lib/booking/ReservationHoldProvider';
+import { isHoldsEnabled } from '@/lib/config/holdsFeature';
 
 const useStyles = createStyles((c) => ({
   container: { flex: 1, backgroundColor: c.bgBase },
@@ -265,6 +267,11 @@ export default function Step7Confirmation() {
     seatingPreference,
     paymentMethod,
     cart: cartParam,
+    paid: paidParam,
+    reservationId: paidReservationId,
+    confirmationCode: paidConfirmationCode,
+    tableIds: paidTableIdsParam,
+    durationMinutes: paidDurationMinutesParam,
   } = useLocalSearchParams<{
     restaurantId: string;
     date: string;
@@ -280,6 +287,11 @@ export default function Step7Confirmation() {
     seatingPreference?: string;
     paymentMethod?: string;
     cart?: string;
+    paid?: string;
+    reservationId?: string;
+    confirmationCode?: string;
+    tableIds?: string;
+    durationMinutes?: string;
   }>();
   const router = useRouter();
   const insets = useSafeAreaInsets();
@@ -287,14 +299,30 @@ export default function Step7Confirmation() {
   const styles = useStyles();
   const rid = restaurantId ?? '';
 
+  const hold = useReservationHoldContext();
+  const alreadyPaid = paidParam === '1' && Boolean(paidReservationId) && Boolean(paidConfirmationCode);
+  const initialConfirmation = alreadyPaid
+    ? ({
+        reservation_id: paidReservationId!,
+        order_id: null,
+        confirmation_code: paidConfirmationCode!,
+        table_ids: paidTableIdsParam ? paidTableIdsParam.split(',').filter(Boolean) : [],
+        duration_minutes: paidDurationMinutesParam ? parseInt(paidDurationMinutesParam, 10) || null : null,
+        confirmation_delivery: 'skipped',
+        confirmation_delivery_channel: null,
+        deposit_required: true,
+        deposit_amount_cents: 0,
+        deposit_status: 'charged',
+      } as PublicBookingResponse)
+    : null;
   const [restaurant, setRestaurant] = useState(() => getCachedRestaurantById(rid));
-  const [confirmation, setConfirmation] = useState<PublicBookingResponse | null>(null);
+  const [confirmation, setConfirmation] = useState<PublicBookingResponse | null>(initialConfirmation);
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [calendarAdding, setCalendarAdding] = useState(false);
   const [calendarAdded, setCalendarAdded] = useState(false);
   const [depositPendingError, setDepositPendingError] = useState<string | null>(null);
   const guests = parseInt(partySize ?? '2', 10);
-  const savedReservationRef = useRef(false);
+  const savedReservationRef = useRef(alreadyPaid);
   const cart = parseBookingCartParam(cartParam);
   const preorderSubtotal = cartSubtotal(cart);
 
@@ -338,6 +366,19 @@ export default function Step7Confirmation() {
       try {
         const taxAmount = Math.round(preorderSubtotal * currentRestaurant.taxRate * 100) / 100;
         const previewDepositDollars = previewDepositCents(currentRestaurant.depositTiers, guests) / 100;
+
+        // If the user landed on step7 while the hold was still being created
+        // (e.g. tapped Skip on step4 within ~200ms of mount), wait briefly for
+        // it to materialize. Falls through to the legacy path on timeout.
+        if (isHoldsEnabled() && hold.state.status === 'creating') {
+          for (let i = 0; i < 30; i++) {
+            if (cancelled) return;
+            if (hold.state.status !== 'creating') break;
+            await new Promise((resolve) => setTimeout(resolve, 100));
+          }
+        }
+        const activeHoldId =
+          isHoldsEnabled() && hold.state.status === 'active' ? hold.state.holdId : null;
         const result = await createPublicBooking({
           restaurant_id: rid,
           shift_id: shiftId,
@@ -358,9 +399,13 @@ export default function Step7Confirmation() {
           discount_reason: null,
           promotion_id: null,
           payment_method: paymentMethod === 'split' ? 'split' : 'card',
+          hold_id: activeHoldId,
         });
         if (cancelled) return;
         setConfirmation(result);
+        if (activeHoldId) {
+          hold.confirmConverted(result.reservation_id, result.confirmation_code);
+        }
 
         // STRIPE STUB — collect the deposit immediately after the booking
         // succeeds. On real Stripe, this becomes a confirmPayment call against

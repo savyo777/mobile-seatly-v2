@@ -22,6 +22,8 @@ import { loadRestaurantForBooking } from '@/lib/data/restaurantCatalog';
 import { formatCurrency } from '@/lib/utils/formatCurrency';
 import { useColors, createStyles, borderRadius } from '@/lib/theme';
 import { BOOKING_STEPS_TOTAL } from '@/lib/booking/bookingDefaults';
+import { useReservationHoldContext } from '@/lib/booking/ReservationHoldProvider';
+import { isHoldsEnabled } from '@/lib/config/holdsFeature';
 
 interface CartItem {
   menuItemId: string;
@@ -112,6 +114,7 @@ export default function Step4Preorder() {
   const { t } = useTranslation();
   const c = useColors();
   const styles = useStyles();
+  const hold = useReservationHoldContext();
   const [cart, setCart] = useState<CartItem[]>([]);
   const [selectedCategory, setSelectedCategory] = useState('All');
   const [liveCategories, setLiveCategories] = useState<LiveMenuCategory[]>([]);
@@ -161,6 +164,46 @@ export default function Step4Preorder() {
       active = false;
     };
   }, [restaurantId]);
+
+  // Configure the reservation hold the moment the diner lands on this step —
+  // they've already picked date + time + table, so the slot is fully committed.
+  // The provider triggers `create-reservation-hold` once the args settle. When
+  // the feature flag is off, `configure(..., enabled: true)` is a no-op because
+  // the hook itself short-circuits on `isHoldsEnabled() === false`.
+  useEffect(() => {
+    if (!restaurantId || !shiftId || !slotDateTime) return;
+    if (!isHoldsEnabled()) return;
+    hold.configure({
+      restaurantId,
+      shiftId,
+      dateTime: slotDateTime,
+      partySize: partySizeNum,
+      enabled: true,
+      source: 'app',
+    });
+  }, [restaurantId, shiftId, slotDateTime, partySizeNum, hold]);
+
+  // Debounced cart-snapshot push so the server-side hold knows what the diner
+  // is ordering. Useful for analytics + the converted reservation's order rows.
+  useEffect(() => {
+    if (!isHoldsEnabled()) return;
+    if (hold.state.status !== 'active') return;
+    if (cart.length === 0) return;
+    const timer = setTimeout(() => {
+      const cartSnapshot = {
+        items: cart.map((item) => ({
+          menu_item_id: item.menuItemDbId,
+          name: item.name,
+          quantity: item.quantity,
+          unit_price: item.price,
+        })),
+        subtotal: cart.reduce((sum, item) => sum + item.price * item.quantity, 0),
+      };
+      const totalAmountCents = Math.round(cartSnapshot.subtotal * 100);
+      void hold.updateCart(cartSnapshot, totalAmountCents);
+    }, 500);
+    return () => clearTimeout(timer);
+  }, [cart, hold]);
 
   const liveCategoryNameById = useMemo(
     () => new Map(liveCategories.map((category) => [category.id, category.name])),

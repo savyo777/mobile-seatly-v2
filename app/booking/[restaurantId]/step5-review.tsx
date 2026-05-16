@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, TouchableOpacity, ScrollView, TextInput } from 'react-native';
+import { Alert, View, Text, TouchableOpacity, ScrollView, TextInput } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -12,6 +12,8 @@ import { BOOKING_STEPS_TOTAL } from '@/lib/booking/bookingDefaults';
 import { formatCurrency } from '@/lib/utils/formatCurrency';
 import { useColors, createStyles, borderRadius } from '@/lib/theme';
 import { sanitizeTextInput } from '@/lib/validation/input';
+import { useReservationHoldContext } from '@/lib/booking/ReservationHoldProvider';
+import { isHoldsEnabled } from '@/lib/config/holdsFeature';
 
 const OCCASIONS = ['None', 'Birthday', 'Anniversary', 'Date Night', 'Business Dinner', 'Celebration', 'Other'];
 
@@ -97,9 +99,44 @@ export default function Step5Review() {
   const [specialRequest, setSpecialRequest] = useState(notes ?? '');
   const [occasion, setOccasion] = useState(initialOccasion || 'None');
   const [restaurant, setRestaurant] = useState(() => getCachedRestaurantById(restaurantId));
+  const [submitting, setSubmitting] = useState(false);
+  const hold = useReservationHoldContext();
   const BOOKING_STEPS = BOOKING_STEPS_TOTAL;
   const STEP = 4;
   const progress = STEP / BOOKING_STEPS;
+
+  const handleContinue = async () => {
+    if (submitting) return;
+    const target = `/booking/${restaurantId}/step6-payment?${qpBase}`;
+    if (!isHoldsEnabled() || hold.state.status !== 'active') {
+      router.push(target);
+      return;
+    }
+    setSubmitting(true);
+    try {
+      const result = await hold.updateDiner({
+        name: name ?? undefined,
+        email: email ?? undefined,
+        phone: phone ?? undefined,
+        specialRequest: specialRequest || undefined,
+        occasion: occasion && occasion !== 'None' ? occasion : undefined,
+        seatingPreference: seatingPreference ?? undefined,
+      });
+      if (!result.ok) {
+        const message =
+          result.reason === 'diner_double_book'
+            ? t('booking.holdDoubleBook')
+            : result.reason === 'hold_expired'
+              ? t('booking.holdExpiredBody')
+              : t('booking.holdNetworkError');
+        Alert.alert(t('booking.holdExpiredTitle'), message);
+        return;
+      }
+      router.push(target);
+    } finally {
+      setSubmitting(false);
+    }
+  };
 
   useEffect(() => {
     let cancelled = false;
@@ -222,7 +259,7 @@ export default function Step5Review() {
       </ScrollView>
 
       <View style={[styles.footer, { paddingBottom: insets.bottom + 16 }]}>
-        <Button title={t('common.next')} onPress={() => router.push(`/booking/${restaurantId}/step6-payment?${qpBase}`)} />
+        <Button title={t('common.next')} onPress={handleContinue} disabled={submitting} />
       </View>
     </View>
   );

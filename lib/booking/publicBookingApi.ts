@@ -47,6 +47,10 @@ export type PublicBookingPayload = {
   discount_reason: string | null;
   promotion_id: string | null;
   payment_method: 'card' | 'split';
+  // When set and the server's CENAIVA_HOLDS_ENABLED flag is on, the booking
+  // is created by converting an existing reservation_holds row. Otherwise the
+  // legacy book_reservation path runs unchanged.
+  hold_id?: string | null;
 };
 
 export type PublicBookingResponse = {
