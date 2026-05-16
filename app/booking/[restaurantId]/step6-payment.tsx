@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Alert, View, Text, TouchableOpacity, ScrollView, Platform } from 'react-native';
+import { Alert, View, Text, TouchableOpacity, ScrollView, Platform, Modal, Pressable } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -17,6 +17,7 @@ import { useReservationHoldContext } from '@/lib/booking/ReservationHoldProvider
 import { isHoldsEnabled } from '@/lib/config/holdsFeature';
 import {
   HoldApiError,
+  confirmHoldPaid,
   createHoldPaymentIntent,
   refundPaymentIntent,
 } from '@/lib/booking/holdApi';
@@ -56,6 +57,46 @@ const useStyles = createStyles((c) => ({
   secureText: { fontSize: 12, color: c.textMuted, textAlign: 'center', marginTop: 20, lineHeight: 18 },
   payLaterNote: { fontSize: 12, color: c.textMuted, textAlign: 'center', marginTop: 20, lineHeight: 18 },
   footer: { position: 'absolute', bottom: 0, left: 0, right: 0, paddingHorizontal: 20, paddingTop: 16, backgroundColor: c.bgBase, borderTopWidth: 1, borderTopColor: c.border },
+  // Amount-changed retry modal (STRIPE_SETUP.md §9.4).
+  retryBackdrop: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.55)',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 24,
+  },
+  retryCard: {
+    width: '100%',
+    backgroundColor: c.bgSurface,
+    borderRadius: borderRadius.xl,
+    borderWidth: 1,
+    borderColor: c.border,
+    padding: 24,
+    gap: 14,
+  },
+  retryIconWrap: {
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    backgroundColor: 'rgba(212, 165, 116, 0.18)',
+    alignItems: 'center',
+    justifyContent: 'center',
+    alignSelf: 'flex-start',
+  },
+  retryTitle: { fontSize: 20, fontWeight: '700', color: c.textPrimary },
+  retryBody: { fontSize: 14, lineHeight: 20, color: c.textSecondary },
+  retryAmountsRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginVertical: 4,
+  },
+  retryAmountLabel: { fontSize: 13, color: c.textMuted },
+  retryAmountOld: { fontSize: 14, color: c.textSecondary, textDecorationLine: 'line-through' },
+  retryAmountNew: { fontSize: 18, fontWeight: '700', color: c.gold },
+  retryRefundNote: { fontSize: 12, color: c.textMuted, lineHeight: 17 },
+  retrySecondaryBtn: { alignItems: 'center', paddingVertical: 12 },
+  retrySecondaryText: { fontSize: 14, fontWeight: '600', color: c.textMuted },
 }));
 
 export default function Step6Payment() {
@@ -101,6 +142,17 @@ export default function Step6Payment() {
   const [depositTiers, setDepositTiers] = useState<DepositTier[] | undefined>(undefined);
   const [defaultCard, setDefaultCard] = useState<CustomerPaymentMethod | null>(null);
   const [paying, setPaying] = useState(false);
+  // Drives the "amount changed mid-checkout" recovery modal (STRIPE_SETUP.md §9.4).
+  // Populated when confirm-hold-paid returns 402 payment_amount_too_low; the
+  // diner re-confirms the new total and we re-present PaymentSheet with the
+  // fresh PI. The old PI is auto-refunded by stripe-webhook.
+  const [pendingRetry, setPendingRetry] = useState<{
+    holdId: string;
+    oldAmountCents: number;
+    newAmountCents: number;
+    clientSecret: string;
+    paymentIntentId: string;
+  } | null>(null);
   const hold = useReservationHoldContext();
   const { initPaymentSheet, presentPaymentSheet } = useStripe();
   const BOOKING_STEPS = BOOKING_STEPS_TOTAL;
@@ -168,6 +220,61 @@ export default function Step6Payment() {
     router.push(`/booking/${restaurantId}/step7-confirmation?${qpBase}${extraQp ? `&${extraQp}` : ''}`);
   };
 
+  // Presents PaymentSheet for the given client_secret then converts the hold by
+  // calling confirm-hold-paid directly (bypasses the hook so we can distinguish
+  // a 402 payment_amount_too_low from other failures — the hook's closure-
+  // captured state can't reflect mid-handler transitions). On success we update
+  // the hook with confirmConverted() so the timer/state stays in sync.
+  //
+  // Returns one of:
+  //   'confirmed' → conversion succeeded; user navigated to step7
+  //   'cancelled' → user dismissed PaymentSheet, no further action
+  //   'amount_changed' → 402 payment_amount_too_low; caller should refresh the PI and re-run
+  //   throws on every other failure
+  const runStripePaymentFlow = async (
+    holdId: string,
+    paymentIntentId: string,
+    clientSecret: string,
+  ): Promise<'confirmed' | 'cancelled' | 'amount_changed'> => {
+    const initResult = await initPaymentSheet({
+      paymentIntentClientSecret: clientSecret,
+      merchantDisplayName: 'Cenaiva',
+      returnURL: 'cenaiva://stripe-redirect',
+      applePay: { merchantCountryCode: 'CA' },
+      googlePay: { merchantCountryCode: 'CA', testEnv: __DEV__ },
+      allowsDelayedPaymentMethods: false,
+      defaultBillingDetails: {
+        name: name || undefined,
+        email: email || undefined,
+        phone: phone || undefined,
+      },
+    });
+    if (initResult.error) throw new Error(initResult.error.message);
+
+    const presentResult = await presentPaymentSheet();
+    if (presentResult.error) {
+      if (presentResult.error.code === 'Canceled') return 'cancelled';
+      throw new Error(presentResult.error.message);
+    }
+
+    try {
+      const resp = await confirmHoldPaid(holdId, paymentIntentId);
+      hold.confirmConverted(resp.reservation_id, resp.confirmation_code);
+      const tableIdsParam = encodeURIComponent(resp.table_ids.join(','));
+      goToConfirmation(
+        `paid=1&reservationId=${encodeURIComponent(resp.reservation_id)}` +
+          `&confirmationCode=${encodeURIComponent(resp.confirmation_code)}` +
+          `&tableIds=${tableIdsParam}&durationMinutes=${resp.duration_minutes}`,
+      );
+      return 'confirmed';
+    } catch (error) {
+      if (error instanceof HoldApiError && error.reason === 'payment_amount_too_low') {
+        return 'amount_changed';
+      }
+      throw error;
+    }
+  };
+
   const handleConfirmBooking = async () => {
     if (paying) return;
 
@@ -186,12 +293,13 @@ export default function Step6Payment() {
       return;
     }
 
+    const holdId = hold.state.holdId;
     setPaying(true);
     let createdPaymentIntentId: string | null = null;
     try {
       const totalCents = Math.max(50, Math.round(totalDue * 100));
       const intent = await createHoldPaymentIntent({
-        hold_id: hold.state.holdId,
+        hold_id: holdId,
         restaurant_id: restaurantId,
         amount_cents: totalCents,
         currency: 'cad',
@@ -200,47 +308,28 @@ export default function Step6Payment() {
       });
       createdPaymentIntentId = intent.payment_intent_id;
 
-      const initResult = await initPaymentSheet({
-        paymentIntentClientSecret: intent.client_secret,
-        merchantDisplayName: 'Cenaiva',
-        returnURL: 'cenaiva://stripe-redirect',
-        applePay: { merchantCountryCode: 'CA' },
-        googlePay: { merchantCountryCode: 'CA', testEnv: __DEV__ },
-        allowsDelayedPaymentMethods: false,
-        defaultBillingDetails: {
-          name: name || undefined,
-          email: email || undefined,
-          phone: phone || undefined,
-        },
-      });
-      if (initResult.error) throw new Error(initResult.error.message);
-
-      const presentResult = await presentPaymentSheet();
-      if (presentResult.error) {
-        if (presentResult.error.code === 'Canceled') {
-          // User cancelled — stay on screen, nothing to refund yet.
-          return;
-        }
-        throw new Error(presentResult.error.message);
-      }
-
-      const conversion = await hold.confirmHoldPayment(intent.payment_intent_id);
-      if (!conversion) {
-        // The hook already moved into 'expired' or 'error' state and the
-        // HoldExpiredDialog (or the error banner) will surface to the user.
-        // Best-effort refund — the webhook usually beats us to it.
-        if (createdPaymentIntentId) {
-          await refundPaymentIntent(createdPaymentIntentId).catch(() => {});
-        }
+      const outcome = await runStripePaymentFlow(holdId, intent.payment_intent_id, intent.client_secret);
+      if (outcome === 'amount_changed') {
+        // The hold's total_amount_cents grew between PI mint and confirm-hold-paid.
+        // Refresh the PI with the corrected amount and surface a confirm modal.
+        const refreshed = await createHoldPaymentIntent({
+          hold_id: holdId,
+          restaurant_id: restaurantId,
+          amount_cents: totalCents,
+          currency: 'cad',
+          customer_email: email || null,
+          customer_name: name || null,
+        });
+        setPendingRetry({
+          holdId,
+          oldAmountCents: totalCents,
+          newAmountCents: refreshed.amount_cents,
+          clientSecret: refreshed.client_secret,
+          paymentIntentId: refreshed.payment_intent_id,
+        });
+        // Don't refund the old PI — stripe-webhook auto-refunds non-converted PIs.
         return;
       }
-
-      const tableIdsParam = encodeURIComponent(conversion.table_ids.join(','));
-      goToConfirmation(
-        `paid=1&reservationId=${encodeURIComponent(conversion.reservation_id)}` +
-          `&confirmationCode=${encodeURIComponent(conversion.confirmation_code)}` +
-          `&tableIds=${tableIdsParam}&durationMinutes=${conversion.duration_minutes}`,
-      );
     } catch (error) {
       if (createdPaymentIntentId) {
         await refundPaymentIntent(createdPaymentIntentId).catch(() => {});
@@ -255,6 +344,48 @@ export default function Step6Payment() {
     } finally {
       setPaying(false);
     }
+  };
+
+  const handleRetryConfirm = async () => {
+    if (!pendingRetry || paying) return;
+    setPaying(true);
+    const retry = pendingRetry;
+    try {
+      const outcome = await runStripePaymentFlow(retry.holdId, retry.paymentIntentId, retry.clientSecret);
+      if (outcome === 'amount_changed') {
+        // Amount changed AGAIN between Continue and confirm. Bail with a clear
+        // error rather than re-looping — the diner can back out and retry from
+        // step 4 if it keeps happening.
+        Alert.alert(
+          t('booking.amountChangedTitle'),
+          t('booking.amountChangedBody', {
+            oldAmount: formatCurrency(retry.newAmountCents / 100),
+            newAmount: t('booking.amountChangedAgainFallback'),
+          }) as string,
+        );
+        setPendingRetry(null);
+        return;
+      }
+      if (outcome === 'confirmed') {
+        setPendingRetry(null);
+      }
+      // 'cancelled' → modal stays open, user can Continue again or Cancel.
+    } catch (error) {
+      const message =
+        error instanceof HoldApiError
+          ? error.message
+          : error instanceof Error
+            ? error.message
+            : 'Could not complete payment.';
+      Alert.alert(t('booking.holdExpiredTitle'), message);
+      setPendingRetry(null);
+    } finally {
+      setPaying(false);
+    }
+  };
+
+  const handleRetryCancel = () => {
+    setPendingRetry(null);
   };
 
   return (
@@ -355,6 +486,49 @@ export default function Step6Payment() {
           disabled={paying}
         />
       </View>
+
+      <Modal
+        visible={pendingRetry !== null}
+        transparent
+        animationType="fade"
+        onRequestClose={handleRetryCancel}
+      >
+        <View style={styles.retryBackdrop}>
+          <View style={styles.retryCard}>
+            <View style={styles.retryIconWrap}>
+              <Ionicons name="cash-outline" size={28} color={c.warning} />
+            </View>
+            <Text style={styles.retryTitle}>{t('booking.amountChangedTitle')}</Text>
+            <Text style={styles.retryBody}>{t('booking.amountChangedBody')}</Text>
+            {pendingRetry ? (
+              <>
+                <View style={styles.retryAmountsRow}>
+                  <Text style={styles.retryAmountLabel}>{t('booking.amountChangedOldLabel')}</Text>
+                  <Text style={styles.retryAmountOld}>{formatCurrency(pendingRetry.oldAmountCents / 100)}</Text>
+                </View>
+                <View style={styles.retryAmountsRow}>
+                  <Text style={styles.retryAmountLabel}>{t('booking.amountChangedNewLabel')}</Text>
+                  <Text style={styles.retryAmountNew}>{formatCurrency(pendingRetry.newAmountCents / 100)}</Text>
+                </View>
+              </>
+            ) : null}
+            <Text style={styles.retryRefundNote}>{t('booking.amountChangedRefundNote')}</Text>
+            <Button
+              title={paying ? (t('common.loading', 'Please wait…') as string) : t('booking.amountChangedContinue')}
+              onPress={handleRetryConfirm}
+              disabled={paying}
+            />
+            <Pressable
+              onPress={handleRetryCancel}
+              style={styles.retrySecondaryBtn}
+              accessibilityRole="button"
+              disabled={paying}
+            >
+              <Text style={styles.retrySecondaryText}>{t('booking.amountChangedCancel')}</Text>
+            </Pressable>
+          </View>
+        </View>
+      </Modal>
     </View>
   );
 }
