@@ -21,13 +21,11 @@ import { useRouter } from 'expo-router';
 import * as ImagePicker from 'expo-image-picker';
 import { useColors, createStyles, spacing, borderRadius } from '@/lib/theme';
 import { sanitizeInputByKind } from '@/lib/validation/input';
-import {
-  OWNER_BUSINESS_PROFILE as DEMO_OWNER_BUSINESS_PROFILE,
-  OWNER_BUSINESS_HOURS as DEMO_OWNER_BUSINESS_HOURS,
-  OWNER_BUSINESS_INSTAGRAM as DEMO_OWNER_BUSINESS_INSTAGRAM,
-  type BusinessHoursRow,
-} from '@/lib/mock/ownerApp';
-import { isDemoModeEnabled } from '@/lib/config/demoMode';
+// BusinessHoursRow shape lives in lib/mock/ownerApp but is purely a typed
+// container — the actual data this screen renders is loaded from the live
+// `restaurants` row + `shifts` table via the useEffect below. No mock
+// placeholder data on this surface.
+import { type BusinessHoursRow } from '@/lib/mock/ownerApp';
 import { useOwnerScope } from '@/hooks/useOwnerScope';
 import { uploadRestaurantPhoto } from '@/lib/owner/uploadRestaurantPhoto';
 import { saveRestaurantProfile } from '@/lib/owner/saveRestaurantProfile';
@@ -37,28 +35,6 @@ import {
   type RestaurantShift,
 } from '@/lib/owner/restaurantShifts';
 import { saveRestaurantHours, time12hToDbString } from '@/lib/owner/saveRestaurantHours';
-
-const EMPTY_OWNER_BUSINESS_PROFILE: typeof DEMO_OWNER_BUSINESS_PROFILE = {
-  name: '',
-  cuisine: '',
-  neighborhood: '',
-  description: '',
-  phone: '',
-  email: '',
-  address: '',
-  website: '',
-  rating: 0,
-  reviewCount: 0,
-  followerCount: 0,
-  coverPhotoSeed: '',
-};
-const OWNER_BUSINESS_PROFILE: typeof DEMO_OWNER_BUSINESS_PROFILE = isDemoModeEnabled()
-  ? DEMO_OWNER_BUSINESS_PROFILE
-  : EMPTY_OWNER_BUSINESS_PROFILE;
-const OWNER_BUSINESS_HOURS: typeof DEMO_OWNER_BUSINESS_HOURS = isDemoModeEnabled()
-  ? DEMO_OWNER_BUSINESS_HOURS
-  : [];
-const OWNER_BUSINESS_INSTAGRAM = isDemoModeEnabled() ? DEMO_OWNER_BUSINESS_INSTAGRAM : '';
 
 // ── Styles ──────────────────────────────────────────────────────────────────
 
@@ -749,24 +725,25 @@ export default function EditBusinessProfileScreen() {
   const insets = useSafeAreaInsets();
   const router = useRouter();
 
-  const p = OWNER_BUSINESS_PROFILE;
   const { selectedRestaurant } = useOwnerScope();
 
-  // Basics — seed from the selected real restaurant when not in demo mode.
-  const [name, setName] = useState(p.name);
-  const [cuisine, setCuisine] = useState(p.cuisine);
-  const [neighborhood, setNeighborhood] = useState(p.neighborhood);
-  const [description, setDescription] = useState(p.description);
-  const [instagram, setInstagram] = useState(OWNER_BUSINESS_INSTAGRAM);
+  // All initial state is empty — the useEffect below seeds every field
+  // from the live `selectedRestaurant` row + the shifts table. No mock
+  // / placeholder data on this screen.
+  const [name, setName] = useState('');
+  const [cuisine, setCuisine] = useState('');
+  const [neighborhood, setNeighborhood] = useState('');
+  const [description, setDescription] = useState('');
+  const [instagram, setInstagram] = useState('');
 
   // Contact
-  const [phone, setPhone] = useState(p.phone);
-  const [email, setEmail] = useState(p.email);
-  const [website, setWebsite] = useState(p.website);
-  const [address, setAddress] = useState(p.address);
+  const [phone, setPhone] = useState('');
+  const [email, setEmail] = useState('');
+  const [website, setWebsite] = useState('');
+  const [address, setAddress] = useState('');
 
   useEffect(() => {
-    if (isDemoModeEnabled() || !selectedRestaurant) return;
+    if (!selectedRestaurant) return;
     setName(selectedRestaurant.name ?? '');
     setCuisine(selectedRestaurant.cuisine ?? '');
     setDescription(selectedRestaurant.description ?? '');
@@ -823,13 +800,10 @@ export default function EditBusinessProfileScreen() {
   const [turnTime, setTurnTime] = useState<string>('');
   const [turnTimePickerVisible, setTurnTimePickerVisible] = useState(false);
 
-  // Hours
-  const [hours, setHours] = useState<BusinessHoursRow[]>(
-    OWNER_BUSINESS_HOURS.map((h) => ({ ...h, open: to12h(h.open), close: to12h(h.close) })),
-  );
-  const [openDays, setOpenDays] = useState<boolean[]>(
-    OWNER_BUSINESS_HOURS.map((h) => h.open !== null),
-  );
+  // Hours — seeded by the useEffect above from buildWeeklyHours(shifts).
+  // No mock seed; empty array until the live data lands.
+  const [hours, setHours] = useState<BusinessHoursRow[]>([]);
+  const [openDays, setOpenDays] = useState<boolean[]>([]);
 
   const pickCover = async () => {
     const result = await ImagePicker.launchImageLibraryAsync({

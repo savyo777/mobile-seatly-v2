@@ -21,11 +21,10 @@ import { useMenu } from '@/lib/context/MenuContext';
 import { isDemoModeEnabled } from '@/lib/config/demoMode';
 import { useOwnerScope } from '@/hooks/useOwnerScope';
 import { RestaurantPicker } from '@/components/owner/RestaurantPicker';
-import {
-  OWNER_BUSINESS_PROFILE,
-  OWNER_RESERVATIONS,
-} from '@/lib/mock/ownerApp';
-import { mockRestaurants } from '@/lib/mock/restaurants';
+// Mock fallbacks (OWNER_BUSINESS_PROFILE / OWNER_RESERVATIONS / mockRestaurants)
+// were removed from the business header — that surface now renders real DB
+// data only. DEMO_listSnapPostsByRestaurant is still used by the Photos
+// section's demo-mode preview below.
 import { listSnapPostsByRestaurant as DEMO_listSnapPostsByRestaurant } from '@/lib/mock/snaps';
 import {
   fetchRestaurantVisitPhotos,
@@ -477,24 +476,24 @@ export default function OwnerBusinessScreen() {
     return acc;
   }, {});
 
-  const coverPhotoUrl =
-    ownerRestaurant?.coverPhotoUrl ??
-    (isDemoModeEnabled() ? mockRestaurants.find((r) => r.id === 'r1')?.coverPhotoUrl : null);
-  const profileName = ownerRestaurant?.name ?? (isDemoModeEnabled() ? OWNER_BUSINESS_PROFILE.name : 'Your restaurant');
-  const logoUrl =
-    ownerRestaurant?.logoUrl ??
-    (isDemoModeEnabled() ? mockRestaurants.find((r) => r.id === 'r1')?.logoUrl ?? null : null);
+  // Business view reads from the live `restaurants` row only. No mock
+  // fallbacks — if a field is missing the UI shows an empty state. This
+  // is the surface the user actually evaluates the app on, so seeing
+  // placeholder data here ("4.8 / 512 reviews / Nova Ristorante") was
+  // misleading. Demo content stays in place on other staff screens.
+  const coverPhotoUrl = ownerRestaurant?.coverPhotoUrl ?? null;
+  const profileName = ownerRestaurant?.name ?? 'Your restaurant';
+  const logoUrl = ownerRestaurant?.logoUrl ?? null;
   const profileAddress = ownerRestaurant?.address ?? '';
-  const profileRating = ownerRestaurant?.rating ?? (isDemoModeEnabled() ? OWNER_BUSINESS_PROFILE.rating : null);
-  const profileReviewCount = ownerRestaurant?.reviewCount ?? (isDemoModeEnabled() ? OWNER_BUSINESS_PROFILE.reviewCount : null);
+  const profileRating = ownerRestaurant?.rating ?? null;
+  const profileReviewCount = ownerRestaurant?.reviewCount ?? null;
   const profileCuisine = ownerRestaurant?.cuisine ?? '';
 
-  // Real bookings stats will come from a /owner/stats/bookings endpoint that
-  // aggregates the `reservations` table. Until that's wired up, derive
-  // demo numbers from OWNER_RESERVATIONS in demo mode and show 0 in prod
-  // rather than the previous hardcoded "198".
-  const todayBookings = isDemoModeEnabled() ? OWNER_RESERVATIONS.length : 0;
-  const thisWeekBookings = isDemoModeEnabled() ? OWNER_RESERVATIONS.length * 6 : 0;
+  // Real bookings stats will come from an /owner/stats/bookings endpoint
+  // that aggregates the `reservations` table. Until that ships, render 0
+  // — never the prior demo-derived numbers.
+  const todayBookings = 0;
+  const thisWeekBookings = 0;
   const avgRating = profileRating ?? 0;
 
   const contactRows: { label: string; value: string }[] = [
