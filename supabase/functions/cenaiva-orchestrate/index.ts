@@ -44,6 +44,12 @@ import {
 } from "../_shared/input-validation.ts";
 import { enforceRateLimit, rateLimitIdentifier, RateLimitError } from "../_shared/rate-limit.ts";
 import { CENAIVA_LIMITS, MAX_OUTPUT_TOKENS_ORCHESTRATE, CENAIVA_RATE_LIMIT_CODES } from "../_shared/cenaiva-limits.ts";
+import {
+  enforcePaidUsageBudget,
+  paidUsageIdentifier,
+  PAID_USAGE_BUDGETS,
+  PaidUsageBudgetError,
+} from "../_shared/paid-usage.ts";
 
 const stripeSecretKey = Deno.env.get("STRIPE_SECRET_KEY") ?? "";
 const LATENCY_DEBUG = Deno.env.get("CENAIVA_LATENCY_DEBUG") === "1";
@@ -4091,6 +4097,23 @@ Deno.serve(async (req) => {
       !bookingProcessIntent(transcript) &&
       !bookingFieldReplyIntent(transcript, booking_state, selected_restaurant_id, effectiveTimeZone)
     );
+    const reserveOpenAiBudget = async (path: string) => {
+      try {
+        await enforcePaidUsageBudget(supabaseAdmin, {
+          userKey: paidUsageIdentifier(payload.sub as string),
+          service: "cenaiva-orchestrate",
+          estimatedCostUsd: PAID_USAGE_BUDGETS.costs.orchestrate,
+        });
+        return true;
+      } catch (budgetErr) {
+        if (budgetErr instanceof PaidUsageBudgetError) {
+          send({ type: "error", message: "paid_usage_budget_exceeded", status: 402 });
+          latency.done({ path });
+          return false;
+        }
+        throw budgetErr;
+      }
+    };
 
     if (rejectedSingleRecommendation) {
       const payload = makeAssistantPayload({
@@ -4143,6 +4166,7 @@ Deno.serve(async (req) => {
     }
 
     if (isSmallPromptTurn) {
+      if (!(await reserveOpenAiBudget("paid_budget_small_prompt"))) return;
       const smallPromptSystem = buildSmallPromptSystemPrompt({
         restaurantName: typeof booking_state.restaurant_name === "string" ? booking_state.restaurant_name : null,
         restaurantId: typeof booking_state.restaurant_id === "string" ? booking_state.restaurant_id : null,
@@ -4267,6 +4291,8 @@ Deno.serve(async (req) => {
         return;
       }
     }
+
+    if (!(await reserveOpenAiBudget("paid_budget_orchestrate"))) return;
 
     const userCity = await getUserCity();
 

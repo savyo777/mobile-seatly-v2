@@ -20,6 +20,12 @@ import {
   rateLimitIdentifier,
 } from "../_shared/rate-limit.ts";
 import { CENAIVA_LIMITS, CENAIVA_RATE_LIMIT_CODES } from "../_shared/cenaiva-limits.ts";
+import {
+  enforcePaidUsageBudget,
+  paidUsageIdentifier,
+  PAID_USAGE_BUDGETS,
+  PaidUsageBudgetError,
+} from "../_shared/paid-usage.ts";
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
@@ -50,6 +56,19 @@ Deno.serve(async (req) => {
       }
       throw rlErr;
     }
+  }
+
+  try {
+    await enforcePaidUsageBudget(supabaseAdmin, {
+      userKey: paidUsageIdentifier(auth.authUserId),
+      service: "deepgram-live-token",
+      estimatedCostUsd: PAID_USAGE_BUDGETS.costs.deepgramToken,
+    });
+  } catch (budgetErr) {
+    if (budgetErr instanceof PaidUsageBudgetError) {
+      return jsonRes({ error: "paid_usage_budget_exceeded", reason: budgetErr.reason }, 402);
+    }
+    throw budgetErr;
   }
 
   // Mint a short-lived Deepgram temporary token scoped to this project key.

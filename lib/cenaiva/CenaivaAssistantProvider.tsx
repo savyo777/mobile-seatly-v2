@@ -34,7 +34,6 @@ import {
   normalizeSingleRestaurantRecommendationResponse,
 } from '@/lib/cenaiva/recommendationIntent';
 import {
-  getCenaivaImmediateFiller,
   isCenaivaProcessPrompt,
   shouldResetCenaivaBookingContext,
 } from '@/lib/cenaiva/simplePromptIntent';
@@ -110,6 +109,7 @@ function friendlyError(cause: string | null) {
   if (cause === 'timeout') return 'The assistant is taking a while. Try again.';
   if (cause === 'rate_limit_minute') return 'Slow down for a moment and try again.';
   if (cause === 'rate_limit_day') return "You've used Hey Cenaiva a lot today. Try again tomorrow.";
+  if (cause === 'paid_usage_budget_exceeded') return "You've used Hey Cenaiva a lot today. Try again tomorrow.";
   return 'Something went wrong. Try again.';
 }
 
@@ -395,6 +395,7 @@ function AssistantInner({ children }: { children: ReactNode }) {
         debugEvent: string,
         apply: () => void,
         preparedAudio?: { audio_base64: string; audio_content_type?: string | null } | null,
+        options: { useFreeSpeechFallback?: boolean } = {},
       ) => {
         let applied = false;
         const applyOnce = () => {
@@ -415,6 +416,8 @@ function AssistantInner({ children }: { children: ReactNode }) {
         });
         if (preparedAudio?.audio_base64) {
           await voice.speakPreparedAudio(spokenText, preparedAudio, { onFirstAudioStart: applyOnce });
+        } else if (options.useFreeSpeechFallback) {
+          await voice.speakFallback(spokenText, { onFirstAudioStart: applyOnce });
         } else {
           await voice.speak(spokenText, { onFirstAudioStart: applyOnce });
         }
@@ -425,6 +428,7 @@ function AssistantInner({ children }: { children: ReactNode }) {
         response: AssistantResponseType,
         outcome: string,
         preparedAudio?: { audio_base64: string; audio_content_type?: string | null } | null,
+        options: { useFreeSpeechFallback?: boolean } = {},
       ) => {
         await speakWithSyncedApply(
           response.spoken_text,
@@ -434,6 +438,7 @@ function AssistantInner({ children }: { children: ReactNode }) {
             commit({ type: 'APPLY_RESPONSE', response });
           },
           preparedAudio,
+          options,
         );
 
         const responseStatus = stateRef.current.booking.status;
@@ -485,7 +490,7 @@ function AssistantInner({ children }: { children: ReactNode }) {
               };
               commit({ type: 'SET_VOICE_STATUS', status: 'speaking' });
               checkpoints.playbackRequestedAt = Date.now();
-              await voice.speak(localDecision.filler, { onFirstAudioStart: applyFiller });
+              await voice.speakFallback(localDecision.filler, { onFirstAudioStart: applyFiller });
               applyFiller();
             },
           );
@@ -623,6 +628,7 @@ function AssistantInner({ children }: { children: ReactNode }) {
             response,
             result.error ? 'small_prompt_error' : 'small_prompt_ok',
             result.data?.audio,
+            { useFreeSpeechFallback: result.data?.audio_budget_exceeded === true },
           );
           return;
         } catch {
@@ -704,7 +710,7 @@ function AssistantInner({ children }: { children: ReactNode }) {
       let fillerQueued = false;
       let deferredFiller: DeferredAction | null = null;
       const streamingActive = voice.isStreamingTTSAvailable && !opts?.silent;
-      const immediateFiller = streamingActive ? getCenaivaImmediateFiller(trimmed) : null;
+      const immediateFiller: string | null = null;
       const scheduleDeferredFiller = () => {
         if (!immediateFiller || deferredFiller) return;
         deferredFiller = createDeferredAction(

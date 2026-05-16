@@ -23,6 +23,12 @@ import {
 import { enforceRateLimit, rateLimitIdentifier, RateLimitError } from "../_shared/rate-limit.ts";
 import { supabaseAdmin } from "../_shared/supabase.ts";
 import { CENAIVA_LIMITS, CENAIVA_RATE_LIMIT_CODES } from "../_shared/cenaiva-limits.ts";
+import {
+  enforcePaidUsageBudget,
+  paidUsageIdentifier,
+  PAID_USAGE_BUDGETS,
+  PaidUsageBudgetError,
+} from "../_shared/paid-usage.ts";
 
 const DEFAULT_VOICE_ID = Deno.env.get("ELEVENLABS_VOICE_ID") ?? SHARED_DEFAULT_VOICE_ID;
 const TTS_OUTPUT_FORMAT = Deno.env.get("ELEVENLABS_OUTPUT_FORMAT") ?? DEFAULT_OUTPUT_FORMAT;
@@ -108,7 +114,7 @@ function arrayBufferToBase64(buffer: ArrayBuffer): string {
 
 async function synthesizeSmallPromptAudio(text: string, voiceId: string) {
   const apiKey = Deno.env.get("ELEVENLABS_API_KEY");
-  if (!apiKey) return null;
+  if (!apiKey) return { audio: null, budgetExceeded: false };
 
   try {
     const response = await fetch(
@@ -127,15 +133,15 @@ async function synthesizeSmallPromptAudio(text: string, voiceId: string) {
         }),
       },
     );
-    if (!response.ok) return null;
+    if (!response.ok) return { audio: null, budgetExceeded: false };
     const buffer = await response.arrayBuffer();
-    if (!buffer.byteLength) return null;
-    return {
+    if (!buffer.byteLength) return { audio: null, budgetExceeded: false };
+    return { audio: {
       audio_base64: arrayBufferToBase64(buffer),
       audio_content_type: response.headers.get("content-type") ?? "audio/mpeg",
-    };
+    }, budgetExceeded: false };
   } catch {
-    return null;
+    return { audio: null, budgetExceeded: false };
   }
 }
 
@@ -198,6 +204,25 @@ Deno.serve(async (req) => {
     if (!transcript) return jsonRes({ error: "transcript is required" }, 400);
 
     const missing = nextMissing(body.booking);
+    const userKey = paidUsageIdentifier(auth.authUserId);
+    try {
+      await enforcePaidUsageBudget(supabaseAdmin, {
+        userKey,
+        service: "cenaiva-small-prompt",
+        estimatedCostUsd: PAID_USAGE_BUDGETS.costs.smallPrompt,
+      });
+    } catch (budgetErr) {
+      if (budgetErr instanceof PaidUsageBudgetError) {
+        return jsonRes({
+          spoken_text: missing.question,
+          next_expected_input: missing.next,
+          audio: null,
+          audio_budget_exceeded: true,
+        });
+      }
+      throw budgetErr;
+    }
+
     const response = await getOpenAI().chat.completions.create({
       model: SMALL_PROMPT_MODEL,
       temperature: SMALL_PROMPT_TEMPERATURE,
@@ -212,14 +237,15 @@ Deno.serve(async (req) => {
       response.choices[0]?.message?.content ?? "",
       missing.question,
     );
-    const audio = await synthesizeSmallPromptAudio(
+    const audioResult = await synthesizeSmallPromptAudio(
       spokenText,
       stringOrNull(body.voice_id) ?? DEFAULT_VOICE_ID,
     );
     return jsonRes({
       spoken_text: spokenText,
       next_expected_input: missing.next,
-      audio,
+      audio: audioResult.audio,
+      audio_budget_exceeded: audioResult.budgetExceeded,
     });
   } catch (error) {
     const validation = validationResponse(error, corsHeaders);

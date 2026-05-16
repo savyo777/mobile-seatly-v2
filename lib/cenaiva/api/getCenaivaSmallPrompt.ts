@@ -8,6 +8,7 @@ export type CenaivaSmallPromptResponse = {
     audio_base64: string;
     audio_content_type?: string | null;
   } | null;
+  audio_budget_exceeded?: boolean;
 };
 
 type FetchLikeResponse = {
@@ -47,6 +48,7 @@ function parseSmallPromptResponse(payload: unknown): CenaivaSmallPromptResponse 
                 : null,
           }
         : null,
+    audio_budget_exceeded: value.audio_budget_exceeded === true,
   };
 }
 

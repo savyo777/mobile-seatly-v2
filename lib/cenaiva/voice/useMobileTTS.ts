@@ -353,6 +353,19 @@ export function useMobileTTS(options: UseMobileTTSOptions = {}) {
     [markFirstAudioStart],
   );
 
+  const speakFallback = useCallback(
+    async (text: string, options: SpeakOptions = {}): Promise<boolean> => {
+      const trimmed = text.trim();
+      if (!trimmed) return true;
+      stopSpeaking();
+      setIsSpeaking(true);
+      await speakWithFallback(trimmed, options);
+      setIsSpeaking(false);
+      return false;
+    },
+    [speakWithFallback, stopSpeaking],
+  );
+
   const playSource = useCallback(
     async (playable: TTSPlayable, options: SpeakOptions = {}): Promise<PlayResult> => {
       try {
@@ -615,6 +628,7 @@ export function useMobileTTS(options: UseMobileTTSOptions = {}) {
     isSpeaking,
     isStreamingTTSAvailable: true,
     speak,
+    speakFallback,
     speakPreparedAudio,
     speakStreamingChunk,
     discardStreamingSpeech,

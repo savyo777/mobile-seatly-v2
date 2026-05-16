@@ -22,9 +22,20 @@ import {
   DEFAULT_VOICE_SETTINGS,
   DEFAULT_OUTPUT_FORMAT,
 } from "../_shared/elevenlabs.ts";
+import {
+  enforcePaidUsageBudget,
+  paidUsageIdentifier,
+  PAID_USAGE_BUDGETS,
+  PaidUsageBudgetError,
+} from "../_shared/paid-usage.ts";
 
 const DEFAULT_VOICE_ID = Deno.env.get("ELEVENLABS_VOICE_ID") ?? SHARED_DEFAULT_VOICE_ID;
 const OUTPUT_FORMAT = Deno.env.get("ELEVENLABS_OUTPUT_FORMAT") ?? DEFAULT_OUTPUT_FORMAT;
+const MAX_TTS_TEXT_CHARS = (() => {
+  const raw = Deno.env.get("CENAIVA_TTS_TEXT_MAX_CHARS");
+  const n = raw ? Number.parseInt(raw, 10) : NaN;
+  return Number.isFinite(n) && n > 0 ? n : 220;
+})();
 
 // Reuse same pronunciation map as useCenaivaSpeech.ts
 function applyPronunciation(text: string): string {
@@ -88,17 +99,29 @@ Deno.serve(async (req) => {
     const body = queryText != null
       ? { text: queryText, voice_id: url.searchParams.get("voice_id") ?? undefined }
       : await readJsonObject(req) as { text?: string; voice_id?: string };
-    // 300-char cap aligns with real AI booking-reply length (typical
-    // response is 100–200 chars) while preventing crafted long-text
-    // payloads that previously made the per-call cost up to $0.12.
-    // At 300 chars per call * 25 calls/day this caps worst-case TTS
-    // spend per user at ~$0.75/day. Bump via env if a future flow
-    // genuinely needs longer single utterances.
-    const rawText = validatedText(body.text, "text", { required: true, maxLength: 300, multiline: true }) ?? "";
+    // Keep paid voice clips short. Native speech fallback handles longer
+    // responses if a future flow needs them.
+    const rawText = validatedText(body.text, "text", { required: true, maxLength: MAX_TTS_TEXT_CHARS, multiline: true }) ?? "";
     if (!rawText) return jsonRes({ error: "text is required" }, 400);
 
     const text = applyPronunciation(rawText);
     const voiceId = validatedText(body.voice_id, "voice_id", { maxLength: 120 }) ?? DEFAULT_VOICE_ID;
+
+    try {
+      await enforcePaidUsageBudget(supabaseAdmin, {
+        userKey: paidUsageIdentifier(auth.authUserId),
+        service: "elevenlabs-tts",
+        estimatedCostUsd: PAID_USAGE_BUDGETS.costs.elevenlabsTts,
+      });
+    } catch (budgetErr) {
+      if (budgetErr instanceof PaidUsageBudgetError) {
+        return jsonRes(
+          { error: "paid_usage_budget_exceeded", reason: budgetErr.reason },
+          402,
+        );
+      }
+      throw budgetErr;
+    }
 
     // Call ElevenLabs with one automatic retry on transient failures. Without
     // this, any 5xx / network blip drops us to Web Speech for that single turn,

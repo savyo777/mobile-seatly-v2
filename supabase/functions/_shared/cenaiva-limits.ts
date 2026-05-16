@@ -25,22 +25,22 @@ export const CENAIVA_LIMITS = {
     },
     day: {
       scope: "cenaiva-orchestrate:day" as const,
-      limit: envInt("CENAIVA_ORCHESTRATE_DAILY_LIMIT", 100),
+      limit: envInt("CENAIVA_ORCHESTRATE_DAILY_LIMIT", 80),
       windowSeconds: DAY_SECONDS,
     },
   },
   smallPrompt: {
     // Small-prompt also synthesizes ElevenLabs audio directly, so the daily
-    // cap is part of the Hey Cenaiva audio budget. 8/day covers a normal
-    // slot-filling booking flow with retries; 4/min stops tight retry loops.
+    // cap is part of the Hey Cenaiva audio budget. 6/day covers a normal
+    // slot-filling booking flow with retries; 3/min stops tight retry loops.
     minute: {
       scope: "cenaiva-small-prompt:min" as const,
-      limit: envInt("CENAIVA_SMALL_PROMPT_MINUTE_LIMIT", 4),
+      limit: envInt("CENAIVA_SMALL_PROMPT_MINUTE_LIMIT", 3),
       windowSeconds: MIN_SECONDS,
     },
     day: {
       scope: "cenaiva-small-prompt:day" as const,
-      limit: envInt("CENAIVA_SMALL_PROMPT_DAILY_LIMIT", 8),
+      limit: envInt("CENAIVA_SMALL_PROMPT_DAILY_LIMIT", 6),
       windowSeconds: DAY_SECONDS,
     },
   },
@@ -59,35 +59,35 @@ export const CENAIVA_LIMITS = {
       windowSeconds: DAY_SECONDS,
     },
   },
-  // ElevenLabs TTS is the priciest per-call service we use. 10/day keeps the
-  // Hey Cenaiva daily max near the $1.50/user target while still covering a
+  // ElevenLabs TTS is the priciest per-call service we use. 8/day keeps the
+  // Hey Cenaiva daily max near the $0.50/user target while still covering a
   // normal voice booking session. Cached clips and native speech fallback keep
   // the experience usable if a user hits the cost cap.
   elevenlabsTts: {
     minute: {
       scope: "elevenlabs-tts:min" as const,
-      limit: envInt("CENAIVA_ELEVENLABS_TTS_MINUTE_LIMIT", 6),
+      limit: envInt("CENAIVA_ELEVENLABS_TTS_MINUTE_LIMIT", 4),
       windowSeconds: MIN_SECONDS,
     },
     day: {
       scope: "elevenlabs-tts:day" as const,
-      limit: envInt("CENAIVA_ELEVENLABS_TTS_DAILY_LIMIT", 10),
+      limit: envInt("CENAIVA_ELEVENLABS_TTS_DAILY_LIMIT", 8),
       windowSeconds: DAY_SECONDS,
     },
   },
   // Deepgram short-lived STT token. One token per voice utterance.
-  // Per-minute cap matches ElevenLabs at 15/min so the full Hey Cenaiva
-  // voice path can keep pace. Daily cap is TTS (30) plus a ~33% buffer for
+  // Per-minute cap leaves room for quick retries while the daily cap keeps
+  // STT inside the $0.50/user/day Hey Cenaiva budget. Daily cap is TTS plus
   // empty/cancelled/no-speech transcripts.
   deepgramToken: {
     minute: {
       scope: "deepgram-live-token:min" as const,
-      limit: envInt("CENAIVA_DEEPGRAM_TOKEN_MINUTE_LIMIT", 15),
+      limit: envInt("CENAIVA_DEEPGRAM_TOKEN_MINUTE_LIMIT", 10),
       windowSeconds: MIN_SECONDS,
     },
     day: {
       scope: "deepgram-live-token:day" as const,
-      limit: envInt("CENAIVA_DEEPGRAM_TOKEN_DAILY_LIMIT", 40),
+      limit: envInt("CENAIVA_DEEPGRAM_TOKEN_DAILY_LIMIT", 30),
       windowSeconds: DAY_SECONDS,
     },
   },
@@ -107,7 +107,7 @@ export const CENAIVA_LIMITS = {
 // requested 600–900 band.
 export const MAX_OUTPUT_TOKENS_ORCHESTRATE = envInt(
   "CENAIVA_ORCHESTRATE_MAX_OUTPUT_TOKENS",
-  750,
+  450,
 );
 
 // Stable error codes returned to the mobile client. Kept in one place so

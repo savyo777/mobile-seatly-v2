@@ -53,6 +53,7 @@ export function useCenaivaVoice(options: UseCenaivaVoiceOptions = {}) {
       isSpeaking: tts.isSpeaking,
       isStreamingTTSAvailable: tts.isStreamingTTSAvailable,
       speak: tts.speak as (text: string, options?: SpeakOptions) => Promise<boolean>,
+      speakFallback: tts.speakFallback as (text: string, options?: SpeakOptions) => Promise<boolean>,
       speakPreparedAudio: tts.speakPreparedAudio as (
         text: string,
         audio?: PreparedAudio | null,
@@ -76,6 +77,7 @@ export function useCenaivaVoice(options: UseCenaivaVoiceOptions = {}) {
       tts.isSpeaking,
       tts.isStreamingTTSAvailable,
       tts.speak,
+      tts.speakFallback,
       tts.speakPreparedAudio,
       tts.speakStreamingChunk,
       tts.discardStreamingSpeech,

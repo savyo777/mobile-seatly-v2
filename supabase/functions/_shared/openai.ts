@@ -20,7 +20,11 @@ export const SMALL_PROMPT_MODEL =
 
 // Sensible defaults; individual callers can override per-request.
 export const SMALL_PROMPT_TEMPERATURE = 0.1;
-export const SMALL_PROMPT_MAX_TOKENS = 45;
+export const SMALL_PROMPT_MAX_TOKENS = (() => {
+  const raw = Deno.env.get("CENAIVA_SMALL_PROMPT_MAX_TOKENS");
+  const n = raw ? Number.parseInt(raw, 10) : NaN;
+  return Number.isFinite(n) && n > 0 ? n : 30;
+})();
 
 // Construction is lazy via getOpenAI() because Deno cold-starts in some
 // environments fail when the OpenAI module is imported with no key set.
