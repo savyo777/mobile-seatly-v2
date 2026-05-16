@@ -30,18 +30,17 @@ export const CENAIVA_LIMITS = {
     },
   },
   smallPrompt: {
-    // Per-minute is the burst gate: small-prompt fires on off-topic chatter
-    // (1–2/min in human cadence), so 10/min gives ~5x burst headroom and
-    // catches spam loops within seconds. 5:1 ratio to the day cap means a
-    // user spamming flat-out drains the daily allowance in ~5 minutes.
+    // Small-prompt also synthesizes ElevenLabs audio directly, so the daily
+    // cap is part of the Hey Cenaiva audio budget. 8/day covers a normal
+    // slot-filling booking flow with retries; 4/min stops tight retry loops.
     minute: {
       scope: "cenaiva-small-prompt:min" as const,
-      limit: envInt("CENAIVA_SMALL_PROMPT_MINUTE_LIMIT", 10),
+      limit: envInt("CENAIVA_SMALL_PROMPT_MINUTE_LIMIT", 4),
       windowSeconds: MIN_SECONDS,
     },
     day: {
       scope: "cenaiva-small-prompt:day" as const,
-      limit: envInt("CENAIVA_SMALL_PROMPT_DAILY_LIMIT", 50),
+      limit: envInt("CENAIVA_SMALL_PROMPT_DAILY_LIMIT", 8),
       windowSeconds: DAY_SECONDS,
     },
   },
@@ -60,19 +59,19 @@ export const CENAIVA_LIMITS = {
       windowSeconds: DAY_SECONDS,
     },
   },
-  // ElevenLabs TTS is the priciest per-call service we use. 15/min covers
-  // fast voice conversations with retry/headroom; 30/day covers several full
-  // booking sessions while still stopping continuous loops. Per-call char cap
-  // (300, in the function itself) remains the biggest cost lever.
+  // ElevenLabs TTS is the priciest per-call service we use. 10/day keeps the
+  // Hey Cenaiva daily max near the $1.50/user target while still covering a
+  // normal voice booking session. Cached clips and native speech fallback keep
+  // the experience usable if a user hits the cost cap.
   elevenlabsTts: {
     minute: {
       scope: "elevenlabs-tts:min" as const,
-      limit: envInt("CENAIVA_ELEVENLABS_TTS_MINUTE_LIMIT", 15),
+      limit: envInt("CENAIVA_ELEVENLABS_TTS_MINUTE_LIMIT", 6),
       windowSeconds: MIN_SECONDS,
     },
     day: {
       scope: "elevenlabs-tts:day" as const,
-      limit: envInt("CENAIVA_ELEVENLABS_TTS_DAILY_LIMIT", 30),
+      limit: envInt("CENAIVA_ELEVENLABS_TTS_DAILY_LIMIT", 10),
       windowSeconds: DAY_SECONDS,
     },
   },
