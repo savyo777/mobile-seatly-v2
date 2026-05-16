@@ -623,6 +623,11 @@ function SettingsSection({
       );
     } else if (item.label === 'Appearance') {
       setAppearanceOpen((open) => !open);
+    } else if (item.label === 'Currency') {
+      Alert.alert(
+        `Currency: ${item.value ?? ''}`,
+        "This is the currency the app uses for all your revenue, expenses, and analytics. It's set when your restaurant is created. Receipts scanned in a different currency are automatically converted to this one. Contact support if you need to change it.",
+      );
     } else if (item.action === 'switch_to_customer') {
       void (async () => {
         await setAppShellPreference('customer');
@@ -674,7 +679,8 @@ export default function OwnerSettingsScreen() {
   const [closuresLabel, setClosuresLabel] = React.useState('');
   const [staffMembersLabel, setStaffMembersLabel] = React.useState('');
   const { refresh: refreshOwnerRestaurants } = useOwnerRestaurantContext();
-  const { selectedRestaurantId, restaurants } = useOwnerScope();
+  const { selectedRestaurantId, restaurants, selectedRestaurant } = useOwnerScope();
+  const currencyLabel = (selectedRestaurant?.currency ?? 'CAD').toUpperCase();
   const [restaurantRemovalOpen, setRestaurantRemovalOpen] = React.useState(false);
   const [restaurantRemovalIds, setRestaurantRemovalIds] = React.useState<string[]>([]);
   const [restaurantRemovalConfirmation, setRestaurantRemovalConfirmation] = React.useState('');
@@ -898,6 +904,12 @@ export default function OwnerSettingsScreen() {
           value: closuresLabel,
           icon: 'ban-outline',
           route: '/(staff)/closures',
+        },
+        {
+          kind: 'nav',
+          label: 'Currency',
+          value: currencyLabel,
+          icon: 'cash-outline',
         },
       ],
     },

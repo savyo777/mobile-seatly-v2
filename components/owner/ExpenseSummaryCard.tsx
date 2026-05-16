@@ -9,6 +9,7 @@ import type { Expense } from '@/lib/expenses/types';
 import { formatCurrency } from '@/lib/utils/formatCurrency';
 import { useOwnerColors } from '@/lib/theme/ownerTheme';
 import { brandGold, withAlpha } from '@/lib/theme/tokens';
+import { useExpenses } from '@/lib/context/ExpensesContext';
 
 type Props = {
   expenses: Expense[];
@@ -38,6 +39,13 @@ function inMonth(iso: string, monthStart: Date): boolean {
 
 export function ExpenseSummaryCard({ expenses }: Props) {
   const ownerColors = useOwnerColors();
+  // Use the restaurant's actual currency for the headline numbers — not
+  // whichever currency happens to be most common across saved expenses.
+  // The old "dominant currency" approach labelled the summary as USD on
+  // Canadian restaurants whenever a few USD receipts slipped through
+  // (e.g. before the FX provider was fixed). Individual expense rows
+  // still display their own stored currency in ExpenseListRow.
+  const { ownerRestaurantCurrency } = useExpenses();
 
   const { thisMonthSpent, thisMonthEarned, thisMonthTax, deltaPercent, currency, topCategories } = useMemo(() => {
     const now = new Date();
@@ -73,8 +81,12 @@ export function ExpenseSummaryCard({ expenses }: Props) {
       }
     }
 
+    // Fall back to the most common expense currency only when the
+    // restaurant context hasn't loaded yet (e.g. first render).
     const sortedCurrencies = Array.from(currencyCounts.entries()).sort((a, b) => b[1] - a[1]);
-    const dominantCurrency = sortedCurrencies[0]?.[0] ?? 'cad';
+    const dominantCurrency = ownerRestaurantCurrency
+      ?? sortedCurrencies[0]?.[0]
+      ?? 'cad';
 
     const cats: CategoryTotal[] = EXPENSE_CATEGORIES.map((c) => ({
       key: c.key,
@@ -97,7 +109,7 @@ export function ExpenseSummaryCard({ expenses }: Props) {
       currency: dominantCurrency,
       topCategories: cats,
     };
-  }, [expenses]);
+  }, [expenses, ownerRestaurantCurrency]);
 
   const maxAmount = topCategories[0]?.amount ?? 0;
 

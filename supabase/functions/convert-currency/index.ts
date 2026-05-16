@@ -5,10 +5,23 @@
 // Provider selection:
 //   - If FX_PROVIDER_URL is set, it is treated as a templated GET endpoint.
 //     `{from}`, `{to}`, and `{date}` placeholders get URL-encoded values.
+//     For "latest" rate, `{date}` is replaced with the literal "latest"
+//     so providers like frankfurter that put the date in the path work
+//     without an extra config knob.
 //     The response is parsed as JSON and the first numeric value found at
 //     one of the well-known shapes below is used as the rate.
-//   - Otherwise the function defaults to exchangerate.host (no key needed):
-//       https://api.exchangerate.host/convert?from=USD&to=CAD&amount=20
+//   - Otherwise the function defaults to frankfurter.app (free, no key,
+//     ECB-sourced daily rates):
+//       https://api.frankfurter.app/latest?from=USD&to=CAD
+//     History via /{date}?from=...&to=...
+//
+//   NOTE: exchangerate.host was the prior default but stopped accepting
+//   anonymous requests in 2024 (now returns `missing_access_key` error).
+//
+//   Last-resort fallback: a small in-code rate table (FALLBACK_RATES below)
+//   so common pairs like USD↔CAD never hard-fail when the upstream FX
+//   provider has a transient outage. Update the constants when the rates
+//   drift more than ~5%.
 //
 // FX_PROVIDER_AUTH_HEADER (optional): "Header-Name: value" — sent on the
 // outbound rate request when the provider needs an API key.
@@ -34,7 +47,23 @@ import {
 } from "../_shared/input-validation.ts";
 
 const DEFAULT_PROVIDER_URL =
-  "https://api.exchangerate.host/convert?from={from}&to={to}&amount=1";
+  "https://api.frankfurter.app/{date}?from={from}&to={to}";
+
+// Approximate fallback rates for the most common pairs we see in receipts.
+// Used only when the upstream FX provider call fails — better to charge an
+// approximate amount than to fail the receipt save. Update periodically
+// (e.g. every quarter) when the real rates drift more than ~5%.
+// Last updated: 2026-05-16.
+const FALLBACK_RATES: Record<string, Record<string, number>> = {
+  USD: { CAD: 1.37, EUR: 0.92, GBP: 0.79, AUD: 1.50, MXN: 17.0, JPY: 150.0 },
+  CAD: { USD: 0.73, EUR: 0.67, GBP: 0.57, AUD: 1.10, MXN: 12.4, JPY: 109.5 },
+  EUR: { USD: 1.09, CAD: 1.49, GBP: 0.86, AUD: 1.63 },
+  GBP: { USD: 1.27, CAD: 1.74, EUR: 1.16 },
+};
+
+function lookupFallbackRate(from: string, to: string): number | null {
+  return FALLBACK_RATES[from]?.[to] ?? null;
+}
 
 type Body = {
   amount?: unknown;
@@ -120,10 +149,29 @@ function extractRate(
 }
 
 function buildProviderUrl(template: string, from: string, to: string, date: string | null): string {
+  // For providers (frankfurter.app, fixer historical, etc) that put the
+  // date in the path, substitute "latest" when caller didn't specify a
+  // date so the URL stays valid.
   return template
     .replace(/\{from\}/g, encodeURIComponent(from))
     .replace(/\{to\}/g, encodeURIComponent(to))
-    .replace(/\{date\}/g, date ? encodeURIComponent(date) : "");
+    .replace(/\{date\}/g, date ? encodeURIComponent(date) : "latest");
+}
+
+function fallbackResponse(
+  amount: number,
+  from: string,
+  to: string,
+  rate: number,
+): Record<string, unknown> {
+  return {
+    convertedAmount: Math.round(amount * rate * 100) / 100,
+    rate,
+    sourceCurrency: from.toLowerCase(),
+    targetCurrency: to.toLowerCase(),
+    provider: "fallback_static",
+    quotedAt: new Date().toISOString(),
+  };
 }
 
 function providerNameFromUrl(url: string): string {
@@ -188,33 +236,60 @@ Deno.serve(async (req) => {
       if (name && value) headers[name] = value;
     }
 
-    const response = await fetchWithTimeout(providerUrl, { method: "GET", headers }, FX_TIMEOUT_MS);
-    if (!response.ok) {
-      return jsonResWithCors(
-        req,
-        { error: "fx_provider_error", status: response.status },
-        502,
-      );
-    }
-    const json = (await response.json()) as Record<string, unknown>;
-    const rate = extractRate(json, to);
-    if (rate == null || !Number.isFinite(rate) || rate <= 0) {
-      return jsonResWithCors(req, { error: "fx_rate_unavailable" }, 502);
+    let response: Response | null = null;
+    try {
+      response = await fetchWithTimeout(providerUrl, { method: "GET", headers }, FX_TIMEOUT_MS);
+    } catch (fetchErr) {
+      console.warn("convert-currency: provider fetch threw", fetchErr);
+      response = null;
     }
 
-    const converted = Math.round(amount * rate * 100) / 100;
-    return jsonResWithCors(req, {
-      convertedAmount: converted,
-      rate,
-      sourceCurrency: from.toLowerCase(),
-      targetCurrency: to.toLowerCase(),
-      provider: providerNameFromUrl(providerUrl),
-      quotedAt: new Date().toISOString(),
-    });
+    if (response && response.ok) {
+      const json = (await response.json().catch(() => ({}))) as Record<string, unknown>;
+      const rate = extractRate(json, to);
+      if (rate != null && Number.isFinite(rate) && rate > 0) {
+        const converted = Math.round(amount * rate * 100) / 100;
+        return jsonResWithCors(req, {
+          convertedAmount: converted,
+          rate,
+          sourceCurrency: from.toLowerCase(),
+          targetCurrency: to.toLowerCase(),
+          provider: providerNameFromUrl(providerUrl),
+          quotedAt: new Date().toISOString(),
+        });
+      }
+      console.warn("convert-currency: provider returned no usable rate", { from, to });
+    } else if (response) {
+      console.warn("convert-currency: provider non-2xx", response.status);
+    }
+
+    // Upstream failed. Try the static fallback so common pairs still
+    // convert (better an approximate save than a hard-fail).
+    const fallbackRate = lookupFallbackRate(from, to);
+    if (fallbackRate != null) {
+      return jsonResWithCors(req, fallbackResponse(amount, from, to, fallbackRate));
+    }
+
+    return jsonResWithCors(
+      req,
+      { error: response && !response.ok ? "fx_provider_error" : "fx_rate_unavailable" },
+      502,
+    );
   } catch (err) {
     const validation = validationResponse(err, buildCorsHeaders(req));
     if (validation) return validation;
     console.error("convert-currency: fx lookup failed", err);
+    // Last-resort fallback even for unexpected errors.
+    const body = (await req.clone().json().catch(() => ({}))) as Body;
+    const amount = normalizeAmount(body.amount);
+    const from = normalizeCurrency(body.from);
+    const to = normalizeCurrency(body.to);
+    if (amount != null && from && to && from !== to) {
+      const fallbackRate = lookupFallbackRate(from, to);
+      if (fallbackRate != null) {
+        return jsonResWithCors(req, fallbackResponse(amount, from, to, fallbackRate));
+      }
+    }
     return jsonResWithCors(
       req,
       { error: "fx_lookup_failed", message: String(err?.message ?? err) },
