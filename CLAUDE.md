@@ -40,11 +40,11 @@ If the filtered output is empty, typecheck is clean. The unfiltered command prin
 
 Per-user limits on every paid AI/voice edge function. All limits live in `supabase/functions/_shared/cenaiva-limits.ts` (env-overridable, no redeploy to tune):
 
-- `cenaiva-orchestrate` (gpt-4o-mini): 15/min, 80/day, 450 max output tokens
-- `cenaiva-small-prompt` (gpt-4.1-nano + ElevenLabs audio): 3/min, 6/day, 30 max output tokens
+- `cenaiva-orchestrate` (gpt-4o-mini): 6/min, 100/day, 450 max output tokens
+- `cenaiva-small-prompt` (gpt-4.1-nano + ElevenLabs audio): 4/min, 8/day, 30 max output tokens
 - `scan-receipt` (gpt-4o-mini vision): 10/min, 75/day
-- `elevenlabs-tts`: 4/min, 8/day, **220 chars max per call** (the char cap is the biggest cost lever, not the request count)
-- `deepgram-live-token`: 10/min, 30/day (room for no-speech/cancelled transcripts without letting STT run away)
+- `elevenlabs-tts`: 4/min, 12/day, **220 chars max per call** (the char cap is the biggest cost lever, not the request count)
+- `deepgram-live-token`: 6/min, 44/day (room for no-speech/cancelled transcripts without letting STT run away)
 
 Per-minute caps are burst brakes; per-day caps are the request ceiling. `paid_usage_buckets` adds the real cost ceiling with `CENAIVA_USER_DAILY_AI_BUDGET_USD=0.50` and `CENAIVA_PLATFORM_DAILY_AI_BUDGET_USD=5000` defaults. Keep audio-bearing daily caps tight first, because ElevenLabs dominates Hey Cenaiva spend.
 
