@@ -45,13 +45,13 @@ export const CENAIVA_LIMITS = {
       windowSeconds: DAY_SECONDS,
     },
   },
-  // Vision-based receipt OCR. Vision tokens are the most expensive per call.
-  // Daily cap sized for owners doing a weekly bookkeeping catch-up of up to
-  // ~75 receipts in a single sitting; per-minute cap holds it to human pace.
+  // Vision-based receipt OCR. 10/min lets owners scan a receipt stack at a
+  // normal pace without waiting between every few uploads; daily cap remains
+  // sized for a weekly bookkeeping catch-up.
   scanReceipt: {
     minute: {
       scope: "scan-receipt:min" as const,
-      limit: envInt("CENAIVA_SCAN_RECEIPT_MINUTE_LIMIT", 5),
+      limit: envInt("CENAIVA_SCAN_RECEIPT_MINUTE_LIMIT", 10),
       windowSeconds: MIN_SECONDS,
     },
     day: {
@@ -60,40 +60,35 @@ export const CENAIVA_LIMITS = {
       windowSeconds: DAY_SECONDS,
     },
   },
-  // ElevenLabs TTS is the priciest per-call service we use. Per-minute
-  // cap of 10 covers human conversation cadence (~6 turns/min) with ~1.5x
-  // headroom and prevents a burst from chewing through the day cap in
-  // seconds. At $0.03/call max, 10/min caps single-minute spend at $0.30
-  // instead of the old $1.80. Daily cap of 25 covers ~3 full booking
-  // conversations per user. Per-call char cap (300, in the function
-  // itself) is the third lever — see elevenlabs-tts/index.ts.
+  // ElevenLabs TTS is the priciest per-call service we use. 15/min covers
+  // fast voice conversations with retry/headroom; 30/day covers several full
+  // booking sessions while still stopping continuous loops. Per-call char cap
+  // (300, in the function itself) remains the biggest cost lever.
   elevenlabsTts: {
     minute: {
       scope: "elevenlabs-tts:min" as const,
-      limit: envInt("CENAIVA_ELEVENLABS_TTS_MINUTE_LIMIT", 10),
+      limit: envInt("CENAIVA_ELEVENLABS_TTS_MINUTE_LIMIT", 15),
       windowSeconds: MIN_SECONDS,
     },
     day: {
       scope: "elevenlabs-tts:day" as const,
-      limit: envInt("CENAIVA_ELEVENLABS_TTS_DAILY_LIMIT", 25),
+      limit: envInt("CENAIVA_ELEVENLABS_TTS_DAILY_LIMIT", 30),
       windowSeconds: DAY_SECONDS,
     },
   },
   // Deepgram short-lived STT token. One token per voice utterance.
-  // Per-minute cap matches elevenlabs-tts at 10/min — voice turns pair
-  // 1:1 (1 token + 1 TTS), so neither service should be able to race
-  // ahead of the other. Daily cap matches TTS (25) plus a 5-token buffer
-  // for empty/cancelled transcripts (~20% of STT calls return "" when
-  // the user paused or didn't actually speak).
+  // Per-minute cap matches ElevenLabs at 15/min so the full Hey Cenaiva
+  // voice path can keep pace. Daily cap is TTS (30) plus a ~33% buffer for
+  // empty/cancelled/no-speech transcripts.
   deepgramToken: {
     minute: {
       scope: "deepgram-live-token:min" as const,
-      limit: envInt("CENAIVA_DEEPGRAM_TOKEN_MINUTE_LIMIT", 10),
+      limit: envInt("CENAIVA_DEEPGRAM_TOKEN_MINUTE_LIMIT", 15),
       windowSeconds: MIN_SECONDS,
     },
     day: {
       scope: "deepgram-live-token:day" as const,
-      limit: envInt("CENAIVA_DEEPGRAM_TOKEN_DAILY_LIMIT", 30),
+      limit: envInt("CENAIVA_DEEPGRAM_TOKEN_DAILY_LIMIT", 40),
       windowSeconds: DAY_SECONDS,
     },
   },

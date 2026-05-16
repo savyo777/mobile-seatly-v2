@@ -42,9 +42,9 @@ Per-user limits on every paid AI/voice edge function. All limits live in `supaba
 
 - `cenaiva-orchestrate` (gpt-4o-mini): 15/min, 100/day
 - `cenaiva-small-prompt` (gpt-4.1-nano): 10/min, 50/day
-- `scan-receipt` (gpt-4o-mini vision): 5/min, 75/day
-- `elevenlabs-tts`: 10/min, 25/day, **300 chars max per call** (the char cap is the biggest cost lever, not the request count)
-- `deepgram-live-token`: 10/min, 30/day (intentionally aligned with TTS — a token is wasted if TTS can't reply)
+- `scan-receipt` (gpt-4o-mini vision): 10/min, 75/day
+- `elevenlabs-tts`: 15/min, 30/day, **300 chars max per call** (the char cap is the biggest cost lever, not the request count)
+- `deepgram-live-token`: 15/min, 40/day (aligned with TTS per-minute, with daily buffer for no-speech/cancelled transcripts)
 
 Per-minute caps are intentionally smaller than per-day caps. The per-minute gate is a burst brake that fires before the per-day ceiling — if a per-minute value is ever raised above ~`day/3`, the burst gate becomes dead code.
 
