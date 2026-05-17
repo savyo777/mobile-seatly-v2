@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next';
 import type { Restaurant } from '@/lib/mock/restaurants';
 import { DiscoverEnhancedCard } from '@/components/discover/DiscoverEnhancedCard';
 import { ChevronGlyph } from '@/components/ui/ChevronGlyph';
+import { isCompactDiscoverEnabled } from '@/lib/config/discoverDensity';
 import { createStyles, spacing, typography, useColors } from '@/lib/theme';
 
 type Props = {
@@ -57,20 +58,32 @@ function DiscoverHorizontalSectionBase({ title, data, onPressCard, onPressSeeAll
   const c = useColors();
   const styles = useStyles();
   const { width: winW } = useWindowDimensions();
-  const cardWidth = useMemo(() => Math.min(winW * 0.72, 280), [winW]);
-  const itemStride = cardWidth + spacing.md;
+  const compact = isCompactDiscoverEnabled();
+  const cardWidth = useMemo(
+    () => (compact ? Math.min(winW * 0.46, 170) : Math.min(winW * 0.72, 280)),
+    [winW, compact],
+  );
+  const cardGap = compact ? spacing.sm : spacing.md;
+  const trailingPad = compact ? spacing.md : spacing.lg;
+  const itemStride = cardWidth + cardGap;
   const renderItem = useCallback(
     ({ item, index }: { item: Restaurant; index: number }) => (
-      <View style={[styles.cardWrap, index === data.length - 1 && styles.lastWrap]}>
+      <View
+        style={[
+          { marginRight: cardGap },
+          index === data.length - 1 && styles.lastWrap,
+        ]}
+      >
         <DiscoverEnhancedCard
           restaurant={item}
           width={cardWidth}
           onPress={() => onPressCard(item)}
           variant="carousel"
+          compact={compact}
         />
       </View>
     ),
-    [cardWidth, data.length, onPressCard, styles.cardWrap, styles.lastWrap],
+    [cardWidth, cardGap, compact, data.length, onPressCard, styles.lastWrap],
   );
   const getItemLayout = useCallback(
     (_: ArrayLike<Restaurant> | null | undefined, index: number) => ({
@@ -105,7 +118,7 @@ function DiscoverHorizontalSectionBase({ title, data, onPressCard, onPressSeeAll
         windowSize={5}
         updateCellsBatchingPeriod={24}
         showsHorizontalScrollIndicator={false}
-        contentContainerStyle={styles.listContent}
+        contentContainerStyle={[styles.listContent, { paddingRight: trailingPad }]}
       />
     </View>
   );

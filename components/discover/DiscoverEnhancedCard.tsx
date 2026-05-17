@@ -16,6 +16,12 @@ type Props = {
   variant?: Variant;
   /** Fixed image height for grid cards (helps uniform rows). */
   gridImageHeight?: number;
+  /**
+   * Compact density (DoorDash/UberEats-style). Smaller image, tighter
+   * body, smaller name + meta. Only the Discover horizontal sections
+   * opt in; all other consumers keep the default spacious layout.
+   */
+  compact?: boolean;
 };
 
 function badgeLabel(t: (k: string) => string, kind: DiscoverBadgeKind): string {
@@ -140,6 +146,7 @@ export function DiscoverEnhancedCard({
   onPress,
   variant = 'carousel',
   gridImageHeight,
+  compact = false,
 }: Props) {
   const { t } = useTranslation();
   const c = useColors();
@@ -148,7 +155,7 @@ export function DiscoverEnhancedCard({
   const urgency = getUrgencyCopy(restaurant, t);
   const tag = shortTagLine(restaurant);
   const imgHeight =
-    variant === 'grid' ? gridImageHeight ?? 112 : 130;
+    variant === 'grid' ? gridImageHeight ?? 112 : compact ? 100 : 130;
 
   return (
     <Pressable
@@ -173,8 +180,17 @@ export function DiscoverEnhancedCard({
           </View>
         ))}
       </View>
-      <View style={[styles.body, variant === 'grid' && styles.bodyGrid]}>
-        <Text style={styles.name} numberOfLines={1}>
+      <View
+        style={[
+          styles.body,
+          variant === 'grid' && styles.bodyGrid,
+          compact && { padding: spacing.sm },
+        ]}
+      >
+        <Text
+          style={[styles.name, compact && { fontSize: 14 }]}
+          numberOfLines={1}
+        >
           {restaurant.name}
         </Text>
         <View style={styles.ratingRow}>
@@ -186,7 +202,10 @@ export function DiscoverEnhancedCard({
             · {t('discover.reviewsCount', { count: restaurant.totalReviews })}
           </Text>
         </View>
-        <Text style={styles.meta} numberOfLines={1}>
+        <Text
+          style={[styles.meta, compact && { fontSize: 12 }]}
+          numberOfLines={1}
+        >
           {restaurant.cuisineType} · {restaurantPriceLabel(restaurant.priceRange)} · {t('discover.kmAway', { distance: restaurant.distanceKm.toFixed(1) })}
         </Text>
         <Text style={styles.tag} numberOfLines={1}>

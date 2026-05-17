@@ -23,6 +23,7 @@ import { getTorontoGreetingPeriod } from '@/lib/discover/torontoTime';
 import { loadRestaurantsForDiscover } from '@/lib/data/restaurantCatalog';
 import { fetchCurrentUserProfile } from '@/lib/services/userProfile';
 import { isDemoModeEnabled } from '@/lib/config/demoMode';
+import { isCompactDiscoverEnabled } from '@/lib/config/discoverDensity';
 import { pickFeaturedRestaurant } from '@/lib/mock/discoverPresentation';
 import { mockRestaurants, type Restaurant } from '@/lib/mock/restaurants';
 import {
@@ -483,7 +484,13 @@ export default function DiscoverScreen() {
   return (
     <ScreenWrapper scrollable={false} padded={false}>
       {/* Sticky header: logo + List/Map toggle + bell, plus an always-visible search bar. */}
-      <View style={[styles.stickyHeader, { paddingTop: spacing.xs }]}>
+      <View
+        style={[
+          styles.stickyHeader,
+          { paddingTop: spacing.xs },
+          isCompactDiscoverEnabled() && { paddingHorizontal: spacing.md },
+        ]}
+      >
         <View style={styles.stickyHeaderTopRow}>
           <Image
             source={require('../../../assets/cenaiva-logo.png')}
@@ -539,6 +546,7 @@ export default function DiscoverScreen() {
         contentContainerStyle={[
           styles.content,
           { paddingBottom: spacing.lg },
+          isCompactDiscoverEnabled() && { paddingHorizontal: spacing.md },
         ]}
         refreshControl={
           <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={c.gold} />
