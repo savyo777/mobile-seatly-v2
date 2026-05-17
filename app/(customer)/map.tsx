@@ -13,7 +13,7 @@ import {
 } from 'react-native';
 import * as Location from 'expo-location';
 import { Ionicons } from '@expo/vector-icons';
-import { useRouter } from 'expo-router';
+import { useRouter, type Href } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { RestaurantDiscoveryMap } from '@/components/map/RestaurantDiscoveryMap';
@@ -504,7 +504,9 @@ export default function MapScreen() {
         }}
         onViewDetails={() => {
           if (!selectedRestaurant) return;
-          router.push(`/discover/${selectedRestaurant.id}`);
+          // Route is /(customer)/discover/[id] — the previous path
+          // was missing the (customer) group prefix and 404'd silently.
+          router.push(`/(customer)/discover/${selectedRestaurant.id}` as Href);
         }}
         onAskAi={() => {
           if (!selectedRestaurant) return;
