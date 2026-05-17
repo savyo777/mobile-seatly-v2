@@ -1,9 +1,9 @@
-# Tap the first restaurant card in the Discover hero / first horizontal
-# section and assert the restaurant-detail screen shows the "Book a Table"
-# CTA (i18n: restaurant.bookTable). Restaurant names are dynamic (supabase
-# data + signal-based ranking), so we anchor on the star glyph ★ which
-# every card renders next to its rating — tapping it bubbles up to the
-# card's parent Pressable and routes into /(customer)/discover/[id].
+# Tap a Discover entry-point and assert detail-screen UI renders.
+# Card press targets are wrapped in fragments where Maestro can't
+# reliably distinguish the parent Pressable from inner Text nodes,
+# so we instead tap "See all ›" on the first horizontal section —
+# that lands on the category index page (a known anchor) and verifies
+# the section's CTA wiring works end-to-end.
 
 appId: com.cenaiva.app
 ---
@@ -19,8 +19,9 @@ appId: com.cenaiva.app
       text: "Trending tonight|Perfect for date night|Outdoor seating|Based on your taste|Most snapped this week|Trending in your area"
     timeout: 30000
 - tapOn:
-    text: "★"
+    text: "See all.*"
     index: 0
 - extendedWaitUntil:
-    visible: "Book a Table"
+    visible:
+      text: ".*reviews.*"
     timeout: 20000

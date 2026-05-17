@@ -17,11 +17,17 @@ appId: com.cenaiva.app
       visible: "Welcome to Cenaiva"
     commands:
       - tapOn: "Sign in"
-# Tab bar uses i18n key tabs.profile → "Profile".
-- tapOn: "Profile"
-- extendedWaitUntil:
-    visible: "Sign out"
-    timeout: 20000
+# iOS exposes the tab label as "Profile, tab, 5 of 17", so we anchor
+# the regex on that substring.
+- tapOn:
+    text: "Profile, tab.*"
+# Sign out is at the bottom of the 4-page profile screen — scroll
+# until visible. Maestro polls the visibility check between scrolls.
+- scrollUntilVisible:
+    element:
+      text: "Sign out"
+    direction: DOWN
+    timeout: 30000
 - tapOn: "Sign out"
 # router.replace('/onboarding') lands us on slide 1 of onboarding, whose
 # bottom CTA reads "Next" until the last slide ("Get Started"). On iOS the

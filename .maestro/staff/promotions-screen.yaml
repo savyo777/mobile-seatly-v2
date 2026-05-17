@@ -14,9 +14,11 @@ appId: com.cenaiva.app
       - tapOn: "Sign in"
 - runFlow:
     when:
-      visible: "Home"
+      visible:
+        text: "Home, tab.*"
     commands:
-      - tapOn: "Promos"
+      - tapOn:
+          text: "Promos, tab.*"
       - extendedWaitUntil:
           visible: "Offers & promos"
           timeout: 20000

@@ -8,6 +8,8 @@
 #
 # This flow only runs when the keychain restores a staff session; if we
 # land in the customer shell instead, we exit early without failing.
+# iOS exposes tab labels as e.g. "Home, tab, 1 of N", so we anchor the
+# regex on that substring.
 
 appId: com.cenaiva.app
 ---
@@ -18,29 +20,38 @@ appId: com.cenaiva.app
       visible: "Welcome to Cenaiva"
     commands:
       - tapOn: "Sign in"
-# Only proceed if a staff session is restored — the staff shell always shows
-# "Home" as the active tab on first mount.
 - runFlow:
     when:
-      visible: "Home"
+      visible:
+        text: "Home, tab.*"
     commands:
-      - tapOn: "Bookings"
+      - tapOn:
+          text: "Bookings, tab.*"
       - extendedWaitUntil:
-          visible: "Bookings"
+          visible:
+            text: "Bookings, tab.*"
           timeout: 15000
-      - tapOn: "Expenses"
+      - tapOn:
+          text: "Expenses, tab.*"
       - extendedWaitUntil:
-          visible: "Expenses"
+          visible:
+            text: "Expenses, tab.*"
           timeout: 15000
-      - tapOn: "Promos"
+      - tapOn:
+          text: "Promos, tab.*"
       - extendedWaitUntil:
-          visible: "Promos"
+          visible:
+            text: "Promos, tab.*"
           timeout: 15000
-      - tapOn: "Business"
+      - tapOn:
+          text: "Business, tab.*"
       - extendedWaitUntil:
-          visible: "Business"
+          visible:
+            text: "Business, tab.*"
           timeout: 15000
-      - tapOn: "Home"
+      - tapOn:
+          text: "Home, tab.*"
       - extendedWaitUntil:
-          visible: "Home"
+          visible:
+            text: "Home, tab.*"
           timeout: 15000
