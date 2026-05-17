@@ -10,6 +10,7 @@ import { type OwnerEventRow, type OwnerPromotion } from '@/lib/mock/ownerApp';
 import { useOwnerScope } from '@/hooks/useOwnerScope';
 import { fetchUpcomingEvents, type EventRow } from '@/lib/events/getEvents';
 import { fetchActivePromotions, type PromotionRow } from '@/lib/promotions/getPromotions';
+import { isPromoCreationEnabled } from '@/lib/config/staffFeatures';
 
 const useStyles = createStyles((c) => ({
   root: { flex: 1, backgroundColor: c.bgBase },
@@ -220,10 +221,12 @@ export default function OwnerPromoteScreen() {
             <Text style={styles.topSubline}>Marketing</Text>
             <Text style={styles.title}>Promote</Text>
           </View>
-          <Pressable style={styles.newBtn}>
-            <Ionicons name="add" size={16} color={c.bgBase} />
-            <Text style={styles.newBtnText}>New</Text>
-          </Pressable>
+          {isPromoCreationEnabled() ? (
+            <Pressable style={styles.newBtn}>
+              <Ionicons name="add" size={16} color={c.bgBase} />
+              <Text style={styles.newBtnText}>New</Text>
+            </Pressable>
+          ) : null}
         </View>
 
         {/* Events */}

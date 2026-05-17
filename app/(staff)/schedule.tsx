@@ -21,6 +21,7 @@ import {
 import { isDemoModeEnabled } from '@/lib/config/demoMode';
 import { useOwnerScope } from '@/hooks/useOwnerScope';
 import { RestaurantPicker } from '@/components/owner/RestaurantPicker';
+import { isWalkinAddEnabled } from '@/lib/config/staffFeatures';
 import {
   fetchTonightBriefing,
   fetchTonightGuests,
@@ -463,9 +464,11 @@ export default function TonightScreen() {
             <View>
               <Text style={styles.walkSeatsNum}>{b.openSeats}<Text style={styles.walkSeatsSuffix}> seats open</Text></Text>
             </View>
-            <Pressable style={styles.walkInBtn} accessibilityRole="button">
-              <Text style={styles.walkInBtnText}>+ Walk-in</Text>
-            </Pressable>
+            {isWalkinAddEnabled() ? (
+              <Pressable style={styles.walkInBtn} accessibilityRole="button">
+                <Text style={styles.walkInBtnText}>+ Walk-in</Text>
+              </Pressable>
+            ) : null}
           </View>
           <Text style={styles.walkSub}>{b.bookedSeats} booked / {b.totalCapacity} total</Text>
           <View style={styles.walkTrack}>

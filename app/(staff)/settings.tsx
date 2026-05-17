@@ -635,9 +635,10 @@ function SettingsSection({
       })();
     } else if (item.route) {
       router.push(withOwnerReturnTarget(item.route, 'settings') as never);
-    } else {
-      Alert.alert(item.label, 'Coming soon.');
     }
+    // No silent fallback: every nav row must either have a route or a
+    // dedicated branch above. Adding a row without one is a build-time bug
+    // we'd rather surface during development than hide behind "Coming soon".
   };
 
   return (
@@ -975,7 +976,6 @@ export default function OwnerSettingsScreen() {
       title: 'App & Display',
       rows: [
         { kind: 'nav', label: 'Appearance', value: themeLabel(mode), icon: 'contrast-outline' },
-        { kind: 'nav', label: 'Language', value: 'English', icon: 'language-outline' },
       ],
     },
     {

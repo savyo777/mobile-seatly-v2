@@ -301,13 +301,15 @@ function ProfileLoyaltyScreenInner() {
   const redeemedTx = useMemo(() => sortedTx.filter((tx) => tx.type === 'redeem'), [sortedTx]);
 
   const renderReward: ListRenderItem<LoyaltyReward> = ({ item }) => (
+    // Redeem button removed — handler was a no-op stub. Re-add with a
+    // real onPress when the redemption flow ships (track via a new
+    // isLoyaltyRedeemEnabled() flag in lib/config/loyaltyFeature.ts).
     <Card style={styles.rewardCard}>
       <View style={styles.rewardHeader}>
         <Text style={styles.rewardName}>{item.name}</Text>
         <Badge label={t('loyalty.pointsShort', { count: item.pointsCost })} variant="gold" />
       </View>
       <Text style={styles.rewardDescription}>{item.description}</Text>
-      <Button title={t('loyalty.redeemPoints')} variant="outlined" size="sm" fullWidth onPress={() => {}} />
     </Card>
   );
 

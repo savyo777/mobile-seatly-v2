@@ -80,6 +80,7 @@ function mapWaitlistRowToEntry(row: WaitlistRow): WaitlistEntry {
 import { createStyles, useTheme } from '@/lib/theme';
 import { ownerColorsFromPalette, ownerRadii, ownerSpace, useOwnerColors } from '@/lib/theme/ownerTheme';
 import { friendlyError } from '@/lib/errors/friendlyError';
+import { isWaitlistActionsEnabled } from '@/lib/config/staffFeatures';
 
 type DetailTarget =
   | { kind: 'walkin'; item: WalkInQueueItem }
@@ -392,10 +393,12 @@ export default function OwnerWaitlistScreen() {
             ) : null}
 
             <View style={styles.modalActions}>
-              <Pressable onPress={onSeat} style={({ pressed }) => [styles.actionBtn, pressed && styles.actionBtnPressed]}>
-                <Ionicons name="restaurant-outline" size={20} color={ownerColors.gold} />
-                <Text style={styles.actionBtnText}>{t('owner.waitlistDetailSeat')}</Text>
-              </Pressable>
+              {isWaitlistActionsEnabled() ? (
+                <Pressable onPress={onSeat} style={({ pressed }) => [styles.actionBtn, pressed && styles.actionBtnPressed]}>
+                  <Ionicons name="restaurant-outline" size={20} color={ownerColors.gold} />
+                  <Text style={styles.actionBtnText}>{t('owner.waitlistDetailSeat')}</Text>
+                </Pressable>
+              ) : null}
               <Pressable
                 onPress={onNotifyReady}
                 style={({ pressed }) => [styles.actionBtn, pressed && styles.actionBtnPressed]}
@@ -403,13 +406,15 @@ export default function OwnerWaitlistScreen() {
                 <Ionicons name="notifications-outline" size={20} color={ownerColors.gold} />
                 <Text style={styles.actionBtnText}>Notify ready</Text>
               </Pressable>
-              <Pressable
-                onPress={onEditTime}
-                style={({ pressed }) => [styles.actionBtn, pressed && styles.actionBtnPressed]}
-              >
-                <Ionicons name="time-outline" size={20} color={ownerColors.gold} />
-                <Text style={styles.actionBtnText}>{t('owner.waitlistDetailEditTime')}</Text>
-              </Pressable>
+              {isWaitlistActionsEnabled() ? (
+                <Pressable
+                  onPress={onEditTime}
+                  style={({ pressed }) => [styles.actionBtn, pressed && styles.actionBtnPressed]}
+                >
+                  <Ionicons name="time-outline" size={20} color={ownerColors.gold} />
+                  <Text style={styles.actionBtnText}>{t('owner.waitlistDetailEditTime')}</Text>
+                </Pressable>
+              ) : null}
               <Pressable
                 onPress={onRemoveDetail}
                 style={({ pressed }) => [styles.actionBtn, styles.actionBtnDanger, pressed && styles.actionBtnPressed]}
