@@ -60,3 +60,33 @@ export function getRecoveryTokenHashFromUrl(url: string): { tokenHash: string; t
   if (tokenHash && type === 'recovery') return { tokenHash, type };
   return null;
 }
+
+/**
+ * Check whether THIS device recently initiated a password-reset for
+ * the email embedded in the recovery link. Used as an out-of-band
+ * sanity check: if the user clicks a recovery link without ever
+ * tapping "Forgot password" on this device, log a notice (deep-link
+ * may have come from somewhere unexpected — phishing, replay, etc.).
+ *
+ * Returns true when the local state is fresh (<60min old), false
+ * otherwise. Callers proceed regardless — cross-device reset is
+ * legitimate — but the warning lands in crash_logs for ops visibility.
+ *
+ * Added 2026-05-17 in the security audit.
+ */
+const RECOVERY_FRESHNESS_MS = 60 * 60 * 1000;
+
+export async function isRecoveryRecentlyInitiated(email: string): Promise<boolean> {
+  if (!email) return false;
+  try {
+    const AsyncStorage = (await import('@react-native-async-storage/async-storage')).default;
+    const key = `@cenaiva/recovery_initiated:${email.trim().toLowerCase()}`;
+    const raw = await AsyncStorage.getItem(key);
+    if (!raw) return false;
+    const initiatedMs = Number(raw);
+    if (!Number.isFinite(initiatedMs)) return false;
+    return Date.now() - initiatedMs <= RECOVERY_FRESHNESS_MS;
+  } catch {
+    return false;
+  }
+}

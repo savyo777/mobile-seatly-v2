@@ -1,6 +1,7 @@
 import { Platform } from 'react-native';
 import Constants from 'expo-constants';
 import { getSupabase } from '@/lib/supabase/client';
+import { scrubCrashContext, scrubCrashString } from '@/lib/errors/scrubCrashContext';
 
 /**
  * In-house crash logger. Fire-and-forget POST of a single error event
@@ -94,14 +95,23 @@ export async function logCrash(err: unknown, context?: CrashContext): Promise<vo
   if (!supabase) return;
 
   try {
+    // PII scrub before posting. The crash_logs table is service-role
+    // readable only, but defense-in-depth: a caller that includes
+    // { email, phone, token, card } in their context shouldn't have
+    // that data persisted server-side. See scrubCrashContext.ts for
+    // the redaction rules.
+    const scrubbedMessage = scrubCrashString(extractMessage(err));
+    const scrubbedStack = scrubCrashString(extractStack(err));
+    const scrubbedExtra = scrubCrashContext(context?.extra);
+
     const payload = {
       p_platform: Platform.OS,
       p_app_version: appVersion(),
       p_build_number: buildNumber(),
       p_route: truncate(context?.route ?? null, 200),
-      p_message: truncate(extractMessage(err), MAX_MESSAGE_LENGTH),
-      p_stack: truncate(extractStack(err), MAX_STACK_LENGTH),
-      p_context: context?.extra ?? null,
+      p_message: truncate(scrubbedMessage, MAX_MESSAGE_LENGTH),
+      p_stack: truncate(scrubbedStack, MAX_STACK_LENGTH),
+      p_context: scrubbedExtra,
     };
     const { error } = await supabase.rpc('insert_crash_log', payload);
     if (error && __DEV__) {

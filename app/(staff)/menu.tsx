@@ -31,9 +31,6 @@ import { createStyles, useTheme } from '@/lib/theme';
 import { ownerColorsFromPalette, ownerRadii, ownerSpace, useOwnerColors } from '@/lib/theme/ownerTheme';
 import { sanitizeSearchInput } from '@/lib/validation/input';
 
-const PLACEHOLDER_PHOTO =
-  'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=600&q=80';
-
 const MODAL_EXIT_MS = 190;
 
 function filterItems(

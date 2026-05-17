@@ -173,6 +173,20 @@ export async function sendPasswordResetEmail(email: string): Promise<void> {
     redirectTo,
   });
   if (error) throw error;
+  // Record that THIS device just initiated a reset. The recovery-link
+  // handler uses this to flag deep-links that arrive without a
+  // matching local request — those are still allowed (cross-device
+  // reset is legitimate) but a server-side notice is logged for ops
+  // visibility. Added 2026-05-17 in the security audit.
+  try {
+    const AsyncStorage = (await import('@react-native-async-storage/async-storage')).default;
+    await AsyncStorage.setItem(
+      `@cenaiva/recovery_initiated:${email.trim().toLowerCase()}`,
+      String(Date.now()),
+    );
+  } catch {
+    /* AsyncStorage write is best-effort; do not surface errors */
+  }
 }
 
 // TODO(supabase): persist via supabase user_metadata or a profiles table

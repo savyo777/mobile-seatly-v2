@@ -82,6 +82,20 @@ export async function clearUnusablePersistedSupabaseSession(): Promise<boolean> 
 
 /**
  * Singleton Supabase browser/RN client. Returns null when env is not set (mock-only mode).
+ *
+ * TODO(security-phase-2.1): swap `storage: AsyncStorage` for the
+ * SecureStore-backed adapter at `lib/supabase/secureStorage.ts`
+ * once `expo-secure-store` is installed:
+ *
+ *   npx expo install expo-secure-store
+ *   // then:
+ *   import { secureStorageAdapter } from './secureStorage';
+ *   storage: secureStorageAdapter(),
+ *
+ * The adapter handles a one-time migration of existing AsyncStorage
+ * sessions to SecureStore on first read, so the switch is a one-line
+ * change with no logout-everyone fallout. Tracked in the 2026-05-17
+ * security audit.
  */
 export function getSupabase(): SupabaseClient | null {
   if (!isSupabaseConfigured()) return null;

@@ -35,8 +35,11 @@ const listEvents: typeof DEMO_listEvents = (...args) =>
 const getRestaurantForEvent: typeof DEMO_getRestaurantForEvent = (id) =>
   isDemoModeEnabled() ? DEMO_getRestaurantForEvent(id) : undefined;
 
-const FALLBACK_EVENT_COVER =
-  'https://images.unsplash.com/photo-1414235077428-338989a2e8c0?w=800&q=80';
+// Empty string when neither a cover_image_url nor media_url is set;
+// EventCard renders a plain dark View in place of the Image so the
+// app doesn't depend on a third-party CDN. Matches the cover-photo
+// pattern in lib/supabase/mapRestaurantRow.ts.
+const FALLBACK_EVENT_COVER = '';
 
 function inferEventType(row: EventRow): EventType {
   const theme = (row.theme ?? '').toLowerCase();

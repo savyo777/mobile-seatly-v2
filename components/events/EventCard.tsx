@@ -234,7 +234,11 @@ export function EventCard({ event, isHero = false, onPressed }: Props) {
       accessibilityRole="button"
       accessibilityLabel={`${event.title} at ${restaurant?.name}`}
     >
-      <Image source={{ uri: event.coverImage }} style={[styles.photo, { height: cardHeight }]} />
+      {event.coverImage ? (
+        <Image source={{ uri: event.coverImage }} style={[styles.photo, { height: cardHeight }]} />
+      ) : (
+        <View style={[styles.photo, { height: cardHeight, backgroundColor: '#0A0A0A' }]} />
+      )}
       <LinearGradient
         colors={['transparent', 'rgba(0,0,0,0.2)', 'rgba(0,0,0,0.88)']}
         style={[StyleSheet.absoluteFill, { borderRadius: borderRadius.xl }]}
