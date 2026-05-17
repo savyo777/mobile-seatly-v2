@@ -1,7 +1,9 @@
-# Customer tab navigation: tap the Events tab and assert the screen
-# header renders. Empty state copy is "No events found" / "No results
-# found" depending on filters; we don't pin to either since the
-# supabase data path may return real rows in production.
+# Customer tab navigation: tap the Events tab and assert it renders.
+# Empty state copy is "No events found" / "No results found" depending
+# on filters; we don't pin to either since the supabase data path may
+# return real rows in production.
+#
+# Only runs when the keychain restored a customer session.
 
 appId: com.cenaiva.app
 ---
@@ -9,15 +11,12 @@ appId: com.cenaiva.app
 - runFlow: ../_subflows/past-onboarding.yaml
 - runFlow:
     when:
-      visible: "Welcome to Cenaiva"
+      visible:
+        text: "Events, tab.*"
     commands:
       - tapOn:
-          text: ".*Sign in"
-# iOS exposes the tab label as "Events, tab, 2 of 17", so we anchor
-# the regex on that substring.
-- tapOn:
-    text: "Events, tab.*"
-- extendedWaitUntil:
-    visible:
-      text: ".*Events.*"
-    timeout: 20000
+          text: "Events, tab.*"
+      - extendedWaitUntil:
+          visible:
+            text: "TORONTO|Events|No events"
+          timeout: 20000

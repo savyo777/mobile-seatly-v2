@@ -1,9 +1,11 @@
 # Tap a Discover entry-point and assert detail-screen UI renders.
-# Card press targets are wrapped in fragments where Maestro can't
-# reliably distinguish the parent Pressable from inner Text nodes,
-# so we instead tap "See all ›" on the first horizontal section —
-# that lands on the category index page (a known anchor) and verifies
-# the section's CTA wiring works end-to-end.
+# We tap "See all ›" on the first horizontal section — that lands on
+# the category index page (a known anchor) and verifies the section's
+# CTA wiring works end-to-end.
+#
+# Only runs when the keychain restored a customer session — we skip
+# when signed-out because we can't recover a real auth session in
+# the test harness.
 
 appId: com.cenaiva.app
 ---
@@ -11,18 +13,17 @@ appId: com.cenaiva.app
 - runFlow: ../_subflows/past-onboarding.yaml
 - runFlow:
     when:
-      visible: "Welcome to Cenaiva"
+      visible:
+        text: "Discover, tab.*"
     commands:
+      - extendedWaitUntil:
+          visible:
+            text: "Trending tonight|Perfect for date night|Outdoor seating|Based on your taste|Most snapped this week|Trending in your area"
+          timeout: 30000
       - tapOn:
-          text: ".*Sign in"
-- extendedWaitUntil:
-    visible:
-      text: "Trending tonight|Perfect for date night|Outdoor seating|Based on your taste|Most snapped this week|Trending in your area"
-    timeout: 30000
-- tapOn:
-    text: "See all.*"
-    index: 0
-- extendedWaitUntil:
-    visible:
-      text: ".*reviews.*"
-    timeout: 20000
+          text: "See all.*"
+          index: 0
+      - extendedWaitUntil:
+          visible:
+            text: ".*reviews.*"
+          timeout: 20000

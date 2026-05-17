@@ -1,39 +1,32 @@
 # Profile → Sign out flow. The Profile tab's bottom row renders a
 # Pressable whose Text reads "Sign out" (app/(customer)/profile/index.tsx).
 # After signOut(), the screen calls router.replace('/onboarding'), so we
-# expect to land back at the welcome / sign-in surface.
+# expect to land back at onboarding / welcome.
 #
-# Note: the iOS simulator's keychain can auto-restore the session on the
-# next boot, so this flow only verifies sign-out for the *current* session.
+# Only runs when the keychain restored a customer session — there's no
+# Profile tab to sign out from on Welcome.
 
 appId: com.cenaiva.app
 ---
 - runFlow: ../_subflows/boot-to-app.yaml
 - runFlow: ../_subflows/past-onboarding.yaml
-# If we hit the welcome screen, we're not signed in — bail out of the
-# sign-out assertion gracefully.
 - runFlow:
     when:
-      visible: "Welcome to Cenaiva"
+      visible:
+        text: "Profile, tab.*"
     commands:
       - tapOn:
-          text: ".*Sign in"
-# iOS exposes the tab label as "Profile, tab, 5 of 17", so we anchor
-# the regex on that substring.
-- tapOn:
-    text: "Profile, tab.*"
-# Sign out is at the bottom of the 4-page profile screen — scroll
-# until visible. Maestro polls the visibility check between scrolls.
-- scrollUntilVisible:
-    element:
-      text: "Sign out"
-    direction: DOWN
-    timeout: 30000
-- tapOn: "Sign out"
-# router.replace('/onboarding') lands us on slide 1 of onboarding, whose
-# bottom CTA reads "Next" until the last slide ("Get Started"). On iOS the
-# label is exposed as "Next, " — match either.
-- extendedWaitUntil:
-    visible:
-      text: "Next.*|Get Started|Welcome to Cenaiva|Sign in"
-    timeout: 20000
+          text: "Profile, tab.*"
+      # Sign out is at the bottom of the 4-page profile — scroll until visible.
+      - scrollUntilVisible:
+          element:
+            text: "Sign out"
+          direction: DOWN
+          timeout: 30000
+      - tapOn: "Sign out"
+      # router.replace('/onboarding') → either onboarding (Next button)
+      # or Welcome (Sign in) depending on whether onboarding was cached.
+      - extendedWaitUntil:
+          visible:
+            text: "Next.*|Get Started|Welcome to Cenaiva|.*Sign in"
+          timeout: 20000
