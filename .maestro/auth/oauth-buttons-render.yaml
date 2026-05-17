@@ -6,6 +6,7 @@ appId: com.cenaiva.app
 ---
 - runFlow: ../_subflows/boot-to-app.yaml
 - runFlow: ../_subflows/past-onboarding.yaml
-- tapOn: "Sign in"
+- tapOn:
+    text: ".*Sign in"
 - assertVisible: "Continue with Google"
 - assertVisible: "Continue with Apple"

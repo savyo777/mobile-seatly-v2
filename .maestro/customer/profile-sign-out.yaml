@@ -16,7 +16,8 @@ appId: com.cenaiva.app
     when:
       visible: "Welcome to Cenaiva"
     commands:
-      - tapOn: "Sign in"
+      - tapOn:
+          text: ".*Sign in"
 # iOS exposes the tab label as "Profile, tab, 5 of 17", so we anchor
 # the regex on that substring.
 - tapOn:

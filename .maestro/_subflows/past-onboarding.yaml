@@ -1,16 +1,17 @@
-# Steps through the four onboarding slides via the Next / Get Started
+# Steps through the three onboarding slides via the Next / Get Started
 # CTA at the bottom — but only if onboarding is actually showing.
+#
+# Onboarding has 3 slides (Discover, Book, Social) — 2 Next taps then
+# Get Started. We avoid the top-right "Skip" because it's in the same
+# screen region as the floating Expo dev-menu gear icon and Maestro's
+# tap occasionally hits the gear instead.
 #
 # Branches the flow could land in after boot-to-app:
 #   1. Welcome screen — already past onboarding, no-op.
-#   2. Onboarding — tap Next×3 then Get Started.
+#   2. Onboarding — tap Next×2 then Get Started.
 #   3. Authenticated shell (customer Discover or staff Dashboard) —
 #      keychain auto-restored a prior session, no onboarding/welcome
 #      to skip. No-op so the calling flow can branch on its own.
-#
-# We avoid the top-right "Skip" because it's in the same screen region
-# as the floating Expo dev-menu gear icon and Maestro's tap
-# occasionally hits the gear instead.
 
 appId: com.cenaiva.app
 ---
@@ -19,8 +20,6 @@ appId: com.cenaiva.app
       visible:
         text: "Next.*"
     commands:
-      - tapOn:
-          text: "Next.*"
       - tapOn:
           text: "Next.*"
       - tapOn:

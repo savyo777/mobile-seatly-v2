@@ -12,7 +12,8 @@ appId: com.cenaiva.app
     when:
       visible: "Welcome to Cenaiva"
     commands:
-      - tapOn: "Sign in"
+      - tapOn:
+          text: ".*Sign in"
 - extendedWaitUntil:
     visible: "Map"
     timeout: 30000
