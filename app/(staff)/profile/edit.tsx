@@ -550,6 +550,8 @@ function TimePickerModal({ visible, initial, label, onConfirm, onClose }: {
   return (
     <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
       <Pressable style={styles.pickerBackdrop} onPress={onClose}>
+        {/* Empty onPress swallows taps so tapping inside the picker
+            card doesn't bubble up to the backdrop and dismiss it. */}
         <Pressable onPress={() => {}} style={styles.pickerCard}>
           <Text style={styles.pickerTitle}>{label.toUpperCase()}</Text>
           <View style={styles.pickerColumns}>
@@ -597,6 +599,8 @@ function TurnTimePickerModal({
   return (
     <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
       <Pressable style={styles.pickerBackdrop} onPress={onClose}>
+        {/* Empty onPress swallows taps so tapping inside the picker
+            card doesn't bubble up to the backdrop and dismiss it. */}
         <Pressable onPress={() => {}} style={styles.pickerCard}>
           <Text style={styles.pickerTitle}>TURN TIME · MINUTES</Text>
           <View style={styles.pickerColumns}>

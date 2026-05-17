@@ -283,6 +283,8 @@ function EditItemSheet({
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
       >
         <Pressable style={styles.backdrop} onPress={onClose}>
+          {/* Empty onPress swallows taps so tapping inside the sheet
+              doesn't bubble up to the backdrop and dismiss the modal. */}
           <Pressable onPress={() => {}} style={styles.sheet}>
             <Text style={styles.sheetTitle}>{isNew ? 'New item' : 'Edit item'}</Text>
             <ScrollView keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false}>

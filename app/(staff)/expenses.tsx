@@ -207,6 +207,8 @@ export default function OwnerExpensesScreen() {
               styles.modalSheet,
               { paddingBottom: insets.bottom + ownerSpace.lg, backgroundColor: ownerColors.bgElevated },
             ]}
+            // Swallow taps so tapping inside the sheet doesn't bubble up
+            // to the backdrop Pressable and close the modal.
             onPress={() => {}}
           >
             <View style={styles.modalGrabber} />
