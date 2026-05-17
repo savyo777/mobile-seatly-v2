@@ -9,6 +9,14 @@ type Props = {
   title: string;
   subtitle?: string;
   children?: React.ReactNode;
+  /**
+   * When false, skip the inner ScrollView wrapper. Use this when the
+   * screen's children already provide their own scrolling (a FlatList,
+   * SectionList, or other VirtualizedList). React Native warns when a
+   * VirtualizedList is nested inside a same-orientation ScrollView
+   * because windowing breaks. Default true preserves existing screens.
+   */
+  scrollable?: boolean;
 };
 
 const useStyles = createStyles((c) => ({
@@ -54,7 +62,7 @@ const useStyles = createStyles((c) => ({
   },
 }));
 
-export function ProfileStackScreen({ title, subtitle, children }: Props) {
+export function ProfileStackScreen({ title, subtitle, children, scrollable = true }: Props) {
   const router = useRouter();
   const navigation = useNavigation();
   const insets = useSafeAreaInsets();
@@ -86,13 +94,20 @@ export function ProfileStackScreen({ title, subtitle, children }: Props) {
         </Text>
         <View style={styles.headerSpacer} />
       </View>
-      <ScrollView
-        showsVerticalScrollIndicator={false}
-        contentContainerStyle={[styles.body, { paddingBottom: insets.bottom + spacing['3xl'] }]}
-      >
-        {subtitle ? <Text style={styles.subtitle}>{subtitle}</Text> : null}
-        {children}
-      </ScrollView>
+      {scrollable ? (
+        <ScrollView
+          showsVerticalScrollIndicator={false}
+          contentContainerStyle={[styles.body, { paddingBottom: insets.bottom + spacing['3xl'] }]}
+        >
+          {subtitle ? <Text style={styles.subtitle}>{subtitle}</Text> : null}
+          {children}
+        </ScrollView>
+      ) : (
+        <View style={{ flex: 1 }}>
+          {subtitle ? <View style={styles.body}><Text style={styles.subtitle}>{subtitle}</Text></View> : null}
+          {children}
+        </View>
+      )}
     </View>
   );
 }

@@ -360,7 +360,7 @@ export default function MyReviewsScreen() {
   );
 
   return (
-    <ProfileStackScreen title="My Reviews">
+    <ProfileStackScreen title="My Reviews" scrollable={false}>
       {loading ? (
         <View style={styles.loadingWrap}>
           <ActivityIndicator color={c.gold} />
