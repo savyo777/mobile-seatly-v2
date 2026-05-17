@@ -335,7 +335,7 @@ export default function OwnerLoginScreen() {
       const result = await signInWithGoogle();
       if (result.status === 'cancelled') return;
       if (result.status === 'error') {
-        Alert.alert('Google sign in failed', result.message);
+        Alert.alert('Google sign in failed', friendlyError(result.message, "Couldn't sign in with Google. Please try again."));
         return;
       }
       const allowed = await enforceOwnerRole(result.session.user.id);
@@ -354,7 +354,7 @@ export default function OwnerLoginScreen() {
       const result = await signInWithApple();
       if (result.status === 'cancelled') return;
       if (result.status === 'error') {
-        Alert.alert('Apple sign in failed', result.message);
+        Alert.alert('Apple sign in failed', friendlyError(result.message, "Couldn't sign in with Apple. Please try again."));
         return;
       }
       const allowed = await enforceOwnerRole(result.session.user.id);

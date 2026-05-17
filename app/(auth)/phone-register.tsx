@@ -9,6 +9,7 @@ import { ScreenWrapper, Input, Button, Checkbox } from '@/components/ui';
 import { normalizePhoneToE164, sendPhoneOtp } from '@/lib/services/phoneAuth';
 import { TERMS_URL, PRIVACY_URL } from '@/lib/config/legalLinks';
 import { normalizeName } from '@/lib/validation/input';
+import { friendlyError } from '@/lib/errors/friendlyError';
 
 const useStyles = createStyles((c) => ({
   inner: {
@@ -117,7 +118,7 @@ export default function PhoneRegisterScreen() {
         },
       });
       if (error) {
-        Alert.alert('SMS failed', error);
+        Alert.alert('SMS failed', friendlyError(error, "Couldn't send the code. Please try again."));
         return;
       }
       router.push({
