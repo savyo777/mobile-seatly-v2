@@ -1,0 +1,37 @@
+# On the iOS Simulator, the persisted Supabase session in the keychain
+# survives `xcrun simctl uninstall` + reinstall, so the app frequently
+# boots straight into the customer or staff shell. Flows that need a
+# logged-out starting state run this subflow after boot-to-app to
+# force the app back to the welcome screen.
+#
+# Branches:
+#   - "Welcome to Cenaiva" already visible → no-op
+#   - Owner/staff dashboard visible → Settings tab → Log out
+#   - Customer Discover visible → Profile tab → Sign out
+
+appId: com.cenaiva.app
+---
+- runFlow:
+    when:
+      visible: "Restaurant dashboard"
+    commands:
+      - tapOn:
+          text: "Business"
+      - tapOn: "Log out"
+      - tapOn:
+          text: "Log out"
+          index: 1
+- runFlow:
+    when:
+      visible: "Discover"
+    commands:
+      - tapOn:
+          text: "Profile"
+      - tapOn: "Sign out"
+      - tapOn:
+          text: "Sign out"
+          index: 1
+- extendedWaitUntil:
+    visible: "Welcome to Cenaiva"
+    timeout: 15000
+    optional: true
