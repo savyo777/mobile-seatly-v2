@@ -31,6 +31,7 @@ import { rememberReceiptPreview, rememberReceiptStoragePath } from '@/lib/expens
 import { convertCurrency, type ConvertCurrencySuccess } from '@/lib/expenses/convertCurrency';
 import { formatCurrency } from '@/lib/utils/formatCurrency';
 import { getCurrentUserProfileId } from '@/lib/expenses/expensesApi';
+import { friendlyError } from '@/lib/errors/friendlyError';
 import {
   EXPENSE_CATEGORIES,
   isExpenseCategoryKey,
@@ -511,7 +512,7 @@ export default function ExpenseReviewScreen() {
       void Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
       router.replace('/(staff)/expenses' as never);
     } catch (err) {
-      Alert.alert('Couldn’t save', String((err as Error)?.message ?? err));
+      Alert.alert('Couldn’t save', friendlyError(err, "Couldn’t save the receipt. Please try again."));
       setSaving(false);
     }
   }, [

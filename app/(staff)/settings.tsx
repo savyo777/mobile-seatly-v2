@@ -28,6 +28,7 @@ import type { OwnerRestaurant } from '@/lib/services/ownerRestaurant';
 import { readBusinessHours, BUSINESS_HOURS_DAY_KEYS } from '@/lib/owner/businessHoursSettings';
 import { readClosures } from '@/lib/owner/closuresSettings';
 import { fetchStaffRoster } from '@/lib/owner/staffRoster';
+import { friendlyError } from '@/lib/errors/friendlyError';
 
 const OWNER_MONTHLY_SUB_DOLLARS = Number(process.env.EXPO_PUBLIC_OWNER_MONTHLY_SUB_DOLLARS) || 0;
 const OWNER_MONTHLY_SUB_LABEL = OWNER_MONTHLY_SUB_DOLLARS > 0
@@ -557,7 +558,7 @@ function SettingsSection({
               await signOut();
               router.replace('/onboarding' as never);
             } catch (e: any) {
-              Alert.alert('Logout failed', e?.message ?? 'Failed to log out. Please try again.');
+              Alert.alert('Logout failed', friendlyError(e, 'Failed to log out. Please try again.'));
             }
           },
         },
@@ -771,7 +772,7 @@ export default function OwnerSettingsScreen() {
         Alert.alert('Restaurants removed', message);
       }
     } catch (e: any) {
-      Alert.alert('Removal failed', e?.message ?? 'Could not remove restaurants. Please try again.');
+      Alert.alert('Removal failed', friendlyError(e, 'Could not remove restaurants. Please try again.'));
     } finally {
       setRemovingRestaurants(false);
     }

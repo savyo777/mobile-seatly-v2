@@ -26,6 +26,7 @@ import {
 } from '@/lib/expenses/reporting';
 import { shareExpensesCsv } from '@/lib/expenses/exportCsv';
 import { formatCurrency } from '@/lib/utils/formatCurrency';
+import { friendlyError } from '@/lib/errors/friendlyError';
 import { createStyles } from '@/lib/theme';
 import {
   ownerColorsFromPalette,
@@ -87,7 +88,13 @@ export default function ExpenseReportsScreen() {
     [byMonth],
   );
 
-  const handleClose = useCallback(() => router.back(), [router]);
+  const handleClose = useCallback(() => {
+    if (router.canGoBack()) {
+      router.back();
+    } else {
+      router.replace('/(staff)/expenses' as never);
+    }
+  }, [router]);
 
   const handleExport = useCallback(async () => {
     if (exporting) return;
@@ -106,7 +113,7 @@ export default function ExpenseReportsScreen() {
         );
       }
     } catch (err) {
-      Alert.alert('Export failed', String((err as Error)?.message ?? err));
+      Alert.alert('Export failed', friendlyError(err, "Couldn’t export the report. Please try again."));
     } finally {
       setExporting(false);
     }

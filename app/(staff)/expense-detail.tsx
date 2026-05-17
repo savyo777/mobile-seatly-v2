@@ -31,6 +31,7 @@ import { createStyles } from '@/lib/theme';
 import { ownerColorsFromPalette, ownerRadii, ownerSpace, useOwnerColors } from '@/lib/theme/ownerTheme';
 import { brandGold, withAlpha } from '@/lib/theme/tokens';
 import { normalizeTextInput, sanitizeMoneyInput, sanitizeTextInput } from '@/lib/validation/input';
+import { friendlyError } from '@/lib/errors/friendlyError';
 
 const TRANSACTION_TYPES: Array<{ value: TransactionType; label: string }> = [
   { value: 'expense', label: 'Expense' },
@@ -327,7 +328,7 @@ export default function ExpenseDetailScreen() {
       }
       setEditing(false);
     } catch (err) {
-      Alert.alert('Couldn’t save changes', String((err as Error)?.message ?? err));
+      Alert.alert('Couldn’t save changes', friendlyError(err, "Couldn’t save changes to this expense. Please try again."));
     } finally {
       setSaving(false);
     }
