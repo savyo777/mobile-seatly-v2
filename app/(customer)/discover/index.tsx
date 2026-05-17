@@ -24,6 +24,7 @@ import { loadRestaurantsForDiscover } from '@/lib/data/restaurantCatalog';
 import { fetchCurrentUserProfile } from '@/lib/services/userProfile';
 import { isDemoModeEnabled } from '@/lib/config/demoMode';
 import { isCompactDiscoverEnabled } from '@/lib/config/discoverDensity';
+import { isDiscoverFullBleedEnabled } from '@/lib/config/discoverFullBleed';
 import { pickFeaturedRestaurant } from '@/lib/mock/discoverPresentation';
 import { mockRestaurants, type Restaurant } from '@/lib/mock/restaurants';
 import {
@@ -487,7 +488,7 @@ export default function DiscoverScreen() {
       <View
         style={[
           styles.stickyHeader,
-          { paddingTop: spacing.xs },
+          { paddingTop: isDiscoverFullBleedEnabled() ? 0 : spacing.xs },
           isCompactDiscoverEnabled() && { paddingHorizontal: spacing.md },
         ]}
       >
@@ -545,14 +546,20 @@ export default function DiscoverScreen() {
         showsVerticalScrollIndicator={false}
         contentContainerStyle={[
           styles.content,
-          { paddingBottom: spacing.lg },
+          { paddingBottom: isDiscoverFullBleedEnabled() ? 0 : spacing.lg },
           isCompactDiscoverEnabled() && { paddingHorizontal: spacing.md },
+          isDiscoverFullBleedEnabled() && { paddingHorizontal: 0 },
         ]}
         refreshControl={
           <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={c.gold} />
         }
       >
-        <View style={styles.headerBlock}>
+        <View
+          style={[
+            styles.headerBlock,
+            isDiscoverFullBleedEnabled() && { paddingHorizontal: spacing.md },
+          ]}
+        >
           {/* Quick filter chips */}
           <ScrollView
             horizontal

@@ -5,6 +5,7 @@ import type { Restaurant } from '@/lib/mock/restaurants';
 import { DiscoverEnhancedCard } from '@/components/discover/DiscoverEnhancedCard';
 import { ChevronGlyph } from '@/components/ui/ChevronGlyph';
 import { isCompactDiscoverEnabled } from '@/lib/config/discoverDensity';
+import { isDiscoverFullBleedEnabled } from '@/lib/config/discoverFullBleed';
 import { createStyles, spacing, typography, useColors } from '@/lib/theme';
 
 type Props = {
@@ -59,6 +60,7 @@ function DiscoverHorizontalSectionBase({ title, data, onPressCard, onPressSeeAll
   const styles = useStyles();
   const { width: winW } = useWindowDimensions();
   const compact = isCompactDiscoverEnabled();
+  const fullBleed = isDiscoverFullBleedEnabled();
   const cardWidth = useMemo(
     () => (compact ? Math.min(winW * 0.46, 170) : Math.min(winW * 0.72, 280)),
     [winW, compact],
@@ -98,7 +100,12 @@ function DiscoverHorizontalSectionBase({ title, data, onPressCard, onPressSeeAll
 
   return (
     <View style={styles.section}>
-      <View style={styles.sectionHeader}>
+      <View
+        style={[
+          styles.sectionHeader,
+          fullBleed && { paddingHorizontal: spacing.md },
+        ]}
+      >
         <Text style={styles.title}>{title}</Text>
         {onPressSeeAll ? (
           <Pressable onPress={onPressSeeAll} style={styles.seeAllBtn} hitSlop={8}>
@@ -118,7 +125,11 @@ function DiscoverHorizontalSectionBase({ title, data, onPressCard, onPressSeeAll
         windowSize={5}
         updateCellsBatchingPeriod={24}
         showsHorizontalScrollIndicator={false}
-        contentContainerStyle={[styles.listContent, { paddingRight: trailingPad }]}
+        contentContainerStyle={[
+          styles.listContent,
+          { paddingRight: trailingPad },
+          fullBleed && { paddingLeft: 0 },
+        ]}
       />
     </View>
   );
