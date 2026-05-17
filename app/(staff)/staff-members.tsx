@@ -5,6 +5,9 @@ import { Ionicons } from '@expo/vector-icons';
 import { OwnerScreen } from '@/components/owner/OwnerScreen';
 import { SubpageHeader } from '@/components/owner/SubpageHeader';
 import { borderRadius, createStyles, spacing, typography, useColors } from '@/lib/theme';
+import { useAuthSession } from '@/lib/auth/AuthContext';
+
+const TEAM_ADMIN_ROLES = new Set(['owner', 'manager', 'diner_and_owner']);
 
 type StaffRole = 'Owner' | 'Manager' | 'Host' | 'Server' | 'Kitchen';
 
@@ -189,6 +192,8 @@ export default function StaffMembersScreen() {
   const router = useRouter();
   const [team, setTeam] = useState<StaffMember[]>(INITIAL_TEAM);
   const [filter, setFilter] = useState<Filter>('all');
+  const { role: viewerRole } = useAuthSession();
+  const canAdminTeam = viewerRole ? TEAM_ADMIN_ROLES.has(viewerRole.toLowerCase()) : false;
 
   const filtered = useMemo(() => {
     if (filter === 'all') return team;
@@ -196,6 +201,13 @@ export default function StaffMembersScreen() {
   }, [team, filter]);
 
   const showActions = (m: StaffMember) => {
+    if (!canAdminTeam) {
+      Alert.alert(
+        'Not allowed',
+        'Only owners and managers can change roles or remove team members.',
+      );
+      return;
+    }
     Alert.alert(
       m.name,
       m.role,

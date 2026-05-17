@@ -22,6 +22,9 @@ import { type MenuItem } from '@/lib/mock/menuItems';
 import { createStyles } from '@/lib/theme';
 import { ownerColorsFromPalette, ownerRadii, ownerSpace, useOwnerColors } from '@/lib/theme/ownerTheme';
 import { normalizeMoneyInput, normalizeTextInput, sanitizeMoneyInput, sanitizeTextInput } from '@/lib/validation/input';
+import { useAuthSession } from '@/lib/auth/AuthContext';
+
+const MENU_MUTATION_ROLES = new Set(['owner', 'manager', 'diner_and_owner']);
 
 export default function MenuItemEditScreen() {
   const { t } = useTranslation();
@@ -30,6 +33,8 @@ export default function MenuItemEditScreen() {
   const styles = useStyles();
   const { id } = useLocalSearchParams<{ id?: string }>();
   const { ownerRestaurantId, items, addItem, updateItem, removeItem, categories } = useMenu();
+  const { role } = useAuthSession();
+  const canMutateMenu = role ? MENU_MUTATION_ROLES.has(role.toLowerCase()) : false;
 
   const editingItem = useMemo(() => (id ? items.find((i) => i.id === id) ?? null : null), [id, items]);
   const isEditing = editingItem != null;
@@ -100,6 +105,15 @@ export default function MenuItemEditScreen() {
 
   const handleDelete = useCallback(() => {
     if (!editingItem) return;
+    if (!canMutateMenu) {
+      Alert.alert(
+        t('common.notAllowed', { defaultValue: 'Not allowed' }),
+        t('owner.menuItemDeleteNotAllowed', {
+          defaultValue: 'Only owners and managers can delete menu items.',
+        }),
+      );
+      return;
+    }
     Alert.alert(
       t('owner.menuItemDeleteTitle', { name: editingItem.name }),
       t('owner.menuItemDeleteConfirm'),
@@ -115,7 +129,7 @@ export default function MenuItemEditScreen() {
         },
       ],
     );
-  }, [editingItem, removeItem, router, t]);
+  }, [canMutateMenu, editingItem, removeItem, router, t]);
 
   return (
     <View style={styles.screen}>
@@ -201,7 +215,7 @@ export default function MenuItemEditScreen() {
               placeholderTextColor={ownerColors.textMuted}
             />
 
-            {isEditing ? (
+            {isEditing && canMutateMenu ? (
               <Pressable
                 onPress={handleDelete}
                 style={({ pressed }) => [styles.deleteBtn, pressed && styles.btnPressed]}
