@@ -483,7 +483,11 @@ export default function DiscoverScreen() {
   const quickChipStyle = (active: boolean) => [styles.vibeChip, active && styles.vibeChipSelected];
 
   return (
-    <ScreenWrapper scrollable={false} padded={false}>
+    <ScreenWrapper
+      scrollable={false}
+      padded={false}
+      withSafeAreaBottom={!isDiscoverFullBleedEnabled()}
+    >
       {/* Sticky header: logo + List/Map toggle + bell, plus an always-visible search bar. */}
       <View
         style={[
