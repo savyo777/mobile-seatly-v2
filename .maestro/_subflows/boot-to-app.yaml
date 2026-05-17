@@ -1,0 +1,49 @@
+# Shared sub-flow that gets the app past every dev-client + cookie
+# overlay and into the actual UI. Every named flow runs this first.
+
+appId: com.cenaiva.app
+---
+- launchApp:
+    clearState: true
+- runFlow:
+    when:
+      visible: "Development servers"
+    commands:
+      - tapOn:
+          text: "Cenaiva"
+          index: 1
+      - extendedWaitUntil:
+          notVisible: "Development servers"
+          timeout: 15000
+- extendedWaitUntil:
+    visible: "Continue"
+    timeout: 60000
+    optional: true
+- runFlow:
+    when:
+      visible: "Continue"
+    commands:
+      - tapOn: "Continue"
+- runFlow:
+    when:
+      visible: "Open DevTools"
+    commands:
+      - tapOn:
+          text: "Close"
+          optional: true
+- extendedWaitUntil:
+    notVisible: "Open DevTools"
+    timeout: 10000
+    optional: true
+- extendedWaitUntil:
+    visible: "Accept all cookies"
+    timeout: 30000
+    optional: true
+- runFlow:
+    when:
+      visible: "Accept all cookies"
+    commands:
+      - tapOn: "Accept all cookies"
+      - extendedWaitUntil:
+          notVisible: "Accept all cookies"
+          timeout: 10000
