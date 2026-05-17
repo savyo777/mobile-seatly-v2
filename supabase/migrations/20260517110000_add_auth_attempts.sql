@@ -112,16 +112,20 @@ comment on function public.record_auth_attempt(text, boolean) is
 
 -- 4. Auto-purge attempts older than 90 days so the table stays bounded.
 -- Daily cron via pg_cron (no-op if pg_cron unavailable).
-do $$
+-- NOTE: the inner SQL string uses $cron$ tags instead of $$ because
+-- it's nested inside the outer $do$ block — Postgres dollar-quoted
+-- strings must use distinct tags when nested.
+do $do$
 begin
   if exists (select 1 from pg_extension where extname = 'pg_cron') then
     perform cron.schedule(
       'purge_auth_attempts_daily',
       '0 4 * * *',
-      $$ delete from public.auth_attempts where attempted_at < now() - interval '90 days' $$
+      $cron$ delete from public.auth_attempts where attempted_at < now() - interval '90 days' $cron$
     );
   end if;
 exception when others then
   -- pg_cron not available or already scheduled — non-fatal.
   null;
-end$$;
+end
+$do$;
