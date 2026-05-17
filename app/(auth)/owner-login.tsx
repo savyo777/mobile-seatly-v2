@@ -14,6 +14,7 @@ import { normalizePhoneToE164, sendPhoneOtp } from '@/lib/services/phoneAuth';
 import { roleIncludes } from '@/lib/auth/roles';
 import { MAX_FAILED_ATTEMPTS } from '@/lib/auth/lockoutPolicy';
 import { recordAuthAttempt } from '@/lib/auth/authAttempts';
+import { recordSignIn } from '@/lib/auth/recordSignIn';
 import { normalizeEmail } from '@/lib/validation/input';
 import { friendlyError } from '@/lib/errors/friendlyError';
 import {
@@ -289,6 +290,9 @@ export default function OwnerLoginScreen() {
         Alert.alert('Session error', 'Could not load your account. Please try again.');
         return;
       }
+      // Fire-and-forget new-device-alert recording. See
+      // lib/auth/recordSignIn.ts.
+      void recordSignIn();
       const allowed = await enforceOwnerRole(signedInUserId);
       if (!allowed) return;
       await setAppShellPreference('staff');

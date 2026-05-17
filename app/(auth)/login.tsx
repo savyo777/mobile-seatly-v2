@@ -14,6 +14,7 @@ import { normalizePhoneToE164, sendPhoneOtp } from '@/lib/services/phoneAuth';
 import { getRoleForSignedInUser } from '@/lib/auth/postSignInRouting';
 import { MAX_FAILED_ATTEMPTS } from '@/lib/auth/lockoutPolicy';
 import { recordAuthAttempt } from '@/lib/auth/authAttempts';
+import { recordSignIn } from '@/lib/auth/recordSignIn';
 import { normalizeEmail } from '@/lib/validation/input';
 import { friendlyError } from '@/lib/errors/friendlyError';
 import {
@@ -219,6 +220,11 @@ export default function LoginScreen() {
   }, [isLockedOut, lockoutUntilMs]);
 
   const routeSignedInSession = async (session: Session) => {
+    // Tell the server about this sign-in. If the device fingerprint
+    // hasn't been seen before for this user, the server queues a
+    // "new device sign-in" email alert (fire-and-forget — never blocks
+    // the route).
+    void recordSignIn();
     const role = await getRoleForSignedInUser(session.user.id, session.user);
     if (!role) {
       try {
