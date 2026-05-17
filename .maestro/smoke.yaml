@@ -1,0 +1,24 @@
+# Smoke flow — 10-second sanity check that the app boots + reaches the
+# welcome screen. Run before every Phase 4 batch as a "is the app
+# fundamentally alive" gate.
+
+appId: com.cenaiva.app
+---
+- launchApp:
+    clearState: true
+- assertVisible:
+    text: "Cenaiva"
+    timeout: 30000
+# Onboarding shows first on a fresh launch; tap through or skip if
+# present. If we land directly on Welcome (already-seen onboarding),
+# this is a no-op.
+- runFlow:
+    when:
+      visible: "Skip"
+    commands:
+      - tapOn: "Skip"
+- assertVisible:
+    text: "Welcome to Cenaiva"
+    timeout: 15000
+- assertVisible: "Sign in"
+- assertVisible: "Create Account"

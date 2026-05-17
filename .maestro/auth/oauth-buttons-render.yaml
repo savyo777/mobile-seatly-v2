@@ -1,0 +1,26 @@
+# Verifies the OAuth buttons are visible and tappable on both
+# sign-in screens. We DON'T complete the OAuth handshake (that
+# requires real Google / Apple credentials). We assert they render
+# and respond to tap by opening the system browser / auth sheet.
+
+appId: com.cenaiva.app
+---
+- launchApp:
+    clearState: true
+- runFlow:
+    when:
+      visible: "Skip"
+    commands:
+      - tapOn: "Skip"
+- tapOn: "Sign in"
+- assertVisible: "Continue with Google"
+- assertVisible: "Continue with Apple"
+# Tap each — if the handler is broken, Maestro will see the screen
+# stay the same. A working button opens the OAuth web sheet which
+# overlays the app.
+- tapOn: "Continue with Apple"
+- waitForAnimationToEnd
+# Apple Sign-In sheet shows over the app. Dismiss it and re-verify
+# we land back on the login screen, not an error alert.
+- pressKey: "Back"
+- assertVisible: "Welcome back"

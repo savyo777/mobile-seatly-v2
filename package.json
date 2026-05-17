@@ -18,7 +18,12 @@
     "test:cenaiva": "jest __tests__/cenaiva --runInBand",
     "test": "jest",
     "test:watch": "jest --watch",
-    "smoke:ios": "node scripts/qa/mobile-click-smoke.mjs"
+    "smoke:ios": "node scripts/qa/mobile-click-smoke.mjs",
+    "e2e": "maestro test .maestro/",
+    "e2e:smoke": "maestro test .maestro/smoke.yaml",
+    "e2e:auth": "maestro test .maestro/auth/",
+    "e2e:customer": "maestro test .maestro/customer/",
+    "e2e:staff": "maestro test .maestro/staff/"
   },
   "dependencies": {
     "@cenaiva/assistant": "file:packages/assistant",
