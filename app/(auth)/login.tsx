@@ -402,6 +402,8 @@ export default function LoginScreen() {
           autoCorrect={false}
           value={email}
           onChangeText={setEmail}
+          testID="login-email-input"
+          accessibilityLabel={t('auth.email')}
         />
         <Input
           icon="lock-closed-outline"
@@ -409,6 +411,8 @@ export default function LoginScreen() {
           isPassword
           value={password}
           onChangeText={setPassword}
+          testID="login-password-input"
+          accessibilityLabel={t('auth.password')}
         />
 
         <View style={styles.rowBetween}>
@@ -443,6 +447,7 @@ export default function LoginScreen() {
           onPress={handleLogin}
           size="lg"
           disabled={submitting || isLockedOut}
+          testID="login-submit-button"
         />
 
         <View style={styles.dividerRow}>

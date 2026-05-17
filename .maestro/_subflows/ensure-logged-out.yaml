@@ -11,26 +11,39 @@
 
 appId: com.cenaiva.app
 ---
+# Wait for the app to settle on one of the three possible landing
+# states — without this the `when:` conditional checks fire while the
+# screen is still transitioning and miss the match.
+- extendedWaitUntil:
+    visible:
+      text: "Restaurant dashboard|Discover, tab.*|Welcome to Cenaiva"
+    timeout: 15000
+    optional: true
 - runFlow:
     when:
       visible: "Restaurant dashboard"
     commands:
       - tapOn:
-          text: "Business"
+          text: "Business.*"
       - tapOn: "Log out"
       - tapOn:
           text: "Log out"
           index: 1
 - runFlow:
     when:
-      visible: "Discover"
+      visible: "Discover, tab.*"
     commands:
       - tapOn:
-          text: "Profile"
-      - tapOn: "Sign out"
+          text: "Profile, tab.*"
+      - scrollUntilVisible:
+          element:
+            id: "customer-profile-sign-out"
+          direction: DOWN
+          timeout: 10000
       - tapOn:
-          text: "Sign out"
-          index: 1
+          id: "customer-profile-sign-out"
+      # handleLogout signs out without a confirmation dialog; the next
+      # screen is /onboarding directly.
 - extendedWaitUntil:
     visible: "Welcome to Cenaiva"
     timeout: 15000

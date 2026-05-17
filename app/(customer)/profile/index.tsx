@@ -932,6 +932,9 @@ export default function ProfileScreen() {
         <Pressable
           style={({ pressed }) => [styles.signOutBtn, pressed && { opacity: 0.7 }]}
           onPress={handleLogout}
+          testID="customer-profile-sign-out"
+          accessibilityRole="button"
+          accessibilityLabel="Sign out"
         >
           <Text style={styles.signOutText}>Sign out</Text>
         </Pressable>

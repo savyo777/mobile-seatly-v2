@@ -11,9 +11,11 @@ interface ButtonProps {
   disabled?: boolean;
   fullWidth?: boolean;
   style?: ViewStyle;
+  testID?: string;
+  accessibilityLabel?: string;
 }
 
-export function Button({ title, onPress, variant = 'primary', size = 'md', loading = false, disabled = false, fullWidth = true, style }: ButtonProps) {
+export function Button({ title, onPress, variant = 'primary', size = 'md', loading = false, disabled = false, fullWidth = true, style, testID, accessibilityLabel }: ButtonProps) {
   const c = useColors();
 
   const sizeStyles = {
@@ -45,6 +47,9 @@ export function Button({ title, onPress, variant = 'primary', size = 'md', loadi
       onPress={onPress}
       disabled={disabled || loading}
       activeOpacity={0.8}
+      testID={testID}
+      accessibilityLabel={accessibilityLabel ?? title}
+      accessibilityRole="button"
       style={[
         styles.base,
         variantStyles[variant],
