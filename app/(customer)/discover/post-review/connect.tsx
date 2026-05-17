@@ -467,7 +467,7 @@ export default function SnapCaptionScreen() {
         },
       });
     } catch (err) {
-      console.warn('[connect.postSnap] failed:', err);
+      if (__DEV__) console.warn('[connect.postSnap] failed:', err);
       Alert.alert('Could not post snap', 'Please try again.');
     } finally {
       if (!navigated) setPosting(false);

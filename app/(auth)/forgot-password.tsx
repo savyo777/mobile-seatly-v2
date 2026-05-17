@@ -90,7 +90,8 @@ export default function ForgotPasswordScreen() {
     }
     setSubmitting(true);
     const redirectTo = RESET_PASSWORD_REDIRECT;
-    console.log('Reset redirect URL:', redirectTo);
+    // Don't log the redirectTo here — it lets anyone watching the device log
+    // see the deep-link URL we're about to send to the user's inbox.
     const { error } = await supabase.auth.resetPasswordForEmail(trimmedEmail, { redirectTo });
     setSubmitting(false);
     if (error) {

@@ -320,7 +320,7 @@ export default function EventsScreen() {
         ];
         setRealEvents(merged);
       } catch (err) {
-        console.warn('[events] fetch failed', err);
+        if (__DEV__) console.warn('[events] fetch failed', err);
       }
     })();
     return () => {

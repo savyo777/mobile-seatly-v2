@@ -276,7 +276,7 @@ export default function ReceiptScreen() {
     try {
       await fn();
     } catch (e) {
-      console.warn(e);
+      if (__DEV__) console.warn(e);
       Alert.alert(t('common.error'), t('receipt.actionError'));
     } finally {
       setActionLoading(false);

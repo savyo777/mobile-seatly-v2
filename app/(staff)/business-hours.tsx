@@ -275,7 +275,7 @@ export default function BusinessHoursScreen() {
       })
       .catch((err) => {
         if (!active) return;
-        console.warn('[business-hours] readBusinessHours failed', err);
+        if (__DEV__) console.warn('[business-hours] readBusinessHours failed', err);
         setHours(scheduleToRows(DEFAULT_BUSINESS_HOURS));
       })
       .finally(() => {
@@ -307,7 +307,7 @@ export default function BusinessHoursScreen() {
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
       Alert.alert('Saved', 'Business hours updated.');
     } catch (err) {
-      console.warn('[business-hours] writeBusinessHours failed', err);
+      if (__DEV__) console.warn('[business-hours] writeBusinessHours failed', err);
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error).catch(() => {});
       Alert.alert("Couldn't save", friendlyError(err, 'Please try again in a moment.'));
     } finally {

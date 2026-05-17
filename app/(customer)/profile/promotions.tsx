@@ -65,7 +65,7 @@ export default function PromotionsScreen() {
         if (!active) return;
         setPromotions(rows.map(mapPromotionRow));
       } catch (err) {
-        console.warn('[promotions] fetch failed', err);
+        if (__DEV__) console.warn('[promotions] fetch failed', err);
       }
     })();
     return () => {

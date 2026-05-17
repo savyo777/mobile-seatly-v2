@@ -98,7 +98,9 @@ function mapPromotionRowToOwnerPromotion(row: PromotionRow): OwnerPromotion {
 
 type Tab = 'active' | 'past';
 
-const FALLBACK_IMAGE = 'https://images.unsplash.com/photo-1414235077428-338989a2e8c0?w=800';
+// Fallback for promo cards that don't have a coverImage. Self-hosted on
+// cenaiva.com — see LAUNCH_CHECKLIST.md for the asset upload step.
+const FALLBACK_IMAGE = 'https://cenaiva.com/assets/promo-cover-fallback.jpg';
 
 function isActive(p: OwnerPromotion): boolean {
   return p.status === 'live' || p.status === 'scheduled' || p.status === 'paused' || p.status === 'draft';

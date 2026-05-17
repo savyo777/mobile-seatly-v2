@@ -11,7 +11,11 @@ import { normalizeRestaurantPriceRange } from '@/lib/restaurants/pricing';
 import { DEFAULT_CURRENCY, DEFAULT_TAX_RATE_FALLBACK } from '@/lib/booking/bookingDefaults';
 import { readDepositTiers } from '@/lib/booking/depositTiers';
 
-const DEFAULT_RESTAURANT_COVER = 'https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=1200';
+// Fallback used when a restaurant row has no hero_image_url / cover_photo_url.
+// Lives on cenaiva.com (the brand domain) — NOT on a third-party CDN like
+// Unsplash that the app would depend on for first-render. Upload the actual
+// 1200×800 placeholder to that URL before launch; see LAUNCH_CHECKLIST.md.
+const DEFAULT_RESTAURANT_COVER = 'https://cenaiva.com/assets/restaurant-cover-fallback.jpg';
 
 function num(v: string | number | null | undefined, fallback: number): number {
   if (v == null) return fallback;

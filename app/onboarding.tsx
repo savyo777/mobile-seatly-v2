@@ -58,7 +58,7 @@ function BookIllustration({ c }: { c: ReturnType<typeof useColors> }) {
           <Ionicons name="checkmark" size={32} color="#fff" />
         </View>
         <Text style={[ill.confirmTitle, { color: c.textPrimary }]}>Reservation Confirmed</Text>
-        <Text style={[ill.confirmSub, { color: c.textMuted }]}>Nova Ristorante</Text>
+        <Text style={[ill.confirmSub, { color: c.textMuted }]}>Your favourite restaurant</Text>
         <View style={[ill.confirmDivider, { backgroundColor: c.border }]} />
         <View style={ill.confirmRow}>
           <Ionicons name="calendar-outline" size={14} color={c.textMuted} />

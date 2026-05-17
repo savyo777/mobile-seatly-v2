@@ -283,7 +283,7 @@ function ProfileLoyaltyScreenInner() {
         setLoyaltyPointsBalance(balance);
         setLoyaltyTier(profile?.loyaltyTier ?? tierLabelForBalance(balance));
       } catch (err) {
-        console.warn('[loyalty] fetch failed', err);
+        if (__DEV__) console.warn('[loyalty] fetch failed', err);
       }
     })();
     return () => {
