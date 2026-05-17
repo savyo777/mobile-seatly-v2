@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Switch, Text, View } from 'react-native';
+import { ActivityIndicator, Alert, Pressable, ScrollView, StyleSheet, Switch, Text, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { OwnerScreen } from '@/components/owner/OwnerScreen';
 import { SubpageHeader } from '@/components/owner/SubpageHeader';
@@ -191,11 +191,16 @@ export default function RolesPermissionsScreen() {
     };
   }, [selectedRestaurantId, isAll]);
 
-  const persist = (next: RolePermissionMatrix) => {
+  const persist = (next: RolePermissionMatrix, previous: RolePermissionMatrix) => {
     if (isAll || !selectedRestaurantId) return;
-    // Fire-and-forget: the UI already reflects the change optimistically.
     writeRolePermissions(selectedRestaurantId, next).catch(() => {
-      /* swallow — a future toast/system can surface failures */
+      // Rollback on persistence failure so the toggle doesn't silently
+      // drift out of sync with the server.
+      setPerms(previous);
+      Alert.alert(
+        'Permissions not saved',
+        'We couldn’t save that change. Check your connection and try again.',
+      );
     });
   };
 
@@ -205,7 +210,7 @@ export default function RolesPermissionsScreen() {
         ...prev,
         [activeRole]: { ...(prev[activeRole] ?? {}), [key]: next },
       };
-      persist(updated);
+      persist(updated, prev);
       return updated;
     });
   };
@@ -216,7 +221,7 @@ export default function RolesPermissionsScreen() {
         ...prev,
         [activeRole]: { ...DEFAULT_PERMS[activeRole] },
       };
-      persist(updated);
+      persist(updated, prev);
       return updated;
     });
   };
