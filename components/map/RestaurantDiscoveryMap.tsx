@@ -3,7 +3,7 @@ import { View, Text, StyleSheet, Platform, Pressable, ActivityIndicator } from '
 import MapView, { Marker, PROVIDER_GOOGLE, type MapPressEvent, type Region } from 'react-native-maps';
 import { Ionicons } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
-import { RestaurantMapMarkerContent } from '@/components/map/RestaurantMapMarker';
+import { RestaurantMapMarkerContent, MARKER_ANCHOR_Y } from '@/components/map/RestaurantMapMarker';
 import { googleDarkMapStyle } from '@/lib/map/darkMapStyle';
 import { hasFiniteCoords, haversineMeters } from '@/lib/map/geo';
 import { DEFAULT_MAP_CENTER } from '@/lib/map/mapFilters';
@@ -557,7 +557,7 @@ export function RestaurantDiscoveryMap({
               accessibilityLabel={`${r.name ?? 'Restaurant'}, ${displayRating.toFixed(1)} rating · ${displayPriceLabel}`}
               accessibilityHint={markerVariant === 'cenaiva' ? 'Shows restaurant catalog' : undefined}
               accessibilityRole="button"
-              anchor={markerVariant === 'cenaiva' ? { x: 0.5, y: 0.36 } : { x: 0.5, y: 1 }}
+              anchor={{ x: 0.5, y: MARKER_ANCHOR_Y }}
               zIndex={selected ? 1000 : 1}
               onPress={() => onSelectRestaurant(r.id)}
               tracksViewChanges={selected}
@@ -567,7 +567,6 @@ export function RestaurantDiscoveryMap({
                 rating={displayRating}
                 priceTier={displayPriceTier}
                 selected={selected}
-                variant={markerVariant}
               />
             </Marker>
           );

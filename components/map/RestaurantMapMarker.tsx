@@ -12,17 +12,26 @@ type Props = {
   rating: number;
   priceTier: number;
   selected: boolean;
+  /**
+   * Kept for backwards compatibility with callers. Both variants now
+   * render the same unified UI — the dark rating/price pill on top,
+   * the restaurant name label below — so the discover map and the
+   * Hey Cenaiva map look identical.
+   */
   variant?: 'default' | 'cenaiva';
   onPress: (id: string) => void;
 };
 
-type ContentProps = Pick<Props, 'name' | 'rating' | 'priceTier' | 'selected' | 'variant'>;
+type ContentProps = Pick<Props, 'name' | 'rating' | 'priceTier' | 'selected'>;
 
 const PIN = 40;
-const CENAIVA_FRAME_WIDTH = 96;
-const CENAIVA_FRAME_HEIGHT = 78;
-const CENAIVA_PIN_STAGE = 56;
-const CENAIVA_ANCHOR_Y = (CENAIVA_PIN_STAGE / 2) / CENAIVA_FRAME_HEIGHT;
+// The marker frame is sized so the anchor (passed on the Marker
+// element) can point at the centre of the pill, not the bottom of the
+// name label. Pill ~34, gap 4, label ~16 → frame ~54. The Marker
+// anchor uses (pillHalf + glowPadding) / frameHeight.
+const FRAME_HEIGHT = 56;
+const PIN_HEIGHT = 34;
+export const MARKER_ANCHOR_Y = (PIN_HEIGHT / 2) / FRAME_HEIGHT;
 
 function safeRating(value: number): number {
   return Number.isFinite(value) ? value : 0;
@@ -31,19 +40,14 @@ function safeRating(value: number): number {
 const useStyles = createStyles((c) => ({
   wrap: {
     alignItems: 'center',
-    justifyContent: 'flex-end',
-  },
-  cenaivaFrame: {
-    width: CENAIVA_FRAME_WIDTH,
-    height: CENAIVA_FRAME_HEIGHT,
-    alignItems: 'center',
     justifyContent: 'flex-start',
+    gap: 4,
   },
   glow: {
     position: 'absolute',
-    bottom: 4,
+    top: 2,
     width: 52,
-    height: 52,
+    height: PIN_HEIGHT,
     borderRadius: borderRadius.full,
     backgroundColor: 'transparent',
     opacity: 0,
@@ -53,25 +57,9 @@ const useStyles = createStyles((c) => ({
     backgroundColor: 'rgba(201, 168, 76, 0.22)',
     ...shadows.goldGlow,
   },
-  cenaivaPinStage: {
-    width: CENAIVA_PIN_STAGE,
-    height: CENAIVA_PIN_STAGE,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  cenaivaGlow: {
-    position: 'absolute',
-    left: 2,
-    top: 2,
-    width: 52,
-    height: 52,
-    borderRadius: borderRadius.full,
-    backgroundColor: 'transparent',
-    opacity: 0,
-  },
   pin: {
     minWidth: PIN + 4,
-    height: 34,
+    height: PIN_HEIGHT,
     borderRadius: borderRadius.full,
     backgroundColor: c.bgElevated,
     borderWidth: 1.5,
@@ -86,52 +74,25 @@ const useStyles = createStyles((c) => ({
     borderColor: c.gold,
     transform: [{ scale: 1.08 }],
   },
-  cenaivaPin: {
-    minWidth: 38,
-    height: 34,
-    borderRadius: 17,
-    backgroundColor: '#C8A951',
-    borderWidth: 2,
-    borderColor: '#0A0A0A',
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingHorizontal: 7,
-    shadowColor: '#000000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.34,
-    shadowRadius: 9,
-    elevation: 6,
-  },
-  cenaivaPinSelected: {
-    borderColor: '#FFFFFF',
-    backgroundColor: '#D8BA5A',
-  },
-  cenaivaPinPriceText: {
-    color: '#0A0A0A',
-    fontSize: 10,
-    fontWeight: '900',
-    lineHeight: 12,
-    textAlign: 'center',
-  },
-  cenaivaLabel: {
-    maxWidth: 96,
+  nameLabel: {
+    maxWidth: 120,
     minHeight: 16,
     borderRadius: 6,
     borderWidth: 1,
     borderColor: 'rgba(255,255,255,0.10)',
-    backgroundColor: 'rgba(7,7,7,0.72)',
-    paddingHorizontal: 5,
+    backgroundColor: 'rgba(7,7,7,0.78)',
+    paddingHorizontal: 6,
     paddingVertical: 2,
   },
-  cenaivaLabelSelected: {
-    borderColor: 'rgba(216,186,90,0.70)',
-    backgroundColor: 'rgba(15,15,15,0.84)',
+  nameLabelSelected: {
+    borderColor: 'rgba(201, 168, 76, 0.70)',
+    backgroundColor: 'rgba(15,15,15,0.88)',
   },
-  cenaivaLabelText: {
+  nameLabelText: {
     color: '#FFFFFF',
-    fontSize: 9,
+    fontSize: 10,
     fontWeight: '800',
-    lineHeight: 11,
+    lineHeight: 12,
     textAlign: 'center',
     textShadowColor: 'rgba(0,0,0,0.7)',
     textShadowOffset: { width: 0, height: 1 },
@@ -184,33 +145,11 @@ export function RestaurantMapMarkerContent({
   rating,
   priceTier,
   selected,
-  variant = 'default',
 }: ContentProps) {
   const styles = useStyles();
-  const isCenaiva = variant === 'cenaiva';
   const displayRating = safeRating(rating);
   const displayPriceTier = normalizeRestaurantPriceRange(priceTier);
   const displayPriceLabel = restaurantPriceLabel(displayPriceTier);
-
-  if (isCenaiva) {
-    return (
-      <View style={styles.cenaivaFrame} pointerEvents="none">
-        <View style={styles.cenaivaPinStage}>
-          <View style={[styles.cenaivaGlow, selected && styles.glowSelected]} />
-          <View style={[styles.cenaivaPin, selected && styles.cenaivaPinSelected]}>
-            <Text style={styles.cenaivaPinPriceText} numberOfLines={1}>
-              {displayPriceLabel}
-            </Text>
-          </View>
-        </View>
-        <View style={[styles.cenaivaLabel, selected && styles.cenaivaLabelSelected]}>
-          <Text style={styles.cenaivaLabelText} numberOfLines={1} ellipsizeMode="tail">
-            {name ?? 'Restaurant'}
-          </Text>
-        </View>
-      </View>
-    );
-  }
 
   return (
     <View style={styles.wrap} pointerEvents="box-none">
@@ -226,6 +165,13 @@ export function RestaurantMapMarkerContent({
           <Text style={[styles.priceText, selected && styles.priceTextSelected]}>{displayPriceLabel}</Text>
         </View>
       </View>
+      {name ? (
+        <View style={[styles.nameLabel, selected && styles.nameLabelSelected]}>
+          <Text style={styles.nameLabelText} numberOfLines={1} ellipsizeMode="tail">
+            {name}
+          </Text>
+        </View>
+      ) : null}
     </View>
   );
 }
@@ -238,40 +184,17 @@ function RestaurantMapMarkerComponent({
   rating,
   priceTier,
   selected,
-  variant = 'default',
   onPress,
 }: Props) {
-  const isCenaiva = variant === 'cenaiva';
   const displayRating = safeRating(rating);
   const displayPriceLabel = restaurantPriceLabel(priceTier);
-
-  if (isCenaiva) {
-    return (
-      <Marker
-        coordinate={{ latitude, longitude }}
-        accessibilityLabel={`${name ?? 'Restaurant'}, ${displayRating.toFixed(1)} rating · ${displayPriceLabel}`}
-        accessibilityHint="Shows restaurant catalog"
-        accessibilityRole="button"
-        anchor={{ x: 0.5, y: CENAIVA_ANCHOR_Y }}
-        zIndex={selected ? 1000 : 1}
-        onPress={() => onPress(id)}
-        tracksViewChanges={selected}
-      >
-        <RestaurantMapMarkerContent
-          name={name}
-          rating={rating}
-          priceTier={priceTier}
-          selected={selected}
-          variant={variant}
-        />
-      </Marker>
-    );
-  }
 
   return (
     <Marker
       coordinate={{ latitude, longitude }}
-      anchor={{ x: 0.5, y: 1 }}
+      accessibilityLabel={`${name ?? 'Restaurant'}, ${displayRating.toFixed(1)} rating · ${displayPriceLabel}`}
+      accessibilityRole="button"
+      anchor={{ x: 0.5, y: MARKER_ANCHOR_Y }}
       zIndex={selected ? 1000 : 1}
       onPress={() => onPress(id)}
       tracksViewChanges={selected}
@@ -281,7 +204,6 @@ function RestaurantMapMarkerComponent({
         rating={rating}
         priceTier={priceTier}
         selected={selected}
-        variant={variant}
       />
     </Marker>
   );
