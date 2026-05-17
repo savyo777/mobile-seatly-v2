@@ -5,7 +5,7 @@ import { ProfileStackScreen } from '@/components/profile/ProfileStackScreen';
 import { ProfileSectionTitle } from '@/components/profile/ProfileSectionTitle';
 import { ChevronSettingRow } from '@/components/profile/ChevronSettingRow';
 import { ToggleRow } from '@/components/profile/ToggleRow';
-import { useColors, createStyles, spacing, borderRadius, shadows } from '@/lib/theme';
+import { createStyles, spacing, borderRadius, shadows } from '@/lib/theme';
 
 const useStyles = createStyles((c) => ({
   group: {
@@ -21,34 +21,22 @@ const useStyles = createStyles((c) => ({
 
 export default function PrivacyScreen() {
   const { t } = useTranslation();
-  const c = useColors();
   const styles = useStyles();
 
   const [adPersonalization, setAdPersonalization] = useState(true);
   const [analytics, setAnalytics] = useState(true);
   const [recommendations, setRecommendations] = useState(true);
 
-  const confirmDelete = () => {
-    Alert.alert(
-      'Delete account',
-      'This will permanently remove your Seatly account and reservation history. This cannot be undone.',
-      [
-        { text: t('common.cancel'), style: 'cancel' },
-        { text: 'Delete', style: 'destructive', onPress: () => {} },
-      ],
-    );
-  };
-
   return (
     <ProfileStackScreen
       title={t('profile.privacySecurity')}
-      subtitle="Control how Seatly uses your data and manage your account data."
+      subtitle="Control how Cenaiva uses your data and manage your account data."
     >
       <ProfileSectionTitle>Data preferences</ProfileSectionTitle>
       <View style={styles.group}>
         <ToggleRow
           title="Personalised recommendations"
-          subtitle="Let Seatly use your dining history to suggest restaurants and events"
+          subtitle="Let Cenaiva use your dining history to suggest restaurants and events"
           value={recommendations}
           onValueChange={setRecommendations}
         />
@@ -60,7 +48,7 @@ export default function PrivacyScreen() {
         />
         <ToggleRow
           title="Analytics & crash reporting"
-          subtitle="Help improve Seatly by sharing anonymous usage data"
+          subtitle="Help improve Cenaiva by sharing anonymous usage data"
           value={analytics}
           onValueChange={setAnalytics}
           isLast
@@ -73,15 +61,8 @@ export default function PrivacyScreen() {
           title="Download account data"
           subtitle="Get a copy of your reservations, orders, and profile"
           icon="download-outline"
-          onPress={() => Alert.alert('Download data', 'We will email a link when your export is ready (demo).')}
-        />
-        <ChevronSettingRow
-          title="Delete account"
-          subtitle="Permanently remove your account and data"
-          icon="trash-outline"
-          destructive
           isLast
-          onPress={confirmDelete}
+          onPress={() => Alert.alert('Download data', 'We will email a link when your export is ready (demo).')}
         />
       </View>
     </ProfileStackScreen>

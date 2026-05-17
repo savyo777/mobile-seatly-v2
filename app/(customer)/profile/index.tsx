@@ -16,6 +16,7 @@ import { resolveAuthDisplayProfile, initialsFromDisplayName } from '@/lib/auth/d
 import { restaurantPriceLabel } from '@/lib/restaurants/pricing';
 import { useColors, useTheme, createStyles, spacing, borderRadius } from '@/lib/theme';
 import { useAuthSession } from '@/lib/auth/AuthContext';
+import { deleteAccount } from '@/lib/services/accountSecurity';
 import { fetchMyBookingItems, type MyBookingItem } from '@/lib/booking/myReservations';
 import { isDemoModeEnabled } from '@/lib/config/demoMode';
 import { isLoyaltyEnabled } from '@/lib/config/loyaltyFeature';
@@ -487,12 +488,30 @@ const useStyles = createStyles((c) => ({
     borderColor: c.border,
     alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: spacing.lg,
+    marginBottom: spacing.sm,
   },
   signOutText: {
     fontSize: 15,
     fontWeight: '600',
     color: c.textPrimary,
+  },
+  deleteAccountBtn: {
+    marginHorizontal: spacing.lg,
+    paddingVertical: 15,
+    borderRadius: borderRadius.lg,
+    backgroundColor: 'transparent',
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: 'rgba(227, 91, 91, 0.45)',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: spacing.lg,
+    flexDirection: 'row',
+    gap: 8,
+  },
+  deleteAccountText: {
+    fontSize: 15,
+    fontWeight: '600',
+    color: '#e35b5b',
   },
 }));
 
@@ -602,6 +621,31 @@ export default function ProfileScreen() {
       Alert.alert('Logout failed', e?.message ?? 'Failed to log out. Please try again.');
     }
   }
+
+  const handleDeleteAccount = () => {
+    Alert.alert(
+      'Delete account',
+      'This action is permanent and cannot be undone. Your account, reservations, reviews, and saved data will be removed.',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Delete account',
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              await deleteAccount();
+              router.replace('/onboarding');
+            } catch (e: any) {
+              Alert.alert(
+                'Delete failed',
+                e?.message ?? 'Could not delete your account. Please try again.',
+              );
+            }
+          },
+        },
+      ],
+    );
+  };
 
   const dinnersCount = recentVisits.length;
   const citiesCount = new Set(recentVisits.map((visit) => visit.restaurantName)).size;
@@ -889,6 +933,17 @@ export default function ProfileScreen() {
           onPress={handleLogout}
         >
           <Text style={styles.signOutText}>Sign out</Text>
+        </Pressable>
+
+        {/* Delete account */}
+        <Pressable
+          style={({ pressed }) => [styles.deleteAccountBtn, pressed && { opacity: 0.7 }]}
+          onPress={handleDeleteAccount}
+          accessibilityRole="button"
+          accessibilityLabel="Delete account"
+        >
+          <Ionicons name="trash-outline" size={16} color="#e35b5b" />
+          <Text style={styles.deleteAccountText}>Delete account</Text>
         </Pressable>
       </ScrollView>
     </View>
