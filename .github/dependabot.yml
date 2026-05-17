@@ -1,0 +1,86 @@
+# Dependabot config — keeps npm + GitHub Actions dependencies up to
+# date without spamming the PR list.
+#
+# Strategy:
+#   - npm: weekly schedule, single grouped PR for minor + patch updates,
+#     separate PRs for major-version bumps (which need real review).
+#   - github-actions: monthly (slow-moving ecosystem, no rush).
+#   - All PRs target main, opened with a "dependencies" label so you can
+#     filter the dashboard.
+#
+# Vulnerability alerts (separate from version updates) fire immediately
+# regardless of this schedule — those PRs always land as soon as a CVE
+# is published. Toggle in GitHub Settings → Security and analysis.
+
+version: 2
+updates:
+  # ---- Mobile app (root package.json) ----
+  - package-ecosystem: "npm"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "06:00"
+      timezone: "America/Toronto"
+    target-branch: "main"
+    open-pull-requests-limit: 5
+    labels:
+      - "dependencies"
+      - "automated"
+    commit-message:
+      prefix: "deps"
+      include: "scope"
+    # Group all minor + patch updates into one weekly PR per group.
+    # Major bumps still get their own PR so each one can be reviewed
+    # for breaking changes.
+    groups:
+      expo-and-react-native:
+        patterns:
+          - "expo*"
+          - "react-native*"
+          - "@react-native*"
+          - "@expo/*"
+        update-types:
+          - "minor"
+          - "patch"
+      supabase:
+        patterns:
+          - "@supabase/*"
+        update-types:
+          - "minor"
+          - "patch"
+      stripe:
+        patterns:
+          - "@stripe/*"
+          - "stripe"
+        update-types:
+          - "minor"
+          - "patch"
+      everything-else:
+        patterns:
+          - "*"
+        update-types:
+          - "minor"
+          - "patch"
+    # Ignore major version bumps on a few packages where the upgrade
+    # is non-trivial. We'll handle these manually on our own schedule.
+    ignore:
+      - dependency-name: "react"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "react-native"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "expo"
+        update-types: ["version-update:semver-major"]
+
+  # ---- GitHub Actions (if/when we add CI workflows) ----
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "monthly"
+    target-branch: "main"
+    open-pull-requests-limit: 3
+    labels:
+      - "dependencies"
+      - "ci"
+    commit-message:
+      prefix: "ci"
