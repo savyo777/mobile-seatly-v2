@@ -25,6 +25,10 @@ import { fetchCurrentUserProfile } from '@/lib/services/userProfile';
 import { isDemoModeEnabled } from '@/lib/config/demoMode';
 import { isCompactDiscoverEnabled } from '@/lib/config/discoverDensity';
 import { isDiscoverFullBleedEnabled } from '@/lib/config/discoverFullBleed';
+import { isPersonalizedDiscoverEnabled } from '@/lib/config/discoverPersonalization';
+import { useUserSignals } from '@/lib/discover/useUserSignals';
+import { applySectionSpec } from '@/lib/discover/applySectionSpec';
+import { SECTION_SPECS } from '@/lib/discover/sectionSpecs';
 import { pickFeaturedRestaurant } from '@/lib/mock/discoverPresentation';
 import { mockRestaurants, type Restaurant } from '@/lib/mock/restaurants';
 import {
@@ -404,22 +408,29 @@ export default function DiscoverScreen() {
     [filteredRestaurants, featured],
   );
 
+  const personalized = isPersonalizedDiscoverEnabled();
+  const signals = useUserSignals();
+
   const trendingData = useMemo(() => {
+    if (personalized) return applySectionSpec(withoutFeatured, SECTION_SPECS.trending, signals);
     const hit = withoutFeatured.filter((r) => r.featuredIn.includes('popular-near-you'));
     return (hit.length ? hit : withoutFeatured).slice(0, 12);
-  }, [withoutFeatured]);
+  }, [personalized, signals, withoutFeatured]);
 
   const dateNightData = useMemo(() => {
+    if (personalized) return applySectionSpec(withoutFeatured, SECTION_SPECS.dateNight, signals);
     const hit = withoutFeatured.filter((r) => r.featuredIn.includes('date-night-picks'));
     return (hit.length ? hit : withoutFeatured).slice(0, 12);
-  }, [withoutFeatured]);
+  }, [personalized, signals, withoutFeatured]);
 
   const outdoorData = useMemo(() => {
+    if (personalized) return applySectionSpec(withoutFeatured, SECTION_SPECS.outdoor, signals);
     const hit = withoutFeatured.filter((r) => r.featuredIn.includes('outdoor-seating'));
     return (hit.length ? hit : withoutFeatured).slice(0, 12);
-  }, [withoutFeatured]);
+  }, [personalized, signals, withoutFeatured]);
 
   const tasteData = useMemo(() => {
+    if (personalized) return applySectionSpec(withoutFeatured, SECTION_SPECS.taste, signals);
     // When the diner has saved "Places" picks, intersect them with each
     // restaurant's business_type. Restaurants with NULL business_type are
     // skipped from this section until an owner sets one.
@@ -432,16 +443,22 @@ export default function DiscoverScreen() {
     // section never goes empty for new diners.
     const hit = withoutFeatured.filter((r) => r.featuredIn.includes('recommended'));
     return (hit.length ? hit : withoutFeatured).slice(0, 12);
-  }, [withoutFeatured, userPlacesPrefs]);
+  }, [personalized, signals, withoutFeatured, userPlacesPrefs]);
 
   const mostSnappedData = useMemo(() => {
+    if (personalized) return applySectionSpec(withoutFeatured, SECTION_SPECS.mostSnapped, signals);
     const trending = isDemoModeEnabled() ? listTrendingRestaurants(7) : [];
     const idToRestaurant = new Map(baseRestaurants.map((r) => [r.id, r]));
     return trending
       .map((t) => idToRestaurant.get(t.restaurantId))
       .filter((r): r is Restaurant => !!r)
       .slice(0, 10);
-  }, [baseRestaurants]);
+  }, [personalized, signals, withoutFeatured, baseRestaurants]);
+
+  const worldwideData = useMemo(() => {
+    if (personalized) return applySectionSpec(baseRestaurants, SECTION_SPECS.worldwide, signals, 8);
+    return baseRestaurants.slice().sort((a, b) => (b.avgRating ?? 0) - (a.avgRating ?? 0)).slice(0, 8);
+  }, [personalized, signals, baseRestaurants]);
 
   const onRefresh = useCallback(() => {
     setRefreshing(true);
@@ -675,7 +692,7 @@ export default function DiscoverScreen() {
 
             <DiscoverHorizontalSection
               title="Trending Worldwide"
-              data={baseRestaurants.slice().sort((a, b) => (b.avgRating ?? 0) - (a.avgRating ?? 0)).slice(0, 8)}
+              data={worldwideData}
               onPressCard={openRestaurant}
               onPressSeeAll={() => goCategory('trending')}
             />
