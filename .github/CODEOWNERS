@@ -1,0 +1,49 @@
+# CODEOWNERS codifies which paths require explicit review approval
+# before a PR can merge (when branch protection's "Require review
+# from Code Owners" is enabled).
+#
+# Even with a single human reviewer, this matters because:
+#   1. It forces a deliberate review on the most security-sensitive
+#      paths instead of merging via the auto-merge / Dependabot path.
+#   2. When you add a collaborator later, the right paths automatically
+#      gate on you without needing to re-think permissions.
+#
+# Pattern syntax matches gitignore. Last matching line wins, so put
+# more specific rules below more general ones.
+
+# Default fallback — anything not explicitly listed below.
+*                                          @savyo777
+
+# Database — every schema change touches the production DB.
+/supabase/migrations/                      @savyo777
+/supabase/functions/                       @savyo777
+/supabase/functions/_shared/               @savyo777
+
+# Authentication + identity — anything that decides who someone is.
+/lib/auth/                                 @savyo777
+/lib/supabase/client.ts                    @savyo777
+/lib/supabase/secureStorage.ts             @savyo777
+
+# Payment + money flow.
+/supabase/functions/create-public-booking/ @savyo777
+/supabase/functions/cenaiva-orchestrate/   @savyo777
+/supabase/functions/register-restaurant-owner/ @savyo777
+/supabase/functions/delete-account/        @savyo777
+/supabase/functions/stripe-webhook/        @savyo777
+/supabase/functions/refund-payment-intent/ @savyo777
+/supabase/functions/confirm-hold-paid/     @savyo777
+/lib/booking/                              @savyo777
+
+# Privacy + crash logging.
+/lib/errors/                               @savyo777
+
+# Feature flags that gate security behavior.
+/lib/config/                               @savyo777
+
+# CI / repo hardening — changes here change the security posture itself.
+/.github/                                  @savyo777
+/CLAUDE.md                                 @savyo777
+
+# Build + deploy configuration.
+/eas.json                                  @savyo777
+/app.json                                  @savyo777

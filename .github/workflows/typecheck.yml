@@ -1,0 +1,49 @@
+name: Typecheck
+
+# Runs `npx tsc --noEmit` on every PR + push to main. Blocks PRs from
+# merging when typecheck fails (combined with branch protection's
+# "Require status checks to pass before merging").
+#
+# CLAUDE.md notes that the stale `mobile-seatly-v2-2/` subfolder
+# contains ~100 pre-existing errors that aren't relevant to the
+# active codebase. The workflow filters those out and fails ONLY when
+# the active code has TypeScript errors.
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  typecheck:
+    name: Typecheck
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Typecheck (excluding stale subfolder)
+        run: |
+          set -e
+          # Capture tsc output (don't exit on tsc's nonzero status yet).
+          # Filter out errors from the stale mobile-seatly-v2-2/ subfolder
+          # which CLAUDE.md says to ignore. If anything remains, fail.
+          OUTPUT=$(npx tsc --noEmit 2>&1 | grep -v "mobile-seatly-v2-2" || true)
+          if [ -n "$OUTPUT" ]; then
+            echo "$OUTPUT"
+            echo ""
+            echo "Typecheck failed. Run 'npx tsc --noEmit 2>&1 | grep -v \"mobile-seatly-v2-2\"' locally to see the same errors."
+            exit 1
+          fi
+          echo "Typecheck clean."

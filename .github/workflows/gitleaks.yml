@@ -1,0 +1,36 @@
+name: Gitleaks
+
+# Scans commits + PRs for accidentally committed secrets (API keys,
+# tokens, private keys, etc.) using gitleaks. Complements GitHub's
+# built-in secret scanning by running on PRs BEFORE they merge, so
+# a bad commit gets caught before landing on main.
+#
+# Free for public repos; the action is open source.
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  scan:
+    name: Scan
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          # Full history so gitleaks can scan every commit in the PR,
+          # not just the latest tip.
+          fetch-depth: 0
+
+      - name: Run gitleaks
+        uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          # GITLEAKS_LICENSE is only required for organization repos
+          # on the Pro tier. Public repos work without it.
