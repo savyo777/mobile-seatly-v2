@@ -2,7 +2,7 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "npm:@supabase/supabase-js@2";
 import { enforceRateLimit, rateLimitIdentifier, RateLimitError } from "../_shared/rate-limit.ts";
-import { sendSmsOrEmail, logCommunication } from "../_shared/sms.ts";
+import { sendSmsOrEmail, logCommunication, sanitizeForSmsField } from "../_shared/sms.ts";
 import {
   closureUnavailableMessage,
   findClosedSpecialDayForDate,
@@ -750,12 +750,20 @@ Deno.serve(async (req: Request) => {
     }
 
     const reservationDateLabel = formatReservationDate(reservedAt);
-    const confirmationSubject = `Your reservation at ${restaurantName}`;
+    // Sanitize user-controlled name fields before interpolating into
+    // SMS / email bodies — strips control chars + non-cenaiva URLs so
+    // a maliciously chosen guest_name can't smuggle a phishing payload
+    // into the restaurant's outbound notifications. Restaurant_name
+    // is owner-controlled (less hostile) but we still sanitize as
+    // defense-in-depth.
+    const safeGuestName = sanitizeForSmsField(guestName);
+    const safeRestaurantName = sanitizeForSmsField(restaurantName);
+    const confirmationSubject = `Your reservation at ${safeRestaurantName}`;
     const manageLink = restaurantSlug && savedConfirmationCode
       ? `https://cenaiva.com/${restaurantSlug}?confirmation=${encodeURIComponent(savedConfirmationCode)}`
       : null;
     const confirmationBody =
-      `Hi ${guestName}, your table at ${restaurantName} is booked for ${partySize} ` +
+      `Hi ${safeGuestName}, your table at ${safeRestaurantName} is booked for ${partySize} ` +
       `${partySize === 1 ? "guest" : "guests"} on ${reservationDateLabel}. ` +
       `Confirmation code: ${savedConfirmationCode}.` +
       (manageLink ? ` Manage: ${manageLink}` : "");

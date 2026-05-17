@@ -222,6 +222,17 @@ Deno.serve(async (req) => {
 
     if (!payload.setup_intent_id) return json(400, { error: 'Missing setup intent id.' });
     const setupIntent = await stripeGet(`setup_intents/${payload.setup_intent_id}?expand[]=payment_method`);
+
+    // Ownership check (security audit 2026-05-17). The SetupIntent was
+    // created above for `customerId`; reject if a client somehow passes
+    // a setup_intent_id belonging to a different customer. Defense in
+    // depth against IDOR — Stripe already binds SetupIntent →
+    // Customer, but we double-check before promoting the payment
+    // method to billing default.
+    if (setupIntent.customer && setupIntent.customer !== customerId) {
+      return json(403, { error: 'Setup intent does not belong to this customer.' });
+    }
+
     const paymentMethodId =
       typeof setupIntent.payment_method === 'string'
         ? setupIntent.payment_method
@@ -232,6 +243,14 @@ Deno.serve(async (req) => {
         : setupIntent.payment_method;
     if (!paymentMethodId) {
       return json(400, { error: 'No payment method available from setup intent.' });
+    }
+
+    // Belt + suspenders: re-fetch the PM and confirm it's attached to
+    // this customer. If somehow the PM is attached to a different
+    // customer (or detached), we refuse to set it as default here.
+    const verifiedPm = await stripeGet(`payment_methods/${paymentMethodId}`);
+    if (verifiedPm.customer && verifiedPm.customer !== customerId) {
+      return json(403, { error: 'Payment method does not belong to this customer.' });
     }
 
     await stripeRequest(`customers/${customerId}`, {

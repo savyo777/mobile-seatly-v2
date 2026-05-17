@@ -49,6 +49,37 @@ import {
 const DEFAULT_PROVIDER_URL =
   "https://api.frankfurter.app/{date}?from={from}&to={to}";
 
+// Hostnames the function is allowed to call. Defense-in-depth against
+// SSRF — even if FX_PROVIDER_URL is misconfigured (or somehow
+// influenced by an attacker via env), the request never hits an
+// internal IP, metadata service, or unrelated third party. Added
+// 2026-05-17 in response to the security audit P1 finding.
+const FX_PROVIDER_ALLOWED_HOSTS = new Set([
+  "api.frankfurter.app",
+  "api.exchangerate.host",
+  "api.fxratesapi.com",
+  "openexchangerates.org",
+  "api.currencyapi.com",
+]);
+
+// Cap on the FX provider response body so a hostile or buggy upstream
+// can't blow our memory budget. ~256 KB is comfortably more than any
+// real FX response.
+const FX_MAX_RESPONSE_BYTES = 256 * 1024;
+
+function isAllowedFxHost(url: string): boolean {
+  try {
+    const parsed = new URL(url);
+    // Reject anything that isn't https — http leaks request contents
+    // to local network observers, and the file:/ data:/ schemes are
+    // useless for our purposes.
+    if (parsed.protocol !== "https:") return false;
+    return FX_PROVIDER_ALLOWED_HOSTS.has(parsed.hostname.toLowerCase());
+  } catch {
+    return false;
+  }
+}
+
 // Approximate fallback rates for the most common pairs we see in receipts.
 // Used only when the upstream FX provider call fails — better to charge an
 // approximate amount than to fail the receipt save. Update periodically
@@ -227,6 +258,30 @@ Deno.serve(async (req) => {
     const providerTemplate = (Deno.env.get("FX_PROVIDER_URL") ?? "").trim() || DEFAULT_PROVIDER_URL;
     const providerUrl = buildProviderUrl(providerTemplate, from, to, date);
 
+    // Hostname allowlist (SSRF defense). Reject anything not in the
+    // approved set — fall straight through to the in-code FALLBACK_RATES
+    // so receipts still convert even if the env is misconfigured.
+    if (!isAllowedFxHost(providerUrl)) {
+      console.warn("convert-currency: rejected provider URL (not allowlisted)", providerUrl);
+      const fallbackRate = lookupFallbackRate(from, to);
+      if (fallbackRate != null) {
+        const converted = Math.round(amount * fallbackRate * 100) / 100;
+        return jsonResWithCors(req, {
+          convertedAmount: converted,
+          rate: fallbackRate,
+          sourceCurrency: from.toLowerCase(),
+          targetCurrency: to.toLowerCase(),
+          provider: "fallback",
+          quotedAt: new Date().toISOString(),
+          warning: "fx_provider_not_allowed",
+        });
+      }
+      return jsonResWithCors(req, {
+        error: "fx_provider_not_allowed",
+        message: "Currency conversion is temporarily unavailable.",
+      }, 503);
+    }
+
     const headers: Record<string, string> = { "Accept": "application/json" };
     const authHeader = (Deno.env.get("FX_PROVIDER_AUTH_HEADER") ?? "").trim();
     if (authHeader.includes(":")) {
@@ -245,7 +300,28 @@ Deno.serve(async (req) => {
     }
 
     if (response && response.ok) {
-      const json = (await response.json().catch(() => ({}))) as Record<string, unknown>;
+      // Reject responses larger than the cap so a misbehaving (or
+      // hostile) upstream can't bloat our memory. Most FX responses
+      // are well under 5 KB.
+      const contentLength = Number(response.headers.get("content-length") ?? "0");
+      if (contentLength > FX_MAX_RESPONSE_BYTES) {
+        console.warn("convert-currency: provider response too large", contentLength);
+        response = null;
+      }
+    }
+
+    if (response && response.ok) {
+      const bodyText = await response.text().catch(() => "");
+      if (bodyText.length > FX_MAX_RESPONSE_BYTES) {
+        console.warn("convert-currency: provider body exceeded cap after read", bodyText.length);
+        response = null;
+      }
+      let json: Record<string, unknown> = {};
+      if (response && bodyText) {
+        try { json = JSON.parse(bodyText) as Record<string, unknown>; } catch {
+          json = {};
+        }
+      }
       const rate = extractRate(json, to);
       if (rate != null && Number.isFinite(rate) && rate > 0) {
         const converted = Math.round(amount * rate * 100) / 100;

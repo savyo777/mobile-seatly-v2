@@ -29,6 +29,41 @@ export type CommunicationType =
   | "waitlist_ready"
   | (string & {});
 
+/**
+ * Sanitize a user-controlled field (guest_name, restaurant_name, etc.)
+ * before it's interpolated into an SMS body or email subject/body.
+ *
+ *  1. Strips ASCII control characters (incl. CR/LF/TAB) — no SMTP
+ *     header smuggling, no SMS body interleaving. Built from a string
+ *     via the RegExp constructor so the escape sequences survive
+ *     editor / tool round-trips that would otherwise collapse the
+ *     literal control bytes inside a regex character class.
+ *  2. Replaces http/https URLs that aren't cenaiva.com with the
+ *     literal "[link removed]" — no phishing payloads piggy-backed
+ *     on legitimate notifications.
+ *  3. Collapses runs of whitespace.
+ *  4. Caps length at 64 chars.
+ *
+ * Added 2026-05-17 in response to the security audit P1 finding:
+ * guest_name was interpolated directly into the SMS body so a guest
+ * named "Click here for free pizza: http://evil.tld" could phish
+ * other guests via the restaurant's outgoing reservation reminders.
+ */
+const CTRL_CHARS_RE = new RegExp("[\\u0000-\\u001F\\u007F]+", "g");
+
+export function sanitizeForSmsField(value: string | null | undefined): string {
+  if (!value) return "";
+  let s = String(value);
+  s = s.replace(CTRL_CHARS_RE, " ");
+  s = s.replace(
+    /https?:\/\/(?!(?:[a-z0-9-]+\.)*cenaiva\.com)[^\s]+/gi,
+    "[link removed]",
+  );
+  s = s.replace(/\s+/g, " ").trim();
+  if (s.length > 64) s = s.slice(0, 64).trim();
+  return s;
+}
+
 function readTwilioEnv(): { sid: string; token: string; from: string } | null {
   const sid = Deno.env.get("TWILIO_ACCOUNT_SID");
   const token = Deno.env.get("TWILIO_AUTH_TOKEN");

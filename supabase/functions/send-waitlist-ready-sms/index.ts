@@ -22,7 +22,7 @@ import {
   validationResponse,
   asUuid,
 } from "../_shared/input-validation.ts";
-import { sendSmsOrEmail, logCommunication } from "../_shared/sms.ts";
+import { sendSmsOrEmail, logCommunication, sanitizeForSmsField } from "../_shared/sms.ts";
 
 Deno.serve(async (req: Request) => {
   const corsHeaders = buildCorsHeaders(req);
@@ -80,8 +80,11 @@ Deno.serve(async (req: Request) => {
       .select("name")
       .eq("id", row.restaurant_id)
       .maybeSingle();
-    const restaurantName = restaurant?.name ?? "the restaurant";
-    const guestName = row.guest_name ?? "there";
+    // Sanitize user-controlled fields before interpolating into the
+    // outbound SMS / email (security audit: strip control chars and
+    // any non-cenaiva URLs).
+    const restaurantName = sanitizeForSmsField(restaurant?.name) || "the restaurant";
+    const guestName = sanitizeForSmsField(row.guest_name) || "there";
 
     const smsBody =
       `Hi ${guestName}, your table at ${restaurantName} is ready! ` +

@@ -66,3 +66,23 @@ export async function stripeGet(path: string): Promise<Record<string, unknown>> 
   }
   return data;
 }
+
+/**
+ * DELETE request to Stripe. Used to delete customers + cancel
+ * subscriptions during account teardown. Returns the response body
+ * (Stripe returns the deleted-flag object).
+ */
+export async function stripeDelete(path: string): Promise<Record<string, unknown>> {
+  const response = await fetch(`${STRIPE_BASE}/${path}`, {
+    method: "DELETE",
+    headers: {
+      Authorization: `Bearer ${stripeSecret()}`,
+      "Stripe-Version": STRIPE_API_VERSION,
+    },
+  });
+  const data = await response.json();
+  if (!response.ok) {
+    throw new Error(data?.error?.message ?? "Stripe request failed.");
+  }
+  return data;
+}

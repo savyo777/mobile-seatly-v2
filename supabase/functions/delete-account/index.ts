@@ -5,6 +5,7 @@ import { decodeJwtPayload } from "../_shared/jwt.ts";
 import { jsonRes } from "../_shared/json-response.ts";
 import { resolveOwnedRestaurantScope } from "../_shared/owner-restaurants.ts";
 import { supabaseAdmin } from "../_shared/supabase.ts";
+import { stripeRequest, stripeDelete } from "../_shared/stripe.ts";
 
 const supabaseUrl = Deno.env.get("SUPABASE_URL") ?? "";
 const supabaseAnonKey = Deno.env.get("SUPABASE_ANON_KEY") ?? "";
@@ -121,7 +122,100 @@ async function scrubProfiles(profileIds: string[], authUserId: string): Promise<
   );
 }
 
+/**
+ * Detach saved Stripe payment methods + delete the Stripe customer
+ * before the auth row goes away. Without this, deleted-account
+ * customers + cards would linger in Stripe forever, blocking future
+ * re-registrations under the same email and quietly inflating the
+ * Stripe customer count. Closed in the 2026-05-17 security audit.
+ *
+ * Every Stripe call is wrapped in bestEffort because a missing key /
+ * already-detached card / deleted-customer-then-rerun shouldn't fail
+ * the user's account-delete flow (the SQL side is what matters).
+ */
+async function cleanupStripeArtifacts(profileIds: string[]): Promise<void> {
+  if (!profileIds.length) return;
+
+  // Saved cards table is optional — some deploys don't have it yet.
+  // Tolerate "relation does not exist" and continue.
+  let savedCards: Array<{ stripe_payment_method_id?: string | null; stripe_customer_id?: string | null }> = [];
+  try {
+    const { data, error } = await supabaseAdmin
+      .from("saved_cards")
+      .select("stripe_payment_method_id, stripe_customer_id")
+      .in("user_profile_id", profileIds);
+    if (error) {
+      console.warn(`saved_cards lookup failed: ${error.message}`);
+    } else if (Array.isArray(data)) {
+      savedCards = data as typeof savedCards;
+    }
+  } catch (error) {
+    console.warn("saved_cards lookup threw:", error);
+  }
+
+  const paymentMethodIds = Array.from(
+    new Set(
+      savedCards
+        .map((row) => row.stripe_payment_method_id)
+        .filter((id): id is string => typeof id === "string" && id.length > 0),
+    ),
+  );
+  const customerIds = Array.from(
+    new Set(
+      savedCards
+        .map((row) => row.stripe_customer_id)
+        .filter((id): id is string => typeof id === "string" && id.length > 0),
+    ),
+  );
+
+  // Detach payment methods first. Stripe rejects deleting a customer
+  // with attached subscriptions, but PMs can be detached at any time.
+  for (const pmId of paymentMethodIds) {
+    await bestEffort(`stripe detach ${pmId}`, () =>
+      stripeRequest(`payment_methods/${pmId}/detach`, {}),
+    );
+  }
+
+  // Cancel any active subscriptions on each customer, then delete the
+  // customer. `customers/<id>?expand[]=subscriptions` is unavailable
+  // via the lightweight stripeGet wrapper, so we list subs directly.
+  for (const customerId of customerIds) {
+    try {
+      // List subscriptions for the customer (best-effort).
+      const subsRes = await fetch(
+        `https://api.stripe.com/v1/subscriptions?customer=${encodeURIComponent(customerId)}&status=all&limit=100`,
+        {
+          headers: {
+            Authorization: `Bearer ${Deno.env.get("STRIPE_SECRET_KEY") ?? ""}`,
+            "Stripe-Version": "2025-02-24.acacia",
+          },
+        },
+      );
+      if (subsRes.ok) {
+        const subsBody = (await subsRes.json()) as { data?: Array<{ id?: string; status?: string }> };
+        for (const sub of subsBody.data ?? []) {
+          if (!sub.id) continue;
+          if (sub.status === "canceled" || sub.status === "incomplete_expired") continue;
+          await bestEffort(`stripe cancel sub ${sub.id}`, () =>
+            stripeDelete(`subscriptions/${sub.id}`),
+          );
+        }
+      }
+    } catch (error) {
+      console.warn(`stripe subscriptions lookup failed for ${customerId}:`, error);
+    }
+    await bestEffort(`stripe delete customer ${customerId}`, () =>
+      stripeDelete(`customers/${customerId}`),
+    );
+  }
+}
+
 async function cleanupProfileData(profileIds: string[], authUserId: string): Promise<void> {
+  // Stripe cleanup happens FIRST — once auth + saved_cards rows are
+  // gone the customer/PM IDs would be lost and we'd never be able to
+  // reach them again.
+  await cleanupStripeArtifacts(profileIds);
+
   const conversationIds = await selectIds("chat_conversations", "user_profile_id", profileIds);
   await deleteRows("chat_messages", "conversation_id", conversationIds);
   await deleteRows("chat_conversations", "id", conversationIds);
