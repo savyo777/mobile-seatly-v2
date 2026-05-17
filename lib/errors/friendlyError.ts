@@ -174,7 +174,17 @@ function extractCandidateCodes(err: unknown): string[] {
   const rec = asRecord(err);
   if (rec) {
     // Standard places where libraries put a code.
-    for (const key of ['code', 'reason', 'name', 'declineCode', 'errorCode']) {
+    // `unavailable_reason` is what lib/booking/publicBookingApi.ts stamps
+    // on thrown errors when the server returns a 4xx with a known reason
+    // (slot_taken, diner_double_book, etc.).
+    for (const key of [
+      'code',
+      'reason',
+      'name',
+      'declineCode',
+      'errorCode',
+      'unavailable_reason',
+    ]) {
       const v = asString(rec[key]);
       if (v) out.push(v);
     }

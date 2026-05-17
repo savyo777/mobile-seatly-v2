@@ -41,6 +41,7 @@ import {
   shouldRouteAsCenaivaBookingConfirmation,
   transcriptForCenaivaBookingConfirmation,
 } from '@/lib/cenaiva/confirmationIntent';
+import { friendlyError as friendlyErrorCentral } from '@/lib/errors/friendlyError';
 import {
   buildLocalAvailabilityResponse,
   planLocalBookingTurn,
@@ -104,13 +105,14 @@ export function useCenaivaAssistant(): CenaivaAssistant {
   return ctx;
 }
 
+// Hey Cenaiva error-cause → user copy is now sourced from the central
+// lib/errors/friendlyError module so the strings stay consistent across the
+// rest of the app. The legacy not_authenticated / timeout / rate_limit_*
+// entries are all covered there. friendlyVoiceError stays local — it uses
+// substring matching on voice codes that don't map 1:1 to the central
+// helper's exact-code lookup.
 function friendlyError(cause: string | null) {
-  if (cause === 'not_authenticated') return 'Please sign in to continue.';
-  if (cause === 'timeout') return 'The assistant is taking a while. Try again.';
-  if (cause === 'rate_limit_minute') return 'Slow down for a moment and try again.';
-  if (cause === 'rate_limit_day') return "You've used Hey Cenaiva a lot today. Try again tomorrow.";
-  if (cause === 'paid_usage_budget_exceeded') return "You've used Hey Cenaiva a lot today. Try again tomorrow.";
-  return 'Something went wrong. Try again.';
+  return friendlyErrorCentral(cause, 'Something went wrong. Try again.');
 }
 
 function friendlyVoiceError(cause: string | null) {
