@@ -319,9 +319,22 @@ export default function RegisterScreen() {
         }
       }
 
-      if (data.session) {
+      // Even when Supabase auto-confirm is on and returns a session
+      // immediately, double-check the user's email_confirmed_at. We
+      // never route into the authenticated stack on an unconfirmed
+      // session — that would let anyone register with someone else's
+      // email and start using the account before the rightful owner
+      // sees the confirmation request. This guard was added in the
+      // 2026-05-17 security audit.
+      const confirmedAt = data.session?.user?.email_confirmed_at ?? null;
+      if (data.session && confirmedAt) {
         router.replace('/(customer)/discover' as never);
       } else {
+        // Sign out any unconfirmed session so the (auth) stack doesn't
+        // see them as already-signed-in on the next render.
+        if (data.session) {
+          try { await supabase.auth.signOut(); } catch { /* best-effort */ }
+        }
         Alert.alert(
           'Check your email',
           'We sent a confirmation link to your email. Verify it, then sign in.',

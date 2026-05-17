@@ -37,9 +37,14 @@ const ROLE_LOOKUP_FALLBACK_MS = 450;
 
 function resolveRoleFromMetadata(user: User | null): string | null {
   if (!user) return null;
-  const roleFromMetadata =
-    (user.app_metadata?.role as string | undefined) ??
-    (user.user_metadata?.role as string | undefined);
+  // Read ONLY app_metadata.role — that's server-set (and locked behind
+  // the service-role / SECURITY DEFINER RPCs that hand out owner +
+  // staff roles). Never read user_metadata.role — user_metadata is
+  // mutable by the user via `auth.updateUser({ data: {...} })`, so a
+  // malicious client could spoof their own role to 'owner' and flash
+  // owner chrome before the user_profiles lookup completes. This was
+  // closed in the 2026-05-17 security audit.
+  const roleFromMetadata = user.app_metadata?.role as string | undefined;
   if (!roleFromMetadata) return null;
   const normalized = roleFromMetadata.toLowerCase();
   if (normalized === 'diner') return 'customer';

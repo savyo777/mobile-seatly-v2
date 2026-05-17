@@ -12,7 +12,8 @@ import { sendPasswordResetEmail } from '@/lib/services/accountSecurity';
 import { signInWithApple, signInWithGoogle } from '@/lib/services/oauth';
 import { normalizePhoneToE164, sendPhoneOtp } from '@/lib/services/phoneAuth';
 import { roleIncludes } from '@/lib/auth/roles';
-import { LOCKOUT_MS, MAX_FAILED_ATTEMPTS } from '@/lib/auth/lockoutPolicy';
+import { MAX_FAILED_ATTEMPTS } from '@/lib/auth/lockoutPolicy';
+import { recordAuthAttempt } from '@/lib/auth/authAttempts';
 import { normalizeEmail } from '@/lib/validation/input';
 import { friendlyError } from '@/lib/errors/friendlyError';
 import {
@@ -251,15 +252,19 @@ export default function OwnerLoginScreen() {
         email: trimmedEmail,
         password,
       });
+
+      // Server-side lockout tracking. See migration
+      // 20260517110000_add_auth_attempts.sql + lib/auth/authAttempts.ts.
+      const attempt = await recordAuthAttempt(trimmedEmail, !error);
+
       if (error) {
-        const prevRaw = await AsyncStorage.getItem(failuresKey(trimmedEmail));
-        const prev = prevRaw ? Math.max(0, parseInt(prevRaw, 10) || 0) : 0;
-        const next = prev + 1;
-        if (next >= MAX_FAILED_ATTEMPTS) {
+        if (attempt.lockedUntilMs) {
+          await AsyncStorage.setItem(
+            lockoutKey(trimmedEmail),
+            new Date(attempt.lockedUntilMs).toISOString(),
+          );
           await AsyncStorage.removeItem(failuresKey(trimmedEmail));
-          const until = Date.now() + LOCKOUT_MS;
-          await AsyncStorage.setItem(lockoutKey(trimmedEmail), new Date(until).toISOString());
-          setLockoutUntilMs(until);
+          setLockoutUntilMs(attempt.lockedUntilMs);
           Alert.alert(
             'Too many attempts',
             'Too many failed attempts. Please wait 15 minutes or reset your password.',
@@ -271,7 +276,8 @@ export default function OwnerLoginScreen() {
           }
           return;
         }
-        await AsyncStorage.setItem(failuresKey(trimmedEmail), String(next));
+        const failuresUsed = Math.max(0, MAX_FAILED_ATTEMPTS - attempt.attemptsRemaining);
+        await AsyncStorage.setItem(failuresKey(trimmedEmail), String(failuresUsed));
         Alert.alert('Sign in failed', friendlyError(error, 'Wrong email or password.'));
         return;
       }
