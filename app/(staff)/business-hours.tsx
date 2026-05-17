@@ -26,6 +26,7 @@ import {
   type BusinessHoursSchedule,
 } from '@/lib/owner/businessHoursSettings';
 import { borderRadius, createStyles, spacing, typography, useColors } from '@/lib/theme';
+import { friendlyError } from '@/lib/errors/friendlyError';
 
 type DayRow = {
   key: BusinessHoursDayKey;
@@ -308,10 +309,7 @@ export default function BusinessHoursScreen() {
     } catch (err) {
       console.warn('[business-hours] writeBusinessHours failed', err);
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error).catch(() => {});
-      Alert.alert(
-        "Couldn't save",
-        err instanceof Error ? err.message : 'Please try again in a moment.',
-      );
+      Alert.alert("Couldn't save", friendlyError(err, 'Please try again in a moment.'));
     } finally {
       setSaving(false);
     }

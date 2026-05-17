@@ -23,6 +23,7 @@ import {
 import { useAuthSession } from '@/lib/auth/AuthContext';
 import { listMyReviews, type MyReviewRow } from '@/lib/reviews/listMyReviews';
 import { deleteMyReview } from '@/lib/reviews/deleteMyReview';
+import { friendlyError } from '@/lib/errors/friendlyError';
 
 const useStyles = createStyles((c) => ({
   listContent: {
@@ -261,8 +262,7 @@ export default function MyReviewsScreen() {
       setRows((prev) => prev.filter((r) => r.id !== pendingDelete.id));
       setPendingDelete(null);
     } catch (err) {
-      const msg = err instanceof Error ? err.message : 'Could not delete your review.';
-      Alert.alert('Delete failed', msg);
+      Alert.alert('Delete failed', friendlyError(err, 'Could not delete your review.'));
     } finally {
       setDeleting(false);
     }

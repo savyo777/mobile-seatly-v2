@@ -79,6 +79,7 @@ function mapWaitlistRowToEntry(row: WaitlistRow): WaitlistEntry {
 }
 import { createStyles, useTheme } from '@/lib/theme';
 import { ownerColorsFromPalette, ownerRadii, ownerSpace, useOwnerColors } from '@/lib/theme/ownerTheme';
+import { friendlyError } from '@/lib/errors/friendlyError';
 
 type DetailTarget =
   | { kind: 'walkin'; item: WalkInQueueItem }
@@ -222,7 +223,7 @@ export default function OwnerWaitlistScreen() {
       });
       setDetail(null);
       if (error) {
-        Alert.alert('Notify failed', error.message ?? 'Could not notify guest.');
+        Alert.alert('Notify failed', friendlyError(error, 'Could not notify guest.'));
         return;
       }
       const result = (data ?? {}) as { channel?: string | null; status?: string };
@@ -236,7 +237,7 @@ export default function OwnerWaitlistScreen() {
       }
     } catch (err) {
       setDetail(null);
-      Alert.alert('Notify failed', err instanceof Error ? err.message : 'Network error.');
+      Alert.alert('Notify failed', friendlyError(err, 'Could not notify guest. Please try again.'));
     }
   }, [detail, t]);
 

@@ -8,6 +8,7 @@ import { useColors, createStyles, spacing, borderRadius, typography } from '@/li
 import { changeEmail, resendVerificationEmail } from '@/lib/services/accountSecurity';
 import { useAuthSession } from '@/lib/auth/AuthContext';
 import { normalizeEmail, sanitizeEmailInput } from '@/lib/validation/input';
+import { friendlyError } from '@/lib/errors/friendlyError';
 
 const useStyles = createStyles((c) => ({
   currentLabel: {
@@ -119,7 +120,7 @@ export default function ChangeEmailScreen() {
         { text: 'OK', onPress: () => router.back() },
       ]);
     } catch (err: any) {
-      Alert.alert('Error', err.message);
+      Alert.alert('Error', friendlyError(err, 'Could not update your email. Please try again.'));
     } finally {
       setLoading(false);
     }

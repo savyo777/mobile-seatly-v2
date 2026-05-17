@@ -23,6 +23,7 @@ import { getSnapRestaurantName as DEMO_getSnapRestaurantName } from '@/lib/mock/
 import { mockRestaurants as DEMO_RESTAURANTS } from '@/lib/mock/restaurants';
 import { isDemoModeEnabled } from '@/lib/config/demoMode';
 import { captureStyledSnapToTmpFile } from '@/lib/snapOverlays/captureStyledSnap';
+import { friendlyError } from '@/lib/errors/friendlyError';
 
 const getSnapRestaurantName: typeof DEMO_getSnapRestaurantName = (id) =>
   isDemoModeEnabled() ? DEMO_getSnapRestaurantName(id) : '';
@@ -151,8 +152,7 @@ export default function SnapStylesScreen() {
         await finish(decodedUri, filterId);
       }
     } catch (e) {
-      const msg = e instanceof Error ? e.message : 'Could not render your styled snap.';
-      Alert.alert('Capture failed', msg);
+      Alert.alert('Capture failed', friendlyError(e, 'Could not render your styled snap.'));
     } finally {
       setBusy(false);
     }

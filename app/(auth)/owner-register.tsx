@@ -11,6 +11,7 @@ import { ensureOwnerProfile, signInWithApple, signInWithGoogle } from '@/lib/ser
 import { normalizePhoneToE164, sendPhoneOtp } from '@/lib/services/phoneAuth';
 import { Input, Button, SocialAuthButtons, TermsFooter, Checkbox } from '@/components/ui';
 import { normalizeEmail, normalizeName, normalizeTextInput } from '@/lib/validation/input';
+import { friendlyError } from '@/lib/errors/friendlyError';
 
 import { TERMS_URL, PRIVACY_URL } from '@/lib/config/legalLinks';
 
@@ -293,7 +294,7 @@ export default function OwnerRegisterScreen() {
           router.replace('/(staff)');
           return;
         }
-        Alert.alert('Sign up failed', error.message);
+        Alert.alert('Sign up failed', friendlyError(error, "Couldn't create your account. Please try again."));
         return;
       }
 
@@ -350,7 +351,7 @@ export default function OwnerRegisterScreen() {
         },
       });
       if (error) {
-        Alert.alert('SMS failed', error);
+        Alert.alert('SMS failed', friendlyError(error, "Couldn't send the code. Please try again."));
         return;
       }
       router.push({

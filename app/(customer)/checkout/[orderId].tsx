@@ -9,6 +9,7 @@ import { createStyles, spacing, typography, useColors } from '@/lib/theme';
 import { formatCurrency } from '@/lib/utils/formatCurrency';
 import { mockRestaurants } from '@/lib/mock/restaurants';
 import { isDemoModeEnabled } from '@/lib/config/demoMode';
+import { friendlyError } from '@/lib/errors/friendlyError';
 
 type CheckoutOrder = {
   id: string;
@@ -255,7 +256,9 @@ export default function CenaivaCheckoutScreen() {
           .select('id,restaurant_id,reservation_id,status,subtotal,tax_amount,tip_amount,total_amount,confirmation_code,paid_at')
           .eq('id', orderId)
           .single();
-        if (orderError || !orderRow) throw new Error(orderError?.message ?? 'Checkout order not found.');
+        if (orderError || !orderRow) {
+          throw new Error(friendlyError(orderError, 'Checkout order not found.'));
+        }
 
         const { data: restaurantRow } = await supabase
           .from('restaurants')
@@ -268,7 +271,7 @@ export default function CenaivaCheckoutScreen() {
           .select('id,name,quantity,unit_price,line_total')
           .eq('order_id', orderId)
           .order('name', { ascending: true });
-        if (itemError) throw new Error(itemError.message);
+        if (itemError) throw new Error(friendlyError(itemError, 'Could not load checkout.'));
 
         if (!cancelled) {
           setOrder({
@@ -296,7 +299,7 @@ export default function CenaivaCheckoutScreen() {
           );
         }
       } catch (err) {
-        if (!cancelled) setError((err as Error)?.message ?? 'Could not load checkout.');
+        if (!cancelled) setError(friendlyError(err, 'Could not load checkout.'));
       } finally {
         if (!cancelled) setLoading(false);
       }

@@ -8,6 +8,7 @@ import { useColors, createStyles, spacing, typography } from '@/lib/theme';
 import { ScreenWrapper, Input, Button } from '@/components/ui';
 import { getSupabase } from '@/lib/supabase/client';
 import { normalizeEmail } from '@/lib/validation/input';
+import { friendlyError } from '@/lib/errors/friendlyError';
 
 const RESET_PASSWORD_REDIRECT = 'cenaiva://reset-password';
 
@@ -93,7 +94,7 @@ export default function ForgotPasswordScreen() {
     const { error } = await supabase.auth.resetPasswordForEmail(trimmedEmail, { redirectTo });
     setSubmitting(false);
     if (error) {
-      Alert.alert('Reset failed', error.message);
+      Alert.alert('Reset failed', friendlyError(error, "Couldn't send the reset email. Please try again."));
       return;
     }
     setSubmitted(true);

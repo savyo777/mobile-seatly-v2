@@ -14,6 +14,7 @@ import { normalizePhoneToE164, sendPhoneOtp } from '@/lib/services/phoneAuth';
 import { getRoleForSignedInUser } from '@/lib/auth/postSignInRouting';
 import { LOCKOUT_MS, MAX_FAILED_ATTEMPTS } from '@/lib/auth/lockoutPolicy';
 import { normalizeEmail } from '@/lib/validation/input';
+import { friendlyError } from '@/lib/errors/friendlyError';
 import {
   ScreenWrapper,
   Input,
@@ -273,7 +274,7 @@ export default function LoginScreen() {
           return;
         }
         await AsyncStorage.setItem(failuresKey(trimmedEmail), String(next));
-        Alert.alert('Sign in failed', error.message);
+        Alert.alert('Sign in failed', friendlyError(error, 'Wrong email or password.'));
         return;
       }
       await AsyncStorage.multiRemove([failuresKey(trimmedEmail), lockoutKey(trimmedEmail)]);
@@ -302,7 +303,7 @@ export default function LoginScreen() {
     try {
       const { error } = await sendPhoneOtp(e164);
       if (error) {
-        Alert.alert('SMS failed', error);
+        Alert.alert('SMS failed', friendlyError(error, "Couldn't send the code. Please try again."));
         return;
       }
       router.push({
@@ -321,7 +322,7 @@ export default function LoginScreen() {
       const result = await signInWithGoogle();
       if (result.status === 'cancelled') return;
       if (result.status === 'error') {
-        Alert.alert('Google sign in failed', result.message);
+        Alert.alert('Google sign in failed', friendlyError(result.message, "Couldn't sign in with Google. Please try again."));
         return;
       }
       await routeSignedInSession(result.session);
@@ -337,7 +338,7 @@ export default function LoginScreen() {
       const result = await signInWithApple();
       if (result.status === 'cancelled') return;
       if (result.status === 'error') {
-        Alert.alert('Apple sign in failed', result.message);
+        Alert.alert('Apple sign in failed', friendlyError(result.message, "Couldn't sign in with Apple. Please try again."));
         return;
       }
       await routeSignedInSession(result.session);

@@ -19,6 +19,7 @@ import { useColors } from '@/lib/theme';
 import { OWNER_TRIAL_MONTHS } from '@/lib/owner/trialPolicy';
 import { registerRestaurantNoBilling } from '@/lib/services/restaurantRegistration';
 import { getSupabase } from '@/lib/supabase/client';
+import { friendlyError } from '@/lib/errors/friendlyError';
 import {
   normalizeTextInput,
   sanitizeCardNumberInput,
@@ -200,10 +201,7 @@ export default function RegisterRestaurantCardEntryScreen() {
           },
         });
       } catch (err) {
-        Alert.alert(
-          'Registration failed',
-          err instanceof Error ? err.message : 'Something went wrong. Please try again.',
-        );
+        Alert.alert('Registration failed', friendlyError(err, 'Something went wrong. Please try again.'));
       } finally {
         setSaving(false);
       }

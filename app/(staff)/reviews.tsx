@@ -21,6 +21,7 @@ import {
   type OwnerReviewRow,
 } from '@/lib/reviews/getRestaurantOwnerReviews';
 import { borderRadius, createStyles, spacing, useColors } from '@/lib/theme';
+import { friendlyError } from '@/lib/errors/friendlyError';
 
 function formatReviewDate(value: string | null | undefined): string {
   if (!value) return '';
@@ -67,22 +68,11 @@ export default function OwnerReviewsScreen() {
         if (active) setReviews(rows);
       })
       .catch((err) => {
-        // Supabase errors are plain objects with {message,details,hint,code},
-        // not Error instances — extract every readable field so the surface
-        // shows the actual reason instead of a generic fallback.
-        const messageParts: string[] = [];
-        if (err && typeof err === 'object') {
-          const e = err as { message?: unknown; details?: unknown; hint?: unknown; code?: unknown };
-          for (const v of [e.message, e.details, e.hint, e.code]) {
-            if (typeof v === 'string' && v.trim()) messageParts.push(v);
-          }
-        }
-        if (messageParts.length === 0 && err instanceof Error && err.message) {
-          messageParts.push(err.message);
-        }
-        if (__DEV__) console.warn('[ownerReviews] load failed', err);
+        // Central friendlyError swallows the raw Supabase {message,details,
+        // hint,code} payload (it would otherwise leak SQL column / RLS
+        // policy names) and logs the raw error in __DEV__ for debugging.
         if (active) {
-          setError(messageParts.length ? messageParts.join(' · ') : 'Could not load reviews.');
+          setError(friendlyError(err, 'Could not load reviews.'));
         }
       })
       .finally(() => {

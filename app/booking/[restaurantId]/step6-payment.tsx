@@ -21,6 +21,7 @@ import {
   createHoldPaymentIntent,
   refundPaymentIntent,
 } from '@/lib/booking/holdApi';
+import { friendlyError, isUserCancellation } from '@/lib/errors/friendlyError';
 
 type PaymentMethod = 'card' | 'apple_pay' | 'google_pay';
 
@@ -249,12 +250,14 @@ export default function Step6Payment() {
         phone: phone || undefined,
       },
     });
-    if (initResult.error) throw new Error(initResult.error.message);
+    if (initResult.error) {
+      throw new Error(friendlyError(initResult.error, 'Could not start the payment. Please try again.'));
+    }
 
     const presentResult = await presentPaymentSheet();
     if (presentResult.error) {
-      if (presentResult.error.code === 'Canceled') return 'cancelled';
-      throw new Error(presentResult.error.message);
+      if (isUserCancellation(presentResult.error)) return 'cancelled';
+      throw new Error(friendlyError(presentResult.error, 'Could not complete payment. Please try again.'));
     }
 
     try {
@@ -334,13 +337,10 @@ export default function Step6Payment() {
       if (createdPaymentIntentId) {
         await refundPaymentIntent(createdPaymentIntentId).catch(() => {});
       }
-      const message =
-        error instanceof HoldApiError
-          ? error.message
-          : error instanceof Error
-            ? error.message
-            : 'Could not complete payment.';
-      Alert.alert(t('booking.holdExpiredTitle'), message);
+      Alert.alert(
+        t('booking.holdExpiredTitle'),
+        friendlyError(error, 'Could not complete payment. Please try again.'),
+      );
     } finally {
       setPaying(false);
     }
@@ -371,13 +371,10 @@ export default function Step6Payment() {
       }
       // 'cancelled' → modal stays open, user can Continue again or Cancel.
     } catch (error) {
-      const message =
-        error instanceof HoldApiError
-          ? error.message
-          : error instanceof Error
-            ? error.message
-            : 'Could not complete payment.';
-      Alert.alert(t('booking.holdExpiredTitle'), message);
+      Alert.alert(
+        t('booking.holdExpiredTitle'),
+        friendlyError(error, 'Could not complete payment. Please try again.'),
+      );
       setPendingRetry(null);
     } finally {
       setPaying(false);

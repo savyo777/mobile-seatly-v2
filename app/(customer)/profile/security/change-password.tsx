@@ -6,6 +6,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { ProfileStackScreen } from '@/components/profile/ProfileStackScreen';
 import { useColors, createStyles, spacing, borderRadius, typography } from '@/lib/theme';
 import { changePassword } from '@/lib/services/accountSecurity';
+import { friendlyError } from '@/lib/errors/friendlyError';
 
 type PasswordChecks = {
   minLength: boolean;
@@ -161,7 +162,7 @@ export default function ChangePasswordScreen() {
         { text: 'OK', onPress: () => router.back() },
       ]);
     } catch (err: any) {
-      Alert.alert('Error', err.message);
+      Alert.alert('Error', friendlyError(err, 'Could not change your password. Please try again.'));
     } finally {
       setLoading(false);
     }

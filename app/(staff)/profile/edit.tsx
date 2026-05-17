@@ -35,6 +35,7 @@ import {
   type RestaurantShift,
 } from '@/lib/owner/restaurantShifts';
 import { saveRestaurantHours, time12hToDbString } from '@/lib/owner/saveRestaurantHours';
+import { friendlyError } from '@/lib/errors/friendlyError';
 
 // ── Styles ──────────────────────────────────────────────────────────────────
 
@@ -957,7 +958,7 @@ export default function EditBusinessProfileScreen() {
         { text: 'OK', onPress: () => router.back() },
       ]);
     } catch (err) {
-      Alert.alert('Save failed', err instanceof Error ? err.message : 'Try again in a moment.');
+      Alert.alert('Save failed', friendlyError(err, 'Try again in a moment.'));
     } finally {
       setSaving(false);
     }

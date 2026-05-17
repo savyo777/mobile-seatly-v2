@@ -20,6 +20,7 @@ import {
   type ReservationSettings,
 } from '@/lib/owner/reservationSettings';
 import { borderRadius, createStyles, spacing, typography, useColors } from '@/lib/theme';
+import { friendlyError } from '@/lib/errors/friendlyError';
 
 const useStyles = createStyles((c) => ({
   pickerRow: {
@@ -285,8 +286,7 @@ export default function ReservationSettingsScreen() {
       await writeReservationSettings(selectedRestaurantId, settings);
       Alert.alert('Saved', 'Reservation settings updated.');
     } catch (err) {
-      const message = err instanceof Error ? err.message : 'Could not save reservation settings.';
-      Alert.alert('Save failed', message);
+      Alert.alert('Save failed', friendlyError(err, 'Could not save reservation settings.'));
     } finally {
       setIsSaving(false);
     }

@@ -16,6 +16,7 @@ import {
   Checkbox,
 } from '@/components/ui';
 import { normalizeEmail, normalizeName } from '@/lib/validation/input';
+import { friendlyError } from '@/lib/errors/friendlyError';
 
 import { TERMS_URL, PRIVACY_URL } from '@/lib/config/legalLinks';
 
@@ -302,7 +303,7 @@ export default function RegisterScreen() {
           router.replace('/(customer)/discover' as never);
           return;
         }
-        Alert.alert('Sign up failed', error.message);
+        Alert.alert('Sign up failed', friendlyError(error, "Couldn't create your account. Please try again."));
         return;
       }
 

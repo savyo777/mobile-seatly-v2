@@ -28,6 +28,7 @@ import {
 import { useOwnerScope } from '@/hooks/useOwnerScope';
 import { uploadEventMedia } from '@/lib/owner/uploadEventMedia';
 import { createPromotion } from '@/lib/owner/createEventOrPromotion';
+import { friendlyError } from '@/lib/errors/friendlyError';
 import {
   normalizeTextInput,
   sanitizeIntegerInput,
@@ -317,8 +318,7 @@ export default function NewPromotionScreen() {
         { text: 'OK', onPress: () => router.back() },
       ]);
     } catch (err) {
-      const message = err instanceof Error ? err.message : 'Failed to post promotion';
-      Alert.alert('Could not post promotion', message);
+      Alert.alert('Could not post promotion', friendlyError(err, 'Please try again in a moment.'));
     } finally {
       setSubmitting(false);
     }

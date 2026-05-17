@@ -42,6 +42,7 @@ import {
 } from '@/lib/data/restaurantCatalog';
 import { getEventById as DEMO_getEventById } from '@/lib/mock/events';
 import { isDemoModeEnabled } from '@/lib/config/demoMode';
+import { friendlyError } from '@/lib/errors/friendlyError';
 
 const getEventById: typeof DEMO_getEventById = (id) =>
   isDemoModeEnabled() ? DEMO_getEventById(id) : undefined;
@@ -462,17 +463,7 @@ export default function Step2Time() {
       .catch((error) => {
         if (cancelled) return;
         setSlots([]);
-        const rawMessage = error instanceof Error ? error.message : '';
-        const trimmed = typeof rawMessage === 'string' ? rawMessage.trim() : '';
-        const lower = trimmed.toLowerCase();
-        const looksLikeJunk =
-          !trimmed ||
-          lower === '[object object]' ||
-          lower === 'object object' ||
-          lower === '{}' ||
-          lower === 'null' ||
-          lower === 'undefined';
-        setSlotsError(looksLikeJunk ? 'Could not load availability.' : trimmed);
+        setSlotsError(friendlyError(error, 'Could not load availability.'));
       })
       .finally(() => {
         if (!cancelled) setSlotsLoading(false);
@@ -547,8 +538,7 @@ export default function Step2Time() {
           router.replace(`/(customer)/bookings/${reservationId}`);
         })
         .catch((error) => {
-          const message = error instanceof Error ? error.message : 'Could not update the reservation.';
-          Alert.alert('Could not update', message);
+          Alert.alert('Could not update', friendlyError(error, 'Could not update the reservation.'));
         })
         .finally(() => setSubmitting(false));
       return;

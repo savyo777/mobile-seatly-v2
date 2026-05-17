@@ -17,6 +17,7 @@ import {
   type CustomerPaymentMethod as PaymentMethod,
 } from '@/lib/storage/customerPaymentMethods';
 import { useColors, createStyles, spacing, typography, borderRadius, shadows } from '@/lib/theme';
+import { friendlyError } from '@/lib/errors/friendlyError';
 import {
   normalizeName,
   sanitizeCardNumberInput,
@@ -302,7 +303,7 @@ export default function PaymentScreen() {
         setAddingCard(false);
         resetForm();
       } catch (error) {
-        Alert.alert('Card not saved', error instanceof Error ? error.message : 'Please try again.');
+        Alert.alert('Card not saved', friendlyError(error, 'Please try again.'));
       }
     })();
   };

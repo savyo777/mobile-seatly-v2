@@ -31,6 +31,7 @@ import { getSupabase } from '@/lib/supabase/client';
 import { formatCurrency } from '@/lib/utils/formatCurrency';
 import { isDemoModeEnabled } from '@/lib/config/demoMode';
 import { useColors, createStyles, spacing, borderRadius } from '@/lib/theme';
+import { friendlyError } from '@/lib/errors/friendlyError';
 
 type SegmentKey = 'upcoming' | 'past' | 'cancelled';
 
@@ -449,8 +450,7 @@ export default function ActivityScreen() {
       await reloadLiveBookings();
       void Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
     } catch (error) {
-      const message = error instanceof Error ? error.message : 'Could not charge the deposit.';
-      Alert.alert('Payment failed', message);
+      Alert.alert('Payment failed', friendlyError(error, 'Could not charge the deposit.'));
     } finally {
       setPayingDepositId(null);
     }

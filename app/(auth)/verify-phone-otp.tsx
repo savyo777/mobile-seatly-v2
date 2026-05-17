@@ -12,6 +12,7 @@ import { getSupabase } from '@/lib/supabase/client';
 import { setAppShellPreference } from '@/lib/navigation/appShellPreference';
 import { roleIncludes } from '@/lib/auth/roles';
 import { resolveHomeForSignedInUser, type AuthHomeHref } from '@/lib/auth/postSignInRouting';
+import { friendlyError } from '@/lib/errors/friendlyError';
 
 const useStyles = createStyles((c) => ({
   inner: {
@@ -160,7 +161,7 @@ export default function VerifyPhoneOtpScreen() {
     try {
       const { session, error } = await verifyPhoneOtp(phone, otp);
       if (error) {
-        Alert.alert('Verification failed', error);
+        Alert.alert('Verification failed', friendlyError(error, "That code didn't work. Try again or request a new one."));
         return;
       }
       if (!session) {
@@ -215,7 +216,7 @@ export default function VerifyPhoneOtpScreen() {
       const isRegistration = source === 'register' || source === 'owner-register';
       const { error } = await sendPhoneOtp(phone, { shouldCreateUser: isRegistration });
       if (error) {
-        Alert.alert('Resend failed', error);
+        Alert.alert('Resend failed', friendlyError(error, "Couldn't send a new code. Please try again."));
         return;
       }
       setResendSeconds(60);

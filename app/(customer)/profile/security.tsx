@@ -11,6 +11,7 @@ import { sendPasswordResetEmail, toggleTwoFactor, toggleBiometric } from '@/lib/
 import { resolveDisplayPhone } from '@/lib/services/phoneAuth';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useAuthSession } from '@/lib/auth/AuthContext';
+import { friendlyError } from '@/lib/errors/friendlyError';
 
 const BIOMETRIC_KEY = '@seatly/biometric';
 const TWO_FA_KEY = '@seatly/twofactor';
@@ -59,7 +60,7 @@ export default function SecurityScreen() {
                 t('profile.resetPasswordSent', { email: currentEmail }),
               );
             } catch (e: any) {
-              Alert.alert('Error', e.message);
+              Alert.alert('Error', friendlyError(e, 'Could not send the reset email. Please try again.'));
             }
           },
         },

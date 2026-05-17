@@ -22,6 +22,7 @@ import {
   type ReferralLimitsSnapshot,
 } from '@/lib/storage/referralLimits';
 import { useColors, createStyles, spacing, typography, borderRadius, shadows } from '@/lib/theme';
+import { friendlyError } from '@/lib/errors/friendlyError';
 
 const useStyles = createStyles((c) => ({
   hero: {
@@ -218,7 +219,7 @@ export default function InviteScreen() {
         await refresh();
       }
     } catch (error) {
-      Alert.alert('Could not share', error instanceof Error ? error.message : 'Please try again.');
+      Alert.alert('Could not share', friendlyError(error, 'Please try again.'));
     }
   };
 

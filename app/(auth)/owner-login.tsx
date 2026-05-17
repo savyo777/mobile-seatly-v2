@@ -14,6 +14,7 @@ import { normalizePhoneToE164, sendPhoneOtp } from '@/lib/services/phoneAuth';
 import { roleIncludes } from '@/lib/auth/roles';
 import { LOCKOUT_MS, MAX_FAILED_ATTEMPTS } from '@/lib/auth/lockoutPolicy';
 import { normalizeEmail } from '@/lib/validation/input';
+import { friendlyError } from '@/lib/errors/friendlyError';
 import {
   ScreenWrapper,
   Input,
@@ -271,7 +272,7 @@ export default function OwnerLoginScreen() {
           return;
         }
         await AsyncStorage.setItem(failuresKey(trimmedEmail), String(next));
-        Alert.alert('Sign in failed', error.message);
+        Alert.alert('Sign in failed', friendlyError(error, 'Wrong email or password.'));
         return;
       }
 
@@ -305,7 +306,7 @@ export default function OwnerLoginScreen() {
     try {
       const { error } = await sendPhoneOtp(e164);
       if (error) {
-        Alert.alert('SMS failed', error);
+        Alert.alert('SMS failed', friendlyError(error, "Couldn't send the code. Please try again."));
         return;
       }
       router.push({

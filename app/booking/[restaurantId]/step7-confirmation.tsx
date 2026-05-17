@@ -34,6 +34,7 @@ import { useColors, createStyles, spacing, borderRadius, shadows } from '@/lib/t
 import type { DateKey } from '@/lib/booking/availabilityTypes';
 import { useReservationHoldContext } from '@/lib/booking/ReservationHoldProvider';
 import { isHoldsEnabled } from '@/lib/config/holdsFeature';
+import { friendlyError } from '@/lib/errors/friendlyError';
 
 const useStyles = createStyles((c) => ({
   container: { flex: 1, backgroundColor: c.bgBase },
@@ -426,15 +427,12 @@ export default function Step7Confirmation() {
             }
           } catch (depositError) {
             if (cancelled) return;
-            const message = depositError instanceof Error
-              ? depositError.message
-              : 'The deposit could not be charged.';
-            setDepositPendingError(message);
+            setDepositPendingError(friendlyError(depositError, 'The deposit could not be charged.'));
           }
         }
       } catch (error) {
         const status = (error as Error & { status?: number }).status;
-        const message = error instanceof Error ? error.message : 'Reservation failed.';
+        const message = friendlyError(error, 'Could not confirm your reservation. Please try again.');
         if (!cancelled) {
           setSubmitError(message);
           if (status === 409) {
@@ -486,8 +484,7 @@ export default function Step7Confirmation() {
       });
       setCalendarAdded(true);
     } catch (error) {
-      const message = error instanceof Error && error.message ? error.message : 'Could not add to calendar.';
-      Alert.alert('Add to calendar', message);
+      Alert.alert('Add to calendar', friendlyError(error, 'Could not add to calendar.'));
     } finally {
       setCalendarAdding(false);
     }

@@ -24,6 +24,7 @@ import { TimeField } from '@/components/owner/forms/TimeField';
 import { useOwnerScope } from '@/hooks/useOwnerScope';
 import { uploadEventMedia } from '@/lib/owner/uploadEventMedia';
 import { createEvent } from '@/lib/owner/createEventOrPromotion';
+import { friendlyError } from '@/lib/errors/friendlyError';
 import {
   normalizeTextInput,
   sanitizeIntegerInput,
@@ -301,8 +302,7 @@ export default function NewEventScreen() {
         { text: 'OK', onPress: () => router.back() },
       ]);
     } catch (err) {
-      const message = err instanceof Error ? err.message : 'Failed to post event';
-      Alert.alert('Could not post event', message);
+      Alert.alert('Could not post event', friendlyError(err, 'Please try again in a moment.'));
     } finally {
       setSubmitting(false);
     }

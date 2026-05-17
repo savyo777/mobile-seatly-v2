@@ -6,6 +6,7 @@ import { ProfileStackScreen } from '@/components/profile/ProfileStackScreen';
 import { useColors, createStyles, spacing, borderRadius, typography, shadows } from '@/lib/theme';
 import { revokeSession, revokeAllOtherSessions } from '@/lib/services/accountSecurity';
 import { useAuthSession } from '@/lib/auth/AuthContext';
+import { friendlyError } from '@/lib/errors/friendlyError';
 
 type Session = {
   id: string;
@@ -155,7 +156,7 @@ export default function SessionsScreen() {
               await revokeSession(session.id);
               setSessions((prev) => prev.filter((s) => s.id !== session.id));
             } catch (e: any) {
-              Alert.alert('Error', e.message);
+              Alert.alert('Error', friendlyError(e, 'Could not sign out that session. Please try again.'));
             } finally {
               setRevoking(null);
             }
@@ -180,7 +181,7 @@ export default function SessionsScreen() {
               await revokeAllOtherSessions();
               setSessions((prev) => prev.filter((s) => s.isCurrent));
             } catch (e: any) {
-              Alert.alert('Error', e.message);
+              Alert.alert('Error', friendlyError(e, 'Could not sign out that session. Please try again.'));
             } finally {
               setRevokingAll(false);
             }
