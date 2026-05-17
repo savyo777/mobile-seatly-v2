@@ -1,0 +1,24 @@
+# Open the owner menu-management screen. Neither /(staff)/menu nor
+# /(staff)/menu-manage is wired to a visible tab — both are routed via
+# router.push from edit flows. We deep-link via the cenaiva:// URL scheme
+# (configured in app.json) and assert the header copy from i18n
+# (owner.menuTitle = "Menu", owner.menuSubtitle = "Items, pricing, and
+# availability").
+
+appId: com.cenaiva.app
+---
+- runFlow: ../_subflows/boot-to-app.yaml
+- runFlow: ../_subflows/past-onboarding.yaml
+- runFlow:
+    when:
+      visible: "Welcome to Cenaiva"
+    commands:
+      - tapOn: "Sign in"
+- runFlow:
+    when:
+      visible: "Home"
+    commands:
+      - openLink: "cenaiva:///(staff)/menu"
+      - extendedWaitUntil:
+          visible: "Items, pricing, and availability"
+          timeout: 20000

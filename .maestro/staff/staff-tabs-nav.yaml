@@ -1,0 +1,46 @@
+# Staff bottom-tab navigation. The owner shell (app/(staff)/_layout.tsx)
+# exposes five tabs:
+#   home          → "Home"
+#   reservations  → "Bookings"
+#   expenses      → "Expenses"
+#   promotions    → "Promos"
+#   profile       → "Business"
+#
+# This flow only runs when the keychain restores a staff session; if we
+# land in the customer shell instead, we exit early without failing.
+
+appId: com.cenaiva.app
+---
+- runFlow: ../_subflows/boot-to-app.yaml
+- runFlow: ../_subflows/past-onboarding.yaml
+- runFlow:
+    when:
+      visible: "Welcome to Cenaiva"
+    commands:
+      - tapOn: "Sign in"
+# Only proceed if a staff session is restored — the staff shell always shows
+# "Home" as the active tab on first mount.
+- runFlow:
+    when:
+      visible: "Home"
+    commands:
+      - tapOn: "Bookings"
+      - extendedWaitUntil:
+          visible: "Bookings"
+          timeout: 15000
+      - tapOn: "Expenses"
+      - extendedWaitUntil:
+          visible: "Expenses"
+          timeout: 15000
+      - tapOn: "Promos"
+      - extendedWaitUntil:
+          visible: "Promos"
+          timeout: 15000
+      - tapOn: "Business"
+      - extendedWaitUntil:
+          visible: "Business"
+          timeout: 15000
+      - tapOn: "Home"
+      - extendedWaitUntil:
+          visible: "Home"
+          timeout: 15000

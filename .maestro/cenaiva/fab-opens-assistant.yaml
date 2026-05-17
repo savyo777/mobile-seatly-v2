@@ -1,0 +1,31 @@
+# Hey Cenaiva floating-action-button → assistant shell.
+#
+# The FAB lives in components/ai/AiChatFab.tsx and is mounted by
+# app/(customer)/_layout.tsx (bottomOffset=100) on every customer tab
+# except the routes in HIDE_FAB_ROUTES (ai-chat, post-review, camera,
+# booking, checkout, register-restaurant).
+#
+# The Pressable exposes accessibilityLabel="Open AI assistant". Opening
+# it mounts a full-screen <Modal> containing <CenaivaVoiceShell>, whose
+# close button uses accessibilityLabel="Close assistant".
+
+appId: com.cenaiva.app
+---
+- runFlow: ../_subflows/boot-to-app.yaml
+- runFlow: ../_subflows/past-onboarding.yaml
+- runFlow:
+    when:
+      visible: "Welcome to Cenaiva"
+    commands:
+      - tapOn: "Sign in"
+# FAB only renders on the customer shell, not the staff shell. Skip when
+# the keychain restored a staff session.
+- runFlow:
+    when:
+      visible:
+        text: "Trending tonight|Perfect for date night|Outdoor seating|Based on your taste|Most snapped this week|Trending in your area"
+    commands:
+      - tapOn: "Open AI assistant"
+      - extendedWaitUntil:
+          visible: "Close assistant"
+          timeout: 20000

@@ -1,0 +1,27 @@
+# Discover view-mode toggle. The header has two text Pressables labeled
+# "List" / "Map". Tapping "Map" swaps the ScrollView body for the
+# <DiscoverMapView />, and hides the inline search input. We assert the
+# search placeholder ("Restaurants, cuisines, neighborhoods...") is no
+# longer visible — that's the most stable signal that map mode mounted.
+
+appId: com.cenaiva.app
+---
+- runFlow: ../_subflows/boot-to-app.yaml
+- runFlow: ../_subflows/past-onboarding.yaml
+- runFlow:
+    when:
+      visible: "Welcome to Cenaiva"
+    commands:
+      - tapOn: "Sign in"
+- extendedWaitUntil:
+    visible: "Map"
+    timeout: 30000
+- tapOn: "Map"
+- extendedWaitUntil:
+    notVisible: "Restaurants, cuisines, neighborhoods..."
+    timeout: 10000
+# Toggle back so the test leaves the app in its default state.
+- tapOn: "List"
+- extendedWaitUntil:
+    visible: "Restaurants, cuisines, neighborhoods..."
+    timeout: 10000

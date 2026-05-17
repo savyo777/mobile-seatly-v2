@@ -1,0 +1,26 @@
+# Open the Promos tab and assert the header renders. The screen header
+# (app/(staff)/promotions/index.tsx) shows kicker "PROMOTIONS" + title
+# "Offers & promos". Empty-state copy is "No promotions here yet"; the
+# Active / Past segmented control always renders regardless of data.
+
+appId: com.cenaiva.app
+---
+- runFlow: ../_subflows/boot-to-app.yaml
+- runFlow: ../_subflows/past-onboarding.yaml
+- runFlow:
+    when:
+      visible: "Welcome to Cenaiva"
+    commands:
+      - tapOn: "Sign in"
+- runFlow:
+    when:
+      visible: "Home"
+    commands:
+      - tapOn: "Promos"
+      - extendedWaitUntil:
+          visible: "Offers & promos"
+          timeout: 20000
+      - assertVisible:
+          text: "Active.*"
+      - assertVisible:
+          text: "Past.*"

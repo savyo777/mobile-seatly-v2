@@ -1,0 +1,28 @@
+# Discover list view: assert at least one horizontal section renders.
+# Each section title comes from i18n (lib/i18n/locales/en.ts → discover.*):
+#   sectionTrending     = "Trending tonight"
+#   sectionDateNight    = "Perfect for date night"
+#   sectionOutdoor      = "Outdoor seating"
+#   sectionTaste        = "Based on your taste"
+#   sectionMostSnapped  = "Most snapped this week"
+#   sectionNearby       = "Trending in your area"
+#
+# Sections render conditionally based on user signals + filtered lists, so we
+# only need *one* to prove the screen mounted past the hero.
+
+appId: com.cenaiva.app
+---
+- runFlow: ../_subflows/boot-to-app.yaml
+- runFlow: ../_subflows/past-onboarding.yaml
+# Auth keychain may have auto-signed-in. If we hit the welcome screen, hop
+# into Discover via "Sign in" → existing session. Otherwise we're already on
+# Discover (or the staff dashboard, in which case this flow doesn't apply).
+- runFlow:
+    when:
+      visible: "Welcome to Cenaiva"
+    commands:
+      - tapOn: "Sign in"
+- extendedWaitUntil:
+    visible:
+      text: "Trending tonight|Perfect for date night|Outdoor seating|Based on your taste|Most snapped this week|Trending in your area"
+    timeout: 30000

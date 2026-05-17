@@ -1,0 +1,26 @@
+# Tap the first restaurant card in the Discover hero / first horizontal
+# section and assert the restaurant-detail screen shows the "Book a Table"
+# CTA (i18n: restaurant.bookTable). Restaurant names are dynamic (supabase
+# data + signal-based ranking), so we anchor on the star glyph ★ which
+# every card renders next to its rating — tapping it bubbles up to the
+# card's parent Pressable and routes into /(customer)/discover/[id].
+
+appId: com.cenaiva.app
+---
+- runFlow: ../_subflows/boot-to-app.yaml
+- runFlow: ../_subflows/past-onboarding.yaml
+- runFlow:
+    when:
+      visible: "Welcome to Cenaiva"
+    commands:
+      - tapOn: "Sign in"
+- extendedWaitUntil:
+    visible:
+      text: "Trending tonight|Perfect for date night|Outdoor seating|Based on your taste|Most snapped this week|Trending in your area"
+    timeout: 30000
+- tapOn:
+    text: "★"
+    index: 0
+- extendedWaitUntil:
+    visible: "Book a Table"
+    timeout: 20000

@@ -1,0 +1,20 @@
+# Customer tab navigation: tap the Events tab and assert the screen
+# header ("Events") renders. Empty state copy is "No events found" /
+# "No results found" depending on filters; we don't pin to either since
+# the supabase data path may return real rows in production.
+
+appId: com.cenaiva.app
+---
+- runFlow: ../_subflows/boot-to-app.yaml
+- runFlow: ../_subflows/past-onboarding.yaml
+- runFlow:
+    when:
+      visible: "Welcome to Cenaiva"
+    commands:
+      - tapOn: "Sign in"
+# Events tab label is hardcoded "Events" in app/(customer)/_layout.tsx.
+- tapOn: "Events"
+- extendedWaitUntil:
+    visible: "TORONTO"
+    timeout: 20000
+- assertVisible: "Events"

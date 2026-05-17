@@ -1,0 +1,32 @@
+# Open the Hey Cenaiva assistant shell and close it. Verifies the close
+# button (accessibilityLabel="Close assistant" in CenaivaVoiceShell.tsx)
+# dismisses the modal and returns the user to the underlying Discover
+# screen. We pin the "back to Discover" assertion on the Discover search
+# placeholder "Restaurants, cuisines, neighborhoods..." since the section
+# titles depend on signal data.
+
+appId: com.cenaiva.app
+---
+- runFlow: ../_subflows/boot-to-app.yaml
+- runFlow: ../_subflows/past-onboarding.yaml
+- runFlow:
+    when:
+      visible: "Welcome to Cenaiva"
+    commands:
+      - tapOn: "Sign in"
+- runFlow:
+    when:
+      visible:
+        text: "Trending tonight|Perfect for date night|Outdoor seating|Based on your taste|Most snapped this week|Trending in your area"
+    commands:
+      - tapOn: "Open AI assistant"
+      - extendedWaitUntil:
+          visible: "Close assistant"
+          timeout: 20000
+      - tapOn: "Close assistant"
+      - extendedWaitUntil:
+          notVisible: "Close assistant"
+          timeout: 15000
+      - extendedWaitUntil:
+          visible: "Restaurants, cuisines, neighborhoods..."
+          timeout: 15000

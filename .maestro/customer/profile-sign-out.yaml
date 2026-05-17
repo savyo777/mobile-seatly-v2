@@ -1,0 +1,32 @@
+# Profile → Sign out flow. The Profile tab's bottom row renders a
+# Pressable whose Text reads "Sign out" (app/(customer)/profile/index.tsx).
+# After signOut(), the screen calls router.replace('/onboarding'), so we
+# expect to land back at the welcome / sign-in surface.
+#
+# Note: the iOS simulator's keychain can auto-restore the session on the
+# next boot, so this flow only verifies sign-out for the *current* session.
+
+appId: com.cenaiva.app
+---
+- runFlow: ../_subflows/boot-to-app.yaml
+- runFlow: ../_subflows/past-onboarding.yaml
+# If we hit the welcome screen, we're not signed in — bail out of the
+# sign-out assertion gracefully.
+- runFlow:
+    when:
+      visible: "Welcome to Cenaiva"
+    commands:
+      - tapOn: "Sign in"
+# Tab bar uses i18n key tabs.profile → "Profile".
+- tapOn: "Profile"
+- extendedWaitUntil:
+    visible: "Sign out"
+    timeout: 20000
+- tapOn: "Sign out"
+# router.replace('/onboarding') lands us on slide 1 of onboarding, whose
+# bottom CTA reads "Next" until the last slide ("Get Started"). On iOS the
+# label is exposed as "Next, " — match either.
+- extendedWaitUntil:
+    visible:
+      text: "Next.*|Get Started|Welcome to Cenaiva|Sign in"
+    timeout: 20000
