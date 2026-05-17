@@ -18,6 +18,7 @@ import { formatCurrency } from '@/lib/utils/formatCurrency';
 import { useColors, createStyles, spacing, borderRadius } from '@/lib/theme';
 import { getSupabase } from '@/lib/supabase/client';
 import { fetchCurrentUserProfile } from '@/lib/services/userProfile';
+import { useOwnerRestaurantContext } from '@/lib/owner/OwnerRestaurantContext';
 
 const ZERO_METRIC = { revenue: 0, covers: 0, avgSpend: 0, noShowPct: 0, turnover: 0 };
 const ZERO_REVENUE = { total: 0, trendPct: 0, series: [] as number[] };
@@ -278,6 +279,10 @@ export default function OwnerAnalyticsScreen() {
   const [range, setRange] = useState<PerfRange>('7d');
   const [analyticsMetrics, setAnalyticsMetrics] = useState(ANALYTICS_METRICS_DEFAULT);
   const [revenueData, setRevenueData] = useState(REVENUE_DATA_DEFAULT);
+  const { restaurants, selectedRestaurantId, isAll } = useOwnerRestaurantContext();
+  const headerSubtitle = isAll
+    ? undefined
+    : restaurants.find((r) => r.id === selectedRestaurantId)?.name;
 
   useEffect(() => {
     if (isDemoModeEnabled()) return;
@@ -410,7 +415,7 @@ export default function OwnerAnalyticsScreen() {
 
   return (
     <OwnerScreen contentContainerStyle={{ paddingHorizontal: 0 }}>
-      <OwnerHeader title={t('owner.analyticsTitle')} subtitle="Nova Ristorante" />
+      <OwnerHeader title={t('owner.analyticsTitle')} subtitle={headerSubtitle} />
       <View style={styles.chipRow}>
         {RANGES.map((r) => (
           <Pressable

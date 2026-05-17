@@ -18,18 +18,22 @@ These are the items the audit found that I can fix in code. Each maps to one of 
 
 | Item | Status | File(s) |
 |---|---|---|
-| iOS `buildNumber` set | 🔴 → Commit 2 | `app.json` |
-| Android `versionCode` set | 🔴 → Commit 2 | `app.json` |
-| `NSPhotoLibraryUsageDescription` + `NSPhotoLibraryAddUsageDescription` | 🔴 → Commit 2 | `app.json` |
-| `runtimeVersion` policy | 🔴 → Commit 2 | `app.json` |
-| EAS `production` build profile with APNs `production` entitlement | 🔴 → Commit 2 | `eas.json` |
-| Remove `"Nova Ristorante"` leak from onboarding | 🔴 → Commit 3 | `app/onboarding.tsx:61` |
-| Replace Unsplash hardcoded URL on restaurant cover fallback | 🔴 → Commit 3 | `lib/supabase/mapRestaurantRow.ts:14` |
-| Replace Unsplash hardcoded URL on promo cover fallback | 🔴 → Commit 3 | `app/(staff)/promotions/index.tsx:101` |
-| Remove `console.log('Reset redirect URL:', redirectTo)` | 🔴 → Commit 3 | `app/(auth)/forgot-password.tsx:93` |
-| Gate 7 production `console.warn` calls behind `__DEV__` | 🔴 → Commit 3 | various |
-| In-house crash logger (Supabase `crash_logs` table + RPC) | 🔴 → Commit 4 | new files |
+| iOS `buildNumber` set | ✅ done | `app.json` |
+| Android `versionCode` set | ✅ done | `app.json` |
+| `NSPhotoLibraryUsageDescription` + `NSPhotoLibraryAddUsageDescription` | ✅ done | `app.json` |
+| `runtimeVersion` policy | ✅ done | `app.json` |
+| EAS `production` build profile with APNs `production` entitlement | ✅ done | `eas.json` |
+| Remove `"Nova Ristorante"` leak from onboarding | ✅ done | `app/onboarding.tsx:61` |
+| Remove `"Nova Ristorante"` hardcoded subtitle in owner Analytics screen | ✅ done | `app/(staff)/analytics.tsx:413` |
+| Remove `"Nova Ristorante · Roster"` hardcoded subtitle in owner Staff screen | ✅ done | `app/(staff)/staff.tsx:392` |
+| Replace Unsplash hardcoded URL on restaurant cover fallback | ✅ done | `lib/supabase/mapRestaurantRow.ts:14` |
+| Replace Unsplash hardcoded URL on promo cover fallback | ✅ done | `app/(staff)/promotions/index.tsx:101` |
+| Remove `console.log('Reset redirect URL:', redirectTo)` | ✅ done | `app/(auth)/forgot-password.tsx:93` |
+| Gate 7 production `console.warn` calls behind `__DEV__` | ✅ done | various |
+| Gate `CenaivaAssistantBoundary` `console.error` behind `__DEV__` + wire to crash logger | ✅ done | `components/cenaiva/CenaivaAssistantBoundary.tsx:20` |
+| In-house crash logger (Supabase `crash_logs` table + RPC) | ✅ done | `lib/errors/crashLogger.ts`, `installCrashGuards.ts`, `AppErrorBoundary.tsx` |
 | Apply migration `20260516010000_add_crash_logs.sql` to live DB | 🟡 user action | Supabase SQL editor |
+| Upload `restaurant-cover-fallback.jpg` + `promo-cover-fallback.jpg` to `cenaiva.com/assets/` | 🟡 user action | hosted asset CDN |
 
 ## 2. App Store submission paperwork (iOS)
 
@@ -43,7 +47,7 @@ These are the items the audit found that I can fix in code. Each maps to one of 
 ### 2.2 Build & version
 
 - ✅ `version: 1.0.0` in `app.json`.
-- 🔴 `ios.buildNumber: "1"` (will land in Commit 2). **Bump before every TestFlight upload.**
+- ✅ `ios.buildNumber: "1"` set in `app.json`. **Bump before every TestFlight upload.**
 - 🟡 Provisioning profile + Apple Distribution certificate handled by EAS (`eas credentials`).
 
 ### 2.3 App privacy / data safety
@@ -168,7 +172,7 @@ These are tracked here so the web team has visibility, but the mobile repo can't
 
 - 🟡 Run `eas login` with the team's Apple ID + Google Play credentials.
 - 🟡 Run `eas credentials` once to set up signing for both platforms. EAS will manage the iOS distribution cert + provisioning profile and the Android keystore.
-- 🔴 Add `preview` + `production` build profiles to `eas.json` (Commit 2 of this batch).
+- ✅ `preview` + `production` build profiles in `eas.json`.
 - 🟡 First production build: `eas build --platform ios --profile production` + `eas build --platform android --profile production`. Wait for build, download the `.ipa` / `.aab`, upload to App Store Connect / Play Console.
 - 🟡 Bump `ios.buildNumber` and `android.versionCode` in `app.json` for every subsequent submission (Apple + Google reject duplicates).
 - 🟡 OTA updates via `expo-updates` if you want hotfixes without store re-submission. Configure `eas update` when ready; not required for v1.

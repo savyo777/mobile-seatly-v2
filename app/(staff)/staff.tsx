@@ -289,7 +289,11 @@ export default function OwnerStaffScreen() {
   const c = useColors();
   const styles = useStyles();
   const demo = isDemoModeEnabled();
-  const { restaurantIds, isAll, restaurants } = useOwnerScope();
+  const { restaurantIds, isAll, restaurants, selectedRestaurantId } = useOwnerScope();
+  const selectedRestaurantName = isAll
+    ? undefined
+    : restaurants.find((r) => r.id === selectedRestaurantId)?.name;
+  const headerSubtitle = selectedRestaurantName ?? t('owner.staffSubtitle');
   const [approvalOpen, setApprovalOpen] = useState(false);
   const [liveRoster, setLiveRoster] = useState<StaffRosterEntry[]>([]);
   const [pendingApprovals, setPendingApprovals] = useState<ManagerApproval[]>([]);
@@ -389,7 +393,7 @@ export default function OwnerStaffScreen() {
 
   return (
     <OwnerScreen contentContainerStyle={{ paddingHorizontal: 0 }}>
-      <OwnerHeader title={t('owner.staffTitle')} subtitle="Nova Ristorante · Roster" />
+      <OwnerHeader title={t('owner.staffTitle')} subtitle={headerSubtitle} />
 
       <View style={styles.pickerRow}>
         <RestaurantPicker allowAll={true} size="compact" />

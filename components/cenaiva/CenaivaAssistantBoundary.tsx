@@ -1,5 +1,6 @@
 import React from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { logCrash } from '@/lib/errors/crashLogger';
 
 type Props = {
   children: React.ReactNode;
@@ -18,7 +19,13 @@ export class CenaivaAssistantBoundary extends React.Component<Props, State> {
   }
 
   componentDidCatch(error: unknown, info: unknown) {
-    console.error('[Cenaiva] assistant render recovered', { error, info });
+    if (__DEV__) {
+      console.error('[Cenaiva] assistant render recovered', { error, info });
+    }
+    void logCrash(error, {
+      route: 'cenaiva-assistant',
+      extra: { componentStack: (info as { componentStack?: string } | null)?.componentStack ?? null },
+    });
   }
 
   reset = () => {
