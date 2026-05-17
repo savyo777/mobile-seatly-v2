@@ -17,11 +17,12 @@ import {
   normalizePhoneToE164 as validatedPhone,
 } from "../_shared/input-validation.ts";
 
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
-  "Access-Control-Allow-Methods": "POST, OPTIONS",
-};
+// CORS is enforced via the shared allowlist (set ALLOWED_ORIGINS env on
+// the function). Mobile callers don't send Origin so they're unaffected;
+// only browser callers get the allowlist restriction. The previous local
+// wildcard ("Access-Control-Allow-Origin: *") was a P0 finding in the
+// 2026-05-17 security audit — replaced here.
+import { corsHeaders, buildCorsHeaders } from "../_shared/cors.ts";
 
 type CartItemInput = {
   menu_item_id?: unknown;
@@ -82,6 +83,153 @@ function roundMoney(value: unknown): number {
   return Math.round(asNumber(value) * 100) / 100;
 }
 
+type NormalizedCartItem = {
+  menu_item_id: string | null;
+  name: string;
+  quantity: number;
+  unit_price: number;
+  line_total: number;
+};
+
+/**
+ * Server-side amount validation. Reload each cart item's canonical
+ * unit_price from menu_items + the restaurant's tax_rate, recompute
+ * the totals, and reject the request if the caller's claimed amounts
+ * deviate from server-computed by more than a cent.
+ *
+ * Added 2026-05-17 in response to the security audit P0 finding:
+ * mobile clients sent subtotal/tax/tip/total fields that the server
+ * stored verbatim, so a tampered client could pay $0.10 for a $100
+ * order. The server is now authoritative for prices.
+ *
+ * Cart items without a menu_item_id (ad-hoc add-ons) keep their
+ * claimed unit_price — but we cap tip + discount at 100% of subtotal
+ * so even those can't be used to gain net value.
+ */
+async function validateAndRecomputeAmounts(
+  supabase: ReturnType<typeof createClient>,
+  restaurantId: string,
+  cartItems: NormalizedCartItem[],
+  claimed: {
+    subtotal: number;
+    tax_amount: number;
+    tip_amount: number;
+    total_amount: number;
+    discount_amount: number;
+  },
+): Promise<
+  | { ok: true; recomputed: typeof claimed; cartItems: NormalizedCartItem[] }
+  | { ok: false; error: string; detail: Record<string, unknown> }
+> {
+  const TOLERANCE_CENTS = 1;
+  const TOLERANCE = TOLERANCE_CENTS / 100;
+
+  // 1. Restaurant tax rate.
+  const { data: restRow, error: restErr } = await supabase
+    .from("restaurants")
+    .select("tax_rate")
+    .eq("id", restaurantId)
+    .maybeSingle();
+  if (restErr) {
+    return {
+      ok: false,
+      error: "tax_rate_lookup_failed",
+      detail: { message: restErr.message },
+    };
+  }
+  const taxRate = Number(restRow?.tax_rate ?? 0);
+  const safeTaxRate = Number.isFinite(taxRate) && taxRate >= 0 ? taxRate : 0;
+
+  // 2. Canonical menu prices.
+  const menuItemIds = cartItems
+    .map((c) => c.menu_item_id)
+    .filter((id): id is string => !!id);
+  const priceById = new Map<string, number>();
+  if (menuItemIds.length > 0) {
+    const { data: menuRows, error: menuErr } = await supabase
+      .from("menu_items")
+      .select("id, price")
+      .in("id", menuItemIds);
+    if (menuErr) {
+      return {
+        ok: false,
+        error: "menu_price_lookup_failed",
+        detail: { message: menuErr.message },
+      };
+    }
+    for (const row of menuRows ?? []) {
+      const p = Number((row as { price?: unknown }).price ?? NaN);
+      if (Number.isFinite(p) && p >= 0) {
+        priceById.set((row as { id: string }).id, p);
+      }
+    }
+  }
+
+  // 3. Recompute each item with canonical price; sum subtotal.
+  const recomputedItems: NormalizedCartItem[] = cartItems.map((c) => {
+    const canonical = c.menu_item_id ? priceById.get(c.menu_item_id) : undefined;
+    const unitPrice = canonical !== undefined ? canonical : c.unit_price;
+    return {
+      menu_item_id: c.menu_item_id,
+      name: c.name,
+      quantity: c.quantity,
+      unit_price: roundMoney(unitPrice),
+      line_total: roundMoney(unitPrice * c.quantity),
+    };
+  });
+  const computedSubtotal = roundMoney(
+    recomputedItems.reduce((sum, item) => sum + item.line_total, 0),
+  );
+
+  // 4. Tax derives from subtotal × restaurant tax_rate.
+  const computedTax = roundMoney(computedSubtotal * safeTaxRate);
+
+  // 5. Tip + discount are user-controlled but capped at 100% of
+  //    (subtotal + tax) so they can't be used to manipulate net value.
+  const cap = computedSubtotal + computedTax;
+  const computedTip = roundMoney(
+    Math.max(0, Math.min(claimed.tip_amount, cap)),
+  );
+  const computedDiscount = roundMoney(
+    Math.max(0, Math.min(claimed.discount_amount, cap)),
+  );
+
+  // 6. Total = subtotal + tax + tip - discount.
+  const computedTotal = roundMoney(
+    computedSubtotal + computedTax + computedTip - computedDiscount,
+  );
+
+  // 7. Compare claimed vs computed total. Subtotal/tax/tip/discount
+  //    are each derived above; the user-facing reject reason is on
+  //    total.
+  if (Math.abs(claimed.total_amount - computedTotal) > TOLERANCE) {
+    return {
+      ok: false,
+      error: "payment_amount_mismatch",
+      detail: {
+        claimed_total: claimed.total_amount,
+        computed_total: computedTotal,
+        computed_subtotal: computedSubtotal,
+        computed_tax: computedTax,
+        computed_tip: computedTip,
+        computed_discount: computedDiscount,
+      },
+    };
+  }
+
+  return {
+    ok: true,
+    recomputed: {
+      subtotal: computedSubtotal,
+      tax_amount: computedTax,
+      tip_amount: computedTip,
+      total_amount: computedTotal,
+      discount_amount: computedDiscount,
+    },
+    cartItems: recomputedItems,
+  };
+}
+
 function normalizeCartItems(value: unknown): Array<{
   menu_item_id: string | null;
   name: string;
@@ -116,7 +264,7 @@ function formatReservationDate(date: Date): string {
 }
 
 Deno.serve(async (req: Request) => {
-  if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
+  if (req.method === "OPTIONS") return new Response(null, { headers: buildCorsHeaders(req) });
   if (req.method !== "POST") return jsonResponse({ error: "POST required" }, 405);
 
   try {
@@ -523,8 +671,32 @@ Deno.serve(async (req: Request) => {
     }
 
     let orderId: string | null = null;
-    const cartItems = normalizeCartItems(payload.cart_items);
+    let cartItems = normalizeCartItems(payload.cart_items);
     if (cartItems.length > 0) {
+      // Server-side amount validation (security audit P0). Reject the
+      // request if the caller's claimed totals deviate from what the
+      // server computes from canonical menu prices + restaurant tax.
+      const amountCheck = await validateAndRecomputeAmounts(
+        supabase,
+        restaurantId,
+        cartItems,
+        {
+          subtotal: roundMoney(payload.subtotal),
+          tax_amount: roundMoney(payload.tax_amount),
+          tip_amount: roundMoney(payload.tip_amount),
+          total_amount: roundMoney(payload.total_amount),
+          discount_amount: roundMoney(payload.discount_amount),
+        },
+      );
+      if (!amountCheck.ok) {
+        return jsonResponse(
+          { error: amountCheck.error, detail: amountCheck.detail },
+          400,
+        );
+      }
+      cartItems = amountCheck.cartItems;
+      const verified = amountCheck.recomputed;
+
       const { data: order, error: orderError } = await supabase
         .from("orders")
         .insert({
@@ -534,11 +706,11 @@ Deno.serve(async (req: Request) => {
           is_preorder: true,
           order_type: "dine_in",
           status: "pending",
-          subtotal: roundMoney(payload.subtotal),
-          tax_amount: roundMoney(payload.tax_amount),
-          tip_amount: roundMoney(payload.tip_amount),
-          total_amount: roundMoney(payload.total_amount),
-          discount_amount: roundMoney(payload.discount_amount) > 0 ? roundMoney(payload.discount_amount) : null,
+          subtotal: verified.subtotal,
+          tax_amount: verified.tax_amount,
+          tip_amount: verified.tip_amount,
+          total_amount: verified.total_amount,
+          discount_amount: verified.discount_amount > 0 ? verified.discount_amount : null,
           discount_reason: asText(payload.discount_reason),
           promotion_id: promotionId,
           payment_method: asText(payload.payment_method) ?? "card",

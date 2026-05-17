@@ -5571,13 +5571,22 @@ Deno.serve(async (req) => {
                         });
                       }
                     }
-                  } else if (Deno.env.get("CENAIVA_ALLOW_TEST_PAYMENTS") === "1") {
-                    // Test mode — only entered when STRIPE_SECRET_KEY is unset
-                    // AND the operator has explicitly opted in via the
-                    // CENAIVA_ALLOW_TEST_PAYMENTS env flag. In production this
-                    // env must remain unset; otherwise a misconfigured Stripe
-                    // key would silently mint successful payments without
-                    // charging the customer.
+                  } else if (
+                    Deno.env.get("CENAIVA_ALLOW_TEST_PAYMENTS") === "1" &&
+                    Deno.env.get("CENAIVA_REQUIRE_STRIPE") !== "true"
+                  ) {
+                    // Test mode — only entered when ALL THREE are true:
+                    //   (1) STRIPE_SECRET_KEY is unset on this function,
+                    //   (2) the operator has explicitly opted in via
+                    //       CENAIVA_ALLOW_TEST_PAYMENTS=1, AND
+                    //   (3) CENAIVA_REQUIRE_STRIPE is NOT set to "true".
+                    //
+                    // Production sets CENAIVA_REQUIRE_STRIPE=true so a
+                    // misconfigured deploy (missing Stripe key, stale
+                    // CENAIVA_ALLOW_TEST_PAYMENTS) can never silently mint
+                    // a successful "payment" without actually charging
+                    // the customer. This guard was added 2026-05-17 in
+                    // response to the security audit.
                     const { data: rest } = await supabaseAdmin
                       .from("restaurants")
                       .select("currency")
