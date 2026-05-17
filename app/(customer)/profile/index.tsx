@@ -17,6 +17,7 @@ import { restaurantPriceLabel } from '@/lib/restaurants/pricing';
 import { useColors, useTheme, createStyles, spacing, borderRadius } from '@/lib/theme';
 import { useAuthSession } from '@/lib/auth/AuthContext';
 import { deleteAccount } from '@/lib/services/accountSecurity';
+import { friendlyError } from '@/lib/errors/friendlyError';
 import { fetchMyBookingItems, type MyBookingItem } from '@/lib/booking/myReservations';
 import { isDemoModeEnabled } from '@/lib/config/demoMode';
 import { isLoyaltyEnabled } from '@/lib/config/loyaltyFeature';
@@ -618,7 +619,7 @@ export default function ProfileScreen() {
       await signOut();
       router.replace('/onboarding');
     } catch (e: any) {
-      Alert.alert('Logout failed', e?.message ?? 'Failed to log out. Please try again.');
+      Alert.alert('Logout failed', friendlyError(e, 'Failed to log out. Please try again.'));
     }
   }
 
@@ -638,7 +639,7 @@ export default function ProfileScreen() {
             } catch (e: any) {
               Alert.alert(
                 'Delete failed',
-                e?.message ?? 'Could not delete your account. Please try again.',
+                friendlyError(e, 'Could not delete your account. Please try again.'),
               );
             }
           },

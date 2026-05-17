@@ -17,6 +17,7 @@ import { useColors, createStyles, spacing, borderRadius, typography } from '@/li
 import { useAuthSession } from '@/lib/auth/AuthContext';
 import { resolveAuthDisplayProfile } from '@/lib/auth/displayProfile';
 import { deleteAccount, signOutAllDevices } from '@/lib/services/accountSecurity';
+import { friendlyError } from '@/lib/errors/friendlyError';
 import { fetchCurrentUserProfile, type AppUserProfile } from '@/lib/services/userProfile';
 import { fetchCurrentOwnerRestaurant } from '@/lib/services/ownerRestaurant';
 import {
@@ -472,7 +473,7 @@ export default function SettingsScreen() {
       await signOut();
       router.replace('/onboarding');
     } catch (e: any) {
-      Alert.alert('Logout failed', e?.message ?? 'Failed to log out. Please try again.');
+      Alert.alert('Logout failed', friendlyError(e, 'Failed to log out. Please try again.'));
     }
   };
 
@@ -492,7 +493,7 @@ export default function SettingsScreen() {
             } catch (e: any) {
               Alert.alert(
                 'Sign out failed',
-                e?.message ?? 'Could not sign out all devices. Please try again.',
+                friendlyError(e, 'Could not sign out all devices. Please try again.'),
               );
             }
           },
@@ -517,7 +518,7 @@ export default function SettingsScreen() {
             } catch (e: any) {
               Alert.alert(
                 'Delete failed',
-                e?.message ?? 'Could not delete your account. Please try again.',
+                friendlyError(e, 'Could not delete your account. Please try again.'),
               );
             }
           },
