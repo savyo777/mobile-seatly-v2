@@ -138,7 +138,11 @@ export function RestaurantDiscoveryMap({
               onPress={() => onSelectRestaurant(r.id)}
               style={[styles.row, selected && styles.rowSelected]}
             >
-              <Image source={{ uri: r.coverPhotoUrl }} style={styles.thumb} />
+              {r.coverPhotoUrl ? (
+                <Image source={{ uri: r.coverPhotoUrl }} style={styles.thumb} />
+              ) : (
+                <View style={[styles.thumb, { backgroundColor: '#0A0A0A' }]} />
+              )}
               <View style={styles.rowBody}>
                 <Text style={styles.rowName} numberOfLines={1}>
                   {r.name}

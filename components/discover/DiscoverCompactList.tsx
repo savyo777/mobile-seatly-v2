@@ -131,7 +131,11 @@ export function DiscoverCompactList({ title, data, onPressRow }: Props) {
                 pressed && styles.rowPressed,
               ]}
             >
-              <Image source={{ uri: item.coverPhotoUrl }} style={styles.thumb} />
+              {item.coverPhotoUrl ? (
+                <Image source={{ uri: item.coverPhotoUrl }} style={styles.thumb} />
+              ) : (
+                <View style={[styles.thumb, { backgroundColor: '#0A0A0A' }]} />
+              )}
               <View style={styles.rowBody}>
                 <Text style={styles.name} numberOfLines={1}>
                   {item.name}

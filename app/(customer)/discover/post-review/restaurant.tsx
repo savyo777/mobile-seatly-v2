@@ -142,7 +142,11 @@ export default function SnapRestaurantScreen() {
                   pressed && !lockedRestaurantId && styles.cardPressed,
                 ]}
               >
-                <Image source={{ uri: restaurant.coverPhotoUrl }} style={styles.photo} />
+                {restaurant.coverPhotoUrl ? (
+                  <Image source={{ uri: restaurant.coverPhotoUrl }} style={styles.photo} />
+                ) : (
+                  <View style={[styles.photo, { backgroundColor: '#0A0A0A' }]} />
+                )}
                 <View style={styles.cardBody}>
                   <Text style={styles.name}>{restaurant.name}</Text>
                   <Text style={styles.meta}>

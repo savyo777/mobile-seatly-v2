@@ -126,8 +126,8 @@ export function FeedHero({ restaurant, onPressCard, onPressReserve }: Props) {
     <View style={styles.wrap}>
       <Pressable onPress={onPressCard} style={({ pressed }) => [styles.card, pressed && styles.cardPressed]}>
         <ImageBackground
-          source={{ uri: restaurant.coverPhotoUrl }}
-          style={styles.image}
+          source={restaurant.coverPhotoUrl ? { uri: restaurant.coverPhotoUrl } : undefined}
+          style={[styles.image, !restaurant.coverPhotoUrl && { backgroundColor: '#0A0A0A' }]}
           imageStyle={styles.imageRadius}
         >
           <LinearGradient

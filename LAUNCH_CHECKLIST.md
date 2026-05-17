@@ -26,14 +26,13 @@ These are the items the audit found that I can fix in code. Each maps to one of 
 | Remove `"Nova Ristorante"` leak from onboarding | ✅ done | `app/onboarding.tsx:61` |
 | Remove `"Nova Ristorante"` hardcoded subtitle in owner Analytics screen | ✅ done | `app/(staff)/analytics.tsx:413` |
 | Remove `"Nova Ristorante · Roster"` hardcoded subtitle in owner Staff screen | ✅ done | `app/(staff)/staff.tsx:392` |
-| Replace Unsplash hardcoded URL on restaurant cover fallback | ✅ done | `lib/supabase/mapRestaurantRow.ts:14` |
-| Replace Unsplash hardcoded URL on promo cover fallback | ✅ done | `app/(staff)/promotions/index.tsx:101` |
+| Remove Unsplash hardcoded URL on restaurant cover fallback; render plain dark `View` when no cover | ✅ done | `lib/supabase/mapRestaurantRow.ts` + ~12 consumer screens |
+| Remove Unsplash hardcoded URL on promo cover fallback; render plain dark `View` when no cover | ✅ done | `app/(staff)/promotions/index.tsx` |
 | Remove `console.log('Reset redirect URL:', redirectTo)` | ✅ done | `app/(auth)/forgot-password.tsx:93` |
 | Gate 7 production `console.warn` calls behind `__DEV__` | ✅ done | various |
 | Gate `CenaivaAssistantBoundary` `console.error` behind `__DEV__` + wire to crash logger | ✅ done | `components/cenaiva/CenaivaAssistantBoundary.tsx:20` |
 | In-house crash logger (Supabase `crash_logs` table + RPC) | ✅ done | `lib/errors/crashLogger.ts`, `installCrashGuards.ts`, `AppErrorBoundary.tsx` |
-| Apply migration `20260516010000_add_crash_logs.sql` to live DB | 🟡 user action | Supabase SQL editor |
-| Upload `restaurant-cover-fallback.jpg` + `promo-cover-fallback.jpg` to `cenaiva.com/assets/` | 🟡 user action | hosted asset CDN |
+| Apply migration `20260516010000_add_crash_logs.sql` to live DB | ✅ done | Supabase SQL editor (applied 2026-05-16) |
 
 ## 2. App Store submission paperwork (iOS)
 

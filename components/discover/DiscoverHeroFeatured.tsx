@@ -104,8 +104,8 @@ export function DiscoverHeroFeatured({ restaurant, onPressCard, onPressReserve }
         style={({ pressed }) => [styles.cardOuter, pressed && styles.pressed]}
       >
         <ImageBackground
-          source={{ uri: restaurant.coverPhotoUrl }}
-          style={styles.heroImage}
+          source={restaurant.coverPhotoUrl ? { uri: restaurant.coverPhotoUrl } : undefined}
+          style={[styles.heroImage, !restaurant.coverPhotoUrl && { backgroundColor: '#0A0A0A' }]}
           imageStyle={styles.heroImageRadius}
         >
           <LinearGradient

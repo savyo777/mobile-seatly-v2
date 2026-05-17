@@ -98,10 +98,6 @@ function mapPromotionRowToOwnerPromotion(row: PromotionRow): OwnerPromotion {
 
 type Tab = 'active' | 'past';
 
-// Fallback for promo cards that don't have a coverImage. Self-hosted on
-// cenaiva.com — see LAUNCH_CHECKLIST.md for the asset upload step.
-const FALLBACK_IMAGE = 'https://cenaiva.com/assets/promo-cover-fallback.jpg';
-
 function isActive(p: OwnerPromotion): boolean {
   return p.status === 'live' || p.status === 'scheduled' || p.status === 'paused' || p.status === 'draft';
 }
@@ -594,10 +590,14 @@ export default function PromosScreen() {
             return (
               <View key={promo.id} style={styles.card}>
                 <View style={styles.banner}>
-                  <Image
-                    source={{ uri: promo.coverImage ?? FALLBACK_IMAGE }}
-                    style={styles.bannerImage}
-                  />
+                  {promo.coverImage ? (
+                    <Image
+                      source={{ uri: promo.coverImage }}
+                      style={styles.bannerImage}
+                    />
+                  ) : (
+                    <View style={[styles.bannerImage, { backgroundColor: '#0A0A0A' }]} />
+                  )}
                   <LinearGradient
                     colors={['rgba(0,0,0,0.08)', 'rgba(0,0,0,0.20)', 'rgba(0,0,0,0.84)']}
                     style={StyleSheet.absoluteFill}

@@ -904,7 +904,11 @@ export default function RestaurantDetailScreen() {
         contentContainerStyle={[styles.scrollContent, { paddingBottom: insets.bottom + 160, paddingTop: isPreview ? 44 : 0 }]}
       >
         <View style={styles.heroWrap}>
-          <Image source={{ uri: restaurant.coverPhotoUrl }} style={styles.hero} />
+          {restaurant.coverPhotoUrl ? (
+            <Image source={{ uri: restaurant.coverPhotoUrl }} style={styles.hero} />
+          ) : (
+            <View style={[styles.hero, { backgroundColor: '#0A0A0A' }]} />
+          )}
           <Pressable
             accessibilityRole="button"
             onPress={() => router.back()}

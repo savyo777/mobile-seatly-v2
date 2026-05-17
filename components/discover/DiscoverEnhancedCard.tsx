@@ -161,7 +161,11 @@ export function DiscoverEnhancedCard({
         pressed && styles.pressed,
       ]}
     >
-      <Image source={{ uri: restaurant.coverPhotoUrl }} style={[styles.image, { height: imgHeight }]} />
+      {restaurant.coverPhotoUrl ? (
+        <Image source={{ uri: restaurant.coverPhotoUrl }} style={[styles.image, { height: imgHeight }]} />
+      ) : (
+        <View style={[styles.image, { height: imgHeight, backgroundColor: '#0A0A0A' }]} />
+      )}
       <View style={styles.badgeRow}>
         {badges.map((b) => (
           <View key={b} style={styles.miniBadge}>

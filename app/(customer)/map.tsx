@@ -373,7 +373,11 @@ export default function MapScreen() {
           }}
           style={[styles.restaurantCard, isActive && styles.restaurantCardActive]}
         >
-          <Image source={{ uri: item.coverPhotoUrl }} style={styles.restaurantThumb} />
+          {item.coverPhotoUrl ? (
+            <Image source={{ uri: item.coverPhotoUrl }} style={styles.restaurantThumb} />
+          ) : (
+            <View style={[styles.restaurantThumb, { backgroundColor: '#0A0A0A' }]} />
+          )}
           <View style={styles.restaurantBody}>
             <Text style={styles.restaurantName} numberOfLines={1}>
               {item.name}

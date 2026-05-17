@@ -774,7 +774,11 @@ export default function ProfileScreen() {
               style={({ pressed }) => [styles.savedCard, pressed && { opacity: 0.8 }]}
               onPress={() => router.push(`/(customer)/discover/${r.id}` as Href)}
             >
-              <Image source={{ uri: r.coverPhotoUrl }} style={styles.savedPhoto} resizeMode="cover" />
+              {r.coverPhotoUrl ? (
+                <Image source={{ uri: r.coverPhotoUrl }} style={styles.savedPhoto} resizeMode="cover" />
+              ) : (
+                <View style={[styles.savedPhoto, { backgroundColor: '#0A0A0A' }]} />
+              )}
               <View style={styles.savedBookmark}>
                 <Ionicons name="bookmark" size={13} color={c.gold} />
               </View>

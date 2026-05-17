@@ -97,7 +97,11 @@ export function RestaurantBrowseCard({ restaurant, width, onPress }: RestaurantB
   const styles = useStyles();
   return (
     <Pressable style={[styles.card, { width }]} onPress={onPress}>
-      <Image source={{ uri: restaurant.coverPhotoUrl }} style={styles.image} />
+      {restaurant.coverPhotoUrl ? (
+        <Image source={{ uri: restaurant.coverPhotoUrl }} style={styles.image} />
+      ) : (
+        <View style={[styles.image, { backgroundColor: '#0A0A0A' }]} />
+      )}
       <View style={styles.badge}>
         <Text style={styles.badgeText}>{restaurant.availability}</Text>
       </View>

@@ -104,7 +104,11 @@ export function SavedRestaurantCard({ restaurant, onPress }: Props) {
   const content = (
     <View style={styles.card}>
       <View style={styles.imageWrap}>
-        <Image source={{ uri: restaurant.coverPhotoUrl }} style={styles.image} resizeMode="cover" />
+        {restaurant.coverPhotoUrl ? (
+          <Image source={{ uri: restaurant.coverPhotoUrl }} style={styles.image} resizeMode="cover" />
+        ) : (
+          <View style={[styles.image, { backgroundColor: '#0A0A0A' }]} />
+        )}
         <View style={styles.imageOverlay} />
         <View style={styles.badgeRow}>
           <View style={styles.ratingBadge}>

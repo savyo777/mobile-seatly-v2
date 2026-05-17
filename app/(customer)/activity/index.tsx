@@ -508,8 +508,8 @@ export default function ActivityScreen() {
           >
             {/* Photo */}
             <ImageBackground
-              source={{ uri: item.coverPhotoUrl }}
-              style={styles.photo}
+              source={item.coverPhotoUrl ? { uri: item.coverPhotoUrl } : undefined}
+              style={[styles.photo, !item.coverPhotoUrl && { backgroundColor: '#0A0A0A' }]}
               imageStyle={styles.photoImg}
             >
               <LinearGradient
