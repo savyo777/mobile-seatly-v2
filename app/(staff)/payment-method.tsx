@@ -275,21 +275,25 @@ export default function PaymentMethodScreen() {
 
   const loadCards = useCallback(() => {
     void (async () => {
-      const stored = await getStoredRestaurantPaymentCards();
-      setCards(
-        stored.map((card) => ({
-          id: card.id,
-          brand: card.brand,
-          funding: card.funding,
-          last4: card.last4,
-          expiry: card.expiry,
-          cardholder: card.cardholder,
-          isDefault: card.isDefault,
-          source: card.source,
-        })),
-      );
-      const address = await getStoredBillingAddress();
-      setBillingAddress(address);
+      try {
+        const stored = await getStoredRestaurantPaymentCards();
+        setCards(
+          stored.map((card) => ({
+            id: card.id,
+            brand: card.brand,
+            funding: card.funding,
+            last4: card.last4,
+            expiry: card.expiry,
+            cardholder: card.cardholder,
+            isDefault: card.isDefault,
+            source: card.source,
+          })),
+        );
+        const address = await getStoredBillingAddress();
+        setBillingAddress(address);
+      } catch (err) {
+        if (__DEV__) console.warn('payment-method: loadCards failed', err);
+      }
     })();
   }, []);
 
