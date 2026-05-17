@@ -1,6 +1,7 @@
 import { Platform } from 'react-native';
 import { router, type Href } from 'expo-router';
 import { FALLBACK_ROUTES } from '@/lib/navigation/safeNavigation';
+import { logCrash } from '@/lib/errors/crashLogger';
 
 type ErrorUtilsLike = {
   getGlobalHandler?: () => ((error: unknown, isFatal?: boolean) => void) | undefined;
@@ -30,12 +31,16 @@ function routeFallbackForPath(pathname: string | undefined): Href {
 }
 
 function logRecoveredError(context: string, error: unknown, extra?: Record<string, unknown>): void {
-  console.error('[CrashGuard] recovered', {
-    context,
-    platform: Platform.OS,
-    error,
-    ...extra,
-  });
+  if (__DEV__) {
+    console.error('[CrashGuard] recovered', {
+      context,
+      platform: Platform.OS,
+      error,
+      ...extra,
+    });
+  }
+  // Fire-and-forget capture to the in-house crash_logs table. Never throws.
+  void logCrash(error, { route: null, extra: { source: context, ...extra } });
 }
 
 export function getDefaultCrashFallback(pathname: string | undefined): Href {

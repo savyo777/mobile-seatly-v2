@@ -1,5 +1,6 @@
 import React from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { logCrash } from '@/lib/errors/crashLogger';
 
 type Props = {
   children: React.ReactNode;
@@ -19,10 +20,19 @@ export class AppErrorBoundary extends React.Component<Props, State> {
   }
 
   componentDidCatch(error: unknown, info: unknown) {
-    console.error('[App] render recovered', {
-      route: this.props.resetKey,
-      error,
-      info,
+    if (__DEV__) {
+      console.error('[App] render recovered', {
+        route: this.props.resetKey,
+        error,
+        info,
+      });
+    }
+    // Fire-and-forget capture to the in-house crash_logs table. Never
+    // throws (see crashLogger). Includes the React componentStack so
+    // dashboard queries can group by route + component.
+    void logCrash(error, {
+      route: this.props.resetKey ?? null,
+      extra: { componentStack: (info as { componentStack?: string } | null)?.componentStack ?? null },
     });
   }
 
