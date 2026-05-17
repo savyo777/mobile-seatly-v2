@@ -1,6 +1,6 @@
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import { createClient, type SupabaseClient } from '@supabase/supabase-js';
 import { getSupabaseEnv, isSupabaseConfigured } from './env';
+import { secureStorageAdapter } from './secureStorage';
 
 let client: SupabaseClient | null = null;
 
@@ -17,44 +17,49 @@ export function getSupabaseAuthStorageKey(): string | null {
 }
 
 /**
- * Clears the persisted Supabase session from AsyncStorage AND resets the
- * client singleton. Use only when you need a completely fresh client (e.g.
- * after detecting a corrupt persisted session at startup). Do NOT call this
- * during a normal sign-out — it destroys the onAuthStateChange subscription
- * that AuthProvider registered on the original client, breaking subsequent logins.
+ * Clears the persisted Supabase session and resets the client singleton.
+ * Use only when you need a completely fresh client (e.g. after detecting
+ * a corrupt persisted session at startup). Do NOT call this during a
+ * normal sign-out — it destroys the onAuthStateChange subscription that
+ * AuthProvider registered on the original client, breaking subsequent
+ * logins.
+ *
+ * Clears from BOTH SecureStore and AsyncStorage so the migration period
+ * (some users may still have AsyncStorage leftovers) is handled.
  */
 export async function clearPersistedSupabaseSession(): Promise<void> {
   const storageKey = getSupabaseAuthStorageKey();
   if (!storageKey) return;
-  await AsyncStorage.multiRemove([
-    storageKey,
-    `${storageKey}-code-verifier`,
-    `${storageKey}-user`,
-  ]);
+  const adapter = secureStorageAdapter();
+  const keys = [storageKey, `${storageKey}-code-verifier`, `${storageKey}-user`];
+  await Promise.all(keys.map((k) => adapter.removeItem(k).catch(() => {})));
   client = null;
 }
 
 /**
- * Clears only the AsyncStorage keys for the Supabase session.
- * Unlike clearPersistedSupabaseSession, this does NOT null the client
- * singleton, so the onAuthStateChange subscription set up by AuthProvider
- * remains intact and subsequent logins work correctly.
+ * Clears only the persisted Supabase session keys. Unlike
+ * clearPersistedSupabaseSession, this does NOT null the client
+ * singleton, so the onAuthStateChange subscription set up by
+ * AuthProvider remains intact and subsequent logins work correctly.
  * Use this for normal sign-out flows.
+ *
+ * Clears from BOTH SecureStore and AsyncStorage to cover both new
+ * sessions and lingering AsyncStorage ones from before the migration.
  */
 export async function clearSupabaseStorageOnly(): Promise<void> {
   const storageKey = getSupabaseAuthStorageKey();
   if (!storageKey) return;
-  await AsyncStorage.multiRemove([
-    storageKey,
-    `${storageKey}-code-verifier`,
-    `${storageKey}-user`,
-  ]);
+  const adapter = secureStorageAdapter();
+  const keys = [storageKey, `${storageKey}-code-verifier`, `${storageKey}-user`];
+  await Promise.all(keys.map((k) => adapter.removeItem(k).catch(() => {})));
 }
 
 export async function clearUnusablePersistedSupabaseSession(): Promise<boolean> {
   const storageKey = getSupabaseAuthStorageKey();
   if (!storageKey) return false;
-  const raw = await AsyncStorage.getItem(storageKey);
+  // Read via the adapter so we see the session regardless of whether it
+  // lives in SecureStore (new) or AsyncStorage (pre-migration leftover).
+  const raw = await secureStorageAdapter().getItem(storageKey);
   if (!raw) return false;
 
   try {
@@ -83,19 +88,12 @@ export async function clearUnusablePersistedSupabaseSession(): Promise<boolean> 
 /**
  * Singleton Supabase browser/RN client. Returns null when env is not set (mock-only mode).
  *
- * TODO(security-phase-2.1): swap `storage: AsyncStorage` for the
- * SecureStore-backed adapter at `lib/supabase/secureStorage.ts`
- * once `expo-secure-store` is installed:
- *
- *   npx expo install expo-secure-store
- *   // then:
- *   import { secureStorageAdapter } from './secureStorage';
- *   storage: secureStorageAdapter(),
- *
- * The adapter handles a one-time migration of existing AsyncStorage
- * sessions to SecureStore on first read, so the switch is a one-line
- * change with no logout-everyone fallout. Tracked in the 2026-05-17
- * security audit.
+ * Session tokens are persisted via `secureStorageAdapter()` which
+ * wraps `expo-secure-store` — tokens land in iOS Keychain + Android
+ * EncryptedSharedPreferences instead of plaintext AsyncStorage. The
+ * adapter handles a one-time migration on first read so existing
+ * sessions are moved over without a logout-everyone event. Closed
+ * the P1 finding in the 2026-05-17 security audit.
  */
 export function getSupabase(): SupabaseClient | null {
   if (!isSupabaseConfigured()) return null;
@@ -106,7 +104,7 @@ export function getSupabase(): SupabaseClient | null {
     try {
       client = createClient(url, anonKey, {
         auth: {
-          storage: AsyncStorage,
+          storage: secureStorageAdapter(),
           storageKey,
           // Avoid Supabase's startup recovery logging stale refresh tokens to LogBox.
           // AuthProvider refreshes once, clears invalid persisted sessions, then starts
