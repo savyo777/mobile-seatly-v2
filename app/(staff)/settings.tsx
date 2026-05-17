@@ -724,6 +724,7 @@ export default function OwnerSettingsScreen() {
   }, []);
 
   const performRestaurantRemoval = React.useCallback(async () => {
+    if (removingRestaurants) return;
     if (restaurantRemovalIds.length === 0) {
       Alert.alert('Choose restaurants', 'Choose at least one restaurant to remove.');
       return;
