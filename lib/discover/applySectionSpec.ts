@@ -25,6 +25,13 @@ export function applySectionSpec(
   limit = 12,
 ): Restaurant[] {
   if (!pool.length) return [];
+  // Defensive: a stale Metro hot-reload bundle can briefly hold a
+  // section-spec import binding that no longer exists after a rename.
+  // Crashing the whole Discover screen on render is worse than rendering
+  // an empty section while the dev reloads.
+  if (!spec || typeof spec.qualifies !== 'function' || typeof spec.score !== 'function') {
+    return [];
+  }
 
   let candidates = pool.filter(spec.qualifies);
   if (candidates.length === 0 && !spec.strictPool) {
