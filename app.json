@@ -128,7 +128,8 @@
       ],
       "expo-asset",
       "expo-web-browser",
-      "expo-image"
+      "expo-image",
+      "expo-secure-store"
     ],
     "extra": {
       "socialSharing": {

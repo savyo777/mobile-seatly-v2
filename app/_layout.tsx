@@ -208,8 +208,15 @@ export default function RootLayout() {
 
   if (isExpoGo || !publishableKey) return app;
 
+  // Apple Pay merchant id. Falls back to the historical hardcoded value
+  // when the env var isn't set so existing builds keep working.
+  // Override via EXPO_PUBLIC_STRIPE_MERCHANT_IDENTIFIER if/when we move
+  // to a different Apple Developer merchant id without rebuilding.
+  const merchantIdentifier =
+    process.env.EXPO_PUBLIC_STRIPE_MERCHANT_IDENTIFIER || 'merchant.com.cenaiva';
+
   return (
-    <StripeProvider publishableKey={publishableKey} merchantIdentifier="merchant.com.cenaiva">
+    <StripeProvider publishableKey={publishableKey} merchantIdentifier={merchantIdentifier}>
       {app}
     </StripeProvider>
   );

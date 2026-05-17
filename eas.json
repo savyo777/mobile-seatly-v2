@@ -39,10 +39,12 @@
       "ios": {
         "entitlements": {
           "aps-environment": "production"
-        }
+        },
+        "jsEngine": "hermes"
       },
       "android": {
-        "buildType": "app-bundle"
+        "buildType": "app-bundle",
+        "jsEngine": "hermes"
       },
       "env": {
         "EXPO_PUBLIC_DEEPGRAM_STT_ENABLED": "true",

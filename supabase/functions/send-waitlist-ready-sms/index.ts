@@ -75,6 +75,29 @@ Deno.serve(async (req: Request) => {
       return jsonRes({ error: `Cannot notify: entry is ${status}.` }, 409);
     }
 
+    // Per-waitlist-entry dedup (Phase 3 audit fix 2026-05-17). The
+    // user-level rate limit above caps total sends per staff member,
+    // but doesn't stop a re-notify of the SAME guest if staff taps
+    // twice. Refuse if we already sent a waitlist_ready notice for
+    // this row in the last hour.
+    const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000).toISOString();
+    const { data: recentNotice } = await supabaseAdmin
+      .from("communication_log")
+      .select("id")
+      .eq("type", "waitlist_ready")
+      .eq("campaign_id", row.id)
+      .eq("status", "sent")
+      .gte("sent_at", oneHourAgo)
+      .limit(1)
+      .maybeSingle();
+    if (recentNotice) {
+      return jsonRes({
+        ok: false,
+        error: "Already notified within the last hour.",
+        code: "duplicate_notify",
+      }, 409);
+    }
+
     const { data: restaurant } = await supabaseAdmin
       .from("restaurants")
       .select("name")
