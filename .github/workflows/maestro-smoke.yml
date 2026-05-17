@@ -1,0 +1,83 @@
+name: Maestro smoke (manual)
+
+# Runs the Maestro smoke flow against a freshly-built iOS Simulator
+# dev client. This is a sanity check that the app boots + reaches the
+# cookie consent sheet — a "is the JS bundle loading at all" gate.
+#
+# Manual trigger only (workflow_dispatch). GitHub-hosted macOS runners
+# can build the iOS app, but the full ~30min run cost makes per-PR
+# automation prohibitive on the standard plan. Use this when you
+# suspect a boot-time regression. The nightly variant is in
+# maestro-nightly.yml.
+
+on:
+  workflow_dispatch:
+
+jobs:
+  smoke:
+    name: iOS Smoke
+    runs-on: macos-14
+    timeout-minutes: 45
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Install Maestro
+        run: |
+          curl -Ls "https://get.maestro.mobile.dev" | bash
+          echo "$HOME/.maestro/bin" >> $GITHUB_PATH
+
+      - name: Boot iPhone Simulator
+        run: |
+          UDID=$(xcrun simctl create "ci-iphone" "iPhone 16" "com.apple.CoreSimulator.SimRuntime.iOS-18-0" || \
+                 xcrun simctl list devices available | grep "iPhone 1" | head -1 | grep -oE "[0-9A-F-]{36}")
+          xcrun simctl boot "$UDID"
+          echo "SIM_UDID=$UDID" >> $GITHUB_ENV
+
+      - name: Build iOS dev client
+        env:
+          EXPO_PUBLIC_CENAIVA_DEMO_MODE: "true"
+        run: |
+          npx expo prebuild --platform ios --no-install --clean
+          cd ios && pod install && cd ..
+          xcodebuild \
+            -workspace ios/Cenaiva.xcworkspace \
+            -scheme Cenaiva \
+            -configuration Debug \
+            -destination "id=$SIM_UDID" \
+            -derivedDataPath build \
+            CODE_SIGNING_ALLOWED=NO \
+            build
+
+      - name: Install app on simulator
+        run: |
+          APP_PATH=$(find build/Build/Products/Debug-iphonesimulator -name "Cenaiva.app" -maxdepth 2 | head -1)
+          xcrun simctl install "$SIM_UDID" "$APP_PATH"
+
+      - name: Start Metro
+        run: npx expo start --dev-client --port 8081 &
+        env:
+          EXPO_PUBLIC_CENAIVA_DEMO_MODE: "true"
+
+      - name: Wait for Metro
+        run: |
+          until curl -s "http://localhost:8081/status" | grep -q "running"; do sleep 2; done
+
+      - name: Run Maestro smoke
+        run: maestro test .maestro/smoke.yaml
+
+      - name: Upload Maestro artifacts on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: maestro-artifacts
+          path: ~/.maestro/tests/
