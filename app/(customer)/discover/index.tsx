@@ -455,8 +455,8 @@ export default function DiscoverScreen() {
       .slice(0, 10);
   }, [personalized, signals, withoutFeatured, baseRestaurants]);
 
-  const worldwideData = useMemo(() => {
-    if (personalized) return applySectionSpec(baseRestaurants, SECTION_SPECS.worldwide, signals, 8);
+  const nearbyData = useMemo(() => {
+    if (personalized) return applySectionSpec(baseRestaurants, SECTION_SPECS.nearby, signals, 8);
     return baseRestaurants.slice().sort((a, b) => (b.avgRating ?? 0) - (a.avgRating ?? 0)).slice(0, 8);
   }, [personalized, signals, baseRestaurants]);
 
@@ -691,8 +691,8 @@ export default function DiscoverScreen() {
             />
 
             <DiscoverHorizontalSection
-              title="Trending Worldwide"
-              data={worldwideData}
+              title={t('discover.sectionNearby')}
+              data={nearbyData}
               onPressCard={openRestaurant}
               onPressSeeAll={() => goCategory('trending')}
             />

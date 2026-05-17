@@ -241,6 +241,7 @@ export default {
     sectionAvailableNow: 'Available now',
     sectionTaste: 'Based on your taste',
     sectionMostSnapped: 'Most snapped this week',
+    sectionNearby: 'Trending in your area',
     sectionTrendingDishes: 'Trending dishes',
     trendingDishCount: '{{count}} posts',
     chipDateNight: 'Date night',

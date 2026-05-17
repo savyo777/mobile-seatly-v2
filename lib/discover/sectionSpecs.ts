@@ -32,7 +32,7 @@ export type SectionKey =
   | 'outdoor'
   | 'taste'
   | 'mostSnapped'
-  | 'worldwide';
+  | 'nearby';
 
 export type SectionSpec = {
   key: SectionKey;
@@ -139,12 +139,18 @@ export const SECTION_SPECS: Record<SectionKey, SectionSpec> = {
       0.20 * recentVisitScore(r.id, s.recentBookings) +
       dietaryPenalty(r, s.dietaryRestrictions),
   },
-  worldwide: {
-    key: 'worldwide',
+  nearby: {
+    // "Trending in your area." Weighted toward distance so the list is
+    // bookable for the current user; falls back gracefully to popularity
+    // + rating when location permission isn't granted (distanceScore
+    // returns 0 for everyone, so the other terms dominate).
+    key: 'nearby',
     qualifies: alwaysQualifies,
     score: (r, s) =>
-      0.60 * ratingScore(r) +
-      0.40 * popularityScore(r) +
+      0.40 * distanceScore(r, s.userLocation) +
+      0.30 * popularityScore(r) +
+      0.20 * ratingScore(r) +
+      0.10 * recentVisitScore(r.id, s.recentBookings) +
       dietaryPenalty(r, s.dietaryRestrictions),
   },
 };
