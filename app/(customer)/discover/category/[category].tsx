@@ -1,5 +1,5 @@
-import React, { useMemo } from 'react';
-import { View, Text, StyleSheet, FlatList, Pressable, useWindowDimensions } from 'react-native';
+import React, { useEffect, useMemo, useState } from 'react';
+import { View, Text, StyleSheet, FlatList, Pressable, useWindowDimensions, ActivityIndicator } from 'react-native';
 import { useLocalSearchParams, useRouter, Href } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -11,11 +11,21 @@ import {
   restaurantsForDiscoverCategory,
   type DiscoverCategorySlug,
 } from '@/lib/discover/discoverCategories';
-import { mockRestaurants as DEMO_RESTAURANTS, type Restaurant } from '@/lib/mock/restaurants';
-import { isDemoModeEnabled } from '@/lib/config/demoMode';
-
-const mockRestaurants: typeof DEMO_RESTAURANTS = isDemoModeEnabled() ? DEMO_RESTAURANTS : [];
+import type { Restaurant } from '@/lib/mock/restaurants';
+import { loadRestaurantsForDiscover } from '@/lib/data/restaurantCatalog';
+import { isPersonalizedDiscoverEnabled } from '@/lib/config/discoverPersonalization';
+import { useUserSignals } from '@/lib/discover/useUserSignals';
+import { applySectionSpec } from '@/lib/discover/applySectionSpec';
+import { SECTION_SPECS, type SectionKey } from '@/lib/discover/sectionSpecs';
 import { useColors, createStyles, spacing, typography } from '@/lib/theme';
+
+const SLUG_TO_SECTION_KEY: Record<DiscoverCategorySlug, SectionKey> = {
+  trending: 'trending',
+  'date-night': 'dateNight',
+  'outdoor-seating': 'outdoor',
+  'available-now': 'trending',
+  taste: 'taste',
+};
 
 const useStyles = createStyles((c) => ({
   header: {
@@ -64,6 +74,10 @@ const useStyles = createStyles((c) => ({
     paddingVertical: spacing['3xl'],
     width: '100%',
   },
+  loadingWrap: {
+    paddingVertical: spacing['3xl'],
+    alignItems: 'center',
+  },
   invalidWrap: {
     paddingHorizontal: spacing.lg,
   },
@@ -98,11 +112,42 @@ export default function DiscoverCategoryScreen() {
 
   const title = valid ? t(DISCOVER_CATEGORY_TITLE_KEYS[slug as DiscoverCategorySlug]) : t('discover.categoryInvalid');
 
-  const data = useMemo(() => {
-    if (!valid) return [];
-    const active = mockRestaurants.filter((r) => r.isActive);
-    return restaurantsForDiscoverCategory(slug as DiscoverCategorySlug, active);
-  }, [slug, valid]);
+  const [pool, setPool] = useState<Restaurant[]>([]);
+  const [loading, setLoading] = useState<boolean>(true);
+  const signals = useUserSignals();
+
+  useEffect(() => {
+    if (!valid) {
+      setLoading(false);
+      return;
+    }
+    let cancelled = false;
+    setLoading(true);
+    loadRestaurantsForDiscover()
+      .then(({ list }) => {
+        if (cancelled) return;
+        setPool(list.filter((r) => r.isActive));
+      })
+      .catch(() => {
+        if (!cancelled) setPool([]);
+      })
+      .finally(() => {
+        if (!cancelled) setLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [valid, slug]);
+
+  const data = useMemo<Restaurant[]>(() => {
+    if (!valid || pool.length === 0) return [];
+    const slugTyped = slug as DiscoverCategorySlug;
+    if (isPersonalizedDiscoverEnabled()) {
+      const spec = SECTION_SPECS[SLUG_TO_SECTION_KEY[slugTyped]];
+      return applySectionSpec(pool, spec, signals, 100);
+    }
+    return restaurantsForDiscoverCategory(slugTyped, pool);
+  }, [valid, slug, pool, signals]);
 
   type GridCell = { kind: 'restaurant'; restaurant: Restaurant } | { kind: 'spacer' };
 
@@ -171,7 +216,15 @@ export default function DiscoverCategoryScreen() {
           styles.listContent,
           { paddingBottom: insets.bottom + spacing['3xl'] },
         ]}
-        ListEmptyComponent={<Text style={styles.empty}>{t('discover.categoryEmpty')}</Text>}
+        ListEmptyComponent={
+          loading ? (
+            <View style={styles.loadingWrap}>
+              <ActivityIndicator color={c.gold} />
+            </View>
+          ) : (
+            <Text style={styles.empty}>{t('discover.categoryEmpty')}</Text>
+          )
+        }
         renderItem={({ item }) =>
           item.kind === 'spacer' ? (
             <View style={{ width: colW }} />
