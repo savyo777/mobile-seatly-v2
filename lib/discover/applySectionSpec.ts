@@ -33,22 +33,41 @@ export function applySectionSpec(
     return [];
   }
 
-  let candidates = pool.filter(spec.qualifies);
-  if (candidates.length === 0 && !spec.strictPool) {
-    candidates = pool;
+  // Wrap the entire scoring pipeline so a bad spec entry, a malformed
+  // restaurant row, or an unexpected signal shape can never take down the
+  // tab — the Discover screen is eagerly mounted by the Tabs navigator,
+  // so a render error here would surface across the whole app even when
+  // the user is on a different tab.
+  try {
+    let candidates = pool.filter((r) => {
+      try {
+        return spec.qualifies(r);
+      } catch {
+        return false;
+      }
+    });
+    if (candidates.length === 0 && !spec.strictPool) {
+      candidates = pool;
+    }
+    if (candidates.length === 0) return [];
+
+    const scored = candidates.map((r) => {
+      let score = 0;
+      try {
+        score = spec.score(r, signals);
+      } catch {
+        score = 0;
+      }
+      return { r, score, tie: sectionTieBreak(r.id, spec.key) };
+    });
+
+    scored.sort((a, b) => {
+      if (b.score !== a.score) return b.score - a.score;
+      return b.tie - a.tie;
+    });
+
+    return scored.slice(0, limit).map((x) => x.r);
+  } catch {
+    return [];
   }
-  if (candidates.length === 0) return [];
-
-  const scored = candidates.map((r) => ({
-    r,
-    score: spec.score(r, signals),
-    tie: sectionTieBreak(r.id, spec.key),
-  }));
-
-  scored.sort((a, b) => {
-    if (b.score !== a.score) return b.score - a.score;
-    return b.tie - a.tie;
-  });
-
-  return scored.slice(0, limit).map((x) => x.r);
 }
