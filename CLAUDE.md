@@ -105,15 +105,15 @@ When you see a literal that looks like a duplicate, check first whether a centra
 
 ## Edge function deploys
 
-You **write** the function code; the user **deploys** with `npx supabase functions deploy <name>`. Don't run deploys yourself.
+You deploy edge functions yourself via the Supabase MCP `deploy_edge_function` tool or the CLI (`npx supabase functions deploy <name>`). The user pre-authorized you to handle deploys on `exbjodmnpdiayfzrdyux` end-to-end — no per-deploy approval required. Coordinate with the web team if a function name is shared with the Seatly sister repo.
 
 Project ref: `exbjodmnpdiayfzrdyux`
 
-When committing edge-function changes, mention which functions need redeploy in the commit message.
+When committing edge-function changes, mention which functions you (re)deployed in the commit message.
 
 ## DB migrations
 
-Same pattern: you **write** SQL under `supabase/migrations/`, the user **applies** it. Provide a precheck query for any destructive change (e.g. `SELECT id FROM restaurants WHERE tax_rate IS NULL` before adding `NOT NULL`).
+You apply migrations yourself via the Supabase MCP `apply_migration` tool (preferred — keeps the migration log up to date) or the CLI. The user pre-authorized you for `exbjodmnpdiayfzrdyux`. For destructive changes (NOT NULL adds, column drops, anything that could break running queries), still write a precheck query into the migration file as a comment so a future reader sees the safety reasoning.
 
 ## Hardcoding hygiene
 
