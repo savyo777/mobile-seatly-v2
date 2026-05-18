@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet } from 'react-native';
+import { View, Text, StyleSheet, Pressable } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 import { OwnerScreen } from '@/components/owner/OwnerScreen';
@@ -11,6 +11,7 @@ import { fetchUpcomingEvents, type EventRow } from '@/lib/events/getEvents';
 import { useOwnerScope } from '@/hooks/useOwnerScope';
 import { createStyles } from '@/lib/theme';
 import { ownerColorsFromPalette, ownerRadii } from '@/lib/theme/ownerTheme';
+import { friendlyError } from '@/lib/errors/friendlyError';
 
 const INITIAL_OWNER_EVENTS: typeof DEMO_OWNER_EVENTS = isDemoModeEnabled() ? DEMO_OWNER_EVENTS : [];
 
@@ -54,25 +55,33 @@ export default function OwnerEventsScreen() {
   const { restaurantIds } = useOwnerScope();
   const restaurantIdsKey = restaurantIds.join('|');
 
+  const [loadError, setLoadError] = useState<string | null>(null);
+  const [reloadKey, setReloadKey] = useState(0);
+
   useEffect(() => {
     if (isDemoModeEnabled()) return;
     if (restaurantIds.length === 0) {
       setEvents([]);
+      setLoadError(null);
       return;
     }
     let active = true;
+    setLoadError(null);
     void (async () => {
-      const rows = await fetchUpcomingEvents({ restaurantIds, includePrivate: true }).catch(
-        () => [] as EventRow[],
-      );
-      if (!active) return;
-      setEvents(rows.map(mapEventRowToOwnerEvent));
+      try {
+        const rows = await fetchUpcomingEvents({ restaurantIds, includePrivate: true });
+        if (!active) return;
+        setEvents(rows.map(mapEventRowToOwnerEvent));
+      } catch (err) {
+        if (!active) return;
+        setLoadError(friendlyError(err, "Couldn't load events."));
+      }
     })();
     return () => {
       active = false;
     };
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [restaurantIdsKey]);
+  }, [restaurantIdsKey, reloadKey]);
 
   return (
     <OwnerScreen
@@ -84,6 +93,22 @@ export default function OwnerEventsScreen() {
         />
       }
     >
+      {loadError && events.length === 0 ? (
+        <View style={styles.errorBlock}>
+          <Text style={styles.errorText}>{loadError}</Text>
+          <Pressable
+            onPress={() => {
+              setLoadError(null);
+              setReloadKey((k) => k + 1);
+            }}
+            style={styles.retryBtn}
+            accessibilityRole="button"
+            accessibilityLabel="Retry loading events"
+          >
+            <Text style={styles.retryText}>Retry</Text>
+          </Pressable>
+        </View>
+      ) : null}
       {events.map((ev, i) => (
         <Animated.View key={ev.id} entering={FadeInDown.delay(i * 40)}>
           <GlassCard style={styles.card}>
@@ -109,6 +134,29 @@ const useStyles = createStyles((c) => {
   card: {
     padding: 16,
     marginBottom: 10,
+  },
+  errorBlock: {
+    alignItems: 'center',
+    paddingVertical: 32,
+    gap: 12,
+  },
+  errorText: {
+    fontSize: 14,
+    color: ownerColors.textMuted,
+    textAlign: 'center',
+    paddingHorizontal: 24,
+  },
+  retryBtn: {
+    paddingHorizontal: 18,
+    paddingVertical: 8,
+    borderRadius: ownerRadii.xl,
+    borderWidth: 1,
+    borderColor: ownerColors.gold,
+  },
+  retryText: {
+    color: ownerColors.gold,
+    fontSize: 14,
+    fontWeight: '600',
   },
   top: {
     flexDirection: 'row',
