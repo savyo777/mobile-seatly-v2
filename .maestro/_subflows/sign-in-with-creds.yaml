@@ -1,0 +1,59 @@
+# Boots the app, forces a logged-out state, then signs in with the
+# credentials passed via --env MAESTRO_EMAIL/MAESTRO_PASSWORD.
+#
+# Lands on either the customer Discover shell or the owner Restaurant
+# dashboard depending on the account's server role. Caller is
+# responsible for any role-specific navigation that follows.
+#
+# Usage:
+#   - runFlow: ../_subflows/sign-in-with-creds.yaml
+# Pass creds on the CLI:
+#   maestro test ... --env MAESTRO_EMAIL=... --env MAESTRO_PASSWORD=...
+
+appId: com.cenaiva.app
+---
+- runFlow: ../_subflows/boot-to-app.yaml
+- runFlow: ../_subflows/ensure-logged-out.yaml
+- runFlow: ../_subflows/past-onboarding.yaml
+- extendedWaitUntil:
+    visible: "Welcome to Cenaiva"
+    timeout: 15000
+- tapOn:
+    text: ".*Sign in"
+- extendedWaitUntil:
+    visible: "Welcome back"
+    timeout: 20000
+- tapOn:
+    id: "login-email-input"
+- inputText: ${MAESTRO_EMAIL}
+- tapOn:
+    id: "login-password-input"
+- inputText: ${MAESTRO_PASSWORD}
+# iOS 26 hideKeyboard is flaky — tap a static label to drop the keyboard.
+- tapOn:
+    text: "Welcome back"
+- tapOn:
+    id: "login-submit-button"
+# iOS may prompt to save the password as a system sheet. The sheet
+# can show up to ~15s after Log In, and Maestro's `when: visible:`
+# predicate doesn't reliably see system sheets even when they're in
+# the a11y tree. Fire optional taps on "Not Now" twice with retry to
+# clear it whenever it shows.
+- tapOn:
+    text: "Not Now"
+    optional: true
+    retryTapIfNoChange: false
+- tapOn:
+    text: "Not Now"
+    optional: true
+    retryTapIfNoChange: false
+- extendedWaitUntil:
+    visible:
+      text: "Discover, tab.*|Restaurant dashboard|Home, tab.*"
+    timeout: 30000
+# If the system sheet is what's masking the final shell, dismiss it
+# once more and re-assert.
+- tapOn:
+    text: "Not Now"
+    optional: true
+    retryTapIfNoChange: false

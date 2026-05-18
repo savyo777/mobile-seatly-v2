@@ -1,0 +1,10 @@
+# Sign in with owner-role creds, then flip to the customer side via
+# Business → Settings → Switch to user side. Used as a setup step for
+# customer flows when the test account only has an owner role.
+
+appId: com.cenaiva.app
+---
+- runFlow: ../_subflows/sign-in-with-creds.yaml
+- runFlow: ../_subflows/switch-to-customer.yaml
+- assertVisible:
+    text: "Discover, tab.*"

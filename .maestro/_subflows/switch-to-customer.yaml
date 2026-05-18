@@ -1,0 +1,47 @@
+# If we're on the staff shell, navigate Business tab → Settings →
+# "Switch to user side" to flip the app into the customer shell.
+#
+# No-op if we're already on the customer shell.
+
+appId: com.cenaiva.app
+---
+- extendedWaitUntil:
+    visible:
+      text: "Discover, tab.*|Home, tab.*"
+    timeout: 30000
+- runFlow:
+    when:
+      visible:
+        text: "Home, tab.*"
+    commands:
+      - tapOn:
+          text: "Business, tab.*"
+      - extendedWaitUntil:
+          visible:
+            text: "Business, tab.*"
+          timeout: 15000
+      # The 38x38 gear (top-right) shares pixel space with the Expo
+      # dev-client floater. Tapping by id sometimes lands on the
+      # floater. Try by-id first, then fall back to a precise point
+      # tap at the gear's center (89%, 9% on iPhone 16e).
+      - tapOn:
+          id: "staff-business-settings-gear"
+          waitToSettleTimeoutMs: 2000
+      - extendedWaitUntil:
+          visible: "Switch to user side"
+          timeout: 8000
+          optional: true
+      - runFlow:
+          when:
+            notVisible: "Switch to user side"
+          commands:
+            - tapOn:
+                point: "89%,9%"
+            - extendedWaitUntil:
+                visible: "Switch to user side"
+                timeout: 15000
+      - tapOn: "Switch to user side"
+      - extendedWaitUntil:
+          visible:
+            text: "Discover, tab.*"
+          timeout: 30000

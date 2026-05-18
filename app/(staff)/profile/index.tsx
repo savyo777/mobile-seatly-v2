@@ -547,6 +547,7 @@ export default function OwnerBusinessScreen() {
             onPress={() => router.push('/(staff)/settings' as never)}
             accessibilityRole="button"
             accessibilityLabel="Settings"
+            testID="staff-business-settings-gear"
           >
             <Ionicons name="settings-outline" size={18} color={c.textSecondary} />
           </Pressable>

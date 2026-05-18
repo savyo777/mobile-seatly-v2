@@ -1,55 +1,15 @@
-# Real-credential sign-in. Creds come from --env MAESTRO_EMAIL=... and
-# --env MAESTRO_PASSWORD=... on the maestro CLI so they never live in
-# the repo.
+# Real-credential sign-in test. Verifies an owner/customer account
+# can sign in with email+password and land on the role-appropriate
+# shell (Discover for customer, Home/Restaurant dashboard for owner).
 #
-# Lands on Discover (customer shell) or Restaurant dashboard (staff
-# shell) depending on the account's role. We accept either.
-#
-# NOTE: iOS 26 hideKeyboard is flaky; we tap the heading to dismiss
-# the keyboard instead, then click the submit button by id.
+# Usage:
+#   maestro test .maestro/auth/sign-in-success.yaml \
+#     --env MAESTRO_EMAIL=you@example.com \
+#     --env MAESTRO_PASSWORD=...
 
 appId: com.cenaiva.app
 ---
-- runFlow: ../_subflows/boot-to-app.yaml
-# Supabase session survives clearState/uninstall via the keychain, so
-# force a logged-out state before attempting sign-in. ensure-logged-out
-# may leave us back on the onboarding screen, so run past-onboarding
-# after it.
-- runFlow: ../_subflows/ensure-logged-out.yaml
-- runFlow: ../_subflows/past-onboarding.yaml
-- extendedWaitUntil:
-    visible: "Welcome to Cenaiva"
-    timeout: 15000
-- tapOn:
-    text: ".*Sign in"
-- extendedWaitUntil:
-    visible: "Welcome back"
-    timeout: 20000
-- tapOn:
-    id: "login-email-input"
-- inputText: ${MAESTRO_EMAIL}
-- tapOn:
-    id: "login-password-input"
-- inputText: ${MAESTRO_PASSWORD}
-# iOS 26 hideKeyboard returns false-failure; tap a static label to drop the keyboard.
-- tapOn:
-    text: "Welcome back"
-- tapOn:
-    id: "login-submit-button"
-# iOS surfaces a "Save Password?" dialog after a successful sign-in
-# (sometimes a few seconds late); wait for it, then dismiss if visible.
-- extendedWaitUntil:
-    visible: "Save Password"
-    timeout: 8000
-    optional: true
-- runFlow:
-    when:
-      visible: "Save Password"
-    commands:
-      - tapOn: "Not Now"
-# Successful sign-in routes through the splash → role check → either
-# Discover (customer) or the owner Restaurant dashboard.
-- extendedWaitUntil:
-    visible:
-      text: "Discover, tab.*|Restaurant dashboard|Home, tab.*"
-    timeout: 30000
+- runFlow: ../_subflows/sign-in-with-creds.yaml
+# sign-in-with-creds already asserts we land on the role-appropriate
+# shell, so this test is a thin pass-through verifying the subflow
+# works end-to-end against real Supabase auth.
