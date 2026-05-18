@@ -130,6 +130,7 @@ const AUTH_MESSAGES: Record<string, string> = {
   bad_jwt: 'Your session expired. Please sign in again.',
   refresh_token_not_found: 'Your session expired. Please sign in again.',
   session_not_found: 'Your session expired. Please sign in again.',
+  session_expired_needs_reauth: 'Your session expired. Please sign in again to share your snap.',
 };
 
 // Postgres SQLSTATE codes — selective subset that maps to user-friendly causes.

@@ -20,18 +20,21 @@ import { VISIT_PHOTOS_BUCKET, visitPhotoObjectPath } from '@/lib/storage/buckets
  * We defensively detect and copy them to a temp file:// URI before uploading
  * so any caller path that bypasses the picker option still works.
  */
-function decodeJwtSub(token: string): string | null {
+function decodeJwt(token: string): Record<string, unknown> | null {
   try {
     const part = token.split('.')[1];
-    // base64url -> base64
     const b64 = part.replace(/-/g, '+').replace(/_/g, '/');
     const padded = b64 + '='.repeat((4 - (b64.length % 4)) % 4);
     const json = typeof atob !== 'undefined' ? atob(padded) : Buffer.from(padded, 'base64').toString('utf-8');
-    const claims = JSON.parse(json);
-    return typeof claims?.sub === 'string' ? claims.sub : null;
+    return JSON.parse(json);
   } catch {
     return null;
   }
+}
+
+function decodeJwtSub(token: string): string | null {
+  const claims = decodeJwt(token);
+  return typeof claims?.sub === 'string' ? claims.sub : null;
 }
 
 async function normalizeToFileUri(uri: string): Promise<string> {
@@ -53,10 +56,30 @@ export async function uploadSnapPhoto(args: {
   const { url } = getSupabaseEnv();
   if (!url) return null;
 
-  const {
-    data: { session },
-  } = await supabase.auth.getSession();
-  if (!session?.access_token) return null;
+  // Read the session, refresh proactively if the access_token is past or
+  // near expiry. Storage RLS rejects expired bearers silently (treats them
+  // as anon → auth.uid() resolves to NULL → "new row violates row-level
+  // security policy"). The JS SDK is supposed to auto-refresh but in
+  // practice doesn't always fire before a manual fetch upload.
+  let { data: { session } } = await supabase.auth.getSession();
+  const nowSec = Math.floor(Date.now() / 1000);
+  const refreshGraceSec = 60;
+  if (session?.expires_at && session.expires_at - nowSec < refreshGraceSec) {
+    const { data: refreshed, error: refreshError } = await supabase.auth.refreshSession();
+    if (refreshError || !refreshed.session) {
+      // Refresh token is itself expired or revoked. The user needs a full
+      // re-auth; we can't fix this server-side. Throw a code the
+      // friendlyError mapping translates to "Sign in again to share."
+      throw new Error('session_expired_needs_reauth');
+    }
+    session = refreshed.session;
+  }
+  // Final guard: even after the refresh attempt, if the token is still
+  // expired the upload will silently 403. Better to surface a clear error.
+  const finalExp = session?.expires_at ?? 0;
+  if (!session?.access_token || finalExp - nowSec < 0) {
+    throw new Error('session_expired_needs_reauth');
+  }
 
   const localUri = await normalizeToFileUri(args.uri);
 
@@ -69,15 +92,6 @@ export async function uploadSnapPhoto(args: {
   // security policy" — same shape as our prior failures.
   const jwtSub = decodeJwtSub(session.access_token);
   const authUserId = jwtSub ?? session.user?.id ?? args.userId;
-  if (__DEV__) {
-    // eslint-disable-next-line no-console
-    console.warn('[uploadSnapPhoto] auth-id resolution', {
-      jwtSub,
-      sessionUserId: session.user?.id,
-      argsUserId: args.userId,
-      using: authUserId,
-    });
-  }
   const path = visitPhotoObjectPath(authUserId, args.photoId);
   const uploadUrl = `${url}/storage/v1/object/${VISIT_PHOTOS_BUCKET}/${path}`;
 
