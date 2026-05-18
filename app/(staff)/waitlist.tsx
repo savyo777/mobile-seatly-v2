@@ -126,16 +126,19 @@ export default function OwnerWaitlistScreen() {
   const [walkins, setWalkins] = useState<WalkInQueueItem[]>(() => [...INITIAL_WALKIN_QUEUE]);
   const [waitlist, setWaitlist] = useState<WaitlistEntry[]>(() => [...INITIAL_WAITLIST_ENTRIES]);
   const [detail, setDetail] = useState<DetailTarget | null>(null);
+  const [loadError, setLoadError] = useState<string | null>(null);
+  const [reloadKey, setReloadKey] = useState(0);
 
   useEffect(() => {
     if (isDemoModeEnabled()) return;
     let active = true;
+    setLoadError(null);
     void (async () => {
       const profile = await fetchCurrentUserProfile().catch(() => null);
       const restaurantId = profile?.restaurantId ?? null;
       const supabase = getSupabase();
       if (!restaurantId || !supabase) return;
-      const { data } = await supabase
+      const { data, error } = await supabase
         .from('waitlist')
         .select(
           'id,restaurant_id,guest_name,party_size,joined_at,estimated_wait_minutes,status,remote_join',
@@ -144,6 +147,10 @@ export default function OwnerWaitlistScreen() {
         .in('status', ['waiting', 'notified', 'arriving', 'late'])
         .order('joined_at', { ascending: true });
       if (!active) return;
+      if (error) {
+        setLoadError(friendlyError(error, "Couldn't load the waitlist."));
+        return;
+      }
       const rows = (data ?? []) as WaitlistRow[];
       setWalkins(rows.filter((r) => !r.remote_join).map(mapWaitlistRowToWalkin));
       setWaitlist(rows.filter((r) => r.remote_join).map(mapWaitlistRowToEntry));
@@ -151,7 +158,8 @@ export default function OwnerWaitlistScreen() {
     return () => {
       active = false;
     };
-  }, []);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [reloadKey]);
 
   const totalWaiting = walkins.length + waitlist.length;
   const walkInCount = walkins.length;

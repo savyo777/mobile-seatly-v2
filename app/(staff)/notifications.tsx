@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { View, Text, StyleSheet, FlatList, TouchableOpacity, ListRenderItem } from 'react-native';
+import { View, Text, StyleSheet, FlatList, TouchableOpacity, Pressable, ListRenderItem } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { Ionicons } from '@expo/vector-icons';
 import { ScreenWrapper } from '@/components/ui';
@@ -12,6 +12,7 @@ import { isDemoModeEnabled } from '@/lib/config/demoMode';
 import { fetchCurrentUserProfile } from '@/lib/services/userProfile';
 import { getSupabase } from '@/lib/supabase/client';
 import { subscribeToNotifications } from '@/lib/realtime/notificationsRegistry';
+import { friendlyError } from '@/lib/errors/friendlyError';
 import {
   getStaffNotificationIconName,
   getStaffNotificationTimeLabel,
@@ -131,6 +132,8 @@ export default function StaffNotificationsScreen() {
   const [rawNotifications, setRawNotifications] = useState<StaffNotificationItem[]>(
     initialStaffNotifications,
   );
+  const [loadError, setLoadError] = useState<string | null>(null);
+  const [reloadKey, setReloadKey] = useState(0);
   const notifications = useMemo(
     () => normalizeStaffNotifications(rawNotifications),
     [rawNotifications],
@@ -177,8 +180,13 @@ export default function StaffNotificationsScreen() {
       if (scopeIds.length > 0) {
         query = query.in('restaurant_id', scopeIds);
       }
-      const { data } = await query;
+      const { data, error } = await query;
       if (!active) return;
+      if (error) {
+        setLoadError(friendlyError(error, "Couldn't load notifications."));
+        return;
+      }
+      setLoadError(null);
       const rows = ((data ?? []) as NotificationRow[]).map(mapNotificationRow);
       setRawNotifications(rows);
       setReadIds(new Set(rows.filter((n) => n.isRead).map((n) => n.id)));
@@ -198,7 +206,8 @@ export default function StaffNotificationsScreen() {
       active = false;
       if (unsubscribe) unsubscribe();
     };
-  }, [restaurantIdsKey]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [restaurantIdsKey, reloadKey]);
 
   const onPress = useCallback((id: string) => {
     setReadIds((prev) => {
@@ -254,6 +263,26 @@ export default function StaffNotificationsScreen() {
         renderItem={renderItem}
         contentContainerStyle={styles.list}
         showsVerticalScrollIndicator={false}
+        ListEmptyComponent={
+          loadError ? (
+            <View style={{ alignItems: 'center', paddingVertical: 48, gap: 12 }}>
+              <Text style={{ fontSize: 14, color: c.textMuted, textAlign: 'center', paddingHorizontal: 24 }}>
+                {loadError}
+              </Text>
+              <Pressable
+                onPress={() => {
+                  setLoadError(null);
+                  setReloadKey((k) => k + 1);
+                }}
+                style={{ paddingHorizontal: 18, paddingVertical: 8, borderRadius: 999, borderWidth: 1, borderColor: c.gold }}
+                accessibilityRole="button"
+                accessibilityLabel="Retry loading notifications"
+              >
+                <Text style={{ color: c.gold, fontSize: 14, fontWeight: '600' }}>Retry</Text>
+              </Pressable>
+            </View>
+          ) : null
+        }
       />
     </ScreenWrapper>
   );

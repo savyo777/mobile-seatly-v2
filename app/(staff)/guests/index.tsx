@@ -26,6 +26,7 @@ import { getSupabase } from '@/lib/supabase/client';
 import { fetchCurrentUserProfile } from '@/lib/services/userProfile';
 import { fetchLoyaltyTransactionsForGuests } from '@/lib/loyalty/getLoyaltyTransactions';
 import { sanitizeSearchInput } from '@/lib/validation/input';
+import { friendlyError } from '@/lib/errors/friendlyError';
 
 function mapDbGuestRow(row: Record<string, unknown>): OwnerGuest {
   const tier = (typeof row.loyalty_tier === 'string'
@@ -353,9 +354,13 @@ export default function OwnerGuestsScreen() {
     isDemoModeEnabled() ? DEMO_OWNER_GUESTS : [],
   );
 
+  const [loadError, setLoadError] = useState<string | null>(null);
+  const [reloadKey, setReloadKey] = useState(0);
+
   useEffect(() => {
     if (isDemoModeEnabled()) return;
     let active = true;
+    setLoadError(null);
     void (async () => {
       try {
         const profile = await fetchCurrentUserProfile();
@@ -364,14 +369,16 @@ export default function OwnerGuestsScreen() {
         const rows = await fetchOwnerGuests(restaurantId);
         if (!active) return;
         setGuests(rows);
-      } catch {
-        // swallow; UI shows empty state.
+      } catch (err) {
+        if (!active) return;
+        setLoadError(friendlyError(err, "Couldn't load your guests."));
       }
     })();
     return () => {
       active = false;
     };
-  }, []);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [reloadKey]);
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
@@ -445,7 +452,22 @@ export default function OwnerGuestsScreen() {
           ))}
         </ScrollView>
 
-        {filtered.length === 0 ? (
+        {loadError && guests.length === 0 ? (
+          <View style={styles.empty}>
+            <Text style={styles.emptyText}>{loadError}</Text>
+            <Pressable
+              onPress={() => {
+                setLoadError(null);
+                setReloadKey((k) => k + 1);
+              }}
+              style={{ marginTop: spacing.md, paddingHorizontal: spacing.lg, paddingVertical: spacing.sm, borderRadius: borderRadius.full, borderWidth: 1, borderColor: c.gold }}
+              accessibilityRole="button"
+              accessibilityLabel="Retry loading guests"
+            >
+              <Text style={{ color: c.gold, fontWeight: '600' }}>Retry</Text>
+            </Pressable>
+          </View>
+        ) : filtered.length === 0 ? (
           <View style={styles.empty}>
             <Text style={styles.emptyText}>No guests match.</Text>
           </View>
