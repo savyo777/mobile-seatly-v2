@@ -130,6 +130,8 @@ The checklist is the system of record for un-hardcoding work. Update it when you
 - "I want everything to main" — see Branching above.
 - "Don't show fake numbers to real users" — every fix that gates mock-data behind `isDemoModeEnabled()` traces back to this.
 - "Brand is Cenaiva" — flag and fix any "Seatly" leak in user-visible surfaces (i18n strings, AsyncStorage keys, ICS files, support emails).
+- "Not one thing should be iOS only" — both platforms must be equally functional. The intentional exceptions (Apple Sign-In, Apple Pay vs Google Pay, biometric labels, RN shadow vs elevation) are catalogued in `AGENTS.md` under "Platform parity"; everything else gets a cross-platform code path or doesn't ship.
+- "Don't put API keys in any code or any MD files" — all keys live in Supabase Secrets / EAS Secrets / gitignored `.env`. Grep the staged diff for `AIza[A-Za-z0-9_-]{20,}` before any commit that touches a secret-adjacent file.
 - The user reads commit messages — write descriptive ones.
 
 ## Common gotchas

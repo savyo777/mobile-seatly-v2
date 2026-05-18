@@ -129,7 +129,14 @@
       "expo-asset",
       "expo-web-browser",
       "expo-image",
-      "expo-secure-store"
+      "expo-secure-store",
+      [
+        "expo-notifications",
+        {
+          "icon": "./assets/icon.png",
+          "color": "#C9A84C"
+        }
+      ]
     ],
     "extra": {
       "socialSharing": {

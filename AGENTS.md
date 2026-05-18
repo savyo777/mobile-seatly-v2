@@ -216,6 +216,32 @@ If the filtered output is empty, you're clean.
 
 react-i18next is set up. Locale files at `lib/i18n/locales/{en,fr}.ts`. The bilingual launch is a hard requirement — when adding user-visible copy, add both English and French keys, not raw strings.
 
+### Platform parity (iOS vs Android)
+
+The user's hard rule: the app must work equally on iOS and Android. Default to writing one code path that works everywhere. The handful of surfaces where iOS and Android genuinely diverge are documented below — these are intentional and not "iOS-only bugs":
+
+- **Apple Sign-In** at `components/ui/SocialAuthButtons.tsx:15` — gated to `Platform.OS === 'ios'` because Apple restricts the Sign-In with Apple SDK to iOS. Email + Google Sign-In are always rendered as the cross-platform alternatives, so Android users have a complete auth path.
+- **Apple Pay vs Google Pay** at `app/booking/[restaurantId]/step6-payment.tsx:191-192` — these are correct mirrors of the same native-wallet concept. iOS renders Apple Pay, Android renders Google Pay, both via Stripe. Not a feature gap.
+- **Biometric labels** at `(staff)/biometric.tsx:97-98` — "Face ID / Touch ID" on iOS vs "Fingerprint" on Android. The label differs because the OS-level capability is named differently; the underlying flow is symmetric.
+- **`Platform.select` for fonts and shadow-vs-elevation** (several files including `(customer)/map.tsx:149-158`, `bookings/[id].tsx:110`, `activity/index.tsx:252`, `orders/[id].tsx:15`) — RN convention. iOS uses `shadow*` props, Android uses `elevation`; font families differ to match each OS's system font. Cosmetic, not feature gates.
+- **`expo-intent-launcher` Android branch** in `lib/device/openAppPhotoSettings.ts:11-26` — opens Android's per-app settings screen directly; iOS falls through to generic Settings because iOS doesn't expose a per-app deep link.
+
+If a new platform-specific branch lands, add it here with the same one-line justification. The default answer to "should this be platform-specific?" is **no** — prove the cross-platform path is broken before forking.
+
+### Google Maps API keys
+
+Three keys live in **Supabase Secrets** on project `exbjodmnpdiayfzrdyux` (deployed 2026-05-18):
+
+- `GOOGLE_MAPS_BROWSER_API_KEY` — used by the Seatly web app (HTTP referrer-restricted). Available for any edge function that needs to render or proxy web-facing map data.
+- `GOOGLE_MAPS_SERVER_API_KEY` — server-only, used by Supabase Edge Functions for geocoding / Places API. Not exposed to clients.
+- `GOOGLE_MAPS_MOBILE_API_KEY` — *(pending — mobile-restricted key creation deferred per user 2026-05-18)*. When created: restricted to iOS bundle `com.cenaiva.app` and Android package `com.cenaiva.app` + dev/release SHA-1 fingerprints. APIs: Maps SDK for iOS, Maps SDK for Android, Places API.
+
+**Hard rule**: never write a key value into a tracked file (source code, MD, `.env.example`, commit messages, code comments). All values flow through Supabase Secrets (server) / EAS Secrets (mobile cloud build) / gitignored local `.env` (dev). Before every commit that touches a secret-adjacent file, run `grep -rE "AIza[A-Za-z0-9_-]{20,}" .` over the staged diff and abort if anything matches.
+
+### Hey Cenaiva voice path
+
+Wake-word detection uses `expo-speech-recognition` on **both platforms** (the previous iOS-only gate was lifted on 2026-05-18). The iOS simulator is the only environment that bypasses on-device recognition; everywhere else (iOS device, Android emulator, Android device) the on-device speech recognizer activates. Deepgram via the `deepgram-live-token` edge function is the cloud fallback when the on-device recognizer reports unavailable. The fallback is rate-limited per user via `supabase/functions/_shared/cenaiva-limits.ts`.
+
 ---
 
 ## Lessons learned

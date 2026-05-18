@@ -36,7 +36,7 @@ const MAX_CONSECUTIVE_ERRORS = 4;
 const ROLLING_WAKE_WINDOW_MS = 3_500;
 const ROLLING_WAKE_WORD_LIMIT = 18;
 const IS_IOS_SIMULATOR = Platform.OS === 'ios' && Device.isDevice === false;
-const USE_ON_DEVICE_WAKE_RECOGNITION = Platform.OS === 'ios' && !IS_IOS_SIMULATOR;
+const USE_ON_DEVICE_WAKE_RECOGNITION = !IS_IOS_SIMULATOR;
 const WAKE_CONTEXT_STRINGS = [
   'Cenaiva',
   'Hey Cenaiva',
@@ -255,7 +255,7 @@ export function useCenaivaWakeWord(onWake: () => void, lang = 'en-US') {
       const speechMic = NATIVE_SPEECH.requestMicrophonePermissionsAsync
         ? await NATIVE_SPEECH.requestMicrophonePermissionsAsync().catch(() => null)
         : null;
-      const recognizer = !USE_ON_DEVICE_WAKE_RECOGNITION && NATIVE_SPEECH.requestSpeechRecognizerPermissionsAsync
+      const recognizer = NATIVE_SPEECH.requestSpeechRecognizerPermissionsAsync
         ? await NATIVE_SPEECH.requestSpeechRecognizerPermissionsAsync().catch(() => null)
         : null;
 
@@ -291,7 +291,7 @@ export function useCenaivaWakeWord(onWake: () => void, lang = 'en-US') {
       const speechMic = NATIVE_SPEECH.getMicrophonePermissionsAsync
         ? await NATIVE_SPEECH.getMicrophonePermissionsAsync().catch(() => null)
         : null;
-      const recognizer = !USE_ON_DEVICE_WAKE_RECOGNITION && NATIVE_SPEECH.getSpeechRecognizerPermissionsAsync
+      const recognizer = NATIVE_SPEECH.getSpeechRecognizerPermissionsAsync
         ? await NATIVE_SPEECH.getSpeechRecognizerPermissionsAsync().catch(() => null)
         : null;
 
