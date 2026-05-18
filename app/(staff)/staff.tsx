@@ -19,6 +19,7 @@ import {
   OWNER_RESERVATIONS as DEMO_OWNER_RESERVATIONS,
 } from '@/lib/mock/ownerApp';
 import { isDemoModeEnabled } from '@/lib/config/demoMode';
+import { friendlyError } from '@/lib/errors/friendlyError';
 import { getSupabase } from '@/lib/supabase/client';
 import { fetchCurrentUserProfile } from '@/lib/services/userProfile';
 import {
@@ -384,7 +385,7 @@ export default function OwnerStaffScreen() {
   const handleApproval = (id: string, decision: 'approve' | 'deny') => {
     void approveStaffAction({ approvalId: id, decision }).then((res) => {
       if (res.error) {
-        Alert.alert('Approval failed', res.error);
+        Alert.alert('Approval failed', friendlyError(res.error, "Couldn't apply that approval. Please try again."));
         return;
       }
       setPendingApprovals((prev) => prev.filter((p) => p.id !== id));

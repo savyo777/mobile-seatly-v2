@@ -113,7 +113,7 @@ export default function ChangeEmailScreen() {
               await resendVerificationEmail(cleanEmail);
               Alert.alert('Sent', `Verification email resent to ${cleanEmail}.`);
             } catch (resendErr: any) {
-              Alert.alert('Error', resendErr?.message ?? 'Failed to resend verification email.');
+              Alert.alert('Error', friendlyError(resendErr, 'Failed to resend verification email.'));
             }
           },
         },

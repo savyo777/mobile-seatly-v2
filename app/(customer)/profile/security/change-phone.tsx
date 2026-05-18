@@ -8,6 +8,7 @@ import { startChangePhone, confirmChangePhone } from '@/lib/services/accountSecu
 import { normalizePhoneToE164, resolveDisplayPhone } from '@/lib/services/phoneAuth';
 import { useAuthSession } from '@/lib/auth/AuthContext';
 import { sanitizeOtpInput, sanitizePhoneInput } from '@/lib/validation/input';
+import { friendlyError } from '@/lib/errors/friendlyError';
 
 const useStyles = createStyles((c) => ({
   currentLabel: {
@@ -121,7 +122,7 @@ export default function ChangePhoneScreen() {
       setStep('verify');
       Alert.alert('Code sent', `We sent a 6-digit code to ${phoneE164}.`);
     } catch (err: any) {
-      Alert.alert('Error', err?.message ?? 'Failed to send verification code.');
+      Alert.alert('Error', friendlyError(err, 'Failed to send verification code.'));
     } finally {
       setLoading(false);
     }
@@ -141,7 +142,7 @@ export default function ChangePhoneScreen() {
         { text: 'OK', onPress: () => router.back() },
       ]);
     } catch (err: any) {
-      Alert.alert('Error', err?.message ?? 'Failed to confirm code.');
+      Alert.alert('Error', friendlyError(err, 'Failed to confirm code.'));
     } finally {
       setLoading(false);
     }
@@ -154,7 +155,7 @@ export default function ChangePhoneScreen() {
       await startChangePhone(pendingE164);
       Alert.alert('Code resent', `A new 6-digit code was sent to ${pendingE164}.`);
     } catch (err: any) {
-      Alert.alert('Error', err?.message ?? 'Failed to resend code.');
+      Alert.alert('Error', friendlyError(err, 'Failed to resend code.'));
     } finally {
       setLoading(false);
     }

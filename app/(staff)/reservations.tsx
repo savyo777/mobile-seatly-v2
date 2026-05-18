@@ -40,6 +40,7 @@ import {
   updateStaffReservationStatus,
 } from '@/lib/staff/staffServices';
 import { subscribeToAvailability } from '@/lib/realtime/availabilityRegistry';
+import { friendlyError } from '@/lib/errors/friendlyError';
 
 type DateFilter = 'today' | 'tomorrow' | 'week' | 'custom';
 
@@ -1131,7 +1132,7 @@ export default function OwnerReservationsScreen() {
                     reservedAt,
                   });
                   if (res.error) {
-                    Alert.alert('Could not create', res.error);
+                    Alert.alert('Could not create', friendlyError(res.error, 'Could not create the reservation. Please try again.'));
                   } else {
                     await loadReservations(restaurantIds);
                   }

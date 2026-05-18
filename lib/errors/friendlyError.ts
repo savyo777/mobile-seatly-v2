@@ -294,6 +294,23 @@ export function friendlyError(err: unknown, fallback?: string): string {
   if (text.includes('function') && text.includes('not found')) {
     return 'This feature is unavailable right now.';
   }
+  // Expo / native module rejection ("Call to function 'X' has been rejected.")
+  // Examples: CenaivaSocialShare.shareToInstagramStory rejection when
+  // Instagram isn't installed; expo-camera permission denial; etc.
+  if (text.includes('call to function') || text.includes('has been rejected')) {
+    return fallback ?? "That action couldn't complete. Please try again.";
+  }
+  // Linking.openURL crash on empty / malformed string.
+  if (text.includes('invariant violation') && text.includes('url')) {
+    return "That link couldn't open. Please try again later.";
+  }
+  // Optional native module not bundled into the dev/preview build.
+  if (
+    text.includes('native social share module is unavailable') ||
+    text.includes('does not include native social sharing')
+  ) {
+    return "This feature isn't available in your current Cenaiva build. Update the app and try again.";
+  }
 
   return fallback ?? GENERIC_FALLBACK;
 }

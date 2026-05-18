@@ -5,6 +5,7 @@ import { useTranslation } from 'react-i18next';
 import { ScreenWrapper } from '@/components/ui';
 import { createStyles, useColors, spacing, borderRadius, typography } from '@/lib/theme';
 import { getSupabase } from '@/lib/supabase/client';
+import { friendlyError } from '@/lib/errors/friendlyError';
 
 const useStyles = createStyles((c) => ({
   inner: {
@@ -116,7 +117,7 @@ export default function ResetPasswordScreen() {
         password: nextPassword,
       });
       if (updateError) {
-        Alert.alert('Reset failed', updateError.message);
+        Alert.alert('Reset failed', friendlyError(updateError, "Couldn't reset your password. Please try again."));
         return;
       }
       Alert.alert('Password updated', 'You can now sign in with your new password.', [

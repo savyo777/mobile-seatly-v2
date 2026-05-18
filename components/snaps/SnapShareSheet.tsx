@@ -32,6 +32,7 @@ import {
   getSnapPreviewLayout,
 } from '@/lib/storyFilters/previewLayout';
 import type { StoryFilterId } from '@/lib/storyFilters/types';
+import { friendlyError } from '@/lib/errors/friendlyError';
 
 interface SnapShareSheetProps {
   imageUrl: string;
@@ -333,7 +334,7 @@ export function SnapShareSheet({
           );
         }
       } catch (error) {
-        const message = error instanceof Error ? error.message : 'This snap could not be saved.';
+        const message = friendlyError(error, 'This snap could not be saved.');
         if (!silent) {
           setCameraRollError(message);
           Alert.alert('Save unavailable', message);
@@ -385,7 +386,7 @@ export function SnapShareSheet({
           await openPersonalSnapchatApp();
         }
       } catch (error) {
-        const message = error instanceof Error ? error.message : 'Something went wrong.';
+        const message = friendlyError(error, "Couldn't open that app. Please try again.");
         Alert.alert(DESTINATION_LABEL[destination], message);
       } finally {
         setPendingDestination(null);
@@ -410,8 +411,7 @@ export function SnapShareSheet({
         try {
           uri = await prepareSnapMedia();
         } catch (error) {
-          const message =
-            error instanceof Error ? error.message : 'This image could not be prepared for sharing.';
+          const message = friendlyError(error, 'This image could not be prepared for sharing.');
           setPrepareError(message);
           Alert.alert('Share unavailable', message);
           return;
@@ -433,7 +433,7 @@ export function SnapShareSheet({
           break;
       }
     } catch (error) {
-      const message = error instanceof Error ? error.message : 'The media could not be shared.';
+      const message = friendlyError(error, 'The media could not be shared.');
       Alert.alert(`${DESTINATION_LABEL[destination]} unavailable`, message);
     } finally {
       setPendingDestination(null);

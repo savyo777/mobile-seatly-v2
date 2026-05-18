@@ -6,6 +6,7 @@ import {
   type SocialMediaType,
   type SocialMimeType,
 } from './mime';
+import { friendlyError } from '@/lib/errors/friendlyError';
 
 // Install / app-launch URLs used when a direct composer can't open because the
 // target social app isn't on the device. We try the app's custom scheme first
@@ -155,8 +156,9 @@ async function shareWithNativeComposer(
         console.warn(`[CenaivaSocialShare] System share sheet fallback also failed for ${destination}.`, fallbackError);
       }
     }
-    const message = error instanceof Error && error.message ? error.message : directComposerUnavailableMessage(destination);
-    throw new Error(message);
+    // Re-throw with a user-friendly message so the Alert at the callsite
+    // doesn't surface the raw "Call to function … rejected" string.
+    throw new Error(friendlyError(error, directComposerUnavailableMessage(destination)));
   }
 }
 

@@ -315,7 +315,7 @@ export default function RegisterScreen() {
             phoneOverride: e164Phone,
           });
         } catch (profileError: any) {
-          Alert.alert('Profile setup warning', profileError?.message ?? 'Could not update profile role.');
+          Alert.alert('Profile setup warning', friendlyError(profileError, 'Could not update profile role.'));
         }
       }
 
