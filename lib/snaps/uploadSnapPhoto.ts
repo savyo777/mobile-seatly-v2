@@ -1,41 +1,36 @@
 import * as FileSystem from 'expo-file-system/legacy';
 import { getSupabase } from '@/lib/supabase/client';
-import { getSupabaseEnv } from '@/lib/supabase/env';
 import { VISIT_PHOTOS_BUCKET, visitPhotoObjectPath } from '@/lib/storage/buckets';
 
 /**
  * Uploads a local snap photo (file:// URI) to the visit-photos bucket.
  *
- * The previous implementation used `await (await fetch(uri)).blob()` which is
- * a known React Native footgun — fetching a `file://` URI returns a Body whose
- * `.blob()` resolves to a zero-byte Blob, so the storage row got created with
- * an empty object. That made every saved snap render as a black thumbnail.
+ * Implementation history:
  *
- * Fix: use expo-file-system's `uploadAsync` to stream the file's bytes
- * directly to Supabase Storage's REST endpoint. The Supabase JS client only
- * helps us derive the URL / inject auth — the actual transfer is binary.
+ *   1. Original: `await (await fetch(uri)).blob()` — known RN footgun, the
+ *      blob came back zero-byte and storage rows got created with empty
+ *      objects → black thumbnails.
  *
- * Android caveat: `uploadAsync` cannot stream `content://` URIs (the format
- * the Android photo picker returns when `copyToCacheDirectory` is false).
- * We defensively detect and copy them to a temp file:// URI before uploading
- * so any caller path that bypasses the picker option still works.
+ *   2. Replaced with `FileSystem.uploadAsync` to stream bytes directly to
+ *      Supabase Storage's REST endpoint with manual `apikey` + `Authorization`
+ *      headers. Worked when the project's apikey was the legacy `eyJ...` JWT.
+ *
+ *   3. CURRENT: Supabase disabled legacy API keys on this project (the
+ *      `sb_publishable_*` format is now the only valid apikey). Storage's
+ *      REST endpoint behind the new key format requires the apikey to be
+ *      attached the way the JS SDK does it (not as a raw header), otherwise
+ *      auth.uid() resolves to NULL server-side and RLS rejects with "new row
+ *      violates row-level security policy". Switched to the SDK's
+ *      `supabase.storage.from(bucket).upload(path, arrayBuffer)` method,
+ *      which knows how to negotiate the new key format with the bearer JWT.
+ *
+ *      Cost: we read the file as base64 + decode to a Uint8Array to feed the
+ *      SDK. A 1-3 MB photo → ~1.5-4 MB peak memory during the round-trip.
+ *      Acceptable for snap photos.
+ *
+ * Android caveat retained: `content://` URIs are copied to a temp file://
+ * via FileSystem.copyAsync before reading.
  */
-function decodeJwt(token: string): Record<string, unknown> | null {
-  try {
-    const part = token.split('.')[1];
-    const b64 = part.replace(/-/g, '+').replace(/_/g, '/');
-    const padded = b64 + '='.repeat((4 - (b64.length % 4)) % 4);
-    const json = typeof atob !== 'undefined' ? atob(padded) : Buffer.from(padded, 'base64').toString('utf-8');
-    return JSON.parse(json);
-  } catch {
-    return null;
-  }
-}
-
-function decodeJwtSub(token: string): string | null {
-  const claims = decodeJwt(token);
-  return typeof claims?.sub === 'string' ? claims.sub : null;
-}
 
 async function normalizeToFileUri(uri: string): Promise<string> {
   if (!uri.startsWith('content://')) return uri;
@@ -45,6 +40,17 @@ async function normalizeToFileUri(uri: string): Promise<string> {
   return dest;
 }
 
+function base64ToUint8Array(base64: string): Uint8Array {
+  const binary = typeof atob !== 'undefined'
+    ? atob(base64)
+    : Buffer.from(base64, 'base64').toString('binary');
+  const bytes = new Uint8Array(binary.length);
+  for (let i = 0; i < binary.length; i++) {
+    bytes[i] = binary.charCodeAt(i);
+  }
+  return bytes;
+}
+
 export async function uploadSnapPhoto(args: {
   uri: string;
   userId: string;
@@ -52,9 +58,6 @@ export async function uploadSnapPhoto(args: {
 }): Promise<string | null> {
   const supabase = getSupabase();
   if (!supabase) return null;
-
-  const { url } = getSupabaseEnv();
-  if (!url) return null;
 
   // Read the session, refresh proactively if the access_token is past or
   // near expiry. Storage RLS rejects expired bearers silently (treats them
@@ -67,47 +70,41 @@ export async function uploadSnapPhoto(args: {
   if (session?.expires_at && session.expires_at - nowSec < refreshGraceSec) {
     const { data: refreshed, error: refreshError } = await supabase.auth.refreshSession();
     if (refreshError || !refreshed.session) {
-      // Refresh token is itself expired or revoked. The user needs a full
-      // re-auth; we can't fix this server-side. Throw a code the
-      // friendlyError mapping translates to "Sign in again to share."
       throw new Error('session_expired_needs_reauth');
     }
     session = refreshed.session;
   }
-  // Final guard: even after the refresh attempt, if the token is still
-  // expired the upload will silently 403. Better to surface a clear error.
   const finalExp = session?.expires_at ?? 0;
   if (!session?.access_token || finalExp - nowSec < 0) {
     throw new Error('session_expired_needs_reauth');
   }
 
   const localUri = await normalizeToFileUri(args.uri);
-
-  // Decode the access_token's `sub` claim — this is the literal user id that
-  // Supabase Storage will see as auth.uid() when applying RLS. Using
-  // session.user?.id can drift from the JWT's sub if the SDK refreshed the
-  // user object out-of-band with the access_token. The storage RLS policy
-  //   bucket_id='visit-photos' AND auth.uid()::text=(storage.foldername(name))[1]
-  // is strict, so any mismatch surfaces as "new row violates row-level
-  // security policy" — same shape as our prior failures.
-  const jwtSub = decodeJwtSub(session.access_token);
-  const authUserId = jwtSub ?? session.user?.id ?? args.userId;
+  // The Storage RLS policy on visit-photos requires
+  //   bucket_id = 'visit-photos' AND auth.uid()::text = (storage.foldername(name))[1]
+  // session.user.id matches auth.uid() on the server (both come from the
+  // same JWT that supabase.storage.upload will send).
+  const authUserId = session.user?.id ?? args.userId;
   const path = visitPhotoObjectPath(authUserId, args.photoId);
-  const uploadUrl = `${url}/storage/v1/object/${VISIT_PHOTOS_BUCKET}/${path}`;
 
-  const result = await FileSystem.uploadAsync(uploadUrl, localUri, {
-    httpMethod: 'POST',
-    headers: {
-      Authorization: `Bearer ${session.access_token}`,
-      'Content-Type': 'image/jpeg',
-      'x-upsert': 'true',
-      apikey: getSupabaseEnv().anonKey,
-    },
-    uploadType: FileSystem.FileSystemUploadType.BINARY_CONTENT,
+  // Read file as base64 then decode to a Uint8Array. The Supabase JS SDK's
+  // storage.upload() accepts ArrayBuffer / Uint8Array / Blob / File. RN's
+  // Blob shim is the known-broken path (zero-byte uploads), so we hand it
+  // the underlying ArrayBuffer directly.
+  const base64 = await FileSystem.readAsStringAsync(localUri, {
+    encoding: FileSystem.EncodingType.Base64,
   });
+  const bytes = base64ToUint8Array(base64);
 
-  if (result.status >= 400) {
-    throw new Error(`Supabase storage upload failed (${result.status}): ${result.body}`);
+  const { error: uploadError } = await supabase.storage
+    .from(VISIT_PHOTOS_BUCKET)
+    .upload(path, bytes, {
+      upsert: true,
+      contentType: 'image/jpeg',
+    });
+
+  if (uploadError) {
+    throw new Error(uploadError.message || 'storage_upload_failed');
   }
 
   const { data } = supabase.storage.from(VISIT_PHOTOS_BUCKET).getPublicUrl(path);
