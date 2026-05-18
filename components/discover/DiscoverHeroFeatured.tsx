@@ -121,7 +121,13 @@ export function DiscoverHeroFeatured({ restaurant, onPressCard, onPressReserve }
             </Text>
             <Text style={styles.heroAvailability}>{urgency.line}</Text>
             {urgency.sub ? <Text style={styles.heroSlot}>{urgency.sub}</Text> : null}
-            <Pressable onPress={onPressReserve} style={({ pressed }) => [styles.cta, pressed && styles.ctaPressed]}>
+            <Pressable
+              onPress={onPressReserve}
+              style={({ pressed }) => [styles.cta, pressed && styles.ctaPressed]}
+              testID="discover-hero-reserve-cta"
+              accessibilityRole="button"
+              accessibilityLabel={t('discover.reserveNow')}
+            >
               <Text style={styles.ctaText}>{t('discover.reserveNow')}</Text>
             </Pressable>
           </View>
