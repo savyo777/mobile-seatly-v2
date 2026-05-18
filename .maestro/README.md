@@ -72,3 +72,43 @@ If the failure is a real defect (not a flaky test), fix it at the root and re-ru
 - **inputText** to type into a focused field; tap the field first, then inputText
 - **Stripe test card** for any payment flow: `4242 4242 4242 4242`, exp `12/30`, CVC `123`
 - Reuse YAML snippets via `runFlow: file: ../shared/sign-in-test-customer.yaml` once we have repeated setup steps
+
+## Authenticated flows
+
+Real-credential flows take the email/password on the CLI so secrets never live in the repo:
+
+```bash
+maestro test .maestro/customer/booking-happy-path.yaml \
+  --env MAESTRO_EMAIL=you@example.com \
+  --env MAESTRO_PASSWORD=...
+```
+
+`_subflows/sign-in-with-creds.yaml` is the shared boot → ensure-logged-out → past-onboarding → Welcome → email/password → land-on-shell machinery; every authenticated flow composes it. `_subflows/switch-to-customer.yaml` flips an owner-role account into the customer shell via the staff Business → Settings → "Switch to user side" deep link, so a single test account can drive both shells.
+
+### Common iOS-26 + Expo dev-client quirks
+
+The dev build adds a floating gear button at the upper-right of every screen ("dev launcher floater"). It shares pixel space with the app's own settings gear on the staff Business tab, so taps there are unreliable. Flows that need to reach `/(staff)/settings` use `openLink: cenaiva://(staff)/settings` instead of tapping the in-app gear.
+
+iOS-26 also wraps a11y card labels with leading commas (`, Mark Testing`, `, Staff members, …`). Flows match those with `.*Label.*` anchors. If a new flow's `visible:` predicate stalls on a label that's clearly on screen, dump the hierarchy with `maestro hierarchy` and check the `accessibilityText` formatting.
+
+## Pre-grant simulator permissions
+
+Some flows fail on the iOS sim if the app shows a permission dialog (microphone, camera, location). Grant them once before running the suite so the dialogs don't block:
+
+```bash
+UDID=$(xcrun simctl list devices booted | awk '/iPhone/ {print $NF}' | tr -d '()')
+xcrun simctl privacy "$UDID" grant microphone com.cenaiva.app
+xcrun simctl privacy "$UDID" grant camera com.cenaiva.app
+xcrun simctl privacy "$UDID" grant location com.cenaiva.app
+xcrun simctl privacy "$UDID" grant photos com.cenaiva.app
+```
+
+## Known coverage gaps
+
+The following are explicitly NOT covered by Maestro yet and need manual QA:
+
+- **Stripe PaymentSheet** — `booking-with-preorder.yaml` asserts the "Confirm Booking · $X.XX" trigger button + the Payment Method section, then stops. Scripting Maestro into the native iOS Stripe sheet to actually authorize a charge is brittle across SDK versions; manual QA with card `4242 4242 4242 4242 / 12/30 / 123 / 10001` is required to verify the full purchase round-trip.
+- **Real network failure modes** — iOS simulators have no clean airplane-mode toggle Maestro can drive. Network Link Conditioner exists in Developer settings but it's a UI you'd have to script. The expected coverage is "verify `friendlyError()` surfaces on offline sign-in / booking / snap / voice", which is best tested on a real device with Wi-Fi toggled off.
+- **Staff destructive write paths** — delete menu item, remove team member, role-permission toggle persist. The screens themselves are covered by `staff/team-screen.yaml` and `staff/roles-permissions-screen.yaml`, but the actual writes risk leaving the test owner locked out (or breaking other QA) if the test exits mid-run.
+- **Snap / camera / voice / Deepgram / ElevenLabs transcripts** — Maestro can tap the entry points but can't verify transcription content or captured frames.
+- **Android** — the corpus is iOS-only today. Selectors that match iOS-26 a11y label formats (`Discover, tab, 1 of 17`, leading commas, etc.) will need Android variants. Disk has been freed; the install + first-run path is documented in the team's runbook.
