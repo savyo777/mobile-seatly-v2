@@ -140,4 +140,4 @@ The checklist is the system of record for un-hardcoding work. Update it when you
 - The Tailwind palette has drifted from `lib/theme/palettes.ts`. Three different golds exist (`#C9A84C`, `#C9A24A`, `#D4AF37`). Don't introduce more.
 - Supabase functions occasionally bypass the centralized `_shared/` modules and reinvent the wheel — `register-restaurant-owner/index.ts` is the worst offender.
 - Two confirmation-code generators with different formats are still inline (`PRE-XXXX`, `CNV-NNNNNN`) despite the centralized one in `_shared/confirmation-code.ts`.
-- `lib/storage/keys.ts` references a `lib/storage/migrate.ts` that doesn't exist. The legacy `@seatly/...` AsyncStorage keys won't be migrated to `@cenaiva/...` until that file ships.
+- `lib/storage/migrate.ts` ships the one-shot `@seatly/...` → `@cenaiva/...` AsyncStorage rename, invoked at module-eval time from `app/_layout.tsx` so it runs on every cold start. Covered by `__tests__/storage/migrate.test.ts` (5 scenarios incl. collision + AsyncStorage failure).
