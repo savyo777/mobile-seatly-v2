@@ -542,6 +542,9 @@ export default function DiscoverScreen() {
               }}
               hitSlop={8}
               style={styles.bellBtn}
+              testID="discover-notifications-bell"
+              accessibilityRole="button"
+              accessibilityLabel="Notifications"
             >
               <Ionicons name="notifications-outline" size={22} color={c.textPrimary} />
               {unreadCount > 0 ? <View style={styles.bellDot} /> : null}

@@ -1,0 +1,15 @@
+# Customer profile → My Reviews. Verifies the reviews listing screen
+# renders. The actual write-review flow lives off booking confirmation
+# and isn't easily reachable from a fresh sign-in without going through
+# a full visit, so we cover the list surface here.
+
+appId: com.cenaiva.app
+---
+- runFlow: ../_subflows/sign-in-with-creds.yaml
+- runFlow: ../_subflows/switch-to-customer.yaml
+- openLink: "cenaiva://(customer)/profile/my-reviews"
+- extendedWaitUntil:
+    visible:
+      text: "My Reviews|No reviews|Reviews you've written|Share your experience"
+    timeout: 15000
+- assertVisible: "My Reviews"

@@ -1,0 +1,14 @@
+# Customer profile → Favorites/Saved Places.
+# Uses a deep link to avoid the bell/gear/floater tap collisions on
+# Discover.
+
+appId: com.cenaiva.app
+---
+- runFlow: ../_subflows/sign-in-with-creds.yaml
+- runFlow: ../_subflows/switch-to-customer.yaml
+- openLink: "cenaiva://(customer)/profile/favorites"
+- extendedWaitUntil:
+    visible:
+      text: "Favorites|No saved restaurants|Your favorite|Save your favorite"
+    timeout: 15000
+- assertVisible: "Favorites"

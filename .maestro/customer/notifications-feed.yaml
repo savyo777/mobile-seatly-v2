@@ -1,0 +1,18 @@
+# Customer notifications feed. Tap the bell on Discover and verify
+# the notifications screen renders (with either content or empty state).
+
+appId: com.cenaiva.app
+---
+- runFlow: ../_subflows/sign-in-with-creds.yaml
+- runFlow: ../_subflows/switch-to-customer.yaml
+- assertVisible:
+    text: "Discover, tab.*"
+# Bell icon on Discover shares pixel space with the Expo dev floater.
+# Deep-link straight into the notifications screen instead.
+- openLink: "cenaiva://(customer)/notifications"
+- extendedWaitUntil:
+    visible:
+      text: "Activity|Notifications|EARLIER|All caught up|Nothing here yet"
+    timeout: 15000
+- assertVisible:
+    text: "Activity|Notifications"

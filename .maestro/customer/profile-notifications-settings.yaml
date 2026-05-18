@@ -1,0 +1,14 @@
+# Customer profile → Notification settings (per-channel push prefs).
+# Uses a deep link to avoid Discover-screen tap collisions.
+
+appId: com.cenaiva.app
+---
+- runFlow: ../_subflows/sign-in-with-creds.yaml
+- runFlow: ../_subflows/switch-to-customer.yaml
+- openLink: "cenaiva://(customer)/profile/notifications"
+- extendedWaitUntil:
+    visible:
+      text: "Notifications|Push|Email|SMS|Booking reminders|Rewards"
+    timeout: 15000
+- assertVisible:
+    text: "Notifications|Push|Booking reminders"

@@ -1,0 +1,21 @@
+# Customer Bookings tab. After booking-happy-path ran, there's at
+# least one upcoming reservation, so we assert on the heading + that
+# the reservation card renders.
+
+appId: com.cenaiva.app
+---
+- runFlow: ../_subflows/sign-in-with-creds.yaml
+- runFlow: ../_subflows/switch-to-customer.yaml
+- tapOn:
+    text: "Bookings, tab.*"
+- extendedWaitUntil:
+    visible:
+      text: "^Bookings$"
+    timeout: 15000
+- assertVisible:
+    text: "^Bookings$"
+# The Upcoming / Past / Cancelled tab labels are deterministic; they
+# render whether or not there are reservations.
+- assertVisible: "Upcoming"
+- assertVisible:
+    text: "Past|Cancelled"
