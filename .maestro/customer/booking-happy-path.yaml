@@ -1,15 +1,21 @@
 # Customer booking E2E. Signs in (via the staff→customer subflow
 # because our test account is owner-role), then walks the hero
-# "Reserve now" CTA all the way through Stripe checkout to the
-# confirmation screen.
+# "Reserve now" CTA through review → preorder → final review → the
+# Stripe PaymentSheet trigger.
 #
-# Stripe is in test mode; uses card 4242 4242 4242 4242, exp 12/30,
-# CVC 123, zip 10001. The PaymentSheet UI is native — selectors that
-# work here may need tuning if Stripe ships a new mobile SDK.
+# Booking route map:
+#   /(customer)/discover  → "Reserve now"
+#   /booking/{id}/step2-time   (date, time, party)   → "Continue"
+#   /booking/{id}/confirm      (review: name/email)  → "Continue to menu"
+#   /booking/{id}/step4-preorder (preorder; Skip if no preorder)
+#   /booking/{id}/step5-review (final review)        → "Next"
+#   /booking/{id}/step6-payment (Stripe PaymentSheet)
 #
-# Usage:
-#   maestro test .maestro/customer/booking-happy-path.yaml \
-#     --env MAESTRO_EMAIL=... --env MAESTRO_PASSWORD=...
+# Stripe is in test mode; card 4242 4242 4242 4242, exp 12/30, CVC 123,
+# zip 10001. The Stripe PaymentSheet UI is native; if its selectors
+# drift, this flow will stop at the Confirm Booking button rather than
+# completing the purchase. Manual QA still required for actual Stripe
+# tap-through.
 
 appId: com.cenaiva.app
 ---
@@ -18,34 +24,27 @@ appId: com.cenaiva.app
 - assertVisible:
     text: "Discover, tab.*"
 
-# Discover hero → Reserve now (the hero CTA is the entry into the
-# booking flow). The CTA has a testID for stable targeting.
+# Discover hero → Reserve now
 - extendedWaitUntil:
     visible: "Reserve now"
     timeout: 15000
 - tapOn:
     id: "discover-hero-reserve-cta"
 
-# Step 2 — Date + Time
+# step2-time: pick the default slot, hit Continue
 - extendedWaitUntil:
     visible: "Available times"
     timeout: 20000
 - tapOn: "Continue"
 
-# Step 3 — Table (auto-assigned if no manual pick is required)
-# Some restaurants skip the table picker entirely; tolerate either.
+# confirm.tsx: review reservation; the form is pre-filled from the
+# signed-in account, so we just hit Continue to menu.
 - extendedWaitUntil:
-    visible:
-      text: "Continue|Skip|Pre-?Order|Next"
+    visible: "Continue to menu"
     timeout: 20000
-- runFlow:
-    when:
-      visible:
-        text: "Continue"
-    commands:
-      - tapOn: "Continue"
+- tapOn: "Continue to menu"
 
-# Step 4 — Pre-order. Skip for now to keep the flow deterministic.
+# step4-preorder: Skip preorder to keep the flow deterministic.
 - extendedWaitUntil:
     visible:
       text: "Skip|Continue to Pre-Pay|Next"
@@ -56,20 +55,14 @@ appId: com.cenaiva.app
     commands:
       - tapOn: "Skip"
 
-# Step 5 — Review
-- extendedWaitUntil:
-    visible: "Next"
-    timeout: 20000
-- tapOn: "Next"
-
-# Step 6 — Payment via Stripe PaymentSheet.
-# We assert on the confirmation screen rather than scripting Stripe's
-# native sheet (selectors there are version-dependent). The test
-# verifies the app reaches the PaymentSheet trigger; manual QA still
-# needed for the Stripe sheet itself.
+# step4 Skip routes directly to step7-confirmation when the booking
+# has no deposit and no preorder cart (most common case). Wait for
+# the reservation-confirmed screen.
 - extendedWaitUntil:
     visible:
-      text: "Confirm Booking.*|Pay.*|Payment"
-    timeout: 20000
+      text: "You're all set.*|Your table is booked.*|Booking confirmed"
+    timeout: 60000
 - assertVisible:
-    text: "Confirm Booking.*|Pay.*"
+    text: "CONFIRMATION CODE|You're all set.*"
+- assertVisible:
+    text: "View my bookings"

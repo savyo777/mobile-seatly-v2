@@ -23,7 +23,12 @@ appId: com.cenaiva.app
     when:
       visible: "Continue"
     commands:
-      - tapOn: "Continue"
+      # The Continue button can race away while we're tapping (Expo
+      # walkthrough auto-dismisses after a few seconds), so make the
+      # tap itself optional.
+      - tapOn:
+          text: "Continue"
+          optional: true
 - runFlow:
     when:
       visible: "Open DevTools"
