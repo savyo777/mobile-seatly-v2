@@ -28,6 +28,7 @@ import {
   type LiveFeedKind,
 } from '@/lib/owner/kdsFeed';
 import { isDemoModeEnabled } from '@/lib/config/demoMode';
+import { friendlyError } from '@/lib/errors/friendlyError';
 import { getSupabase } from '@/lib/supabase/client';
 import { useOwnerScope } from '@/hooks/useOwnerScope';
 import { RestaurantPicker } from '@/components/owner/RestaurantPicker';
@@ -113,6 +114,11 @@ export default function OwnerOrdersKdsScreen() {
   const [tickets, setTickets] = useState<KdsTicket[]>(() => (demo ? [...DEMO_KDS_TICKETS] : []));
   const [feed, setFeed] = useState<LiveFeedEvent[]>(() => (demo ? [...DEMO_LIVE_FEED] : []));
   const [detail, setDetail] = useState<KdsTicket | null>(null);
+
+  // Mirror of `tickets` so async write handlers can snapshot the pre-update
+  // state and revert optimistic UI when the Supabase write rejects.
+  const ticketsRef = useRef<KdsTicket[]>(tickets);
+  useEffect(() => { ticketsRef.current = tickets; }, [tickets]);
 
   const restaurantNameById = useMemo(() => {
     const m = new Map<string, string>();
@@ -213,31 +219,51 @@ export default function OwnerOrdersKdsScreen() {
     return { activeCount, avgMins, delayedCount };
   }, [tickets]);
 
-  const persistOrderStatus = useCallback((id: string, status: string) => {
-    if (isDemoModeEnabled()) return;
+  // Awaited so we can surface a friendly alert + revert the optimistic UI
+  // when the server write fails. KDS is live kitchen ops — a silently dropped
+  // status update means the line cook thinks an order shipped when it didn't.
+  const persistOrderStatus = useCallback(async (id: string, status: string): Promise<boolean> => {
+    if (isDemoModeEnabled()) return true;
     const supabase = getSupabase();
-    if (!supabase) return;
-    void supabase.from('orders').update({ status }).eq('id', id);
+    if (!supabase) return true;
+    const { error } = await supabase.from('orders').update({ status }).eq('id', id);
+    if (error) {
+      Alert.alert("Couldn't sync ticket", friendlyError(error, 'The order update did not save. Tap the ticket again or refresh.'));
+      return false;
+    }
+    return true;
   }, []);
 
-  const markReady = useCallback((id: string) => {
+  const markReady = useCallback(async (id: string) => {
+    const previous = ticketsRef.current.find((x) => x.id === id);
     setTickets((prev) =>
       prev.map((x) => (x.id === id ? { ...x, status: 'ready' as const, mins: 0, delayed: false } : x)),
     );
-    persistOrderStatus(id, 'ready');
+    const ok = await persistOrderStatus(id, 'ready');
+    if (!ok && previous) {
+      setTickets((prev) => prev.map((x) => (x.id === id ? previous : x)));
+    }
   }, [persistOrderStatus]);
 
-  const markFired = useCallback((id: string) => {
+  const markFired = useCallback(async (id: string) => {
+    const previous = ticketsRef.current.find((x) => x.id === id);
     setTickets((prev) =>
       prev.map((x) => (x.id === id ? { ...x, status: 'fired' as const, delayed: false } : x)),
     );
-    persistOrderStatus(id, 'fired');
+    const ok = await persistOrderStatus(id, 'fired');
+    if (!ok && previous) {
+      setTickets((prev) => prev.map((x) => (x.id === id ? previous : x)));
+    }
   }, [persistOrderStatus]);
 
-  const completeTicket = useCallback((id: string) => {
+  const completeTicket = useCallback(async (id: string) => {
+    const previous = ticketsRef.current.find((x) => x.id === id);
     setTickets((prev) => prev.filter((x) => x.id !== id));
     setDetail((d) => (d?.id === id ? null : d));
-    persistOrderStatus(id, 'completed');
+    const ok = await persistOrderStatus(id, 'completed');
+    if (!ok && previous) {
+      setTickets((prev) => [previous, ...prev]);
+    }
   }, [persistOrderStatus]);
 
   const openMenu = useCallback(() => {

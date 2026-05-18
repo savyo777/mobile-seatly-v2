@@ -174,11 +174,22 @@ export function MenuProvider({ children }: { children: React.ReactNode }) {
     });
   }, [items]);
 
+  // Menu edits are medium-severity writes. UI stays optimistic so the staff
+  // user sees their change immediately; we log failures in dev so flaky-write
+  // bugs get surfaced during testing without spamming production users with
+  // alerts on every momentary connectivity blip. Next menu refresh recovers
+  // the canonical state if a write was lost.
   const updateItem = useCallback((id: string, changes: Partial<MenuItem>) => {
     setItems((prev) => prev.map((item) => (item.id === id ? { ...item, ...changes } : item)));
     const supabase = getSupabase();
     if (supabase && ownerRestaurantId) {
-      void supabase.from('menu_items').update(itemToPatch(changes)).eq('id', id);
+      supabase
+        .from('menu_items')
+        .update(itemToPatch(changes))
+        .eq('id', id)
+        .then(({ error }) => {
+          if (error && __DEV__) console.warn('[menu] updateItem failed', error);
+        });
     }
   }, [ownerRestaurantId]);
 
@@ -188,12 +199,13 @@ export function MenuProvider({ children }: { children: React.ReactNode }) {
     setItems((prev) => [...prev, localItem]);
     const supabase = getSupabase();
     if (supabase && restaurantId) {
-      void supabase
+      supabase
         .from('menu_items')
         .insert(itemToRow(localItem, restaurantId))
         .select('id')
         .single()
-        .then(({ data }) => {
+        .then(({ data, error }) => {
+          if (error && __DEV__) console.warn('[menu] addItem failed', error);
           const dbId = typeof data?.id === 'string' ? data.id : null;
           if (dbId) setItems((prev) => prev.map((next) => (next.id === item.id ? { ...next, id: dbId } : next)));
         });
@@ -203,7 +215,11 @@ export function MenuProvider({ children }: { children: React.ReactNode }) {
   const removeItem = useCallback((id: string) => {
     setItems((prev) => prev.filter((item) => item.id !== id));
     const supabase = getSupabase();
-    if (supabase) void supabase.from('menu_items').delete().eq('id', id);
+    if (supabase) {
+      supabase.from('menu_items').delete().eq('id', id).then(({ error }) => {
+        if (error && __DEV__) console.warn('[menu] removeItem failed', error);
+      });
+    }
   }, []);
 
   const reorderCategories = useCallback((next: string[]) => {
@@ -233,11 +249,14 @@ export function MenuProvider({ children }: { children: React.ReactNode }) {
     setItems((prev) => prev.map((item) => (item.category === from ? { ...item, category: trimmed } : item)));
     const supabase = getSupabase();
     if (supabase && ownerRestaurantId) {
-      void supabase
+      supabase
         .from('menu_items')
         .update({ category: trimmed })
         .eq('restaurant_id', ownerRestaurantId)
-        .eq('category', from);
+        .eq('category', from)
+        .then(({ error }) => {
+          if (error && __DEV__) console.warn('[menu] renameCategory failed', error);
+        });
     }
     return { ok: true };
   }, [categories, ownerRestaurantId]);

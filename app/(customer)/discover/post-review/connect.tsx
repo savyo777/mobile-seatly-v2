@@ -40,6 +40,7 @@ import {
 } from '@/lib/storyFilters/previewLayout';
 import type { StoryFilterId } from '@/lib/storyFilters/types';
 import { normalizeTextInput, sanitizeTextInput } from '@/lib/validation/input';
+import { friendlyError } from '@/lib/errors/friendlyError';
 
 const H_PAD = 18;
 
@@ -409,48 +410,56 @@ export default function SnapCaptionScreen() {
       });
 
       // Persist to Supabase whenever the user is authenticated, regardless of
-      // whether a bookingId is present (covers the past-restaurants carousel flow).
+      // whether a bookingId is present (covers the past-restaurants carousel
+      // flow). The upload + visit_photos insert are awaited so the user
+      // doesn't navigate away into "Posted!" while the write silently failed.
+      // The optional restaurant_reviews mirror stays fire-and-forget after
+      // navigation (it's a nice-to-have for the Reviews section, not the
+      // source of truth for the snap itself).
       if (isAuthenticated && user?.id) {
         const photoId = Crypto.randomUUID();
-        void (async () => {
-          try {
-            const publicUrl = await uploadSnapPhoto({
-              uri: decodedUri,
+        try {
+          const publicUrl = await uploadSnapPhoto({
+            uri: decodedUri,
+            userId: user.id,
+            photoId,
+          });
+          if (publicUrl) {
+            await insertVisitPhoto({
               userId: user.id,
-              photoId,
+              restaurantId,
+              imageUrl: publicUrl,
+              caption: cleanCaption.length > 0 ? cleanCaption : null,
+              bookingId: bookingId ?? null,
+              storyFilterId: selectedFilterId ?? null,
+              storyFilterCapturedAt: selectedFilterId ? capturedAt : null,
+              rating: ratingValue ?? null,
+              tags: [],
             });
-            if (publicUrl) {
-              await insertVisitPhoto({
-                userId: user.id,
-                restaurantId,
-                imageUrl: publicUrl,
-                caption: cleanCaption.length > 0 ? cleanCaption : null,
-                bookingId: bookingId ?? null,
-                storyFilterId: selectedFilterId ?? null,
-                storyFilterCapturedAt: selectedFilterId ? capturedAt : null,
-                rating: ratingValue ?? null,
-                tags: [],
-              });
-            }
-            // Only mirror to restaurant_reviews when there's an actual rating —
-            // the reviews table clamps to 1..5 and a snap-only post (no stars,
-            // no caption) doesn't belong in the Reviews section.
-            if (ratingValue) {
-              try {
-                await insertRestaurantReview({
-                  userId: user.id,
-                  restaurantId,
-                  rating: ratingValue,
-                  body: cleanCaption,
-                });
-              } catch {
-                // Non-fatal — the snap photo is already persisted.
-              }
-            }
-          } catch {
-            // Fire-and-forget: UI already navigated away; don't alert the user.
           }
-        })();
+        } catch (uploadErr) {
+          Alert.alert(
+            'Snap not saved',
+            friendlyError(uploadErr, "We couldn't save your snap. Check your connection and try again."),
+          );
+          setPosting(false);
+          return;
+        }
+
+        // Mirror to restaurant_reviews only when there's an actual rating.
+        // Fire-and-forget by design: failure here doesn't lose user data
+        // (the snap + rating are already persisted on visit_photos above).
+        if (ratingValue) {
+          const reviewRating = ratingValue;
+          void insertRestaurantReview({
+            userId: user.id,
+            restaurantId,
+            rating: reviewRating,
+            body: cleanCaption,
+          }).catch((reviewErr) => {
+            if (__DEV__) console.warn('[snap] restaurant_reviews mirror failed', reviewErr);
+          });
+        }
       }
 
       navigated = true;

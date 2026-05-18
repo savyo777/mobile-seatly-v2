@@ -457,7 +457,17 @@ export default function NotificationsScreen() {
   const markSupabaseRead = useCallback((id: string) => {
     const supabase = getSupabase();
     if (!supabase) return;
-    void supabase.from('notifications').update({ is_read: true }).eq('id', id);
+    // Low-severity write: optimistic-update the UI immediately, log failures
+    // in dev. We don't surface an alert here because a missed read flag on a
+    // notification is a benign sync gap (next refresh recovers it) and we
+    // shouldn't bug the user with an error toast for every flaky tap.
+    supabase
+      .from('notifications')
+      .update({ is_read: true })
+      .eq('id', id)
+      .then(({ error }) => {
+        if (error && __DEV__) console.warn('[notifications] mark-as-read failed', error);
+      });
     setAllNotifs((prev) => prev.map((item) => (item.id === id ? { ...item, read: true } : item)));
   }, []);
 
