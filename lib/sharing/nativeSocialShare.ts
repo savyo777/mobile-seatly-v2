@@ -100,18 +100,29 @@ async function shareWithNativeComposer(
   const nativeSocialShare = getNativeSocialShare();
 
   if (!nativeSocialShare) {
-    throw new Error(
-      'This Cenaiva app build does not include native social sharing yet. Reinstall the latest dev build, then reopen this snap.',
-    );
+    // No native module — go straight to the OS share sheet so the user still
+    // has a path forward (works even on the AVD where target apps aren't
+    // installed).
+    return openSystemShareSheet(mediaUri, mediaType, undefined, destination);
   }
 
   try {
     await nativeCall(mimeType);
     return { destination, usedFallback: false };
   } catch (error) {
-    console.warn(`[CenaivaSocialShare] ${destination} direct composer failed.`, error);
-    const message = error instanceof Error && error.message ? error.message : directComposerUnavailableMessage(destination);
-    throw new Error(message);
+    // Most common cause: the target app (Instagram / TikTok / Snapchat) isn't
+    // installed, or the device version of the app doesn't accept the
+    // composer intent. Rather than block the user with a raw error, fall
+    // through to the OS share sheet so they can pick another installed app
+    // or be prompted to install the missing one.
+    console.warn(`[CenaivaSocialShare] ${destination} direct composer failed; falling back to system share sheet.`, error);
+    try {
+      return await openSystemShareSheet(mediaUri, mediaType, undefined, destination);
+    } catch (fallbackError) {
+      console.warn(`[CenaivaSocialShare] System share sheet fallback also failed for ${destination}.`, fallbackError);
+      const message = error instanceof Error && error.message ? error.message : directComposerUnavailableMessage(destination);
+      throw new Error(message);
+    }
   }
 }
 
