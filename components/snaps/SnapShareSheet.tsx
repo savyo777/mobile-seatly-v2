@@ -19,7 +19,7 @@ import {
 } from '@/lib/sharing/mediaExport';
 import { getMediaTypeFromMime, type SocialMediaType } from '@/lib/sharing/mime';
 import {
-  shareToInstagramFeed,
+  shareToInstagramStory,
   shareToYouTube,
   isNativeSocialShareAvailable,
   type SocialShareDestination,
@@ -54,7 +54,7 @@ type ShareOption = {
 };
 
 const SHARE_OPTIONS: ShareOption[] = [
-  { destination: 'instagram-feed', label: 'Instagram', icon: 'logo-instagram' },
+  { destination: 'instagram-story', label: 'Instagram', icon: 'logo-instagram' },
   { destination: 'snapchat-story', label: 'Snapchat', icon: 'chatbubble-ellipses-outline', personalSocial: true },
   { destination: 'tiktok', label: 'TikTok', icon: 'logo-tiktok', personalSocial: true },
   { destination: 'youtube', label: 'YouTube', icon: 'logo-youtube', videoOnly: true },
@@ -423,8 +423,8 @@ export function SnapShareSheet({
       if (!uri) return;
 
       switch (destination) {
-        case 'instagram-feed':
-          await shareToInstagramFeed(uri, resolvedMediaType);
+        case 'instagram-story':
+          await shareToInstagramStory(uri, resolvedMediaType);
           break;
         case 'youtube':
           await shareToYouTube(uri);
