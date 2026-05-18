@@ -413,6 +413,12 @@ export default function ReviewCameraScreen() {
 
   const launchPhotoLibrary = useCallback(async () => {
     try {
+      // expo-image-picker v55 removed `copyToCacheDirectory` from the typed
+      // options; the picker's caching behavior is now SDK-internal. On
+      // Android it can still return a content:// URI from MediaStore, which
+      // expo-file-system.uploadAsync can't stream. The defensive normalize
+      // in lib/snaps/uploadSnapPhoto.ts copies content:// -> file:// before
+      // upload, so this picker call stays minimal.
       const result = await ImagePicker.launchImageLibraryAsync({
         mediaTypes: ['images'],
         quality: 0.9,
