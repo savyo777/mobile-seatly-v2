@@ -3,17 +3,28 @@
 
 appId: com.cenaiva.app
 ---
+# Don't clearState — that revokes permissions Maestro can't re-grant
+# inline (microphone, camera, etc.) and surfaces a system dialog
+# that's invisible to the iOS a11y tree. ensure-logged-out handles
+# auth state; AsyncStorage carryover is fine for our flows.
 - launchApp:
-    clearState: true
+    clearState: false
+    stopApp: true
+# iOS-26 dev launcher shows the section header as "DEVELOPMENT SERVERS"
+# (all-caps); previous iOS versions used "Development servers". Accept
+# either. The "Development Build" label below the app name is also a
+# reliable anchor.
 - runFlow:
     when:
-      visible: "Development servers"
+      visible:
+        text: "DEVELOPMENT SERVERS|Development servers|Development Build"
     commands:
       - tapOn:
           text: "Cenaiva"
           index: 1
       - extendedWaitUntil:
-          notVisible: "Development servers"
+          notVisible:
+            text: "DEVELOPMENT SERVERS|Development servers|Development Build"
           timeout: 15000
 - extendedWaitUntil:
     visible: "Continue"
@@ -26,6 +37,11 @@ appId: com.cenaiva.app
       # The Continue button can race away while we're tapping (Expo
       # walkthrough auto-dismisses after a few seconds), so make the
       # tap itself optional.
+      - tapOn:
+          text: "Continue"
+          optional: true
+      # The dev-menu walkthrough can leave a second "Continue" screen
+      # behind it. Try once more.
       - tapOn:
           text: "Continue"
           optional: true
