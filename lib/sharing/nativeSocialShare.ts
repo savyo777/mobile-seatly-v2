@@ -1,4 +1,4 @@
-import { Platform } from 'react-native';
+import { Platform, Linking } from 'react-native';
 import { requireOptionalNativeModule } from 'expo-modules-core';
 import * as Sharing from 'expo-sharing';
 import {
@@ -6,6 +6,15 @@ import {
   type SocialMediaType,
   type SocialMimeType,
 } from './mime';
+
+// Install / app-launch URLs used when a direct composer can't open because the
+// target social app isn't on the device. We try the app's custom scheme first
+// (launches the app if installed) and fall back to the store listing.
+const INSTAGRAM_APP_URL = 'instagram://app';
+const INSTAGRAM_STORE_URLS = {
+  ios: 'https://apps.apple.com/app/instagram/id389801252',
+  android: 'https://play.google.com/store/apps/details?id=com.instagram.android',
+};
 
 type NativeSocialShareModule = {
   shareToInstagramStory(mediaUri: string, mimeType: string, instagramAppId: string | null): Promise<void>;
@@ -90,6 +99,23 @@ export async function openSystemShareSheet(
   };
 }
 
+async function openInstagramOrStore(destination: SocialShareDestination): Promise<SocialShareResult> {
+  // Try to launch the Instagram app directly. canOpenURL is unreliable on
+  // Android 11+ without manifest <queries> declarations, so we attempt the
+  // openURL call and only fall back to the store listing if it actually
+  // rejects (ActivityNotFoundException on Android, no-handler error on iOS).
+  // The user explicitly wants the Instagram surface — never the OS share sheet.
+  try {
+    await Linking.openURL(INSTAGRAM_APP_URL);
+    return { destination, usedFallback: true, message: 'Opened Instagram. Pick your snap from Photos to share it.' };
+  } catch {
+    const storeUrl =
+      Platform.OS === 'ios' ? INSTAGRAM_STORE_URLS.ios : INSTAGRAM_STORE_URLS.android;
+    await Linking.openURL(storeUrl);
+    return { destination, usedFallback: true, message: 'Install Instagram, then come back to share your snap.' };
+  }
+}
+
 async function shareWithNativeComposer(
   destination: SocialShareDestination,
   mediaUri: string,
@@ -98,11 +124,13 @@ async function shareWithNativeComposer(
 ): Promise<SocialShareResult> {
   const mimeType = resolveMimeType(mediaUri, mediaType);
   const nativeSocialShare = getNativeSocialShare();
+  const isInstagram = destination === 'instagram-story' || destination === 'instagram-feed';
 
   if (!nativeSocialShare) {
-    // No native module — go straight to the OS share sheet so the user still
-    // has a path forward (works even on the AVD where target apps aren't
-    // installed).
+    // No native module: Instagram destinations open the Instagram app (or
+    // Play Store / App Store if not installed). Other destinations fall
+    // through to the OS share sheet as before.
+    if (isInstagram) return openInstagramOrStore(destination);
     return openSystemShareSheet(mediaUri, mediaType, undefined, destination);
   }
 
@@ -110,19 +138,25 @@ async function shareWithNativeComposer(
     await nativeCall(mimeType);
     return { destination, usedFallback: false };
   } catch (error) {
-    // Most common cause: the target app (Instagram / TikTok / Snapchat) isn't
-    // installed, or the device version of the app doesn't accept the
-    // composer intent. Rather than block the user with a raw error, fall
-    // through to the OS share sheet so they can pick another installed app
-    // or be prompted to install the missing one.
-    console.warn(`[CenaivaSocialShare] ${destination} direct composer failed; falling back to system share sheet.`, error);
-    try {
-      return await openSystemShareSheet(mediaUri, mediaType, undefined, destination);
-    } catch (fallbackError) {
-      console.warn(`[CenaivaSocialShare] System share sheet fallback also failed for ${destination}.`, fallbackError);
-      const message = error instanceof Error && error.message ? error.message : directComposerUnavailableMessage(destination);
-      throw new Error(message);
+    console.warn(`[CenaivaSocialShare] ${destination} direct composer failed.`, error);
+    // Instagram-specific recovery: take the user to Instagram (or its install
+    // page) so they end up on the Instagram surface, not a generic share sheet.
+    if (isInstagram) {
+      try {
+        return await openInstagramOrStore(destination);
+      } catch (fallbackError) {
+        console.warn(`[CenaivaSocialShare] Instagram launch fallback also failed.`, fallbackError);
+      }
+    } else {
+      // For TikTok / Snapchat / etc., the system share sheet stays the safety net.
+      try {
+        return await openSystemShareSheet(mediaUri, mediaType, undefined, destination);
+      } catch (fallbackError) {
+        console.warn(`[CenaivaSocialShare] System share sheet fallback also failed for ${destination}.`, fallbackError);
+      }
     }
+    const message = error instanceof Error && error.message ? error.message : directComposerUnavailableMessage(destination);
+    throw new Error(message);
   }
 }
 
