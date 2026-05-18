@@ -1,10 +1,12 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { View, Text, StyleSheet, Platform, Pressable, ActivityIndicator } from 'react-native';
-import MapView, { Marker, PROVIDER_GOOGLE, type MapPressEvent, type Region } from 'react-native-maps';
+import MapView, { Marker, PROVIDER_GOOGLE, UrlTile, type MapPressEvent, type Region } from 'react-native-maps';
 import { Ionicons } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
 import { RestaurantMapMarkerContent, MARKER_ANCHOR_Y } from '@/components/map/RestaurantMapMarker';
-import { googleDarkMapStyle } from '@/lib/map/darkMapStyle';
+// googleDarkMapStyle is currently unused while Android renders OSM tiles
+// (mapType="none" suppresses Google's base layer). Restore the import + the
+// customMapStyle wiring on line 496 when the Google Maps key is in place.
 import { hasFiniteCoords, haversineMeters } from '@/lib/map/geo';
 import { DEFAULT_MAP_CENTER } from '@/lib/map/mapFilters';
 import { normalizeRestaurantPriceRange, restaurantPriceLabel } from '@/lib/restaurants/pricing';
@@ -492,8 +494,8 @@ export function RestaurantDiscoveryMap({
         provider={Platform.OS === 'android' ? PROVIDER_GOOGLE : undefined}
         initialRegion={initialRegion}
         userInterfaceStyle={effective}
-        mapType={Platform.OS === 'ios' ? 'mutedStandard' : 'standard'}
-        customMapStyle={Platform.OS === 'android' && effective === 'dark' ? googleDarkMapStyle : undefined}
+        mapType={Platform.OS === 'ios' ? 'mutedStandard' : 'none'}
+        customMapStyle={undefined}
         showsUserLocation={showUserLocation}
         showsMyLocationButton={false}
         showsCompass={false}
@@ -508,6 +510,21 @@ export function RestaurantDiscoveryMap({
         onPress={handleMapPress}
         onRegionChangeComplete={handleRegionChangeComplete}
       >
+        {Platform.OS === 'android' ? (
+          // Temporary OSM raster tiles until a mobile-restricted Google Maps
+          // API key lands. Google Maps SDK still initializes for the underlying
+          // MapView (we don't have a runtime path to disable it), but mapType
+          // "none" suppresses Google's base layer so the missing-key tile-load
+          // errors never render. UrlTile draws OpenStreetMap on top instead.
+          <UrlTile
+            urlTemplate="https://tile.openstreetmap.org/{z}/{x}/{y}.png"
+            maximumZ={19}
+            flipY={false}
+            tileSize={256}
+            zIndex={-1}
+          />
+        ) : null}
+
         {safeUserLocation && !showUserLocation ? (
           <Marker
             key="user-location-fallback"
