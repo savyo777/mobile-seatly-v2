@@ -34,6 +34,7 @@ import {
 import { OWNER_GUESTS as DEMO_OWNER_GUESTS } from '@/lib/mock/guests';
 import { isDemoModeEnabled } from '@/lib/config/demoMode';
 import { getSupabase } from '@/lib/supabase/client';
+import { friendlyError } from '@/lib/errors/friendlyError';
 
 const EMPTY_LIVE_METRICS: typeof DEMO_LIVE_METRICS = {
   tonightCovers: 0,
@@ -738,6 +739,8 @@ export default function OwnerHomeScreen() {
   );
   const displayProfile = useMemo(() => resolveAuthDisplayProfile(user, { fullName: 'Owner' }), [user]);
   const [profileFullName, setProfileFullName] = useState<string>('');
+  const [loadError, setLoadError] = useState<string | null>(null);
+  const [reloadKey, setReloadKey] = useState(0);
 
   useEffect(() => {
     let active = true;
@@ -766,6 +769,8 @@ export default function OwnerHomeScreen() {
     if (!supabase) return;
     let active = true;
 
+    setLoadError(null);
+
     // Shift briefing text — only meaningful when scoped to a single restaurant.
     if (!isAll && restaurantIds.length === 1) {
       void supabase
@@ -773,8 +778,12 @@ export default function OwnerHomeScreen() {
         .select('current_shift_briefing')
         .eq('id', restaurantIds[0])
         .maybeSingle()
-        .then(({ data }) => {
+        .then(({ data, error }) => {
           if (!active) return;
+          if (error) {
+            setLoadError((prev) => prev ?? friendlyError(error, "Couldn't load today's metrics."));
+            return;
+          }
           const briefing = (data?.current_shift_briefing ?? null) as string | null;
           setShiftBriefing(briefing && briefing.trim() ? briefing : null);
         });
@@ -796,8 +805,12 @@ export default function OwnerHomeScreen() {
       .gte('date', fromIso)
       .lte('date', todayIso)
       .order('date', { ascending: true })
-      .then(({ data }) => {
+      .then(({ data, error }) => {
         if (!active) return;
+        if (error) {
+          setLoadError((prev) => prev ?? friendlyError(error, "Couldn't load today's metrics."));
+          return;
+        }
         const rawRows = (data ?? []) as Array<{
           date: string;
           total_covers: number | null;
@@ -904,8 +917,12 @@ export default function OwnerHomeScreen() {
       .in('restaurant_id', restaurantIds)
       .gte('reserved_at', dayStart.toISOString())
       .lt('reserved_at', dayEnd.toISOString())
-      .then(({ data }) => {
+      .then(({ data, error }) => {
         if (!active) return;
+        if (error) {
+          setLoadError((prev) => prev ?? friendlyError(error, "Couldn't load today's metrics."));
+          return;
+        }
         const rows = (data ?? []) as Array<{ reserved_at: string; status: string | null; party_size: number | null }>;
         setTodayReservationCount(rows.length);
         const COUNTED = new Set(['pending', 'confirmed', 'seated', 'checked_in', 'completed']);
@@ -941,8 +958,12 @@ export default function OwnerHomeScreen() {
       .from('guests')
       .select('id', { count: 'exact', head: true })
       .in('restaurant_id', restaurantIds)
-      .then(({ count }) => {
+      .then(({ count, error }) => {
         if (!active) return;
+        if (error) {
+          setLoadError((prev) => prev ?? friendlyError(error, "Couldn't load today's metrics."));
+          return;
+        }
         setGuestProfilesCount(count ?? 0);
       });
 
@@ -950,7 +971,7 @@ export default function OwnerHomeScreen() {
       active = false;
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [restaurantIdsKey, isAll]);
+  }, [restaurantIdsKey, isAll, reloadKey]);
 
   const seatedTables = OWNER_FLOOR_TABLES.filter((t) => t.status === 'occupied').length;
   const tablesTotal = OWNER_FLOOR_TABLES.length;
@@ -1003,6 +1024,22 @@ export default function OwnerHomeScreen() {
         bounces={true}
         contentContainerStyle={{ paddingBottom: spacing.lg }}
       >
+        {loadError ? (
+          <View style={{ marginHorizontal: spacing.md, marginTop: spacing.md, padding: spacing.md, borderRadius: borderRadius.lg, borderWidth: 1, borderColor: c.gold, backgroundColor: c.bgSurface, flexDirection: 'row', alignItems: 'center', gap: spacing.md }}>
+            <Text style={{ color: c.textPrimary, fontSize: 13, flex: 1 }}>{loadError}</Text>
+            <Pressable
+              onPress={() => {
+                setLoadError(null);
+                setReloadKey((k) => k + 1);
+              }}
+              style={{ paddingHorizontal: spacing.md, paddingVertical: spacing.xs, borderRadius: borderRadius.full, borderWidth: 1, borderColor: c.gold }}
+              accessibilityRole="button"
+              accessibilityLabel="Retry loading today's metrics"
+            >
+              <Text style={{ color: c.gold, fontWeight: '600', fontSize: 13 }}>Retry</Text>
+            </Pressable>
+          </View>
+        ) : null}
         {/* ── Greeting block ── */}
         <View style={styles.topBar}>
           <View style={styles.tonightKicker}>

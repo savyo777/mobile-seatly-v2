@@ -40,6 +40,7 @@ const EMPTY_ANALYTICS_INSIGHTS: typeof DEMO_ANALYTICS_INSIGHTS = {
   bestDays: '',
 };
 import { formatCurrency } from '@/lib/utils/formatCurrency';
+import { friendlyError } from '@/lib/errors/friendlyError';
 
 const PERIODS: { key: RevenuePeriod; label: string }[] = [
   { key: 'day', label: 'Today' },
@@ -247,10 +248,13 @@ export default function OwnerInsightsScreen() {
   const [aiInsightsHome, setAiInsightsHome] = useState<typeof DEMO_AI_INSIGHTS_HOME>(
     isDemoModeEnabled() ? DEMO_AI_INSIGHTS_HOME : [],
   );
+  const [loadError, setLoadError] = useState<string | null>(null);
+  const [reloadKey, setReloadKey] = useState(0);
 
   useEffect(() => {
     if (isDemoModeEnabled()) return;
     let active = true;
+    setLoadError(null);
     void (async () => {
       try {
         const supabase = getSupabase();
@@ -379,14 +383,16 @@ export default function OwnerInsightsScreen() {
           String(r.title ?? r.summary ?? r.rationale ?? ''),
         );
         if (aiList.length) setAiInsightsHome(aiList);
-      } catch {
-        // swallow
+      } catch (err) {
+        if (!active) return;
+        setLoadError(friendlyError(err, "Couldn't load insights."));
       }
     })();
     return () => {
       active = false;
     };
-  }, []);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [reloadKey]);
 
   const metrics = analyticsMetrics[period];
   const revData = revenueData[period];
@@ -406,6 +412,23 @@ export default function OwnerInsightsScreen() {
           <Text style={styles.topSubline}>Performance</Text>
           <Text style={styles.title}>Insights</Text>
         </View>
+
+        {loadError ? (
+          <View style={{ marginHorizontal: spacing.md, marginBottom: spacing.md, padding: spacing.md, borderRadius: borderRadius.lg, borderWidth: 1, borderColor: c.gold, backgroundColor: c.bgSurface, flexDirection: 'row', alignItems: 'center', gap: spacing.md }}>
+            <Text style={{ color: c.textPrimary, fontSize: 13, flex: 1 }}>{loadError}</Text>
+            <Pressable
+              onPress={() => {
+                setLoadError(null);
+                setReloadKey((k) => k + 1);
+              }}
+              style={{ paddingHorizontal: spacing.md, paddingVertical: spacing.xs, borderRadius: borderRadius.full, borderWidth: 1, borderColor: c.gold }}
+              accessibilityRole="button"
+              accessibilityLabel="Retry loading insights"
+            >
+              <Text style={{ color: c.gold, fontWeight: '600', fontSize: 13 }}>Retry</Text>
+            </Pressable>
+          </View>
+        ) : null}
 
         {/* Revenue card */}
         <View style={styles.sectionPad}>

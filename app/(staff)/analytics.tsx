@@ -18,6 +18,7 @@ import { formatCurrency } from '@/lib/utils/formatCurrency';
 import { useColors, createStyles, spacing, borderRadius } from '@/lib/theme';
 import { getSupabase } from '@/lib/supabase/client';
 import { fetchCurrentUserProfile } from '@/lib/services/userProfile';
+import { friendlyError } from '@/lib/errors/friendlyError';
 import { useOwnerRestaurantContext } from '@/lib/owner/OwnerRestaurantContext';
 
 const ZERO_METRIC = { revenue: 0, covers: 0, avgSpend: 0, noShowPct: 0, turnover: 0 };
@@ -284,9 +285,13 @@ export default function OwnerAnalyticsScreen() {
     ? undefined
     : restaurants.find((r) => r.id === selectedRestaurantId)?.name;
 
+  const [loadError, setLoadError] = useState<string | null>(null);
+  const [reloadKey, setReloadKey] = useState(0);
+
   useEffect(() => {
     if (isDemoModeEnabled()) return;
     let active = true;
+    setLoadError(null);
     void (async () => {
       try {
         const supabase = getSupabase();
@@ -370,14 +375,16 @@ export default function OwnerAnalyticsScreen() {
             series: seriesFor(yearRows),
           },
         });
-      } catch {
-        // swallow
+      } catch (err) {
+        if (!active) return;
+        setLoadError(friendlyError(err, "Couldn't load analytics."));
       }
     })();
     return () => {
       active = false;
     };
-  }, []);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [reloadKey]);
 
   const period = RANGE_MAP[range];
   const m = analyticsMetrics[period];
@@ -416,6 +423,22 @@ export default function OwnerAnalyticsScreen() {
   return (
     <OwnerScreen contentContainerStyle={{ paddingHorizontal: 0 }}>
       <OwnerHeader title={t('owner.analyticsTitle')} subtitle={headerSubtitle} />
+      {loadError ? (
+        <View style={{ marginHorizontal: spacing.md, marginVertical: spacing.sm, padding: spacing.md, borderRadius: borderRadius.lg, borderWidth: 1, borderColor: c.gold, backgroundColor: c.bgSurface, flexDirection: 'row', alignItems: 'center', gap: spacing.md }}>
+          <Text style={{ color: c.textPrimary, fontSize: 13, flex: 1 }}>{loadError}</Text>
+          <Pressable
+            onPress={() => {
+              setLoadError(null);
+              setReloadKey((k) => k + 1);
+            }}
+            style={{ paddingHorizontal: spacing.md, paddingVertical: spacing.xs, borderRadius: borderRadius.full, borderWidth: 1, borderColor: c.gold }}
+            accessibilityRole="button"
+            accessibilityLabel="Retry loading analytics"
+          >
+            <Text style={{ color: c.gold, fontWeight: '600', fontSize: 13 }}>Retry</Text>
+          </Pressable>
+        </View>
+      ) : null}
       <View style={styles.chipRow}>
         {RANGES.map((r) => (
           <Pressable
