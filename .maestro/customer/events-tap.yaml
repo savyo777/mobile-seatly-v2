@@ -12,10 +12,10 @@ appId: com.cenaiva.app
 - runFlow:
     when:
       visible:
-        text: "Events, tab.*"
+        text: "^Events(, tab.*)?$"
     commands:
       - tapOn:
-          text: "Events, tab.*"
+          text: "^Events(, tab.*)?$"
       - extendedWaitUntil:
           visible:
             text: "TORONTO|Events|No events"

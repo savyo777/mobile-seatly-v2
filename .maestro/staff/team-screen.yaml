@@ -11,7 +11,7 @@ appId: com.cenaiva.app
 ---
 - runFlow: ../_subflows/sign-in-with-creds.yaml
 - assertVisible:
-    text: "Home, tab.*"
+    text: "^Home(, tab.*)?$"
 - openLink: "cenaiva://(staff)/team"
 # iOS-26 wraps card labels with leading commas in the a11y tree
 # (".., Staff members, …"), so we match with .* anchors.

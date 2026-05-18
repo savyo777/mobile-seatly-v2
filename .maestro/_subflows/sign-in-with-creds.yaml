@@ -36,10 +36,16 @@ appId: com.cenaiva.app
 - tapOn:
     id: "login-email-input"
 - inputText: ${MAESTRO_EMAIL}
+# Drop the soft keyboard before targeting the password field. On
+# Android the keyboard covers the lower half of the screen and
+# Maestro's tap-by-id treats the obscured element as not-visible,
+# so tap-by-id falls through. iOS 26's hideKeyboard is flaky, but
+# tapping a static label above the keyboard works on both.
+- tapOn:
+    text: "Welcome back"
 - tapOn:
     id: "login-password-input"
 - inputText: ${MAESTRO_PASSWORD}
-# iOS 26 hideKeyboard is flaky — tap a static label to drop the keyboard.
 - tapOn:
     text: "Welcome back"
 - tapOn:
@@ -59,7 +65,7 @@ appId: com.cenaiva.app
     retryTapIfNoChange: false
 - extendedWaitUntil:
     visible:
-      text: "Discover, tab.*|Restaurant dashboard|Home, tab.*"
+      text: "^Discover(, tab.*)?$|Restaurant dashboard|^Home(, tab.*)?$"
     timeout: 30000
 # If the system sheet is what's masking the final shell, dismiss it
 # once more and re-assert.

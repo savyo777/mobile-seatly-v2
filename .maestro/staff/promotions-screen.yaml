@@ -16,10 +16,10 @@ appId: com.cenaiva.app
 - runFlow:
     when:
       visible:
-        text: "Home, tab.*"
+        text: "^Home(, tab.*)?$"
     commands:
       - tapOn:
-          text: "Promos, tab.*"
+          text: "^Promos(, tab.*)?$"
       - extendedWaitUntil:
           visible: "Offers & promos"
           timeout: 20000

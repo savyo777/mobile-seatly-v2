@@ -17,7 +17,7 @@ appId: com.cenaiva.app
 - runFlow: ../_subflows/sign-in-with-creds.yaml
 # Owner-default landing is /(staff)/home; deep-link straight in.
 - assertVisible:
-    text: "Home, tab.*"
+    text: "^Home(, tab.*)?$"
 - openLink: "cenaiva://(staff)/roles-permissions"
 - extendedWaitUntil:
     visible: "Roles & permissions"

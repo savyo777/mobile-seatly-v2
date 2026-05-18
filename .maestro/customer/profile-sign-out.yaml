@@ -13,10 +13,10 @@ appId: com.cenaiva.app
 - runFlow:
     when:
       visible:
-        text: "Profile, tab.*"
+        text: "^Profile(, tab.*)?$"
     commands:
       - tapOn:
-          text: "Profile, tab.*"
+          text: "^Profile(, tab.*)?$"
       # Sign out is at the bottom of the 4-page profile — scroll until visible.
       - scrollUntilVisible:
           element:

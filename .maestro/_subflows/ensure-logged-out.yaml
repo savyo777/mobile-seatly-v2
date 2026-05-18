@@ -14,9 +14,11 @@ appId: com.cenaiva.app
 # Wait for the app to settle on one of the three possible landing
 # states — without this the `when:` conditional checks fire while the
 # screen is still transitioning and miss the match.
+# iOS exposes tab labels as e.g. "Discover, tab, 1 of N"; Android
+# exposes them as just "Discover". Regex covers both.
 - extendedWaitUntil:
     visible:
-      text: "Restaurant dashboard|Discover, tab.*|Welcome to Cenaiva"
+      text: "Restaurant dashboard|^Discover(, tab.*)?$|Welcome to Cenaiva"
     timeout: 15000
     optional: true
 - runFlow:
@@ -24,24 +26,29 @@ appId: com.cenaiva.app
       visible: "Restaurant dashboard"
     commands:
       - tapOn:
-          text: "Business.*"
+          text: "^Business(, tab.*)?$"
       - tapOn: "Log out"
       - tapOn:
           text: "Log out"
           index: 1
 - runFlow:
     when:
-      visible: "Discover, tab.*"
+      visible:
+        text: "^Discover(, tab.*)?$"
     commands:
       - tapOn:
-          text: "Profile, tab.*"
+          text: "^Profile(, tab.*)?$"
+      # RN's `testID` is mapped to `resource-id` reliably on iOS but
+      # not on Android (depends on the wrapper component), so scroll
+      # + tap by visible text instead. The label is i18n
+      # auth.signOut → "Sign out".
       - scrollUntilVisible:
           element:
-            id: "customer-profile-sign-out"
+            text: "^Sign out$"
           direction: DOWN
           timeout: 10000
       - tapOn:
-          id: "customer-profile-sign-out"
+          text: "^Sign out$"
       # handleLogout signs out without a confirmation dialog; the next
       # screen is /onboarding directly.
 - extendedWaitUntil:

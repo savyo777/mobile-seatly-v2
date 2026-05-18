@@ -12,7 +12,7 @@ appId: com.cenaiva.app
 - runFlow:
     when:
       visible:
-        text: "Discover, tab.*"
+        text: "^Discover(, tab.*)?$"
     commands:
       - extendedWaitUntil:
           visible: "Map"

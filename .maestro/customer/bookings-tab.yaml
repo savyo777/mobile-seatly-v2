@@ -7,7 +7,7 @@ appId: com.cenaiva.app
 - runFlow: ../_subflows/sign-in-with-creds.yaml
 - runFlow: ../_subflows/switch-to-customer.yaml
 - tapOn:
-    text: "Bookings, tab.*"
+    text: "^Bookings(, tab.*)?$"
 - extendedWaitUntil:
     visible:
       text: "^Bookings$"

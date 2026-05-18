@@ -15,15 +15,19 @@
 
 appId: com.cenaiva.app
 ---
+# Anchor the matcher to the literal "Next" CTA — otherwise it matches
+# any visible "Next..." prefix (e.g. "Next slot: 7:30 PM" on a Discover
+# restaurant card) and incorrectly enters this branch when the user is
+# already signed in.
 - runFlow:
     when:
       visible:
-        text: "Next.*"
+        text: "^Next$"
     commands:
       - tapOn:
-          text: "Next.*"
+          text: "^Next$"
       - tapOn:
-          text: "Next.*"
+          text: "^Next$"
       - tapOn: "Get Started"
       - extendedWaitUntil:
           visible: "Welcome to Cenaiva"

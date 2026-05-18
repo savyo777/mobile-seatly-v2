@@ -6,7 +6,7 @@ appId: com.cenaiva.app
 - runFlow: ../_subflows/sign-in-with-creds.yaml
 - runFlow: ../_subflows/switch-to-customer.yaml
 - assertVisible:
-    text: "Discover, tab.*"
+    text: "^Discover(, tab.*)?$"
 # Bell icon on Discover shares pixel space with the Expo dev floater.
 # Deep-link straight into the notifications screen instead.
 - openLink: "cenaiva://(customer)/notifications"

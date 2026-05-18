@@ -13,7 +13,7 @@ appId: com.cenaiva.app
 ---
 - runFlow: ../_subflows/sign-in-with-creds.yaml
 - assertVisible:
-    text: "Home, tab.*"
+    text: "^Home(, tab.*)?$"
 
 # ── Pre-flight cleanup: reset Server role to defaults in case a
 #    previous crashed run left state changed.
@@ -57,7 +57,7 @@ appId: com.cenaiva.app
 - openLink: "cenaiva://(staff)/home"
 - extendedWaitUntil:
     visible:
-      text: "Home, tab.*"
+      text: "^Home(, tab.*)?$"
     timeout: 15000
 
 # ── Return to Roles & Permissions, switch to Server tab, and verify

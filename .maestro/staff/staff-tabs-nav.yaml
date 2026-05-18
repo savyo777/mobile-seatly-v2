@@ -8,8 +8,9 @@
 #
 # This flow only runs when the keychain restores a staff session; if we
 # land in the customer shell instead, we exit early without failing.
-# iOS exposes tab labels as e.g. "Home, tab, 1 of N", so we anchor the
-# regex on that substring.
+# iOS exposes tab labels as e.g. "Home, tab, 1 of N"; Android exposes
+# them as just "Home". The regex matches both with an optional ", tab…"
+# suffix.
 
 appId: com.cenaiva.app
 ---
@@ -24,35 +25,35 @@ appId: com.cenaiva.app
 - runFlow:
     when:
       visible:
-        text: "Home, tab.*"
+        text: "^Home(, tab.*)?$"
     commands:
       - tapOn:
-          text: "Bookings, tab.*"
+          text: "^Bookings(, tab.*)?$"
       - extendedWaitUntil:
           visible:
-            text: "Bookings, tab.*"
+            text: "^Bookings(, tab.*)?$"
           timeout: 15000
       - tapOn:
-          text: "Expenses, tab.*"
+          text: "^Expenses(, tab.*)?$"
       - extendedWaitUntil:
           visible:
-            text: "Expenses, tab.*"
+            text: "^Expenses(, tab.*)?$"
           timeout: 15000
       - tapOn:
-          text: "Promos, tab.*"
+          text: "^Promos(, tab.*)?$"
       - extendedWaitUntil:
           visible:
-            text: "Promos, tab.*"
+            text: "^Promos(, tab.*)?$"
           timeout: 15000
       - tapOn:
-          text: "Business, tab.*"
+          text: "^Business(, tab.*)?$"
       - extendedWaitUntil:
           visible:
-            text: "Business, tab.*"
+            text: "^Business(, tab.*)?$"
           timeout: 15000
       - tapOn:
-          text: "Home, tab.*"
+          text: "^Home(, tab.*)?$"
       - extendedWaitUntil:
           visible:
-            text: "Home, tab.*"
+            text: "^Home(, tab.*)?$"
           timeout: 15000

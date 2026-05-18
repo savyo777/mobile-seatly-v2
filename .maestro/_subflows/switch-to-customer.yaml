@@ -10,12 +10,12 @@ appId: com.cenaiva.app
 ---
 - extendedWaitUntil:
     visible:
-      text: "Discover, tab.*|Home, tab.*"
+      text: "^Discover(, tab.*)?$|^Home(, tab.*)?$"
     timeout: 30000
 - runFlow:
     when:
       visible:
-        text: "Home, tab.*"
+        text: "^Home(, tab.*)?$"
     commands:
       - openLink: "cenaiva://(staff)/settings"
       - extendedWaitUntil:
@@ -24,5 +24,5 @@ appId: com.cenaiva.app
       - tapOn: "Switch to user side"
       - extendedWaitUntil:
           visible:
-            text: "Discover, tab.*"
+            text: "^Discover(, tab.*)?$"
           timeout: 30000
