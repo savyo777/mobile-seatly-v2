@@ -381,12 +381,14 @@ export default function SnapCaptionScreen() {
   }, []);
 
   const postSnap = async () => {
-    if (!restaurantId || !decodedUri || !caption.trim() || rating === 0 || posting) return;
+    // Rating + caption are optional; the snap can ship with just the photo.
+    if (!restaurantId || !decodedUri || posting) return;
     setPosting(true);
     let navigated = false;
 
     try {
       const cleanCaption = normalizeTextInput(caption, { maxLength: 220, multiline: true });
+      const ratingValue = rating > 0 ? (rating as 1 | 2 | 3 | 4 | 5) : undefined;
       const userId = me;
       if (!userId) {
         setPosting(false);
@@ -400,7 +402,7 @@ export default function SnapCaptionScreen() {
         booking_id: bookingId,
         image: decodedUri,
         caption: cleanCaption,
-        rating,
+        rating: ratingValue,
         tags: [],
         storyFilterId: selectedFilterId ?? undefined,
         storyFilterCapturedAt: selectedFilterId ? capturedAt : undefined,
@@ -422,25 +424,28 @@ export default function SnapCaptionScreen() {
                 userId: user.id,
                 restaurantId,
                 imageUrl: publicUrl,
-                caption: cleanCaption,
+                caption: cleanCaption.length > 0 ? cleanCaption : null,
                 bookingId: bookingId ?? null,
                 storyFilterId: selectedFilterId ?? null,
                 storyFilterCapturedAt: selectedFilterId ? capturedAt : null,
-                rating,
+                rating: ratingValue ?? null,
                 tags: [],
               });
             }
-            // Also write to restaurant_reviews so the rating + caption appears
-            // in the Reviews section of the restaurant detail page.
-            try {
-              await insertRestaurantReview({
-                userId: user.id,
-                restaurantId,
-                rating,
-                body: cleanCaption,
-              });
-            } catch {
-              // Non-fatal — the snap photo + rating are already persisted.
+            // Only mirror to restaurant_reviews when there's an actual rating —
+            // the reviews table clamps to 1..5 and a snap-only post (no stars,
+            // no caption) doesn't belong in the Reviews section.
+            if (ratingValue) {
+              try {
+                await insertRestaurantReview({
+                  userId: user.id,
+                  restaurantId,
+                  rating: ratingValue,
+                  body: cleanCaption,
+                });
+              } catch {
+                // Non-fatal — the snap photo is already persisted.
+              }
             }
           } catch {
             // Fire-and-forget: UI already navigated away; don't alert the user.
@@ -556,7 +561,7 @@ export default function SnapCaptionScreen() {
               </View>
             </View>
             <View style={styles.ratingRow}>
-              <Text style={styles.ratingLabel}>Rate this visit</Text>
+              <Text style={styles.ratingLabel}>Rate this visit (optional)</Text>
               <View style={styles.starsRow}>
                 {[1, 2, 3, 4, 5].map((value) => {
                   const active = value <= rating;
@@ -578,7 +583,7 @@ export default function SnapCaptionScreen() {
             <TextInput
               value={caption}
               onChangeText={(value) => setCaption(sanitizeTextInput(value, { maxLength: 220, multiline: true }))}
-              placeholder="How was it?"
+              placeholder="How was it? (optional)"
               placeholderTextColor={c.textMuted}
               multiline
               style={styles.input}
@@ -601,7 +606,7 @@ export default function SnapCaptionScreen() {
           <Button
             title={posting ? 'Posting...' : 'Post'}
             onPress={postSnap}
-            disabled={posting || !caption.trim() || rating === 0 || !restaurantId || !decodedUri}
+            disabled={posting || !restaurantId || !decodedUri}
             loading={posting}
             size="lg"
           />
