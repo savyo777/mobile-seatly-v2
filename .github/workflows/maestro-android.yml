@@ -1,0 +1,176 @@
+name: Maestro Android parity
+
+# Boots an Android emulator, builds the Cenaiva dev client, runs the
+# verified parity flows (the same 6 customer + auth flows that passed
+# in Pass 3 + Pass 4 on the local AVD). Surfaces regressions in the
+# user-facing flows before they merge to main.
+#
+# Trigger on:
+#   - push to main (post-merge gate)
+#   - pull_request touching the surfaces that could affect parity
+#   - manual workflow_dispatch
+#
+# Linux runners chosen over macOS for cost: the Android emulator runs
+# fine on ubuntu-latest via reactivecircus/android-emulator-runner.
+# Total cost: ~15-20 min per run.
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'app/**'
+      - 'lib/**'
+      - 'components/**'
+      - 'hooks/**'
+      - 'modules/**'
+      - 'supabase/migrations/**'
+      - '.maestro/**'
+      - 'package.json'
+      - 'package-lock.json'
+      - 'app.json'
+      - '.github/workflows/maestro-android.yml'
+  pull_request:
+    paths:
+      - 'app/**'
+      - 'lib/**'
+      - 'components/**'
+      - 'hooks/**'
+      - 'modules/**'
+      - 'supabase/migrations/**'
+      - '.maestro/**'
+      - 'package.json'
+      - 'package-lock.json'
+      - 'app.json'
+  workflow_dispatch:
+
+concurrency:
+  group: maestro-android-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  android-parity:
+    name: Android parity flows
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    # Required to boot the Android emulator on a Linux runner.
+    permissions:
+      contents: read
+
+    env:
+      EXPO_PUBLIC_CENAIVA_DEMO_MODE: "true"
+      MAESTRO_EMAIL: ${{ secrets.MAESTRO_EMAIL }}
+      MAESTRO_PASSWORD: ${{ secrets.MAESTRO_PASSWORD }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Install Maestro
+        run: |
+          curl -Ls "https://get.maestro.mobile.dev" | bash
+          echo "$HOME/.maestro/bin" >> $GITHUB_PATH
+
+      - name: Enable KVM (required by the emulator)
+        run: |
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
+
+      - name: Cache Gradle
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.gradle/caches
+            ~/.gradle/wrapper
+          key: gradle-${{ runner.os }}-${{ hashFiles('android/**/*.gradle*', 'android/**/gradle-wrapper.properties') }}
+          restore-keys: gradle-${{ runner.os }}-
+
+      - name: Cache AVD
+        uses: actions/cache@v4
+        id: avd-cache
+        with:
+          path: |
+            ~/.android/avd/*
+            ~/.android/adb*
+          key: avd-android-34
+
+      - name: Create AVD snapshot (first run only)
+        if: steps.avd-cache.outputs.cache-hit != 'true'
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 34
+          target: default
+          arch: x86_64
+          force-avd-creation: false
+          emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none
+          disable-animations: false
+          script: echo "Generated AVD snapshot for caching."
+
+      - name: Boot emulator + build + run Maestro
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 34
+          target: default
+          arch: x86_64
+          force-avd-creation: false
+          emulator-options: -no-snapshot-save -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none
+          disable-animations: true
+          script: |
+            set -e
+            echo "::group::Build Android dev client"
+            npx expo prebuild --platform android --no-install --clean
+            cd android && ./gradlew installDebug --no-daemon --console=plain && cd ..
+            echo "::endgroup::"
+
+            echo "::group::Start Metro"
+            npx expo start --dev-client --port 8081 &
+            METRO_PID=$!
+            until curl -s "http://localhost:8081/status" | grep -q "running"; do sleep 2; done
+            echo "::endgroup::"
+
+            echo "::group::Run Maestro flows"
+            FLOWS=(
+              ".maestro/smoke.yaml"
+              ".maestro/auth/sign-in-success.yaml"
+              ".maestro/customer/discover-list.yaml"
+              ".maestro/customer/bookings-tab.yaml"
+              ".maestro/customer/profile-favorites.yaml"
+              ".maestro/customer/notifications-feed.yaml"
+              ".maestro/cenaiva/fab-opens-assistant.yaml"
+              ".maestro/cenaiva/close-assistant.yaml"
+            )
+            for flow in "${FLOWS[@]}"; do
+              echo ">>> $flow"
+              # force-stop between flows to avoid the Maestro AVD-driver
+              # instrumentation flakiness we saw in Pass 3.
+              adb shell am force-stop com.cenaiva.app || true
+              maestro test "$flow"
+              sleep 3
+            done
+            echo "::endgroup::"
+
+            kill $METRO_PID || true
+
+      - name: Upload Maestro artifacts on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: maestro-android-artifacts
+          path: |
+            ~/.maestro/tests/
+          retention-days: 14
