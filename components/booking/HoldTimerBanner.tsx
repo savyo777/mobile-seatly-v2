@@ -2,6 +2,7 @@ import React, { useEffect, useMemo, useRef } from 'react';
 import { Animated, Text, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useColors, createStyles } from '@/lib/theme';
 import { useOptionalReservationHoldContext } from '@/lib/booking/ReservationHoldProvider';
 
@@ -46,6 +47,7 @@ export function HoldTimerBanner() {
   const { t } = useTranslation();
   const c = useColors();
   const styles = useStyles();
+  const insets = useSafeAreaInsets();
   const pulseAnim = useRef(new Animated.Value(1)).current;
 
   const status = hold?.state.status ?? 'idle';
@@ -86,7 +88,7 @@ export function HoldTimerBanner() {
 
   return (
     <Animated.View
-      style={[containerStyle, { opacity: pulseAnim }]}
+      style={[containerStyle, { opacity: pulseAnim, paddingTop: insets.top + 10 }]}
       accessibilityRole="text"
       accessibilityLabel={label}
     >
