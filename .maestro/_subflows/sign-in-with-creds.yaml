@@ -14,6 +14,16 @@ appId: com.cenaiva.app
 ---
 - runFlow: ../_subflows/boot-to-app.yaml
 - runFlow: ../_subflows/ensure-logged-out.yaml
+# Sign-out clears AsyncStorage, which can resurrect the cookie
+# consent sheet. Tolerate either case.
+- runFlow:
+    when:
+      visible: "Accept all cookies"
+    commands:
+      - tapOn: "Accept all cookies"
+      - extendedWaitUntil:
+          notVisible: "Accept all cookies"
+          timeout: 10000
 - runFlow: ../_subflows/past-onboarding.yaml
 - extendedWaitUntil:
     visible: "Welcome to Cenaiva"

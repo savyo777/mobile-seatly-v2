@@ -1,0 +1,27 @@
+# Staff Team screen loads. Verifies the three cards (Staff members,
+# Roles & permissions, Staff PIN codes) render — these are the
+# entry points for invite/remove/role-change destructive actions.
+#
+# We don't exercise the destructive actions themselves because they
+# require either an additional staff member (we'd need to invite one
+# first, also destructive) or risk locking out the owner. Those
+# flows are left as manual QA items.
+
+appId: com.cenaiva.app
+---
+- runFlow: ../_subflows/sign-in-with-creds.yaml
+- assertVisible:
+    text: "Home, tab.*"
+- openLink: "cenaiva://(staff)/team"
+# iOS-26 wraps card labels with leading commas in the a11y tree
+# (".., Staff members, …"), so we match with .* anchors.
+- extendedWaitUntil:
+    visible:
+      text: ".*Staff members.*"
+    timeout: 15000
+- assertVisible:
+    text: ".*Staff members.*"
+- assertVisible:
+    text: ".*Roles & permissions.*"
+- assertVisible:
+    text: ".*Staff PIN codes.*"

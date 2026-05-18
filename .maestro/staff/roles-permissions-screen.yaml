@@ -1,0 +1,31 @@
+# Staff Roles & Permissions screen loads. Verifies the screen
+# renders with the expected role tabs and at least one permission
+# switch.
+#
+# NOTE: Maestro can tap iOS native Switches, but actually verifying
+# "toggle persists across navigation" requires writing the live
+# permission state to Supabase — that's a real config change and
+# risks leaving the test account locked out if the test exits mid-
+# run. The persistence path is left as a manual QA item.
+#
+# Bug surface this guards: a code path that fails to render the
+# Switches (e.g. the loading spinner never resolves, or the
+# PERMISSIONS array is empty after a refactor).
+
+appId: com.cenaiva.app
+---
+- runFlow: ../_subflows/sign-in-with-creds.yaml
+# Owner-default landing is /(staff)/home; deep-link straight in.
+- assertVisible:
+    text: "Home, tab.*"
+- openLink: "cenaiva://(staff)/roles-permissions"
+- extendedWaitUntil:
+    visible: "Roles & permissions"
+    timeout: 15000
+- assertVisible: "Roles & permissions"
+# The role tabs (Manager / Host / Server) and at least one permission
+# label render on every variant of this screen.
+- assertVisible:
+    text: ".*Manager.*"
+- assertVisible:
+    text: ".*View and edit reservations.*|.*Access guest CRM.*|.*Edit the menu.*"

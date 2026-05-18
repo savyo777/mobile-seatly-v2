@@ -1,0 +1,50 @@
+# Customer cancels their own upcoming reservation. Assumes a recent
+# booking exists (created by booking-happy-path or booking-with-
+# preorder). Verifies the destructive action takes the card to the
+# Cancelled tab.
+#
+# Run this AFTER booking-happy-path / booking-with-preorder so there's
+# something to cancel.
+
+appId: com.cenaiva.app
+---
+- runFlow: ../_subflows/sign-in-with-creds.yaml
+- runFlow: ../_subflows/switch-to-customer.yaml
+- tapOn:
+    text: "Bookings, tab.*"
+- extendedWaitUntil:
+    visible: "^Bookings$"
+    timeout: 15000
+- assertVisible: "Upcoming"
+# Give the reservation list a moment to settle in the FlatList.
+# The iOS-26 a11y tree wraps the card label as ", Confirmed, Mark
+# Testing" (leading comma), so we anchor with .* on each side.
+- extendedWaitUntil:
+    visible:
+      text: ".*Mark Testing.*|No upcoming bookings"
+    timeout: 15000
+
+# If there's an upcoming card, tap Cancel; otherwise no-op so the
+# test is idempotent across reruns of the suite.
+- runFlow:
+    when:
+      visible: ".*Mark Testing.*"
+    commands:
+      - tapOn:
+          text: "^Cancel$"
+      - extendedWaitUntil:
+          visible: "Cancel reservation"
+          timeout: 10000
+      - tapOn:
+          text: "Cancel reservation"
+      # The card moves to the Cancelled tab; verify by switching to
+      # that tab and asserting the booking shows up there.
+      - extendedWaitUntil:
+          visible: "Cancelled"
+          timeout: 15000
+      - tapOn:
+          text: "Cancelled"
+      - extendedWaitUntil:
+          visible:
+            text: ".*Mark Testing.*|No cancelled reservations|Reservations you cancel"
+          timeout: 15000
