@@ -136,7 +136,8 @@
           "icon": "./assets/icon.png",
           "color": "#C9A84C"
         }
-      ]
+      ],
+      "@sentry/react-native"
     ],
     "extra": {
       "socialSharing": {

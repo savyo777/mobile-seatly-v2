@@ -7,7 +7,24 @@ import { SafeAreaProvider } from 'react-native-safe-area-context';
 import * as Linking from 'expo-linking';
 import Constants from 'expo-constants';
 import { StripeProvider } from '@stripe/stripe-react-native';
+import * as Sentry from '@sentry/react-native';
 import '@/lib/i18n';
+
+// Crash reporting. DSN comes from EXPO_PUBLIC_SENTRY_DSN — empty in dev
+// builds disables the SDK without throwing. PII scrubbing is enabled by
+// default; we explicitly set `sendDefaultPii: false` so no email/IP/
+// device identifiers leave the device.
+const sentryDsn = process.env.EXPO_PUBLIC_SENTRY_DSN?.trim() || '';
+if (sentryDsn) {
+  Sentry.init({
+    dsn: sentryDsn,
+    environment: process.env.EXPO_PUBLIC_SENTRY_ENV?.trim() || 'production',
+    tracesSampleRate: 0.1,
+    sendDefaultPii: false,
+    enableAutoSessionTracking: true,
+    debug: __DEV__,
+  });
+}
 import { AuthProvider, useAuthSession } from '@/lib/auth/AuthContext';
 import { ThemeProvider, useColors } from '@/lib/theme';
 import { MenuProvider } from '@/lib/context/MenuContext';

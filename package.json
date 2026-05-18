@@ -31,6 +31,7 @@
     "@expo/vector-icons": "^15.0.2",
     "@hookform/resolvers": "^5.2.2",
     "@react-native-async-storage/async-storage": "2.2.0",
+    "@sentry/react-native": "~7.11.0",
     "@stripe/stripe-react-native": "0.63.0",
     "@supabase/supabase-js": "^2.49.8",
     "babel-preset-expo": "^55.0.12",
