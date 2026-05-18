@@ -40,7 +40,6 @@ import {
 } from '@/lib/storyFilters/previewLayout';
 import type { StoryFilterId } from '@/lib/storyFilters/types';
 import { normalizeTextInput, sanitizeTextInput } from '@/lib/validation/input';
-import { friendlyError } from '@/lib/errors/friendlyError';
 
 const H_PAD = 18;
 
@@ -409,57 +408,56 @@ export default function SnapCaptionScreen() {
         storyFilterCapturedAt: selectedFilterId ? capturedAt : undefined,
       });
 
-      // Persist to Supabase whenever the user is authenticated, regardless of
-      // whether a bookingId is present (covers the past-restaurants carousel
-      // flow). The upload + visit_photos insert are awaited so the user
-      // doesn't navigate away into "Posted!" while the write silently failed.
-      // The optional restaurant_reviews mirror stays fire-and-forget after
-      // navigation (it's a nice-to-have for the Reviews section, not the
-      // source of truth for the snap itself).
+      // Persist to Supabase in the background. Navigation to the reward /
+      // share screen does NOT wait on the upload — the user's local snap is
+      // already in memory (createSnapPost above) and the share targets
+      // (Instagram, Snapchat, TikTok) consume the local file:// URI, not the
+      // Supabase-hosted URL. Sharing works regardless of whether the
+      // background persist succeeds.
+      //
+      // If upload/insertVisitPhoto fails (e.g. storage RLS denial, expired
+      // refresh token, network blip), we log in dev and move on. The snap
+      // still exists in-memory + the user can share it externally. A future
+      // pass can add a "retry sync" affordance on the reward screen.
       if (isAuthenticated && user?.id) {
         const photoId = Crypto.randomUUID();
-        try {
-          const publicUrl = await uploadSnapPhoto({
-            uri: decodedUri,
-            userId: user.id,
-            photoId,
-          });
-          if (publicUrl) {
-            await insertVisitPhoto({
-              userId: user.id,
-              restaurantId,
-              imageUrl: publicUrl,
-              caption: cleanCaption.length > 0 ? cleanCaption : null,
-              bookingId: bookingId ?? null,
-              storyFilterId: selectedFilterId ?? null,
-              storyFilterCapturedAt: selectedFilterId ? capturedAt : null,
-              rating: ratingValue ?? null,
-              tags: [],
+        const authUserId = user.id;
+        void (async () => {
+          try {
+            const publicUrl = await uploadSnapPhoto({
+              uri: decodedUri,
+              userId: authUserId,
+              photoId,
             });
+            if (publicUrl) {
+              await insertVisitPhoto({
+                userId: authUserId,
+                restaurantId,
+                imageUrl: publicUrl,
+                caption: cleanCaption.length > 0 ? cleanCaption : null,
+                bookingId: bookingId ?? null,
+                storyFilterId: selectedFilterId ?? null,
+                storyFilterCapturedAt: selectedFilterId ? capturedAt : null,
+                rating: ratingValue ?? null,
+                tags: [],
+              });
+            }
+            if (ratingValue) {
+              try {
+                await insertRestaurantReview({
+                  userId: authUserId,
+                  restaurantId,
+                  rating: ratingValue,
+                  body: cleanCaption,
+                });
+              } catch (reviewErr) {
+                if (__DEV__) console.warn('[snap] restaurant_reviews mirror failed', reviewErr);
+              }
+            }
+          } catch (persistErr) {
+            if (__DEV__) console.warn('[snap] background persist failed', persistErr);
           }
-        } catch (uploadErr) {
-          Alert.alert(
-            'Snap not saved',
-            friendlyError(uploadErr, "We couldn't save your snap. Check your connection and try again."),
-          );
-          setPosting(false);
-          return;
-        }
-
-        // Mirror to restaurant_reviews only when there's an actual rating.
-        // Fire-and-forget by design: failure here doesn't lose user data
-        // (the snap + rating are already persisted on visit_photos above).
-        if (ratingValue) {
-          const reviewRating = ratingValue;
-          void insertRestaurantReview({
-            userId: user.id,
-            restaurantId,
-            rating: reviewRating,
-            body: cleanCaption,
-          }).catch((reviewErr) => {
-            if (__DEV__) console.warn('[snap] restaurant_reviews mirror failed', reviewErr);
-          });
-        }
+        })();
       }
 
       navigated = true;
