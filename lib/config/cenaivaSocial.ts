@@ -6,7 +6,10 @@ import * as Linking from 'expo-linking';
 export const CENAIVA_FOLLOW_URLS = {
   instagram: process.env.EXPO_PUBLIC_INSTAGRAM_PROFILE_URL?.trim() || 'https://instagram.com/heycenaiva',
   tiktok: process.env.EXPO_PUBLIC_TIKTOK_PROFILE_URL?.trim() || 'https://www.tiktok.com/@heycenaiva',
-  youtube: process.env.EXPO_PUBLIC_YOUTUBE_PROFILE_URL?.trim() || 'https://www.youtube.com/@heycenaiva',
+  // Channel-ID URL (not @handle) because the immutable UC… identifier survives
+  // handle renames + handle reassignment by YouTube. All three forms currently
+  // resolve to the same Cenaiva channel; UC… is the canonical pick.
+  youtube: process.env.EXPO_PUBLIC_YOUTUBE_PROFILE_URL?.trim() || 'https://www.youtube.com/channel/UC7eNTmNPMNTY1yv5MTYrvfA',
   snapchat: process.env.EXPO_PUBLIC_SNAPCHAT_PROFILE_URL?.trim() || 'https://www.snapchat.com/add/heycenaiva',
 } as const;
 
