@@ -411,7 +411,13 @@ export default function Step4Preorder() {
                   </TouchableOpacity>
                 )}
                 {qty > 0 && <Text style={styles.qtyText}>{qty}</Text>}
-                <TouchableOpacity onPress={() => addToCart(item)} style={[styles.qtyBtn, styles.qtyBtnAdd]}>
+                <TouchableOpacity
+                  onPress={() => addToCart(item)}
+                  style={[styles.qtyBtn, styles.qtyBtnAdd]}
+                  testID="preorder-add-button"
+                  accessibilityRole="button"
+                  accessibilityLabel={`Add ${item.name} to cart`}
+                >
                   <Ionicons name="add" size={18} color={c.bgBase} />
                 </TouchableOpacity>
               </View>

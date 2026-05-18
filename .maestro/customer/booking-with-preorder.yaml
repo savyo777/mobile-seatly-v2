@@ -1,0 +1,76 @@
+# Customer booking with preorder — exercises the Stripe PaymentSheet
+# trigger. Adds a single menu item to the cart so step4 → step5 →
+# step6 routes through the payment screen instead of skipping
+# straight to confirmation.
+#
+# STOPS at the Confirm Booking button. Scripting Maestro into Stripe's
+# native PaymentSheet is brittle across SDK versions, so we assert the
+# trigger is visible and let manual QA handle the actual card entry
+# with 4242 4242 4242 4242 / 12/30 / 123 / 10001.
+#
+# Usage:
+#   maestro test .maestro/customer/booking-with-preorder.yaml \
+#     --env MAESTRO_EMAIL=... --env MAESTRO_PASSWORD=...
+
+appId: com.cenaiva.app
+---
+- runFlow: ../_subflows/sign-in-with-creds.yaml
+- runFlow: ../_subflows/switch-to-customer.yaml
+- assertVisible:
+    text: "Discover, tab.*"
+
+# Discover hero → Reserve now
+- extendedWaitUntil:
+    visible: "Reserve now"
+    timeout: 15000
+- tapOn:
+    id: "discover-hero-reserve-cta"
+
+# step2-time → Continue
+- extendedWaitUntil:
+    visible: "Available times"
+    timeout: 20000
+- tapOn: "Continue"
+
+# confirm → Continue to menu
+- extendedWaitUntil:
+    visible: "Continue to menu"
+    timeout: 20000
+- tapOn: "Continue to menu"
+
+# step4-preorder: add the first menu item to the cart. The "+ "Add"
+# buttons share a testID and Maestro picks the first one by default.
+- extendedWaitUntil:
+    visible:
+      id: "preorder-add-button"
+    timeout: 20000
+- tapOn:
+    id: "preorder-add-button"
+# After tapping Add, the footer's CTA flips to either Continue to
+# Pre-Pay (postBooking) or Next (booking flow). We're in the pre-
+# booking path, so it's Next.
+- tapOn:
+    text: "^Next$|Continue to Pre-Pay"
+
+# step5-review with non-empty cart → step6-payment.
+- extendedWaitUntil:
+    visible:
+      text: "^Next$|Payment Method|Confirm Booking"
+    timeout: 20000
+- runFlow:
+    when:
+      visible:
+        text: "^Next$"
+    commands:
+      - tapOn:
+          text: "^Next$"
+
+# step6-payment: assert we reached the Stripe PaymentSheet trigger.
+- extendedWaitUntil:
+    visible:
+      text: "Confirm Booking.*|Payment Method|Pay now by card"
+    timeout: 30000
+- assertVisible:
+    text: "Confirm Booking.*"
+- assertVisible:
+    text: "Payment Method|Pay now by card|Secured by Stripe"
