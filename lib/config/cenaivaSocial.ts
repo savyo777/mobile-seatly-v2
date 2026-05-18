@@ -1,11 +1,13 @@
 import * as Linking from 'expo-linking';
 
-/** Official Cenaiva profiles — override with EXPO_PUBLIC_* URLs at build time if needed. */
+/** Official Cenaiva profiles — override with EXPO_PUBLIC_* URLs at build time if needed.
+ *  Use `||` (not `??`) so an empty `.env` entry like `EXPO_PUBLIC_INSTAGRAM_PROFILE_URL=`
+ *  still falls back to the canonical URL instead of returning '' and crashing Linking.openURL. */
 export const CENAIVA_FOLLOW_URLS = {
-  instagram: process.env.EXPO_PUBLIC_INSTAGRAM_PROFILE_URL ?? 'https://instagram.com/heycenaiva',
-  tiktok: process.env.EXPO_PUBLIC_TIKTOK_PROFILE_URL ?? 'https://www.tiktok.com/@heycenaiva',
-  youtube: process.env.EXPO_PUBLIC_YOUTUBE_PROFILE_URL ?? 'https://www.youtube.com/@heycenaiva',
-  snapchat: process.env.EXPO_PUBLIC_SNAPCHAT_PROFILE_URL ?? 'https://www.snapchat.com/add/heycenaiva',
+  instagram: process.env.EXPO_PUBLIC_INSTAGRAM_PROFILE_URL?.trim() || 'https://instagram.com/heycenaiva',
+  tiktok: process.env.EXPO_PUBLIC_TIKTOK_PROFILE_URL?.trim() || 'https://www.tiktok.com/@heycenaiva',
+  youtube: process.env.EXPO_PUBLIC_YOUTUBE_PROFILE_URL?.trim() || 'https://www.youtube.com/@heycenaiva',
+  snapchat: process.env.EXPO_PUBLIC_SNAPCHAT_PROFILE_URL?.trim() || 'https://www.snapchat.com/add/heycenaiva',
 } as const;
 
 export type CenaivaFollowPlatform = keyof typeof CENAIVA_FOLLOW_URLS;
