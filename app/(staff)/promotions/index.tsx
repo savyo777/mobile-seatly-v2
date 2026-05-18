@@ -16,6 +16,7 @@ import {
 } from '@/lib/mock/ownerApp';
 import { fetchActivePromotions, type PromotionRow } from '@/lib/promotions/getPromotions';
 import { useOwnerScope } from '@/hooks/useOwnerScope';
+import { friendlyError } from '@/lib/errors/friendlyError';
 
 const PROMO_TYPE_MAP: Record<string, PromoType> = {
   percentage: 'percent_off',
@@ -493,27 +494,34 @@ export default function PromosScreen() {
   // is the surface owners evaluate the app on, so misleading them with
   // hardcoded numbers is worse than showing an empty state.
   const [promotions, setPromotions] = useState<OwnerPromotion[]>([]);
+  const [loadError, setLoadError] = useState<string | null>(null);
+  const [reloadKey, setReloadKey] = useState(0);
   const { restaurantIds } = useOwnerScope();
   const restaurantIdsKey = restaurantIds.join('|');
 
   useEffect(() => {
     if (restaurantIds.length === 0) {
       setPromotions([]);
+      setLoadError(null);
       return;
     }
     let active = true;
+    setLoadError(null);
     void (async () => {
-      const rows = await fetchActivePromotions({ restaurantIds, includePrivate: true }).catch(
-        () => [] as PromotionRow[],
-      );
-      if (!active) return;
-      setPromotions(rows.map(mapPromotionRowToOwnerPromotion));
+      try {
+        const rows = await fetchActivePromotions({ restaurantIds, includePrivate: true });
+        if (!active) return;
+        setPromotions(rows.map(mapPromotionRowToOwnerPromotion));
+      } catch (err) {
+        if (!active) return;
+        setLoadError(friendlyError(err, "Couldn't load promotions."));
+      }
     })();
     return () => {
       active = false;
     };
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [restaurantIdsKey]);
+  }, [restaurantIdsKey, reloadKey]);
 
   // No owner-side tap handler. Clicks are a diner-only signal — they
   // count when a diner views a promo from the customer surfaces
@@ -563,7 +571,22 @@ export default function PromosScreen() {
           </Pressable>
         </View>
 
-        {list.length === 0 ? (
+        {loadError ? (
+          <View style={styles.empty}>
+            <Text style={styles.emptyText}>{loadError}</Text>
+            <Pressable
+              onPress={() => {
+                setLoadError(null);
+                setReloadKey((k) => k + 1);
+              }}
+              style={{ marginTop: spacing.md, paddingHorizontal: spacing.lg, paddingVertical: spacing.sm, borderRadius: borderRadius.full, borderWidth: 1, borderColor: c.gold }}
+              accessibilityRole="button"
+              accessibilityLabel="Retry loading promotions"
+            >
+              <Text style={{ color: c.gold, fontWeight: '600' }}>Retry</Text>
+            </Pressable>
+          </View>
+        ) : list.length === 0 ? (
           <View style={styles.empty}>
             <Text style={styles.emptyText}>No promotions here yet</Text>
           </View>
