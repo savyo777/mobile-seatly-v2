@@ -103,12 +103,29 @@ xcrun simctl privacy "$UDID" grant location com.cenaiva.app
 xcrun simctl privacy "$UDID" grant photos com.cenaiva.app
 ```
 
-## Known coverage gaps
+## Coverage gaps — manual QA only
 
-The following are explicitly NOT covered by Maestro yet and need manual QA:
+These are explicitly NOT covered by automated Maestro flows and need manual QA on a real device:
 
-- **Stripe PaymentSheet** — `booking-with-preorder.yaml` asserts the "Confirm Booking · $X.XX" trigger button + the Payment Method section, then stops. Scripting Maestro into the native iOS Stripe sheet to actually authorize a charge is brittle across SDK versions; manual QA with card `4242 4242 4242 4242 / 12/30 / 123 / 10001` is required to verify the full purchase round-trip.
-- **Real network failure modes** — iOS simulators have no clean airplane-mode toggle Maestro can drive. Network Link Conditioner exists in Developer settings but it's a UI you'd have to script. The expected coverage is "verify `friendlyError()` surfaces on offline sign-in / booking / snap / voice", which is best tested on a real device with Wi-Fi toggled off.
-- **Staff destructive write paths** — delete menu item, remove team member, role-permission toggle persist. The screens themselves are covered by `staff/team-screen.yaml` and `staff/roles-permissions-screen.yaml`, but the actual writes risk leaving the test owner locked out (or breaking other QA) if the test exits mid-run.
-- **Snap / camera / voice / Deepgram / ElevenLabs transcripts** — Maestro can tap the entry points but can't verify transcription content or captured frames.
-- **Android** — the corpus is iOS-only today. Selectors that match iOS-26 a11y label formats (`Discover, tab, 1 of 17`, leading commas, etc.) will need Android variants. Disk has been freed; the install + first-run path is documented in the team's runbook.
+- **Stripe PaymentSheet card round-trip** — `booking-with-preorder.yaml` asserts the "Confirm Booking · $X.XX" trigger button + the Payment Method section, then stops short of opening the sheet. Investigation in the last session found a hold-activation race condition that prevents the sheet from opening reliably in the test environment (when `hold.state.status !== 'active'`, `handleConfirmBooking` in `app/booking/[restaurantId]/step6-payment.tsx:281` short-circuits past the Stripe trigger). A pre-flight safety script (`scripts/maestro-stripe-preflight.sh`) is committed to refuse to run against a non-test (`pk_test_*`) key when the race is fixed. Until then: manual QA with card `4242 4242 4242 4242 / 12/30 / 123 / 10001`.
+- **Real network failure modes** — confirmed iOS-sim-infeasible. iOS simulators have no clean airplane-mode toggle Maestro can drive; Network Link Conditioner is a UI that can't be reliably scripted. The expected coverage is "verify `friendlyError()` surfaces on offline sign-in / booking", which has to be tested on a real device with Wi-Fi toggled off. Note that `auth/sign-in-wrong-password.yaml` already covers the `friendlyError()` mapping for a recoverable server error.
+- **Snap / camera / voice / Deepgram / ElevenLabs transcripts** — permanent Maestro limitation. Maestro can tap the entry points but can't verify transcription content, captured frames, or audio output. The routing into these surfaces is in scope for new flows; the *content* of the audio/transcript is not.
+- **Owner-role permission toggling** — `staff/roles-permissions-persist.yaml` deliberately only touches the *Server* role (the inactive role for the signed-in Manager/Owner account) so a crashed run can't lock the owner out. The Manager/Host tabs are skipped by design.
+- **Menu-delete-item and team-remove-member** — destructive writes are not covered because rolling them back from a flow tail is unreliable. The screens themselves are covered by `staff/team-screen.yaml` and `staff/roles-permissions-screen.yaml`.
+
+## Closed coverage gaps
+
+- **Notch / Dynamic Island clipping** — audited Mar 2026. Only `components/booking/HoldTimerBanner.tsx` was rendering behind the notch; fixed in commit `9550b5a` by adding `useSafeAreaInsets()` + `paddingTop: insets.top + 10`. Spot-checked Discover, Bookings, Profile, Notifications, staff Home, staff Business, staff Settings, staff Dashboard, and staff Roles & Permissions — all clear.
+- **Permission persistence (Server role)** — covered by `staff/roles-permissions-persist.yaml`. The flow opens with a pre-flight reset, toggles a Server permission, navigates away, returns, and resets to defaults at the end. Safe to re-run.
+
+## Android (in progress)
+
+The corpus is iOS-first. Setup notes for adding Android:
+
+- JDK 17 (Temurin or `openjdk@17` from Homebrew). Java 23 breaks the Android Gradle Plugin.
+- Android command-line tools: `brew install --cask android-commandlinetools` (no sudo). Symlinks `sdkmanager`, `avdmanager`, etc. into `/opt/homebrew/bin`.
+- SDK packages: `platform-tools`, `platforms;android-34`, `build-tools;34.0.0`, `emulator`, `system-images;android-34;google_apis;arm64-v8a` (arm64 required on Apple Silicon).
+- AVD: `avdmanager create avd -n Pixel_7_API_34 -k "system-images;android-34;google_apis;arm64-v8a" -d pixel_7`.
+- Boot: `$ANDROID_HOME/emulator/emulator -avd Pixel_7_API_34 -no-snapshot`.
+- App build: `npx expo prebuild -p android` then `npx expo run:android --port 8082` (port 8082 keeps Metro out of conflict with the iOS bundler on 8081).
+- Selectors will likely need Android variants — iOS-26 uses `Discover, tab, 1 of 17` formats with leading commas, while Android uses `Discover, Tab 1 of 5`. When divergence is unavoidable, fork into `flow-android.yaml` rather than fight a unified matcher.
