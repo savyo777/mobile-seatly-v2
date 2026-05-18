@@ -7,6 +7,7 @@ import {
   Pressable,
   RefreshControl,
   Image,
+  Platform,
 } from 'react-native';
 import { useRouter, useFocusEffect, Href } from 'expo-router';
 import { useTranslation } from 'react-i18next';
@@ -521,20 +522,25 @@ export default function DiscoverScreen() {
             accessibilityLabel={t('common.appName')}
           />
           <View style={styles.headerRight}>
-            <View style={styles.viewToggle}>
-              <Pressable
-                onPress={() => setViewMode('list')}
-                style={[styles.toggleBtn, viewMode === 'list' && styles.toggleBtnActive]}
-              >
-                <Text style={[styles.toggleLabel, viewMode === 'list' && styles.toggleLabelActive]}>List</Text>
-              </Pressable>
-              <Pressable
-                onPress={() => setViewMode('map')}
-                style={[styles.toggleBtn, viewMode === 'map' && styles.toggleBtnActive]}
-              >
-                <Text style={[styles.toggleLabel, viewMode === 'map' && styles.toggleLabelActive]}>Map</Text>
-              </Pressable>
-            </View>
+            {/* Map view requires a Google Maps mobile API key on Android.
+                Hide the toggle until that key is provisioned; iOS keeps Apple
+                Maps. When the key lands, drop the Platform.OS gate. */}
+            {Platform.OS === 'ios' ? (
+              <View style={styles.viewToggle}>
+                <Pressable
+                  onPress={() => setViewMode('list')}
+                  style={[styles.toggleBtn, viewMode === 'list' && styles.toggleBtnActive]}
+                >
+                  <Text style={[styles.toggleLabel, viewMode === 'list' && styles.toggleLabelActive]}>List</Text>
+                </Pressable>
+                <Pressable
+                  onPress={() => setViewMode('map')}
+                  style={[styles.toggleBtn, viewMode === 'map' && styles.toggleBtnActive]}
+                >
+                  <Text style={[styles.toggleLabel, viewMode === 'map' && styles.toggleLabelActive]}>Map</Text>
+                </Pressable>
+              </View>
+            ) : null}
             <Pressable
               onPress={() => {
                 router.push('/(customer)/notifications' as Href);
