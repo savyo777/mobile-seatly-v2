@@ -16,7 +16,7 @@ type ThemeContextValue = {
 const STORAGE_KEY = key('theme');
 
 const ThemeContext = createContext<ThemeContextValue>({
-  mode: 'system',
+  mode: 'dark',
   effective: 'dark',
   colors: darkColors,
   setMode: () => {},
@@ -29,7 +29,10 @@ function resolveEffective(mode: ThemeMode, system: ColorSchemeName): 'light' | '
 }
 
 export function ThemeProvider({ children }: { children: React.ReactNode }) {
-  const [mode, setModeState] = useState<ThemeMode>('system');
+  // Cenaiva ships dark-first. Until the user explicitly picks light or
+  // system in staff Settings / customer Profile (which persists via
+  // AsyncStorage), the app renders dark regardless of OS color scheme.
+  const [mode, setModeState] = useState<ThemeMode>('dark');
   const [systemScheme, setSystemScheme] = useState<ColorSchemeName>(
     Appearance.getColorScheme() ?? 'dark',
   );
