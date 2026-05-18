@@ -22,6 +22,7 @@ import {
   shareToInstagramStory,
   shareToYouTube,
   isNativeSocialShareAvailable,
+  openSystemShareSheet,
   type SocialShareDestination,
 } from '@/lib/sharing/nativeSocialShare';
 import { openPersonalSnapchatApp, openPersonalTikTokApp } from '@/lib/sharing/personalSocialApp';
@@ -166,6 +167,32 @@ const useStyles = createStyles((c) => ({
     fontWeight: '600',
     textAlign: 'center',
   },
+  systemShareButton: {
+    width: '100%',
+    minHeight: 46,
+    borderRadius: borderRadius.md,
+    borderWidth: 1,
+    borderColor: c.border,
+    backgroundColor: c.bgBase,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: spacing.sm,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
+  },
+  systemShareButtonPressed: {
+    opacity: 0.86,
+  },
+  systemShareButtonDisabled: {
+    opacity: 0.62,
+  },
+  systemShareButtonText: {
+    ...typography.bodySmall,
+    color: c.textPrimary,
+    fontWeight: '700',
+    textAlign: 'center',
+  },
   statusText: {
     ...typography.bodySmall,
     color: c.textSecondary,
@@ -188,6 +215,7 @@ export function SnapShareSheet({
   const storyFrameRef = useRef<View | null>(null);
   const autoSaveAttemptedRef = useRef(false);
   const [pendingDestination, setPendingDestination] = useState<SocialShareDestination | null>(null);
+  const [isSystemSharePending, setIsSystemSharePending] = useState(false);
   const [localMediaUri, setLocalMediaUri] = useState<string | null>(null);
   const [localMediaIncludesStoryFilter, setLocalMediaIncludesStoryFilter] = useState(false);
   const [prepareError, setPrepareError] = useState<string | null>(null);
@@ -440,6 +468,48 @@ export function SnapShareSheet({
     }
   };
 
+  const handleSystemShare = useCallback(async () => {
+    if (isSystemSharePending || pendingDestination) return;
+
+    setIsSystemSharePending(true);
+    try {
+      let uri = localMediaUri;
+      if (!uri) {
+        setIsPreparingMedia(true);
+        setPrepareError(null);
+        try {
+          uri = await prepareSnapMedia();
+        } catch (error) {
+          const message = friendlyError(error, 'This image could not be prepared for sharing.');
+          setPrepareError(message);
+          Alert.alert('Share unavailable', message);
+          return;
+        } finally {
+          setIsPreparingMedia(false);
+        }
+      }
+
+      if (!uri) return;
+
+      await openSystemShareSheet(uri, resolvedMediaType, 'Share your Cenaiva snap');
+    } catch (error) {
+      // expo-sharing throws when the user dismisses on some Android OEMs;
+      // that's not a real error, so suppress generic-cancel messages.
+      const message = friendlyError(error, 'The media could not be shared.');
+      if (!/cancel|dismiss/i.test(message)) {
+        Alert.alert('Share unavailable', message);
+      }
+    } finally {
+      setIsSystemSharePending(false);
+    }
+  }, [
+    isSystemSharePending,
+    localMediaUri,
+    pendingDestination,
+    prepareSnapMedia,
+    resolvedMediaType,
+  ]);
+
   const showPrepareStatus =
     isPreparingMedia ||
     !!cameraRollError ||
@@ -571,6 +641,26 @@ export function SnapShareSheet({
           );
         })}
       </View>
+
+      <Pressable
+        onPress={() => void handleSystemShare()}
+        disabled={isSystemSharePending || pendingDestination !== null || isPreparingMedia}
+        style={({ pressed }) => [
+          styles.systemShareButton,
+          pressed && styles.systemShareButtonPressed,
+          (isSystemSharePending || pendingDestination !== null || isPreparingMedia) &&
+            styles.systemShareButtonDisabled,
+        ]}
+        accessibilityRole="button"
+        accessibilityLabel="Share to other apps on this device"
+      >
+        {isSystemSharePending ? (
+          <ActivityIndicator size="small" color={c.textPrimary} />
+        ) : (
+          <Ionicons name="share-outline" size={18} color={c.textPrimary} />
+        )}
+        <Text style={styles.systemShareButtonText}>Share to other apps</Text>
+      </Pressable>
     </View>
   );
 }

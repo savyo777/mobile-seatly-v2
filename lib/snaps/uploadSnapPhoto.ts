@@ -1,5 +1,7 @@
 import * as FileSystem from 'expo-file-system/legacy';
+import { createClient } from '@supabase/supabase-js';
 import { getSupabase } from '@/lib/supabase/client';
+import { getSupabaseEnv } from '@/lib/supabase/env';
 import { VISIT_PHOTOS_BUCKET, visitPhotoObjectPath } from '@/lib/storage/buckets';
 
 /**
@@ -96,7 +98,28 @@ export async function uploadSnapPhoto(args: {
   });
   const bytes = base64ToUint8Array(base64);
 
-  const { error: uploadError } = await supabase.storage
+  // CRITICAL: build a dedicated upload client with an explicit `accessToken`
+  // callback. Without this, supabase-js's internal `_getAccessToken` reads
+  // `auth.getSession()` again at fetch time and — when the session-loaded
+  // state is stale or out-of-sync — falls back to `this.supabaseKey` (the
+  // `sb_publishable_*` value) as the Authorization bearer. The server can't
+  // parse the publishable key as a user JWT, so `auth.uid()` is NULL and
+  // the visit_photos_storage_auth_insert RLS check fails with "new row
+  // violates row-level security policy".
+  //
+  // Binding `accessToken: async () => session.access_token` short-circuits
+  // the SDK's session re-read entirely — the upload request is guaranteed
+  // to send the user's JWT in Authorization, and auth.uid() resolves to
+  // the user's id on the server. Matches the RLS policy's first-folder
+  // path segment we computed above.
+  const { url, anonKey } = getSupabaseEnv();
+  const userAccessToken = session.access_token;
+  const uploadClient = createClient(url, anonKey, {
+    accessToken: async () => userAccessToken,
+    auth: { persistSession: false, autoRefreshToken: false, detectSessionInUrl: false },
+  });
+
+  const { error: uploadError } = await uploadClient.storage
     .from(VISIT_PHOTOS_BUCKET)
     .upload(path, bytes, {
       upsert: true,
