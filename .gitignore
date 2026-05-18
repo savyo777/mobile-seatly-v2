@@ -41,6 +41,11 @@ yarn-error.*
 /ios
 /android
 
+# Local-module Android Gradle build output (created by `npx expo run:android`)
+modules/*/android/build/
+modules/*/android/.gradle/
+modules/*/android/.cxx/
+
 # Supabase CLI local link/cache (machine-specific)
 supabase/.temp/
 .claude/

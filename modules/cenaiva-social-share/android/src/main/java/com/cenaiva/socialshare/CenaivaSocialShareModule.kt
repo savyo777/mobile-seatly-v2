@@ -74,10 +74,14 @@ class CenaivaSocialShareModule : Module() {
     }
 
     AsyncFunction("shareToSnapchat") { _: String, _: String ->
-      throw SocialShareException(
+      // Stabilize the inferred return type as Unit so AsyncFunction's
+      // reified TReturn isn't Nothing. Without this, Kotlin 2.1 fails
+      // with "Cannot use 'Nothing' as reified type parameter."
+      val result: Unit = throw SocialShareException(
         "SNAP_KIT_CONFIGURATION_REQUIRED",
         "Snapchat Creative Kit requires Snap app setup before direct Story sharing can be used."
       )
+      result
     }
 
     AsyncFunction("shareToYouTube") { videoUri: String ->

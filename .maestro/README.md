@@ -118,14 +118,38 @@ These are explicitly NOT covered by automated Maestro flows and need manual QA o
 - **Notch / Dynamic Island clipping** — audited Mar 2026. Only `components/booking/HoldTimerBanner.tsx` was rendering behind the notch; fixed in commit `9550b5a` by adding `useSafeAreaInsets()` + `paddingTop: insets.top + 10`. Spot-checked Discover, Bookings, Profile, Notifications, staff Home, staff Business, staff Settings, staff Dashboard, and staff Roles & Permissions — all clear.
 - **Permission persistence (Server role)** — covered by `staff/roles-permissions-persist.yaml`. The flow opens with a pre-flight reset, toggles a Server permission, navigates away, returns, and resets to defaults at the end. Safe to re-run.
 
-## Android (in progress)
+## Android
 
-The corpus is iOS-first. Setup notes for adding Android:
+The corpus is iOS-first, but `smoke.yaml` and the shared `_subflows/boot-to-app.yaml` are cross-platform — confirmed running against a Pixel 7 API 34 emulator on Apple Silicon. Run with:
 
-- JDK 17 (Temurin or `openjdk@17` from Homebrew). Java 23 breaks the Android Gradle Plugin.
-- Android command-line tools: `brew install --cask android-commandlinetools` (no sudo). Symlinks `sdkmanager`, `avdmanager`, etc. into `/opt/homebrew/bin`.
+```bash
+~/.maestro/bin/maestro test .maestro/smoke.yaml --platform android
+```
+
+### Toolchain setup
+
+- JDK 17. `brew install openjdk@17` (no-sudo formula). Java 23 breaks the Android Gradle Plugin — verified.
+- Command-line tools: `brew install --cask android-commandlinetools`. Symlinks `sdkmanager`, `avdmanager`, etc. into `/opt/homebrew/bin`. `ANDROID_HOME=/opt/homebrew/share/android-commandlinetools`.
 - SDK packages: `platform-tools`, `platforms;android-34`, `build-tools;34.0.0`, `emulator`, `system-images;android-34;google_apis;arm64-v8a` (arm64 required on Apple Silicon).
+- The Gradle build also auto-installs NDK 27 and platform/build-tools 36 — expect ~5 GiB extra disk during the first build.
 - AVD: `avdmanager create avd -n Pixel_7_API_34 -k "system-images;android-34;google_apis;arm64-v8a" -d pixel_7`.
 - Boot: `$ANDROID_HOME/emulator/emulator -avd Pixel_7_API_34 -no-snapshot`.
-- App build: `npx expo prebuild -p android` then `npx expo run:android --port 8082` (port 8082 keeps Metro out of conflict with the iOS bundler on 8081).
-- Selectors will likely need Android variants — iOS-26 uses `Discover, tab, 1 of 17` formats with leading commas, while Android uses `Discover, Tab 1 of 5`. When divergence is unavoidable, fork into `flow-android.yaml` rather than fight a unified matcher.
+
+### Building the app
+
+`npx expo prebuild -p android` then `npx expo run:android --port 8082`. Port 8082 keeps Metro out of conflict with the iOS bundler on 8081. First build takes ~40 min on a clean machine; subsequent rebuilds are ~7 min with `--build-cache` warm. Make sure Metro is started with `ANDROID_HOME` in its environment — otherwise the dev-client can't shell out to `adb`.
+
+### Confirmed selector divergences (iOS ↔ Android)
+
+| Surface | iOS (a11y label) | Android (visible text) | Strategy |
+|---|---|---|---|
+| Dev launcher header | `DEVELOPMENT SERVERS` | `DEVELOPMENT SERVERS` | Same — works after adding a 20s mount wait. RN starts up slower than Maestro's first poll. |
+| Dev launcher row tap | `Cenaiva` (index 1) | `http://10.0.2.2:80<port>` | Two optional taps in sequence; whichever matches wins. |
+| Cookie consent | `Accept all cookies` | `Accept all` | Regex `Accept all( cookies)?` matches both. |
+| Onboarding/tabs | `Discover, tab, 1 of 17` (leading comma) | TBD when more flows run | Document as we hit them; fork into `<flow>-android.yaml` only if a unified regex stops being viable. |
+
+### Known Android-only gotchas
+
+- The local Kotlin module `cenaiva-social-share` had a Kotlin 2.1 reified-type bug: a `throw`-only `AsyncFunction` body inferred a return type of `Nothing`, which the reified `TReturn` can't accept. Fixed by introducing an explicit `val result: Unit = throw …` line. iOS never compiled the Kotlin file so this surfaced only on the first Android build.
+- The first Metro bundle compile takes 60–90s. The dev-client can show an ANR ("Cenaiva isn't responding") during that window — tap **Wait**, never **Close app**. Subsequent bundles are <5s.
+- `npx expo prebuild -p android` is destructive (regenerates `android/`). `.gitignore` already excludes `/android`, so don't worry about it leaking into commits. Local-module build output (`modules/*/android/build/`) is also gitignored as of this commit.

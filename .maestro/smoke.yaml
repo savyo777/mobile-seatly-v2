@@ -3,55 +3,10 @@
 # Run before every Phase 4 batch as a "is the app fundamentally
 # alive" gate.
 #
-# We deliberately stop after accepting cookies. Onboarding + Welcome
-# transitions interact with the Expo dev-client overlay in non-
-# deterministic ways on iOS-26 dev builds; full-app flows live under
-# .maestro/{auth,customer,staff}/ and run after the user has the dev
-# menu walkthrough out of the way.
+# The dev-launcher + onboarding + cookie-sheet machinery is shared
+# with every authenticated flow; it lives in _subflows/boot-to-app.yaml
+# so iOS-26 + Android selector quirks get fixed in exactly one place.
 
 appId: com.cenaiva.app
 ---
-- launchApp:
-    clearState: true
-# Dev-client landing: pick the cached Cenaiva server.
-- runFlow:
-    when:
-      visible: "Development servers"
-    commands:
-      - tapOn:
-          text: "Cenaiva"
-          index: 1
-      - extendedWaitUntil:
-          notVisible: "Development servers"
-          timeout: 15000
-# Expo's first-run developer-menu walkthrough overlay.
-- extendedWaitUntil:
-    visible: "Continue"
-    timeout: 60000
-    optional: true
-- runFlow:
-    when:
-      visible: "Continue"
-    commands:
-      - tapOn: "Continue"
-# After the walkthrough the dev menu itself stays open on iOS-26.
-- runFlow:
-    when:
-      visible: "Open DevTools"
-    commands:
-      - tapOn:
-          text: "Close"
-          optional: true
-- extendedWaitUntil:
-    notVisible: "Open DevTools"
-    timeout: 10000
-    optional: true
-# Cookie-consent sheet on first launch. iOS exposes the longer
-# a11y label "Accept all cookies", not the visible text "Accept all".
-- extendedWaitUntil:
-    visible: "Accept all cookies"
-    timeout: 30000
-- tapOn: "Accept all cookies"
-- extendedWaitUntil:
-    notVisible: "Accept all cookies"
-    timeout: 10000
+- runFlow: _subflows/boot-to-app.yaml
