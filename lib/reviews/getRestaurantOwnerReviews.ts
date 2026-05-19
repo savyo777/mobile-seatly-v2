@@ -77,16 +77,16 @@ type PhotoRow = {
 
 const FIVE_MIN_MS = 5 * 60 * 1000;
 
+// Returns the caller-supplied fallback string, never the raw Supabase
+// error fields (message / details / hint / code). The previous version
+// concatenated those with `·`, which leaked SQL column names, RLS
+// policy names, and SQLSTATE codes into user-facing toasts whenever a
+// caller forgot to wrap the throw with `friendlyError`. Downstream
+// callers (e.g. app/(staff)/reviews.tsx:75) already route the thrown
+// Error through `friendlyError(err, ...)`, so user copy stays
+// identical — only the bypass path becomes safe.
 function supabaseErrorMessage(err: unknown, fallback: string): string {
-  if (!err) return fallback;
-  if (typeof err === 'string' && err.trim()) return err;
-  if (err && typeof err === 'object') {
-    const e = err as { message?: unknown; details?: unknown; hint?: unknown; code?: unknown };
-    const parts = [e.message, e.details, e.hint, e.code]
-      .filter((v): v is string => typeof v === 'string' && v.trim().length > 0);
-    if (parts.length) return parts.join(' · ');
-  }
-  if (err instanceof Error) return err.message;
+  if (__DEV__ && err) console.warn('[reviews] supabase error (suppressed in UI):', err);
   return fallback;
 }
 

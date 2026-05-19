@@ -135,7 +135,12 @@ function friendlyVoiceError(cause: string | null) {
     base = 'Voice input could not reach speech service. Try again or type your request.';
   }
 
-  if (code && process.env.NODE_ENV !== 'production') return `${base} (${code})`;
+  // Never append the internal code to the user-visible string — even in dev.
+  // The NODE_ENV gate that used to live here leaked codes like
+  // "(deepgram-token-unavailable)" into every dev and EAS preview build,
+  // which is exactly the leakage the friendlyError contract is meant to
+  // prevent. Devs still get the code via the React Native log stream.
+  if (__DEV__ && code) console.warn('[Cenaiva] voice error code:', code);
   return base;
 }
 

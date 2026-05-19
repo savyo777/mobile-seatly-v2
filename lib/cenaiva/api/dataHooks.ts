@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { loadRestaurantsForDiscover } from '@/lib/data/restaurantCatalog';
 import { isDemoModeEnabled } from '@/lib/config/demoMode';
 import { getSupabase } from '@/lib/supabase/client';
+import { friendlyError } from '@/lib/errors/friendlyError';
 import { mockRestaurants, type Restaurant } from '@/lib/mock/restaurants';
 import {
   menuCategories as mockMenuCategories,
@@ -92,7 +93,7 @@ export function useCenaivaRestaurants() {
       const { list } = await loadRestaurantsForDiscover();
       setRestaurants(list);
     } catch (err) {
-      setError(String(err));
+      setError(friendlyError(err, "Couldn't load restaurants. Pull to retry."));
       setRestaurants(isDemoModeEnabled() ? mockRestaurants : []);
     } finally {
       setHasLoaded(true);
@@ -149,7 +150,7 @@ export function usePublicMenuCategories(restaurantId: string | null | undefined)
         }
       } catch (err) {
         if (!cancelled) {
-          setError(String(err));
+          setError(friendlyError(err, "Couldn't load the menu categories."));
           setCategories(isDemoModeEnabled() ? fallback : []);
         }
       } finally {
@@ -222,7 +223,7 @@ export function usePublicMenuItems(restaurantId: string | null | undefined) {
         }
       } catch (err) {
         if (!cancelled) {
-          setError(String(err));
+          setError(friendlyError(err, "Couldn't load the menu."));
           setItems(isDemoModeEnabled() ? fallback : []);
         }
       } finally {

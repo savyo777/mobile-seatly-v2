@@ -468,7 +468,7 @@ export default function ActivityScreen() {
           onPress: async () => {
             const { ok, reason } = await cancelReservationByIdAsync(item.id);
             if (!ok) {
-              Alert.alert('Could not cancel', reason ?? 'Please try again.');
+              Alert.alert('Could not cancel', friendlyError(reason, 'Please try again.'));
               return;
             }
             seenReservationsVersionRef.current = getMockReservationsVersion();

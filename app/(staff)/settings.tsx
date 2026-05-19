@@ -579,7 +579,7 @@ function SettingsSection({
               } catch (e: any) {
                 Alert.alert(
                   'Sign out failed',
-                  e?.message ?? 'Could not sign out all devices. Please try again.',
+                  friendlyError(e, 'Could not sign out all devices. Please try again.'),
                 );
               }
             },
@@ -615,7 +615,7 @@ function SettingsSection({
               } catch (e: any) {
                 Alert.alert(
                   'Delete failed',
-                  e?.message ?? 'Could not delete your account. Please try again.',
+                  friendlyError(e, 'Could not delete your account. Please try again.'),
                 );
               }
             },
@@ -748,9 +748,10 @@ export default function OwnerSettingsScreen() {
       }
 
       if (failed.length > 0) {
+        const detail = friendlyError(failed[0]?.error, 'Please try again.');
         Alert.alert(
           'Some restaurants were not removed',
-          `${removed.length} removed, ${failed.length} failed. ${failed[0]?.error ?? 'Please try again.'}`,
+          `${removed.length} removed, ${failed.length} failed. ${detail}`,
         );
         return;
       }

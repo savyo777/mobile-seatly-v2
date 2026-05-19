@@ -17,6 +17,7 @@ import {
 } from '@/lib/booking/holdApi';
 import { key } from '@/lib/storage/keys';
 import { isHoldsEnabled } from '@/lib/config/holdsFeature';
+import { friendlyError } from '@/lib/errors/friendlyError';
 
 export type HoldVisualState = 'calm' | 'warning' | 'urgent';
 
@@ -265,7 +266,7 @@ export function useReservationHold(args: UseReservationHoldArgs): UseReservation
       return { holdId: resp.hold_id, expiresAt: resp.expires_at };
     } catch (error) {
       const reason = error instanceof HoldApiError ? error.reason : 'unknown';
-      const message = error instanceof Error ? error.message : 'Could not hold your table.';
+      const message = friendlyError(error, 'Could not hold your table.');
       setState({ status: 'error', message, reason });
       return null;
     } finally {
@@ -455,7 +456,7 @@ export function useReservationHold(args: UseReservationHoldArgs): UseReservation
         return resp;
       } catch (error) {
         const reason = error instanceof HoldApiError ? error.reason : 'unknown';
-        const message = error instanceof Error ? error.message : 'Could not confirm your reservation.';
+        const message = friendlyError(error, 'Could not confirm your reservation.');
         if (reason === 'hold_expired') {
           setState({ status: 'expired', holdId: current.holdId });
         } else {

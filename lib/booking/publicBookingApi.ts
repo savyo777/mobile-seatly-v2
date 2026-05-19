@@ -241,19 +241,29 @@ function isJunkErrorString(value: string): boolean {
   );
 }
 
+// Backend-vocabulary regex. Any candidate string that matches this is
+// treated as unsafe and replaced with the caller's fallback. Catches the
+// most common Postgrest / Supabase Storage / Postgres internals that
+// shouldn't reach user UI.
+const BACKEND_LEAK_PATTERN =
+  /Postgrest|PGRST\d+|JWT|RLS|row.level|relation "[^"]+" does not exist|column "[^"]+" of relation|violates [a-z_]+ constraint|new row violates|duplicate key value/i;
+
 function coerceErrorMessage(value: unknown, fallback: string): string {
-  if (typeof value === 'string' && !isJunkErrorString(value)) {
+  // Returns the caller-supplied fallback unless the value is a SAFE
+  // user-facing string. Previously this would happily return any
+  // non-junk string OR any `message`/`detail`/`description` field from
+  // a backend error object — that path leaked Postgrest codes and RLS
+  // policy names into the UI whenever a caller bypassed `friendlyError`.
+  // Now we whitelist: strings only, must not match BACKEND_LEAK_PATTERN.
+  // Object inputs always fall through to the fallback (they're shaped
+  // like backend error responses, never user-safe copy).
+  const safeString = (s: string) =>
+    !isJunkErrorString(s) && !BACKEND_LEAK_PATTERN.test(s);
+
+  if (typeof value === 'string' && safeString(value)) {
     return value.trim();
   }
-  if (value && typeof value === 'object') {
-    const record = value as Record<string, unknown>;
-    for (const key of ['message', 'error', 'detail', 'description'] as const) {
-      const candidate = record[key];
-      if (typeof candidate === 'string' && !isJunkErrorString(candidate)) {
-        return candidate.trim();
-      }
-    }
-  }
+  if (__DEV__ && value) console.warn('[booking] coerced error (suppressed in UI):', value);
   return fallback;
 }
 

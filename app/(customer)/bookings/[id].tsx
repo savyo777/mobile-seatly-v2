@@ -18,6 +18,7 @@ const mockReservations: typeof DEMO_RESERVATIONS = isDemoModeEnabled() ? DEMO_RE
 const mockOrders: typeof DEMO_ORDERS = isDemoModeEnabled() ? DEMO_ORDERS : [];
 import { formatCurrency } from '@/lib/utils/formatCurrency';
 import { useColors, createStyles, spacing, borderRadius, typography } from '@/lib/theme';
+import { friendlyError } from '@/lib/errors/friendlyError';
 
 function reservationBadgeVariant(
   status: Reservation['status'],
@@ -361,7 +362,7 @@ export default function BookingDetailScreen() {
             if (result.ok) {
               setCancelledLocally(true);
             } else {
-              Alert.alert(t('common.error'), result.reason ?? t('common.error'));
+              Alert.alert(t('common.error'), friendlyError(result.reason, t('common.error')));
             }
           },
         },
