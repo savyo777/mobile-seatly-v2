@@ -9,6 +9,7 @@ import {
   getStoredRestaurantPaymentCards,
   type RestaurantPaymentCard,
 } from '@/lib/storage/restaurantPaymentMethod';
+import { OWNER_REFERRAL_BONUS_DAYS } from '@/lib/owner/referralPolicy';
 
 const PLAN = {
   name: 'Cenaiva Pro',
@@ -275,6 +276,38 @@ const useStyles = createStyles((c) => ({
     lineHeight: 18,
     flex: 1,
   },
+
+  referCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.md,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.md,
+    borderRadius: borderRadius.xl,
+    borderWidth: 1,
+    borderColor: 'rgba(201, 168, 76, 0.4)',
+    backgroundColor: c.bgSurface,
+    marginBottom: spacing.lg,
+  },
+  referIcon: {
+    width: 36,
+    height: 36,
+    borderRadius: 10,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: 'rgba(201, 168, 76, 0.12)',
+  },
+  referTitle: {
+    ...typography.body,
+    color: c.textPrimary,
+    fontWeight: '700',
+  },
+  referMeta: {
+    ...typography.bodySmall,
+    color: c.textMuted,
+    lineHeight: 16,
+    marginTop: 1,
+  },
 }));
 
 export default function SubscriptionPlanScreen() {
@@ -378,6 +411,24 @@ export default function SubscriptionPlanScreen() {
             : `Access ends on ${NEXT_BILL_DATE}`}
         </Text>
       </View>
+
+      <Pressable
+        onPress={() => router.push('/(staff)/refer-earn' as never)}
+        style={({ pressed }) => [styles.referCard, pressed && { opacity: 0.85 }]}
+        accessibilityRole="button"
+        accessibilityLabel="Refer and earn"
+      >
+        <View style={styles.referIcon}>
+          <Ionicons name="gift-outline" size={18} color={c.gold} />
+        </View>
+        <View style={{ flex: 1 }}>
+          <Text style={styles.referTitle}>Refer a restaurant — get 2 months free</Text>
+          <Text style={styles.referMeta}>
+            We push your next charge {OWNER_REFERRAL_BONUS_DAYS} days when a restaurant you refer signs up.
+          </Text>
+        </View>
+        <Ionicons name="chevron-forward" size={18} color={c.textMuted} />
+      </Pressable>
 
       <Text style={styles.sectionLabel}>BILLING</Text>
       <View style={styles.card}>

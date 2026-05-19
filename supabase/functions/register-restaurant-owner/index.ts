@@ -13,6 +13,8 @@ import {
   asText as validatedText,
   normalizePhoneToE164 as validatedPhone,
 } from '../_shared/input-validation.ts';
+import { isValidOwnerReferralCode } from '../_shared/referral-policy.ts';
+import { tryGrantReferralCredit } from '../_shared/grant-referral-credit.ts';
 
 type RegisterPayload = {
   action?: 'init_payment_sheet' | 'preview_payment_method' | 'finalize_registration' | 'register_no_billing';
@@ -21,6 +23,7 @@ type RegisterPayload = {
   owner_phone: string;
   payment_method_id?: string;
   setup_intent_id?: string;
+  referred_by_code?: string;
 };
 
 const supabaseUrl = Deno.env.get('SUPABASE_URL') ?? '';
@@ -90,6 +93,9 @@ Deno.serve(async (req) => {
         ? actionRaw
         : 'finalize_registration'
     ) as RegisterPayload['action'];
+    const referredByCodeRaw = validatedText(rawPayload.referred_by_code, 'referred_by_code', { maxLength: 32 });
+    const referredByCode = isValidOwnerReferralCode(referredByCodeRaw) ? referredByCodeRaw : undefined;
+
     const payload: RegisterPayload = {
       action,
       business_name: validatedText(rawPayload.business_name, 'business_name', { maxLength: 120 }) ?? '',
@@ -97,6 +103,7 @@ Deno.serve(async (req) => {
       owner_phone: rawPayload.owner_phone == null ? '' : validatedPhone(rawPayload.owner_phone, 'owner_phone') ?? '',
       payment_method_id: validatedText(rawPayload.payment_method_id, 'payment_method_id', { maxLength: 120 }) ?? undefined,
       setup_intent_id: validatedText(rawPayload.setup_intent_id, 'setup_intent_id', { maxLength: 120 }) ?? undefined,
+      referred_by_code: referredByCode,
     };
 
     if (action === 'preview_payment_method') {
@@ -144,11 +151,27 @@ Deno.serve(async (req) => {
             has_bar: false,
             is_active: true,
             trial_ends_at: trialEndsAt,
+            ...(payload.referred_by_code ? { referred_by_code: payload.referred_by_code } : {}),
           })
           .select('id')
           .single();
         if (insertError) throw insertError;
         restaurantId = inserted.id;
+
+        // Referral credit grant — best-effort, never blocks signup.
+        if (payload.referred_by_code) {
+          const result = await tryGrantReferralCredit(adminClient, {
+            referredRestaurantId: restaurantId,
+            referredByCode: payload.referred_by_code,
+          });
+          if (!result.granted) {
+            console.warn('register-restaurant-owner: referral grant skipped', {
+              reason: result.reason,
+              restaurantId,
+              code: payload.referred_by_code,
+            });
+          }
+        }
       }
 
       await adminClient.from('user_profiles').upsert(
@@ -293,10 +316,26 @@ Deno.serve(async (req) => {
         billing_card_exp_month: paymentMethod?.card?.exp_month ?? null,
         billing_card_exp_year: paymentMethod?.card?.exp_year ?? null,
         trial_ends_at: trialEndsAt,
+        ...(payload.referred_by_code ? { referred_by_code: payload.referred_by_code } : {}),
       })
       .select('id')
       .single();
     if (insertError) throw insertError;
+
+    // Referral credit grant — best-effort, never blocks registration.
+    if (payload.referred_by_code) {
+      const result = await tryGrantReferralCredit(adminClient, {
+        referredRestaurantId: inserted.id,
+        referredByCode: payload.referred_by_code,
+      });
+      if (!result.granted) {
+        console.warn('register-restaurant-owner: referral grant skipped', {
+          reason: result.reason,
+          restaurantId: inserted.id,
+          code: payload.referred_by_code,
+        });
+      }
+    }
 
     await adminClient.from('user_profiles').upsert(
       {

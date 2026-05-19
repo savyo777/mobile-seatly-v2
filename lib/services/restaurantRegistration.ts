@@ -1,10 +1,12 @@
 import { getSupabase } from '@/lib/supabase/client';
 import { normalizePhoneToE164 } from '@/lib/validation/phone';
+import { isValidOwnerReferralCode } from '@/lib/owner/referralPolicy';
 
 export type RestaurantRegistrationInput = {
   businessName: string;
   address: string;
   ownerPhone: string;
+  referredByCode?: string;
 };
 
 export type RestaurantRegistrationResult = {
@@ -48,10 +50,12 @@ export function normalizePhoneWithCountryCode(value: string): string {
 }
 
 function sanitizeRegistrationInput(input: RestaurantRegistrationInput) {
+  const code = input.referredByCode?.trim() ?? '';
   return {
     business_name: input.businessName.trim(),
     address: input.address.trim(),
     owner_phone: normalizePhoneWithCountryCode(input.ownerPhone),
+    ...(isValidOwnerReferralCode(code) ? { referred_by_code: code } : {}),
   };
 }
 

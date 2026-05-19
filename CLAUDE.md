@@ -92,6 +92,7 @@ When you see a literal that looks like a duplicate, check first whether a centra
 | Staff roles | `lib/owner/staffRoles.ts` |
 | Promotion types | `lib/owner/promotionTypes.ts` |
 | Owner trial policy | `lib/owner/trialPolicy.ts` |
+| Owner referral policy (code format, +60 days bonus, deep-link) | `lib/owner/referralPolicy.ts` (mirrored server-side in `supabase/functions/_shared/referral-policy.ts`) |
 | KDS thresholds | `lib/owner/kdsThresholds.ts` |
 | Price-tier options | `lib/restaurants/priceTiers.ts` |
 | Preference catalogs (cuisines, dietary, vibes) | `lib/constants/preferenceCatalog.ts` |

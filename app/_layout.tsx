@@ -50,6 +50,13 @@ import {
   getRecoveryTokenHashFromUrl,
   getRecoveryTokensFromUrl,
 } from '@/lib/auth/recoveryLinks';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import {
+  OWNER_REFERRAL_DEEP_LINK_PATH,
+  OWNER_REFERRAL_PENDING_STORAGE_KEY,
+  OWNER_REFERRAL_QUERY_PARAM,
+  isValidOwnerReferralCode,
+} from '@/lib/owner/referralPolicy';
 
 enableScreens(true);
 enableFreeze(true);
@@ -144,6 +151,62 @@ function RecoveryLinkHandler() {
   return null;
 }
 
+function extractOwnerReferralCode(url: string): string | null {
+  try {
+    const parsed = Linking.parse(url);
+    // Linking.parse strips the scheme; check both `path` and `hostname`
+    // because deep-link parsing on iOS/Android can put the segment in
+    // either spot depending on how the URL was opened.
+    const segment = (parsed.path || parsed.hostname || '').replace(/^\/+/, '').toLowerCase();
+    if (segment !== OWNER_REFERRAL_DEEP_LINK_PATH) return null;
+    const raw = parsed.queryParams?.[OWNER_REFERRAL_QUERY_PARAM];
+    const candidate = Array.isArray(raw) ? raw[0] : raw;
+    if (!candidate) return null;
+    const normalized = String(candidate).trim().toUpperCase();
+    return isValidOwnerReferralCode(normalized) ? normalized : null;
+  } catch {
+    return null;
+  }
+}
+
+function OwnerReferralLinkHandler() {
+  useEffect(() => {
+    let isMounted = true;
+
+    const handleUrl = async (url: string) => {
+      const code = extractOwnerReferralCode(url);
+      if (!code) return;
+      try {
+        await AsyncStorage.setItem(
+          OWNER_REFERRAL_PENDING_STORAGE_KEY,
+          JSON.stringify({ code, capturedAt: new Date().toISOString() }),
+        );
+      } catch {
+        // Storage failure is non-fatal; the referral just won't be
+        // remembered across this session.
+      }
+      if (!isMounted) return;
+    };
+
+    Linking.getInitialURL()
+      .then((initialUrl) => {
+        if (initialUrl) void handleUrl(initialUrl);
+      })
+      .catch(() => undefined);
+
+    const sub = Linking.addEventListener('url', ({ url }) => {
+      void handleUrl(url);
+    });
+
+    return () => {
+      isMounted = false;
+      sub.remove();
+    };
+  }, []);
+
+  return null;
+}
+
 function ThemedRootShell() {
   const c = useColors();
   const router = useRouter();
@@ -177,6 +240,7 @@ function ThemedRootShell() {
   return (
     <>
       <RecoveryLinkHandler />
+      <OwnerReferralLinkHandler />
       <StatusBar style="auto" backgroundColor={c.bgBase} />
       <AppErrorBoundary resetKey={pathname} onGoHome={handleGoHome}>
         <Stack screenOptions={createStackTransitionOptions(c.bgBase)}>

@@ -18,6 +18,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useColors } from '@/lib/theme';
 import { OWNER_TRIAL_MONTHS } from '@/lib/owner/trialPolicy';
 import { registerRestaurantNoBilling } from '@/lib/services/restaurantRegistration';
+import { clearPendingOwnerReferral, readPendingOwnerReferral } from '@/lib/owner/pendingReferral';
 import { getSupabase } from '@/lib/supabase/client';
 import { friendlyError } from '@/lib/errors/friendlyError';
 import {
@@ -141,6 +142,18 @@ export default function RegisterRestaurantCardEntryScreen() {
     setRestaurantName(input.businessName);
   }, [input.businessName]);
 
+  const [pendingReferralCode, setPendingReferralCode] = useState<string | null>(null);
+  useEffect(() => {
+    let cancelled = false;
+    void (async () => {
+      const pending = await readPendingOwnerReferral();
+      if (!cancelled) setPendingReferralCode(pending?.code ?? null);
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
   const trialEndsLabel = useMemo(
     () => formatTrialEnd(addMonths(new Date(), OWNER_TRIAL_MONTHS)),
     [],
@@ -178,7 +191,14 @@ export default function RegisterRestaurantCardEntryScreen() {
           businessName: normalizeTextInput(restaurantName, { maxLength: 120 }) || input.businessName,
           address: input.address,
           ownerPhone: input.ownerPhone,
+          ...(pendingReferralCode ? { referredByCode: pendingReferralCode } : {}),
         });
+
+        // Pending referral consumed (or skipped server-side); clear so a
+        // future signup on this device doesn't accidentally reuse it.
+        if (pendingReferralCode) {
+          await clearPendingOwnerReferral();
+        }
 
         // Refresh the local JWT so the updated role in user_metadata is
         // picked up on the next cold boot without a DB round-trip delay.
@@ -252,6 +272,24 @@ export default function RegisterRestaurantCardEntryScreen() {
             <Text style={[s.subtitle, { color: c.textSecondary }]}>
               Three months on us. After that, {MONTHLY_FEE_SHORT} / month — cancel anytime.
             </Text>
+            {pendingReferralCode ? (
+              <View style={[s.referralChip, { borderColor: c.gold }]}>
+                <Ionicons name="gift-outline" size={12} color={c.gold} />
+                <Text style={[s.referralChipText, { color: c.gold }]}>
+                  Referral applied: {pendingReferralCode}
+                </Text>
+                <Pressable
+                  onPress={() => {
+                    setPendingReferralCode(null);
+                    void clearPendingOwnerReferral();
+                  }}
+                  hitSlop={8}
+                  accessibilityLabel="Remove referral code"
+                >
+                  <Ionicons name="close" size={14} color={c.gold} />
+                </Pressable>
+              </View>
+            ) : null}
           </View>
 
           {/* Receipt */}
@@ -492,6 +530,23 @@ const s = StyleSheet.create({
     fontSize: 14,
     lineHeight: 21,
     marginTop: 14,
+  },
+  referralChip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    alignSelf: 'flex-start',
+    gap: 6,
+    paddingVertical: 6,
+    paddingHorizontal: 10,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderRadius: 999,
+    marginTop: 14,
+  },
+  referralChipText: {
+    fontFamily: SF,
+    fontSize: 11,
+    fontWeight: '700',
+    letterSpacing: 0.5,
   },
   receiptOuter: {
     marginHorizontal: 22,
