@@ -8,26 +8,6 @@ import { createStyles, borderRadius, spacing, typography } from '@/lib/theme';
 const CARD_WIDTH = 208;
 type RailRestaurant = Restaurant & { distanceMeters?: number };
 
-const CUISINE_EMOJI: Record<string, string> = {
-  italian: '🍝',
-  japanese: '🍣',
-  mexican: '🌮',
-  french: '🥐',
-  indian: '🍛',
-  thai: '🍜',
-  seafood: '🦞',
-  bbq: '🔥',
-  chinese: '🥢',
-  american: '🍔',
-  greek: '🫒',
-};
-
-function cuisineEmoji(cuisine: string | null | undefined) {
-  const cleaned = cuisine?.toLowerCase() ?? '';
-  const match = Object.entries(CUISINE_EMOJI).find(([key]) => cleaned.includes(key));
-  return match?.[1] ?? '🍽️';
-}
-
 const useStyles = createStyles(() => ({
   rail: {
     backgroundColor: '#0D0D0D',
@@ -56,11 +36,7 @@ const useStyles = createStyles(() => ({
   image: {
     width: '100%',
     height: 112,
-    backgroundColor: '#1E1E1E',
-  },
-  imagePlaceholder: {
-    alignItems: 'center',
-    justifyContent: 'center',
+    backgroundColor: '#000000',
   },
   imageOverlay: {
     position: 'absolute',
@@ -69,10 +45,6 @@ const useStyles = createStyles(() => ({
     bottom: 0,
     height: 1,
     backgroundColor: '#C8A951',
-  },
-  emoji: {
-    fontSize: 34,
-    lineHeight: 42,
   },
   body: {
     padding: spacing.sm,
@@ -179,9 +151,13 @@ export function RestaurantRail({
               {imageUrl ? (
                 <Image source={{ uri: imageUrl }} style={styles.image} />
               ) : (
-                <View style={[styles.image, styles.imagePlaceholder]}>
-                  <Text style={styles.emoji}>{cuisineEmoji(item.cuisineType)}</Text>
-                </View>
+                // No cover photo → plain black tile. Previously rendered a
+                // cuisine emoji as a placeholder, but on devices missing the
+                // emoji glyphs (e.g. iOS sim with the stock font set) it
+                // rendered as the `[?]` unknown-glyph box, which read as a
+                // broken-image placeholder. Per the user's UX rule: empty
+                // image slot = black, never a glyph.
+                <View style={styles.image} />
               )}
               {active ? <View style={styles.imageOverlay} /> : null}
             </View>
