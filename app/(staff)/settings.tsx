@@ -857,6 +857,18 @@ export default function OwnerSettingsScreen() {
 
   const sections: Section[] = [
     {
+      title: 'Rewards',
+      rows: [
+        {
+          kind: 'nav',
+          label: 'Refer & earn',
+          value: 'Get 2 months free',
+          icon: 'gift-outline',
+          route: '/(staff)/refer-earn',
+        },
+      ],
+    },
+    {
       title: 'App',
       rows: [
         {
