@@ -4,7 +4,9 @@ import { key } from '@/lib/storage/keys';
 // app, the edge function, and any future Stripe webhook stay aligned.
 // Mirrored server-side in `supabase/functions/_shared/referral-policy.ts`.
 
-export const OWNER_REFERRAL_BONUS_DAYS = 60;
+// +30 days per side — referrer AND referred each get 1 month free
+// the moment a referral signup completes.
+export const OWNER_REFERRAL_BONUS_DAYS = 30;
 
 // Code format: CNV-OWNER-XXXXXX (6 chars, uppercase alphanumeric).
 // Generation happens server-side in `get_or_create_owner_referral_code`.

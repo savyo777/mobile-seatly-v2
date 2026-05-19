@@ -862,7 +862,7 @@ export default function OwnerSettingsScreen() {
         {
           kind: 'nav',
           label: 'Refer & earn',
-          value: 'Get 2 months free',
+          value: 'Get 1 month free',
           icon: 'gift-outline',
           route: '/(staff)/refer-earn',
         },

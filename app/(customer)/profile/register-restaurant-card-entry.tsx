@@ -276,7 +276,7 @@ export default function RegisterRestaurantCardEntryScreen() {
               <View style={[s.referralChip, { borderColor: c.gold }]}>
                 <Ionicons name="gift-outline" size={12} color={c.gold} />
                 <Text style={[s.referralChipText, { color: c.gold }]}>
-                  Referral applied: {pendingReferralCode}
+                  Referral applied — 1 month free unlocked
                 </Text>
                 <Pressable
                   onPress={() => {

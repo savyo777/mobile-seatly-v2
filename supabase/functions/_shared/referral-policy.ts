@@ -3,7 +3,8 @@
 // the policy constants live here too. Keep these in lock-step with the
 // mobile-side file.
 
-export const OWNER_REFERRAL_BONUS_DAYS = 60;
+// +30 days per side — referrer AND referred each get 1 month free.
+export const OWNER_REFERRAL_BONUS_DAYS = 30;
 
 export const OWNER_REFERRAL_CODE_RE = /^CNV-OWNER-[A-Z0-9]{6}$/;
 

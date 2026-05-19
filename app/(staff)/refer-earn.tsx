@@ -263,7 +263,7 @@ export default function ReferEarnScreen() {
     if (!code) return;
     const link = buildOwnerReferralDeepLink(code);
     const message =
-      `Run a restaurant? Join me on Cenaiva and we both win: I get ${OWNER_REFERRAL_BONUS_DAYS} extra days on my subscription.\n\n` +
+      `Run a restaurant? Join me on Cenaiva and we both get 1 month free on our subscription.\n\n` +
       `Sign up with my link: ${link}\n` +
       `Or use code: ${code}`;
     try {
@@ -282,8 +282,8 @@ export default function ReferEarnScreen() {
       <View style={styles.intro}>
         <Text style={styles.introTitle}>Refer & earn</Text>
         <Text style={styles.introText}>
-          Share your code with another restaurant. When they sign up with Cenaiva, your next charge
-          slips by {OWNER_REFERRAL_BONUS_DAYS} days — that's two months on us.
+          Share your code with another restaurant. When they sign up, you both get 1 month free on
+          your subscriptions.
         </Text>
       </View>
 
@@ -292,8 +292,8 @@ export default function ReferEarnScreen() {
         <Text style={styles.heroBody}>
           1. Send your code (or share link) to a restaurant owner.{'\n'}
           2. They sign up for Cenaiva and finish onboarding.{'\n'}
-          3. We slide your next billing date forward by {OWNER_REFERRAL_BONUS_DAYS} days. Whether
-          you're on the free trial or already paying, the result is the same.
+          3. We slide both billing dates forward by {OWNER_REFERRAL_BONUS_DAYS} days — you each get
+          1 month free, whether you're on the free trial or already paying.
         </Text>
       </View>
 
