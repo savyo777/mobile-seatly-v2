@@ -422,7 +422,7 @@ export function useMobileTranscription() {
         } catch (err) {
           const error = err instanceof Error ? err : new Error(String(err));
           debugVoice('deepgram transcription failed', { message: error.message });
-          setLastError(error.message);
+          setLastError(error.message); // allow-raw-error-message — code path; sanitized at the consumer via friendlyVoiceError
           setPhase('idle');
           rejectRef.current?.(error);
         }
@@ -513,7 +513,7 @@ export function useMobileTranscription() {
       } catch (err) {
         const error = err instanceof Error ? err : new Error(String(err));
         debugVoice('deepgram preflight failed', { message: error.message });
-        setLastError(error.message);
+        setLastError(error.message); // allow-raw-error-message — code path; sanitized at the consumer via friendlyVoiceError
         setPhase('idle');
         if (!nativeAttempted && shouldFallbackToNative(error)) return startNativeSpeechRecognition(hints);
         throw error;
@@ -529,7 +529,7 @@ export function useMobileTranscription() {
       } catch (err) {
         const message = err instanceof Error ? err.message : String(err);
         const error = new Error(`recording-prepare-failed:${message}`);
-        setLastError(error.message);
+        setLastError(error.message); // allow-raw-error-message — code path; sanitized at the consumer via friendlyVoiceError
         setPhase('idle');
         if (!nativeAttempted && shouldFallbackToNative(error)) return startNativeSpeechRecognition(hints);
         throw error;
@@ -544,7 +544,7 @@ export function useMobileTranscription() {
         } catch (err) {
           const message = err instanceof Error ? err.message : String(err);
           const error = new Error(`recording-start-failed:${message}`);
-          setLastError(error.message);
+          setLastError(error.message); // allow-raw-error-message — code path; sanitized at the consumer via friendlyVoiceError
           resolveRef.current = null;
           rejectRef.current = null;
           reject(error);

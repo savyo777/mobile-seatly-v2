@@ -1,5 +1,21 @@
 // Centralized error-to-user-message translation.
 //
+// CONTRACT (enforced by __tests__/lint/no-raw-error-in-alerts.test.ts):
+// Every user-facing `Alert.alert(...)`, `setError(...)`,
+// `setLastError(...)`, and `setBanner(...)` call that fires in an error
+// or warning context must route its message through `friendlyError(err,
+// fallback)` — even when the current value is a hardcoded literal. The
+// wrapper returns the fallback unchanged when there is no error, so the
+// user experience stays identical, but a future edit that swaps the
+// literal for `err.message` cannot leak Supabase / Postgrest / Storage /
+// RLS / JWT internals.
+//
+// Internal error codes (passed to `friendlyVoiceError` etc.) are OK to
+// store in state as raw strings — the translator at the render boundary
+// is the gate. Mark those callsites with a same-line
+// `// allow-raw-error-message` comment so the lint test recognizes them
+// as verified-safe.
+//
 // Replaces every "err instanceof Error ? err.message : 'fallback'" pattern
 // in the app with a single helper that:
 //

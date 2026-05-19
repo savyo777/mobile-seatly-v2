@@ -81,7 +81,7 @@ export default function MenuCategoriesScreen() {
     if (!renamingCategory) return;
     const result = renameCategory(renamingCategory, normalizeTextInput(renamingValue, { maxLength: 80 }));
     if (!result.ok) {
-      Alert.alert(
+      Alert.alert( // allow-raw-error-message — result.reason is a ternary discriminator; body is i18n
         t('common.error'),
         result.reason === 'duplicate'
           ? t('owner.menuCategoryAlreadyExists')

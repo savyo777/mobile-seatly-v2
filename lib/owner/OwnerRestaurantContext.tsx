@@ -98,7 +98,7 @@ export function OwnerRestaurantProvider({ children }: { children: React.ReactNod
         setSelectedRestaurantIdState(pickInitial(list, stored));
       }
     } catch (err) {
-      setError(err instanceof Error ? err : new Error(String(err)));
+      setError(err instanceof Error ? err : new Error(String(err))); // allow-raw-error-message — error state is exposed as Error object; consumers must wrap before render
       setRestaurants([]);
       setSelectedRestaurantIdState(null);
     } finally {
