@@ -233,7 +233,24 @@ export default function ReferEarnScreen() {
       const value = (row as { code?: string } | null)?.code ?? null;
       setCode(value);
     } catch (error) {
-      Alert.alert('Could not load code', friendlyError(error, "We couldn't load your referral code. Please try again."));
+      // In dev, surface the raw Postgres / supabase-js error verbatim so
+      // failures (RLS, missing grant, function bug, schema-cache miss)
+      // are diagnosable without rebuilding. Production keeps the
+      // friendlyError wrapper so nothing internal leaks to real users.
+      const friendly = friendlyError(error, "We couldn't load your referral code. Please try again.");
+      const raw = __DEV__
+        ? (() => {
+            const e = error as { message?: string; code?: string; details?: string; hint?: string } | null;
+            const parts = [
+              e?.message ? `message: ${e.message}` : '',
+              e?.code ? `code: ${e.code}` : '',
+              e?.details ? `details: ${e.details}` : '',
+              e?.hint ? `hint: ${e.hint}` : '',
+            ].filter(Boolean);
+            return parts.length ? parts.join('\n') : String(error);
+          })()
+        : '';
+      Alert.alert('Could not load code', __DEV__ ? `${friendly}\n\nDEV DEBUG:\n${raw}` : friendly);
     } finally {
       setLoadingCode(false);
     }
