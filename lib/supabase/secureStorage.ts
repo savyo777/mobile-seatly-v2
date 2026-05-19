@@ -50,10 +50,25 @@ async function loadSecureStore(): Promise<SecureStoreModule | null> {
   if (secureStoreCache !== undefined) return secureStoreCache;
   try {
     // Dynamic import so an uninstalled `expo-secure-store` doesn't
-    // break the whole module graph.
+    // break the whole module graph. Depending on Metro/Babel transforms
+    // the resolved module may expose the API at the top level or under
+    // `.default` — normalize both so callers get a uniform shape.
     // @ts-ignore — module may not be installed yet
-    const mod = await import('expo-secure-store');
-    secureStoreCache = mod as unknown as SecureStoreModule;
+    const mod: unknown = await import('expo-secure-store');
+    const candidate =
+      mod && typeof (mod as { setItemAsync?: unknown }).setItemAsync === 'function'
+        ? (mod as SecureStoreModule)
+        : (mod as { default?: SecureStoreModule } | null)?.default ?? null;
+    if (
+      candidate &&
+      typeof candidate.getItemAsync === 'function' &&
+      typeof candidate.setItemAsync === 'function' &&
+      typeof candidate.deleteItemAsync === 'function'
+    ) {
+      secureStoreCache = candidate;
+    } else {
+      secureStoreCache = null;
+    }
   } catch {
     secureStoreCache = null;
   }
@@ -94,9 +109,18 @@ export function secureStorageAdapter(): SupabaseStorage {
         await AsyncStorage.setItem(key, value);
         return;
       }
-      await store.setItemAsync(key, value);
-      // Belt + suspenders: ensure the old plaintext copy is gone.
-      await AsyncStorage.removeItem(key).catch(() => {});
+      try {
+        await store.setItemAsync(key, value);
+        // Belt + suspenders: ensure the old plaintext copy is gone.
+        await AsyncStorage.removeItem(key).catch(() => {});
+      } catch {
+        // SecureStore can fail at runtime (missing native module on a
+        // mismatched dev build, Keychain access errors, etc.). Never
+        // let a write failure bubble up as an uncaught promise — that
+        // would crash the auth flow. Persist to AsyncStorage so the
+        // session is still recoverable on next launch.
+        await AsyncStorage.setItem(key, value);
+      }
     },
     async removeItem(key) {
       const store = await loadSecureStore();
