@@ -97,14 +97,12 @@ BEGIN
 
   LOOP
     v_attempt := v_attempt + 1;
-    -- base32 of 4 random bytes → ~6.4 chars; strip padding/lowercase to
-    -- guarantee uppercase alphanumeric and slice to 6.
-    v_raw := upper(regexp_replace(encode(gen_random_bytes(5), 'base32'), '[^A-Z0-9]', '', 'g'));
+    -- Postgres `encode()` only supports base64/hex/escape (no base32).
+    -- Use hex of 3 random bytes → 6 hex chars, uppercase → matches the
+    -- client-side regex /^CNV-OWNER-[A-Z0-9]{6}$/. 16^6 = ~16M codes,
+    -- comfortable headroom for any reasonable owner count.
+    v_raw := upper(encode(gen_random_bytes(3), 'hex'));
     v_code := 'CNV-OWNER-' || substr(v_raw, 1, 6);
-    IF length(v_code) <> 16 THEN
-      -- Defensive: re-roll if we got fewer than 6 alnum chars after stripping.
-      CONTINUE;
-    END IF;
     BEGIN
       INSERT INTO owner_referral_codes(owner_user_id, code)
         VALUES (v_owner, v_code);
