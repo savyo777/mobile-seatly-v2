@@ -144,17 +144,18 @@ jobs:
             echo "::endgroup::"
 
             echo "::group::Run Maestro flows"
-            FLOWS=(
-              ".maestro/smoke.yaml"
-              ".maestro/auth/sign-in-success.yaml"
-              ".maestro/customer/discover-list.yaml"
-              ".maestro/customer/bookings-tab.yaml"
-              ".maestro/customer/profile-favorites.yaml"
-              ".maestro/customer/notifications-feed.yaml"
-              ".maestro/cenaiva/fab-opens-assistant.yaml"
-              ".maestro/cenaiva/close-assistant.yaml"
-            )
-            for flow in "${FLOWS[@]}"; do
+            # The android-emulator-runner action drops us into POSIX sh
+            # (dash on ubuntu-latest), which doesn't support bash arrays.
+            # Iterate a literal newline-separated list of flow paths instead.
+            for flow in \
+              .maestro/smoke.yaml \
+              .maestro/auth/sign-in-success.yaml \
+              .maestro/customer/discover-list.yaml \
+              .maestro/customer/bookings-tab.yaml \
+              .maestro/customer/profile-favorites.yaml \
+              .maestro/customer/notifications-feed.yaml \
+              .maestro/cenaiva/fab-opens-assistant.yaml \
+              .maestro/cenaiva/close-assistant.yaml; do
               echo ">>> $flow"
               # force-stop between flows to avoid the Maestro AVD-driver
               # instrumentation flakiness we saw in Pass 3.
