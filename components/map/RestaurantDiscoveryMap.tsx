@@ -4,12 +4,12 @@ import MapView, { Marker, PROVIDER_GOOGLE, type MapPressEvent, type Region } fro
 import { Ionicons } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
 import { RestaurantMapMarkerContent, MARKER_ANCHOR_Y } from '@/components/map/RestaurantMapMarker';
-import { googleDarkMapStyle } from '@/lib/map/darkMapStyle';
+import { CENAIVA_MAP_STYLE } from '@/lib/map/darkMapStyle';
 import { hasFiniteCoords, haversineMeters } from '@/lib/map/geo';
 import { DEFAULT_MAP_CENTER } from '@/lib/map/mapFilters';
 import { normalizeRestaurantPriceRange, restaurantPriceLabel } from '@/lib/restaurants/pricing';
 import type { RestaurantDiscoveryMapProps } from '@/components/map/restaurantMapTypes';
-import { useColors, useTheme, createStyles, spacing, borderRadius, typography, shadows } from '@/lib/theme';
+import { useColors, createStyles, spacing, borderRadius, typography, shadows } from '@/lib/theme';
 
 const DEFAULT_RECENTER_REGION_DELTA = {
   latitudeDelta: 0.025,
@@ -228,7 +228,6 @@ export function RestaurantDiscoveryMap({
   contentBottomInset = 0,
 }: RestaurantDiscoveryMapProps) {
   const c = useColors();
-  const { effective } = useTheme();
   const styles = useStyles();
   const { t } = useTranslation();
   const mapRef = useRef<MapView>(null);
@@ -491,14 +490,17 @@ export function RestaurantDiscoveryMap({
         style={StyleSheet.absoluteFill}
         provider={Platform.OS === 'android' ? PROVIDER_GOOGLE : undefined}
         initialRegion={initialRegion}
-        userInterfaceStyle={effective}
-        mapType={Platform.OS === 'ios' ? 'mutedStandard' : 'standard'}
-        customMapStyle={Platform.OS === 'android' && effective === 'dark' ? googleDarkMapStyle : undefined}
+        userInterfaceStyle="dark"
+        mapType="standard"
+        customMapStyle={CENAIVA_MAP_STYLE}
         showsUserLocation={showUserLocation}
         showsMyLocationButton={false}
         showsCompass={false}
-        minZoomLevel={2}
-        maxZoomLevel={20}
+        showsBuildings={false}
+        showsTraffic={false}
+        showsPointsOfInterests={false}
+        minZoomLevel={4}
+        maxZoomLevel={18}
         scrollEnabled
         zoomEnabled
         zoomTapEnabled

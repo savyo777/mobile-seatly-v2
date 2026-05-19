@@ -1,49 +1,69 @@
 import type { MapStyleElement } from 'react-native-maps';
-import type { Palette } from '@/lib/theme/palettes';
-import { darkColors, lightColors } from '@/lib/theme/palettes';
 
 /**
- * Build a Google Maps JSON style derived from a palette. Used on Android
- * (iOS uses native `userInterfaceStyle="dark"` / muted map types). Pulling
- * from the palette keeps the map's geometry/label colors in step with the
- * rest of the UI when the brand surface tones move.
+ * Cenaiva-branded dark map theme. SINGLE SOURCE OF TRUTH for the Google Maps
+ * JSON style used everywhere the customer-facing app renders a map
+ * (DiscoverPage, Hey Cenaiva overlay, customer Map screen).
+ *
+ * Byte-for-byte mirror of the web app's `CENAIVA_MAP_STYLES` at
+ * `apps/web/src/lib/google-maps.ts` lines 8-52 of the Seatly repo
+ * (https://github.com/StevenGeorgy/Seatly). Don't drift from the web —
+ * MOBILE_MAPS_GUIDE.md Section 3 explicitly requires byte parity. If the
+ * web style changes, update both sides together.
+ *
+ * Dark-only by design: the spec has no light variant. Previously this file
+ * exported a `buildGoogleMapStyle(palette)` factory and `googleLightMapStyle`,
+ * both of which have been removed — Google's Styled Map spec is identical
+ * across web/Android/iOS, so the literal web JSON is what ships everywhere.
  */
-export function buildGoogleMapStyle(palette: Palette): MapStyleElement[] {
-  const isDark = palette.bgBase === darkColors.bgBase;
-  const geometry = isDark ? '#1d1d1d' : '#F0EDE8';
-  const labelFill = isDark ? '#9ca3af' : '#4A4740';
-  const labelStroke = isDark ? '#0a0a0a' : '#FFFFFF';
-  const adminGeometry = isDark ? '#2a2a2a' : '#D8D5CF';
-  const parkGeometry = isDark ? '#1a2418' : '#DBE8D2';
-  const roadFill = isDark ? '#2e2e2e' : '#FFFFFF';
-  const roadLabelFill = isDark ? '#d1d5db' : '#4A4740';
-  const highwayFill = isDark ? '#3a3a3a' : '#EDE7DA';
-  const highwayStroke = isDark ? '#1f1f1f' : '#C5BCA9';
-  const waterGeometry = isDark ? '#0f1720' : '#CFE3EC';
+export const CENAIVA_MAP_STYLE: MapStyleElement[] = [
+  { elementType: 'geometry', stylers: [{ color: '#0A0A0A' }] },
+  { elementType: 'labels.text.fill', stylers: [{ color: '#AAAAAA' }] },
+  { elementType: 'labels.text.stroke', stylers: [{ color: '#0A0A0A' }, { weight: 4 }] },
+  { elementType: 'labels.icon', stylers: [{ visibility: 'off' }] },
 
-  return [
-    { elementType: 'geometry', stylers: [{ color: geometry }] },
-    { elementType: 'labels.text.fill', stylers: [{ color: labelFill }] },
-    { elementType: 'labels.text.stroke', stylers: [{ color: labelStroke }] },
-    { featureType: 'administrative', elementType: 'geometry', stylers: [{ color: adminGeometry }] },
-    { featureType: 'poi', elementType: 'labels.text.fill', stylers: [{ color: labelFill }] },
-    { featureType: 'poi.park', elementType: 'geometry', stylers: [{ color: parkGeometry }] },
-    { featureType: 'road', elementType: 'geometry.fill', stylers: [{ color: roadFill }] },
-    { featureType: 'road', elementType: 'labels.text.fill', stylers: [{ color: roadLabelFill }] },
-    { featureType: 'road.highway', elementType: 'geometry', stylers: [{ color: highwayFill }] },
-    { featureType: 'road.highway', elementType: 'geometry.stroke', stylers: [{ color: highwayStroke }] },
-    { featureType: 'transit', stylers: [{ visibility: 'off' }] },
-    { featureType: 'water', elementType: 'geometry', stylers: [{ color: waterGeometry }] },
-    { featureType: 'water', elementType: 'labels.text.fill', stylers: [{ color: labelFill }] },
-  ];
-}
+  { featureType: 'administrative', elementType: 'geometry', stylers: [{ color: '#2E2E2E' }] },
+  { featureType: 'administrative.land_parcel', stylers: [{ visibility: 'off' }] },
+  { featureType: 'administrative.country', elementType: 'labels.text.fill', stylers: [{ color: '#F5E6C8' }] },
+  { featureType: 'administrative.locality', elementType: 'labels.text.fill', stylers: [{ color: '#F5E6C8' }] },
+  { featureType: 'administrative.neighborhood', elementType: 'labels.text.fill', stylers: [{ color: '#C9A84C' }] },
+
+  { featureType: 'landscape.man_made', elementType: 'geometry.fill', stylers: [{ color: '#242424' }] },
+  { featureType: 'landscape.man_made', elementType: 'geometry.stroke', stylers: [{ color: '#A8873A' }, { weight: 0.6 }] },
+  { featureType: 'landscape.natural', elementType: 'geometry', stylers: [{ color: '#0F0F0F' }] },
+  { featureType: 'landscape.natural.terrain', elementType: 'geometry', stylers: [{ color: '#121412' }] },
+
+  { featureType: 'poi', elementType: 'labels.text.fill', stylers: [{ color: '#888888' }] },
+  { featureType: 'poi.park', elementType: 'geometry', stylers: [{ color: '#0F1A12' }] },
+  { featureType: 'poi.park', elementType: 'labels.text.fill', stylers: [{ color: '#A8873A' }] },
+  { featureType: 'poi.business', elementType: 'labels.text.fill', stylers: [{ color: '#AAAAAA' }] },
+  { featureType: 'poi.medical', stylers: [{ visibility: 'off' }] },
+  { featureType: 'poi.school', stylers: [{ visibility: 'off' }] },
+  { featureType: 'poi.government', stylers: [{ visibility: 'off' }] },
+  { featureType: 'poi.place_of_worship', stylers: [{ visibility: 'off' }] },
+  { featureType: 'poi.sports_complex', stylers: [{ visibility: 'off' }] },
+
+  { featureType: 'road', elementType: 'geometry.fill', stylers: [{ color: '#1A1A1A' }] },
+  { featureType: 'road', elementType: 'geometry.stroke', stylers: [{ color: '#0A0A0A' }] },
+  { featureType: 'road', elementType: 'labels.text.fill', stylers: [{ color: '#888888' }] },
+  { featureType: 'road', elementType: 'labels.text.stroke', stylers: [{ color: '#0A0A0A' }, { weight: 3 }] },
+  { featureType: 'road', elementType: 'labels.icon', stylers: [{ visibility: 'off' }] },
+  { featureType: 'road.highway', elementType: 'geometry.fill', stylers: [{ color: '#2E2E2E' }] },
+  { featureType: 'road.highway', elementType: 'geometry.stroke', stylers: [{ color: '#0A0A0A' }] },
+  { featureType: 'road.highway', elementType: 'labels.text.fill', stylers: [{ color: '#C9A84C' }] },
+  { featureType: 'road.arterial', elementType: 'geometry.fill', stylers: [{ color: '#242424' }] },
+  { featureType: 'road.arterial', elementType: 'labels.text.fill', stylers: [{ color: '#AAAAAA' }] },
+  { featureType: 'road.local', elementType: 'geometry.fill', stylers: [{ color: '#1F1F1F' }] },
+  { featureType: 'road.local', elementType: 'labels', stylers: [{ visibility: 'off' }] },
+
+  { featureType: 'transit', stylers: [{ visibility: 'off' }] },
+
+  { featureType: 'water', elementType: 'geometry', stylers: [{ color: '#0A1320' }] },
+  { featureType: 'water', elementType: 'labels.text.fill', stylers: [{ color: '#5C7088' }] },
+];
 
 /**
- * Pre-computed dark style. Kept as an export to avoid breaking existing
- * `import { googleDarkMapStyle } from ...` call sites — internally it's
- * just `buildGoogleMapStyle(darkColors)`.
+ * @deprecated Use `CENAIVA_MAP_STYLE` directly. Kept as a temporary alias so
+ * legacy callsites compile while the migration lands.
  */
-export const googleDarkMapStyle: MapStyleElement[] = buildGoogleMapStyle(darkColors);
-
-/** Pre-computed light style for completeness. */
-export const googleLightMapStyle: MapStyleElement[] = buildGoogleMapStyle(lightColors);
+export const googleDarkMapStyle = CENAIVA_MAP_STYLE;
