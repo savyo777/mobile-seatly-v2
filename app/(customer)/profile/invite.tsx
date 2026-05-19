@@ -194,17 +194,17 @@ export default function InviteScreen() {
       if (gate.reason === 'daily_limit') {
         Alert.alert(
           'Daily share limit reached',
-          `You can share your code up to ${REFERRAL_DAILY_SHARE_LIMIT} times per day. Try again tomorrow.`,
+          friendlyError(undefined, `You can share your code up to ${REFERRAL_DAILY_SHARE_LIMIT} times per day. Try again tomorrow.`),
         );
       } else if (gate.reason === 'cooldown') {
         Alert.alert(
           'Slow down a moment',
-          `Wait ${gate.retryInSeconds ?? 0}s before sharing again.`,
+          friendlyError(undefined, `Wait ${gate.retryInSeconds ?? 0}s before sharing again.`),
         );
       } else if (gate.reason === 'cap_reached') {
         Alert.alert(
           'Lifetime credit cap reached',
-          `You've earned the maximum $${REFERRAL_LIFETIME_CREDIT_CAP} in referral credits. Thanks for spreading the word!`,
+          friendlyError(undefined, `You've earned the maximum $${REFERRAL_LIFETIME_CREDIT_CAP} in referral credits. Thanks for spreading the word!`),
         );
       }
       return;

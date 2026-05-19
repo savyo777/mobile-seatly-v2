@@ -10,6 +10,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { CornerBrackets } from '@/components/owner/CornerBrackets';
 import { setPendingScan } from '@/lib/expenses/pendingScan';
 import { brandGold, withAlpha } from '@/lib/theme/tokens';
+import { friendlyError } from '@/lib/errors/friendlyError';
 
 const CAPTURE_TIMEOUT_MS = 15_000;
 
@@ -52,7 +53,7 @@ export default function ExpenseScanScreen() {
     if (capturing) return;
     const camera = cameraRef.current;
     if (!camera) {
-      Alert.alert('Camera not ready', 'Give the camera a second to finish loading, then try again.');
+      Alert.alert('Camera not ready', friendlyError(undefined, 'Give the camera a second to finish loading, then try again.'));
       return;
     }
 
@@ -68,7 +69,7 @@ export default function ExpenseScanScreen() {
         CAPTURE_TIMEOUT_MS,
       );
       if (!photo?.base64 || !photo?.uri) {
-        Alert.alert('No photo captured', 'Try framing the receipt again.');
+        Alert.alert('No photo captured', friendlyError(undefined, 'Try framing the receipt again.'));
         return;
       }
       setPendingScan({
@@ -81,7 +82,7 @@ export default function ExpenseScanScreen() {
       router.replace('/(staff)/expense-review');
     } catch (err) {
       if (__DEV__) console.warn('expense-scan: camera capture failed', err);
-      Alert.alert('Camera did not finish', 'Try again, or enter the expense manually.');
+      Alert.alert('Camera did not finish', friendlyError(undefined, 'Try again, or enter the expense manually.'));
     } finally {
       setCapturing(false);
     }

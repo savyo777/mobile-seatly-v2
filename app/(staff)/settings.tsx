@@ -592,7 +592,7 @@ function SettingsSection({
       if (restaurantCount > 0) {
         Alert.alert(
           'Remove restaurants first',
-          'Remove every restaurant from this account before deleting the owner account. This prevents active subscriptions from being left behind.',
+          friendlyError(undefined, 'Remove every restaurant from this account before deleting the owner account. This prevents active subscriptions from being left behind.'),
           [
             { text: 'Cancel', style: 'cancel' },
             { text: 'Remove restaurants', style: 'destructive', onPress: onOpenRestaurantRemoval },
@@ -726,11 +726,11 @@ export default function OwnerSettingsScreen() {
   const performRestaurantRemoval = React.useCallback(async () => {
     if (removingRestaurants) return;
     if (restaurantRemovalIds.length === 0) {
-      Alert.alert('Choose restaurants', 'Choose at least one restaurant to remove.');
+      Alert.alert('Choose restaurants', friendlyError(undefined, 'Choose at least one restaurant to remove.'));
       return;
     }
     if (!removalConfirmationMatches) {
-      Alert.alert('Type the restaurant name', 'Type the restaurant name exactly as shown before removing it.');
+      Alert.alert('Type the restaurant name', friendlyError(undefined, 'Type the restaurant name exactly as shown before removing it.'));
       return;
     }
     setRemovingRestaurants(true);
@@ -789,11 +789,11 @@ export default function OwnerSettingsScreen() {
   const confirmRestaurantRemoval = React.useCallback(() => {
     const count = restaurantRemovalIds.length;
     if (count === 0) {
-      Alert.alert('Choose restaurants', 'Choose at least one restaurant to remove.');
+      Alert.alert('Choose restaurants', friendlyError(undefined, 'Choose at least one restaurant to remove.'));
       return;
     }
     if (!removalConfirmationMatches) {
-      Alert.alert('Type the restaurant name', 'Type the restaurant name exactly as shown before removing it.');
+      Alert.alert('Type the restaurant name', friendlyError(undefined, 'Type the restaurant name exactly as shown before removing it.'));
       return;
     }
     Alert.alert(

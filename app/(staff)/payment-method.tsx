@@ -17,6 +17,7 @@ import {
   isBillingAddressComplete,
   type RestaurantBillingAddress,
 } from '@/lib/storage/restaurantBillingAddress';
+import { friendlyError } from '@/lib/errors/friendlyError';
 
 type Card = {
   id: string;
@@ -323,7 +324,7 @@ export default function PaymentMethodScreen() {
     if (target.isDefault && cards.length > 1) {
       Alert.alert(
         'Set a new default first',
-        'Make another card the default before removing this one.',
+        friendlyError(undefined, 'Make another card the default before removing this one.'),
       );
       return;
     }

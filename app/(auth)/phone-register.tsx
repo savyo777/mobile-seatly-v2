@@ -95,7 +95,7 @@ export default function PhoneRegisterScreen() {
     if (!agree) {
       Alert.alert(
         'Agreement required',
-        'Please agree to the Terms of Service and Privacy Policy before continuing.',
+        friendlyError(undefined, 'Please agree to the Terms of Service and Privacy Policy before continuing.'),
       );
       return;
     }
@@ -103,7 +103,7 @@ export default function PhoneRegisterScreen() {
     if (!e164) {
       Alert.alert(
         'Invalid phone',
-        'Please enter a valid phone number (include country code, or 10-digit US number).',
+        friendlyError(undefined, 'Please enter a valid phone number (include country code, or 10-digit US number).'),
       );
       return;
     }

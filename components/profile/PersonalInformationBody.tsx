@@ -34,6 +34,7 @@ import {
   sanitizeInputByKind,
   sanitizeTextInput,
 } from '@/lib/validation/input';
+import { friendlyError } from '@/lib/errors/friendlyError';
 
 const BIO_LIMIT = 150;
 
@@ -255,7 +256,7 @@ export function PersonalInformationBody() {
     });
     setIsSaving(false);
     if (error) {
-      Alert.alert('Could not save', 'Please try again in a moment.');
+      Alert.alert('Could not save', friendlyError(undefined, 'Please try again in a moment.'));
       return;
     }
     Alert.alert('Saved', 'Your profile has been updated.');
@@ -267,7 +268,7 @@ export function PersonalInformationBody() {
       if (!permission.granted) {
         Alert.alert(
           'Photo permission required',
-          'Allow photo access to change your profile photo.',
+          friendlyError(undefined, 'Allow photo access to change your profile photo.'),
           permission.canAskAgain === false
             ? [
                 { text: 'Not now', style: 'cancel' },
@@ -288,7 +289,7 @@ export function PersonalInformationBody() {
         setAvatarUri(result.assets[0].uri);
       }
     } catch {
-      Alert.alert('Could not change photo', 'Something went wrong opening your photo library. Please try again.');
+      Alert.alert('Could not change photo', friendlyError(undefined, 'Something went wrong opening your photo library. Please try again.'));
     }
   }, []);
 

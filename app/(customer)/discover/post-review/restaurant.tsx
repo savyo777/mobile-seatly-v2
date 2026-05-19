@@ -17,6 +17,7 @@ const createSnapPost: typeof DEMO_createSnapPost = (...args) => {
   return DEMO_createSnapPost(...args);
 };
 import { useCurrentUserId } from '@/lib/auth/currentUserId';
+import { friendlyError } from '@/lib/errors/friendlyError';
 
 const useStyles = createStyles((c) => ({
   root: {
@@ -99,7 +100,7 @@ export default function SnapRestaurantScreen() {
   const submit = () => {
     if (!selectedRestaurantId || !decodedUri) return;
     if (!me) {
-      Alert.alert('Sign in required', 'Sign in to post a snap.');
+      Alert.alert('Sign in required', friendlyError(undefined, 'Sign in to post a snap.'));
       return;
     }
     createSnapPost({

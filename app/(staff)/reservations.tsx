@@ -1096,16 +1096,16 @@ export default function OwnerReservationsScreen() {
     if (isAll) {
       Alert.alert(
         'Pick a restaurant',
-        'Switch out of "All restaurants" mode to add a new reservation to a specific location.',
+        friendlyError(undefined, 'Switch out of "All restaurants" mode to add a new reservation to a specific location.'),
       );
       return;
     }
     if (!restaurantId) {
-      Alert.alert('Not ready', 'Restaurant not loaded yet.');
+      Alert.alert('Not ready', friendlyError(undefined, 'Restaurant not loaded yet.'));
       return;
     }
     if (isDemoModeEnabled()) {
-      Alert.alert('Add reservation', 'Demo mode — switch demo off to create real reservations.');
+      Alert.alert('Add reservation', friendlyError(undefined, 'Demo mode — switch demo off to create real reservations.'));
       return;
     }
     Alert.prompt?.(

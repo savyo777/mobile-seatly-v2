@@ -6,6 +6,7 @@ import { SubpageHeader } from '@/components/owner/SubpageHeader';
 import { borderRadius, createStyles, spacing, typography, useColors } from '@/lib/theme';
 import { useAuthSession } from '@/lib/auth/AuthContext';
 import { sanitizeOtpInput } from '@/lib/validation/input';
+import { friendlyError } from '@/lib/errors/friendlyError';
 
 type Method = 'sms' | 'email';
 
@@ -233,9 +234,9 @@ export default function TwoFactorScreen() {
     if (!methodAvailable(method)) {
       Alert.alert(
         method === 'sms' ? 'No phone on file' : 'No email on file',
-        method === 'sms'
+        friendlyError(undefined, method === 'sms'
           ? 'Add a phone number to your profile before enabling SMS-based two-factor authentication.'
-          : 'Add an email to your profile before enabling email-based two-factor authentication.',
+          : 'Add an email to your profile before enabling email-based two-factor authentication.'),
       );
       return;
     }
@@ -280,11 +281,11 @@ export default function TwoFactorScreen() {
   const onVerifyCode = () => {
     const normalized = codeInput.replace(/\D/g, '');
     if (!pendingMethod || normalized.length !== 6) {
-      setCodeError('Enter the 6-digit code.');
+      setCodeError(friendlyError(undefined, 'Enter the 6-digit code.'));
       return;
     }
     if (normalized !== sentCode) {
-      setCodeError('That code does not match. Try again.');
+      setCodeError(friendlyError(undefined, 'That code does not match. Try again.'));
       return;
     }
     setEnabled(true);

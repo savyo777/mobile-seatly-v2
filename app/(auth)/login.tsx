@@ -244,13 +244,13 @@ export default function LoginScreen() {
   const handleLogin = async () => {
     if (submitting || isLockedOut) return;
     if (!trimmedEmail || !password) {
-      Alert.alert('Missing info', 'Please enter both email and password.');
+      Alert.alert('Missing info', friendlyError(undefined, 'Please enter both email and password.'));
       return;
     }
 
     const supabase = getSupabase();
     if (!supabase) {
-      Alert.alert('Supabase not configured', 'Missing Supabase environment variables.');
+      Alert.alert('Supabase not configured', friendlyError(undefined, 'Missing Supabase environment variables.'));
       return;
     }
 
@@ -280,7 +280,7 @@ export default function LoginScreen() {
           setLockoutUntilMs(attempt.lockedUntilMs);
           Alert.alert(
             'Too many attempts',
-            'Too many failed attempts. Please wait 15 minutes or reset your password.',
+            friendlyError(undefined, 'Too many failed attempts. Please wait 15 minutes or reset your password.'),
           );
           try {
             await sendPasswordResetEmail(trimmedEmail);
@@ -299,7 +299,7 @@ export default function LoginScreen() {
       await AsyncStorage.multiRemove([failuresKey(trimmedEmail), lockoutKey(trimmedEmail)]);
       setLockoutUntilMs(null);
       if (!data.session?.user?.id) {
-        Alert.alert('Session error', 'Could not load your account. Please try again.');
+        Alert.alert('Session error', friendlyError(undefined, 'Could not load your account. Please try again.'));
         return;
       }
       await routeSignedInSession(data.session);
@@ -314,7 +314,7 @@ export default function LoginScreen() {
     if (!e164) {
       Alert.alert(
         'Invalid phone',
-        'Please enter a valid phone number (include country code, or 10-digit US number).',
+        friendlyError(undefined, 'Please enter a valid phone number (include country code, or 10-digit US number).'),
       );
       return;
     }

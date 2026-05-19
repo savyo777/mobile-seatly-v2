@@ -13,6 +13,7 @@ const mockFaqs: typeof DEMO_FAQS = isDemoModeEnabled() ? DEMO_FAQS : [];
 const mockHelpTopics: typeof DEMO_HELP_TOPICS = isDemoModeEnabled() ? DEMO_HELP_TOPICS : [];
 import { useColors, createStyles, spacing, typography, borderRadius, shadows } from '@/lib/theme';
 import { SUPPORT_EMAIL } from '@/lib/config/contactInfo';
+import { friendlyError } from '@/lib/errors/friendlyError';
 
 if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental) {
   UIManager.setLayoutAnimationEnabledExperimental(true);
@@ -111,7 +112,7 @@ const useStyles = createStyles((c) => ({
 function openSupportEmail(subject: string, body: string) {
   const mailto = `mailto:${SUPPORT_EMAIL}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
   Linking.openURL(mailto).catch(() => {
-    Alert.alert('No email app', `Please email us at ${SUPPORT_EMAIL}`);
+    Alert.alert('No email app', friendlyError(undefined, `Please email us at ${SUPPORT_EMAIL}`));
   });
 }
 

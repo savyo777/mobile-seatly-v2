@@ -356,7 +356,7 @@ export default function Step7Confirmation() {
         savedReservationRef.current = true;
         Alert.alert(
           'Missing booking details',
-          'Please choose an available time and enter your guest details.',
+          friendlyError(undefined, 'Please choose an available time and enter your guest details.'),
         );
         router.replace(`/booking/${rid}/step2-time`);
         return;

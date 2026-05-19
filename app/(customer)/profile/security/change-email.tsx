@@ -100,7 +100,7 @@ export default function ChangeEmailScreen() {
 
   const handleSubmit = async () => {
     const cleanEmail = normalizeEmail(newEmail);
-    if (!cleanEmail) { setEmailError('Enter a valid email address'); return; }
+    if (!cleanEmail) { setEmailError(friendlyError(undefined, 'Enter a valid email address')); return; }
     if (!password) return;
     setLoading(true);
     try {

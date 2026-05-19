@@ -159,15 +159,15 @@ export default function RegisterRestaurantCardEntryScreen() {
     Keyboard.dismiss();
 
     if (!passesLuhn(cardNumber)) {
-      Alert.alert('Invalid card number', 'Please double-check the number on your card.');
+      Alert.alert('Invalid card number', friendlyError(undefined, 'Please double-check the number on your card.'));
       return;
     }
     if (!parsedExpiry) {
-      Alert.alert('Invalid expiry', 'Enter a valid MM / YY in the future.');
+      Alert.alert('Invalid expiry', friendlyError(undefined, 'Enter a valid MM / YY in the future.'));
       return;
     }
     if (cvc.replace(/\D/g, '').length !== expectedCvc) {
-      Alert.alert('Invalid CVC', `CVC should be ${expectedCvc} digits.`);
+      Alert.alert('Invalid CVC', friendlyError(undefined, `CVC should be ${expectedCvc} digits.`));
       return;
     }
 

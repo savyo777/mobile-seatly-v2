@@ -22,6 +22,7 @@ import { SubpageHeader } from '@/components/owner/SubpageHeader';
 import { useMenu } from '@/lib/context/MenuContext';
 import type { MenuItem } from '@/lib/mock/menuItems';
 import { normalizeMoneyInput, normalizeTextInput, sanitizeMoneyInput, sanitizeTextInput } from '@/lib/validation/input';
+import { friendlyError } from '@/lib/errors/friendlyError';
 
 // ── Styles ──────────────────────────────────────────────────────────────────
 
@@ -253,7 +254,7 @@ function EditItemSheet({
   const pickPhoto = async () => {
     const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
     if (!permission.granted) {
-      Alert.alert('Photo permission required', 'Allow photo access to choose a food photo.');
+      Alert.alert('Photo permission required', friendlyError(undefined, 'Allow photo access to choose a food photo.'));
       return;
     }
     const result = await ImagePicker.launchImageLibraryAsync({

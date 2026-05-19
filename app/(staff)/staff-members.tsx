@@ -6,6 +6,7 @@ import { OwnerScreen } from '@/components/owner/OwnerScreen';
 import { SubpageHeader } from '@/components/owner/SubpageHeader';
 import { borderRadius, createStyles, spacing, typography, useColors } from '@/lib/theme';
 import { useAuthSession } from '@/lib/auth/AuthContext';
+import { friendlyError } from '@/lib/errors/friendlyError';
 
 const TEAM_ADMIN_ROLES = new Set(['owner', 'manager', 'diner_and_owner']);
 
@@ -204,7 +205,7 @@ export default function StaffMembersScreen() {
     if (!canAdminTeam) {
       Alert.alert(
         'Not allowed',
-        'Only owners and managers can change roles or remove team members.',
+        friendlyError(undefined, 'Only owners and managers can change roles or remove team members.'),
       );
       return;
     }

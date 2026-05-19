@@ -240,9 +240,9 @@ export default function OwnerWaitlistScreen() {
         const channelLabel = result.channel === 'sms' ? 'SMS sent.' : 'Email sent.';
         Alert.alert('Guest notified', channelLabel);
       } else if (result.status === 'skipped') {
-        Alert.alert('No contact on file', 'Add a phone or email to this waitlist entry first.');
+        Alert.alert('No contact on file', friendlyError(undefined, 'Add a phone or email to this waitlist entry first.'));
       } else {
-        Alert.alert('Notify failed', 'The notification provider rejected the message.');
+        Alert.alert('Notify failed', friendlyError(undefined, 'The notification provider rejected the message.'));
       }
     } catch (err) {
       setDetail(null);

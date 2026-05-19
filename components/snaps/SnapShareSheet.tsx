@@ -425,7 +425,7 @@ export function SnapShareSheet({
     if (!nativeShareAvailable) {
       Alert.alert(
         'Update Cenaiva',
-        'This app build does not include native Instagram or YouTube sharing yet. Reinstall the latest dev build, then reopen this snap.',
+        friendlyError(undefined, 'This app build does not include native Instagram or YouTube sharing yet. Reinstall the latest dev build, then reopen this snap.'),
       );
       return;
     }

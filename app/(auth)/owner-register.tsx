@@ -235,21 +235,21 @@ export default function OwnerRegisterScreen() {
     const trimmedRestaurantName = normalizeTextInput(restaurantName, { maxLength: 120 });
     const trimmedCuisineType = normalizeTextInput(cuisineType, { maxLength: 80 });
     if (!trimmedName || !trimmedEmail || !password) {
-      Alert.alert('Missing info', 'Please fill out your name, email, and password.');
+      Alert.alert('Missing info', friendlyError(undefined, 'Please fill out your name, email, and password.'));
       return;
     }
     if (!isPasswordValid) {
-      Alert.alert('Password requirements', 'Please meet all password requirements before continuing.');
+      Alert.alert('Password requirements', friendlyError(undefined, 'Please meet all password requirements before continuing.'));
       return;
     }
     if (!agree) {
-      Alert.alert('Agreement required', 'Please agree to the Terms of Service and Privacy Policy.');
+      Alert.alert('Agreement required', friendlyError(undefined, 'Please agree to the Terms of Service and Privacy Policy.'));
       return;
     }
 
     const supabase = getSupabase();
     if (!supabase) {
-      Alert.alert('Supabase not configured', 'Missing Supabase environment variables.');
+      Alert.alert('Supabase not configured', friendlyError(undefined, 'Missing Supabase environment variables.'));
       return;
     }
 
@@ -278,7 +278,7 @@ export default function OwnerRegisterScreen() {
           if (signInError || !signInData.session) {
             Alert.alert(
               'Account exists',
-              'This email is already registered. Sign in with your existing password to add restaurant access.',
+              friendlyError(undefined, 'This email is already registered. Sign in with your existing password to add restaurant access.'),
             );
             return;
           }
@@ -329,7 +329,7 @@ export default function OwnerRegisterScreen() {
     if (!agree) {
       Alert.alert(
         'Agreement required',
-        'Please agree to the Terms of Service and Privacy Policy before continuing.',
+        friendlyError(undefined, 'Please agree to the Terms of Service and Privacy Policy before continuing.'),
       );
       return;
     }
@@ -337,7 +337,7 @@ export default function OwnerRegisterScreen() {
     if (!e164) {
       Alert.alert(
         'Invalid phone',
-        'Please enter a valid phone number (include country code, or 10-digit US number).',
+        friendlyError(undefined, 'Please enter a valid phone number (include country code, or 10-digit US number).'),
       );
       return;
     }
@@ -372,7 +372,7 @@ export default function OwnerRegisterScreen() {
     if (!agree) {
       Alert.alert(
         'Agreement required',
-        'Please agree to the Terms of Service and Privacy Policy before continuing.',
+        friendlyError(undefined, 'Please agree to the Terms of Service and Privacy Policy before continuing.'),
       );
       return;
     }
@@ -403,7 +403,7 @@ export default function OwnerRegisterScreen() {
     if (!agree) {
       Alert.alert(
         'Agreement required',
-        'Please agree to the Terms of Service and Privacy Policy before continuing.',
+        friendlyError(undefined, 'Please agree to the Terms of Service and Privacy Policy before continuing.'),
       );
       return;
     }

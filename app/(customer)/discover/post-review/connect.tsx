@@ -32,6 +32,7 @@ import { uploadSnapPhoto } from '@/lib/snaps/uploadSnapPhoto';
 import { insertVisitPhoto } from '@/lib/snaps/visitPhotosApi';
 import { fetchCurrentUserProfile, type AppUserProfile } from '@/lib/services/userProfile';
 import { insertRestaurantReview } from '@/lib/reviews/insertRestaurantReview';
+import { friendlyError } from '@/lib/errors/friendlyError';
 import * as Crypto from 'expo-crypto';
 import { STORY_FILTERS } from '@/lib/storyFilters/registry';
 import {
@@ -480,7 +481,7 @@ export default function SnapCaptionScreen() {
       });
     } catch (err) {
       if (__DEV__) console.warn('[connect.postSnap] failed:', err);
-      Alert.alert('Could not post snap', 'Please try again.');
+      Alert.alert('Could not post snap', friendlyError(undefined, 'Please try again.'));
     } finally {
       if (!navigated) setPosting(false);
     }

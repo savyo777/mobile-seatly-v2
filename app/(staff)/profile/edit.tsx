@@ -896,7 +896,7 @@ export default function EditBusinessProfileScreen() {
     if (saving) return;
     const restaurantId = selectedRestaurant?.id;
     if (!restaurantId) {
-      Alert.alert('No restaurant selected', 'Pick a restaurant before saving.');
+      Alert.alert('No restaurant selected', friendlyError(undefined, 'Pick a restaurant before saving.'));
       return;
     }
     setSaving(true);

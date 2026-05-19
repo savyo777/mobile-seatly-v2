@@ -229,7 +229,7 @@ export default function OwnerLoginScreen() {
     await supabase.auth.signOut();
     Alert.alert(
       'Access denied',
-      'This account is not registered as a restaurant owner. Please create an owner account.',
+      friendlyError(undefined, 'This account is not registered as a restaurant owner. Please create an owner account.'),
     );
     return false;
   };
@@ -237,13 +237,13 @@ export default function OwnerLoginScreen() {
   const handleLogin = async () => {
     if (submitting || isLockedOut) return;
     if (!trimmedEmail || !password) {
-      Alert.alert('Missing info', 'Please enter both email and password.');
+      Alert.alert('Missing info', friendlyError(undefined, 'Please enter both email and password.'));
       return;
     }
 
     const supabase = getSupabase();
     if (!supabase) {
-      Alert.alert('Supabase not configured', 'Missing Supabase environment variables.');
+      Alert.alert('Supabase not configured', friendlyError(undefined, 'Missing Supabase environment variables.'));
       return;
     }
 
@@ -268,7 +268,7 @@ export default function OwnerLoginScreen() {
           setLockoutUntilMs(attempt.lockedUntilMs);
           Alert.alert(
             'Too many attempts',
-            'Too many failed attempts. Please wait 15 minutes or reset your password.',
+            friendlyError(undefined, 'Too many failed attempts. Please wait 15 minutes or reset your password.'),
           );
           try {
             await sendPasswordResetEmail(trimmedEmail);
@@ -287,7 +287,7 @@ export default function OwnerLoginScreen() {
       setLockoutUntilMs(null);
       const signedInUserId = data.user?.id;
       if (!signedInUserId) {
-        Alert.alert('Session error', 'Could not load your account. Please try again.');
+        Alert.alert('Session error', friendlyError(undefined, 'Could not load your account. Please try again.'));
         return;
       }
       // Fire-and-forget new-device-alert recording. See
@@ -308,7 +308,7 @@ export default function OwnerLoginScreen() {
     if (!e164) {
       Alert.alert(
         'Invalid phone',
-        'Please enter a valid phone number (include country code, or 10-digit US number).',
+        friendlyError(undefined, 'Please enter a valid phone number (include country code, or 10-digit US number).'),
       );
       return;
     }

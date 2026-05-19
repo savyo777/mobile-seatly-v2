@@ -16,6 +16,7 @@ import {
   type CreateAvailabilityAlertInput,
 } from '@/lib/alerts/createAvailabilityAlert';
 import { to24h } from '@/lib/alerts/timeNormalize';
+import { friendlyError } from '@/lib/errors/friendlyError';
 
 type CommonProps = {
   defaultPartySize?: number;
@@ -307,7 +308,7 @@ export function NotifyMeButton(props: NotifyMeButtonProps) {
           );
           return;
         }
-        Alert.alert('Something went wrong', err ?? 'Please try again.');
+        Alert.alert('Something went wrong', friendlyError(undefined, err ?? 'Please try again.'));
       } finally {
         setSubmitting(false);
       }

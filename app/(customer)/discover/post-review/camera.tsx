@@ -33,6 +33,7 @@ const mockRestaurants: typeof DEMO_RESTAURANTS = isDemoModeEnabled() ? DEMO_REST
 
 import { openAppPhotoSettings } from '@/lib/device/openAppPhotoSettings';
 import { safeRouterBack } from '@/lib/navigation/transitions';
+import { friendlyError } from '@/lib/errors/friendlyError';
 
 const TRANSPARENT_FRAME_STYLE = { borderRadius: 0, backgroundColor: 'transparent' };
 
@@ -431,7 +432,7 @@ export default function ReviewCameraScreen() {
     } catch {
       Alert.alert(
         'Could not open photos',
-        'Something went wrong opening your photo library. Please try again.',
+        friendlyError(undefined, 'Something went wrong opening your photo library. Please try again.'),
       );
     }
   }, [compositeAndGo]);
@@ -444,7 +445,7 @@ export default function ReviewCameraScreen() {
       try {
         existing = await ImagePicker.getMediaLibraryPermissionsAsync();
       } catch {
-        Alert.alert('Photos', 'Could not check photo access. Please try again.');
+        Alert.alert('Photos', friendlyError(undefined, 'Could not check photo access. Please try again.'));
         return;
       }
 
@@ -458,7 +459,7 @@ export default function ReviewCameraScreen() {
       try {
         r = await ImagePicker.requestMediaLibraryPermissionsAsync();
       } catch {
-        Alert.alert('Photos', 'Could not request photo access. Please try again.');
+        Alert.alert('Photos', friendlyError(undefined, 'Could not request photo access. Please try again.'));
         return;
       }
 

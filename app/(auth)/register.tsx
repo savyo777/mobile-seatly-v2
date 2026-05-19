@@ -242,25 +242,25 @@ export default function RegisterScreen() {
     const trimmedEmail = normalizeEmail(email);
     const trimmedName = normalizeName(fullName);
     if (!trimmedName || !trimmedEmail || !password) {
-      Alert.alert('Missing info', 'Please fill out your name, email, and password.');
+      Alert.alert('Missing info', friendlyError(undefined, 'Please fill out your name, email, and password.'));
       return;
     }
     const e164Phone = normalizePhoneToE164(phone);
     if (!e164Phone) {
       Alert.alert(
         'Invalid phone',
-        'Please enter a valid phone number (include country code, or 10-digit US number).',
+        friendlyError(undefined, 'Please enter a valid phone number (include country code, or 10-digit US number).'),
       );
       return;
     }
     if (!isPasswordValid) {
-      Alert.alert('Password requirements', 'Please meet all password requirements before continuing.');
+      Alert.alert('Password requirements', friendlyError(undefined, 'Please meet all password requirements before continuing.'));
       return;
     }
 
     const supabase = getSupabase();
     if (!supabase) {
-      Alert.alert('Supabase not configured', 'Missing Supabase environment variables.');
+      Alert.alert('Supabase not configured', friendlyError(undefined, 'Missing Supabase environment variables.'));
       return;
     }
 
@@ -287,7 +287,7 @@ export default function RegisterScreen() {
           if (signInError || !signInData.session) {
             Alert.alert(
               'Account exists',
-              'This email is already registered. Sign in with your existing password to add customer access.',
+              friendlyError(undefined, 'This email is already registered. Sign in with your existing password to add customer access.'),
             );
             return;
           }
@@ -356,7 +356,7 @@ export default function RegisterScreen() {
     if (!agree) {
       Alert.alert(
         'Agreement required',
-        'Please agree to the Terms of Service and Privacy Policy before continuing.',
+        friendlyError(undefined, 'Please agree to the Terms of Service and Privacy Policy before continuing.'),
       );
       return;
     }
@@ -384,7 +384,7 @@ export default function RegisterScreen() {
     if (!agree) {
       Alert.alert(
         'Agreement required',
-        'Please agree to the Terms of Service and Privacy Policy before continuing.',
+        friendlyError(undefined, 'Please agree to the Terms of Service and Privacy Policy before continuing.'),
       );
       return;
     }

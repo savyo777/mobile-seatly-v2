@@ -1,5 +1,6 @@
 import { Alert } from 'react-native';
 import type { Href } from 'expo-router';
+import { friendlyError } from '@/lib/errors/friendlyError';
 
 export const FALLBACK_ROUTES = {
   root: '/' as Href,
@@ -35,7 +36,7 @@ function recoverWithReplace(
 
 function notifyNavigationRecovered(showAlert: boolean): void {
   if (!showAlert) return;
-  Alert.alert('Unable to open screen', 'The app recovered. Please try again.');
+  Alert.alert('Unable to open screen', friendlyError(undefined, 'The app recovered. Please try again.'));
 }
 
 export function safePush(router: SafeRouter, href: Href, options: SafeNavigationOptions = {}): void {

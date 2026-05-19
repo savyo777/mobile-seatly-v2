@@ -128,12 +128,12 @@ export default function VerifyPhoneOtpScreen() {
     if (expected === 'owner') {
       Alert.alert(
         'Access denied',
-        'This account is not registered as a restaurant owner. Please create an owner account.',
+        friendlyError(undefined, 'This account is not registered as a restaurant owner. Please create an owner account.'),
       );
     } else {
       Alert.alert(
         'Access denied',
-        'This account is not registered as a customer. Please create a customer account.',
+        friendlyError(undefined, 'This account is not registered as a customer. Please create a customer account.'),
       );
     }
     return false;
@@ -154,7 +154,7 @@ export default function VerifyPhoneOtpScreen() {
   const onVerify = async () => {
     if (submitting) return;
     if (!phone) {
-      Alert.alert('Missing phone', 'Please start again from the sign-in screen.');
+      Alert.alert('Missing phone', friendlyError(undefined, 'Please start again from the sign-in screen.'));
       return;
     }
     setSubmitting(true);
@@ -165,7 +165,7 @@ export default function VerifyPhoneOtpScreen() {
         return;
       }
       if (!session) {
-        Alert.alert('Session error', 'Could not load your session. Please try again.');
+        Alert.alert('Session error', friendlyError(undefined, 'Could not load your session. Please try again.'));
         return;
       }
       let nextHref: AuthHomeHref = '/(customer)';

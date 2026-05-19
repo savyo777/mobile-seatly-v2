@@ -6,6 +6,7 @@ import { OwnerScreen } from '@/components/owner/OwnerScreen';
 import { SubpageHeader } from '@/components/owner/SubpageHeader';
 import { borderRadius, createStyles, spacing, typography, useColors } from '@/lib/theme';
 import { normalizeName, sanitizeNameInput, sanitizeOtpInput } from '@/lib/validation/input';
+import { friendlyError } from '@/lib/errors/friendlyError';
 
 const ROLES = ['Owner', 'Manager', 'Host', 'Server', 'Kitchen'] as const;
 type Role = (typeof ROLES)[number];
@@ -156,7 +157,7 @@ export default function AddPinScreen() {
 
   const onSave = () => {
     if (!canSave) {
-      Alert.alert('Missing info', 'Enter a name and a 4-digit PIN.');
+      Alert.alert('Missing info', friendlyError(undefined, 'Enter a name and a 4-digit PIN.'));
       return;
     }
     Alert.alert(

@@ -273,7 +273,7 @@ export default function ExpenseDetailScreen() {
     if (!vendor.trim()) {
       Alert.alert(
         transactionType === 'income' ? 'Missing source' : 'Missing vendor',
-        transactionType === 'income' ? 'Add a source before saving.' : 'Add a vendor before saving.',
+        friendlyError(undefined, transactionType === 'income' ? 'Add a source before saving.' : 'Add a vendor before saving.'),
       );
       return;
     }
@@ -281,7 +281,7 @@ export default function ExpenseDetailScreen() {
     // empty (single-line receipts). Tax is optional — null when not provided.
     const totalNum = parseDollarsInput(totalAmount);
     if (totalNum == null || totalNum < 0) {
-      Alert.alert('Missing total', 'Enter the total amount before saving.');
+      Alert.alert('Missing total', friendlyError(undefined, 'Enter the total amount before saving.'));
       return;
     }
     const subtotalNum = parseDollarsInput(subtotal);

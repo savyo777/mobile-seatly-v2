@@ -112,7 +112,7 @@ export default function ChangePhoneScreen() {
   const handleSendCode = async () => {
     setPhoneError('');
     if (!phoneLooksValid) {
-      setPhoneError('Enter a valid phone number (include country code, or 10-digit US number).');
+      setPhoneError(friendlyError(undefined, 'Enter a valid phone number (include country code, or 10-digit US number).'));
       return;
     }
     setLoading(true);
@@ -132,7 +132,7 @@ export default function ChangePhoneScreen() {
     setCodeError('');
     if (!pendingE164) return;
     if (code.replace(/\D/g, '').length !== 6) {
-      setCodeError('Enter the 6-digit code.');
+      setCodeError(friendlyError(undefined, 'Enter the 6-digit code.'));
       return;
     }
     setLoading(true);

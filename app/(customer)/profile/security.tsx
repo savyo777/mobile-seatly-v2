@@ -51,7 +51,7 @@ export default function SecurityScreen() {
           onPress: async () => {
             try {
               if (!currentEmail) {
-                Alert.alert('Error', 'No account email is available for password reset.');
+                Alert.alert('Error', friendlyError(undefined, 'No account email is available for password reset.'));
                 return;
               }
               await sendPasswordResetEmail(currentEmail);

@@ -6,6 +6,7 @@ import { OwnerScreen } from '@/components/owner/OwnerScreen';
 import { SubpageHeader } from '@/components/owner/SubpageHeader';
 import { borderRadius, createStyles, spacing, typography, useColors } from '@/lib/theme';
 import { normalizeEmail, normalizeName, sanitizeEmailInput, sanitizeNameInput } from '@/lib/validation/input';
+import { friendlyError } from '@/lib/errors/friendlyError';
 
 const ROLES = ['Manager', 'Host', 'Server', 'Kitchen'] as const;
 type Role = (typeof ROLES)[number];
@@ -147,7 +148,7 @@ export default function InviteTeamMemberScreen() {
 
   const onSave = () => {
     if (!canSave) {
-      Alert.alert('Missing info', 'Add a name and email address first.');
+      Alert.alert('Missing info', friendlyError(undefined, 'Add a name and email address first.'));
       return;
     }
     Alert.alert(

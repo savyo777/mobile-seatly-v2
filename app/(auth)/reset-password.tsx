@@ -106,7 +106,7 @@ export default function ResetPasswordScreen() {
     }
     const supabase = getSupabase();
     if (!supabase) {
-      Alert.alert('Supabase not configured', 'Missing Supabase environment variables.');
+      Alert.alert('Supabase not configured', friendlyError(undefined, 'Missing Supabase environment variables.'));
       return;
     }
 

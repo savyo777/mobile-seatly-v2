@@ -128,7 +128,7 @@ export default function SnapStylesScreen() {
 
   const handleContinue = useCallback(async () => {
     if (!decodedUri || !restaurantId) {
-      Alert.alert('Missing photo', 'Go back and choose a photo first.');
+      Alert.alert('Missing photo', friendlyError(undefined, 'Go back and choose a photo first.'));
       return;
     }
     const finish = async (finalUri: string, preservedFilterId?: StoryFilterId | null) => {

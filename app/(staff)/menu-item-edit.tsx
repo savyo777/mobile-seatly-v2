@@ -23,6 +23,7 @@ import { createStyles } from '@/lib/theme';
 import { ownerColorsFromPalette, ownerRadii, ownerSpace, useOwnerColors } from '@/lib/theme/ownerTheme';
 import { normalizeMoneyInput, normalizeTextInput, sanitizeMoneyInput, sanitizeTextInput } from '@/lib/validation/input';
 import { useAuthSession } from '@/lib/auth/AuthContext';
+import { friendlyError } from '@/lib/errors/friendlyError';
 
 const MENU_MUTATION_ROLES = new Set(['owner', 'manager', 'diner_and_owner']);
 
@@ -51,7 +52,7 @@ export default function MenuItemEditScreen() {
   const pickPhoto = useCallback(async () => {
     const p = await ImagePicker.requestMediaLibraryPermissionsAsync();
     if (!p.granted) {
-      Alert.alert(t('common.error'), 'Photo library permission is required.');
+      Alert.alert(t('common.error'), friendlyError(undefined, 'Photo library permission is required.'));
       return;
     }
     const result = await ImagePicker.launchImageLibraryAsync({
@@ -69,7 +70,7 @@ export default function MenuItemEditScreen() {
     const cleanDescription = normalizeTextInput(formDesc, { maxLength: 500, multiline: true });
     const cleanCategory = normalizeTextInput(formCategory, { maxLength: 80 });
     if (!cleanName || price === null || price < 0) {
-      Alert.alert(t('common.error'), 'Enter a valid name and price.');
+      Alert.alert(t('common.error'), friendlyError(undefined, 'Enter a valid name and price.'));
       return;
     }
     const changes: Pick<MenuItem, 'name' | 'description' | 'price' | 'category' | 'photoUrl' | 'isAvailable'> = {

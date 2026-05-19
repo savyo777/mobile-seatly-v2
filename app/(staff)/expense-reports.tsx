@@ -100,7 +100,7 @@ export default function ExpenseReportsScreen() {
     if (exporting) return;
     const inRange = filterExpensesInRange(expenses, range);
     if (inRange.length === 0) {
-      Alert.alert('Nothing to export', 'No expenses in the selected period.');
+      Alert.alert('Nothing to export', friendlyError(undefined, 'No expenses in the selected period.'));
       return;
     }
     setExporting(true);
@@ -109,7 +109,7 @@ export default function ExpenseReportsScreen() {
       if (!shared) {
         Alert.alert(
           'Sharing unavailable',
-          'This device cannot open the share sheet right now.',
+          friendlyError(undefined, 'This device cannot open the share sheet right now.'),
         );
       }
     } catch (err) {

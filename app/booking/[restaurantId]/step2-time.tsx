@@ -522,7 +522,7 @@ export default function Step2Time() {
           Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
           router.replace(`/(customer)/bookings/${reservationId}`);
         } else {
-          Alert.alert('Could not update', 'Reservation not found.');
+          Alert.alert('Could not update', friendlyError(undefined, 'Reservation not found.'));
         }
         return;
       }
@@ -645,7 +645,7 @@ export default function Step2Time() {
                     if (conflict) {
                       Alert.alert(
                         'Reservation conflict',
-                        'You have another reservation at this time.',
+                        friendlyError(undefined, 'You have another reservation at this time.'),
                       );
                       return;
                     }

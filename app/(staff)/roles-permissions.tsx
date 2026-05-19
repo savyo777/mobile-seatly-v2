@@ -15,6 +15,7 @@ import {
   type RoleId,
   type RolePermissionMatrix,
 } from '@/lib/owner/rolePermissionsSettings';
+import { friendlyError } from '@/lib/errors/friendlyError';
 
 const useStyles = createStyles((c) => ({
   pickerRow: {
@@ -199,7 +200,7 @@ export default function RolesPermissionsScreen() {
       setPerms(previous);
       Alert.alert(
         'Permissions not saved',
-        'We couldn’t save that change. Check your connection and try again.',
+        friendlyError(undefined, 'We couldn’t save that change. Check your connection and try again.'),
       );
     });
   };

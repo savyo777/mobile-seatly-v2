@@ -363,7 +363,7 @@ export default function ExpenseReviewScreen() {
     if (!vendor.trim()) {
       Alert.alert(
         transactionType === 'income' ? 'Missing source' : 'Missing vendor',
-        transactionType === 'income' ? 'Add a source before saving.' : 'Add a vendor name before saving.',
+        friendlyError(undefined, transactionType === 'income' ? 'Add a source before saving.' : 'Add a vendor name before saving.'),
       );
       return;
     }
@@ -372,7 +372,7 @@ export default function ExpenseReviewScreen() {
     // stays null (matches single-line receipts without a tax breakdown).
     const totalNum = parseDollarsInput(totalAmount);
     if (totalNum == null || totalNum < 0) {
-      Alert.alert('Missing total', 'Enter the total amount paid before saving.');
+      Alert.alert('Missing total', friendlyError(undefined, 'Enter the total amount paid before saving.'));
       return;
     }
     const subtotalNum = parseDollarsInput(subtotal);
@@ -450,7 +450,7 @@ export default function ExpenseReviewScreen() {
       if (!restaurantId) {
         Alert.alert(
           'No restaurant linked',
-          'We couldn’t find a restaurant linked to this account. Make sure you finished registering your restaurant.',
+          friendlyError(undefined, 'We couldn’t find a restaurant linked to this account. Make sure you finished registering your restaurant.'),
         );
         setSaving(false);
         return;
@@ -459,7 +459,7 @@ export default function ExpenseReviewScreen() {
       // public.expenses.created_by FKs to user_profiles.id, NOT auth.users.id.
       const profileId = await getCurrentUserProfileId();
       if (!profileId) {
-        Alert.alert('Profile missing', 'We couldn’t resolve your user profile. Sign out and back in, then try again.');
+        Alert.alert('Profile missing', friendlyError(undefined, 'We couldn’t resolve your user profile. Sign out and back in, then try again.'));
         setSaving(false);
         return;
       }

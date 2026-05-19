@@ -21,6 +21,7 @@ const getSnapRestaurantName: typeof DEMO_getSnapRestaurantName = (id) =>
 import { submitPostTurnReview } from '@/lib/postVisit/postTurn';
 import { borderRadius, createStyles, spacing, typography, useColors } from '@/lib/theme';
 import { normalizeTextInput, sanitizeTextInput } from '@/lib/validation/input';
+import { friendlyError } from '@/lib/errors/friendlyError';
 
 const useStyles = createStyles((c) => ({
   root: {
@@ -122,11 +123,11 @@ export default function BookingReviewScreen() {
 
   const submit = async () => {
     if (!isAuthenticated || !user?.id) {
-      Alert.alert('Sign in required', 'Please sign in to leave a review.');
+      Alert.alert('Sign in required', friendlyError(undefined, 'Please sign in to leave a review.'));
       return;
     }
     if (!bookingId || !restaurantId) {
-      Alert.alert('Missing booking', 'This review needs to be linked to a completed booking.');
+      Alert.alert('Missing booking', friendlyError(undefined, 'This review needs to be linked to a completed booking.'));
       return;
     }
     setBusy(true);

@@ -21,6 +21,7 @@ import { previewDepositCents, type DepositTier } from '@/lib/booking/depositTier
 import { loadRestaurantForBooking } from '@/lib/data/restaurantCatalog';
 import { formatCurrency } from '@/lib/utils/formatCurrency';
 import { useColors, createStyles, borderRadius } from '@/lib/theme';
+import { friendlyError } from '@/lib/errors/friendlyError';
 import { BOOKING_STEPS_TOTAL } from '@/lib/booking/bookingDefaults';
 import { useReservationHoldContext } from '@/lib/booking/ReservationHoldProvider';
 import { isHoldsEnabled } from '@/lib/config/holdsFeature';
@@ -331,7 +332,7 @@ export default function Step4Preorder() {
       if (cart.length === 0) {
         Alert.alert(
           'No items selected',
-          'Please select something from the menu to pre-pay for your meal.',
+          friendlyError(undefined, 'Please select something from the menu to pre-pay for your meal.'),
         );
         return;
       }

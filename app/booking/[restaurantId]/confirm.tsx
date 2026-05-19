@@ -38,6 +38,7 @@ import {
   sanitizePhoneInput,
   sanitizeTextInput,
 } from '@/lib/validation/input';
+import { friendlyError } from '@/lib/errors/friendlyError';
 
 const OCCASIONS = ['Birthday', 'Anniversary', 'Date Night', 'Business', 'Celebration'];
 
@@ -346,7 +347,7 @@ export default function ConfirmScreen() {
     if (!slotDateTime || !shiftId) {
       Alert.alert(
         'Select a time',
-        'Please choose an available time before continuing.',
+        friendlyError(undefined, 'Please choose an available time before continuing.'),
       );
       return;
     }
@@ -355,11 +356,11 @@ export default function ConfirmScreen() {
     const cleanedPhone = normalizePhoneInput(phone) ?? normalizeTextInput(phone, { maxLength: 32 });
     const cleanedNotes = normalizeTextInput(notes, { maxLength: 1000, multiline: true });
     if (!cleanedName) {
-      setContactError('Enter the guest name.');
+      setContactError(friendlyError(undefined, 'Enter the guest name.'));
       return;
     }
     if (!cleanedEmail || !isValidEmail(cleanedEmail)) {
-      setContactError('Enter a valid email address.');
+      setContactError(friendlyError(undefined, 'Enter a valid email address.'));
       return;
     }
     setContactError('');
@@ -378,7 +379,7 @@ export default function ConfirmScreen() {
     }
     const parsed = parseInt(digits, 10);
     if (parsed > MAX_ONLINE_PARTY_SIZE) {
-      setGuestError(`${MAX_ONLINE_PARTY_SIZE} is the maximum`);
+      setGuestError(friendlyError(undefined, `${MAX_ONLINE_PARTY_SIZE} is the maximum`));
       return;
     }
     const nextGuests = Math.max(1, parsed);
