@@ -101,7 +101,9 @@ BEGIN
     -- Use hex of 3 random bytes → 6 hex chars, uppercase → matches the
     -- client-side regex /^CNV-OWNER-[A-Z0-9]{6}$/. 16^6 = ~16M codes,
     -- comfortable headroom for any reasonable owner count.
-    v_raw := upper(encode(gen_random_bytes(3), 'hex'));
+    -- pgcrypto lives in the `extensions` schema; qualify explicitly so
+    -- the locked-down search_path (public, pg_temp) doesn't hide it.
+    v_raw := upper(encode(extensions.gen_random_bytes(3), 'hex'));
     v_code := 'CNV-OWNER-' || substr(v_raw, 1, 6);
     BEGIN
       INSERT INTO owner_referral_codes(owner_user_id, code)
