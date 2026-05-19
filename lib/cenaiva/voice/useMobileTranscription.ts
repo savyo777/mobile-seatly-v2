@@ -9,6 +9,7 @@ import {
   useAudioRecorder,
 } from 'expo-audio';
 import { useAuthSession } from '@/lib/auth/AuthContext';
+import { getSupabase } from '@/lib/supabase/client';
 import { getSupabaseEnv, isSupabaseConfigured } from '@/lib/supabase/env';
 
 const DEEPGRAM_URL = process.env.EXPO_PUBLIC_DEEPGRAM_URL?.trim() || 'https://api.deepgram.com/v1/listen';
@@ -180,11 +181,46 @@ export function useMobileTranscription() {
   const fetchDeepgramToken = useCallback(async () => {
     if (!DEEPGRAM_LIVE_TOKEN_ENABLED) return null;
     if (!isSupabaseConfigured() || !session?.access_token) return null;
+
+    // Resolve the freshest possible access_token before hitting the edge
+    // function. The Supabase client is configured with
+    // `autoRefreshToken: false` and AuthProvider's foreground
+    // startAutoRefresh pauses while the app is backgrounded — so after a
+    // ~1h idle the React `session` here can hold an expired JWT, and
+    // the edge function's verify_jwt=true gate will 401 even though
+    // everything else looks healthy. Calling getSession() returns the
+    // most recent token (refreshing it lazily if expiry is close), and
+    // refreshSession() force-rotates one final time if we're inside the
+    // grace window. Either path keeps us off the stale-token cliff.
+    let bearer = session.access_token;
+    const supabase = getSupabase();
+    if (supabase) {
+      try {
+        const live = await supabase.auth.getSession();
+        const liveSession = live?.data?.session;
+        if (liveSession?.access_token) bearer = liveSession.access_token;
+
+        const nowSec = Math.floor(Date.now() / 1000);
+        const expiresAt = liveSession?.expires_at ?? 0;
+        if (!expiresAt || expiresAt - nowSec < 60) {
+          const refreshed = await supabase.auth.refreshSession();
+          const refreshedToken = refreshed?.data?.session?.access_token;
+          if (refreshedToken) bearer = refreshedToken;
+        }
+      } catch (refreshErr) {
+        debugVoice('deepgram token refresh failed', {
+          message: refreshErr instanceof Error ? refreshErr.message : String(refreshErr),
+        });
+        // Fall through with whatever bearer we had — the edge function
+        // will surface 401 cleanly, which friendlyVoiceError translates.
+      }
+    }
+
     const { url, anonKey } = getSupabaseEnv();
     const response = await fetch(`${url}/functions/v1/deepgram-live-token`, {
       method: 'POST',
       headers: {
-        Authorization: `Bearer ${session.access_token}`,
+        Authorization: `Bearer ${bearer}`,
         apikey: anonKey,
         'Content-Type': 'application/json',
       },
