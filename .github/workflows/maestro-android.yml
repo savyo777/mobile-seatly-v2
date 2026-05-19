@@ -144,25 +144,14 @@ jobs:
             echo "::endgroup::"
 
             echo "::group::Run Maestro flows"
-            # The android-emulator-runner action drops us into POSIX sh
-            # (dash on ubuntu-latest), which doesn't support bash arrays.
-            # Iterate a literal newline-separated list of flow paths instead.
-            for flow in \
-              .maestro/smoke.yaml \
-              .maestro/auth/sign-in-success.yaml \
-              .maestro/customer/discover-list.yaml \
-              .maestro/customer/bookings-tab.yaml \
-              .maestro/customer/profile-favorites.yaml \
-              .maestro/customer/notifications-feed.yaml \
-              .maestro/cenaiva/fab-opens-assistant.yaml \
-              .maestro/cenaiva/close-assistant.yaml; do
-              echo ">>> $flow"
-              # force-stop between flows to avoid the Maestro AVD-driver
-              # instrumentation flakiness we saw in Pass 3.
-              adb shell am force-stop com.cenaiva.app || true
-              maestro test "$flow"
-              sleep 3
-            done
+            # The android-emulator-runner action executes each line of this
+            # script as a separate `sh -c` invocation on ubuntu-latest
+            # (dash), so neither bash arrays nor backslash-continued
+            # statements span multiple lines. Drop the entire loop on one
+            # line + use `;` separators. force-stop between flows clears
+            # the Maestro AVD-driver instrumentation flakiness we hit in
+            # Pass 3.
+            for flow in .maestro/smoke.yaml .maestro/auth/sign-in-success.yaml .maestro/customer/discover-list.yaml .maestro/customer/bookings-tab.yaml .maestro/customer/profile-favorites.yaml .maestro/customer/notifications-feed.yaml .maestro/cenaiva/fab-opens-assistant.yaml .maestro/cenaiva/close-assistant.yaml; do echo ">>> $flow"; adb shell am force-stop com.cenaiva.app || true; maestro test "$flow"; sleep 3; done
             echo "::endgroup::"
 
             kill $METRO_PID || true
