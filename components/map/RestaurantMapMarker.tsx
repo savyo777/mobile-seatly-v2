@@ -1,179 +1,163 @@
 import React, { memo } from 'react';
-import { View, Text } from 'react-native';
+import { Platform, StyleSheet, Text, View } from 'react-native';
 import { Marker } from 'react-native-maps';
-import { normalizeRestaurantPriceRange, restaurantPriceLabel } from '@/lib/restaurants/pricing';
-import { createStyles, borderRadius, shadows } from '@/lib/theme';
+import { normalizeRestaurantPriceRange } from '@/lib/restaurants/pricing';
+
+/**
+ * Restaurant pin that matches the Seatly web app's pinIconSvg() pattern at
+ * `apps/web/src/pages/customer/DiscoverPage.tsx:597-650` of the
+ * https://github.com/StevenGeorgy/Seatly repo. Two variants:
+ *
+ *   - No price tier → solid gold circle (22px idle / 28px active).
+ *   - Price tier 1/2/3 → $/$$/$$$ pill, dark idle / light-gold active.
+ *
+ * Rating + name + cuisine intentionally don't render here — those live in
+ * the popup card (MapRestaurantPopup, Tier 5). The web map is much sparser
+ * than the previous mobile pill, which is the point: pixel-equivalent
+ * visual parity with /discover.
+ */
 
 type Props = {
   id: string;
   latitude: number;
   longitude: number;
   name?: string;
-  rating: number;
+  /**
+   * Kept for backwards compatibility with callers. Rating is no longer
+   * rendered on the marker — it shows in the popup card on tap.
+   */
+  rating?: number;
   priceTier: number;
   selected: boolean;
-  /**
-   * Kept for backwards compatibility with callers. Both variants now
-   * render the same unified UI — the dark rating/price pill on top,
-   * the restaurant name label below — so the discover map and the
-   * Hey Cenaiva map look identical.
-   */
   variant?: 'default' | 'cenaiva';
   onPress: (id: string) => void;
 };
 
-type ContentProps = Pick<Props, 'name' | 'rating' | 'priceTier' | 'selected'>;
+// Brand hex tokens (mirror MOBILE_MAPS_GUIDE.md Section 9 — use #C9A84C
+// not #D4AF37; #F5E6C8 is the active/highlight gold).
+const GOLD = '#C9A84C';
+const GOLD_LIGHT = '#F5E6C8';
+const BLACK = '#0A0A0A';
+const BLACK_BORDER_IDLE = 'rgba(10,10,10,0.6)';
+const GOLD_BORDER_IDLE = 'rgba(201,168,76,0.65)';
 
-const PIN = 40;
-// The marker frame is sized so the anchor (passed on the Marker
-// element) can point at the centre of the pill, not the bottom of the
-// name label. Pill ~34, gap 4, label ~16 → frame ~54. The Marker
-// anchor uses (pillHalf + glowPadding) / frameHeight.
-const FRAME_HEIGHT = 56;
-const PIN_HEIGHT = 34;
-export const MARKER_ANCHOR_Y = (PIN_HEIGHT / 2) / FRAME_HEIGHT;
+// Pin sizes (px) — match web's pinIconSvg.
+const CIRCLE_IDLE = 22;
+const CIRCLE_ACTIVE = 28;
+const PILL_HEIGHT_IDLE = 22;
+const PILL_HEIGHT_ACTIVE = 28;
 
-function safeRating(value: number): number {
-  return Number.isFinite(value) ? value : 0;
-}
+// Marker anchor: centered (web anchors at size/2, size/2).
+export const MARKER_ANCHOR_Y = 0.5;
 
-const useStyles = createStyles((c) => ({
-  wrap: {
-    alignItems: 'center',
-    justifyContent: 'flex-start',
-    gap: 4,
+const monoFont = Platform.select({
+  ios: 'Menlo',
+  default: 'monospace',
+});
+
+const styles = StyleSheet.create({
+  // Circle: no price level
+  circleIdle: {
+    width: CIRCLE_IDLE,
+    height: CIRCLE_IDLE,
+    borderRadius: CIRCLE_IDLE / 2,
+    backgroundColor: GOLD,
+    borderWidth: 1.25,
+    borderColor: BLACK_BORDER_IDLE,
+    // Drop shadow — matches feDropShadow dx=0 dy=2 stdDeviation=2 #000 0.55
+    shadowColor: '#000000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.55,
+    shadowRadius: 2,
+    elevation: 4,
   },
-  glow: {
-    position: 'absolute',
-    top: 2,
-    width: 52,
-    height: PIN_HEIGHT,
-    borderRadius: borderRadius.full,
-    backgroundColor: 'transparent',
-    opacity: 0,
+  circleActive: {
+    width: CIRCLE_ACTIVE,
+    height: CIRCLE_ACTIVE,
+    borderRadius: CIRCLE_ACTIVE / 2,
+    backgroundColor: GOLD_LIGHT,
+    borderWidth: 2,
+    borderColor: BLACK,
+    shadowColor: '#000000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.55,
+    shadowRadius: 2,
+    elevation: 4,
   },
-  glowSelected: {
-    opacity: 1,
-    backgroundColor: 'rgba(201, 168, 76, 0.22)',
-    ...shadows.goldGlow,
-  },
-  pin: {
-    minWidth: PIN + 4,
-    height: PIN_HEIGHT,
-    borderRadius: borderRadius.full,
-    backgroundColor: c.bgElevated,
-    borderWidth: 1.5,
-    borderColor: c.border,
+  // Pill: priceLevel 1/2/3
+  pillIdle: {
+    height: PILL_HEIGHT_IDLE,
+    borderRadius: PILL_HEIGHT_IDLE / 2,
+    backgroundColor: BLACK,
+    borderWidth: 1.25,
+    borderColor: GOLD_BORDER_IDLE,
+    paddingHorizontal: 8,
     alignItems: 'center',
     justifyContent: 'center',
+    shadowColor: '#000000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.55,
+    shadowRadius: 2,
+    elevation: 4,
+  },
+  pillActive: {
+    height: PILL_HEIGHT_ACTIVE,
+    borderRadius: PILL_HEIGHT_ACTIVE / 2,
+    backgroundColor: GOLD_LIGHT,
+    borderWidth: 2,
+    borderColor: GOLD,
     paddingHorizontal: 10,
-    ...shadows.card,
-  },
-  pinSelected: {
-    backgroundColor: c.gold,
-    borderColor: c.gold,
-    transform: [{ scale: 1.08 }],
-  },
-  nameLabel: {
-    maxWidth: 120,
-    minHeight: 16,
-    borderRadius: 6,
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.10)',
-    backgroundColor: 'rgba(7,7,7,0.78)',
-    paddingHorizontal: 6,
-    paddingVertical: 2,
-  },
-  nameLabelSelected: {
-    borderColor: 'rgba(201, 168, 76, 0.70)',
-    backgroundColor: 'rgba(15,15,15,0.88)',
-  },
-  nameLabelText: {
-    color: '#FFFFFF',
-    fontSize: 10,
-    fontWeight: '800',
-    lineHeight: 12,
-    textAlign: 'center',
-    textShadowColor: 'rgba(0,0,0,0.7)',
-    textShadowOffset: { width: 0, height: 1 },
-    textShadowRadius: 2,
-  },
-  contentRow: {
-    flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'center',
+    shadowColor: '#000000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.55,
+    shadowRadius: 2,
+    elevation: 4,
   },
-  ratingText: {
-    color: c.textPrimary,
+  pillTextIdle: {
+    color: GOLD,
+    fontFamily: monoFont,
+    fontWeight: '700',
     fontSize: 12,
+    lineHeight: 14,
+    textAlign: 'center',
+    includeFontPadding: false,
+  },
+  pillTextActive: {
+    color: BLACK,
+    fontFamily: monoFont,
     fontWeight: '700',
+    fontSize: 14,
+    lineHeight: 16,
+    textAlign: 'center',
+    includeFontPadding: false,
   },
-  ratingTextSelected: {
-    color: c.bgBase,
-  },
-  dot: {
-    marginHorizontal: 5,
-    color: c.textMuted,
-    fontSize: 11,
-  },
-  dotSelected: {
-    color: '#1f1f1f',
-  },
-  priceText: {
-    color: c.gold,
-    fontSize: 11,
-    fontWeight: '700',
-  },
-  priceTextSelected: {
-    color: c.bgBase,
-  },
-  gap: {
-    width: 3,
-  },
-  starGlyph: {
-    fontSize: 11,
-    lineHeight: 13,
-    color: c.gold,
-    fontWeight: '700',
-  },
-  starGlyphSelected: {
-    color: c.bgBase,
-  },
-}));
+});
 
-export function RestaurantMapMarkerContent({
-  name,
-  rating,
-  priceTier,
-  selected,
-}: ContentProps) {
-  const styles = useStyles();
-  const displayRating = safeRating(rating);
-  const displayPriceTier = normalizeRestaurantPriceRange(priceTier);
-  const displayPriceLabel = restaurantPriceLabel(displayPriceTier);
+function dollarsForTier(tier: number): string | null {
+  const normalized = normalizeRestaurantPriceRange(tier);
+  if (normalized < 1 || normalized > 3) return null;
+  return '$'.repeat(normalized);
+}
 
-  return (
-    <View style={styles.wrap} pointerEvents="box-none">
-      <View style={[styles.glow, selected && styles.glowSelected]} />
-      <View style={[styles.pin, selected && styles.pinSelected]}>
-        <View style={styles.contentRow}>
-          <Text style={[styles.starGlyph, selected && styles.starGlyphSelected]} accessible={false}>
-            ★
-          </Text>
-          <View style={styles.gap} />
-          <Text style={[styles.ratingText, selected && styles.ratingTextSelected]}>{displayRating.toFixed(1)}</Text>
-          <Text style={[styles.dot, selected && styles.dotSelected]}>•</Text>
-          <Text style={[styles.priceText, selected && styles.priceTextSelected]}>{displayPriceLabel}</Text>
-        </View>
+type ContentProps = {
+  priceTier: number;
+  selected: boolean;
+};
+
+export function RestaurantMapMarkerContent({ priceTier, selected }: ContentProps) {
+  const dollars = dollarsForTier(priceTier);
+
+  if (dollars) {
+    return (
+      <View style={selected ? styles.pillActive : styles.pillIdle}>
+        <Text style={selected ? styles.pillTextActive : styles.pillTextIdle}>{dollars}</Text>
       </View>
-      {name ? (
-        <View style={[styles.nameLabel, selected && styles.nameLabelSelected]}>
-          <Text style={styles.nameLabelText} numberOfLines={1} ellipsizeMode="tail">
-            {name}
-          </Text>
-        </View>
-      ) : null}
-    </View>
-  );
+    );
+  }
+
+  return <View style={selected ? styles.circleActive : styles.circleIdle} />;
 }
 
 function RestaurantMapMarkerComponent({
@@ -181,30 +165,26 @@ function RestaurantMapMarkerComponent({
   latitude,
   longitude,
   name,
-  rating,
   priceTier,
   selected,
   onPress,
 }: Props) {
-  const displayRating = safeRating(rating);
-  const displayPriceLabel = restaurantPriceLabel(priceTier);
+  const dollars = dollarsForTier(priceTier);
+  const a11y = dollars
+    ? `${name ?? 'Restaurant'}, price ${dollars}`
+    : (name ?? 'Restaurant');
 
   return (
     <Marker
       coordinate={{ latitude, longitude }}
-      accessibilityLabel={`${name ?? 'Restaurant'}, ${displayRating.toFixed(1)} rating · ${displayPriceLabel}`}
+      accessibilityLabel={a11y}
       accessibilityRole="button"
       anchor={{ x: 0.5, y: MARKER_ANCHOR_Y }}
-      zIndex={selected ? 1000 : 1}
+      zIndex={selected ? 999 : 1}
       onPress={() => onPress(id)}
       tracksViewChanges={selected}
     >
-      <RestaurantMapMarkerContent
-        name={name}
-        rating={rating}
-        priceTier={priceTier}
-        selected={selected}
-      />
+      <RestaurantMapMarkerContent priceTier={priceTier} selected={selected} />
     </Marker>
   );
 }

@@ -4,10 +4,11 @@ import MapView, { Marker, PROVIDER_GOOGLE, type MapPressEvent, type Region } fro
 import { Ionicons } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
 import { RestaurantMapMarkerContent, MARKER_ANCHOR_Y } from '@/components/map/RestaurantMapMarker';
+import { RestaurantClusterMarker } from '@/components/map/RestaurantClusterMarker';
 import { CENAIVA_MAP_STYLE } from '@/lib/map/darkMapStyle';
 import { hasFiniteCoords, haversineMeters } from '@/lib/map/geo';
 import { DEFAULT_MAP_CENTER } from '@/lib/map/mapFilters';
-import { normalizeRestaurantPriceRange, restaurantPriceLabel } from '@/lib/restaurants/pricing';
+import { normalizeRestaurantPriceRange } from '@/lib/restaurants/pricing';
 import type { RestaurantDiscoveryMapProps } from '@/components/map/restaurantMapTypes';
 import { useColors, createStyles, spacing, borderRadius, typography, shadows } from '@/lib/theme';
 
@@ -41,10 +42,6 @@ function isFiniteCoordinate(latitude: unknown, longitude: unknown): boolean {
     Math.abs(latitude) <= 90 &&
     Math.abs(longitude) <= 180
   );
-}
-
-function safeRating(value: number | null | undefined): number {
-  return value != null && Number.isFinite(value) ? value : 0;
 }
 
 type ClusterableRestaurant = RestaurantDiscoveryMapProps['filteredRestaurants'][number] & {
@@ -179,32 +176,6 @@ const useStyles = createStyles((c) => ({
     height: 8,
     borderRadius: borderRadius.full,
     backgroundColor: c.info,
-  },
-  clusterBubble: {
-    minWidth: 56,
-    height: 42,
-    borderRadius: 21,
-    paddingHorizontal: 14,
-    backgroundColor: c.bgElevated,
-    borderWidth: 1.5,
-    borderColor: c.gold,
-    alignItems: 'center',
-    justifyContent: 'center',
-    ...shadows.goldGlow,
-  },
-  clusterCount: {
-    fontSize: 15,
-    lineHeight: 18,
-    fontWeight: '900',
-    color: c.gold,
-  },
-  clusterLabel: {
-    fontSize: 8,
-    lineHeight: 10,
-    fontWeight: '800',
-    color: c.textMuted,
-    textTransform: 'uppercase',
-    letterSpacing: 0.5,
   },
 }));
 
@@ -529,45 +500,33 @@ export function RestaurantDiscoveryMap({
         {markerClusters.map((cluster) => {
           if (cluster.restaurants.length > 1) {
             return (
-              <Marker
+              <RestaurantClusterMarker
                 key={cluster.id}
-                coordinate={{ latitude: cluster.latitude, longitude: cluster.longitude }}
-                accessibilityLabel={`${cluster.restaurants.length} restaurants nearby`}
-                accessibilityHint="Shows the restaurants in this group"
-                accessibilityRole="button"
-                anchor={{ x: 0.5, y: 0.5 }}
-                zIndex={500}
+                id={cluster.id}
+                latitude={cluster.latitude}
+                longitude={cluster.longitude}
+                count={cluster.restaurants.length}
                 onPress={() => focusCluster(cluster)}
-                tracksViewChanges={false}
-              >
-                <View style={styles.clusterBubble}>
-                  <Text style={styles.clusterCount}>{cluster.restaurants.length}</Text>
-                  <Text style={styles.clusterLabel}>spots</Text>
-                </View>
-              </Marker>
+              />
             );
           }
 
           const r = cluster.restaurants[0];
           const selected = selectedId === r.id;
-          const displayRating = safeRating(r.avgRating);
           const displayPriceTier = normalizeRestaurantPriceRange(r.priceRange);
-          const displayPriceLabel = restaurantPriceLabel(displayPriceTier);
           return (
             <Marker
               key={`restaurant-${r.id}`}
               coordinate={{ latitude: r.lat, longitude: r.lng }}
-              accessibilityLabel={`${r.name ?? 'Restaurant'}, ${displayRating.toFixed(1)} rating · ${displayPriceLabel}`}
+              accessibilityLabel={r.name ?? 'Restaurant'}
               accessibilityHint={markerVariant === 'cenaiva' ? 'Shows restaurant catalog' : undefined}
               accessibilityRole="button"
               anchor={{ x: 0.5, y: MARKER_ANCHOR_Y }}
-              zIndex={selected ? 1000 : 1}
+              zIndex={selected ? 999 : 1}
               onPress={() => onSelectRestaurant(r.id)}
               tracksViewChanges={selected}
             >
               <RestaurantMapMarkerContent
-                name={r.name}
-                rating={displayRating}
                 priceTier={displayPriceTier}
                 selected={selected}
               />
