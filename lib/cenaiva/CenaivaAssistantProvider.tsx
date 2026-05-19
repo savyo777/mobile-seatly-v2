@@ -281,6 +281,24 @@ function AssistantInner({ children }: { children: ReactNode }) {
     isOpenRef.current = state.isOpen;
   }, [state.isOpen]);
 
+  // Mirror the transcription hook's phase into the store's voiceStatus so
+  // the mic orb only flips to "listening" once the recorder is actually
+  // running, not the optimistic moment the user tapped. Prevents the
+  // select-then-deselect-immediately flash when recording fails fast.
+  //
+  // Guard against clobbering 'processing'/'speaking'/'error': only flip
+  // to 'listening' from non-active states, and only flip to 'idle' if
+  // we were the one who set 'listening'.
+  useEffect(() => {
+    const phase: TranscriptionPhase = voice.transcriptionPhase;
+    const status = stateRef.current.voiceStatus;
+    if (phase === 'recording' && status !== 'listening' && status !== 'speaking' && status !== 'processing') {
+      commit({ type: 'SET_VOICE_STATUS', status: 'listening' });
+    } else if (phase === 'idle' && status === 'listening') {
+      commit({ type: 'SET_VOICE_STATUS', status: 'idle' });
+    }
+  }, [commit, voice.transcriptionPhase]);
+
   const requestLocation = useCallback(async () => {
     if (userLocationRef.current) return userLocationRef.current;
     if (!locationRequestRef.current) {
@@ -940,7 +958,14 @@ function AssistantInner({ children }: { children: ReactNode }) {
     try {
       const listenStartedAt = Date.now();
       debugTiming('listening started');
-      commit({ type: 'SET_VOICE_STATUS', status: 'listening' });
+      // Don't flip voiceStatus to 'listening' yet. The UI binds to this
+      // value to show the gold pulsing "listening" orb — if we commit here
+      // and voice.startListening throws fast (iOS sim with no mic, native
+      // preflight failure, deepgram-token-unavailable, etc.) the orb flashes
+      // listening then immediately back to idle, which looks like the user
+      // toggled the mic off. Instead, voiceStatus is driven by an effect
+      // below that watches voice.transcriptionPhase and only flips to
+      // 'listening' once the recorder is actually running.
       const { transcript, stopped } = await voice.startListening(speechHintsRef.current);
       debugTiming('listening finished', {
         elapsedMs: Date.now() - listenStartedAt,
