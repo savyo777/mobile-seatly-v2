@@ -7,10 +7,7 @@ import { borderRadius, createStyles, spacing, typography, useColors } from '@/li
 import { getSupabase } from '@/lib/supabase/client';
 import { useAuthSession } from '@/lib/auth/AuthContext';
 import { friendlyError } from '@/lib/errors/friendlyError';
-import {
-  OWNER_REFERRAL_BONUS_DAYS,
-  buildOwnerReferralDeepLink,
-} from '@/lib/owner/referralPolicy';
+import { OWNER_REFERRAL_BONUS_DAYS } from '@/lib/owner/referralPolicy';
 
 type GrantRow = {
   id: string;
@@ -278,11 +275,14 @@ export default function ReferEarnScreen() {
 
   const onShare = async () => {
     if (!code) return;
-    const link = buildOwnerReferralDeepLink(code);
+    // Stopgap: lead with the code, no deep link. cenaiva:// is a custom
+    // URL scheme so recipients without the app can't open it. Once
+    // universal links are set up (https://cenaiva.com/r?ref=...) we can
+    // put the tappable link back.
     const message =
       `Run a restaurant? Join me on Cenaiva and we both get 1 month free on our subscription.\n\n` +
-      `Sign up with my link: ${link}\n` +
-      `Or use code: ${code}`;
+      `Your referral code: ${code}\n\n` +
+      `Download Cenaiva from the App Store or Google Play, then enter this code when you sign up.`;
     try {
       await Share.share({ message, title: 'Cenaiva owner referral' });
     } catch (error) {
