@@ -356,6 +356,7 @@ export default function OwnerTabsLayout() {
         <Tabs.Screen name="billing-history" options={{ href: null, tabBarStyle: { display: 'none' } }} />
         <Tabs.Screen name="billing-year" options={{ href: null, tabBarStyle: { display: 'none' } }} />
         <Tabs.Screen name="subscription-plan" options={{ href: null, tabBarStyle: { display: 'none' } }} />
+        <Tabs.Screen name="connect-onboarding" options={{ href: null, tabBarStyle: { display: 'none' } }} />
         <Tabs.Screen name="refer-earn" options={{ href: null, tabBarStyle: { display: 'none' } }} />
         <Tabs.Screen name="staff-members" options={{ href: null, tabBarStyle: { display: 'none' } }} />
         <Tabs.Screen name="roles-permissions" options={{ href: null, tabBarStyle: { display: 'none' } }} />
