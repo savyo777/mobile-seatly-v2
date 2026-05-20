@@ -133,6 +133,7 @@ The checklist is the system of record for un-hardcoding work. Update it when you
 - "Brand is Cenaiva" — flag and fix any leftover legacy-brand leak in user-visible surfaces (i18n strings, ICS files, support emails). The only intentional legacy artifacts are the `@seatly/` AsyncStorage migration prefix (legacy data) and the `mobile-seatly-v2-2/` folder filter.
 - "Not one thing should be iOS only" — both platforms must be equally functional. The intentional exceptions (Apple Sign-In, Apple Pay vs Google Pay, biometric labels, RN shadow vs elevation) are catalogued in `AGENTS.md` under "Platform parity"; everything else gets a cross-platform code path or doesn't ship.
 - "Don't put API keys in any code or any MD files" — all keys live in Supabase Secrets / EAS Secrets / gitignored `.env`. Grep the staged diff for `AIza[A-Za-z0-9_-]{20,}` before any commit that touches a secret-adjacent file.
+- **Never enable `DEPOSIT_STRIPE_STUB_MODE=true` against a `sk_live_…` Stripe key** — the stub fn flips `reservation_deposit_payments.status='charged'` without minting a real PaymentIntent, so the restaurant thinks they collected a deposit but no money moves. The diner is "confirmed" on a free booking; the restaurant eats the no-show. Stub mode is dev/staging only. Verify Supabase prod project secrets has it explicitly set to `false` (unset defaults to `true` per `confirm-deposit-stub/index.ts:58`). See `MOBILE_STRIPE_GUIDE_ADDENDUM.md` §A6.
 - The user reads commit messages — write descriptive ones.
 
 ## Common gotchas

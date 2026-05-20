@@ -564,10 +564,18 @@ export default function Step2Time() {
           const reason = (error as Error & { unavailable_reason?: string }).unavailable_reason;
           if (reason === 'modify_requires_card') {
             // Per doc §7: 402 from modify-reservation means the diner needs a
-            // saved card to cover the bigger deposit. Steer them to Account → Payment.
+            // saved card to cover the bigger deposit. Offer to jump straight
+            // into the Add-card flow instead of just telling them where to go.
             Alert.alert(
               'Add a card first',
-              'Increasing your party size needs a card on file. Add one in Account → Payment, then try again.',
+              'Increasing your party size needs a card on file. Add one now, then try the change again.',
+              [
+                { text: 'Not now', style: 'cancel' },
+                {
+                  text: 'Add card',
+                  onPress: () => router.push('/(customer)/profile/payment'),
+                },
+              ],
             );
           } else {
             Alert.alert('Could not update', friendlyError(error, 'Could not update the reservation.'));
