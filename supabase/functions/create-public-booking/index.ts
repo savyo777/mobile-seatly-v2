@@ -3,6 +3,7 @@ import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "npm:@supabase/supabase-js@2";
 import { enforceRateLimit, rateLimitIdentifier, RateLimitError } from "../_shared/rate-limit.ts";
 import { sendSmsOrEmail, logCommunication, sanitizeForSmsField } from "../_shared/sms.ts";
+import { sendExpoPush } from "../_shared/expo-push.ts";
 import {
   closureUnavailableMessage,
   findClosedSpecialDayForDate,
@@ -789,6 +790,52 @@ Deno.serve(async (req: Request) => {
         status: confirmationStatus,
         campaign_id: reservationId,
       });
+    }
+
+    // Additive push: if this booking is tied to a signed-in diner with an
+    // Expo push token, deliver a notification alongside the SMS/email so
+    // they get an instant banner. Per MVP plan §B2: additive, not strict
+    // primary — SMS still fires so launch isn't gated on push reliability.
+    try {
+      const { data: guestRow } = await supabase
+        .from("guests")
+        .select("auth_user_id")
+        .eq("id", guestId)
+        .maybeSingle();
+      const authUserId = (guestRow as { auth_user_id?: string | null } | null)?.auth_user_id;
+      if (authUserId) {
+        const { data: profileRow } = await supabase
+          .from("user_profiles")
+          .select("expo_push_token")
+          .eq("auth_user_id", authUserId)
+          .maybeSingle();
+        const token = (profileRow as { expo_push_token?: string | null } | null)?.expo_push_token;
+        if (token) {
+          const pushResult = await sendExpoPush({
+            tokens: [token],
+            title: "Reservation confirmed",
+            body: `Your table at ${safeRestaurantName} is booked. Confirmation: ${savedConfirmationCode}.`,
+            data: {
+              kind: "booking_confirmed",
+              reservationId,
+              restaurantId,
+            },
+          });
+          await logCommunication({
+            supabase,
+            guest_id: guestId,
+            restaurant_id: restaurantId,
+            channel: "push",
+            type: "reservation_confirmation",
+            subject: confirmationSubject,
+            body: confirmationBody,
+            status: pushResult.sentCount > 0 ? "sent" : "failed",
+            campaign_id: reservationId,
+          });
+        }
+      }
+    } catch (pushErr) {
+      console.error("[create-public-booking] push send threw", pushErr);
     }
 
     return jsonResponse({

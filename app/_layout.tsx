@@ -38,6 +38,7 @@ import { isUnusablePersistedSupabaseAuthError } from '@/lib/supabase/authErrors'
 import { CookieConsentBanner } from '@/components/cookie-consent/CookieConsentBanner';
 import { KeyboardDoneBar } from '@/components/ui/KeyboardDoneBar';
 import { PostTurnPromptHost } from '@/components/postVisit/PostTurnPromptHost';
+import { NotificationHandler } from '@/components/notifications/NotificationHandler';
 import { AppErrorBoundary } from '@/components/ui/AppErrorBoundary';
 import { getStripeEnv } from '@/lib/stripe/env';
 import {
@@ -241,6 +242,7 @@ function ThemedRootShell() {
     <>
       <RecoveryLinkHandler />
       <OwnerReferralLinkHandler />
+      <NotificationHandler />
       <StatusBar style="auto" backgroundColor={c.bgBase} />
       <AppErrorBoundary resetKey={pathname} onGoHome={handleGoHome}>
         <Stack screenOptions={createStackTransitionOptions(c.bgBase)}>

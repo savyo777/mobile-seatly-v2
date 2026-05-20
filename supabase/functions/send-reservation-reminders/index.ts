@@ -18,6 +18,7 @@ import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { buildCorsHeaders } from "../_shared/cors.ts";
 import { supabaseAdmin } from "../_shared/supabase.ts";
 import { sendSmsOrEmail, logCommunication } from "../_shared/sms.ts";
+import { sendExpoPush } from "../_shared/expo-push.ts";
 
 const REMINDER_TYPE = "reservation_reminder_24h";
 const WINDOW_LOWER_HOURS = 23.5;
@@ -160,6 +161,56 @@ Deno.serve(async (req: Request) => {
         status: result.status,
         campaign_id: r.id,
       });
+
+      // Additive push: deliver to the signed-in diner alongside SMS/email.
+      // Lookup token via guest → auth_user_id → user_profiles. Best-effort,
+      // never blocks the loop. Dedup already lives on communication_log
+      // via REMINDER_TYPE + campaign_id; a duplicate SMS+push row pair is
+      // intentional (each row records a real channel attempt).
+      try {
+        if (r.guest_id) {
+          const { data: guestRow } = await supabaseAdmin
+            .from("guests")
+            .select("auth_user_id")
+            .eq("id", r.guest_id)
+            .maybeSingle();
+          const authUserId = (guestRow as { auth_user_id?: string | null } | null)?.auth_user_id;
+          if (authUserId) {
+            const { data: profileRow } = await supabaseAdmin
+              .from("user_profiles")
+              .select("expo_push_token")
+              .eq("auth_user_id", authUserId)
+              .maybeSingle();
+            const token = (profileRow as { expo_push_token?: string | null } | null)?.expo_push_token;
+            if (token) {
+              const pushResult = await sendExpoPush({
+                tokens: [token],
+                title: `Reminder: ${restaurantName}`,
+                body: `${localTime} for ${partyLabel}.${codeSuffix}`,
+                data: {
+                  kind: "reservation_reminder",
+                  reservationId: r.id,
+                  restaurantId: r.restaurant_id,
+                },
+              });
+              await logCommunication({
+                supabase: supabaseAdmin,
+                guest_id: r.guest_id,
+                restaurant_id: r.restaurant_id,
+                channel: "push",
+                type: REMINDER_TYPE,
+                subject: emailSubject,
+                body: smsBody,
+                status: pushResult.sentCount > 0 ? "sent" : "failed",
+                campaign_id: r.id,
+              });
+              if (pushResult.sentCount > 0) sent += 1;
+            }
+          }
+        }
+      } catch (pushErr) {
+        console.error("[reminder] push send threw", r.id, pushErr);
+      }
 
       if (result.status === "sent") sent += 1;
       else if (result.status === "failed") failed += 1;

@@ -23,6 +23,7 @@ import {
   asUuid,
 } from "../_shared/input-validation.ts";
 import { sendSmsOrEmail, logCommunication, sanitizeForSmsField } from "../_shared/sms.ts";
+import { sendExpoPush } from "../_shared/expo-push.ts";
 
 Deno.serve(async (req: Request) => {
   const corsHeaders = buildCorsHeaders(req);
@@ -135,6 +136,54 @@ Deno.serve(async (req: Request) => {
         status: result.status,
         campaign_id: row.id,
       });
+    }
+
+    // Additive push: deliver to the signed-in diner. Lookup token via
+    // waitlist.guest_phone → guests → user_profiles. Best-effort. The
+    // 1-hour dedup above is channel-agnostic so a duplicate push+SMS pair
+    // still counts as one notification cycle.
+    try {
+      if (row.guest_phone) {
+        const { data: guestRow } = await supabaseAdmin
+          .from("guests")
+          .select("auth_user_id")
+          .eq("phone", row.guest_phone)
+          .maybeSingle();
+        const authUserId = (guestRow as { auth_user_id?: string | null } | null)?.auth_user_id;
+        if (authUserId) {
+          const { data: profileRow } = await supabaseAdmin
+            .from("user_profiles")
+            .select("expo_push_token")
+            .eq("auth_user_id", authUserId)
+            .maybeSingle();
+          const token = (profileRow as { expo_push_token?: string | null } | null)?.expo_push_token;
+          if (token) {
+            const pushResult = await sendExpoPush({
+              tokens: [token],
+              title: "Your table is ready",
+              body: `Head to the host stand at ${restaurantName}.`,
+              data: {
+                kind: "waitlist_ready",
+                waitlistId: row.id,
+                restaurantId: row.restaurant_id,
+              },
+            });
+            await logCommunication({
+              supabase: supabaseAdmin,
+              guest_id: null,
+              restaurant_id: row.restaurant_id,
+              channel: "push",
+              type: "waitlist_ready",
+              subject: emailSubject,
+              body: smsBody,
+              status: pushResult.sentCount > 0 ? "sent" : "failed",
+              campaign_id: row.id,
+            });
+          }
+        }
+      }
+    } catch (pushErr) {
+      console.error("[waitlist-ready] push send threw", row.id, pushErr);
     }
 
     // Mark the waitlist row as 'notified' so the UI reflects state even

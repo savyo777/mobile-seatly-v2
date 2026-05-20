@@ -14,7 +14,7 @@ import { normalizePhoneToE164 } from "./phone.ts";
 
 type TwilioClient = ReturnType<typeof twilio>;
 
-export type SmsChannel = "sms" | "email" | null;
+export type SmsChannel = "sms" | "email" | "push" | null;
 export type SmsStatus = "sent" | "skipped" | "failed";
 
 export type SmsOrEmailResult = {

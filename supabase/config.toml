@@ -50,5 +50,10 @@ verify_jwt = false
 [functions.send-reservation-reminders]
 verify_jwt = false
 
+# Same pattern as send-reservation-reminders: pg_cron invokes with no JWT,
+# the fn gates itself on X-Cron-Secret matching RESERVATION_REMINDER_CRON_SECRET.
+[functions.send-post-turn-review-prompts]
+verify_jwt = false
+
 [functions.send-waitlist-ready-sms]
 verify_jwt = true
