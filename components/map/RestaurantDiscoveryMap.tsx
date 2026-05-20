@@ -309,6 +309,40 @@ export function RestaurantDiscoveryMap({
     setExpandedClusterKey(null);
   }, [safeRestaurantIdsKey]);
 
+  // When the filter result set changes (user tapped a different chip and the
+  // list of visible restaurants changed identities), animate the camera to
+  // fit all filtered restaurants. Without this, tapping "Top rated" while
+  // zoomed in on Milton leaves the user staring at empty tiles because every
+  // matched restaurant is off-screen. Skip on the very first observation
+  // (initialRegion already centered the camera; we don't want to override
+  // it) and skip when the result set is empty (let the empty-state overlay
+  // show instead).
+  const prevFilteredKeyRef = useRef<string | null>(null);
+  useEffect(() => {
+    if (!locationReady) return;
+    if (prevFilteredKeyRef.current === safeRestaurantIdsKey) return;
+    const isFirstObservation = prevFilteredKeyRef.current === null;
+    prevFilteredKeyRef.current = safeRestaurantIdsKey;
+    if (isFirstObservation) return;
+    if (safeRestaurants.length === 0) return;
+    const coords = safeRestaurants.map((r) => ({
+      latitude: r.lat,
+      longitude: r.lng,
+    }));
+    const t = setTimeout(() => {
+      mapRef.current?.fitToCoordinates(coords, {
+        edgePadding: {
+          top: 140,
+          right: 56,
+          bottom: 200 + contentBottomInset,
+          left: 56,
+        },
+        animated: true,
+      });
+    }, 60);
+    return () => clearTimeout(t);
+  }, [safeRestaurantIdsKey, safeRestaurants, locationReady, contentBottomInset]);
+
   useEffect(() => {
     if (autoFocusResetKeyRef.current !== autoFocusResetKey) {
       autoFocusResetKeyRef.current = autoFocusResetKey;
