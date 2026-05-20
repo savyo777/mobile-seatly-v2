@@ -38,6 +38,11 @@ export default {
     partyOf: 'Groupe de {{count}}',
     notes: 'Notes : {{text}}',
     shareDialogTitle: 'Ajouter la réservation à votre calendrier',
+    addedTitle: 'Ajouté à votre calendrier',
+    addedBody: 'Votre réservation chez {{name}} le {{when}} est maintenant dans votre calendrier principal.',
+    permissionDeniedTitle: 'Accès au calendrier refusé',
+    permissionDeniedBody: "Cenaiva a besoin d'accéder à votre calendrier pour ajouter la réservation. Activez-le dans Réglages, ou utilisez le partage pour enregistrer le fichier .ics.",
+    noWritableCalendar: 'Aucun calendrier inscriptible trouvé sur cet appareil.',
   },
   bookingNotice: {
     none: 'Aucun préavis',

@@ -38,6 +38,11 @@ export default {
     partyOf: 'Party of {{count}}',
     notes: 'Notes: {{text}}',
     shareDialogTitle: 'Add reservation to your calendar',
+    addedTitle: 'Added to your calendar',
+    addedBody: 'Your reservation at {{name}} on {{when}} is now on your primary calendar.',
+    permissionDeniedTitle: 'Calendar access denied',
+    permissionDeniedBody: 'Cenaiva needs calendar access to add your reservation. Enable it in Settings, or use the share option to save the .ics file.',
+    noWritableCalendar: 'No writable calendar was found on this device.',
   },
   bookingNotice: {
     none: 'No notice',

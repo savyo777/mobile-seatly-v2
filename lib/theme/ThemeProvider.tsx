@@ -60,6 +60,27 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
   const effective = resolveEffective(mode, systemScheme);
   const colors = effective === 'light' ? lightColors : darkColors;
 
+  // Push our app-chosen scheme down to the native layer so iOS native
+  // controls (Stripe PaymentSheet, DateTimePicker, native modals, action
+  // sheets) honor it. Without this, app.json's `userInterfaceStyle` (or
+  // the device-level setting when set to "automatic") wins and the user
+  // sees a dark Stripe sheet over a light app — or vice versa.
+  //
+  // When the user picks 'system' we pass `null` to clear our override and
+  // let the OS color scheme through. RN's `Appearance.setColorScheme` is
+  // a no-op on web/older platforms; wrap in try/catch defensively.
+  useEffect(() => {
+    try {
+      if (mode === 'system') {
+        Appearance.setColorScheme('unspecified');
+      } else {
+        Appearance.setColorScheme(effective);
+      }
+    } catch {
+      // Ignore — older RN versions or unsupported platforms.
+    }
+  }, [mode, effective]);
+
   const value = useMemo<ThemeContextValue>(
     () => ({ mode, effective, colors, setMode }),
     [mode, effective, colors, setMode],

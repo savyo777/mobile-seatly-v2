@@ -8,7 +8,7 @@
     },
     "orientation": "portrait",
     "icon": "./assets/icon.png",
-    "userInterfaceStyle": "dark",
+    "userInterfaceStyle": "automatic",
     "scheme": "cenaiva",
     "splash": {
       "image": "./assets/splash-icon.png",
@@ -25,6 +25,9 @@
         "NSSpeechRecognitionUsageDescription": "Cenaiva may use speech recognition to process spoken restaurant and booking requests.",
         "NSPhotoLibraryUsageDescription": "Cenaiva uses your photo library so you can attach photos to receipts, reviews, and your profile.",
         "NSPhotoLibraryAddUsageDescription": "Cenaiva saves photos you capture to your photo library when you tap save.",
+        "NSCalendarsUsageDescription": "Cenaiva adds your reservation to your primary calendar so you don't forget your dine-in time.",
+        "NSCalendarsFullAccessUsageDescription": "Cenaiva adds your reservation to your primary calendar so you don't forget your dine-in time.",
+        "NSCalendarsWriteOnlyAccessUsageDescription": "Cenaiva needs to write your reservation event to your primary calendar.",
         "CFBundleURLTypes": [
           {
             "CFBundleURLSchemes": [
@@ -59,7 +62,9 @@
         "android.permission.ACCESS_COARSE_LOCATION",
         "android.permission.MODIFY_AUDIO_SETTINGS",
         "android.permission.READ_MEDIA_IMAGES",
-        "android.permission.READ_MEDIA_VISUAL_USER_SELECTED"
+        "android.permission.READ_MEDIA_VISUAL_USER_SELECTED",
+        "android.permission.READ_CALENDAR",
+        "android.permission.WRITE_CALENDAR"
       ],
       "intentFilters": [
         {
@@ -137,7 +142,13 @@
           "color": "#C9A84C"
         }
       ],
-      "@sentry/react-native"
+      "@sentry/react-native",
+      [
+        "expo-calendar",
+        {
+          "calendarPermission": "Cenaiva adds your reservation to your primary calendar so you don't forget your dine-in time."
+        }
+      ]
     ],
     "extra": {
       "socialSharing": {
