@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useRef, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import {
   Alert,
   Keyboard,
@@ -15,85 +15,25 @@ import {
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
+import { useStripe } from '@stripe/stripe-react-native';
 import { useColors } from '@/lib/theme';
 import { OWNER_TRIAL_MONTHS } from '@/lib/owner/trialPolicy';
 import { registerRestaurantNoBilling } from '@/lib/services/restaurantRegistration';
 import { clearPendingOwnerReferral, readPendingOwnerReferral } from '@/lib/owner/pendingReferral';
 import { getSupabase } from '@/lib/supabase/client';
-import { friendlyError } from '@/lib/errors/friendlyError';
+import { friendlyError, isUserCancellation } from '@/lib/errors/friendlyError';
+import { normalizeTextInput, sanitizeTextInput } from '@/lib/validation/input';
 import {
-  normalizeTextInput,
-  sanitizeCardNumberInput,
-  sanitizeCvcInput,
-  sanitizeExpiryInput,
-  sanitizeTextInput,
-} from '@/lib/validation/input';
+  createRestaurantSetupIntent,
+  saveRestaurantPaymentMethod,
+} from '@/lib/owner/saveSubscriptionPaymentMethod';
 
 const SF = Platform.OS === 'ios' ? 'System' : undefined;
 const SERIF = Platform.OS === 'ios' ? 'Georgia' : 'serif';
 const MONO = Platform.OS === 'ios' ? 'Menlo' : 'monospace';
 
-// Display monthly fee shown after trial. Tracked in
-// docs/UNHARDCODE_CHECKLIST.md (Phase K) — wire to a single owner-pricing
-// source once Cenaiva pricing has one.
 const MONTHLY_FEE_LABEL = '$200.00 / mo';
 const MONTHLY_FEE_SHORT = '$200';
-
-// ─────────────────────────────────────────────────────────────────────────────
-// Card formatting / validation helpers
-// ─────────────────────────────────────────────────────────────────────────────
-
-function formatCardNumber(input: string): string {
-  return sanitizeCardNumberInput(input);
-}
-
-function formatExpiry(input: string): string {
-  return sanitizeExpiryInput(input).replace('/', ' / ');
-}
-
-function parseExpiry(formatted: string): { month: number; year: number } | null {
-  const digits = formatted.replace(/\D/g, '');
-  if (digits.length !== 4) return null;
-  const month = Number(digits.slice(0, 2));
-  const year = 2000 + Number(digits.slice(2, 4));
-  if (!Number.isFinite(month) || month < 1 || month > 12) return null;
-  if (!Number.isFinite(year)) return null;
-  // Basic past-date guard: card must expire end-of-month >= today.
-  const now = new Date();
-  const lastDayOfExpiryMonth = new Date(year, month, 0);
-  if (lastDayOfExpiryMonth < new Date(now.getFullYear(), now.getMonth(), 1)) return null;
-  return { month, year };
-}
-
-function passesLuhn(rawNumber: string): boolean {
-  const digits = rawNumber.replace(/\D/g, '');
-  if (digits.length < 13) return false;
-  let sum = 0;
-  let alt = false;
-  for (let i = digits.length - 1; i >= 0; i--) {
-    let d = Number(digits[i]);
-    if (alt) {
-      d *= 2;
-      if (d > 9) d -= 9;
-    }
-    sum += d;
-    alt = !alt;
-  }
-  return sum % 10 === 0;
-}
-
-function detectBrand(rawNumber: string): string {
-  const d = rawNumber.replace(/\D/g, '');
-  if (/^4/.test(d)) return 'Visa';
-  if (/^(5[1-5]|2[2-7])/.test(d)) return 'Mastercard';
-  if (/^3[47]/.test(d)) return 'Amex';
-  if (/^6(?:011|5)/.test(d)) return 'Discover';
-  return '';
-}
-
-function expectedCvcLength(rawNumber: string): 3 | 4 {
-  return /^3[47]/.test(rawNumber.replace(/\D/g, '')) ? 4 : 3;
-}
 
 function formatTrialEnd(date: Date): string {
   return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
@@ -105,20 +45,32 @@ function addMonths(d: Date, months: number): Date {
   return out;
 }
 
+function formatBrand(brand: string | null): string {
+  if (!brand) return 'Card';
+  const v = brand.toLowerCase();
+  if (v === 'visa') return 'Visa';
+  if (v === 'mastercard') return 'Mastercard';
+  if (v === 'amex' || v === 'american_express') return 'Amex';
+  if (v === 'discover') return 'Discover';
+  return brand.charAt(0).toUpperCase() + brand.slice(1);
+}
+
+interface SavedCardPreview {
+  brand: string;
+  last4: string;
+  expMonth: number | null;
+  expYear: number | null;
+}
+
 export default function RegisterRestaurantCardEntryScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const c = useColors();
+  const { initPaymentSheet, presentPaymentSheet, retrieveSetupIntent } = useStripe();
 
   const [saving, setSaving] = useState(false);
-
-  const [cardNumber, setCardNumber] = useState('');
-  const [expiry, setExpiry] = useState('');
-  const [cvc, setCvc] = useState('');
-
-  const cardNumberRef = useRef<TextInput>(null);
-  const expiryRef = useRef<TextInput>(null);
-  const cvcRef = useRef<TextInput>(null);
+  const [savedCard, setSavedCard] = useState<SavedCardPreview | null>(null);
+  const [registration, setRegistration] = useState<{ restaurantId: string; trialEndsAt: string } | null>(null);
 
   const params = useLocalSearchParams<{
     businessName?: string;
@@ -159,69 +111,118 @@ export default function RegisterRestaurantCardEntryScreen() {
     [],
   );
 
-  const brand = detectBrand(cardNumber);
-  const expectedCvc = expectedCvcLength(cardNumber);
-  const parsedExpiry = parseExpiry(expiry);
-  const cardComplete =
-    passesLuhn(cardNumber) &&
-    !!parsedExpiry &&
-    cvc.replace(/\D/g, '').length === expectedCvc;
+  // The exact disclosure the owner is agreeing to when they tap "Save card".
+  // Written verbatim into subscription_consent_log per CRA-style auditability
+  // — every byte the owner saw above the button should appear here.
+  const disclosureText = useMemo(
+    () =>
+      [
+        `By saving this card, ${restaurantName.trim() || 'your restaurant'} agrees to start a Cenaiva subscription.`,
+        `${OWNER_TRIAL_MONTHS}-month free trial ends ${trialEndsLabel}.`,
+        `After the trial, ${MONTHLY_FEE_LABEL} (CAD) will be charged automatically to this card.`,
+        'Cancel any time from Account → Subscription. Per-booking fees may apply during paid months.',
+        pendingReferralCode ? `Referral code applied: ${pendingReferralCode}.` : '',
+      ]
+        .filter((line) => line.length > 0)
+        .join(' '),
+    [restaurantName, trialEndsLabel, pendingReferralCode],
+  );
 
-  const onSubmit = () => {
+  const handleSaveCard = () => {
     if (saving) return;
     Keyboard.dismiss();
-
-    if (!passesLuhn(cardNumber)) {
-      Alert.alert('Invalid card number', friendlyError(undefined, 'Please double-check the number on your card.'));
-      return;
-    }
-    if (!parsedExpiry) {
-      Alert.alert('Invalid expiry', friendlyError(undefined, 'Enter a valid MM / YY in the future.'));
-      return;
-    }
-    if (cvc.replace(/\D/g, '').length !== expectedCvc) {
-      Alert.alert('Invalid CVC', friendlyError(undefined, `CVC should be ${expectedCvc} digits.`));
-      return;
-    }
-
     setSaving(true);
     void (async () => {
       try {
-        const result = await registerRestaurantNoBilling({
-          businessName: normalizeTextInput(restaurantName, { maxLength: 120 }) || input.businessName,
-          address: input.address,
-          ownerPhone: input.ownerPhone,
-          ...(pendingReferralCode ? { referredByCode: pendingReferralCode } : {}),
-        });
+        // 1) Make sure the restaurant exists so the server has a row to attach
+        //    the Stripe customer + PM to. This is idempotent on the server
+        //    when the owner has already registered — it returns the existing
+        //    restaurantId + trialEndsAt without re-creating.
+        let reg = registration;
+        if (!reg) {
+          reg = await registerRestaurantNoBilling({
+            businessName: normalizeTextInput(restaurantName, { maxLength: 120 }) || input.businessName,
+            address: input.address,
+            ownerPhone: input.ownerPhone,
+            ...(pendingReferralCode ? { referredByCode: pendingReferralCode } : {}),
+          });
+          setRegistration(reg);
 
-        // Pending referral consumed (or skipped server-side); clear so a
-        // future signup on this device doesn't accidentally reuse it.
-        if (pendingReferralCode) {
-          await clearPendingOwnerReferral();
+          // Refresh JWT so the new owner role lands in user_metadata before
+          // we call the owner-only Stripe edge fns below.
+          const supabase = getSupabase();
+          if (supabase) await supabase.auth.refreshSession().catch(() => {});
         }
 
-        // Refresh the local JWT so the updated role in user_metadata is
-        // picked up on the next cold boot without a DB round-trip delay.
-        const supabase = getSupabase();
-        if (supabase) await supabase.auth.refreshSession().catch(() => {});
+        // 2) Mint a SetupIntent on the restaurant's Stripe customer. The edge
+        //    fn lazily creates the customer on first call.
+        const { clientSecret } = await createRestaurantSetupIntent(reg.restaurantId);
 
-        const digits = cardNumber.replace(/\D/g, '');
-        const last4 = digits.slice(-4);
-        const previewBrand = (brand || 'Card').toUpperCase();
+        // 3) Present Stripe's PaymentSheet — Stripe collects the card; we
+        //    never see PAN / CVC. Cancel returns to the form to retry.
+        const initResult = await initPaymentSheet({
+          setupIntentClientSecret: clientSecret,
+          merchantDisplayName: 'Cenaiva',
+          returnURL: 'cenaiva://stripe-redirect',
+          allowsDelayedPaymentMethods: false,
+        });
+        if (initResult.error) {
+          throw new Error(friendlyError(initResult.error, 'Could not open the secure card form.'));
+        }
+        const presentResult = await presentPaymentSheet();
+        if (presentResult.error) {
+          if (isUserCancellation(presentResult.error)) return;
+          throw new Error(friendlyError(presentResult.error, 'Could not save the card.'));
+        }
+
+        // 4) Read the SetupIntent to discover the resulting PaymentMethod id,
+        //    then hand it to the server to attach + set as default + log
+        //    the consent disclosure.
+        const retrieved = await retrieveSetupIntent(clientSecret);
+        const pm = retrieved.setupIntent;
+        const pmId =
+          (pm?.paymentMethodId as string | undefined) ??
+          (pm as unknown as { payment_method?: string })?.payment_method ??
+          null;
+        if (!pmId) {
+          throw new Error('Stripe didn’t return a saved card. Please try again.');
+        }
+        await saveRestaurantPaymentMethod({
+          restaurantId: reg.restaurantId,
+          paymentMethodId: pmId,
+          disclosureText,
+        });
+
+        // Surface card brand/last4 from PaymentSheet's response when present
+        // so the screen can show a confirmation row before navigating.
+        const card =
+          (pm as unknown as {
+            paymentMethod?: { Card?: { brand?: string; last4?: string; expMonth?: number; expYear?: number } };
+          })?.paymentMethod?.Card ?? null;
+        if (card?.last4) {
+          setSavedCard({
+            brand: card.brand ?? 'card',
+            last4: card.last4,
+            expMonth: typeof card.expMonth === 'number' ? card.expMonth : null,
+            expYear: typeof card.expYear === 'number' ? card.expYear : null,
+          });
+        }
+
+        if (pendingReferralCode) await clearPendingOwnerReferral();
 
         router.replace({
           pathname: '/(customer)/profile/register-restaurant-success',
           params: {
-            trialEndsAt: result.trialEndsAt,
+            trialEndsAt: reg.trialEndsAt,
             businessName: input.businessName,
             address: input.address,
             ownerPhone: input.ownerPhone,
-            cardBrand: previewBrand,
-            cardLast4: last4,
+            cardBrand: formatBrand(card?.brand ?? null).toUpperCase(),
+            cardLast4: card?.last4 ?? '••••',
           },
         });
       } catch (err) {
-        Alert.alert('Registration failed', friendlyError(err, 'Something went wrong. Please try again.'));
+        Alert.alert('Card not saved', friendlyError(err, 'Something went wrong. Please try again.'));
       } finally {
         setSaving(false);
       }
@@ -233,6 +234,14 @@ export default function RegisterRestaurantCardEntryScreen() {
   const dashed = 'rgba(255,255,255,0.10)';
   const ctaBg = c.gold;
   const ctaFg = '#1A1408';
+
+  const cardLineLabel = savedCard
+    ? `${formatBrand(savedCard.brand)} •••• ${savedCard.last4}`
+    : 'Stripe collects your card details';
+  const expiryLineLabel =
+    savedCard?.expMonth && savedCard.expYear
+      ? `${String(savedCard.expMonth).padStart(2, '0')} / ${String(savedCard.expYear).slice(-2)}`
+      : '— / —';
 
   return (
     <SafeAreaView style={[s.safe, { backgroundColor: bg }]} edges={['top', 'left', 'right']}>
@@ -319,96 +328,54 @@ export default function RegisterRestaurantCardEntryScreen() {
                   { borderTopColor: dashed, borderBottomColor: dashed },
                 ]}
               >
-                    <Text style={[s.fieldLabel, { color: c.textMuted }]}>RESTAURANT NAME</Text>
-                    <TextInput
-                      value={restaurantName}
-                      onChangeText={(value) => setRestaurantName(sanitizeTextInput(value, { maxLength: 120 }))}
-                      placeholder="Your restaurant's name"
-                      placeholderTextColor={c.textMuted}
-                      style={[s.fieldInput, { color: c.textPrimary }]}
-                      autoCapitalize="words"
-                      autoCorrect={false}
-                      autoComplete="off"
-                      textContentType="none"
-                      spellCheck={false}
-                      importantForAutofill="no"
-                      returnKeyType="done"
-                      onSubmitEditing={() => cardNumberRef.current?.focus()}
-                      blurOnSubmit={false}
-                    />
-                  </View>
+                <Text style={[s.fieldLabel, { color: c.textMuted }]}>RESTAURANT NAME</Text>
+                <TextInput
+                  value={restaurantName}
+                  onChangeText={(value) => setRestaurantName(sanitizeTextInput(value, { maxLength: 120 }))}
+                  placeholder="Your restaurant's name"
+                  placeholderTextColor={c.textMuted}
+                  style={[s.fieldInput, { color: c.textPrimary }]}
+                  autoCapitalize="words"
+                  autoCorrect={false}
+                  autoComplete="off"
+                  textContentType="none"
+                  spellCheck={false}
+                  importantForAutofill="no"
+                  returnKeyType="done"
+                  blurOnSubmit
+                />
+              </View>
 
-                  {/* Card number */}
-                  <View style={[s.fieldRow, { borderBottomColor: dashed }]}>
-                    <View style={s.fieldLabelRow}>
-                      <Text style={[s.fieldLabel, { color: c.textMuted }]}>CARD NUMBER</Text>
-                      {brand ? (
-                        <Text style={[s.brandTag, { color: c.gold }]}>{brand}</Text>
-                      ) : null}
-                    </View>
-                    <TextInput
-                      ref={cardNumberRef}
-                      value={cardNumber}
-                      onChangeText={(t) => setCardNumber(formatCardNumber(t))}
-                      placeholder="1234 5678 9012 3456"
-                      placeholderTextColor={c.textMuted}
-                      style={[s.fieldInputMono, { color: c.textPrimary }]}
-                      keyboardType="number-pad"
-                      inputMode="numeric"
-                      autoComplete="off"
-                      textContentType="none"
-                      importantForAutofill="no"
-                      maxLength={23}
-                      returnKeyType="done"
-                      onSubmitEditing={() => expiryRef.current?.focus()}
-                      blurOnSubmit={false}
-                    />
-                  </View>
+              {/* Card on file (read-only — Stripe collects via PaymentSheet) */}
+              <View style={[s.fieldRow, { borderBottomColor: dashed }]}>
+                <View style={s.fieldLabelRow}>
+                  <Text style={[s.fieldLabel, { color: c.textMuted }]}>CARD ON FILE</Text>
+                  {savedCard ? (
+                    <Text style={[s.brandTag, { color: c.gold }]}>SAVED</Text>
+                  ) : null}
+                </View>
+                <Text
+                  style={[
+                    s.fieldInputMono,
+                    { color: savedCard ? c.textPrimary : c.textMuted },
+                  ]}
+                >
+                  {cardLineLabel}
+                </Text>
+              </View>
 
-                  {/* Expiry */}
-                  <View style={[s.fieldRow, { borderBottomColor: dashed }]}>
-                    <Text style={[s.fieldLabel, { color: c.textMuted }]}>EXPIRY DATE</Text>
-                    <TextInput
-                      ref={expiryRef}
-                      value={expiry}
-                      onChangeText={(t) => setExpiry(formatExpiry(t))}
-                      placeholder="MM / YY"
-                      placeholderTextColor={c.textMuted}
-                      style={[s.fieldInputMono, { color: c.textPrimary }]}
-                      keyboardType="number-pad"
-                      inputMode="numeric"
-                      autoComplete="off"
-                      textContentType="none"
-                      importantForAutofill="no"
-                      maxLength={7}
-                      returnKeyType="done"
-                      onSubmitEditing={() => cvcRef.current?.focus()}
-                      blurOnSubmit={false}
-                    />
-                  </View>
-
-                  {/* CVC */}
-                  <View style={[s.fieldRow, { borderBottomColor: dashed }]}>
-                    <Text style={[s.fieldLabel, { color: c.textMuted }]}>CVC</Text>
-                    <TextInput
-                      ref={cvcRef}
-                      value={cvc}
-                      onChangeText={(t) => setCvc(sanitizeCvcInput(t, expectedCvc))}
-                      placeholder={expectedCvc === 4 ? '••••' : '•••'}
-                      placeholderTextColor={c.textMuted}
-                      style={[s.fieldInputMono, { color: c.textPrimary }]}
-                      keyboardType="number-pad"
-                      inputMode="numeric"
-                      autoComplete="off"
-                      textContentType="none"
-                      importantForAutofill="no"
-                      passwordRules=""
-                      maxLength={4}
-                      returnKeyType="done"
-                      onSubmitEditing={() => Keyboard.dismiss()}
-                      blurOnSubmit
-                    />
-                  </View>
+              {/* Expiry placeholder */}
+              <View style={[s.fieldRow, { borderBottomColor: dashed }]}>
+                <Text style={[s.fieldLabel, { color: c.textMuted }]}>EXPIRES</Text>
+                <Text
+                  style={[
+                    s.fieldInputMono,
+                    { color: savedCard ? c.textPrimary : c.textMuted },
+                  ]}
+                >
+                  {expiryLineLabel}
+                </Text>
+              </View>
 
               {/* Totals */}
               <View style={[s.totals, { borderTopColor: dashed }]}>
@@ -422,21 +389,25 @@ export default function RegisterRestaurantCardEntryScreen() {
           {/* CTA */}
           <View style={s.ctaWrap}>
             <Pressable
-              onPress={onSubmit}
-              disabled={saving || !cardComplete}
+              onPress={handleSaveCard}
+              disabled={saving}
               style={({ pressed }) => [
                 s.cta,
                 { backgroundColor: ctaBg, borderColor: ctaBg },
-                (saving || !cardComplete) && s.ctaDisabled,
-                pressed && !saving && cardComplete && { opacity: 0.85 },
+                saving && s.ctaDisabled,
+                pressed && !saving && { opacity: 0.85 },
               ]}
             >
-              <Text style={[s.ctaLabel, { color: ctaFg }]}>{saving ? 'SAVING…' : 'SAVE CARD'}</Text>
+              <Text style={[s.ctaLabel, { color: ctaFg }]}>
+                {saving ? 'OPENING STRIPE…' : savedCard ? 'CARD SAVED' : 'ADD CARD VIA STRIPE'}
+              </Text>
             </Pressable>
 
             <View style={s.trustRow}>
               <Ionicons name="lock-closed-outline" size={11} color={c.textMuted} />
-              <Text style={[s.trustText, { color: c.textMuted }]}>Stripe-encrypted · PCI DSS</Text>
+              <Text style={[s.trustText, { color: c.textMuted }]}>
+                Card collected by Stripe · Cenaiva never sees your PAN or CVC
+              </Text>
             </View>
           </View>
         </ScrollView>
@@ -597,16 +568,6 @@ const s = StyleSheet.create({
     fontFamily: MONO,
     fontSize: 10,
   },
-  cardLoadingRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 10,
-    paddingVertical: 24,
-  },
-  cardLoadingText: {
-    fontFamily: SF,
-    fontSize: 12,
-  },
   fieldRow: {
     paddingTop: 12,
     paddingBottom: 10,
@@ -671,26 +632,6 @@ const s = StyleSheet.create({
   totalsValueBold: {
     fontWeight: '700',
   },
-  errorCard: {
-    marginHorizontal: 22,
-    marginTop: 16,
-    borderRadius: 8,
-    borderWidth: 1,
-    borderColor: 'rgba(239,68,68,0.30)',
-    backgroundColor: 'rgba(239,68,68,0.08)',
-    padding: 14,
-    gap: 4,
-  },
-  errorTitle: {
-    fontFamily: SF,
-    fontSize: 13,
-    fontWeight: '700',
-  },
-  errorText: {
-    fontFamily: SF,
-    fontSize: 12,
-    lineHeight: 17,
-  },
   ctaWrap: {
     paddingHorizontal: 22,
     paddingTop: 20,
@@ -718,9 +659,11 @@ const s = StyleSheet.create({
     justifyContent: 'center',
     gap: 6,
     marginTop: 10,
+    paddingHorizontal: 12,
   },
   trustText: {
     fontFamily: SF,
     fontSize: 11,
+    textAlign: 'center',
   },
 });
