@@ -122,10 +122,18 @@ Deno.serve(async (req: Request) => {
       if (stampErr) return jsonRes({ error: stampErr.message }, 500);
     }
 
+    // Stripe rejects non-http(s) URLs in accountLinks.create (the
+    // `cenaiva://` deep link returns `url_invalid`), so the return /
+    // refresh URLs point at the stripe-connect-redirect bounce edge fn
+    // which 302s to the matching `cenaiva://stripe/connect/...` deep
+    // link. expo-web-browser.openAuthSessionAsync on mobile detects
+    // that scheme transition and resolves with type='success'.
+    const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
+    const bounceBase = `${supabaseUrl.replace(/\/$/, "")}/functions/v1/stripe-connect-redirect`;
     const link = await stripe.accountLinks.create({
       account: accountId!,
-      refresh_url: `cenaiva://stripe/connect/refresh?restaurant_id=${encodeURIComponent(restaurant.id)}`,
-      return_url: `cenaiva://stripe/connect/return?restaurant_id=${encodeURIComponent(restaurant.id)}`,
+      refresh_url: `${bounceBase}?action=refresh&restaurant_id=${encodeURIComponent(restaurant.id)}`,
+      return_url: `${bounceBase}?action=return&restaurant_id=${encodeURIComponent(restaurant.id)}`,
       type: "account_onboarding",
     });
 

@@ -60,5 +60,10 @@ verify_jwt = false
 [functions.bill-booking-fees]
 verify_jwt = false
 
+# Anon-callable HTTPS bounce that Stripe accountLinks.create redirects
+# to. Serves HTML that bounces to the cenaiva:// deep link. No auth.
+[functions.stripe-connect-redirect]
+verify_jwt = false
+
 [functions.send-waitlist-ready-sms]
 verify_jwt = true

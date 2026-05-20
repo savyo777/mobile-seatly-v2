@@ -171,10 +171,18 @@ Deno.serve(async (req) => {
     // Stripe-free registration path used during development / trial setup.
     // Inserts the restaurant row and updates user role without any billing.
     if (action === 'register_no_billing') {
+      // Idempotency: dedupe by (owner_user_id, name) instead of
+      // owner_user_id alone. The previous "return first restaurant"
+      // shortcut blocked multi-restaurant signups — an existing owner
+      // re-running the wizard with a different name was silently handed
+      // back their first restaurant's id. Matching on the name preserves
+      // accidental-double-submit safety while letting owners add a
+      // second / third / Nth venue.
       const { data: existingRow } = await adminClient
         .from('restaurants')
         .select('id, trial_ends_at')
         .eq('owner_user_id', user.id)
+        .eq('name', payload.business_name)
         .order('created_at', { ascending: false })
         .limit(1)
         .maybeSingle();
