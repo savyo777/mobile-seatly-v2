@@ -27,6 +27,10 @@ export interface RestaurantRow {
   slug: string;
   logo_url: string | null;
   cover_photo_url: string | null;
+  // `cover_image_url` is the column the owner Edit Profile screen writes to
+  // (saveRestaurantProfile.ts). The diner-facing mapper reads cover_image_url
+  // first so owner-side updates show up — see mapRestaurantRow.ts.
+  cover_image_url?: string | null;
   cuisine_type: string | null;
   business_type: string | null;
   description: string | null;

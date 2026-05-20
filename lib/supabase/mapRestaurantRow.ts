@@ -139,7 +139,17 @@ export function mapRestaurantRowToRestaurant(row: RestaurantRow): Restaurant {
     lat,
     lng,
     phone: row.phone ?? '',
-    coverPhotoUrl: row.hero_image_url?.trim() || row.cover_photo_url?.trim() || '',
+    // Cover URL lives on three columns due to schema drift: the legacy
+    // `hero_image_url`, the public-facing `cover_photo_url`, and
+    // `cover_image_url` (what the owner Edit Profile screen writes to —
+    // saveRestaurantProfile.ts:44). Without `cover_image_url` in the
+    // fallback chain, owner-side cover updates were invisible on the
+    // diner side. Order = newest-write-wins.
+    coverPhotoUrl:
+      row.cover_image_url?.trim()
+      || row.hero_image_url?.trim()
+      || row.cover_photo_url?.trim()
+      || '',
     logoUrl: row.logo_url?.trim() || '',
     avgRating: numOrNull(row.avg_rating ?? (settings?.avg_rating as number | undefined)),
     totalReviews:

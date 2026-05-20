@@ -41,7 +41,16 @@ export async function saveRestaurantProfile(args: SaveRestaurantProfileArgs): Pr
   if (args.phone !== undefined) updates.phone = normalize(args.phone);
   if (args.email !== undefined) updates.email = normalize(args.email);
   if (args.address !== undefined) updates.address = normalize(args.address);
-  if (args.coverImageUrl !== undefined) updates.cover_image_url = args.coverImageUrl;
+  if (args.coverImageUrl !== undefined) {
+    // Schema drift: `cover_image_url` is the column this writer historically
+    // touched; `cover_photo_url` is what most readers (including the
+    // customer-side Discover mapper) consume. Write both so the diner side
+    // sees the update immediately and any future read of either column is
+    // consistent. The mapper at lib/supabase/mapRestaurantRow.ts now reads
+    // cover_image_url first as a defensive fallback.
+    updates.cover_image_url = args.coverImageUrl;
+    updates.cover_photo_url = args.coverImageUrl;
+  }
   if (args.logoUrl !== undefined) updates.logo_url = args.logoUrl;
 
   // Merge website + instagram + turn time into settings_json without
