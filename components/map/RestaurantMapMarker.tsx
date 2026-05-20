@@ -1,7 +1,25 @@
-import React, { memo } from 'react';
+import React, { memo, useEffect, useState } from 'react';
 import { Platform, StyleSheet, Text, View } from 'react-native';
 import { Marker } from 'react-native-maps';
 import { normalizeRestaurantPriceRange } from '@/lib/restaurants/pricing';
+
+/**
+ * Returns true for the first ~600ms after mount on Android, then mirrors
+ * `selected`. Works around react-native-maps' Android-only "snapshot the
+ * custom marker view to a bitmap once `tracksViewChanges` is false"
+ * behavior — when that snapshot runs before layout completes, the gold
+ * pill / cluster renders washed out and missing its shadow. iOS composes
+ * the React tree directly so the bootstrap window is a no-op there.
+ */
+export function useAndroidBitmapBootstrap(selected: boolean): boolean {
+  const [bootstrap, setBootstrap] = useState(Platform.OS === 'android');
+  useEffect(() => {
+    if (!bootstrap) return undefined;
+    const t = setTimeout(() => setBootstrap(false), 600);
+    return () => clearTimeout(t);
+  }, [bootstrap]);
+  return bootstrap || selected;
+}
 
 /**
  * Restaurant pin that matches the Seatly web app's pinIconSvg() pattern at
@@ -173,6 +191,7 @@ function RestaurantMapMarkerComponent({
   const a11y = dollars
     ? `${name ?? 'Restaurant'}, price ${dollars}`
     : (name ?? 'Restaurant');
+  const tracks = useAndroidBitmapBootstrap(selected);
 
   return (
     <Marker
@@ -182,7 +201,7 @@ function RestaurantMapMarkerComponent({
       anchor={{ x: 0.5, y: MARKER_ANCHOR_Y }}
       zIndex={selected ? 999 : 1}
       onPress={() => onPress(id)}
-      tracksViewChanges={selected}
+      tracksViewChanges={tracks}
     >
       <RestaurantMapMarkerContent priceTier={priceTier} selected={selected} />
     </Marker>

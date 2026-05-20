@@ -3,7 +3,7 @@ import { View, Text, StyleSheet, Pressable, ActivityIndicator } from 'react-nati
 import MapView, { Marker, PROVIDER_GOOGLE, type MapPressEvent, type Region } from 'react-native-maps';
 import { Ionicons } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
-import { RestaurantMapMarkerContent, MARKER_ANCHOR_Y } from '@/components/map/RestaurantMapMarker';
+import { RestaurantMapMarkerContent, MARKER_ANCHOR_Y, useAndroidBitmapBootstrap } from '@/components/map/RestaurantMapMarker';
 import { RestaurantClusterMarker } from '@/components/map/RestaurantClusterMarker';
 import { UseMyLocationChip } from '@/components/map/UseMyLocationChip';
 import { CENAIVA_MAP_STYLE } from '@/lib/map/darkMapStyle';
@@ -42,6 +42,48 @@ function isFiniteCoordinate(latitude: unknown, longitude: unknown): boolean {
     Number.isFinite(longitude) &&
     Math.abs(latitude) <= 90 &&
     Math.abs(longitude) <= 180
+  );
+}
+
+/**
+ * Wraps a single restaurant Marker so it can use the Android bitmap-bootstrap
+ * hook. Inlining the hook inside the `markerClusters.map(...)` render below
+ * would violate rules-of-hooks; extracting to a child component is the
+ * minimal-change fix. Keeps the inline `<Marker>` API surface intact.
+ */
+function SingleRestaurantPin({
+  id,
+  latitude,
+  longitude,
+  name,
+  priceTier,
+  selected,
+  hint,
+  onPress,
+}: {
+  id: string;
+  latitude: number;
+  longitude: number;
+  name?: string;
+  priceTier: number;
+  selected: boolean;
+  hint?: string;
+  onPress: (id: string) => void;
+}) {
+  const tracks = useAndroidBitmapBootstrap(selected);
+  return (
+    <Marker
+      coordinate={{ latitude, longitude }}
+      accessibilityLabel={name ?? 'Restaurant'}
+      accessibilityHint={hint}
+      accessibilityRole="button"
+      anchor={{ x: 0.5, y: MARKER_ANCHOR_Y }}
+      zIndex={selected ? 999 : 1}
+      onPress={() => onPress(id)}
+      tracksViewChanges={tracks}
+    >
+      <RestaurantMapMarkerContent priceTier={priceTier} selected={selected} />
+    </Marker>
   );
 }
 
@@ -526,22 +568,17 @@ export function RestaurantDiscoveryMap({
           const selected = selectedId === r.id;
           const displayPriceTier = normalizeRestaurantPriceRange(r.priceRange);
           return (
-            <Marker
+            <SingleRestaurantPin
               key={`restaurant-${r.id}`}
-              coordinate={{ latitude: r.lat, longitude: r.lng }}
-              accessibilityLabel={r.name ?? 'Restaurant'}
-              accessibilityHint={markerVariant === 'cenaiva' ? 'Shows restaurant catalog' : undefined}
-              accessibilityRole="button"
-              anchor={{ x: 0.5, y: MARKER_ANCHOR_Y }}
-              zIndex={selected ? 999 : 1}
-              onPress={() => onSelectRestaurant(r.id)}
-              tracksViewChanges={selected}
-            >
-              <RestaurantMapMarkerContent
-                priceTier={displayPriceTier}
-                selected={selected}
-              />
-            </Marker>
+              id={r.id}
+              latitude={r.lat}
+              longitude={r.lng}
+              name={r.name}
+              priceTier={displayPriceTier}
+              selected={selected}
+              hint={markerVariant === 'cenaiva' ? 'Shows restaurant catalog' : undefined}
+              onPress={onSelectRestaurant}
+            />
           );
         })}
       </MapView>

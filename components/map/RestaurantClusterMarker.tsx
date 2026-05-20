@@ -1,6 +1,7 @@
 import React, { memo } from 'react';
 import { Platform, StyleSheet, Text, View } from 'react-native';
 import { Marker } from 'react-native-maps';
+import { useAndroidBitmapBootstrap } from '@/components/map/RestaurantMapMarker';
 
 /**
  * Cluster bubble for the customer-facing map. Three size tiers per the
@@ -90,6 +91,15 @@ function RestaurantClusterMarkerComponent({
   const innerSize = Math.max(size - 14, 16);
   const fontSize = count >= 50 ? 13 : 12;
 
+  // react-native-maps on Android snapshots a custom marker to a bitmap once
+  // `tracksViewChanges` is false. If we set false from mount the snapshot is
+  // captured before the gold halo / inner circle finish laying out, and the
+  // cluster renders washed out (visible at /tmp/and-map-verify.png). The
+  // shared hook keeps tracksViewChanges=true for ~600ms after mount on
+  // Android so the snapshot captures the fully-rendered view, then drops to
+  // false for perf. iOS composes directly and isn't affected.
+  const tracksChanges = useAndroidBitmapBootstrap(false);
+
   return (
     <Marker
       coordinate={{ latitude, longitude }}
@@ -99,7 +109,7 @@ function RestaurantClusterMarkerComponent({
       anchor={{ x: 0.5, y: 0.5 }}
       zIndex={1000 + count}
       onPress={() => onPress(id)}
-      tracksViewChanges={false}
+      tracksViewChanges={tracksChanges}
     >
       <View style={[styles.wrap, { width: size, height: size }]}>
         <View
