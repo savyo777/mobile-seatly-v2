@@ -4,6 +4,7 @@ import { getMockShiftConfig, getMockTimeSlots } from '@/lib/mock/bookingAvailabi
 import { mockRestaurants } from '@/lib/mock/restaurants';
 import { getCachedRestaurantById } from '@/lib/data/restaurantCatalog';
 import { makeConfirmationCode } from '@/lib/booking/confirmationCode';
+import { bookingDepositsEnabled } from '@/lib/config/bookingDeposits';
 
 export type AvailabilitySlot = {
   shift_id: string;
@@ -428,6 +429,15 @@ export async function prepareDeposit(params: {
   reservation_id: string;
   payers: DepositPayer[];
 }): Promise<PrepareDepositResponse> {
+  // The `prepare-deposit` edge function is not deployed yet (Stripe wiring
+  // is still pending). When the EXPO_PUBLIC_BOOKING_DEPOSITS_ENABLED flag
+  // is off, short-circuit to an empty payments array — every caller does
+  // `for (const p of payments) await confirmDepositStub(...)`, so an
+  // empty list cleanly skips the capture step instead of throwing on a
+  // 404 from the missing function.
+  if (!bookingDepositsEnabled()) {
+    return { payments: [] };
+  }
   const { url, anonKey } = assertConfigured();
   const token = await getAccessToken();
   const controller = new AbortController();
@@ -465,6 +475,12 @@ export async function prepareDeposit(params: {
 export async function confirmDepositStub(params: {
   payment_id: string;
 }): Promise<{ ok: true }> {
+  // Mirror of prepareDeposit above — when deposits are disabled, treat
+  // every confirm call as a successful no-op so callers can keep their
+  // loop logic without special-casing the flag.
+  if (!bookingDepositsEnabled()) {
+    return { ok: true };
+  }
   const { url, anonKey } = assertConfigured();
   const token = await getAccessToken();
   const controller = new AbortController();
