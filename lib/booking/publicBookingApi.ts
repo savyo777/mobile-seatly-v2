@@ -562,6 +562,12 @@ export type ModifyReservationPayload = {
   confirmation_code?: string;
 };
 
+export type DepositAdjustment =
+  | { kind: 'none' }
+  | { kind: 'charged'; amount_cents: number; payment_intent_id: string | null }
+  | { kind: 'refunded'; amount_cents: number; payment_intent_id: string | null }
+  | { kind: 'failed'; reason: string };
+
 export type ModifyReservationResponse = {
   ok: true;
   reservation_id: string;
@@ -571,6 +577,13 @@ export type ModifyReservationResponse = {
   table_ids: string[];
   notification_delivery?: 'sent' | 'failed' | 'skipped';
   notification_delivery_channel?: 'sms' | 'email' | null;
+  /**
+   * Per MOBILE_STRIPE_TRANSFER.md §7: when the new party size needs a bigger
+   * (or smaller) deposit, the server attempts the delta charge or refund
+   * server-side and reports the outcome here so the client can surface
+   * accurate copy ("Charged $X.XX", "Refunding $Y.YY", "Couldn't charge …").
+   */
+  deposit_adjustment?: DepositAdjustment;
 };
 
 const MODIFY_REASON_MESSAGES: Record<string, string> = {
@@ -654,6 +667,7 @@ export async function modifyReservation(
     table_ids: body.table_ids ?? [],
     notification_delivery: body.notification_delivery,
     notification_delivery_channel: body.notification_delivery_channel,
+    deposit_adjustment: body.deposit_adjustment,
   };
 }
 

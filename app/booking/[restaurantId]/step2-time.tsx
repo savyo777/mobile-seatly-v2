@@ -533,12 +533,45 @@ export default function Step2Time() {
         time: `${hh}:${min}`,
         party_size: partySize,
       })
-        .then(() => {
+        .then((response) => {
           Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+          // Surface the deposit-adjustment outcome per MOBILE_STRIPE_TRANSFER.md §7
+          // so the diner knows whether their card was charged or refunded.
+          const adjustment = response.deposit_adjustment;
+          if (adjustment && adjustment.kind !== 'none') {
+            const formatCents = (cents: number) =>
+              new Intl.NumberFormat('en-CA', { style: 'currency', currency: 'CAD' }).format(cents / 100);
+            if (adjustment.kind === 'charged') {
+              Alert.alert(
+                'Reservation updated',
+                `Your party size increased, so we charged ${formatCents(adjustment.amount_cents)} to the card on file.`,
+              );
+            } else if (adjustment.kind === 'refunded') {
+              Alert.alert(
+                'Reservation updated',
+                `Your party size decreased, so we’re refunding ${formatCents(adjustment.amount_cents)} to the card you used. Refunds settle within ~5 days.`,
+              );
+            } else if (adjustment.kind === 'failed') {
+              Alert.alert(
+                'Reservation updated, payment issue',
+                `We couldn’t adjust your deposit: ${adjustment.reason}. The restaurant has been notified — they may follow up directly.`,
+              );
+            }
+          }
           router.replace(`/(customer)/bookings/${reservationId}`);
         })
         .catch((error) => {
-          Alert.alert('Could not update', friendlyError(error, 'Could not update the reservation.'));
+          const reason = (error as Error & { unavailable_reason?: string }).unavailable_reason;
+          if (reason === 'modify_requires_card') {
+            // Per doc §7: 402 from modify-reservation means the diner needs a
+            // saved card to cover the bigger deposit. Steer them to Account → Payment.
+            Alert.alert(
+              'Add a card first',
+              'Increasing your party size needs a card on file. Add one in Account → Payment, then try again.',
+            );
+          } else {
+            Alert.alert('Could not update', friendlyError(error, 'Could not update the reservation.'));
+          }
         })
         .finally(() => setSubmitting(false));
       return;
