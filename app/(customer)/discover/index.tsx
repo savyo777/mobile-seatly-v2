@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useMemo, useState } from 'react';
 import {
   View,
   Text,
@@ -305,15 +305,21 @@ export default function DiscoverScreen() {
     [user],
   );
 
-  useEffect(() => {
-    let cancelled = false;
-    loadRestaurantsForDiscover().then(({ list }) => {
-      if (!cancelled) setBaseRestaurants(list);
-    });
-    return () => {
-      cancelled = true;
-    };
-  }, []);
+  // Re-fetch on every focus so changes from the owner side (cover photo,
+  // logo, name, hours) show up the next time the diner taps Discover.
+  // Without this, the screen only ever fetched on first mount and held
+  // stale state for the entire app lifetime.
+  useFocusEffect(
+    useCallback(() => {
+      let cancelled = false;
+      loadRestaurantsForDiscover().then(({ list }) => {
+        if (!cancelled) setBaseRestaurants(list);
+      });
+      return () => {
+        cancelled = true;
+      };
+    }, []),
+  );
 
   // Refetch the diner's saved "Places" preferences whenever they tab back to
   // Discover so the "Based on your taste" section reflects edits made on the
