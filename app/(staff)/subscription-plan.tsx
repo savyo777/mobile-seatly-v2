@@ -1,4 +1,4 @@
-import React, { useCallback, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import { Alert, Pressable, StyleSheet, Text, View } from 'react-native';
 import { useFocusEffect, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
@@ -9,6 +9,16 @@ import {
   getStoredRestaurantPaymentCards,
   type RestaurantPaymentCard,
 } from '@/lib/storage/restaurantPaymentMethod';
+import { getCurrentOwnerRestaurantId } from '@/lib/services/ownerRestaurant';
+import {
+  cancelSubscription,
+  getSubscriptionStatus,
+  pauseSubscription,
+  restartSubscription,
+  resumeSubscription,
+  type RestaurantSubscriptionSnapshot,
+} from '@/lib/owner/subscriptionLifecycle';
+import { friendlyError } from '@/lib/errors/friendlyError';
 
 const PLAN = {
   name: 'Cenaiva Pro',
@@ -281,8 +291,10 @@ export default function SubscriptionPlanScreen() {
   const c = useColors();
   const styles = useStyles();
   const router = useRouter();
-  const [active, setActive] = useState(true);
+  const [restaurantId, setRestaurantId] = useState<string | null>(null);
+  const [snapshot, setSnapshot] = useState<RestaurantSubscriptionSnapshot | null>(null);
   const [defaultCard, setDefaultCard] = useState<RestaurantPaymentCard | null>(null);
+  const [busy, setBusy] = useState(false);
 
   const NEXT_BILL_DATE = nextBillDateLabel();
   const midCycleNote = midCycleCancelNote();
@@ -296,12 +308,78 @@ export default function SubscriptionPlanScreen() {
 
   useFocusEffect(loadPaymentMethod);
 
+  // Resolve current owner restaurant + hydrate the lifecycle snapshot from
+  // the restaurants row. The row is kept in sync server-side by stripe-webhook
+  // (customer.subscription.updated etc.), so a single read is enough — we
+  // refetch on focus to catch external admin actions.
+  useEffect(() => {
+    let active = true;
+    void (async () => {
+      const id = await getCurrentOwnerRestaurantId();
+      if (!active) return;
+      setRestaurantId(id);
+      if (id) {
+        const s = await getSubscriptionStatus(id);
+        if (active) setSnapshot(s);
+      }
+    })();
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  const refreshSnapshot = useCallback(async () => {
+    if (!restaurantId) return;
+    const next = await getSubscriptionStatus(restaurantId);
+    setSnapshot(next);
+  }, [restaurantId]);
+
+  const status = snapshot?.status ?? 'none';
+  const cancelPending = snapshot?.cancelPending === true;
+  // The "active" surface (Renews on… badge + Cancel button) reflects an
+  // actually-running subscription that isn't already wound down.
+  const active = (status === 'active' || status === 'trialing') && !cancelPending;
+
+  const handleAction = useCallback(
+    async (
+      kind: 'cancel' | 'pause' | 'resume' | 'restart',
+      runner: () => Promise<unknown>,
+    ): Promise<void> => {
+      if (busy) return;
+      setBusy(true);
+      try {
+        await runner();
+        await refreshSnapshot();
+        if (kind === 'cancel') {
+          Alert.alert(
+            'Subscription cancelled',
+            `You'll keep full access until ${NEXT_BILL_DATE}. Resume any time before then to stay live.`,
+          );
+        } else if (kind === 'pause') {
+          Alert.alert(
+            'Subscription paused',
+            'Your restaurant is hidden from diners and billing is on hold. Resume to come back online.',
+          );
+        } else if (kind === 'resume') {
+          Alert.alert('Subscription resumed', 'Your plan will keep renewing as before.');
+        } else if (kind === 'restart') {
+          Alert.alert('Subscription restarted', 'Welcome back! Your plan is active again.');
+        }
+      } catch (err) {
+        Alert.alert('Subscription', friendlyError(err, 'Something went wrong. Please try again.'));
+      } finally {
+        setBusy(false);
+      }
+    },
+    [busy, refreshSnapshot, NEXT_BILL_DATE],
+  );
+
   const onCancel = () => {
+    if (!restaurantId) return;
     const messageParts = [
       `You'll keep full access to ${PLAN.name} through the end of this billing period.`,
     ];
     if (midCycleNote) messageParts.push(midCycleNote);
-
     Alert.alert(
       'Cancel subscription?',
       messageParts.join('\n\n'),
@@ -311,11 +389,25 @@ export default function SubscriptionPlanScreen() {
           text: 'Cancel subscription',
           style: 'destructive',
           onPress: () => {
-            setActive(false);
-            Alert.alert(
-              'Subscription cancelled',
-              `You can resume anytime before ${NEXT_BILL_DATE} to keep your account active.`,
-            );
+            void handleAction('cancel', () => cancelSubscription(restaurantId));
+          },
+        },
+      ],
+    );
+  };
+
+  const onPause = () => {
+    if (!restaurantId) return;
+    Alert.alert(
+      'Pause subscription?',
+      'Your restaurant will be hidden from diners and billing is paused until you resume. Existing reservations stay scheduled.',
+      [
+        { text: 'Keep my plan', style: 'cancel' },
+        {
+          text: 'Pause subscription',
+          style: 'destructive',
+          onPress: () => {
+            void handleAction('pause', () => pauseSubscription(restaurantId));
           },
         },
       ],
@@ -323,9 +415,17 @@ export default function SubscriptionPlanScreen() {
   };
 
   const onResume = () => {
-    setActive(true);
-    Alert.alert('Subscription resumed', 'Your plan will keep renewing as before.');
+    if (!restaurantId) return;
+    void handleAction('resume', () => resumeSubscription(restaurantId));
   };
+
+  const onRestart = () => {
+    if (!restaurantId) return;
+    void handleAction('restart', () => restartSubscription(restaurantId));
+  };
+
+  const showCancelledCard = cancelPending || status === 'cancelled' || status === 'ended' || status === 'paused';
+  const showRestartCta = status === 'ended' || status === 'cancelled';
 
   return (
     <OwnerScreen
@@ -341,18 +441,33 @@ export default function SubscriptionPlanScreen() {
         <Text style={styles.introText}>Review your plan, billing card, invoices, and renewal status.</Text>
       </View>
 
-      {!active ? (
+      {showCancelledCard ? (
         <View style={styles.cancelledCard}>
-          <Text style={styles.cancelledLabel}>CANCELLED</Text>
-          <Text style={styles.cancelledTitle}>Access ends on {NEXT_BILL_DATE}</Text>
+          <Text style={styles.cancelledLabel}>
+            {status === 'paused' ? 'PAUSED' : cancelPending ? 'CANCELS SOON' : 'CANCELLED'}
+          </Text>
+          <Text style={styles.cancelledTitle}>
+            {status === 'paused'
+              ? 'Hidden from diners until you resume'
+              : status === 'ended'
+                ? 'Your subscription has ended'
+                : `Access ends on ${NEXT_BILL_DATE}`}
+          </Text>
           <Text style={styles.cancelledText}>
-            You'll keep full access to {PLAN.name} until then. Resume anytime to stay live on Cenaiva.
+            {status === 'paused'
+              ? 'Resume any time to come back online. Existing reservations are unaffected.'
+              : showRestartCta
+                ? 'Restart your subscription to come back live on Cenaiva.'
+                : `You'll keep full access to ${PLAN.name} until then. Resume anytime to stay live on Cenaiva.`}
           </Text>
           <Pressable
-            onPress={onResume}
-            style={({ pressed }) => [styles.resumeBtn, pressed && { opacity: 0.85 }]}
+            onPress={showRestartCta ? onRestart : onResume}
+            disabled={busy}
+            style={({ pressed }) => [styles.resumeBtn, (pressed || busy) && { opacity: 0.85 }]}
           >
-            <Text style={styles.resumeBtnText}>Resume subscription</Text>
+            <Text style={styles.resumeBtnText}>
+              {busy ? 'Working…' : showRestartCta ? 'Restart subscription' : 'Resume subscription'}
+            </Text>
           </Pressable>
         </View>
       ) : null}
@@ -429,14 +544,26 @@ export default function SubscriptionPlanScreen() {
       ) : null}
 
       {active ? (
-        <Pressable
-          onPress={onCancel}
-          style={({ pressed }) => [styles.cancelBtn, pressed && { opacity: 0.7 }]}
-          accessibilityRole="button"
-        >
-          <Ionicons name="close-circle-outline" size={18} color="#EF4444" />
-          <Text style={styles.cancelBtnText}>Cancel subscription</Text>
-        </Pressable>
+        <>
+          <Pressable
+            onPress={onPause}
+            disabled={busy}
+            style={({ pressed }) => [styles.cancelBtn, (pressed || busy) && { opacity: 0.7 }]}
+            accessibilityRole="button"
+          >
+            <Ionicons name="pause-circle-outline" size={18} color="#EF4444" />
+            <Text style={styles.cancelBtnText}>Pause subscription</Text>
+          </Pressable>
+          <Pressable
+            onPress={onCancel}
+            disabled={busy}
+            style={({ pressed }) => [styles.cancelBtn, (pressed || busy) && { opacity: 0.7 }]}
+            accessibilityRole="button"
+          >
+            <Ionicons name="close-circle-outline" size={18} color="#EF4444" />
+            <Text style={styles.cancelBtnText}>Cancel subscription</Text>
+          </Pressable>
+        </>
       ) : null}
 
       <View style={styles.noteRow}>
