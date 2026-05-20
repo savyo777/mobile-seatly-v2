@@ -105,69 +105,50 @@ export function UseMyLocationChip({ onLocate, cachedLocation, fallbackLocation, 
     })();
   }, []);
 
-  const handlePress = useCallback(async () => {
-    // Strong invariant: every tap moves the camera *somewhere*. The user
-    // should never see a silent no-op. The fallback chain below resolves
-    // coords in this order, returning at the first success:
-    //   1. cachedLocation  (parent's live useLocation result)
-    //   2. last-known position from the OS  (instant when available)
-    //   3. fresh fix via getCurrentPosition  (5 s timeout — emulators
-    //      without a location set can hang indefinitely otherwise)
-    //   4. fallbackLocation  (DEFAULT_MAP_CENTER from caller)
-    // Step 4 guarantees motion even on a freshly-flashed emulator with no
-    // geo fix configured.
+  const handlePress = useCallback(() => {
+    // Latency-first design: the tap MUST move the camera immediately. The
+    // previous version awaited Location.requestForegroundPermissionsAsync
+    // + getLastKnownPositionAsync + getCurrentPositionAsync (5 s race)
+    // BEFORE calling onLocate. On the Android emulator each of those can
+    // add hundreds of ms and the cumulative wait felt broken.
+    //
+    // New flow:
+    //   1. Pan instantly with the best coord available *right now*
+    //      (cachedLocation if the parent has one, else fallbackLocation).
+    //   2. In the background, request permission and try to fetch a fresh
+    //      fix. If a better coord arrives, re-pan to refine.
+    // The user sees zero latency on tap; the second pan (if any) is a
+    // small follow-up nudge with the more accurate coord.
 
     if (status === 'denied') {
       Linking.openSettings();
       return;
     }
 
-    if (cachedLocation) {
-      onLocate(cachedLocation);
-      if (status === 'idle') {
-        // Kick off the permission request in the background so a future tap
-        // without cache doesn't strand the user on the in-chip prompt.
-        const perm = await Location.requestForegroundPermissionsAsync();
-        setStatus(perm.status === 'granted' ? 'granted' : 'denied');
-      }
-      return;
-    }
+    const instant = cachedLocation ?? fallbackLocation;
+    if (instant) onLocate(instant);
 
-    setStatus('requesting');
-    const perm = await Location.requestForegroundPermissionsAsync();
-    if (perm.status !== 'granted') {
-      setStatus('denied');
-      if (fallbackLocation) onLocate(fallbackLocation);
-      return;
-    }
-    setStatus('granted');
+    if (cachedLocation) return; // already have parent's live coord; no async refine needed
 
-    try {
-      const last = await Location.getLastKnownPositionAsync();
-      if (last) {
-        onLocate({ latitude: last.coords.latitude, longitude: last.coords.longitude });
+    void (async () => {
+      const perm =
+        status === 'granted'
+          ? { status: 'granted' as const }
+          : await Location.requestForegroundPermissionsAsync();
+      if (perm.status !== 'granted') {
+        setStatus('denied');
         return;
       }
-    } catch {
-      // fall through
-    }
-
-    try {
-      const pos = await Promise.race([
-        Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Balanced }),
-        new Promise<never>((_, reject) =>
-          setTimeout(() => reject(new Error('location timeout')), 5000),
-        ),
-      ]);
-      onLocate({ latitude: pos.coords.latitude, longitude: pos.coords.longitude });
-      return;
-    } catch {
-      // fall through to fallback
-    }
-
-    if (fallbackLocation) {
-      onLocate(fallbackLocation);
-    }
+      if (status !== 'granted') setStatus('granted');
+      try {
+        const last = await Location.getLastKnownPositionAsync();
+        if (last) {
+          onLocate({ latitude: last.coords.latitude, longitude: last.coords.longitude });
+        }
+      } catch {
+        // Best-effort refine; instant fallback already painted.
+      }
+    })();
   }, [status, onLocate, cachedLocation, fallbackLocation]);
 
   const label = status === 'denied' ? 'Location off' : 'Relocate';
