@@ -302,6 +302,35 @@ const useStyles = createStyles((c) => ({
   modalActionDestructiveText: {
     color: '#fff',
   },
+  topActionsRow: {
+    flexDirection: 'row',
+    gap: spacing.sm,
+    marginTop: spacing.sm,
+    marginBottom: spacing.xs,
+  },
+  topAction: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    minHeight: 52,
+    borderRadius: borderRadius.xl,
+    backgroundColor: c.bgSurface,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: c.border,
+    paddingHorizontal: spacing.sm,
+  },
+  topActionPressed: {
+    backgroundColor: c.bgElevated,
+  },
+  topActionLabel: {
+    fontSize: 14,
+    fontWeight: '700',
+    color: c.textPrimary,
+    textAlign: 'center',
+    flexShrink: 1,
+  },
 }));
 
 // ── Row components ─────────────────────────────────────────────────────────
@@ -665,6 +694,7 @@ function SettingsSection({
 
 export default function OwnerSettingsScreen() {
   const styles = useStyles();
+  const c = useColors();
   const router = useRouter();
   const { mode } = useTheme();
   const { user } = useAuthSession();
@@ -681,7 +711,14 @@ export default function OwnerSettingsScreen() {
   const [closuresLabel, setClosuresLabel] = React.useState('');
   const [staffMembersLabel, setStaffMembersLabel] = React.useState('');
   const { refresh: refreshOwnerRestaurants } = useOwnerRestaurantContext();
-  const { selectedRestaurantId, restaurants, selectedRestaurant } = useOwnerScope();
+  const {
+    selectedRestaurantId,
+    restaurants,
+    selectedRestaurant,
+    isAll,
+    setSelectedRestaurantId,
+  } = useOwnerScope();
+  const [restaurantPickerOpen, setRestaurantPickerOpen] = React.useState(false);
   const currencyLabel = (selectedRestaurant?.currency ?? 'CAD').toUpperCase();
   const [restaurantRemovalOpen, setRestaurantRemovalOpen] = React.useState(false);
   const [restaurantRemovalIds, setRestaurantRemovalIds] = React.useState<string[]>([]);
@@ -1035,6 +1072,33 @@ export default function OwnerSettingsScreen() {
         />
       }
     >
+      <View style={styles.topActionsRow}>
+        <Pressable
+          style={({ pressed }) => [styles.topAction, pressed && styles.topActionPressed]}
+          onPress={() => setRestaurantPickerOpen(true)}
+          accessibilityRole="button"
+          accessibilityLabel={`Switch restaurant view. Current: ${
+            isAll ? 'All restaurants' : selectedRestaurant?.name ?? 'pick a restaurant'
+          }`}
+        >
+          <Ionicons name="swap-horizontal-outline" size={18} color={c.gold} />
+          <Text style={styles.topActionLabel} numberOfLines={1}>
+            {isAll ? 'All restaurants' : selectedRestaurant?.name ?? 'Switch restaurant view'}
+          </Text>
+        </Pressable>
+        <Pressable
+          style={({ pressed }) => [styles.topAction, pressed && styles.topActionPressed]}
+          onPress={() => router.push('/(customer)/profile/register-restaurant')}
+          accessibilityRole="button"
+          accessibilityLabel="Add a new restaurant to your account"
+        >
+          <Ionicons name="add-circle-outline" size={18} color={c.gold} />
+          <Text style={styles.topActionLabel} numberOfLines={1}>
+            Add restaurant
+          </Text>
+        </Pressable>
+      </View>
+
       {sections.map((s) => (
         <SettingsSection
           key={s.title}
@@ -1043,6 +1107,116 @@ export default function OwnerSettingsScreen() {
           onOpenRestaurantRemoval={openRestaurantRemoval}
         />
       ))}
+
+      <Modal
+        visible={restaurantPickerOpen}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setRestaurantPickerOpen(false)}
+      >
+        <Pressable
+          style={styles.modalBackdrop}
+          onPress={() => setRestaurantPickerOpen(false)}
+        >
+          <Pressable
+            style={styles.modalCard}
+            onPress={(e) => e.stopPropagation()}
+          >
+            <View style={styles.modalHeader}>
+              <Text style={styles.modalTitle}>Switch restaurant view</Text>
+              <Pressable
+                style={styles.modalClose}
+                onPress={() => setRestaurantPickerOpen(false)}
+                accessibilityRole="button"
+                accessibilityLabel="Close"
+              >
+                <Ionicons name="close" size={18} color={c.textPrimary} />
+              </Pressable>
+            </View>
+            <Text style={styles.modalBody}>
+              Pick which restaurant the staff app should show data for. Selecting
+              {' '}All restaurants aggregates bookings, guests, and metrics across
+              every location you own.
+            </Text>
+            <ScrollView style={styles.modalList}>
+              <Pressable
+                style={({ pressed }) => [
+                  styles.restaurantChoice,
+                  pressed && styles.restaurantChoicePressed,
+                ]}
+                onPress={() => {
+                  setSelectedRestaurantId('all');
+                  setRestaurantPickerOpen(false);
+                }}
+                accessibilityRole="button"
+                accessibilityLabel="All restaurants"
+              >
+                <View style={styles.iconWrap}>
+                  <Ionicons name="grid-outline" size={16} color={c.gold} />
+                </View>
+                <View style={styles.restaurantChoiceText}>
+                  <Text style={styles.restaurantChoiceName}>All restaurants</Text>
+                  <Text style={styles.restaurantChoiceMeta}>
+                    Aggregate across every location
+                  </Text>
+                </View>
+                {isAll ? (
+                  <Ionicons name="checkmark" size={18} color={c.gold} />
+                ) : null}
+              </Pressable>
+              {restaurants.map((restaurant, index) => {
+                const isSelected = !isAll && selectedRestaurantId === restaurant.id;
+                return (
+                  <Pressable
+                    key={restaurant.id}
+                    style={({ pressed }) => [
+                      styles.restaurantChoice,
+                      styles.restaurantChoiceDivider,
+                      pressed && styles.restaurantChoicePressed,
+                    ]}
+                    onPress={() => {
+                      setSelectedRestaurantId(restaurant.id);
+                      setRestaurantPickerOpen(false);
+                    }}
+                    accessibilityRole="button"
+                    accessibilityLabel={restaurant.name}
+                  >
+                    <View style={styles.iconWrap}>
+                      <Ionicons
+                        name="storefront-outline"
+                        size={16}
+                        color={c.gold}
+                      />
+                    </View>
+                    <View style={styles.restaurantChoiceText}>
+                      <Text style={styles.restaurantChoiceName} numberOfLines={1}>
+                        {restaurant.name}
+                      </Text>
+                      {restaurant.address ? (
+                        <Text style={styles.restaurantChoiceMeta} numberOfLines={1}>
+                          {restaurant.address}
+                        </Text>
+                      ) : null}
+                    </View>
+                    {isSelected ? (
+                      <Ionicons name="checkmark" size={18} color={c.gold} />
+                    ) : null}
+                  </Pressable>
+                );
+              })}
+            </ScrollView>
+            <View style={styles.modalActions}>
+              <Pressable
+                style={[styles.modalAction, styles.modalActionSecondary]}
+                onPress={() => setRestaurantPickerOpen(false)}
+                accessibilityRole="button"
+              >
+                <Text style={styles.modalActionText}>Done</Text>
+              </Pressable>
+            </View>
+          </Pressable>
+        </Pressable>
+      </Modal>
 
       <RestaurantRemovalModal
         visible={restaurantRemovalOpen}
