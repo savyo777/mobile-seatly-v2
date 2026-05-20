@@ -554,7 +554,7 @@ export function RestaurantDiscoveryMap({
         showsUserLocation={showUserLocation}
         showsMyLocationButton={false}
         showsCompass={false}
-        showsBuildings={false}
+        showsBuildings
         showsTraffic={false}
         showsPointsOfInterests={false}
         minZoomLevel={4}
