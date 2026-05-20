@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { View, Text, StyleSheet, ScrollView, Pressable, Platform, Alert } from 'react-native';
-import { useLocalSearchParams, useRouter } from 'expo-router';
+import { useLocalSearchParams, useRouter, type Href } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -535,6 +535,12 @@ export default function BookingDetailScreen() {
 
       {showActions ? (
         <View style={[styles.actions, { paddingBottom: Math.max(insets.bottom, spacing.md) }]}>
+          {livePreorder && livePreorder.status !== 'paid' && livePreorder.total_amount > 0 ? (
+            <Button
+              title="Pay your bill"
+              onPress={() => router.push(`/(customer)/orders/pay/${livePreorder.id}` as Href)}
+            />
+          ) : null}
           {canModify ? (
             <Button title={t('bookings.modifyBooking')} onPress={handleModify} variant="outlined" />
           ) : null}
