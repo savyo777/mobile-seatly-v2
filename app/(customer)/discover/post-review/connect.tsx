@@ -624,25 +624,30 @@ export default function SnapCaptionScreen() {
           </View>
 
         </ScrollView>
-
-        <View
-          style={[
-            styles.footer,
-            {
-              paddingBottom: Math.max(4, Math.min(insets.bottom, 8)),
-              paddingHorizontal: H_PAD,
-            },
-          ]}
-        >
-          <Button
-            title={posting ? 'Posting...' : 'Post'}
-            onPress={postSnap}
-            disabled={posting || !restaurantId || !decodedUri}
-            loading={posting}
-            size="lg"
-          />
-        </View>
       </KeyboardAvoidingView>
+
+      {/* Footer lives OUTSIDE the KeyboardAvoidingView so the Post button
+          stays fixed under the caption box instead of riding the keyboard
+          up (where it would overlap the global KeyboardDoneBar). The
+          keyboard simply covers it; dismissing the keyboard reveals it
+          again in its original position. */}
+      <View
+        style={[
+          styles.footer,
+          {
+            paddingBottom: Math.max(4, Math.min(insets.bottom, 8)),
+            paddingHorizontal: H_PAD,
+          },
+        ]}
+      >
+        <Button
+          title={posting ? 'Posting...' : 'Post'}
+          onPress={postSnap}
+          disabled={posting || !restaurantId || !decodedUri}
+          loading={posting}
+          size="lg"
+        />
+      </View>
     </View>
   );
 }
