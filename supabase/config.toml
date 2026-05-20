@@ -55,5 +55,10 @@ verify_jwt = false
 [functions.send-post-turn-review-prompts]
 verify_jwt = false
 
+# Hourly pg_cron sweeper that converts pending restaurant_booking_fees
+# rows into Stripe invoice_items. Gated on CRON_SECRET via x-cron-secret.
+[functions.bill-booking-fees]
+verify_jwt = false
+
 [functions.send-waitlist-ready-sms]
 verify_jwt = true
