@@ -290,7 +290,7 @@ export default function RegisterRestaurantCardEntryScreen() {
               <Text style={[s.titleItalic, { color: c.gold }]}>quietly</Text> on file.
             </Text>
             <Text style={[s.subtitle, { color: c.textSecondary }]}>
-              Three months on us. After that, {MONTHLY_FEE_SHORT} / month — cancel anytime.
+              {`${OWNER_TRIAL_MONTHS === 1 ? 'One month' : `${OWNER_TRIAL_MONTHS} months`} on us. After that, ${MONTHLY_FEE_SHORT} / month — cancel anytime.`}
             </Text>
             {pendingReferralCode ? (
               <View style={[s.referralChip, { borderColor: c.gold }]}>
