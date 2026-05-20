@@ -26,6 +26,10 @@ import { sanitizeInputByKind } from '@/lib/validation/input';
 // `restaurants` row + `shifts` table via the useEffect below. No mock
 // placeholder data on this surface.
 import { type BusinessHoursRow } from '@/lib/mock/ownerApp';
+import type {
+  RestaurantHoursJson,
+  RestaurantWeekdayKey,
+} from '@/lib/mock/restaurants';
 import { useOwnerScope } from '@/hooks/useOwnerScope';
 import { uploadRestaurantPhoto } from '@/lib/owner/uploadRestaurantPhoto';
 import { saveRestaurantProfile } from '@/lib/owner/saveRestaurantProfile';
@@ -444,6 +448,44 @@ function parseTime12(t: string): { hour: string; minute: string; period: string 
   return { hour: String(parseInt(match[1], 10)), minute: match[2], period: match[3].toUpperCase() };
 }
 
+const UI_DAY_LABELS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'] as const;
+// UI day 0=Mon..6=Sun → RESTAURANT_WEEKDAY_KEYS index (0=Sun..6=Sat):
+//   Mon→1, Tue→2, Wed→3, Thu→4, Fri→5, Sat→6, Sun→0
+const UI_DAY_TO_WEEKDAY_KEY: readonly RestaurantWeekdayKey[] = [
+  'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday',
+];
+
+/**
+ * Read the canonical hours_json from a Restaurant row into the editor's
+ * (hours, openDays) state. Returns null when the row has no hours
+ * configured (caller should fall back to legacy shifts-derived seed).
+ *
+ * The JSON keeps 24h "HH:MM" strings; the editor wants 12h ("5:00 PM");
+ * delegate to the existing `to12h` helper above for the conversion.
+ */
+function hoursJsonToEditorRows(
+  hoursJson: RestaurantHoursJson | null | undefined,
+): { hours: BusinessHoursRow[]; openDays: boolean[] } | null {
+  if (!hoursJson) return null;
+  const hasAny = UI_DAY_TO_WEEKDAY_KEY.some((k) => hoursJson[k] != null);
+  if (!hasAny) return null;
+  const hours: BusinessHoursRow[] = [];
+  const openDays: boolean[] = [];
+  for (let i = 0; i < UI_DAY_TO_WEEKDAY_KEY.length; i++) {
+    const key = UI_DAY_TO_WEEKDAY_KEY[i];
+    const range = hoursJson[key];
+    const isOpen = !!range && !!range.open && !!range.close;
+    hours.push({
+      day: i,
+      label: UI_DAY_LABELS[i],
+      open: isOpen && range ? to12h(range.open) : null,
+      close: isOpen && range ? to12h(range.close) : null,
+    });
+    openDays.push(isOpen);
+  }
+  return { hours, openDays };
+}
+
 // ── Wheel picker ─────────────────────────────────────────────────────────────
 
 const ITEM_H = 44;
@@ -768,7 +810,18 @@ export default function EditBusinessProfileScreen() {
     void fetchRestaurantShifts(selectedRestaurant.id).then((rows) => {
       if (!active) return;
       setShifts(rows);
-      // Seed the per-day editor from the weekly view.
+      // Seed the per-day editor. Prefer `restaurants.hours_json` (the
+      // canonical source the customer Discover screen + web restaurant
+      // page both read) when it's populated; fall back to the shifts
+      // table only for legacy restaurants whose hours_json hasn't been
+      // backfilled yet. After the first save from this screen, hours_json
+      // is always authoritative.
+      const fromJson = hoursJsonToEditorRows(selectedRestaurant.hoursJson);
+      if (fromJson) {
+        setHours(fromJson.hours);
+        setOpenDays(fromJson.openDays);
+        return;
+      }
       // BusinessHoursRow uses UI day 0=Mon..6=Sun; buildWeeklyHours returns
       // entries in Mon..Sun order keyed by DB day (0=Sun..6=Sat).
       const weekly = buildWeeklyHours(rows);
