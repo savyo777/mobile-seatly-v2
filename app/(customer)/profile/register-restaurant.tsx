@@ -223,9 +223,9 @@ export default function RegisterRestaurantScreen() {
 
         <View style={styles.summaryCard}>
           <Text style={styles.summaryLabel}>What's next</Text>
-          <Text style={styles.summaryValue}>2 quick steps</Text>
+          <Text style={styles.summaryValue}>3 quick steps</Text>
           <Text style={styles.summaryText}>
-            Add your restaurant details, then save a card for billing after the trial.
+            Add your restaurant details, set up Stripe payouts, then save a card for billing after the trial.
           </Text>
         </View>
 
