@@ -4,6 +4,7 @@ import { Tabs, useRouter, usePathname, Href } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
 import * as Haptics from 'expo-haptics';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { AiChatFab } from '@/components/ai/AiChatFab';
 import { ShellErrorBoundary } from '@/components/ui/ShellErrorBoundary';
 import { useColors, createStyles } from '@/lib/theme';
@@ -54,9 +55,15 @@ export default function CustomerTabsLayout() {
   const pathname = usePathname();
   const c = useColors();
   const styles = useStyles();
+  const insets = useSafeAreaInsets();
   const { loading, isAuthenticated, role } = useAuthSession();
 
   const hideTabChrome = HIDE_FAB_ROUTES.some((route) => pathname?.includes(route));
+  // Tab bar = ~56pt of touch chrome stacked over the device's bottom safe-area
+  // inset (home-indicator height). Without paddingBottom the labels render
+  // under the indicator and get clipped, especially on Android where the
+  // gesture bar gives no automatic inset.
+  const tabBarPaddingBottom = Math.max(insets.bottom, 8);
   const tabBarStyle = useMemo(
     () =>
       hideTabChrome
@@ -65,9 +72,11 @@ export default function CustomerTabsLayout() {
             backgroundColor: c.bgBase,
             borderTopColor: c.border,
             borderTopWidth: StyleSheet.hairlineWidth,
-            paddingTop: 0,
+            paddingTop: 6,
+            paddingBottom: tabBarPaddingBottom,
+            height: 56 + tabBarPaddingBottom,
           },
-    [c.bgBase, c.border, hideTabChrome],
+    [c.bgBase, c.border, hideTabChrome, tabBarPaddingBottom],
   );
   const screenOptions = useMemo(
     () => ({
@@ -81,9 +90,6 @@ export default function CustomerTabsLayout() {
       tabBarInactiveTintColor: c.textMuted,
       tabBarHideOnKeyboard: true,
       tabBarStyle,
-      tabBarItemStyle: {
-        transform: [{ translateY: 10 }],
-      },
       tabBarLabelStyle: {
         fontSize: 11,
         fontWeight: '600' as const,
@@ -194,7 +200,7 @@ export default function CustomerTabsLayout() {
           <Tabs.Screen name="post/caption" options={{ href: null }} />
           <Tabs.Screen name="post/reward" options={{ href: null }} />
         </Tabs>
-        {!hideTabChrome ? <AiChatFab bottomOffset={100} /> : null}
+        {!hideTabChrome ? <AiChatFab bottomOffset={56 + tabBarPaddingBottom + 16} /> : null}
       </View>
     </ShellErrorBoundary>
   );

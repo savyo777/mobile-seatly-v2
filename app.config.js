@@ -47,6 +47,7 @@ module.exports = () => {
         'react-native-maps',
         {
           iosGoogleMapsApiKey: MAPS_KEY_PLACEHOLDER,
+          androidGoogleMapsApiKey: MAPS_KEY_PLACEHOLDER,
         },
       ],
     ],
