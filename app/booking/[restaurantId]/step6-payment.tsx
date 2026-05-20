@@ -22,6 +22,8 @@ import {
   refundPaymentIntent,
 } from '@/lib/booking/holdApi';
 import { friendlyError, isUserCancellation } from '@/lib/errors/friendlyError';
+import { useCurrentUserId } from '@/lib/auth/currentUserId';
+import { stripeAttachPaymentMethod } from '@/lib/stripe/stripeAttachPaymentMethod';
 
 type PaymentMethod = 'card' | 'apple_pay' | 'google_pay';
 
@@ -56,6 +58,25 @@ const useStyles = createStyles((c) => ({
   mockCardText: { fontSize: 15, color: c.textSecondary, fontFamily: Platform.OS === 'ios' ? 'Menlo' : 'monospace' },
   cardRow: { flexDirection: 'row', gap: 12 },
   secureText: { fontSize: 12, color: c.textMuted, textAlign: 'center', marginTop: 20, lineHeight: 18 },
+  saveCardRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    paddingHorizontal: 4,
+    paddingVertical: 12,
+    marginTop: 6,
+  },
+  saveCardBox: {
+    width: 20,
+    height: 20,
+    borderRadius: 4,
+    borderWidth: 1.5,
+    borderColor: c.border,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  saveCardBoxChecked: { backgroundColor: c.gold, borderColor: c.gold },
+  saveCardLabel: { flex: 1, fontSize: 14, color: c.textSecondary },
   payLaterNote: { fontSize: 12, color: c.textMuted, textAlign: 'center', marginTop: 20, lineHeight: 18 },
   footer: { position: 'absolute', bottom: 0, left: 0, right: 0, paddingHorizontal: 20, paddingTop: 16, backgroundColor: c.bgBase, borderTopWidth: 1, borderTopColor: c.border },
   // Amount-changed retry modal (STRIPE_SETUP.md §9.4).
@@ -143,6 +164,12 @@ export default function Step6Payment() {
   const [depositTiers, setDepositTiers] = useState<DepositTier[] | undefined>(undefined);
   const [defaultCard, setDefaultCard] = useState<CustomerPaymentMethod | null>(null);
   const [paying, setPaying] = useState(false);
+  // Diner opt-in for save-card-during-charge per MOBILE_STRIPE_TRANSFER.md §8.
+  // Gated on being logged in: guests have no Stripe customer to attach the PM to,
+  // so the server would reject the `save_card: true` flag with a 401-equivalent.
+  const currentUserId = useCurrentUserId();
+  const [saveCard, setSaveCard] = useState(false);
+  const canSaveCard = currentUserId != null;
   // Drives the "amount changed mid-checkout" recovery modal (STRIPE_SETUP.md §9.4).
   // Populated when confirm-hold-paid returns 402 payment_amount_too_low; the
   // diner re-confirms the new total and we re-present PaymentSheet with the
@@ -263,6 +290,15 @@ export default function Step6Payment() {
     try {
       const resp = await confirmHoldPaid(holdId, paymentIntentId);
       hold.confirmConverted(resp.reservation_id, resp.confirmation_code);
+      // Fire-and-forget per MOBILE_STRIPE_TRANSFER.md §8: the PM was already
+      // attached to the diner's Stripe customer by `setup_future_usage` at PI
+      // creation, so failing the saved_cards row insert doesn't break the
+      // booking — the diner will still see the card next time via stripe-list-methods
+      // even if our local row is missing; we just won't show the brand/last4 until
+      // the next list fetch reconciles.
+      if (canSaveCard && saveCard) {
+        void stripeAttachPaymentMethod(paymentIntentId).catch(() => {});
+      }
       const tableIdsParam = encodeURIComponent(resp.table_ids.join(','));
       goToConfirmation(
         `paid=1&reservationId=${encodeURIComponent(resp.reservation_id)}` +
@@ -308,6 +344,7 @@ export default function Step6Payment() {
         currency: 'cad',
         customer_email: email || null,
         customer_name: name || null,
+        save_card: canSaveCard && saveCard,
       });
       createdPaymentIntentId = intent.payment_intent_id;
 
@@ -322,6 +359,7 @@ export default function Step6Payment() {
           currency: 'cad',
           customer_email: email || null,
           customer_name: name || null,
+          save_card: canSaveCard && saveCard,
         });
         setPendingRetry({
           holdId,
@@ -470,6 +508,20 @@ export default function Step6Payment() {
             ) : null}
           </Card>
         )}
+
+        {selectedMethod === 'card' && canSaveCard ? (
+          <TouchableOpacity
+            onPress={() => setSaveCard((v) => !v)}
+            style={styles.saveCardRow}
+            accessibilityRole="checkbox"
+            accessibilityState={{ checked: saveCard }}
+          >
+            <View style={[styles.saveCardBox, saveCard && styles.saveCardBoxChecked]}>
+              {saveCard ? <Ionicons name="checkmark" size={16} color={c.bgBase} /> : null}
+            </View>
+            <Text style={styles.saveCardLabel}>Save this card for next time</Text>
+          </TouchableOpacity>
+        ) : null}
 
         <Text style={styles.secureText}>
           <Ionicons name="lock-closed" size={12} color={c.textMuted} /> Secured by Stripe. Your payment information is encrypted.

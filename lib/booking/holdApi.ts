@@ -202,6 +202,18 @@ export type CreateHoldPaymentIntentRequest = {
   currency?: string;
   customer_email?: string | null;
   customer_name?: string | null;
+  /**
+   * When true AND the diner is logged in, the server adds
+   * `setup_future_usage: 'off_session'` + the diner's customer to the
+   * PaymentIntent so the PM stays attached after the charge and can be
+   * surfaced in the saved-cards picker on future bookings. Per
+   * MOBILE_STRIPE_TRANSFER.md §8, both client (PaymentSheet config)
+   * and server (this flag) must agree or Stripe rejects with
+   * "does not match". Mobile pairs this with
+   * `PaymentSheet.Configuration.intentConfiguration` setupFutureUsage =
+   * 'OffSession' in step6-payment.tsx.
+   */
+  save_card?: boolean;
 };
 
 export type CreateHoldPaymentIntentResponse = {
