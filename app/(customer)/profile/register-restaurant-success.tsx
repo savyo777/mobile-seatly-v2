@@ -5,6 +5,7 @@ import { Button, ScreenWrapper } from '@/components/ui';
 import { borderRadius, createStyles, spacing, typography, useColors } from '@/lib/theme';
 import { Ionicons } from '@expo/vector-icons';
 import { setAppShellPreference } from '@/lib/navigation/appShellPreference';
+import { ownerTrialLengthLabel } from '@/lib/owner/trialPolicy';
 
 const useStyles = createStyles((c) => ({
   inner: { flex: 1, justifyContent: 'center', gap: spacing.lg },
@@ -71,7 +72,7 @@ export default function RegisterRestaurantSuccessScreen() {
         </View>
         <Text style={styles.title}>You're all set</Text>
         <Text style={styles.body}>
-          Your restaurant is registered and your 3-month free trial has started.
+          {`Your restaurant is registered and your ${ownerTrialLengthLabel()} free trial has started.`}
         </Text>
 
         {trialLabel ? (

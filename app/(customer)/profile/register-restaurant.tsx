@@ -8,6 +8,10 @@ import { borderRadius, createStyles, spacing, typography, useColors } from '@/li
 import { useAuthSession } from '@/lib/auth/AuthContext';
 import { fetchCurrentOwnerRestaurant } from '@/lib/services/ownerRestaurant';
 import { setAppShellPreference } from '@/lib/navigation/appShellPreference';
+import { OWNER_TRIAL_MONTHS } from '@/lib/owner/trialPolicy';
+import { ownerMonthlyPriceShort } from '@/lib/owner/ownerPricing';
+
+const TRIAL_LABEL = OWNER_TRIAL_MONTHS === 1 ? '1 month free' : `${OWNER_TRIAL_MONTHS} months free`;
 
 const useStyles = createStyles((c) => ({
   scroll: { flex: 1 },
@@ -213,7 +217,7 @@ export default function RegisterRestaurantScreen() {
         <View style={styles.noteRow}>
           <Ionicons name="sparkles-outline" size={14} color={c.gold} />
           <Text style={styles.noteText}>
-            3 months free, then $49/month. Cancel anytime.
+            {`${TRIAL_LABEL}, then ${ownerMonthlyPriceShort()}/month. Cancel anytime.`}
           </Text>
         </View>
 
@@ -230,7 +234,7 @@ export default function RegisterRestaurantScreen() {
             <View style={styles.listIcon}>
               <Ionicons name="checkmark" size={16} color={c.gold} />
             </View>
-            <Text style={styles.listText}>3 months free</Text>
+            <Text style={styles.listText}>{TRIAL_LABEL}</Text>
           </View>
           <View style={styles.listRow}>
             <View style={styles.listIcon}>
