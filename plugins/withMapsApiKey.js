@@ -52,16 +52,25 @@ function withIosMapsApiKey(config, apiKey) {
   });
 
   next = withAppDelegate(next, (cfg) => {
+    const lang = cfg.modResults.language;
+    const existingSwift = /GMSServices\.provideAPIKey\("([^"]*)"\)/g;
+    const existingObjC = /\[GMSServices provideAPIKey:@"([^"]*)"\]/g;
+
     if (cfg.modResults.contents.includes(APP_DELEGATE_MARKER)) {
+      // Another plugin (react-native-maps) already wrote a provideAPIKey
+      // line — usually with a placeholder string because it received our
+      // sentinel. Overwrite the arg with the real env-driven key. This
+      // is the path we hit in normal prebuilds.
+      cfg.modResults.contents = cfg.modResults.contents
+        .replace(existingSwift, `GMSServices.provideAPIKey("${apiKey}")`)
+        .replace(existingObjC, `[GMSServices provideAPIKey:@"${apiKey}"]`);
       return cfg;
     }
 
-    const lang = cfg.modResults.language;
     if (lang === 'swift') {
-      // Swift AppDelegate: insert just after `import` block, before the
-      // class declaration. RN-CLI templates use `import UIKit` and
-      // `import Expo`; we add `import GoogleMaps` + the provideAPIKey
-      // call at didFinishLaunchingWithOptions entry.
+      // No existing call — insert one. Swift AppDelegate: insert just
+      // after `import UIKit`, then call provideAPIKey at the top of
+      // didFinishLaunchingWithOptions.
       cfg.modResults.contents = cfg.modResults.contents
         .replace(
           /(import UIKit\n)/,
