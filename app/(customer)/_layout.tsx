@@ -115,7 +115,7 @@ export default function CustomerTabsLayout() {
       <Pressable
         onPress={() => {
           Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium).catch(() => {});
-          router.push('/(customer)/discover/post-review' as Href);
+          router.push('/(customer)/discover/post-review/camera' as Href);
         }}
         style={styles.centerBtnWrapper}
         accessibilityLabel="Open snap camera"

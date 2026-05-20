@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   Alert,
   KeyboardAvoidingView,
@@ -28,6 +28,7 @@ import { mockCustomer } from '@/lib/mock/users';
 import { useCurrentUserId } from '@/lib/auth/currentUserId';
 import { isDemoModeEnabled } from '@/lib/config/demoMode';
 import { useAuthSession } from '@/lib/auth/AuthContext';
+import { captureStyledSnapToTmpFile } from '@/lib/snapOverlays/captureStyledSnap';
 import { uploadSnapPhoto } from '@/lib/snaps/uploadSnapPhoto';
 import { insertVisitPhoto } from '@/lib/snaps/visitPhotosApi';
 import { fetchCurrentUserProfile, type AppUserProfile } from '@/lib/services/userProfile';
@@ -323,6 +324,12 @@ export default function SnapCaptionScreen() {
   }, [userProfile]);
   const [photoAspect, setPhotoAspect] = useState(DEFAULT_SNAP_PHOTO_ASPECT);
   const [posting, setPosting] = useState(false);
+  // The live preview view with the filter overlay + picked restaurant
+  // name. When the restaurant is chosen after capture (the default flow),
+  // the photoUri passed in is the raw camera frame — we composite the
+  // overlay into a single JPEG at post time so the uploaded/shared snap
+  // carries the restaurant name baked in.
+  const filteredPreviewRef = useRef<View>(null);
 
   const decodedUri = photoUri
     ? (() => {
@@ -396,12 +403,24 @@ export default function SnapCaptionScreen() {
         return;
       }
 
+      // If a filter is on, composite the live preview (photo + filter +
+      // restaurant overlay) into a single JPEG so the uploaded snap +
+      // external share target both carry the restaurant name baked in.
+      // captureStyledSnapToTmpFile returns undefined in Expo Go / when
+      // the native ViewShot module is missing — fall back to the raw
+      // photo so the post still goes through.
+      let finalUri = decodedUri;
+      if (selectedFilterId) {
+        const composed = await captureStyledSnapToTmpFile(filteredPreviewRef);
+        if (composed) finalUri = composed;
+      }
+
       // Keep the in-memory snap so the reward/share sheet renders immediately.
       createSnapPost({
         user_id: userId,
         restaurant_id: restaurantId,
         booking_id: bookingId,
-        image: decodedUri,
+        image: finalUri,
         caption: cleanCaption,
         rating: ratingValue,
         tags: [],
@@ -426,7 +445,7 @@ export default function SnapCaptionScreen() {
         void (async () => {
           try {
             const publicUrl = await uploadSnapPhoto({
-              uri: decodedUri,
+              uri: finalUri,
               userId: authUserId,
               photoId,
             });
@@ -469,7 +488,7 @@ export default function SnapCaptionScreen() {
           restaurantName,
           restaurantId,
           ...(bookingId ? { bookingId } : {}),
-          photoUri: encodeURIComponent(decodedUri),
+          photoUri: encodeURIComponent(finalUri),
           rating: String(rating),
           ...(selectedFilterId
             ? {
@@ -521,7 +540,11 @@ export default function SnapCaptionScreen() {
         >
           {decodedUri ? (
             selectedFilterId ? (
-              <View style={[styles.imageBlock, { width: photoW, height: photoH }]}>
+              <View
+                ref={filteredPreviewRef}
+                collapsable={false}
+                style={[styles.imageBlock, { width: photoW, height: photoH }]}
+              >
                 <StoryFilterFrame
                   filterId={selectedFilterId}
                   width={photoW}

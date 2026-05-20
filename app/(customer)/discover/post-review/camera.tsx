@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import React, { useCallback, useMemo, useRef, useState } from 'react';
 import {
   ActivityIndicator,
   Alert,
@@ -272,7 +272,7 @@ export default function ReviewCameraScreen() {
   const insets = useSafeAreaInsets();
   const { width: windowW, height: windowH } = useWindowDimensions();
   const params = useLocalSearchParams<{
-    restaurantId: string;
+    restaurantId?: string;
     bookingId?: string;
   }>();
   const { restaurantId, bookingId } = params;
@@ -301,9 +301,11 @@ export default function ReviewCameraScreen() {
   const restaurantName = useMemo(() => {
     if (restaurant?.name) return restaurant.name;
     if (restaurantId) return getSnapRestaurantName(restaurantId);
-    return 'Restaurant';
+    // No restaurant chosen yet — picker comes after capture, so the
+    // overlay text stays blank until the user picks one.
+    return '';
   }, [restaurant?.name, restaurantId]);
-  const restaurantCity = restaurant?.city ?? 'Toronto';
+  const restaurantCity = restaurant?.city ?? (restaurantId ? 'Toronto' : '');
   const restaurantArea = restaurant?.area ?? restaurantCity;
 
   const effectiveFlash = useMemo(
@@ -316,21 +318,40 @@ export default function ReviewCameraScreen() {
   const carouselBottom = insets.bottom + 80;
   const pillBottom = carouselBottom + SNAP_FILTER_RING_SIZE + 8;
 
-  const pushToCaption = useCallback(
+  const pushNext = useCallback(
     (uri: string, capturedAtMs: number) => {
       const encodedUri = encodeURIComponent(uri);
       const bookingQuery = bookingId ? `&bookingId=${encodeURIComponent(String(bookingId))}` : '';
+      if (restaurantId) {
+        // Legacy entry path — restaurant was chosen up-front (e.g. from a
+        // booking deep link). Jump straight to caption.
+        router.push(
+          `/(customer)/discover/post-review/details?photoUri=${encodedUri}&restaurantId=${restaurantId}&capturedAt=${capturedAtMs}${bookingQuery}`,
+        );
+        return;
+      }
+      // Default path — capture first, pick restaurant after. Pass the raw
+      // photo + filter selection to the picker; the picker forwards both
+      // to /details once a restaurant is chosen.
+      const filterQuery = selectedFilterId
+        ? `&filterId=${encodeURIComponent(selectedFilterId)}`
+        : '';
       router.push(
-        `/(customer)/discover/post-review/details?photoUri=${encodedUri}&restaurantId=${restaurantId}&capturedAt=${capturedAtMs}${bookingQuery}`,
+        `/(customer)/discover/post-review?photoUri=${encodedUri}&capturedAt=${capturedAtMs}${filterQuery}${bookingQuery}`,
       );
     },
-    [bookingId, restaurantId, router],
+    [bookingId, restaurantId, router, selectedFilterId],
   );
 
   const compositeAndGo = useCallback(
     async (rawPhotoUri: string, capturedAtMs: number) => {
-      if (!selectedFilterId) {
-        pushToCaption(rawPhotoUri, capturedAtMs);
+      // When no restaurant is chosen yet, the filter overlay has no name
+      // baked in — defer the composite until the user picks a restaurant
+      // on the post-capture picker. The raw photo (+ filterId in params)
+      // is passed through; the final composite happens in connect.tsx's
+      // postSnap, where the picked restaurant is known.
+      if (!selectedFilterId || !restaurantId) {
+        pushNext(rawPhotoUri, capturedAtMs);
         return;
       }
       setCapturedUri(rawPhotoUri);
@@ -343,10 +364,10 @@ export default function ReviewCameraScreen() {
       } catch {
         composed = undefined;
       }
-      pushToCaption(composed ?? rawPhotoUri, capturedAtMs);
+      pushNext(composed ?? rawPhotoUri, capturedAtMs);
       setCapturedUri(null);
     },
-    [selectedFilterId, pushToCaption],
+    [selectedFilterId, restaurantId, pushNext],
   );
 
   const TAB_BAR_STYLE = {
@@ -387,10 +408,6 @@ export default function ReviewCameraScreen() {
       };
     }, [compositeAndGo]),
   );
-
-  useEffect(() => {
-    if (!restaurantId) router.replace('/(customer)/discover/post-review');
-  }, [restaurantId, router]);
 
   const runShutter = () => {
     Animated.sequence([
@@ -511,7 +528,11 @@ export default function ReviewCameraScreen() {
   };
 
   const goBack = () => {
-    safeRouterBack(router, '/(customer)/discover/post-review');
+    // FAB now opens the camera directly, so back from the camera should
+    // exit the flow entirely. When restaurantId is present (legacy
+    // entry path), there's no picker to return to either — both cases
+    // land on Discover.
+    safeRouterBack(router, '/(customer)/discover');
   };
 
   return (
@@ -635,7 +656,7 @@ export default function ReviewCameraScreen() {
             <Ionicons name="chevron-back" size={28} color="#fff" />
           </Pressable>
           <Text style={styles.topTitle} numberOfLines={1}>
-            Posting to {restaurantName}
+            {restaurantId && restaurantName ? `Posting to ${restaurantName}` : 'New snap'}
           </Text>
           <Pressable
             onPress={() => {

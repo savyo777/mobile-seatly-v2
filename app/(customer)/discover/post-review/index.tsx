@@ -138,7 +138,25 @@ export default function ReviewRestaurantSelectScreen() {
   const c = useColors();
   const styles = useStyles();
   const router = useRouter();
-  const { restaurantId } = useLocalSearchParams<{ restaurantId?: string }>();
+  const {
+    restaurantId,
+    photoUri,
+    capturedAt,
+    filterId,
+    bookingId,
+  } = useLocalSearchParams<{
+    restaurantId?: string;
+    photoUri?: string;
+    capturedAt?: string;
+    filterId?: string;
+    bookingId?: string;
+  }>();
+  // Post-capture mode: camera passed a photo through and we just need to
+  // pick which restaurant to attach it to. In that mode the tap target is
+  // /details (with all params chained through); otherwise (legacy entry
+  // path, e.g. an old deep link) we keep the original behavior and push
+  // to /camera with the picked restaurantId.
+  const postCaptureMode = Boolean(photoUri);
   const [query, setQuery] = useState('');
 
   // Real-mode state
@@ -169,7 +187,19 @@ export default function ReviewRestaurantSelectScreen() {
     [],
   );
 
-  const openCamera = (id: string) => {
+  const pickRestaurant = (id: string) => {
+    if (postCaptureMode && photoUri) {
+      const photoQuery = `photoUri=${encodeURIComponent(photoUri)}`;
+      const capturedAtQuery = capturedAt ? `&capturedAt=${encodeURIComponent(capturedAt)}` : '';
+      const filterQuery = filterId ? `&filterId=${encodeURIComponent(filterId)}` : '';
+      const bookingQuery = bookingId ? `&bookingId=${encodeURIComponent(bookingId)}` : '';
+      router.push(
+        `/(customer)/discover/post-review/details?${photoQuery}&restaurantId=${id}${capturedAtQuery}${filterQuery}${bookingQuery}`,
+      );
+      return;
+    }
+    // Legacy entry path (no photo yet) — fall back to the original
+    // restaurant → camera flow so any deep link still works.
     router.push(`/(customer)/discover/post-review/camera?restaurantId=${id}`);
   };
 
@@ -202,14 +232,27 @@ export default function ReviewRestaurantSelectScreen() {
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.content}>
         <View style={styles.header}>
           <Pressable
-            onPress={() => safeRouterBack(router, '/(customer)/discover')}
+            onPress={() =>
+              safeRouterBack(
+                router,
+                postCaptureMode
+                  ? '/(customer)/discover/post-review/camera'
+                  : '/(customer)/discover',
+              )
+            }
             hitSlop={10}
             style={styles.backBtn}
           >
             <Ionicons name="chevron-back" size={22} color={c.textPrimary} />
           </Pressable>
-          <Text style={styles.title}>Where are you posting?</Text>
-          <Text style={styles.subtitle}>Choose the restaurant this snap is for</Text>
+          <Text style={styles.title}>
+            {postCaptureMode ? 'Pick a restaurant' : 'Where are you posting?'}
+          </Text>
+          <Text style={styles.subtitle}>
+            {postCaptureMode
+              ? 'Where did you snap this?'
+              : 'Choose the restaurant this snap is for'}
+          </Text>
         </View>
 
         <Input placeholder="Search restaurants" value={query} onChangeText={setQuery} inputKind="search" />
@@ -228,7 +271,7 @@ export default function ReviewRestaurantSelectScreen() {
                     ? demoRecentlyVisited.map((restaurant) => (
                         <Pressable
                           key={`recent-${restaurant.id}`}
-                          onPress={() => openCamera(restaurant.id)}
+                          onPress={() => pickRestaurant(restaurant.id)}
                           style={({ pressed }) => [
                             styles.card,
                             styles.recentCard,
@@ -252,7 +295,7 @@ export default function ReviewRestaurantSelectScreen() {
                     : recentRestaurants.map((restaurant) => (
                         <Pressable
                           key={`recent-${restaurant.restaurantId}`}
-                          onPress={() => openCamera(restaurant.restaurantId)}
+                          onPress={() => pickRestaurant(restaurant.restaurantId)}
                           style={({ pressed }) => [
                             styles.card,
                             styles.recentCard,
@@ -288,7 +331,7 @@ export default function ReviewRestaurantSelectScreen() {
                   ? filteredDemo.map((restaurant) => (
                       <Pressable
                         key={restaurant.id}
-                        onPress={() => openCamera(restaurant.id)}
+                        onPress={() => pickRestaurant(restaurant.id)}
                         style={({ pressed }) => [
                           styles.card,
                           restaurantId === restaurant.id && styles.selectedCard,
@@ -307,7 +350,7 @@ export default function ReviewRestaurantSelectScreen() {
                   : filteredReal.map((restaurant) => (
                       <Pressable
                         key={restaurant.id}
-                        onPress={() => openCamera(restaurant.id)}
+                        onPress={() => pickRestaurant(restaurant.id)}
                         style={({ pressed }) => [
                           styles.card,
                           restaurantId === restaurant.id && styles.selectedCard,
