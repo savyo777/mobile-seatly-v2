@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { View, Text, StyleSheet, Pressable, ActivityIndicator } from 'react-native';
+import { View, Text, StyleSheet, Pressable, ActivityIndicator, Platform } from 'react-native';
 import MapView, { Marker, PROVIDER_GOOGLE, type MapPressEvent, type Region } from 'react-native-maps';
 import { Ionicons } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
@@ -554,7 +554,14 @@ export function RestaurantDiscoveryMap({
         showsUserLocation={showUserLocation}
         showsMyLocationButton={false}
         showsCompass={false}
-        showsBuildings
+        // Buildings layer is platform-specific: on iOS the Google Maps SDK
+        // honors `customMapStyle` for `landscape.man_made` (dark fill + gold
+        // stroke per the web), so we enable the layer to expose those gold
+        // outlines at street zoom. On Android the SDK draws an opaque 3D
+        // buildings layer in its own light-gray style that paints OVER our
+        // styled polygons, hiding the gold edges — keep it off so the base
+        // tile's `landscape.man_made` polygon still surfaces with our style.
+        showsBuildings={Platform.OS === 'ios'}
         showsTraffic={false}
         showsPointsOfInterests={false}
         minZoomLevel={4}

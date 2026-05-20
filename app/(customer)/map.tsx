@@ -409,7 +409,15 @@ export default function MapScreen() {
         selectedId={focusedId}
         onSelectRestaurant={onSelectRestaurant}
         onMapPress={onMapPress}
-        userLocation={hasReliableUserLocation ? { latitude: userCoords.lat, longitude: userCoords.lng } : null}
+        // Pass coords whenever location is live, even when outside the demo
+        // region — the "Use my location" chip uses this as cachedLocation so
+        // a tap can immediately re-center. `showUserLocation` still gates the
+        // blue-dot marker to the demo region.
+        userLocation={
+          locationReady && locationMode === 'live' && !permissionDenied
+            ? { latitude: userCoords.lat, longitude: userCoords.lng }
+            : null
+        }
         showUserLocation={showUserLocation}
         locationReady={locationReady}
         contentBottomInset={bottomRailInset}

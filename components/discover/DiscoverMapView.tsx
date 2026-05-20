@@ -269,7 +269,16 @@ export function DiscoverMapView() {
           setSelectedRestaurant(null);
           setSelectedCluster(null);
         }}
-        userLocation={hasReliableUserLocation ? { latitude: lat, longitude: lng } : null}
+        // Pass the user's coords whenever location is live, even when
+        // outside the demo region — the "Use my location" chip uses this as
+        // cachedLocation so a tap can immediately re-center to the user.
+        // `showUserLocation` still gates the blue-dot marker to the demo
+        // region so users far from launch markets don't see a stray dot.
+        userLocation={
+          locationReady && !permissionDenied && source === 'live'
+            ? { latitude: lat, longitude: lng }
+            : null
+        }
         showUserLocation={hasReliableUserLocation}
         locationReady={locationReady}
         contentBottomInset={180}

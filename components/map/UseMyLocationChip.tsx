@@ -132,12 +132,26 @@ export function UseMyLocationChip({ onLocate, cachedLocation, topOffset }: Props
       return;
     }
     setStatus('granted');
+    // Try the OS's last-known position first (returns instantly when the OS
+    // has a recent fix), then fall back to a fresh fix. Both can return null
+    // on emulators / first-launch / location-services-off.
     try {
-      const pos = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Balanced });
+      const last = await Location.getLastKnownPositionAsync();
+      if (last) {
+        onLocate({ latitude: last.coords.latitude, longitude: last.coords.longitude });
+        return;
+      }
+    } catch {
+      // ignore — fall through to current-position
+    }
+    try {
+      const pos = await Location.getCurrentPositionAsync({
+        accuracy: Location.Accuracy.Balanced,
+      });
       onLocate({ latitude: pos.coords.latitude, longitude: pos.coords.longitude });
     } catch {
-      // Position unavailable (sim with no location set). Caller still
-      // gets the granted UI; no pan is the right behavior here.
+      // Position unavailable (sim with no location set, or fix timed out).
+      // The granted UI stays; nothing else to do without a real coordinate.
     }
   }, [status, onLocate, cachedLocation]);
 
