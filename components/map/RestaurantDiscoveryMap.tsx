@@ -506,9 +506,11 @@ export function RestaurantDiscoveryMap({
 
   const handleLocate = useCallback(
     (coords: { latitude: number; longitude: number }) => {
+      // Zoom 15 ≈ neighborhood / few-blocks view (zoom 13 was too far out —
+      // the user landed on a regional view and had to pinch in manually).
       mapRef.current?.animateCamera(
-        { center: coords, zoom: 13 },
-        { duration: 400 },
+        { center: coords, zoom: 15 },
+        { duration: 420 },
       );
     },
     [],

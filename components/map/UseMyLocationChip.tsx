@@ -6,7 +6,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { borderRadius, createStyles, spacing, typography } from '@/lib/theme';
 
 /**
- * Top-left "Find near me" pill that mirrors the web map's
+ * Top-left "Relocate" pill that mirrors the web map's
  * locate-me affordance at `apps/web/src/pages/customer/DiscoverPage.tsx`.
  * Tapping fires `onLocate(coords)` so the caller can pan/zoom its own
  * MapView. On first tap (no permission yet), requests foreground
@@ -22,10 +22,10 @@ import { borderRadius, createStyles, spacing, typography } from '@/lib/theme';
  * pan). When absent or permission isn't granted yet, we fall through
  * to the in-chip request + fetch.
  *
- * Label switches:
- *   - permission unknown / not requested → "Find near me"
- *   - permission granted                 → "Use my location"
- *   - permission denied                  → "Location off" + tap-to-open-settings
+ * Label is "Relocate" in every state except denied (where it becomes
+ * "Location off" + tap-to-open-settings). Previous wording ("Find near me"
+ * / "Use my location") leaked the permission state into the chip, which
+ * read as inconsistent across taps.
  */
 
 type Props = {
@@ -155,12 +155,7 @@ export function UseMyLocationChip({ onLocate, cachedLocation, topOffset }: Props
     }
   }, [status, onLocate, cachedLocation]);
 
-  const label =
-    status === 'granted'
-      ? 'Use my location'
-      : status === 'denied'
-        ? 'Location off'
-        : 'Find near me';
+  const label = status === 'denied' ? 'Location off' : 'Relocate';
 
   const iconName: keyof typeof Ionicons.glyphMap =
     status === 'granted' ? 'locate' : 'locate-outline';
