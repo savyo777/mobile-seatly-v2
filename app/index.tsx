@@ -1,5 +1,6 @@
 import React, { useEffect } from 'react';
 import { View, Text, Image, ActivityIndicator } from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useRouter } from 'expo-router';
 import { useColors, createStyles } from '@/lib/theme';
 import { useAuthSession } from '@/lib/auth/AuthContext';
@@ -8,6 +9,7 @@ import {
   getCachedAppShellPreference,
 } from '@/lib/navigation/appShellPreference';
 import { fetchCurrentOwnerRestaurant } from '@/lib/services/ownerRestaurant';
+import { ONBOARDING_SEEN_KEY } from '@/app/onboarding';
 
 const useStyles = createStyles((c) => ({
   container: {
@@ -43,7 +45,17 @@ export default function SplashScreen() {
     void (async () => {
       if (cancelled) return;
       if (!isAuthenticated) {
-        router.replace('/onboarding');
+        // Honor the first-launch-only onboarding flag. AsyncStorage failures
+        // here just mean the user sees onboarding again — acceptable. The
+        // flag is written from onboarding.tsx finish/skip.
+        let seen = false;
+        try {
+          seen = (await AsyncStorage.getItem(ONBOARDING_SEEN_KEY)) === '1';
+        } catch {
+          // ignore — fall through to onboarding
+        }
+        if (cancelled) return;
+        router.replace(seen ? '/(auth)/welcome' : '/onboarding');
         return;
       }
       const pref = getCachedAppShellPreference() ?? await getAppShellPreference();
