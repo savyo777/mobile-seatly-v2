@@ -13,11 +13,18 @@ import {
   type RestaurantConnectStatus,
 } from '@/lib/owner/connectOnboarding';
 
-// 15 attempts × 2s = 30s polling window after the owner returns from
-// Stripe. Mirrors Web Step 8's wait pattern. `account.updated` usually
-// fires within a few seconds of finishing the embedded onboarding.
-const POLL_ATTEMPTS = 15;
+// On Safari "success" return (owner submitted the form), poll for up
+// to 15 × 2s = 30s waiting for `account.updated` webhook to flip
+// stripe_charges_enabled. Mirrors Web Step 8's wait pattern.
+const POLL_ATTEMPTS_FULL = 15;
 const POLL_INTERVAL_MS = 2000;
+// On Safari "cancel"/"dismiss" (owner closed without finishing), do
+// ONE quick status check then stop. Holding the polling spinner for
+// 30s after a deliberate close is confusing — the owner just gets
+// stuck staring at a loading button. The single refresh covers the
+// edge case where Stripe still managed to push an account.updated
+// just before the close.
+const POLL_ATTEMPTS_CANCEL = 1;
 
 const useStyles = createStyles((c) => ({
   scroll: { flex: 1 },
@@ -166,22 +173,31 @@ export default function RegisterRestaurantConnectScreen() {
     };
   }, [refresh]);
 
-  // Poll for up to POLL_ATTEMPTS × POLL_INTERVAL_MS after the owner returns
+  // Poll for up to `attempts × POLL_INTERVAL_MS` after the owner returns
   // from Stripe, waiting for the `account.updated` webhook to flip
   // stripe_charges_enabled. Stops as soon as chargesEnabled flips true.
-  const pollUntilVerified = useCallback(async () => {
-    setPolling(true);
-    try {
-      for (let attempt = 0; attempt < POLL_ATTEMPTS; attempt += 1) {
-        const next = await refresh();
-        if (next?.chargesEnabled === true) return true;
-        await new Promise((resolve) => setTimeout(resolve, POLL_INTERVAL_MS));
+  // Callers pass POLL_ATTEMPTS_FULL on a real submit ("success") and
+  // POLL_ATTEMPTS_CANCEL when the owner explicitly closed the sheet.
+  const pollUntilVerified = useCallback(
+    async (attempts: number) => {
+      setPolling(true);
+      try {
+        for (let attempt = 0; attempt < attempts; attempt += 1) {
+          const next = await refresh();
+          if (next?.chargesEnabled === true) return true;
+          // Skip the trailing sleep on the last attempt — saves up to
+          // POLL_INTERVAL_MS of dead spinner time.
+          if (attempt < attempts - 1) {
+            await new Promise((resolve) => setTimeout(resolve, POLL_INTERVAL_MS));
+          }
+        }
+        return false;
+      } finally {
+        setPolling(false);
       }
-      return false;
-    } finally {
-      setPolling(false);
-    }
-  }, [refresh]);
+    },
+    [refresh],
+  );
 
   const handleStart = useCallback(async () => {
     if (!restaurantId || busy) return;
@@ -196,8 +212,16 @@ export default function RegisterRestaurantConnectScreen() {
         'cenaiva://stripe/connect/return',
         { showInRecents: false },
       );
-      if (result.type === 'success' || result.type === 'cancel' || result.type === 'dismiss') {
-        await pollUntilVerified();
+      // 'success' = Stripe redirected back via the cenaiva:// deep link
+      // (the owner finished or refreshed mid-flow). 'cancel'/'dismiss' =
+      // owner closed the sheet without finishing. We only sit on the
+      // full 30s polling window for the success path; for a deliberate
+      // close we do one quick refresh and unblock the UI so the owner
+      // can tap the CTA again to resume.
+      if (result.type === 'success') {
+        await pollUntilVerified(POLL_ATTEMPTS_FULL);
+      } else if (result.type === 'cancel' || result.type === 'dismiss') {
+        await pollUntilVerified(POLL_ATTEMPTS_CANCEL);
       }
     } catch (err) {
       Alert.alert('Stripe Connect', friendlyError(err, 'Could not start Stripe onboarding.'));
