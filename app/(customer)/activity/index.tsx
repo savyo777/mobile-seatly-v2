@@ -23,6 +23,7 @@ import {
 import { mockRestaurants } from '@/lib/mock/restaurants';
 import { fetchMyBookingItems, type MyBookingItem } from '@/lib/booking/myReservations';
 import {
+  cancelReservation,
   confirmDepositStub,
   prepareDeposit,
   type DepositStatus,
@@ -457,29 +458,53 @@ export default function ActivityScreen() {
   }, [reloadLiveBookings]);
 
   const promptCancelBooking = useCallback((item: BookingItem) => {
+    const hadDeposit =
+      typeof item.depositAmountCents === 'number' &&
+      item.depositAmountCents > 0 &&
+      item.depositStatus === 'charged';
+    const refundLine = hadDeposit
+      ? `\n\nThe ${formatCurrency((item.depositAmountCents ?? 0) / 100)} deposit will be refunded to the card you used. Refunds settle within ~5 days.`
+      : '';
     Alert.alert(
       'Cancel reservation?',
-      `Cancel your booking at ${item.restaurantName}?`,
+      `Cancel your booking at ${item.restaurantName}? This can't be undone.${refundLine}`,
       [
         { text: 'Keep reservation', style: 'cancel' },
         {
-          text: 'Cancel reservation',
+          text: 'Yes, cancel',
           style: 'destructive',
-          onPress: async () => {
-            const { ok, reason } = await cancelReservationByIdAsync(item.id);
-            if (!ok) {
-              Alert.alert('Could not cancel', friendlyError(reason, 'Please try again.'));
-              return;
-            }
-            seenReservationsVersionRef.current = getMockReservationsVersion();
-            void reloadLiveBookings();
-            refreshList();
-            void Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+          onPress: () => {
+            void (async () => {
+              try {
+                if (liveLoaded) {
+                  // Real backend path — hit the cancel-reservation edge fn so
+                  // any deposit refund + notification fires. Never raw-UPDATE
+                  // reservations.status (per MOBILE_STRIPE_TRANSFER.md §22 footgun #7).
+                  await cancelReservation({
+                    reservation_id: item.id,
+                    confirmation_code: item.confirmationCode || undefined,
+                  });
+                } else {
+                  // Demo-mode-only path: no live backend, mutate the mock store.
+                  const { ok, reason } = await cancelReservationByIdAsync(item.id);
+                  if (!ok) {
+                    Alert.alert('Could not cancel', friendlyError(reason, 'Please try again.'));
+                    return;
+                  }
+                }
+                seenReservationsVersionRef.current = getMockReservationsVersion();
+                await reloadLiveBookings();
+                refreshList();
+                void Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+              } catch (error) {
+                Alert.alert('Could not cancel', friendlyError(error, 'Please try again.'));
+              }
+            })();
           },
         },
       ],
     );
-  }, [reloadLiveBookings]);
+  }, [liveLoaded, reloadLiveBookings]);
 
   const renderItem = useCallback(
     ({ item }: { item: BookingItem }) => {
