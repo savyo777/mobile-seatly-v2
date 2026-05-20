@@ -1,32 +1,23 @@
-import React, { useEffect, useMemo, useState } from 'react';
-import { View, Text, StyleSheet, Pressable, Alert, TextInput } from 'react-native';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import { View, Text, StyleSheet, Pressable, Alert } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { Ionicons } from '@expo/vector-icons';
+import { useStripe } from '@stripe/stripe-react-native';
 import { ChevronGlyph } from '@/components/ui/ChevronGlyph';
 import { ProfileStackScreen } from '@/components/profile/ProfileStackScreen';
 import { ProfileSectionTitle } from '@/components/profile/ProfileSectionTitle';
 import { Card, Button, Badge } from '@/components/ui';
 import { useAuthSession } from '@/lib/auth/AuthContext';
 import { resolveAuthDisplayProfile } from '@/lib/auth/displayProfile';
-import { inferCardBrand } from '@/lib/storage/restaurantPaymentMethod';
 import {
-  getStoredCustomerPaymentMethods,
-  removeCustomerPaymentMethod,
-  saveCustomerPaymentMethod,
-  setDefaultCustomerPaymentMethod,
-  type CustomerPaymentMethod as PaymentMethod,
-} from '@/lib/storage/customerPaymentMethods';
+  createDinerSetupIntent,
+  detachSavedCard,
+  listSavedCards,
+  setDefaultSavedCard,
+  type SavedCard,
+} from '@/lib/stripe/stripeSavedCards';
 import { useColors, createStyles, spacing, typography, borderRadius, shadows } from '@/lib/theme';
-import { friendlyError } from '@/lib/errors/friendlyError';
-import {
-  normalizeName,
-  sanitizeCardNumberInput,
-  sanitizeCvcInput,
-  sanitizeDigitsInput,
-  sanitizeExpiryInput,
-  sanitizeNameInput,
-  sanitizePostalCodeInput,
-} from '@/lib/validation/input';
+import { friendlyError, isUserCancellation } from '@/lib/errors/friendlyError';
 
 const useStyles = createStyles((c) => ({
   card: {
@@ -89,74 +80,11 @@ const useStyles = createStyles((c) => ({
   addBtn: {
     marginBottom: spacing.lg,
   },
-  addForm: {
+  emptyText: {
+    ...typography.bodySmall,
+    color: c.textMuted,
     marginBottom: spacing.lg,
-    gap: spacing.md,
-  },
-  formTitle: {
-    ...typography.bodyLarge,
-    color: c.textPrimary,
-    fontWeight: '800',
-  },
-  field: {
-    gap: 6,
-  },
-  fieldLabel: {
-    ...typography.label,
-    color: c.textMuted,
-    letterSpacing: 1,
-  },
-  fieldInput: {
-    ...typography.body,
-    color: c.textPrimary,
-    minHeight: 44,
-    borderRadius: borderRadius.md,
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: c.border,
-    backgroundColor: c.bgElevated,
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.sm,
-  },
-  fieldError: {
-    ...typography.bodySmall,
-    color: c.danger,
-  },
-  formRow: {
-    flexDirection: 'row',
-    gap: spacing.md,
-  },
-  formActions: {
-    flexDirection: 'row',
-    gap: spacing.sm,
-  },
-  formAction: {
-    flex: 1,
-  },
-  appleRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    gap: spacing.md,
-  },
-  pill: {
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.xs,
-    borderRadius: borderRadius.full,
-    borderWidth: 1,
-    borderColor: c.border,
-    backgroundColor: c.bgElevated,
-  },
-  pillOn: {
-    borderColor: c.gold,
-    backgroundColor: 'rgba(201, 168, 76, 0.15)',
-  },
-  pillText: {
-    ...typography.bodySmall,
-    color: c.textMuted,
-    fontWeight: '700',
-  },
-  pillTextOn: {
-    color: c.gold,
+    lineHeight: 18,
   },
   addressName: {
     ...typography.bodyLarge,
@@ -179,23 +107,22 @@ const useStyles = createStyles((c) => ({
   },
 }));
 
-function brandLabel(brand: PaymentMethod['brand']): string {
-  if (brand === 'visa') return 'Visa';
-  if (brand === 'mastercard') return 'Mastercard';
-  if (brand === 'amex') return 'Amex';
-  return 'Card';
+function brandLabel(brand: string): string {
+  switch (brand) {
+    case 'visa': return 'Visa';
+    case 'mastercard': return 'Mastercard';
+    case 'amex': return 'Amex';
+    case 'discover': return 'Discover';
+    case 'jcb': return 'JCB';
+    case 'diners': return 'Diners Club';
+    case 'unionpay': return 'UnionPay';
+    default: return 'Card';
+  }
 }
 
-function sanitizeDigits(value: string): string {
-  return sanitizeDigitsInput(value);
-}
-
-function formatCardNumber(value: string): string {
-  return sanitizeCardNumberInput(value);
-}
-
-function formatExpiry(value: string): string {
-  return sanitizeExpiryInput(value);
+function expiryLabel(card: SavedCard): string | null {
+  if (!card.expMonth || !card.expYear) return null;
+  return `Exp ${String(card.expMonth).padStart(2, '0')}/${String(card.expYear).slice(-2)}`;
 }
 
 export default function PaymentScreen() {
@@ -207,103 +134,106 @@ export default function PaymentScreen() {
     () => resolveAuthDisplayProfile(user, { fullName: 'Cardholder' }),
     [user],
   );
-  const [methods, setMethods] = useState<PaymentMethod[]>([]);
-  const [applePay, setApplePay] = useState(true);
+  const [methods, setMethods] = useState<SavedCard[]>([]);
+  const [loading, setLoading] = useState(true);
   const [addingCard, setAddingCard] = useState(false);
-  const [cardholder, setCardholder] = useState(profile.fullName);
-  const [cardNumber, setCardNumber] = useState('');
-  const [expiry, setExpiry] = useState('');
-  const [cvc, setCvc] = useState('');
-  const [postalCode, setPostalCode] = useState('');
-  const [errors, setErrors] = useState<{
-    cardholder?: string;
-    cardNumber?: string;
-    expiry?: string;
-    cvc?: string;
-    postalCode?: string;
-  }>({});
+  const { initPaymentSheet, presentPaymentSheet } = useStripe();
+
+  const refresh = useCallback(async (): Promise<void> => {
+    try {
+      const next = await listSavedCards();
+      setMethods(next);
+    } catch (error) {
+      Alert.alert('Saved cards', friendlyError(error, 'Could not load saved cards.'));
+    } finally {
+      setLoading(false);
+    }
+  }, []);
 
   useEffect(() => {
     let active = true;
     void (async () => {
-      const stored = await getStoredCustomerPaymentMethods(profile.fullName);
-      if (active) setMethods(stored);
+      try {
+        const next = await listSavedCards();
+        if (active) setMethods(next);
+      } catch (error) {
+        if (active) {
+          Alert.alert('Saved cards', friendlyError(error, 'Could not load saved cards.'));
+        }
+      } finally {
+        if (active) setLoading(false);
+      }
     })();
     return () => {
       active = false;
     };
-  }, [profile.fullName]);
+  }, []);
 
-  useEffect(() => {
-    setCardholder((current) => (current.trim() ? current : profile.fullName));
-  }, [profile.fullName]);
-
-  const setDefault = (id: string) => {
+  const handleSetDefault = (card: SavedCard) => {
     void (async () => {
-      const next = await setDefaultCustomerPaymentMethod(id, profile.fullName);
-      setMethods(next);
+      try {
+        await setDefaultSavedCard(card.id);
+        await refresh();
+      } catch (error) {
+        Alert.alert('Saved cards', friendlyError(error, 'Could not change the default card.'));
+      }
     })();
   };
 
-  const removeCard = (m: PaymentMethod) => {
-    Alert.alert('Remove card', `Remove ${brandLabel(m.brand)} •••• ${m.last4}?`, [
-      { text: t('common.cancel'), style: 'cancel' },
-      {
-        text: t('common.delete'),
-        style: 'destructive',
-        onPress: () => {
-          void (async () => {
-            const next = await removeCustomerPaymentMethod(m.id, profile.fullName);
-            setMethods(next);
-          })();
+  const handleRemove = (card: SavedCard) => {
+    Alert.alert(
+      'Remove card',
+      `Remove ${brandLabel(card.brand)} •••• ${card.last4}? You can add it back any time.`,
+      [
+        { text: t('common.cancel'), style: 'cancel' },
+        {
+          text: t('common.delete'),
+          style: 'destructive',
+          onPress: () => {
+            void (async () => {
+              try {
+                await detachSavedCard(card.id);
+                await refresh();
+              } catch (error) {
+                Alert.alert('Saved cards', friendlyError(error, 'Could not remove this card.'));
+              }
+            })();
+          },
         },
-      },
-    ]);
+      ],
+    );
   };
 
-  const resetForm = () => {
-    setCardholder(profile.fullName);
-    setCardNumber('');
-    setExpiry('');
-    setCvc('');
-    setPostalCode('');
-    setErrors({});
-  };
-
-  const saveCard = () => {
-    const digits = sanitizeDigits(cardNumber);
-    const cvcDigits = sanitizeDigits(cvc);
-    const expMatch = expiry.trim().match(/^(\d{2})\s*\/\s*(\d{2}|\d{4})$/);
-    const cleanCardholder = normalizeName(cardholder, 80);
-    const cleanPostalCode = sanitizePostalCodeInput(postalCode).trim();
-    const nextErrors: typeof errors = {};
-
-    if (!cleanCardholder) nextErrors.cardholder = 'Cardholder name is required.';
-    if (digits.length < 13 || digits.length > 19) nextErrors.cardNumber = 'Enter a valid card number.';
-    if (!expMatch) nextErrors.expiry = 'Use MM/YY for the expiration date.';
-    if (cvcDigits.length < 3 || cvcDigits.length > 4) nextErrors.cvc = 'Enter a 3 or 4 digit CVC.';
-    if (!cleanPostalCode) nextErrors.postalCode = 'Billing postal code is required.';
-
-    setErrors(nextErrors);
-    if (Object.keys(nextErrors).length > 0) return;
-
+  const handleAddCard = () => {
+    if (addingCard) return;
+    setAddingCard(true);
     void (async () => {
       try {
-        const next = await saveCustomerPaymentMethod(
-          {
-            brand: inferCardBrand(digits),
-            last4: digits.slice(-4),
-            expiry: expiry.trim(),
-            cardholder: cleanCardholder,
-            isDefault: true,
+        const { clientSecret } = await createDinerSetupIntent();
+        const initResult = await initPaymentSheet({
+          setupIntentClientSecret: clientSecret,
+          merchantDisplayName: 'Cenaiva',
+          returnURL: 'cenaiva://stripe-redirect',
+          allowsDelayedPaymentMethods: false,
+          defaultBillingDetails: {
+            name: profile.fullName || undefined,
+            email: profile.email || undefined,
+            phone: profile.phone || undefined,
           },
-          profile.fullName,
-        );
-        setMethods(next);
-        setAddingCard(false);
-        resetForm();
+        });
+        if (initResult.error) {
+          throw new Error(friendlyError(initResult.error, 'Could not start card setup.'));
+        }
+        const presentResult = await presentPaymentSheet();
+        if (presentResult.error) {
+          if (isUserCancellation(presentResult.error)) return;
+          throw new Error(friendlyError(presentResult.error, 'Could not save the card.'));
+        }
+        await refresh();
       } catch (error) {
-        Alert.alert('Card not saved', friendlyError(error, 'Please try again.'));
+        Alert.alert('Add card', friendlyError(error, 'Could not add this card. Please try again.'));
+      } finally {
+        setAddingCard(false);
       }
     })();
   };
@@ -311,6 +241,11 @@ export default function PaymentScreen() {
   return (
     <ProfileStackScreen title={t('profile.paymentMethods')} subtitle={t('profile.paymentMethodsSub')}>
       <ProfileSectionTitle>Payment methods</ProfileSectionTitle>
+      {!loading && methods.length === 0 ? (
+        <Text style={styles.emptyText}>
+          No cards saved yet. Add one to check out faster next time you book.
+        </Text>
+      ) : null}
       {methods.map((m) => (
         <Card key={m.id} style={styles.card}>
           <View style={styles.cardTop}>
@@ -323,7 +258,7 @@ export default function PaymentScreen() {
                   {brandLabel(m.brand)} ···· {m.last4}
                 </Text>
                 <Text style={styles.meta}>
-                  {[m.cardholder, m.expiry ? `Exp ${m.expiry}` : null].filter(Boolean).join(' · ')}
+                  {expiryLabel(m) ?? 'Saved card'}
                 </Text>
               </View>
             </View>
@@ -331,22 +266,11 @@ export default function PaymentScreen() {
           </View>
           <View style={styles.cardActions}>
             {!m.isDefault ? (
-              <Pressable onPress={() => setDefault(m.id)} style={styles.linkBtn}>
+              <Pressable onPress={() => handleSetDefault(m)} style={styles.linkBtn}>
                 <Text style={styles.linkText}>Set as default</Text>
               </Pressable>
             ) : null}
-            <Pressable
-              onPress={() => {
-                Alert.alert(
-                  'Edit card',
-                  'For security, add a new card to replace this payment method, then remove the old one.',
-                );
-              }}
-              style={styles.linkBtn}
-            >
-              <Text style={styles.linkText}>Edit</Text>
-            </Pressable>
-            <Pressable onPress={() => removeCard(m)} style={styles.linkBtn}>
+            <Pressable onPress={() => handleRemove(m)} style={styles.linkBtn}>
               <Text style={[styles.linkText, styles.linkDanger]}>Remove</Text>
             </Pressable>
           </View>
@@ -354,131 +278,13 @@ export default function PaymentScreen() {
       ))}
 
       <Button
-        title={addingCard ? 'Cancel add card' : 'Add new card'}
-        onPress={() => {
-          if (addingCard) resetForm();
-          setAddingCard((open) => !open);
-        }}
+        title={addingCard ? 'Adding card…' : 'Add new card'}
+        onPress={handleAddCard}
         variant="outlined"
         size="md"
         style={styles.addBtn}
+        disabled={addingCard}
       />
-
-      {addingCard ? (
-        <Card style={StyleSheet.flatten([styles.card, styles.addForm])}>
-          <Text style={styles.formTitle}>Add card</Text>
-          <View style={styles.field}>
-            <Text style={styles.fieldLabel}>CARDHOLDER NAME</Text>
-            <TextInput
-              value={cardholder}
-              onChangeText={(value) => {
-                setCardholder(sanitizeNameInput(value, 80));
-                if (errors.cardholder) setErrors((prev) => ({ ...prev, cardholder: undefined }));
-              }}
-              placeholder={profile.fullName}
-              placeholderTextColor={c.textMuted}
-              style={styles.fieldInput}
-              autoCapitalize="words"
-            />
-            {errors.cardholder ? <Text style={styles.fieldError}>{errors.cardholder}</Text> : null}
-          </View>
-          <View style={styles.field}>
-            <Text style={styles.fieldLabel}>CARD NUMBER</Text>
-            <TextInput
-              value={cardNumber}
-              onChangeText={(value) => {
-                setCardNumber(formatCardNumber(value));
-                if (errors.cardNumber) setErrors((prev) => ({ ...prev, cardNumber: undefined }));
-              }}
-              placeholder="4242 4242 4242 4242"
-              placeholderTextColor={c.textMuted}
-              style={styles.fieldInput}
-              keyboardType="number-pad"
-            />
-            {errors.cardNumber ? <Text style={styles.fieldError}>{errors.cardNumber}</Text> : null}
-          </View>
-          <View style={styles.formRow}>
-            <View style={[styles.field, { flex: 1 }]}>
-              <Text style={styles.fieldLabel}>EXPIRY</Text>
-              <TextInput
-                value={expiry}
-                onChangeText={(value) => {
-                  setExpiry(formatExpiry(value));
-                  if (errors.expiry) setErrors((prev) => ({ ...prev, expiry: undefined }));
-                }}
-                placeholder="MM/YY"
-                placeholderTextColor={c.textMuted}
-                style={styles.fieldInput}
-                keyboardType="number-pad"
-              />
-              {errors.expiry ? <Text style={styles.fieldError}>{errors.expiry}</Text> : null}
-            </View>
-            <View style={[styles.field, { flex: 1 }]}>
-              <Text style={styles.fieldLabel}>CVC</Text>
-              <TextInput
-                value={cvc}
-                onChangeText={(value) => {
-                  setCvc(sanitizeCvcInput(value));
-                  if (errors.cvc) setErrors((prev) => ({ ...prev, cvc: undefined }));
-                }}
-                placeholder="123"
-                placeholderTextColor={c.textMuted}
-                style={styles.fieldInput}
-                keyboardType="number-pad"
-                secureTextEntry
-              />
-              {errors.cvc ? <Text style={styles.fieldError}>{errors.cvc}</Text> : null}
-            </View>
-          </View>
-          <View style={styles.field}>
-            <Text style={styles.fieldLabel}>BILLING POSTAL CODE</Text>
-            <TextInput
-              value={postalCode}
-              onChangeText={(value) => {
-                setPostalCode(sanitizePostalCodeInput(value));
-                if (errors.postalCode) setErrors((prev) => ({ ...prev, postalCode: undefined }));
-              }}
-              placeholder="M5V 2T6"
-              placeholderTextColor={c.textMuted}
-              style={styles.fieldInput}
-              autoCapitalize="characters"
-            />
-            {errors.postalCode ? <Text style={styles.fieldError}>{errors.postalCode}</Text> : null}
-          </View>
-          <View style={styles.formActions}>
-            <Button title="Save card" onPress={saveCard} size="md" style={styles.formAction} />
-            <Button
-              title="Cancel"
-              onPress={() => {
-                resetForm();
-                setAddingCard(false);
-              }}
-              variant="ghost"
-              size="md"
-              style={styles.formAction}
-            />
-          </View>
-        </Card>
-      ) : null}
-
-      <ProfileSectionTitle>Digital wallet</ProfileSectionTitle>
-      <Card style={styles.card}>
-        <View style={styles.appleRow}>
-          <View style={styles.cardLeft}>
-            <Ionicons name="logo-apple" size={24} color={c.textPrimary} />
-            <View>
-              <Text style={styles.brandLabel}>Apple Pay</Text>
-              <Text style={styles.meta}>Pay in one tap at participating restaurants</Text>
-            </View>
-          </View>
-          <Pressable
-            onPress={() => setApplePay(!applePay)}
-            style={[styles.pill, applePay && styles.pillOn]}
-          >
-            <Text style={[styles.pillText, applePay && styles.pillTextOn]}>{applePay ? 'On' : 'Off'}</Text>
-          </Pressable>
-        </View>
-      </Card>
 
       <ProfileSectionTitle>Billing address</ProfileSectionTitle>
       <Card style={styles.card}>
