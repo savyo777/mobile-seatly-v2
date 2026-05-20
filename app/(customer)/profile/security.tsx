@@ -119,22 +119,15 @@ export default function SecurityScreen() {
         />
       </View>
 
-      <ProfileSectionTitle>Authentication</ProfileSectionTitle>
-      <View style={styles.group}>
-        <ToggleRow
-          title={t('profile.biometric')}
-          subtitle={t('profile.biometricSub')}
-          value={biometric}
-          onValueChange={handleBiometricToggle}
-        />
-        <ToggleRow
-          title={t('profile.twoFactor')}
-          subtitle={t('profile.twoFactorSub')}
-          value={twoFa}
-          onValueChange={handleTwoFaToggle}
-          isLast
-        />
-      </View>
+      {/* TODO: re-add biometric + 2FA toggles once they're backed by real
+          services. `toggleBiometric` and `toggleTwoFactor` in
+          lib/services/accountSecurity.ts are currently no-ops (intentional
+          stubs), and shipping flippable rows that silently do nothing
+          actively misleads users about their account security. Re-mount
+          here once expo-local-authentication is wired for biometric and a
+          real 2FA provider (TOTP / SMS) is decided. The local toggle
+          state, i18n keys, and toggleX function signatures are preserved
+          so re-adding is a copy-paste, not a rewrite. */}
 
       <ProfileSectionTitle>Devices</ProfileSectionTitle>
       <View style={styles.group}>
