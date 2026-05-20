@@ -8,10 +8,19 @@ import { borderRadius, createStyles, spacing, typography } from '@/lib/theme';
 /**
  * Top-left "Find near me" pill that mirrors the web map's
  * locate-me affordance at `apps/web/src/pages/customer/DiscoverPage.tsx`.
- * Tapping requests foreground location permission via expo-location
- * (already a project dep), and on grant fires `onLocate(coords)` so the
- * caller can pan/zoom its own MapView. On deny, renders a subtle banner
+ * Tapping fires `onLocate(coords)` so the caller can pan/zoom its own
+ * MapView. On first tap (no permission yet), requests foreground
+ * permission via expo-location; on deny, renders a subtle banner
  * underneath that opens system settings on tap.
+ *
+ * `cachedLocation` lets the caller hand in a location it already
+ * resolved via its own `useLocation` hook (the common case — the
+ * map's parent already had to fetch the user's coords to render the
+ * blue dot). When present, every tap fires `onLocate(cachedLocation)`
+ * immediately, side-stepping the slow `getCurrentPositionAsync` path
+ * (which the simulator returns nothing for, leading to no visible
+ * pan). When absent or permission isn't granted yet, we fall through
+ * to the in-chip request + fetch.
  *
  * Label switches:
  *   - permission unknown / not requested → "Find near me"
@@ -21,6 +30,7 @@ import { borderRadius, createStyles, spacing, typography } from '@/lib/theme';
 
 type Props = {
   onLocate: (coords: { latitude: number; longitude: number }) => void;
+  cachedLocation?: { latitude: number; longitude: number } | null;
   topOffset?: number;
 };
 
@@ -76,7 +86,7 @@ const useStyles = createStyles((c) => ({
   },
 }));
 
-export function UseMyLocationChip({ onLocate, topOffset }: Props) {
+export function UseMyLocationChip({ onLocate, cachedLocation, topOffset }: Props) {
   const styles = useStyles();
   const insets = useSafeAreaInsets();
   const top = topOffset ?? insets.top + spacing.sm;
@@ -95,6 +105,26 @@ export function UseMyLocationChip({ onLocate, topOffset }: Props) {
       Linking.openSettings();
       return;
     }
+
+    // Fast path: the parent already resolved a live user location via its
+    // own useLocation hook. Use that and skip getCurrentPositionAsync,
+    // which is slow and silently no-ops on the iOS simulator unless
+    // someone set a custom location via `xcrun simctl location`.
+    if (cachedLocation) {
+      onLocate(cachedLocation);
+      if (status === 'idle') {
+        // Permission may not have been asked yet on this app launch;
+        // request it in the background so a future tap-without-cache
+        // doesn't strand the user on the in-chip permission prompt.
+        const perm = await Location.requestForegroundPermissionsAsync();
+        setStatus(perm.status === 'granted' ? 'granted' : 'denied');
+      }
+      return;
+    }
+
+    // Slow path: no cached location. Request permission, then fetch fresh
+    // coords, then pan. Hit when the parent hasn't run useLocation yet
+    // or when its fetch failed/was denied.
     setStatus('requesting');
     const perm = await Location.requestForegroundPermissionsAsync();
     if (perm.status !== 'granted') {
@@ -106,11 +136,10 @@ export function UseMyLocationChip({ onLocate, topOffset }: Props) {
       const pos = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Balanced });
       onLocate({ latitude: pos.coords.latitude, longitude: pos.coords.longitude });
     } catch {
-      // Position unavailable (sim sometimes has no location set). Caller
-      // can still get a permission-granted UI; they'll see no pan but
-      // won't be left with a misleading "denied" state.
+      // Position unavailable (sim with no location set). Caller still
+      // gets the granted UI; no pan is the right behavior here.
     }
-  }, [status, onLocate]);
+  }, [status, onLocate, cachedLocation]);
 
   const label =
     status === 'granted'

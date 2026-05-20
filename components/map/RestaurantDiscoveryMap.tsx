@@ -5,7 +5,6 @@ import { Ionicons } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
 import { RestaurantMapMarkerContent, MARKER_ANCHOR_Y } from '@/components/map/RestaurantMapMarker';
 import { RestaurantClusterMarker } from '@/components/map/RestaurantClusterMarker';
-import { MapZoomControls } from '@/components/map/MapZoomControls';
 import { UseMyLocationChip } from '@/components/map/UseMyLocationChip';
 import { CENAIVA_MAP_STYLE } from '@/lib/map/darkMapStyle';
 import { hasFiniteCoords, haversineMeters } from '@/lib/map/geo';
@@ -429,19 +428,6 @@ export function RestaurantDiscoveryMap({
     setCurrentRegion(region);
   }, []);
 
-  const changeZoom = useCallback(async (delta: 1 | -1) => {
-    const map = mapRef.current;
-    if (!map) return;
-    try {
-      const cam = await map.getCamera();
-      const current = typeof cam.zoom === 'number' ? cam.zoom : 13;
-      const next = Math.max(4, Math.min(18, current + delta));
-      map.animateCamera({ zoom: next }, { duration: 200 });
-    } catch {
-      // getCamera not implemented on Apple Maps fallback; ignore.
-    }
-  }, []);
-
   const handleLocate = useCallback(
     (coords: { latitude: number; longitude: number }) => {
       mapRef.current?.animateCamera(
@@ -589,11 +575,7 @@ export function RestaurantDiscoveryMap({
         </Pressable>
       ) : null}
 
-      <UseMyLocationChip onLocate={handleLocate} />
-      <MapZoomControls
-        onZoomIn={() => changeZoom(1)}
-        onZoomOut={() => changeZoom(-1)}
-      />
+      <UseMyLocationChip onLocate={handleLocate} cachedLocation={safeUserLocation} />
     </View>
   );
 }
