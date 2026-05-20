@@ -455,7 +455,7 @@ export default function SettingsScreen() {
         {
           kind: 'nav',
           icon: 'information-circle-outline',
-          label: 'About Seatly',
+          label: 'About Cenaiva',
           href: '/(customer)/profile/about',
         },
       ],

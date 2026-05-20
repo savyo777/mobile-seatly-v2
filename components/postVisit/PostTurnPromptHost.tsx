@@ -13,10 +13,21 @@ import {
 import { Href, usePathname, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import {
+  Gesture,
+  GestureDetector,
+  GestureHandlerRootView,
+} from 'react-native-gesture-handler';
+import Animated, {
+  runOnJS,
+  useAnimatedStyle,
+  useSharedValue,
+  withTiming,
+} from 'react-native-reanimated';
 import { useAuthSession } from '@/lib/auth/AuthContext';
 import { roleIncludes } from '@/lib/auth/roles';
 import {
-  dismissPostTurnRequest,
+  dismissAllPostTurnRequests,
   submitPostTurnReview,
   syncPostTurnRequests,
   type PostTurnRequest,
@@ -181,11 +192,17 @@ export function PostTurnPromptHost() {
     }
   }, [active?.id, active?.type]);
 
-  const handleNotNow = async () => {
-    if (!active || !user?.id) return;
-    await dismissPostTurnRequest(user.id, active.id);
+  // "Not now" + swipe-down both close the entire prompt queue, not just
+  // advance to the next prompt — otherwise the user perceives the dialog
+  // as never closing because Cenaiva queues a separate review + photo
+  // prompt per recent booking. dismissAll marks every pending request
+  // dismissed in one write; the next sync (60s / on foreground) only
+  // re-pulls things that became newly actionable on the server.
+  const handleNotNow = useCallback(async () => {
+    if (!user?.id) return;
+    await dismissAllPostTurnRequests(user.id);
     await refresh();
-  };
+  }, [user?.id, refresh]);
 
   const handleSubmitReview = async () => {
     if (!active || !user?.id || active.type !== 'review') return;
@@ -216,16 +233,69 @@ export function PostTurnPromptHost() {
     } as Href);
   };
 
+  // Swipe-down dismiss gesture. Drag the sheet downward; release past the
+  // threshold (or with enough velocity) fires handleNotNow which closes the
+  // whole queue. Anything below threshold snaps back.
+  const translateY = useSharedValue(0);
+  const SWIPE_DISMISS_THRESHOLD = 120;
+
+  const resetSheet = useCallback(() => {
+    translateY.value = withTiming(0, { duration: 180 });
+  }, [translateY]);
+
+  const dismissFromGesture = useCallback(() => {
+    translateY.value = 0;
+    void handleNotNow();
+  }, [translateY, handleNotNow]);
+
+  const panGesture = useMemo(
+    () =>
+      Gesture.Pan()
+        .activeOffsetY(10)
+        .onUpdate((event) => {
+          if (event.translationY > 0) {
+            translateY.value = event.translationY;
+          }
+        })
+        .onEnd((event) => {
+          const shouldDismiss =
+            event.translationY > SWIPE_DISMISS_THRESHOLD || event.velocityY > 700;
+          if (shouldDismiss) {
+            runOnJS(dismissFromGesture)();
+          } else {
+            runOnJS(resetSheet)();
+          }
+        }),
+    [translateY, resetSheet, dismissFromGesture],
+  );
+
+  const sheetAnimatedStyle = useAnimatedStyle(() => ({
+    transform: [{ translateY: translateY.value }],
+  }));
+
   if (!active) return null;
 
   return (
     <Modal visible={visible} transparent animationType="slide" onRequestClose={handleNotNow}>
-      <KeyboardAvoidingView
-        style={styles.backdrop}
-        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-      >
-        <View style={[styles.sheet, { paddingBottom: Math.max(insets.bottom, spacing.lg) }]}>
-          <View style={styles.handle} />
+      <GestureHandlerRootView style={{ flex: 1 }}>
+        <KeyboardAvoidingView
+          style={styles.backdrop}
+          behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+        >
+          <Pressable
+            style={StyleSheet.absoluteFill}
+            onPress={handleNotNow}
+            accessibilityLabel="Dismiss prompt"
+          />
+          <GestureDetector gesture={panGesture}>
+            <Animated.View
+              style={[
+                styles.sheet,
+                { paddingBottom: Math.max(insets.bottom, spacing.lg) },
+                sheetAnimatedStyle,
+              ]}
+            >
+              <View style={styles.handle} />
           <View style={styles.icon}>
             <Ionicons
               name={active.type === 'review' ? 'star-outline' : 'camera-outline'}
@@ -296,15 +366,17 @@ export function PostTurnPromptHost() {
             </>
           )}
 
-          <Pressable
-            onPress={handleNotNow}
-            style={({ pressed }) => [styles.secondary, pressed && styles.pressed]}
-            accessibilityRole="button"
-          >
-            <Text style={styles.secondaryText}>Not now</Text>
-          </Pressable>
-        </View>
-      </KeyboardAvoidingView>
+              <Pressable
+                onPress={handleNotNow}
+                style={({ pressed }) => [styles.secondary, pressed && styles.pressed]}
+                accessibilityRole="button"
+              >
+                <Text style={styles.secondaryText}>Not now</Text>
+              </Pressable>
+            </Animated.View>
+          </GestureDetector>
+        </KeyboardAvoidingView>
+      </GestureHandlerRootView>
     </Modal>
   );
 }

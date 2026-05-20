@@ -12,9 +12,10 @@ import { resolveDisplayPhone } from '@/lib/services/phoneAuth';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useAuthSession } from '@/lib/auth/AuthContext';
 import { friendlyError } from '@/lib/errors/friendlyError';
+import { key as storageKey } from '@/lib/storage/keys';
 
-const BIOMETRIC_KEY = '@seatly/biometric';
-const TWO_FA_KEY = '@seatly/twofactor';
+const BIOMETRIC_KEY = storageKey('biometric');
+const TWO_FA_KEY = storageKey('twofactor');
 
 const useStyles = createStyles((c) => ({
   group: {

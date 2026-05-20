@@ -37,7 +37,7 @@ export interface SaveRestaurantHoursArgs {
  *      customer Discover detail screen and the web restaurant page.
  *      Shape: { monday: {open:'HH:MM',close:'HH:MM'} | null, ... } in
  *      24-hour format matching the web parser at
- *      `apps/web/src/lib/restaurant-hours.ts` of the Seatly repo.
+ *      `apps/web/src/lib/restaurant-hours.ts` in the sister web repo.
  *
  * If the shifts insert succeeds but the hours_json update fails, we
  * throw — better to surface a half-written state than to silently

@@ -16,7 +16,7 @@ import { borderRadius, createStyles, spacing, typography } from '@/lib/theme';
 /**
  * Mobile port of the web app's `MapRestaurantPopup` from
  * `apps/web/src/pages/customer/DiscoverPage.tsx:888-996` of the
- * https://github.com/StevenGeorgy/Seatly repo. Anchored bottom-left
+ * sister web repo. Anchored bottom-left
  * of the map. Tapping the card body fires `onOpenPreview`. The
  * heart/bookmark are local-only state for now — the mobile app does
  * not yet have a persistent favorites/saves backend (the existing

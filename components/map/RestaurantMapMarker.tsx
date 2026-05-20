@@ -22,9 +22,8 @@ export function useAndroidBitmapBootstrap(selected: boolean): boolean {
 }
 
 /**
- * Restaurant pin that matches the Seatly web app's pinIconSvg() pattern at
- * `apps/web/src/pages/customer/DiscoverPage.tsx:597-650` of the
- * https://github.com/StevenGeorgy/Seatly repo. Two variants:
+ * Restaurant pin that matches the sister web app's pinIconSvg() pattern at
+ * `apps/web/src/pages/customer/DiscoverPage.tsx:597-650`. Two variants:
  *
  *   - No price tier → solid gold circle (22px idle / 28px active).
  *   - Price tier 1/2/3 → $/$$/$$$ pill, dark idle / light-gold active.

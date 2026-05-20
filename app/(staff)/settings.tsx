@@ -29,10 +29,10 @@ import { readBusinessHours, BUSINESS_HOURS_DAY_KEYS } from '@/lib/owner/business
 import { readClosures } from '@/lib/owner/closuresSettings';
 import { fetchStaffRoster } from '@/lib/owner/staffRoster';
 import { friendlyError } from '@/lib/errors/friendlyError';
+import { OWNER_MONTHLY_SUB_DOLLARS, ownerMonthlyPriceLabel } from '@/lib/owner/ownerPricing';
 
-const OWNER_MONTHLY_SUB_DOLLARS = Number(process.env.EXPO_PUBLIC_OWNER_MONTHLY_SUB_DOLLARS) || 0;
 const OWNER_MONTHLY_SUB_LABEL = OWNER_MONTHLY_SUB_DOLLARS > 0
-  ? `$${OWNER_MONTHLY_SUB_DOLLARS} / month`
+  ? ownerMonthlyPriceLabel().replace('/ mo', '/ month')
   : '';
 
 // ── Types ──────────────────────────────────────────────────────────────────

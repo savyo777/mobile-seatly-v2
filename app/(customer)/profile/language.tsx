@@ -7,8 +7,9 @@ import { ProfileStackScreen } from '@/components/profile/ProfileStackScreen';
 import { useColors, createStyles, spacing, borderRadius, typography } from '@/lib/theme';
 import { isDemoModeEnabled } from '@/lib/config/demoMode';
 import { updateCurrentUserProfile } from '@/lib/services/userProfile';
+import { key as storageKey } from '@/lib/storage/keys';
 
-const LANG_KEY = '@seatly/lang';
+const LANG_KEY = storageKey('lang');
 
 const useStyles = createStyles((c) => ({
   group: {

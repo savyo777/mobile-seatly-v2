@@ -17,6 +17,7 @@ import { recordAuthAttempt } from '@/lib/auth/authAttempts';
 import { recordSignIn } from '@/lib/auth/recordSignIn';
 import { normalizeEmail } from '@/lib/validation/input';
 import { friendlyError } from '@/lib/errors/friendlyError';
+import { key as storageKey } from '@/lib/storage/keys';
 import {
   ScreenWrapper,
   Input,
@@ -152,11 +153,11 @@ const useStyles = createStyles((c) => ({
 }));
 
 function failuresKey(email: string) {
-  return `@seatly/owner_login_failures:${email}`;
+  return storageKey(`owner_login_failures:${email}`);
 }
 
 function lockoutKey(email: string) {
-  return `@seatly/owner_login_lockout_until:${email}`;
+  return storageKey(`owner_login_lockout_until:${email}`);
 }
 
 export default function OwnerLoginScreen() {

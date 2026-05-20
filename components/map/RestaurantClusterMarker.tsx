@@ -5,7 +5,7 @@ import { useAndroidBitmapBootstrap } from '@/components/map/RestaurantMapMarker'
 
 /**
  * Cluster bubble for the customer-facing map. Three size tiers per the
- * Seatly web app's `clusterIconSvg()` at
+ * sister web app's `clusterIconSvg()` at
  * `apps/web/src/pages/customer/DiscoverPage.tsx:651-664`:
  *
  *   - 1-9 items   → 40px

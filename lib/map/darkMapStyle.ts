@@ -5,9 +5,8 @@ import type { MapStyleElement } from 'react-native-maps';
  * JSON style used everywhere the customer-facing app renders a map
  * (DiscoverPage, Hey Cenaiva overlay, customer Map screen).
  *
- * Byte-for-byte mirror of the web app's `CENAIVA_MAP_STYLES` at
- * `apps/web/src/lib/google-maps.ts` lines 8-52 of the Seatly repo
- * (https://github.com/StevenGeorgy/Seatly). Don't drift from the web —
+ * Byte-for-byte mirror of the sister web app's `CENAIVA_MAP_STYLES` at
+ * `apps/web/src/lib/google-maps.ts` lines 8-52. Don't drift from the web —
  * MOBILE_MAPS_GUIDE.md Section 3 explicitly requires byte parity. If the
  * web style changes, update both sides together.
  *

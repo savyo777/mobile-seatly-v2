@@ -157,7 +157,7 @@ const useStyles = createStyles((c) => ({
   },
 }));
 
-export default function RateSeatlyScreen() {
+export default function RateCenaivaScreen() {
   const c = useColors();
   const styles = useStyles();
   const [rating, setRating] = useState(5);
@@ -181,7 +181,7 @@ export default function RateSeatlyScreen() {
   const onSubmit = () => {
     Alert.alert(
       'Thanks for the feedback',
-      `You rated Seatly ${rating}/5.\n\nReasons: ${selectedReasons.length ? selectedReasons.join(', ') : 'none'}${
+      `You rated Cenaiva ${rating}/5.\n\nReasons: ${selectedReasons.length ? selectedReasons.join(', ') : 'none'}${
         normalizeTextInput(message, { maxLength: 500, multiline: true })
           ? `\n\nNote: ${normalizeTextInput(message, { maxLength: 500, multiline: true })}`
           : ''
@@ -256,7 +256,7 @@ export default function RateSeatlyScreen() {
       <TextInput
         value={message}
         onChangeText={(value) => setMessage(sanitizeTextInput(value, { maxLength: 500, multiline: true }))}
-        placeholder="Tell us what would make Seatly better for your restaurant."
+        placeholder="Tell us what would make Cenaiva better for your restaurant."
         placeholderTextColor={c.textMuted}
         style={styles.textArea}
         multiline

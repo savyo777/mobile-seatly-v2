@@ -19,10 +19,11 @@ import {
   type RestaurantSubscriptionSnapshot,
 } from '@/lib/owner/subscriptionLifecycle';
 import { friendlyError } from '@/lib/errors/friendlyError';
+import { OWNER_MONTHLY_SUB_DOLLARS } from '@/lib/owner/ownerPricing';
 
 const PLAN = {
   name: 'Cenaiva Pro',
-  priceMonthly: Number(process.env.EXPO_PUBLIC_OWNER_MONTHLY_SUB_DOLLARS) || 0,
+  priceMonthly: OWNER_MONTHLY_SUB_DOLLARS,
 };
 
 const MONTH_NAMES = [
@@ -484,7 +485,7 @@ export default function SubscriptionPlanScreen() {
         </View>
         <Text style={styles.planName}>{PLAN.name}</Text>
         <View style={styles.planPriceRow}>
-          <Text style={styles.planPrice}>${PLAN.priceMonthly}</Text>
+          <Text style={styles.planPrice}>${PLAN.priceMonthly.toFixed(2)}</Text>
           <Text style={styles.planUnit}>/ month</Text>
         </View>
         <Text style={styles.planMeta}>

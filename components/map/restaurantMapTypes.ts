@@ -16,7 +16,7 @@ export type RestaurantDiscoveryMapProps = {
   showUserLocation: boolean;
   /** False while resolving permission / first fix; avoids infinite loading UI. */
   locationReady: boolean;
-  /** Assistant uses Seatly-7 style restaurant-name pills instead of rating/price pins. */
+  /** Assistant uses Cenaiva-style restaurant-name pills instead of rating/price pins. */
   markerVariant?: 'default' | 'cenaiva';
   /** Automatically move the map to the user when a location fix arrives. */
   autoFocusUserLocation?: boolean;

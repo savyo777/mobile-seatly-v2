@@ -27,13 +27,17 @@ import {
   createRestaurantSetupIntent,
   saveRestaurantPaymentMethod,
 } from '@/lib/owner/saveSubscriptionPaymentMethod';
+import {
+  ownerMonthlyPriceLabel,
+  ownerMonthlyPriceShort,
+} from '@/lib/owner/ownerPricing';
 
 const SF = Platform.OS === 'ios' ? 'System' : undefined;
 const SERIF = Platform.OS === 'ios' ? 'Georgia' : 'serif';
 const MONO = Platform.OS === 'ios' ? 'Menlo' : 'monospace';
 
-const MONTHLY_FEE_LABEL = '$200.00 / mo';
-const MONTHLY_FEE_SHORT = '$200';
+const MONTHLY_FEE_LABEL = ownerMonthlyPriceLabel();
+const MONTHLY_FEE_SHORT = ownerMonthlyPriceShort();
 
 function formatTrialEnd(date: Date): string {
   return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });

@@ -8,6 +8,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { borderRadius, createStyles, spacing, typography, useColors } from '@/lib/theme';
 import { getSupabase } from '@/lib/supabase/client';
+import { key as storageKey } from '@/lib/storage/keys';
 import { sendPasswordResetEmail } from '@/lib/services/accountSecurity';
 import { ensureCustomerProfile, signInWithApple, signInWithGoogle } from '@/lib/services/oauth';
 import { normalizePhoneToE164, sendPhoneOtp } from '@/lib/services/phoneAuth';
@@ -155,11 +156,11 @@ const useStyles = createStyles((c) => ({
 }));
 
 function failuresKey(email: string) {
-  return `@seatly/login_failures:${email}`;
+  return storageKey(`login_failures:${email}`);
 }
 
 function lockoutKey(email: string) {
-  return `@seatly/login_lockout_until:${email}`;
+  return storageKey(`login_lockout_until:${email}`);
 }
 
 export default function LoginScreen() {

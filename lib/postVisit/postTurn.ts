@@ -385,6 +385,30 @@ export async function dismissPostTurnRequest(userId: string, requestId: string):
   void upsertRemoteRequests(next.filter((request) => request.id === requestId));
 }
 
+/**
+ * Dismisses every currently-pending post-turn prompt for this user in one go.
+ * Used by the popup's "Not now" button + swipe-down gesture — tapping
+ * dismiss should clear the queue, not just advance to the next prompt
+ * (which the user perceives as the dialog never closing).
+ *
+ * The next syncPostTurnRequests run (60s tick / app foreground) only
+ * re-pulls requests that are newly-actionable on the server; anything
+ * already dismissed stays dismissed because dismissedAt is persisted.
+ */
+export async function dismissAllPostTurnRequests(userId: string): Promise<void> {
+  const requests = await loadLocalRequests(userId);
+  const now = new Date().toISOString();
+  let touched = false;
+  const next = requests.map((request) => {
+    if (request.status !== 'pending' || request.dismissedAt) return request;
+    touched = true;
+    return { ...request, dismissedAt: now };
+  });
+  if (!touched) return;
+  await saveLocalRequests(userId, next);
+  void upsertRemoteRequests(next.filter((request) => request.dismissedAt === now));
+}
+
 export async function submitPostTurnReview(params: {
   userId: string;
   bookingId: string;

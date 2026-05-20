@@ -1,4 +1,4 @@
-// Owner CRM mock — mirrors the Seatly `guests` + related tables' shape,
+// Owner CRM mock — mirrors the production `guests` + related tables' shape,
 // but is UI-only mock data. No Supabase wiring.
 
 export type LoyaltyTier = 'bronze' | 'silver' | 'gold' | 'platinum';
