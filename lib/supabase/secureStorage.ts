@@ -44,38 +44,50 @@ type SecureStoreModule = {
   deleteItemAsync(key: string): Promise<void>;
 };
 
+type NativeSecureStore = {
+  getValueWithKeyAsync?: (key: string, options?: unknown) => Promise<string | null>;
+  setValueWithKeyAsync?: (value: string, key: string, options?: unknown) => Promise<void>;
+  deleteValueWithKeyAsync?: (key: string, options?: unknown) => Promise<void>;
+};
+
 let secureStoreCache: SecureStoreModule | null | undefined;
 
-async function loadSecureStore(): Promise<SecureStoreModule | null> {
+function loadSecureStore(): SecureStoreModule | null {
   if (secureStoreCache !== undefined) return secureStoreCache;
+  // Bypass the `expo-secure-store` JS shim. The shim's top-level
+  // `export default requireNativeModule('ExpoSecureStore')` *throws
+  // synchronously during module evaluation* when the native side isn't
+  // linked (e.g. a stale dev client built before the dep was added),
+  // and that throw escapes Metro's dynamic-import polyfill as an
+  // uncaught error — which is what the global crash guard was logging
+  // on every login.
+  //
+  // `requireOptionalNativeModule` from expo-modules-core returns null
+  // when the module is missing instead of throwing, so we can detect
+  // the missing native side without ever evaluating the throwing shim.
   try {
-    // Dynamic import so an uninstalled `expo-secure-store` doesn't
-    // break the whole module graph. Depending on Metro/Babel transforms
-    // the resolved module may expose the API at the top level or under
-    // `.default` — normalize both so callers get a uniform shape.
-    // @ts-ignore — module may not be installed yet
-    const mod: unknown = await import('expo-secure-store');
-    const candidate =
-      mod && typeof (mod as { setItemAsync?: unknown }).setItemAsync === 'function'
-        ? (mod as SecureStoreModule)
-        : (mod as { default?: SecureStoreModule } | null)?.default ?? null;
+    // eslint-disable-next-line @typescript-eslint/no-var-requires
+    const core = require('expo-modules-core') as {
+      requireOptionalNativeModule?: <T>(name: string) => T | null;
+    };
+    const native = core.requireOptionalNativeModule?.<NativeSecureStore>('ExpoSecureStore') ?? null;
     if (
-      !candidate ||
-      typeof candidate.getItemAsync !== 'function' ||
-      typeof candidate.setItemAsync !== 'function' ||
-      typeof candidate.deleteItemAsync !== 'function'
+      !native ||
+      typeof native.getValueWithKeyAsync !== 'function' ||
+      typeof native.setValueWithKeyAsync !== 'function' ||
+      typeof native.deleteValueWithKeyAsync !== 'function'
     ) {
       secureStoreCache = null;
       return secureStoreCache;
     }
-    // Probe the native module. Metro bundles the JS even when the
-    // native side isn't linked (e.g. a stale dev client built before
-    // expo-secure-store was added); the JS functions exist but throw
-    // "Cannot find native module 'ExpoSecureStore'" *synchronously*
-    // on first call. Catch it here so all subsequent call sites
-    // transparently fall back to AsyncStorage.
-    await candidate.getItemAsync('__cenaiva_secure_store_probe__');
-    secureStoreCache = candidate;
+    // Adapt the native API (getValueWithKeyAsync / setValueWithKeyAsync
+    // / deleteValueWithKeyAsync) to the simple key/value shape the rest
+    // of this file expects.
+    secureStoreCache = {
+      getItemAsync: (key) => native.getValueWithKeyAsync!(key, {}),
+      setItemAsync: (key, value) => native.setValueWithKeyAsync!(value, key, {}),
+      deleteItemAsync: (key) => native.deleteValueWithKeyAsync!(key, {}),
+    };
   } catch {
     secureStoreCache = null;
   }
