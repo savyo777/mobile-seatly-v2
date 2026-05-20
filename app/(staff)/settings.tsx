@@ -1088,7 +1088,7 @@ export default function OwnerSettingsScreen() {
         </Pressable>
         <Pressable
           style={({ pressed }) => [styles.topAction, pressed && styles.topActionPressed]}
-          onPress={() => router.push('/(customer)/profile/register-restaurant')}
+          onPress={() => router.push('/(customer)/profile/register-restaurant?intent=add')}
           accessibilityRole="button"
           accessibilityLabel="Add a new restaurant to your account"
         >

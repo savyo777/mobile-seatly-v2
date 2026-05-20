@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { ActivityIndicator, Pressable, ScrollView, Text, View } from 'react-native';
-import { useRouter } from 'expo-router';
+import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { Button, ScreenWrapper } from '@/components/ui';
@@ -132,15 +132,22 @@ export default function RegisterRestaurantScreen() {
   const c = useColors();
   const styles = useStyles();
   const { user } = useAuthSession();
+  const params = useLocalSearchParams<{ intent?: string }>();
+  // When existing owners tap "Add restaurant" from staff Settings, they
+  // arrive here with `?intent=add` so we know to skip the auto-redirect
+  // guard that would otherwise bounce them back into the staff shell.
+  const isAddingMore = params.intent === 'add';
 
   // Guard: if this user already owns a restaurant, send them straight to
   // the staff side instead of forcing a re-registration. This handles
   // direct navigation, deep links, or back-button cases where the
-  // settings-row gate isn't in play.
+  // settings-row gate isn't in play. Skipped when intent=add so existing
+  // owners can register a second/third location.
   const [redirecting, setRedirecting] = useState(false);
   useEffect(() => {
     let cancelled = false;
     if (!user?.id) return;
+    if (isAddingMore) return;
     void (async () => {
       try {
         const existing = await fetchCurrentOwnerRestaurant();
@@ -157,7 +164,7 @@ export default function RegisterRestaurantScreen() {
     return () => {
       cancelled = true;
     };
-  }, [user?.id, router]);
+  }, [user?.id, router, isAddingMore]);
 
   if (redirecting) {
     return (
