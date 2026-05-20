@@ -1,7 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { View, Text, StyleSheet, Pressable, ActivityIndicator, Platform } from 'react-native';
+import { View, Text, StyleSheet, ActivityIndicator, Platform } from 'react-native';
 import MapView, { Marker, PROVIDER_GOOGLE, type MapPressEvent, type Region } from 'react-native-maps';
-import { Ionicons } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
 import { RestaurantMapMarkerContent, MARKER_ANCHOR_Y, useAndroidBitmapBootstrap } from '@/components/map/RestaurantMapMarker';
 import { RestaurantClusterMarker } from '@/components/map/RestaurantClusterMarker';
@@ -11,7 +10,7 @@ import { hasFiniteCoords, haversineMeters } from '@/lib/map/geo';
 import { DEFAULT_MAP_CENTER } from '@/lib/map/mapFilters';
 import { normalizeRestaurantPriceRange } from '@/lib/restaurants/pricing';
 import type { RestaurantDiscoveryMapProps } from '@/components/map/restaurantMapTypes';
-import { useColors, createStyles, spacing, borderRadius, typography, shadows } from '@/lib/theme';
+import { useColors, createStyles, spacing, borderRadius, typography } from '@/lib/theme';
 
 const DEFAULT_RECENTER_REGION_DELTA = {
   latitudeDelta: 0.025,
@@ -185,19 +184,6 @@ const useStyles = createStyles((c) => ({
     color: c.textSecondary,
     textAlign: 'center',
   },
-  locateFab: {
-    position: 'absolute',
-    right: spacing.md,
-    width: 48,
-    height: 48,
-    borderRadius: borderRadius.full,
-    backgroundColor: c.bgSurface,
-    borderWidth: 1.5,
-    borderColor: c.gold,
-    alignItems: 'center',
-    justifyContent: 'center',
-    ...shadows.goldGlow,
-  },
   loadingOverlay: {
     ...StyleSheet.absoluteFillObject,
     backgroundColor: c.bgBase === '#F8F7F4' ? 'rgba(248,247,244,0.38)' : 'rgba(10,10,10,0.25)',
@@ -287,23 +273,9 @@ export function RestaurantDiscoveryMap({
       ),
     [clusterRadiusMeters, expandedRestaurantIds, safeRestaurants, selectedId],
   );
-  const detailOpen = !!selectedId;
   const selectedRestaurant = selectedId
     ? safeRestaurants.find((restaurant) => restaurant.id === selectedId) ?? null
     : null;
-
-  const recenterOnUser = useCallback(() => {
-    if (!safeUserLocation) return;
-    mapRef.current?.animateToRegion(
-      {
-        latitude: safeUserLocation.latitude,
-        longitude: safeUserLocation.longitude,
-        latitudeDelta: recenterRegionDelta.latitudeDelta,
-        longitudeDelta: recenterRegionDelta.longitudeDelta,
-      },
-      420,
-    );
-  }, [recenterRegionDelta.latitudeDelta, recenterRegionDelta.longitudeDelta, safeUserLocation]);
 
   useEffect(() => {
     setExpandedClusterKey(null);
@@ -638,22 +610,6 @@ export function RestaurantDiscoveryMap({
           <ActivityIndicator size="large" color={c.gold} />
         </View>
       )}
-
-      {locationReady && safeUserLocation ? (
-        <Pressable
-          accessibilityRole="button"
-          accessibilityLabel="Recenter on your location"
-          onPress={recenterOnUser}
-          style={[
-            styles.locateFab,
-            {
-              bottom: (detailOpen ? 200 : spacing.md) + contentBottomInset,
-            },
-          ]}
-        >
-          <Ionicons name="locate" size={22} color={c.gold} />
-        </Pressable>
-      ) : null}
 
       <UseMyLocationChip
         onLocate={handleLocate}
