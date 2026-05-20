@@ -2,7 +2,7 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { View, FlatList, Pressable, Text, ScrollView } from 'react-native';
 import { useRouter } from 'expo-router';
 import { RestaurantDiscoveryMap } from '@/components/map/RestaurantDiscoveryMap';
-import { RestaurantMapDetailSheet } from '@/components/map/RestaurantMapDetailSheet';
+import { MapRestaurantPopup } from '@/components/map/MapRestaurantPopup';
 import type { Restaurant } from '@/lib/mock/restaurants';
 import { mockMapRestaurants as DEMO_MAP_RESTAURANTS } from '@/lib/mock/mapRestaurants';
 import { isDemoModeEnabled } from '@/lib/config/demoMode';
@@ -21,7 +21,6 @@ import { haversineMeters } from '@/lib/map/geo';
 import { useLocation } from '@/lib/location/useLocation';
 import { createStyles, spacing, borderRadius, typography, useColors } from '@/lib/theme';
 import { Ionicons } from '@expo/vector-icons';
-import { useCenaivaAssistant } from '@/lib/cenaiva/CenaivaAssistantProvider';
 
 const FILTERS: { id: MapFilterId; label: string }[] = [
   { id: 'nearby', label: 'Nearby' },
@@ -200,7 +199,6 @@ const useStyles = createStyles((c) => ({
 
 export function DiscoverMapView() {
   const router = useRouter();
-  const assistant = useCenaivaAssistant();
   const c = useColors();
   const styles = useStyles();
   const { lat, lng, locationReady, permissionDenied, source } = useLocation();
@@ -300,15 +298,10 @@ export function DiscoverMapView() {
       </View>
 
       {selectedRestaurant && (
-        <RestaurantMapDetailSheet
+        <MapRestaurantPopup
           restaurant={selectedRestaurant}
           onDismiss={() => setSelectedRestaurant(null)}
-          onBook={() => router.push(`/booking/${selectedRestaurant.id}/step1-date` as any)}
-          onViewDetails={() => router.push(`/(customer)/discover/${selectedRestaurant.id}` as any)}
-          onAskAi={() => {
-            assistant.open(selectedRestaurant.id, selectedRestaurant.name);
-            setSelectedRestaurant(null);
-          }}
+          onOpenPreview={() => router.push(`/(customer)/discover/${selectedRestaurant.id}` as any)}
         />
       )}
 

@@ -207,6 +207,7 @@ Low-impact tidying. Do these in slack time or roll into related changes.
 - [ ] **`eas.json`** — add `production` and `preview` build profiles. Currently only `development`.
 - [ ] **`.env.example`** — replace real-looking ElevenLabs voice IDs (lines 24–25) with placeholder strings. Replace Twilio `+10000000000` with country-agnostic `+<country><number>`.
 - [ ] **`lib/storage/restaurantPaymentMethod.ts:25`** — duplicate version constants between `package.json`, `build.gradle`, podspec for the social-share module.
+- [ ] **Thread `availableSlots` through `lib/map/mapFilters`** so `MapRestaurantPopup` can render the `AvailableTimes` rail instead of always falling back to NotifyMe. The mobile `Restaurant` type currently has no `availableSlots` field — the web computes them per-restaurant from a tonight-availability query. Mirror that query at the map-data layer (probably in `lib/map/mapFilters.ts` or a new `lib/map/availability.ts`) so the popup gets a populated `availableSlots: AvailabilitySlot[]` on each marker tap.
 
 **Effort:** 4–8 hours. **Risk:** Low.
 

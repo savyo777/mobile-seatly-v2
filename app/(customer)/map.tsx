@@ -17,8 +17,7 @@ import { useRouter, type Href } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { RestaurantDiscoveryMap } from '@/components/map/RestaurantDiscoveryMap';
-import { RestaurantMapDetailSheet } from '@/components/map/RestaurantMapDetailSheet';
-import { useCenaivaAssistant } from '@/lib/cenaiva/CenaivaAssistantProvider';
+import { MapRestaurantPopup } from '@/components/map/MapRestaurantPopup';
 import { mockMapRestaurants as DEMO_MAP_RESTAURANTS } from '@/lib/mock/mapRestaurants';
 import { isDemoModeEnabled } from '@/lib/config/demoMode';
 
@@ -226,7 +225,6 @@ export default function MapScreen() {
   const styles = useStyles();
   const { t } = useTranslation();
   const router = useRouter();
-  const assistant = useCenaivaAssistant();
   const insets = useSafeAreaInsets();
   const carouselRef = useRef<FlatList<RestaurantWithDistance>>(null);
 
@@ -495,23 +493,12 @@ export default function MapScreen() {
         </Pressable>
       ) : null}
 
-      <RestaurantMapDetailSheet
+      <MapRestaurantPopup
         restaurant={selectedRestaurant}
         onDismiss={() => setSheetRestaurantId(null)}
-        onBook={() => {
+        onOpenPreview={() => {
           if (!selectedRestaurant) return;
-          router.push(`/booking/${selectedRestaurant.id}/step2-time`);
-        }}
-        onViewDetails={() => {
-          if (!selectedRestaurant) return;
-          // Route is /(customer)/discover/[id] — the previous path
-          // was missing the (customer) group prefix and 404'd silently.
           router.push(`/(customer)/discover/${selectedRestaurant.id}` as Href);
-        }}
-        onAskAi={() => {
-          if (!selectedRestaurant) return;
-          assistant.open(selectedRestaurant.id, selectedRestaurant.name);
-          setSheetRestaurantId(null);
         }}
       />
     </View>
