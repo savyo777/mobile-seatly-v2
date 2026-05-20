@@ -17,15 +17,6 @@
 
 const ALLOWED_ACTIONS = new Set(["return", "refresh"]);
 
-function escapeAttr(value: string): string {
-  return value
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;")
-    .replace(/'/g, "&#39;");
-}
-
 Deno.serve((req: Request) => {
   if (req.method !== "GET") {
     return new Response("Method not allowed", { status: 405 });
@@ -42,26 +33,19 @@ Deno.serve((req: Request) => {
   if (restaurantId) passthrough.set("restaurant_id", restaurantId);
 
   const deepLink = `cenaiva://stripe/connect/${action}${passthrough.toString() ? `?${passthrough}` : ""}`;
-  const safeUrl = escapeAttr(deepLink);
-  // Inline JS does the bounce on iOS/Android Safari/Chrome Custom Tab.
-  // The <noscript> fallback + the meta refresh covers the JS-disabled
-  // case, and the visible link gives the owner a manual tap target if
-  // both bounce attempts fail.
-  const html = `<!doctype html>
-<html><head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Returning to Cenaiva…</title>
-<meta http-equiv="refresh" content="0;url=${safeUrl}">
-<style>body{font-family:-apple-system,system-ui,sans-serif;padding:48px;background:#0a0a0a;color:#f5f5f5;text-align:center}a{color:#c9a84c;font-weight:600}</style>
-</head><body>
-<p>Returning to Cenaiva…</p>
-<p><a href="${safeUrl}">Tap here if nothing happens</a></p>
-<script>window.location.replace(${JSON.stringify(deepLink)});</script>
-</body></html>`;
 
-  return new Response(html, {
-    status: 200,
-    headers: { "Content-Type": "text/html; charset=utf-8", "Cache-Control": "no-store" },
+  // Native HTTP 302 to the cenaiva:// deep link. Supabase Edge Functions
+  // strip text/html responses to text/plain and apply a `default-src
+  // 'none'; sandbox` CSP, so meta-refresh + inline JS bounce HTML
+  // rendered as raw source instead of redirecting. iOS Safari View
+  // Controller / Android Chrome Custom Tab honor a 302 Location pointing
+  // at a custom scheme — the browser hands the deep link to the OS and
+  // expo-web-browser.openAuthSessionAsync resolves with type='success'.
+  return new Response(null, {
+    status: 302,
+    headers: {
+      Location: deepLink,
+      "Cache-Control": "no-store",
+    },
   });
 });
