@@ -1,10 +1,31 @@
-import * as Calendar from 'expo-calendar';
 import * as FileSystem from 'expo-file-system/legacy';
 import * as Sharing from 'expo-sharing';
 import { Alert, Linking, Platform } from 'react-native';
 import { BRAND_DOMAIN } from '@/lib/config/legalLinks';
 import { DEFAULT_TURN_MINUTES } from '@/lib/booking/bookingDefaults';
 import i18n from '@/lib/i18n';
+
+// Lazy load expo-calendar: the native module is only present in dev
+// clients built AFTER it was added to the project. Dev clients built
+// earlier (or production builds before the next rebuild) would otherwise
+// crash on module-load with "Cannot find native module 'ExpoCalendar'".
+// We resolve it on demand; if it's missing we fall through to the
+// existing .ics share-sheet path.
+type ExpoCalendarModule = typeof import('expo-calendar');
+let calendarModule: ExpoCalendarModule | null = null;
+let calendarModuleLoadFailed = false;
+function loadCalendar(): ExpoCalendarModule | null {
+  if (calendarModule) return calendarModule;
+  if (calendarModuleLoadFailed) return null;
+  try {
+    // eslint-disable-next-line @typescript-eslint/no-require-imports, global-require
+    calendarModule = require('expo-calendar') as ExpoCalendarModule;
+    return calendarModule;
+  } catch {
+    calendarModuleLoadFailed = true;
+    return null;
+  }
+}
 
 export type CalendarBooking = {
   reservationId: string;
@@ -117,9 +138,10 @@ function buildGoogleCalendarUrl(booking: CalendarBooking): string {
 
 // Picks the device's "primary" writable calendar. iOS exposes a
 // `isPrimary` flag on the default source; Android exposes a single
-// `Calendar.SOURCE_DEFAULT` source per account. Both providers fall back
-// to the first allowsModifications calendar if no obvious primary exists.
-function pickPrimaryCalendar(calendars: Calendar.Calendar[]): Calendar.Calendar | null {
+// SOURCE_DEFAULT source per account. Both providers fall back to the
+// first allowsModifications calendar if no obvious primary exists.
+type AnyCal = { id: string; allowsModifications: boolean; source?: { type?: string; name?: string }; accessLevel?: string; ownerAccount?: string };
+function pickPrimaryCalendar(calendars: AnyCal[], ownerAccessLevel: string): AnyCal | null {
   const writable = calendars.filter((cal) => cal.allowsModifications);
   if (writable.length === 0) return null;
 
@@ -136,10 +158,10 @@ function pickPrimaryCalendar(calendars: Calendar.Calendar[]): Calendar.Calendar 
     // Android: prefer the account-owner calendar (ownerAccount matches
     // the account name) which is usually the primary Google calendar.
     const primary = writable.find(
-      (cal) => cal.accessLevel === Calendar.CalendarAccessLevel.OWNER && cal.ownerAccount === cal.source?.name,
+      (cal) => cal.accessLevel === ownerAccessLevel && cal.ownerAccount === cal.source?.name,
     );
     if (primary) return primary;
-    const owner = writable.find((cal) => cal.accessLevel === Calendar.CalendarAccessLevel.OWNER);
+    const owner = writable.find((cal) => cal.accessLevel === ownerAccessLevel);
     if (owner) return owner;
   }
 
@@ -147,6 +169,13 @@ function pickPrimaryCalendar(calendars: Calendar.Calendar[]): Calendar.Calendar 
 }
 
 async function writeEventToDeviceCalendar(booking: CalendarBooking): Promise<boolean> {
+  const Calendar = loadCalendar();
+  if (!Calendar) {
+    // Native module unavailable — the dev client wasn't rebuilt after
+    // expo-calendar was added. Fall back to the .ics share path.
+    return false;
+  }
+
   // Ask for permission. On Android (API 33+) and iOS 17+ the OS allows
   // limited / write-only access; expo-calendar resolves that to a single
   // permission. Bail early if user denies.
@@ -160,7 +189,10 @@ async function writeEventToDeviceCalendar(booking: CalendarBooking): Promise<boo
   }
 
   const calendars = await Calendar.getCalendarsAsync(Calendar.EntityTypes.EVENT);
-  const target = pickPrimaryCalendar(calendars);
+  const target = pickPrimaryCalendar(
+    calendars as unknown as AnyCal[],
+    Calendar.CalendarAccessLevel.OWNER,
+  );
   if (!target) {
     Alert.alert(i18n.t('calendar.permissionDeniedTitle'), i18n.t('calendar.noWritableCalendar'));
     return false;
