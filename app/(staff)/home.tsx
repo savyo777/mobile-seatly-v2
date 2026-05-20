@@ -996,30 +996,45 @@ export default function OwnerHomeScreen() {
     // for multi-restaurant scope ("all") subscribe without a filter and
     // post-filter in the handler. Single-restaurant case uses an eq filter
     // server-side, which is cheaper.
-    const channelName = restaurantIds.length === 1
+    //
+    // Channel name is suffixed with a per-mount token because
+    // supabase.channel(name) reuses any existing channel with the same
+    // name; under React StrictMode (dev) or hot-reload the effect can
+    // re-fire before the previous cleanup's async removeChannel has
+    // settled, returning a channel that's already past .subscribe() —
+    // chaining .on() onto that throws "cannot add postgres_changes
+    // callbacks after subscribe()". A unique suffix sidesteps the cache
+    // entirely. We also defensively removeChannel by name before
+    // creating the new one in case a same-name leftover still exists.
+    const baseName = restaurantIds.length === 1
       ? `home-reservations-${restaurantIds[0]}`
       : 'home-reservations-all';
+    const channelName = `${baseName}-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
     const filter = restaurantIds.length === 1
       ? `restaurant_id=eq.${restaurantIds[0]}`
       : undefined;
 
     const ownedIds = new Set(restaurantIds);
-    const channel = supabase
-      .channel(channelName)
-      .on(
-        'postgres_changes',
-        { event: '*', schema: 'public', table: 'reservations', ...(filter ? { filter } : {}) },
-        (payload) => {
-          const row = (payload.new as { restaurant_id?: string } | null)
-            ?? (payload.old as { restaurant_id?: string } | null)
-            ?? null;
-          const restaurantId = row?.restaurant_id;
-          if (!restaurantId || ownedIds.has(restaurantId)) {
-            setReloadKey((k) => k + 1);
-          }
-        },
-      )
-      .subscribe();
+    const existing = supabase.getChannels().filter((ch) => ch.topic.startsWith(`realtime:${baseName}`));
+    for (const stale of existing) {
+      void supabase.removeChannel(stale);
+    }
+
+    const channel = supabase.channel(channelName);
+    channel.on(
+      'postgres_changes',
+      { event: '*', schema: 'public', table: 'reservations', ...(filter ? { filter } : {}) },
+      (payload) => {
+        const row = (payload.new as { restaurant_id?: string } | null)
+          ?? (payload.old as { restaurant_id?: string } | null)
+          ?? null;
+        const restaurantId = row?.restaurant_id;
+        if (!restaurantId || ownedIds.has(restaurantId)) {
+          setReloadKey((k) => k + 1);
+        }
+      },
+    );
+    channel.subscribe();
 
     return () => {
       void supabase.removeChannel(channel);
