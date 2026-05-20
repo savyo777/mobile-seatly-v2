@@ -13,6 +13,7 @@ import {
   type OwnerRestaurant,
 } from '@/lib/services/ownerRestaurant';
 import { key } from '@/lib/storage/keys';
+import { useAuthSession } from '@/lib/auth/AuthContext';
 
 /**
  * Multi-restaurant scope context for the business-side app.
@@ -66,6 +67,10 @@ function pickInitial(
 }
 
 export function OwnerRestaurantProvider({ children }: { children: React.ReactNode }) {
+  // Live auth user — provider is mounted once at the app root and never
+  // unmounts, so we have to react to user.id changes ourselves to keep
+  // one owner's data from leaking into the next session.
+  const { user, loading: authLoading } = useAuthSession();
   const [restaurants, setRestaurants] = useState<OwnerRestaurant[]>([]);
   const [selectedRestaurantId, setSelectedRestaurantIdState] =
     useState<OwnerRestaurantSelection | null>(null);
@@ -110,8 +115,35 @@ export function OwnerRestaurantProvider({ children }: { children: React.ReactNod
   }, []);
 
   useEffect(() => {
+    // Auth still hydrating on cold start — don't touch state yet, wait
+    // for AuthContext's INITIAL_SESSION / SIGNED_IN verdict so we don't
+    // wipe a valid persisted session.
+    if (authLoading) return;
+
+    // Signed out (or never signed in this run). Wipe everything
+    // owner-scoped — React state AND the AsyncStorage key — so the next
+    // user can't see this user's restaurant.
+    if (!user?.id) {
+      setRestaurants([]);
+      setSelectedRestaurantIdState(null);
+      setError(null);
+      setIsLoading(false);
+      storedRef.current = null;
+      userPickedRef.current = false;
+      void AsyncStorage.removeItem(STORAGE_KEY).catch(() => {});
+      return;
+    }
+
+    // Signed in OR account switched. Clear stale selection BEFORE the
+    // fetch resolves so a render window between effect-fire and
+    // load()-resolve can't briefly show the previous user's restaurant.
+    setRestaurants([]);
+    setSelectedRestaurantIdState(null);
+    setError(null);
+    storedRef.current = null;
+    userPickedRef.current = false;
     void load();
-  }, [load]);
+  }, [user?.id, authLoading, load]);
 
   const setSelectedRestaurantId = useCallback(
     (id: OwnerRestaurantSelection) => {
