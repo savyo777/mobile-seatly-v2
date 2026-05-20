@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   View,
   Text,
@@ -10,7 +10,7 @@ import {
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
-import { useRouter } from 'expo-router';
+import { useFocusEffect, useRouter } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import Svg, { Rect, Polyline, Circle, Path, Defs, LinearGradient, Stop } from 'react-native-svg';
 import { useColors, createStyles, spacing, borderRadius } from '@/lib/theme';
@@ -972,6 +972,59 @@ export default function OwnerHomeScreen() {
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [restaurantIdsKey, isAll, reloadKey]);
+
+  // Bump reloadKey whenever the Home tab regains focus so navigating away
+  // and back re-pulls the latest reservations + analytics. Cheap relative
+  // to the staleness of seeing yesterday's numbers after a tab switch.
+  useFocusEffect(
+    useCallback(() => {
+      if (isDemoModeEnabled()) return;
+      setReloadKey((k) => k + 1);
+    }, []),
+  );
+
+  // Live realtime subscription. Any INSERT / UPDATE / DELETE on reservations
+  // for the active restaurant scope bumps reloadKey so the Tonight + Hour
+  // widgets reflect the change without a manual refresh.
+  useEffect(() => {
+    if (isDemoModeEnabled()) return;
+    if (restaurantIds.length === 0) return;
+    const supabase = getSupabase();
+    if (!supabase) return;
+
+    // Postgres filter syntax for realtime: only one filter per channel, so
+    // for multi-restaurant scope ("all") subscribe without a filter and
+    // post-filter in the handler. Single-restaurant case uses an eq filter
+    // server-side, which is cheaper.
+    const channelName = restaurantIds.length === 1
+      ? `home-reservations-${restaurantIds[0]}`
+      : 'home-reservations-all';
+    const filter = restaurantIds.length === 1
+      ? `restaurant_id=eq.${restaurantIds[0]}`
+      : undefined;
+
+    const ownedIds = new Set(restaurantIds);
+    const channel = supabase
+      .channel(channelName)
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'reservations', ...(filter ? { filter } : {}) },
+        (payload) => {
+          const row = (payload.new as { restaurant_id?: string } | null)
+            ?? (payload.old as { restaurant_id?: string } | null)
+            ?? null;
+          const restaurantId = row?.restaurant_id;
+          if (!restaurantId || ownedIds.has(restaurantId)) {
+            setReloadKey((k) => k + 1);
+          }
+        },
+      )
+      .subscribe();
+
+    return () => {
+      void supabase.removeChannel(channel);
+    };
+  }, [restaurantIdsKey, restaurantIds]);
 
   const seatedTables = OWNER_FLOOR_TABLES.filter((t) => t.status === 'occupied').length;
   const tablesTotal = OWNER_FLOOR_TABLES.length;
