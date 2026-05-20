@@ -2,7 +2,7 @@
 
 If you're an LLM agent (Claude Code, Cursor, Aider, GPT-something) walking into this codebase fresh, read this first. It captures **what the project is, what's been done recently, what conventions exist, and the lessons learned the hard way** so you don't relearn them.
 
-For terse, Claude-Code-specific operating rules see [`CLAUDE.md`](./CLAUDE.md). For the rolling un-hardcoding plan see [`docs/UNHARDCODE_CHECKLIST.md`](./docs/UNHARDCODE_CHECKLIST.md). The original product brief / design contract is [`SEATLY-MASTER-BIBLE.mdc`](./SEATLY-MASTER-BIBLE.mdc) (note the legacy "Seatly" name; product is now Cenaiva).
+For terse, Claude-Code-specific operating rules see [`CLAUDE.md`](./CLAUDE.md). For the rolling un-hardcoding plan see [`docs/UNHARDCODE_CHECKLIST.md`](./docs/UNHARDCODE_CHECKLIST.md).
 
 ---
 
@@ -21,7 +21,7 @@ Stack:
 - **Voice**: ElevenLabs TTS + Deepgram STT, OpenAI for the assistant
 - **Maps**: react-native-maps with Google provider on Android, Apple Maps on iOS
 
-Working directory is `/Users/savyoyaqoop/mobile-seatly-v2-15`. Repo is `savyo777/mobile-seatly-v2`. Folder + repo name still say "seatly" — the brand was renamed to Cenaiva but the rename is incomplete (see [Lessons learned](#lessons-learned)).
+Working directory is `/Users/savyoyaqoop/mobile-seatly-v2-15`. Repo is `savyo777/mobile-seatly-v2`. The folder and GitHub repo name are historical artifacts from before the rebrand to **Cenaiva**; the codebase, DB, and product surfaces are fully on the Cenaiva brand.
 
 ---
 
@@ -232,7 +232,7 @@ If a new platform-specific branch lands, add it here with the same one-line just
 
 Three keys live in **Supabase Secrets** on project `exbjodmnpdiayfzrdyux` (deployed 2026-05-18):
 
-- `GOOGLE_MAPS_BROWSER_API_KEY` — used by the Seatly web app (HTTP referrer-restricted). Available for any edge function that needs to render or proxy web-facing map data.
+- `GOOGLE_MAPS_BROWSER_API_KEY` — used by the Cenaiva web app (HTTP referrer-restricted). Available for any edge function that needs to render or proxy web-facing map data.
 - `GOOGLE_MAPS_SERVER_API_KEY` — server-only, used by Supabase Edge Functions for geocoding / Places API. Not exposed to clients.
 - `GOOGLE_MAPS_MOBILE_API_KEY` — *(pending — mobile-restricted key creation deferred per user 2026-05-18)*. When created: restricted to iOS bundle `com.cenaiva.app` and Android package `com.cenaiva.app` + dev/release SHA-1 fingerprints. APIs: Maps SDK for iOS, Maps SDK for Android, Places API.
 
@@ -248,19 +248,15 @@ Wake-word detection uses `expo-speech-recognition` on **both platforms** (the pr
 
 Things that bit us in this codebase. Don't repeat.
 
-### 1. The brand was renamed but the rename is incomplete
+### 1. The brand was renamed from Seatly to Cenaiva — what remains is intentional
 
-The product is now **Cenaiva** but the legacy name **Seatly** still surfaces in:
+The mobile app, DB, edge functions, i18n, native bundles, and UI are fully on the **Cenaiva** brand. The only remaining "seatly" tokens in the tree are deliberate compatibility surfaces, not user-visible:
 
-- Folder name (`mobile-seatly-v2-15`)
-- AsyncStorage keys prefixed `@seatly/...` (6 files; helper `lib/storage/keys.ts` exists but isn't fully adopted)
-- Confirmation-code prefix `SEAT-` (in `_shared/confirmation-code.ts:11`)
-- Nominatim User-Agent on the orchestrator (`Seatly/1.0 (seatly.app)`)
-- i18n strings: `"Update your Seatly password"` in `en.ts:403` and `fr.ts:403`
-- `design-system/MASTER.md` (Seatly gold `#D4AF37`, Playfair Display SC fonts the app doesn't load)
-- Filename `app/(staff)/rate-seatly.tsx`
+- Folder name on disk (`mobile-seatly-v2-15`) and GitHub repo (`savyo777/mobile-seatly-v2`) — kept to preserve git history; not user-visible.
+- `__tests__/lint/no-raw-error-in-alerts.test.ts` and `.github/workflows/typecheck.yml` reference the stale `mobile-seatly-v2-2/` subfolder by name to filter it out of typechecks.
+- AsyncStorage compatibility: `lib/storage/keys.ts` exposes `LEGACY_STORAGE_PREFIX = '@seatly'` and `lib/storage/migrate.ts` runs a one-shot copy from `@seatly/...` → `@cenaiva/...` on cold start so existing installs don't lose data. Covered by `__tests__/storage/migrate.test.ts`.
 
-Two domains coexist: `cenaiva.app` (support email) and `cenaiva.com` (legal links, share captions). Pick one before adding new references.
+Domains: `cenaiva.com` is canonical (legal links, share captions, support email).
 
 ### 2. `mockCustomer.id` was used as the real user's identity
 

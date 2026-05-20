@@ -1,8 +1,8 @@
 # DINER_MOBILE_GUIDE.md
 
 **Version**: 1.1 — 2026-05-09
-**Project**: Seatly Cenaiva (`exbjodmnpdiayfzrdyux`, ca-central-1)
-**Purpose**: Single source of truth for any mobile (iOS / Android / React Native / Flutter / native) implementation that mirrors the diner-facing surfaces of the Seatly Cenaiva web app.
+**Project**: Cenaiva (`exbjodmnpdiayfzrdyux`, ca-central-1)
+**Purpose**: Single source of truth for any mobile (iOS / Android / React Native / Flutter / native) implementation that mirrors the diner-facing surfaces of the Cenaiva web app.
 
 > **Scope note (v1.1):** This guide intentionally excludes the **Hey Cenaiva voice assistant** feature. The mobile app does NOT mirror the voice pipeline — no wake word, no `cenaiva-orchestrate` calls, no ElevenLabs TTS, no Deepgram STT, no voice preference UI. Mobile consumes the same database / edge functions for booking, reservations, search, and account management only.
 
@@ -10,7 +10,7 @@
 
 ## ⚠️ READ-ONLY DIRECTIVE — Read Twice
 
-The Seatly Cenaiva database schema, RPCs, edge functions, RLS policies, and triggers are **frozen** for the mobile app's purposes. The mobile app:
+The Cenaiva database schema, RPCs, edge functions, RLS policies, and triggers are **frozen** for the mobile app's purposes. The mobile app:
 
 - **MUST NOT** create, alter, or drop tables, columns, RPCs, edge functions, or RLS policies.
 - **MUST NOT** write to the database via raw INSERT / UPDATE / DELETE on `reservations`, `reservation_tables`, `tables`, `shifts`, `restaurants`, or any owner-controlled table. Even with service-role keys.

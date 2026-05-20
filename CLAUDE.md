@@ -106,7 +106,7 @@ When you see a literal that looks like a duplicate, check first whether a centra
 
 ## Edge function deploys
 
-You deploy edge functions yourself via the Supabase MCP `deploy_edge_function` tool or the CLI (`npx supabase functions deploy <name>`). The user pre-authorized you to handle deploys on `exbjodmnpdiayfzrdyux` end-to-end — no per-deploy approval required. Coordinate with the web team if a function name is shared with the Seatly sister repo.
+You deploy edge functions yourself via the Supabase MCP `deploy_edge_function` tool or the CLI (`npx supabase functions deploy <name>`). The user pre-authorized you to handle deploys on `exbjodmnpdiayfzrdyux` end-to-end — no per-deploy approval required. Coordinate with the web team if a function name is shared with the Cenaiva web sister repo.
 
 Project ref: `exbjodmnpdiayfzrdyux`
 
@@ -130,7 +130,7 @@ The checklist is the system of record for un-hardcoding work. Update it when you
 
 - "I want everything to main" — see Branching above.
 - "Don't show fake numbers to real users" — every fix that gates mock-data behind `isDemoModeEnabled()` traces back to this.
-- "Brand is Cenaiva" — flag and fix any "Seatly" leak in user-visible surfaces (i18n strings, AsyncStorage keys, ICS files, support emails).
+- "Brand is Cenaiva" — flag and fix any leftover legacy-brand leak in user-visible surfaces (i18n strings, ICS files, support emails). The only intentional legacy artifacts are the `@seatly/` AsyncStorage migration prefix (legacy data) and the `mobile-seatly-v2-2/` folder filter.
 - "Not one thing should be iOS only" — both platforms must be equally functional. The intentional exceptions (Apple Sign-In, Apple Pay vs Google Pay, biometric labels, RN shadow vs elevation) are catalogued in `AGENTS.md` under "Platform parity"; everything else gets a cross-platform code path or doesn't ship.
 - "Don't put API keys in any code or any MD files" — all keys live in Supabase Secrets / EAS Secrets / gitignored `.env`. Grep the staged diff for `AIza[A-Za-z0-9_-]{20,}` before any commit that touches a secret-adjacent file.
 - The user reads commit messages — write descriptive ones.

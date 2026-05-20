@@ -202,7 +202,6 @@ Low-impact tidying. Do these in slack time or roll into related changes.
 - [ ] **`app/(customer)/profile/register-restaurant-card-entry.tsx`** — `MONTHLY_FEE_LABEL = '$200.00 / mo'` is inlined for the receipt totals. Move to a single owner-pricing source once Cenaiva monthly pricing exists in config.
 - [ ] **`scripts/qa/mobile-click-smoke.mjs`** — read scheme + bundle ID from `app.json` at runtime instead of hardcoding two values.
 - [ ] **Sanitize developer paths** in `docs/hey-cenaiva-mobile-recent-handoff.md`, `docs/hey-cenaiva-latency-optimization-handoff.md`, `__tests__/cenaiva/latencyBudget.test.ts`. Replace `/Users/stevengeorgy/...` and `10.0.0.69` with placeholders.
-- [ ] **`SEATLY-MASTER-BIBLE.mdc:8`** — `Last updated: March 2026` is already past today. Replace with a git-tracked stamp or update.
 - [ ] **`README.md`** — currently one line. Pick a canonical name (`mobile-cenaiva-v2` per `package.json` matches).
 - [ ] **`eas.json`** — add `production` and `preview` build profiles. Currently only `development`.
 - [ ] **`.env.example`** — replace real-looking ElevenLabs voice IDs (lines 24–25) with placeholder strings. Replace Twilio `+10000000000` with country-agnostic `+<country><number>`.
