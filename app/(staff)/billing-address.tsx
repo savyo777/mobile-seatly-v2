@@ -13,6 +13,9 @@ import {
   type RestaurantBillingAddress,
 } from '@/lib/storage/restaurantBillingAddress';
 import { normalizeTextInput, sanitizePostalCodeInput, sanitizeTextInput } from '@/lib/validation/input';
+import { getCurrentOwnerRestaurantId } from '@/lib/services/ownerRestaurant';
+import { updateBillingDetails } from '@/lib/owner/billing';
+import { friendlyError } from '@/lib/errors/friendlyError';
 
 const useStyles = createStyles((c) => ({
   scroll: { flex: 1 },
@@ -154,14 +157,44 @@ export default function BillingAddressScreen() {
     if (Object.keys(next).length > 0) return;
 
     void (async () => {
-      await saveBillingAddress({
+      const normalized = {
         line1: normalizeTextInput(address.line1, { maxLength: 120 }),
         line2: normalizeTextInput(address.line2, { maxLength: 120 }),
         city: normalizeTextInput(address.city, { maxLength: 80 }),
         region: normalizeTextInput(address.region, { maxLength: 3 }).toUpperCase(),
         postalCode: sanitizePostalCodeInput(address.postalCode),
         country: normalizeTextInput(address.country, { maxLength: 3 }).toUpperCase(),
-      });
+      };
+      // Persist locally first (for offline fall-through reads on the
+      // payment-method screen). The remote write is the source of truth.
+      await saveBillingAddress(normalized);
+      try {
+        const restaurantId = await getCurrentOwnerRestaurantId();
+        if (restaurantId) {
+          await updateBillingDetails({
+            restaurantId,
+            patch: {
+              address: {
+                line1: normalized.line1,
+                line2: normalized.line2 || null,
+                city: normalized.city,
+                province: normalized.region,
+                postalCode: normalized.postalCode,
+                country: normalized.country,
+              },
+            },
+          });
+        }
+      } catch (err) {
+        Alert.alert(
+          'Saved locally',
+          friendlyError(
+            err,
+            'We couldn’t sync the address to Stripe just now — it’s saved on this device and we’ll retry on the next change.',
+          ),
+        );
+        return;
+      }
       Alert.alert('Billing address saved', 'Your billing address is now on file.', [
         {
           text: 'OK',

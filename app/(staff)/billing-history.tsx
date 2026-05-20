@@ -1,56 +1,43 @@
-import React, { useEffect, useMemo, useState } from 'react';
-import { StyleSheet, Text, View } from 'react-native';
+import React, { useCallback, useEffect, useState } from 'react';
+import { ActivityIndicator, Pressable, StyleSheet, Text, View } from 'react-native';
+import { useFocusEffect } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { OwnerScreen } from '@/components/owner/OwnerScreen';
 import { SubpageHeader } from '@/components/owner/SubpageHeader';
 import { RestaurantPicker } from '@/components/owner/RestaurantPicker';
-import { useOwnerScope } from '@/hooks/useOwnerScope';
-import { getSupabase } from '@/lib/supabase/client';
 import { borderRadius, createStyles, spacing, typography, useColors } from '@/lib/theme';
+import { friendlyError } from '@/lib/errors/friendlyError';
+import { getCurrentOwnerRestaurantId } from '@/lib/services/ownerRestaurant';
+import {
+  getNextBillPreview,
+  listStripePayouts,
+  type NextBillPreview,
+  type PayoutsSnapshot,
+} from '@/lib/owner/billing';
 
-function envMoney(name: string): number {
-  const parsed = Number(process.env[name]);
-  return Number.isFinite(parsed) ? parsed : 0;
-}
-
-const PRICING = {
-  perBookingDollars: envMoney('EXPO_PUBLIC_OWNER_PER_BOOKING_DOLLARS'),
-  preOrderFeePct: envMoney('EXPO_PUBLIC_OWNER_PREORDER_FEE_PCT'),
-  monthlySubDollars: envMoney('EXPO_PUBLIC_OWNER_MONTHLY_SUB_DOLLARS'),
-};
-
-type CycleActivity = {
-  bookingCount: number;
-  preOrderCount: number;
-  preOrderRevenueDollars: number;
-};
-
-function cycleStart(now = new Date()) {
-  return new Date(now.getFullYear(), now.getMonth(), 1);
-}
-
-function nextCycleStart(now = new Date()) {
-  return new Date(now.getFullYear(), now.getMonth() + 1, 1);
-}
-
-function cycleLabel(now = new Date()) {
-  return cycleStart(now).toLocaleDateString('en-CA', { month: 'long', year: 'numeric' });
-}
-
-function cycleBilledOn(now = new Date()) {
-  return nextCycleStart(now).toLocaleDateString('en-CA', {
-    month: 'short',
-    day: 'numeric',
-    year: 'numeric',
-  });
-}
-
-function formatMoney(dollars: number): string {
-  return dollars.toLocaleString('en-CA', {
+function formatMoneyCents(cents: number, currency = 'cad'): string {
+  return new Intl.NumberFormat('en-CA', {
     style: 'currency',
-    currency: 'CAD',
-  });
+    currency: currency.toUpperCase(),
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  }).format((cents || 0) / 100);
 }
+
+function formatDateIso(iso: string | null): string {
+  if (!iso) return '—';
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return '—';
+  return d.toLocaleDateString('en-CA', { month: 'short', day: 'numeric', year: 'numeric' });
+}
+
+const PAYOUT_STATUS_LABEL: Record<string, string> = {
+  paid: 'Paid',
+  pending: 'In transit',
+  in_transit: 'In transit',
+  canceled: 'Canceled',
+  failed: 'Failed',
+};
 
 const useStyles = createStyles((c) => ({
   intro: {
@@ -61,27 +48,23 @@ const useStyles = createStyles((c) => ({
   introTitle: { ...typography.h2, color: c.textPrimary },
   introText: { ...typography.body, color: c.textMuted, lineHeight: 22 },
 
-  /* Cycle pill */
-  cyclePill: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    alignSelf: 'flex-start',
-    gap: 6,
-    paddingHorizontal: 12,
-    paddingVertical: 7,
-    borderRadius: borderRadius.full,
-    backgroundColor: 'rgba(201,168,76,0.12)',
-    borderWidth: 1,
-    borderColor: 'rgba(201,168,76,0.25)',
-    marginBottom: spacing.md,
-  },
-  cyclePillText: {
+  sectionLabel: {
     ...typography.label,
-    color: c.gold,
-    letterSpacing: 1,
+    color: c.textMuted,
+    letterSpacing: 1.2,
+    marginBottom: spacing.sm,
+    paddingHorizontal: 4,
   },
 
-  /* Total hero */
+  card: {
+    borderRadius: borderRadius.xl,
+    backgroundColor: c.bgSurface,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.08)',
+    overflow: 'hidden',
+    marginBottom: spacing.lg,
+  },
+
   totalCard: {
     borderRadius: borderRadius.xl,
     overflow: 'hidden',
@@ -112,120 +95,49 @@ const useStyles = createStyles((c) => ({
     lineHeight: 17,
   },
 
-  sectionLabel: {
-    ...typography.label,
-    color: c.textMuted,
-    letterSpacing: 1.2,
-    marginBottom: spacing.sm,
-    paddingHorizontal: 4,
-  },
-
-  card: {
-    borderRadius: borderRadius.xl,
-    backgroundColor: c.bgSurface,
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: c.border,
-    overflow: 'hidden',
-    marginBottom: spacing.lg,
-  },
-  catRow: {
+  row: {
     flexDirection: 'row',
     alignItems: 'center',
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.md,
     gap: spacing.md,
-    minHeight: 78,
+    minHeight: 56,
   },
   rowDivider: { borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: c.border },
-  catIcon: {
-    width: 40,
-    height: 40,
-    borderRadius: 12,
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: c.bgElevated,
-  },
-  catText: { flex: 1, gap: 3 },
-  catTitle: {
-    ...typography.body,
-    color: c.textPrimary,
-    fontWeight: '700',
-  },
-  catMeta: {
-    ...typography.bodySmall,
-    color: c.textMuted,
-    lineHeight: 16,
-  },
-  catRight: { alignItems: 'flex-end', gap: 2 },
-  catAmount: {
-    ...typography.body,
-    color: c.textPrimary,
-    fontWeight: '800',
-    fontSize: 17,
-    letterSpacing: -0.3,
-  },
-  catRate: {
-    ...typography.bodySmall,
-    color: c.textMuted,
-    lineHeight: 14,
-  },
+  rowLeft: { flex: 1, gap: 2 },
+  rowTitle: { ...typography.body, color: c.textPrimary, fontWeight: '600' },
+  rowMeta: { ...typography.bodySmall, color: c.textMuted, lineHeight: 16 },
+  rowAmount: { ...typography.body, color: c.textPrimary, fontWeight: '700' },
 
-  /* Total summary row */
-  totalRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.lg,
-    backgroundColor: c.bgElevated,
-  },
-  totalRowLabel: {
-    ...typography.body,
-    color: c.textPrimary,
-    fontWeight: '800',
-    flex: 1,
-  },
-  totalRowAmount: {
-    ...typography.h2,
-    color: c.gold,
-    fontWeight: '800',
-    letterSpacing: -0.4,
-  },
-
-  /* Recent invoices */
-  invRow: {
+  pillRow: {
     flexDirection: 'row',
     alignItems: 'center',
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.md,
     gap: spacing.md,
-    minHeight: 60,
   },
-  invIcon: {
-    width: 32,
-    height: 32,
-    borderRadius: 9,
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: 'rgba(34,197,94,0.10)',
-    borderWidth: 1,
-    borderColor: 'rgba(34,197,94,0.30)',
+  pillBox: { flex: 1, gap: 2 },
+  pillLabel: { ...typography.label, color: c.textMuted, letterSpacing: 1 },
+  pillAmount: { ...typography.body, color: c.textPrimary, fontWeight: '700', fontSize: 18 },
+
+  empty: {
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.md,
+    gap: 4,
   },
-  invText: { flex: 1, gap: 2 },
-  invTitle: {
-    ...typography.body,
-    color: c.textPrimary,
+  emptyText: { ...typography.bodySmall, color: c.textMuted, lineHeight: 18 },
+
+  badge: {
+    paddingVertical: 3,
+    paddingHorizontal: 8,
+    borderRadius: borderRadius.full,
+    fontSize: 11,
     fontWeight: '700',
+    overflow: 'hidden',
   },
-  invMeta: {
-    ...typography.bodySmall,
-    color: c.textMuted,
-    lineHeight: 16,
-  },
-  invAmount: {
-    ...typography.body,
-    color: c.textPrimary,
-    fontWeight: '700',
-  },
+  badgePaid: { backgroundColor: 'rgba(34,197,94,0.12)', color: '#22C55E' },
+  badgePending: { backgroundColor: 'rgba(201,168,76,0.15)', color: c.gold },
+  badgeFailed: { backgroundColor: 'rgba(239,68,68,0.12)', color: '#EF4444' },
 
   noteRow: {
     flexDirection: 'row',
@@ -239,205 +151,196 @@ const useStyles = createStyles((c) => ({
     backgroundColor: 'rgba(201,168,76,0.06)',
     marginBottom: spacing.lg,
   },
-  noteText: {
-    ...typography.bodySmall,
-    color: c.textSecondary,
-    lineHeight: 18,
-    flex: 1,
-  },
+  noteText: { ...typography.bodySmall, color: c.textSecondary, lineHeight: 18, flex: 1 },
+
+  refreshBtn: { alignSelf: 'flex-end', paddingHorizontal: 10, paddingVertical: 6 },
+  refreshText: { ...typography.bodySmall, color: c.gold, fontWeight: '700' },
 }));
 
-type Category = {
-  id: string;
-  icon: keyof typeof Ionicons.glyphMap;
-  title: string;
-  meta: string;
-  rate: string;
-  amount: number;
-};
-
-type YearSummary = {
-  year: number;
-  invoiceCount: number;
-  total: number;
-};
-
-const PAST_YEARS: YearSummary[] = [];
+function payoutBadgeStyle(status: string, styles: ReturnType<typeof useStyles>) {
+  if (status === 'paid') return [styles.badge, styles.badgePaid];
+  if (status === 'failed' || status === 'canceled') return [styles.badge, styles.badgeFailed];
+  return [styles.badge, styles.badgePending];
+}
 
 export default function BillingHistoryScreen() {
   const c = useColors();
   const styles = useStyles();
-  const { restaurantIds } = useOwnerScope();
-  const restaurantIdsKey = restaurantIds.join('|');
-  const [activity, setActivity] = useState<CycleActivity>({
-    bookingCount: 0,
-    preOrderCount: 0,
-    preOrderRevenueDollars: 0,
-  });
-  const cycleName = cycleLabel();
-  const billedOn = cycleBilledOn();
+  const [restaurantId, setRestaurantId] = useState<string | null>(null);
+  const [bill, setBill] = useState<NextBillPreview | null>(null);
+  const [payouts, setPayouts] = useState<PayoutsSnapshot | null>(null);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     let active = true;
     void (async () => {
-      if (restaurantIds.length === 0) return;
-      const supabase = getSupabase();
-      if (!supabase) return;
-      const start = cycleStart().toISOString();
-      const end = nextCycleStart().toISOString();
-
-      const [{ count: reservationCount }, { data: orders }] = await Promise.all([
-        supabase
-          .from('reservations')
-          .select('id', { count: 'exact', head: true })
-          .in('restaurant_id', restaurantIds)
-          .gte('reserved_at', start)
-          .lt('reserved_at', end),
-        supabase
-          .from('orders')
-          .select('total_amount')
-          .in('restaurant_id', restaurantIds)
-          .eq('is_preorder', true)
-          .gte('created_at', start)
-          .lt('created_at', end),
-      ]);
-
-      if (!active) return;
-      const orderRows = (orders ?? []) as Array<{ total_amount?: number | string | null }>;
-      setActivity({
-        bookingCount: reservationCount ?? 0,
-        preOrderCount: orderRows.length,
-        preOrderRevenueDollars: orderRows.reduce((sum, order) => {
-          const parsed = typeof order.total_amount === 'number' ? order.total_amount : Number(order.total_amount);
-          return sum + (Number.isFinite(parsed) ? parsed : 0);
-        }, 0),
-      });
-    })().catch(() => undefined);
+      const id = await getCurrentOwnerRestaurantId();
+      if (active) setRestaurantId(id);
+    })();
     return () => {
       active = false;
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [restaurantIdsKey]);
+  }, []);
 
-  const categories = useMemo<Category[]>(() => {
-    const bookingTotal = activity.bookingCount * PRICING.perBookingDollars;
-    const preOrderTotal =
-      activity.preOrderRevenueDollars * PRICING.preOrderFeePct;
-    return [
-      {
-        id: 'bookings',
-        icon: 'calendar-outline',
-        title: 'Tables booked through the app',
-        meta: `${activity.bookingCount} bookings`,
-        rate: `$${PRICING.perBookingDollars} per booking`,
-        amount: bookingTotal,
-      },
-      {
-        id: 'preorders',
-        icon: 'fast-food-outline',
-        title: 'Pre-orders & in-app payments',
-        meta: `${activity.preOrderCount} payments · ${formatMoney(
-          activity.preOrderRevenueDollars,
-        )} collected`,
-        rate: `${(PRICING.preOrderFeePct * 100).toFixed(0)}% transaction fee`,
-        amount: preOrderTotal,
-      },
-      {
-        id: 'subscription',
-        icon: 'star-outline',
-        title: 'Monthly subscription',
-        meta: 'Cenaiva Pro · ' + cycleName,
-        rate: 'Flat rate',
-        amount: PRICING.monthlySubDollars,
-      },
-    ];
-  }, [activity, cycleName]);
+  const refresh = useCallback(async () => {
+    if (!restaurantId) return;
+    setLoading(true);
+    try {
+      const [previewRes, payoutsRes] = await Promise.allSettled([
+        getNextBillPreview(restaurantId),
+        listStripePayouts(restaurantId),
+      ]);
+      if (previewRes.status === 'fulfilled') setBill(previewRes.value);
+      else
+        console.warn(
+          '[billing-history] preview failed',
+          friendlyError(previewRes.reason, 'Could not load next bill.'),
+        );
+      if (payoutsRes.status === 'fulfilled') setPayouts(payoutsRes.value);
+      else
+        console.warn(
+          '[billing-history] payouts failed',
+          friendlyError(payoutsRes.reason, 'Could not load payouts.'),
+        );
+    } finally {
+      setLoading(false);
+    }
+  }, [restaurantId]);
 
-  const total = useMemo(
-    () => categories.reduce((sum, c) => sum + c.amount, 0),
-    [categories],
+  useFocusEffect(
+    useCallback(() => {
+      void refresh();
+    }, [refresh]),
   );
 
   return (
-    <OwnerScreen
-      header={
-        <SubpageHeader
-          title="Billing history"
-          accentBack
-        />
-      }
-    >
+    <OwnerScreen header={<SubpageHeader title="Billing & payouts" accentBack />}>
       <View style={styles.intro}>
-        <Text style={styles.introTitle}>Billing history</Text>
-        <Text style={styles.introText}>Review current charges and open past invoices by year.</Text>
+        <Text style={styles.introTitle}>Billing & payouts</Text>
+        <Text style={styles.introText}>
+          Your next Cenaiva invoice and the latest Stripe payouts to your bank.
+        </Text>
       </View>
 
       <View style={{ marginBottom: spacing.md }}>
         <RestaurantPicker allowAll size="compact" />
       </View>
 
-      <View style={styles.cyclePill}>
-        <Ionicons name="calendar-outline" size={12} color={c.gold} />
-        <Text style={styles.cyclePillText}>{cycleName.toUpperCase()}</Text>
-      </View>
-
-      <View style={styles.totalCard}>
-        <Text style={styles.totalLabel}>TOTAL THIS CYCLE</Text>
-        <Text style={styles.totalAmount}>{formatMoney(total)}</Text>
-        <Text style={styles.totalSub}>Charges to your card on {billedOn}.</Text>
-      </View>
-
-      <Text style={styles.sectionLabel}>BREAKDOWN</Text>
-      <View style={styles.card}>
-        {categories.map((cat, i) => (
-          <View key={cat.id} style={[styles.catRow, i > 0 && styles.rowDivider]}>
-            <View style={styles.catIcon}>
-              <Ionicons name={cat.icon} size={18} color={c.gold} />
-            </View>
-            <View style={styles.catText}>
-              <Text style={styles.catTitle}>{cat.title}</Text>
-              <Text style={styles.catMeta}>{cat.meta}</Text>
-            </View>
-            <View style={styles.catRight}>
-              <Text style={styles.catAmount}>{formatMoney(cat.amount)}</Text>
-              <Text style={styles.catRate}>{cat.rate}</Text>
-            </View>
-          </View>
-        ))}
-        <View style={[styles.totalRow, styles.rowDivider]}>
-          <Text style={styles.totalRowLabel}>Total</Text>
-          <Text style={styles.totalRowAmount}>{formatMoney(total)}</Text>
+      {loading && !bill && !payouts ? (
+        <View style={[styles.card, { padding: spacing.lg, alignItems: 'center' }]}>
+          <ActivityIndicator color={c.gold} />
         </View>
+      ) : null}
+
+      {bill && bill.hasUpcoming ? (
+        <View style={styles.totalCard}>
+          <Text style={styles.totalLabel}>NEXT BILL</Text>
+          <Text style={styles.totalAmount}>
+            {formatMoneyCents(bill.nextAmountCents, bill.currency)}
+          </Text>
+          <Text style={styles.totalSub}>
+            Charges your card on {formatDateIso(bill.nextDateIso)}.
+          </Text>
+        </View>
+      ) : bill && !bill.hasUpcoming ? (
+        <View style={[styles.card, styles.empty]}>
+          <Text style={styles.rowTitle}>No upcoming bill</Text>
+          <Text style={styles.emptyText}>
+            {bill.reason === 'trialing'
+              ? 'You’re still on the free trial — no charge yet.'
+              : bill.reason === 'no_subscription'
+                ? 'No active subscription. Publish your restaurant to start.'
+                : bill.reason === 'no_customer'
+                  ? 'Add a card on file under Account → Payment method first.'
+                  : 'Nothing scheduled this cycle.'}
+          </Text>
+        </View>
+      ) : null}
+
+      {bill && bill.hasUpcoming && bill.lineItems.length > 0 ? (
+        <>
+          <Text style={styles.sectionLabel}>LINE ITEMS</Text>
+          <View style={styles.card}>
+            {bill.lineItems.map((line, i) => (
+              <View key={`${line.description}-${i}`} style={[styles.row, i > 0 && styles.rowDivider]}>
+                <View style={styles.rowLeft}>
+                  <Text style={styles.rowTitle} numberOfLines={2}>
+                    {line.description}
+                  </Text>
+                  <Text style={styles.rowMeta}>
+                    {line.isSubscription ? 'Monthly subscription' : `Quantity ${line.quantity}`}
+                  </Text>
+                </View>
+                <Text style={styles.rowAmount}>
+                  {formatMoneyCents(line.amountCents, bill.currency)}
+                </Text>
+              </View>
+            ))}
+          </View>
+        </>
+      ) : null}
+
+      <Text style={styles.sectionLabel}>PAYOUTS</Text>
+      <View style={styles.card}>
+        {payouts?.hasAccount === false ? (
+          <View style={styles.empty}>
+            <Text style={styles.rowTitle}>Connect Stripe first</Text>
+            <Text style={styles.emptyText}>
+              Finish Stripe onboarding to start receiving payouts to your bank account.
+            </Text>
+          </View>
+        ) : (
+          <>
+            <View style={styles.pillRow}>
+              <View style={styles.pillBox}>
+                <Text style={styles.pillLabel}>AVAILABLE</Text>
+                <Text style={styles.pillAmount}>
+                  {formatMoneyCents(payouts?.availableBalanceCents ?? 0)}
+                </Text>
+              </View>
+              <View style={styles.pillBox}>
+                <Text style={styles.pillLabel}>PENDING</Text>
+                <Text style={styles.pillAmount}>
+                  {formatMoneyCents(payouts?.pendingBalanceCents ?? 0)}
+                </Text>
+              </View>
+            </View>
+            {payouts && payouts.payouts.length > 0 ? (
+              payouts.payouts.map((p, i) => (
+                <View key={p.id} style={[styles.row, styles.rowDivider]}>
+                  <View style={styles.rowLeft}>
+                    <Text style={styles.rowTitle}>
+                      Payout · {formatMoneyCents(p.amountCents, p.currency)}
+                    </Text>
+                    <Text style={styles.rowMeta}>
+                      Arrives {formatDateIso(p.arrivalDateIso)}
+                    </Text>
+                  </View>
+                  <Text style={payoutBadgeStyle(p.status, styles) as never}>
+                    {PAYOUT_STATUS_LABEL[p.status] ?? p.status}
+                  </Text>
+                </View>
+              ))
+            ) : (
+              <View style={[styles.empty, styles.rowDivider]}>
+                <Text style={styles.emptyText}>
+                  No payouts yet — they start once your first booking deposit settles.
+                </Text>
+              </View>
+            )}
+          </>
+        )}
       </View>
 
-      <Text style={styles.sectionLabel}>PAST INVOICES</Text>
-      <View style={styles.card}>
-        {PAST_YEARS.map((y, i) => (
-          <View
-            key={y.year}
-            style={[
-              styles.invRow,
-              i > 0 && styles.rowDivider,
-            ]}
-          >
-            <View style={styles.invIcon}>
-              <Ionicons name="receipt-outline" size={16} color="#22C55E" />
-            </View>
-            <View style={styles.invText}>
-              <Text style={styles.invTitle}>{y.year}</Text>
-              <Text style={styles.invMeta}>
-                {y.invoiceCount} invoice{y.invoiceCount === 1 ? '' : 's'} ·{' '}
-                {formatMoney(y.total)} paid
-              </Text>
-            </View>
-          </View>
-        ))}
-      </View>
+      <Pressable onPress={() => void refresh()} style={styles.refreshBtn}>
+        <Text style={styles.refreshText}>{loading ? 'Refreshing…' : 'Refresh'}</Text>
+      </Pressable>
 
       <View style={styles.noteRow}>
         <Ionicons name="information-circle-outline" size={18} color={c.gold} />
         <Text style={styles.noteText}>
-          Invoices are emailed through Stripe, so these rows are informational only.
+          Stripe emails the full invoice PDFs. Payouts settle to the bank you connected during
+          Stripe onboarding.
         </Text>
       </View>
     </OwnerScreen>

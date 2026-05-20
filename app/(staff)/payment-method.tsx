@@ -1,15 +1,11 @@
-import React, { useCallback, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import { Alert, Pressable, StyleSheet, Text, View } from 'react-native';
 import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
+import { useStripe } from '@stripe/stripe-react-native';
 import { OwnerScreen } from '@/components/owner/OwnerScreen';
 import { SubpageHeader } from '@/components/owner/SubpageHeader';
 import { borderRadius, createStyles, spacing, typography, useColors } from '@/lib/theme';
-import {
-  getStoredRestaurantPaymentCards,
-  removeRestaurantPaymentCard,
-  setDefaultRestaurantPaymentCard,
-} from '@/lib/storage/restaurantPaymentMethod';
 import {
   EMPTY_BILLING_ADDRESS,
   formatBillingAddressOneLine,
@@ -17,24 +13,27 @@ import {
   isBillingAddressComplete,
   type RestaurantBillingAddress,
 } from '@/lib/storage/restaurantBillingAddress';
-import { friendlyError } from '@/lib/errors/friendlyError';
+import { friendlyError, isUserCancellation } from '@/lib/errors/friendlyError';
+import { getCurrentOwnerRestaurantId } from '@/lib/services/ownerRestaurant';
+import {
+  getRestaurantPaymentMethod,
+  updateRestaurantPaymentMethod,
+  type RestaurantCardSummary,
+} from '@/lib/owner/billing';
+import { createRestaurantSetupIntent } from '@/lib/owner/saveSubscriptionPaymentMethod';
 
-type Card = {
-  id: string;
-  brand: string;
-  funding: 'credit' | 'debit' | 'prepaid' | 'unknown';
-  last4: string;
-  expiry: string;
-  cardholder: string;
-  isDefault: boolean;
-  source: 'registration' | 'manual';
-};
+function formatBrand(brand: string | null): string {
+  if (!brand) return 'Card';
+  const v = brand.toLowerCase();
+  if (v === 'visa') return 'Visa';
+  if (v === 'mastercard') return 'Mastercard';
+  if (v === 'amex' || v === 'american_express') return 'Amex';
+  return brand.charAt(0).toUpperCase() + brand.slice(1);
+}
 
-function fundingLabel(funding: Card['funding']): string {
-  if (funding === 'credit') return 'Credit';
-  if (funding === 'debit') return 'Debit';
-  if (funding === 'prepaid') return 'Prepaid';
-  return '';
+function formatExpiry(card: RestaurantCardSummary): string | null {
+  if (!card.expMonth || !card.expYear) return null;
+  return `${String(card.expMonth).padStart(2, '0')}/${String(card.expYear).slice(-2)}`;
 }
 
 const useStyles = createStyles((c) => ({
@@ -260,125 +259,103 @@ const useStyles = createStyles((c) => ({
 
 }));
 
-const INITIAL_CARDS: Card[] = [];
-
 export default function PaymentMethodScreen() {
   const c = useColors();
   const styles = useStyles();
   const router = useRouter();
   const { source } = useLocalSearchParams<{ source?: string }>();
-  const [cards, setCards] = useState<Card[]>(INITIAL_CARDS);
+  const { initPaymentSheet, presentPaymentSheet, retrieveSetupIntent } = useStripe();
+  const [restaurantId, setRestaurantId] = useState<string | null>(null);
+  const [card, setCard] = useState<RestaurantCardSummary | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [updating, setUpdating] = useState(false);
   const [billingAddress, setBillingAddress] = useState<RestaurantBillingAddress>(EMPTY_BILLING_ADDRESS);
   const returnRoute =
     source === 'subscription-plan'
       ? '/(staff)/subscription-plan'
       : '/(staff)/settings';
 
-  const loadCards = useCallback(() => {
+  useEffect(() => {
+    let active = true;
     void (async () => {
-      try {
-        const stored = await getStoredRestaurantPaymentCards();
-        setCards(
-          stored.map((card) => ({
-            id: card.id,
-            brand: card.brand,
-            funding: card.funding,
-            last4: card.last4,
-            expiry: card.expiry,
-            cardholder: card.cardholder,
-            isDefault: card.isDefault,
-            source: card.source,
-          })),
-        );
-        const address = await getStoredBillingAddress();
-        setBillingAddress(address);
-      } catch (err) {
-        if (__DEV__) console.warn('payment-method: loadCards failed', err);
-      }
+      const id = await getCurrentOwnerRestaurantId();
+      if (!active) return;
+      setRestaurantId(id);
     })();
+    return () => {
+      active = false;
+    };
   }, []);
 
-  useFocusEffect(loadCards);
+  const refreshCard = useCallback(async (id: string) => {
+    try {
+      const next = await getRestaurantPaymentMethod(id);
+      setCard(next);
+    } catch (err) {
+      Alert.alert('Payment method', friendlyError(err, 'Could not load the card on file.'));
+    } finally {
+      setLoading(false);
+    }
+  }, []);
 
-  const setDefault = (id: string) => {
+  const loadAll = useCallback(() => {
+    if (!restaurantId) return;
+    void refreshCard(restaurantId);
     void (async () => {
-      const next = await setDefaultRestaurantPaymentCard(id);
-      setCards(
-        next.map((card) => ({
-          id: card.id,
-          brand: card.brand,
-          funding: card.funding,
-          last4: card.last4,
-          expiry: card.expiry,
-          cardholder: card.cardholder,
-          isDefault: card.isDefault,
-          source: card.source,
-        })),
-      );
+      try {
+        setBillingAddress(await getStoredBillingAddress());
+      } catch {
+        /* best effort */
+      }
     })();
-  };
+  }, [restaurantId, refreshCard]);
 
-  const removeCard = (id: string) => {
-    const target = cards.find((c) => c.id === id);
-    if (!target) return;
-    if (target.isDefault && cards.length > 1) {
-      Alert.alert(
-        'Set a new default first',
-        friendlyError(undefined, 'Make another card the default before removing this one.'),
-      );
-      return;
-    }
-    Alert.alert(
-      'Remove card?',
-      `${target.brand} ending in ${target.last4} will be removed from billing.`,
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Remove',
-          style: 'destructive',
-          onPress: () => {
-            void (async () => {
-              const next = await removeRestaurantPaymentCard(id);
-              setCards(
-                next.map((card) => ({
-                  id: card.id,
-                  brand: card.brand,
-                  funding: card.funding,
-                  last4: card.last4,
-                  expiry: card.expiry,
-                  cardholder: card.cardholder,
-                  isDefault: card.isDefault,
-                  source: card.source,
-                })),
-              );
-            })();
-          },
-        },
-      ],
-    );
-  };
+  useFocusEffect(loadAll);
 
-  const showCardActions = (id: string) => {
-    const target = cards.find((c) => c.id === id);
-    if (!target) return;
-    const buttons: { text: string; style?: 'cancel' | 'destructive' | 'default'; onPress?: () => void }[] = [];
-    if (!target.isDefault) {
-      buttons.push({
-        text: 'Make default',
-        onPress: () => setDefault(id),
-      });
-    }
-    buttons.push({ text: 'Remove card', style: 'destructive', onPress: () => removeCard(id) });
-    buttons.push({ text: 'Cancel', style: 'cancel' });
-    Alert.alert(`${target.brand} ···· ${target.last4}`, undefined, buttons);
-  };
-
-  const onAddCard = () => {
-    router.push({
-      pathname: '/(staff)/add-card',
-      params: { source: source ?? 'settings' },
-    } as never);
-  };
+  const handleChangeCard = useCallback(() => {
+    if (!restaurantId || updating) return;
+    setUpdating(true);
+    void (async () => {
+      try {
+        const { clientSecret } = await createRestaurantSetupIntent(restaurantId);
+        const initResult = await initPaymentSheet({
+          setupIntentClientSecret: clientSecret,
+          merchantDisplayName: 'Cenaiva',
+          returnURL: 'cenaiva://stripe-redirect',
+          allowsDelayedPaymentMethods: false,
+        });
+        if (initResult.error) {
+          throw new Error(friendlyError(initResult.error, 'Could not start card setup.'));
+        }
+        const presentResult = await presentPaymentSheet();
+        if (presentResult.error) {
+          if (isUserCancellation(presentResult.error)) return;
+          throw new Error(friendlyError(presentResult.error, 'Could not save the new card.'));
+        }
+        // PaymentSheet attached the new PM during confirmSetup. Read the
+        // SetupIntent to discover its id, then promote it to the
+        // subscription's default and detach the previous card.
+        const retrieved = await retrieveSetupIntent(clientSecret);
+        const newPmId =
+          (retrieved.setupIntent?.paymentMethodId as string | undefined) ??
+          (retrieved.setupIntent as unknown as { payment_method?: string })?.payment_method ??
+          null;
+        if (!newPmId) {
+          throw new Error('Could not read the saved card from Stripe. Please try again.');
+        }
+        await updateRestaurantPaymentMethod({
+          restaurantId,
+          paymentMethodId: newPmId,
+        });
+        await refreshCard(restaurantId);
+        Alert.alert('Card updated', 'Cenaiva will charge your new card going forward.');
+      } catch (err) {
+        Alert.alert('Card not updated', friendlyError(err, 'Please try again.'));
+      } finally {
+        setUpdating(false);
+      }
+    })();
+  }, [restaurantId, updating, initPaymentSheet, presentPaymentSheet, retrieveSetupIntent, refreshCard]);
 
   const onEditBillingAddress = () => {
     router.push({
@@ -391,6 +368,7 @@ export default function PaymentMethodScreen() {
   const billingAddressLine = billingAddressComplete
     ? formatBillingAddressOneLine(billingAddress)
     : 'Add a billing address for receipts and tax docs.';
+  const expiry = card ? formatExpiry(card) : null;
 
   return (
     <OwnerScreen
@@ -405,79 +383,44 @@ export default function PaymentMethodScreen() {
       <View style={styles.intro}>
         <Text style={styles.introTitle}>Payment details</Text>
         <Text style={styles.introText}>
-          Manage the card used for your restaurant account.
+          The card on file is used for your Cenaiva subscription and per-booking fees. Updating
+          replaces the old card automatically.
         </Text>
       </View>
 
       <View style={styles.noteRow}>
         <Ionicons name="lock-closed-outline" size={14} color={c.gold} />
         <Text style={styles.noteText}>
-          Use a Visa, Mastercard, debit Visa, or credit card. The default card is used for Cenaiva billing.
+          Your card is collected by Stripe — Cenaiva never sees the full number or CVC.
         </Text>
       </View>
 
       <View style={styles.summaryCard}>
         <Text style={styles.summaryLabel}>Default payment card</Text>
         <Text style={styles.summaryValue}>
-          {cards.find((card) => card.isDefault)
-            ? `${cards.find((card) => card.isDefault)?.brand} ending in ${cards.find((card) => card.isDefault)?.last4}`
-            : 'No card on file'}
+          {card?.hasCard
+            ? `${formatBrand(card.brand)} ending in ${card.last4 ?? '••••'}`
+            : loading ? 'Loading…' : 'No card on file'}
         </Text>
         <Text style={styles.summaryText}>
-          {cards.find((card) => card.isDefault)?.source === 'registration'
-            ? 'This is the card saved when the restaurant account was registered.'
-            : 'Add the card you want on file for Cenaiva billing.'}
+          {card?.hasCard && expiry
+            ? `Expires ${expiry}`
+            : 'Add a card to keep your subscription active.'}
         </Text>
       </View>
 
-      {cards.length === 0 ? (
+      {!loading && !card?.hasCard ? (
         <View style={[styles.formCard, styles.empty]}>
           <View style={styles.emptyIcon}>
             <Ionicons name="card-outline" size={26} color={c.gold} />
           </View>
           <Text style={styles.emptyTitle}>No card on file</Text>
           <Text style={styles.emptyText}>
-            Add a card to keep your subscription active and pay booking fees automatically.
+            Tap “Add payment card” below to save one via Stripe. Cenaiva uses it for the monthly
+            subscription and per-booking fees.
           </Text>
         </View>
-      ) : (
-        <View style={styles.formCard}>
-          <View style={styles.formCardHeader}>
-            <Text style={styles.formCardTitle}>Saved cards</Text>
-            <Text style={styles.formCardSub}>
-              The registration card appears here automatically. You can set another card as default anytime.
-            </Text>
-          </View>
-
-          <View style={styles.cardList}>
-            {cards.map((card, i) => (
-              <View key={card.id} style={[styles.cardRow, i > 0 && styles.rowDivider]}>
-                <View style={styles.brandBadge}>
-                  <Text style={styles.brandText}>{card.brand.toUpperCase()}</Text>
-                </View>
-                <View style={styles.cardText}>
-                  <Text style={styles.cardTitle}>
-                    {card.brand}{fundingLabel(card.funding) ? ` ${fundingLabel(card.funding)}` : ''} ···· {card.last4}
-                  </Text>
-                  <Text style={styles.cardSub}>
-                    Expires {card.expiry}
-                    {card.cardholder ? ` · ${card.cardholder}` : ''}
-                  </Text>
-                </View>
-                {card.isDefault ? <Text style={styles.defaultBadge}>DEFAULT</Text> : null}
-                <Pressable
-                  onPress={() => showCardActions(card.id)}
-                  style={({ pressed }) => [styles.moreBtn, pressed && { opacity: 0.6 }]}
-                  hitSlop={6}
-                  accessibilityLabel={`More options for card ending in ${card.last4}`}
-                >
-                  <Ionicons name="ellipsis-horizontal" size={20} color={c.textMuted} />
-                </Pressable>
-              </View>
-            ))}
-          </View>
-        </View>
-      )}
+      ) : null}
 
       <Pressable
         onPress={onEditBillingAddress}
@@ -500,13 +443,16 @@ export default function PaymentMethodScreen() {
       </Pressable>
 
       <Pressable
-        onPress={onAddCard}
-        style={({ pressed }) => [styles.addBtn, pressed && { opacity: 0.7 }]}
+        onPress={handleChangeCard}
+        disabled={updating || !restaurantId}
+        style={({ pressed }) => [styles.addBtn, (pressed || updating) && { opacity: 0.7 }]}
         accessibilityRole="button"
-        accessibilityLabel="Add a card"
+        accessibilityLabel={card?.hasCard ? 'Change payment card' : 'Add payment card'}
       >
-        <Ionicons name="add" size={18} color={c.bgBase} />
-        <Text style={styles.addBtnText}>Add payment card</Text>
+        <Ionicons name={card?.hasCard ? 'swap-horizontal' : 'add'} size={18} color={c.bgBase} />
+        <Text style={styles.addBtnText}>
+          {updating ? 'Opening Stripe…' : card?.hasCard ? 'Change payment card' : 'Add payment card'}
+        </Text>
       </Pressable>
     </OwnerScreen>
   );
