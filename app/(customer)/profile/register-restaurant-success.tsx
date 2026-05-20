@@ -6,6 +6,7 @@ import { borderRadius, createStyles, spacing, typography, useColors } from '@/li
 import { Ionicons } from '@expo/vector-icons';
 import { setAppShellPreference } from '@/lib/navigation/appShellPreference';
 import { ownerTrialLengthLabel } from '@/lib/owner/trialPolicy';
+import { useOwnerRestaurantContext } from '@/lib/owner/OwnerRestaurantContext';
 
 const useStyles = createStyles((c) => ({
   inner: { flex: 1, justifyContent: 'center', gap: spacing.lg },
@@ -58,11 +59,16 @@ export default function RegisterRestaurantSuccessScreen() {
       })
     : null;
 
+  const { refresh: refreshOwnerRestaurants } = useOwnerRestaurantContext();
+
   // Persist the staff shell preference so the (staff) layout doesn't bounce
-  // the user back to the customer side while their role catches up.
+  // the user back to the customer side while their role catches up. Also
+  // refresh the cached owner-restaurants list so the brand-new restaurant
+  // appears in the switcher immediately without needing a sign-out.
   useEffect(() => {
     void setAppShellPreference('staff');
-  }, []);
+    void refreshOwnerRestaurants();
+  }, [refreshOwnerRestaurants]);
 
   return (
     <ScreenWrapper padded>

@@ -1075,7 +1075,12 @@ export default function OwnerSettingsScreen() {
       <View style={styles.topActionsRow}>
         <Pressable
           style={({ pressed }) => [styles.topAction, pressed && styles.topActionPressed]}
-          onPress={() => setRestaurantPickerOpen(true)}
+          onPress={() => {
+            // Re-pull from the DB so newly-registered restaurants appear
+            // immediately — the context only auto-loads on auth change.
+            void refreshOwnerRestaurants();
+            setRestaurantPickerOpen(true);
+          }}
           accessibilityRole="button"
           accessibilityLabel={`Switch restaurant view. Current: ${
             isAll ? 'All restaurants' : selectedRestaurant?.name ?? 'pick a restaurant'
