@@ -1,10 +1,12 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { View, Text, StyleSheet, Platform, Pressable, ActivityIndicator } from 'react-native';
+import { View, Text, StyleSheet, Pressable, ActivityIndicator } from 'react-native';
 import MapView, { Marker, PROVIDER_GOOGLE, type MapPressEvent, type Region } from 'react-native-maps';
 import { Ionicons } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
 import { RestaurantMapMarkerContent, MARKER_ANCHOR_Y } from '@/components/map/RestaurantMapMarker';
 import { RestaurantClusterMarker } from '@/components/map/RestaurantClusterMarker';
+import { MapZoomControls } from '@/components/map/MapZoomControls';
+import { UseMyLocationChip } from '@/components/map/UseMyLocationChip';
 import { CENAIVA_MAP_STYLE } from '@/lib/map/darkMapStyle';
 import { hasFiniteCoords, haversineMeters } from '@/lib/map/geo';
 import { DEFAULT_MAP_CENTER } from '@/lib/map/mapFilters';
@@ -427,6 +429,29 @@ export function RestaurantDiscoveryMap({
     setCurrentRegion(region);
   }, []);
 
+  const changeZoom = useCallback(async (delta: 1 | -1) => {
+    const map = mapRef.current;
+    if (!map) return;
+    try {
+      const cam = await map.getCamera();
+      const current = typeof cam.zoom === 'number' ? cam.zoom : 13;
+      const next = Math.max(4, Math.min(18, current + delta));
+      map.animateCamera({ zoom: next }, { duration: 200 });
+    } catch {
+      // getCamera not implemented on Apple Maps fallback; ignore.
+    }
+  }, []);
+
+  const handleLocate = useCallback(
+    (coords: { latitude: number; longitude: number }) => {
+      mapRef.current?.animateCamera(
+        { center: coords, zoom: 13 },
+        { duration: 400 },
+      );
+    },
+    [],
+  );
+
   const focusCluster = useCallback((cluster: MarkerCluster) => {
     if (cluster.restaurants.length <= 1) {
       const restaurant = cluster.restaurants[0];
@@ -459,7 +484,7 @@ export function RestaurantDiscoveryMap({
       <MapView
         ref={mapRef}
         style={StyleSheet.absoluteFill}
-        provider={Platform.OS === 'android' ? PROVIDER_GOOGLE : undefined}
+        provider={PROVIDER_GOOGLE}
         initialRegion={initialRegion}
         userInterfaceStyle="dark"
         mapType="standard"
@@ -563,6 +588,12 @@ export function RestaurantDiscoveryMap({
           <Ionicons name="locate" size={22} color={c.gold} />
         </Pressable>
       ) : null}
+
+      <UseMyLocationChip onLocate={handleLocate} />
+      <MapZoomControls
+        onZoomIn={() => changeZoom(1)}
+        onZoomOut={() => changeZoom(-1)}
+      />
     </View>
   );
 }
