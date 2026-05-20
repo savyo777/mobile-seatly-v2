@@ -655,7 +655,14 @@ export function RestaurantDiscoveryMap({
         </Pressable>
       ) : null}
 
-      <UseMyLocationChip onLocate={handleLocate} cachedLocation={safeUserLocation} />
+      <UseMyLocationChip
+        onLocate={handleLocate}
+        cachedLocation={safeUserLocation}
+        fallbackLocation={{
+          latitude: DEFAULT_MAP_CENTER.latitude,
+          longitude: DEFAULT_MAP_CENTER.longitude,
+        }}
+      />
     </View>
   );
 }

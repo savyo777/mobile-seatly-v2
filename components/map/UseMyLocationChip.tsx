@@ -31,6 +31,11 @@ import { borderRadius, createStyles, spacing, typography } from '@/lib/theme';
 type Props = {
   onLocate: (coords: { latitude: number; longitude: number }) => void;
   cachedLocation?: { latitude: number; longitude: number } | null;
+  // Final fallback if neither cached coords nor a device fix is available
+  // (emulators with no location set, GPS-off devices, denied permissions
+  // that the user hasn't re-granted in Settings yet). When provided, a
+  // tap will always move the camera somewhere — never a silent no-op.
+  fallbackLocation?: { latitude: number; longitude: number } | null;
   topOffset?: number;
 };
 
@@ -86,7 +91,7 @@ const useStyles = createStyles((c) => ({
   },
 }));
 
-export function UseMyLocationChip({ onLocate, cachedLocation, topOffset }: Props) {
+export function UseMyLocationChip({ onLocate, cachedLocation, fallbackLocation, topOffset }: Props) {
   const styles = useStyles();
   const insets = useSafeAreaInsets();
   const top = topOffset ?? insets.top + spacing.sm;
@@ -101,40 +106,42 @@ export function UseMyLocationChip({ onLocate, cachedLocation, topOffset }: Props
   }, []);
 
   const handlePress = useCallback(async () => {
+    // Strong invariant: every tap moves the camera *somewhere*. The user
+    // should never see a silent no-op. The fallback chain below resolves
+    // coords in this order, returning at the first success:
+    //   1. cachedLocation  (parent's live useLocation result)
+    //   2. last-known position from the OS  (instant when available)
+    //   3. fresh fix via getCurrentPosition  (5 s timeout — emulators
+    //      without a location set can hang indefinitely otherwise)
+    //   4. fallbackLocation  (DEFAULT_MAP_CENTER from caller)
+    // Step 4 guarantees motion even on a freshly-flashed emulator with no
+    // geo fix configured.
+
     if (status === 'denied') {
       Linking.openSettings();
       return;
     }
 
-    // Fast path: the parent already resolved a live user location via its
-    // own useLocation hook. Use that and skip getCurrentPositionAsync,
-    // which is slow and silently no-ops on the iOS simulator unless
-    // someone set a custom location via `xcrun simctl location`.
     if (cachedLocation) {
       onLocate(cachedLocation);
       if (status === 'idle') {
-        // Permission may not have been asked yet on this app launch;
-        // request it in the background so a future tap-without-cache
-        // doesn't strand the user on the in-chip permission prompt.
+        // Kick off the permission request in the background so a future tap
+        // without cache doesn't strand the user on the in-chip prompt.
         const perm = await Location.requestForegroundPermissionsAsync();
         setStatus(perm.status === 'granted' ? 'granted' : 'denied');
       }
       return;
     }
 
-    // Slow path: no cached location. Request permission, then fetch fresh
-    // coords, then pan. Hit when the parent hasn't run useLocation yet
-    // or when its fetch failed/was denied.
     setStatus('requesting');
     const perm = await Location.requestForegroundPermissionsAsync();
     if (perm.status !== 'granted') {
       setStatus('denied');
+      if (fallbackLocation) onLocate(fallbackLocation);
       return;
     }
     setStatus('granted');
-    // Try the OS's last-known position first (returns instantly when the OS
-    // has a recent fix), then fall back to a fresh fix. Both can return null
-    // on emulators / first-launch / location-services-off.
+
     try {
       const last = await Location.getLastKnownPositionAsync();
       if (last) {
@@ -142,18 +149,26 @@ export function UseMyLocationChip({ onLocate, cachedLocation, topOffset }: Props
         return;
       }
     } catch {
-      // ignore — fall through to current-position
+      // fall through
     }
+
     try {
-      const pos = await Location.getCurrentPositionAsync({
-        accuracy: Location.Accuracy.Balanced,
-      });
+      const pos = await Promise.race([
+        Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Balanced }),
+        new Promise<never>((_, reject) =>
+          setTimeout(() => reject(new Error('location timeout')), 5000),
+        ),
+      ]);
       onLocate({ latitude: pos.coords.latitude, longitude: pos.coords.longitude });
+      return;
     } catch {
-      // Position unavailable (sim with no location set, or fix timed out).
-      // The granted UI stays; nothing else to do without a real coordinate.
+      // fall through to fallback
     }
-  }, [status, onLocate, cachedLocation]);
+
+    if (fallbackLocation) {
+      onLocate(fallbackLocation);
+    }
+  }, [status, onLocate, cachedLocation, fallbackLocation]);
 
   const label = status === 'denied' ? 'Location off' : 'Relocate';
 
