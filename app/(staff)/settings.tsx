@@ -940,6 +940,13 @@ export default function OwnerSettingsScreen() {
       rows: [
         {
           kind: 'nav',
+          label: 'Set up payouts',
+          value: selectedRestaurant?.stripeChargesEnabled ? 'Active' : 'Verify to accept payments',
+          icon: 'card-outline',
+          route: '/(staff)/connect-onboarding',
+        },
+        {
+          kind: 'nav',
           label: 'Business hours',
           value: businessHoursLabel,
           icon: 'time-outline',

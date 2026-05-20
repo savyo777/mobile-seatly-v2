@@ -1,11 +1,15 @@
 import React, { useMemo, useState } from 'react';
-import { Pressable, ScrollView, Text, View } from 'react-native';
+import { Alert, Pressable, ScrollView, Text, View } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { Input, Button, ScreenWrapper } from '@/components/ui';
 import { borderRadius, createStyles, spacing, typography, useColors } from '@/lib/theme';
-import { normalizePhoneWithCountryCode } from '@/lib/services/restaurantRegistration';
+import {
+  normalizePhoneWithCountryCode,
+  registerRestaurantNoBilling,
+} from '@/lib/services/restaurantRegistration';
+import { friendlyError } from '@/lib/errors/friendlyError';
 
 const useStyles = createStyles((c) => ({
   scroll: { flex: 1 },
@@ -107,6 +111,7 @@ export default function RegisterRestaurantFormScreen() {
     address?: string;
     ownerPhone?: string;
   }>({});
+  const [submitting, setSubmitting] = useState(false);
 
   const trimmed = useMemo(
     () => ({
@@ -138,16 +143,38 @@ export default function RegisterRestaurantFormScreen() {
     if (!validation.ownerPhoneValid) nextErrors.ownerPhone = 'Enter a valid phone number.';
     setErrors(nextErrors);
 
-    if (!validation.allValid) return;
+    if (!validation.allValid || submitting) return;
 
-    router.push({
-      pathname: '/(customer)/profile/register-restaurant-card-entry',
-      params: {
-        businessName: trimmed.businessName,
-        address: trimmed.address,
-        ownerPhone: trimmed.ownerPhone,
-      },
-    });
+    setSubmitting(true);
+    void (async () => {
+      try {
+        // Mint the restaurants row now (action=register_no_billing is
+        // idempotent on retry) so the upcoming Connect step has a
+        // restaurant_id to attach the Stripe Express account to.
+        const result = await registerRestaurantNoBilling({
+          businessName: trimmed.businessName,
+          address: trimmed.address,
+          ownerPhone: validation.ownerPhoneNormalized,
+        });
+        router.push({
+          pathname: '/(customer)/profile/register-restaurant-connect',
+          params: {
+            businessName: trimmed.businessName,
+            address: trimmed.address,
+            ownerPhone: trimmed.ownerPhone,
+            restaurantId: result.restaurantId,
+            trialEndsAt: result.trialEndsAt,
+          },
+        });
+      } catch (err) {
+        Alert.alert(
+          'Registration',
+          friendlyError(err, 'Could not register your restaurant.'),
+        );
+      } finally {
+        setSubmitting(false);
+      }
+    })();
   };
 
   return (
@@ -234,7 +261,13 @@ export default function RegisterRestaurantFormScreen() {
         </View>
 
         <View style={styles.footer}>
-          <Button title="Continue" onPress={onContinue} size="lg" />
+          <Button
+            title="Continue"
+            onPress={onContinue}
+            size="lg"
+            loading={submitting}
+            disabled={submitting}
+          />
         </View>
 
         <View style={styles.secureRow}>

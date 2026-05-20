@@ -29,6 +29,13 @@ export type OwnerRestaurant = {
   stripeCustomerId: string | null;
   stripeSubscriptionId: string | null;
   stripePaymentMethodId: string | null;
+  // Connect (payouts) account — written by `create-onboarding-link` /
+  // `account.updated` webhook. `chargesEnabled` is the flag the staff-side
+  // Settings row and Home banner key off to surface "Set up payouts".
+  stripeAccountId: string | null;
+  stripeChargesEnabled: boolean;
+  stripePayoutsEnabled: boolean;
+  stripeDetailsSubmitted: boolean;
   billingCardBrand: string | null;
   billingCardLast4: string | null;
   billingCardExpMonth: number | null;
@@ -138,6 +145,10 @@ export function mapOwnerRestaurantRow(row: Record<string, unknown>): OwnerRestau
     stripeCustomerId: stringOrNull(row.stripe_customer_id),
     stripeSubscriptionId: stringOrNull(row.stripe_subscription_id),
     stripePaymentMethodId: stringOrNull(row.stripe_payment_method_id),
+    stripeAccountId: stringOrNull(row.stripe_account_id),
+    stripeChargesEnabled: row.stripe_charges_enabled === true,
+    stripePayoutsEnabled: row.stripe_payouts_enabled === true,
+    stripeDetailsSubmitted: row.stripe_details_submitted === true,
     billingCardBrand: stringOrNull(row.billing_card_brand),
     billingCardLast4: stringOrNull(row.billing_card_last4),
     billingCardExpMonth: expMonth,

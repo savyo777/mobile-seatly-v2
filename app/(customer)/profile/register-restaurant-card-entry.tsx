@@ -18,7 +18,6 @@ import { Ionicons } from '@expo/vector-icons';
 import { useStripe } from '@stripe/stripe-react-native';
 import { useColors } from '@/lib/theme';
 import { OWNER_TRIAL_MONTHS } from '@/lib/owner/trialPolicy';
-import { registerRestaurantNoBilling } from '@/lib/services/restaurantRegistration';
 import { clearPendingOwnerReferral, readPendingOwnerReferral } from '@/lib/owner/pendingReferral';
 import { getSupabase } from '@/lib/supabase/client';
 import { friendlyError, isUserCancellation } from '@/lib/errors/friendlyError';
@@ -74,13 +73,32 @@ export default function RegisterRestaurantCardEntryScreen() {
 
   const [saving, setSaving] = useState(false);
   const [savedCard, setSavedCard] = useState<SavedCardPreview | null>(null);
-  const [registration, setRegistration] = useState<{ restaurantId: string; trialEndsAt: string } | null>(null);
-
   const params = useLocalSearchParams<{
     businessName?: string;
     address?: string;
     ownerPhone?: string;
+    restaurantId?: string;
+    trialEndsAt?: string;
   }>();
+
+  // Wizard contract (new): the form step creates the restaurants row via
+  // registerRestaurantNoBilling and the Connect step verifies KYC, both
+  // passing restaurantId + trialEndsAt forward as route params. If they're
+  // missing the wizard was entered out-of-order (e.g. a deep link straight
+  // to card-entry) — bounce back to the form so onboarding state stays
+  // coherent.
+  const registration = useMemo(() => {
+    const restaurantId = typeof params.restaurantId === 'string' ? params.restaurantId.trim() : '';
+    const trialEndsAt = typeof params.trialEndsAt === 'string' ? params.trialEndsAt : '';
+    if (!restaurantId) return null;
+    return { restaurantId, trialEndsAt };
+  }, [params.restaurantId, params.trialEndsAt]);
+
+  useEffect(() => {
+    if (!registration) {
+      router.replace('/(customer)/profile/register-restaurant-form');
+    }
+  }, [registration, router]);
 
   const input = useMemo(
     () => ({
@@ -138,25 +156,22 @@ export default function RegisterRestaurantCardEntryScreen() {
     setSaving(true);
     void (async () => {
       try {
-        // 1) Make sure the restaurant exists so the server has a row to attach
-        //    the Stripe customer + PM to. This is idempotent on the server
-        //    when the owner has already registered — it returns the existing
-        //    restaurantId + trialEndsAt without re-creating.
-        let reg = registration;
+        // The restaurants row was created in the form step (and Stripe
+        // Connect onboarding was completed in the step after) — both pass
+        // restaurantId forward via route params. Bounce back to the form
+        // if we somehow arrived without one.
+        const reg = registration;
         if (!reg) {
-          reg = await registerRestaurantNoBilling({
-            businessName: normalizeTextInput(restaurantName, { maxLength: 120 }) || input.businessName,
-            address: input.address,
-            ownerPhone: input.ownerPhone,
-            ...(pendingReferralCode ? { referredByCode: pendingReferralCode } : {}),
-          });
-          setRegistration(reg);
-
-          // Refresh JWT so the new owner role lands in user_metadata before
-          // we call the owner-only Stripe edge fns below.
-          const supabase = getSupabase();
-          if (supabase) await supabase.auth.refreshSession().catch(() => {});
+          router.replace('/(customer)/profile/register-restaurant-form');
+          return;
         }
+
+        // Refresh JWT so the owner role from the earlier register-no-billing
+        // call lands in user_metadata before we hit the owner-only Stripe
+        // edge fns below (the role was inserted server-side but the JWT in
+        // memory is older).
+        const supabase = getSupabase();
+        if (supabase) await supabase.auth.refreshSession().catch(() => {});
 
         // 2) Mint a SetupIntent on the restaurant's Stripe customer. The edge
         //    fn lazily creates the customer on first call.

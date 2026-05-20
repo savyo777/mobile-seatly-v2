@@ -1093,6 +1093,45 @@ export default function OwnerHomeScreen() {
             </Pressable>
           </View>
         ) : null}
+        {/* Connect payouts nudge — until KYC clears, this restaurant can't
+            accept any diner deposits or pay-the-bill charges, so the
+            publish gate stays locked. Shown only when scoped to a single
+            restaurant (an aggregate "All" view obscures which one needs
+            payouts set up; the per-restaurant Settings row covers that). */}
+        {!isDemoModeEnabled()
+          && !isAll
+          && ownerRestaurant
+          && !ownerRestaurant.stripeChargesEnabled
+          && restaurantIds.length === 1 ? (
+          <Pressable
+            onPress={() => router.push('/(staff)/connect-onboarding')}
+            style={{
+              marginHorizontal: spacing.md,
+              marginTop: spacing.md,
+              padding: spacing.md,
+              borderRadius: borderRadius.lg,
+              borderWidth: 1,
+              borderColor: c.gold,
+              backgroundColor: 'rgba(201,168,76,0.10)',
+              flexDirection: 'row',
+              alignItems: 'center',
+              gap: spacing.md,
+            }}
+            accessibilityRole="button"
+            accessibilityLabel="Finish Stripe payout setup"
+          >
+            <Ionicons name="card-outline" size={22} color={c.gold} />
+            <View style={{ flex: 1 }}>
+              <Text style={{ color: c.textPrimary, fontSize: 14, fontWeight: '700' }}>
+                Finish Stripe payout setup
+              </Text>
+              <Text style={{ color: c.textSecondary, fontSize: 12, marginTop: 2, lineHeight: 16 }}>
+                Verify your business so {ownerRestaurant.name} can accept deposits and bill payments.
+              </Text>
+            </View>
+            <Ionicons name="chevron-forward" size={18} color={c.gold} />
+          </Pressable>
+        ) : null}
         {/* ── Greeting block ── */}
         <View style={styles.topBar}>
           <View style={styles.tonightKicker}>
