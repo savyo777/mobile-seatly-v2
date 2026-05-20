@@ -16,6 +16,53 @@ import {
 import { isValidOwnerReferralCode } from '../_shared/referral-policy.ts';
 import { tryGrantReferralCredit } from '../_shared/grant-referral-credit.ts';
 
+// Bug fix 2026-05-20: when a new restaurant is created, also seed the
+// user_restaurant_roles row so every owner-only edge fn (stripe-setup-intent,
+// save-subscription-payment-method, publish-restaurant, etc.) recognises the
+// owner. Previously we only stamped restaurants.owner_user_id, which is in
+// the auth.users id-space; the roles table uses user_profiles.id, so the
+// two never lined up for fresh signups — Stripe onboarding 403'd as soon
+// as the wizard moved to the card-entry step.
+// Idempotent: skips if the (user, restaurant, owner) row already exists.
+async function ensureOwnerRole(
+  admin: any,
+  authUserId: string,
+  restaurantId: string,
+): Promise<void> {
+  const { data: profile } = await admin
+    .from('user_profiles')
+    .select('id')
+    .eq('auth_user_id', authUserId)
+    .maybeSingle();
+  const profileId = (profile as { id?: string } | null)?.id;
+  if (!profileId) {
+    console.warn('register-restaurant-owner: no user_profiles row for owner', { authUserId, restaurantId });
+    return;
+  }
+  const { data: existing } = await admin
+    .from('user_restaurant_roles')
+    .select('id')
+    .eq('user_id', profileId)
+    .eq('restaurant_id', restaurantId)
+    .eq('role', 'owner')
+    .maybeSingle();
+  if (existing) return;
+  const { error: roleErr } = await admin.from('user_restaurant_roles').insert({
+    user_id: profileId,
+    restaurant_id: restaurantId,
+    role: 'owner',
+    is_primary: true,
+  });
+  if (roleErr) {
+    console.error('register-restaurant-owner: failed to insert owner role', {
+      authUserId,
+      profileId,
+      restaurantId,
+      error: roleErr,
+    });
+  }
+}
+
 type RegisterPayload = {
   action?: 'init_payment_sheet' | 'preview_payment_method' | 'finalize_registration' | 'register_no_billing';
   business_name: string;
@@ -187,6 +234,9 @@ Deno.serve(async (req) => {
         { onConflict: 'auth_user_id' },
       );
 
+      // Seed the owner role row so every owner-only edge fn finds the user.
+      await ensureOwnerRole(adminClient, user.id, restaurantId);
+
       await adminClient.auth.admin.updateUserById(user.id, {
         user_metadata: {
           ...(user.user_metadata ?? {}),
@@ -349,6 +399,9 @@ Deno.serve(async (req) => {
       },
       { onConflict: 'auth_user_id' },
     );
+
+    // Seed the owner role row so every owner-only edge fn finds the user.
+    await ensureOwnerRole(adminClient, user.id, inserted.id);
 
     await adminClient.auth.admin.updateUserById(user.id, {
       user_metadata: {
