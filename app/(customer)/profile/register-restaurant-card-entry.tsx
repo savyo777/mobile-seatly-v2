@@ -169,6 +169,13 @@ export default function RegisterRestaurantCardEntryScreen() {
           merchantDisplayName: 'Cenaiva',
           returnURL: 'cenaiva://stripe-redirect',
           allowsDelayedPaymentMethods: false,
+          // CA default so Stripe shows the alphanumeric keyboard for the
+          // postal-code field (Canadian postal codes are alphanumeric e.g.
+          // M5V 2T6; without this Stripe assumes US ZIP and locks the
+          // keyboard to digits only).
+          defaultBillingDetails: {
+            address: { country: 'CA' },
+          },
         });
         if (initResult.error) {
           throw new Error(friendlyError(initResult.error, 'Could not open the secure card form.'));

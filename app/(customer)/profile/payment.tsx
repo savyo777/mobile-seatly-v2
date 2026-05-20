@@ -219,6 +219,11 @@ export default function PaymentScreen() {
             name: profile.fullName || undefined,
             email: profile.email || undefined,
             phone: profile.phone || undefined,
+            // Default country to CA so Stripe shows an alphanumeric keyboard
+            // for the postal code field (Canadian postal codes are letters +
+            // digits e.g. M5V 2T6 — US ZIPs are digits-only, which is what
+            // Stripe defaults to when country isn't set).
+            address: { country: 'CA' },
           },
         });
         if (initResult.error) {

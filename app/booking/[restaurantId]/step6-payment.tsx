@@ -275,6 +275,11 @@ export default function Step6Payment() {
         name: name || undefined,
         email: email || undefined,
         phone: phone || undefined,
+        // CA default so Stripe shows the alphanumeric keyboard for the
+        // postal-code field (Canadian postal codes are alphanumeric e.g.
+        // M5V 2T6; without this Stripe assumes US ZIP and locks the
+        // keyboard to digits only).
+        address: { country: 'CA' },
       },
     });
     if (initResult.error) {
