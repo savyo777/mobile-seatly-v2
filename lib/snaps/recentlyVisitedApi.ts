@@ -57,7 +57,9 @@ export async function fetchRecentlyVisitedRestaurants(limit = 5): Promise<Recent
     results.push({
       restaurantId: r.id,
       restaurantName: r.name ?? 'Restaurant',
-      coverPhotoUrl: r.cover_photo_url || r.cover_image_url || '',
+      // Prefer cover_image_url (owner Edit Profile writes here); fall back
+      // to legacy cover_photo_url for seeded rows.
+      coverPhotoUrl: r.cover_image_url || r.cover_photo_url || '',
       cuisineType: r.cuisine_type ?? null,
       city: r.city ?? null,
       visitedAt: row.reserved_at,

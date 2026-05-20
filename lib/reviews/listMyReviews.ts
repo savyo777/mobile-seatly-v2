@@ -113,7 +113,9 @@ export async function listMyReviews(userId: string): Promise<MyReviewRow[]> {
       id: p.id,
       restaurantId: p.restaurant_id,
       restaurantName: rest?.name ?? null,
-      restaurantCoverUrl: rest?.cover_photo_url ?? rest?.cover_image_url ?? null,
+      // Prefer cover_image_url (owner Edit Profile writes here); fall back
+      // to legacy cover_photo_url for seeded rows.
+      restaurantCoverUrl: rest?.cover_image_url ?? rest?.cover_photo_url ?? null,
       rating: review?.rating ?? p.rating ?? null,
       body: review?.body ?? p.caption ?? null,
       createdAt: p.created_at,

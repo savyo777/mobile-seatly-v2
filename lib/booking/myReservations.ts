@@ -105,7 +105,10 @@ export async function fetchMyBookingItems(): Promise<MyBookingItem[]> {
       id: row.id,
       restaurantName: restaurant.name ?? i18n.t('common.fallbackRestaurant'),
       restaurantId: restaurant.id,
-      coverPhotoUrl: restaurant.cover_photo_url || restaurant.cover_image_url || '',
+      // Prefer cover_image_url — that's the column the owner Edit Profile
+      // screen writes to. Legacy seeded rows only have cover_photo_url, so
+      // fall through to it.
+      coverPhotoUrl: restaurant.cover_image_url || restaurant.cover_photo_url || '',
       whenIso: row.reserved_at,
       status: normalizeStatus(row.status),
       partySize: row.party_size ?? 1,
