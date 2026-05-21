@@ -19,8 +19,10 @@
       "supportsTablet": true,
       "bundleIdentifier": "com.cenaiva.app",
       "entitlements": {
-        "aps-environment": "production"
+        "aps-environment": "production",
+        "com.apple.developer.applesignin": ["Default"]
       },
+      "usesAppleSignIn": true,
       "infoPlist": {
         "NSMicrophoneUsageDescription": "Cenaiva uses your microphone so you can speak restaurant and booking requests.",
         "NSLocationWhenInUseUsageDescription": "Cenaiva uses your location to find nearby restaurants.",
