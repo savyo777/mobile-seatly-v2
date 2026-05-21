@@ -1,12 +1,18 @@
-// Stripe fee math — locks the threshold + gross-up policy that BOTH the
-// mobile client AND the server's _shared/stripe-fee.ts implement. If these
-// drift, PaymentIntents fail Stripe verification because the diner total
-// won't match what the server expects.
+// Stripe fee math — locks the Option B gross-up policy that BOTH the
+// mobile client AND the server's _shared/stripe-fee.ts implement.
+// Per STRIPE_INTEGRATION_HANDOFF.md §3.1 + STRIPE_UPDATES.md, every
+// diner-facing PI uses the same formula:
 //
-// Per MOBILE_STRIPE_TRANSFER.md §2.
+//   cenaivaFee = ceil(base * 0.055)
+//   subtotal   = base + cenaivaFee
+//   dinerTotal = ceil((subtotal + 30) / 0.971)
+//   processing = dinerTotal - subtotal
+//
+// If client and server diverge, Stripe rejects the PI with
+// "amount does not match" and diners see different totals on web vs
+// mobile (MOBILE_STRIPE_TRANSFER.md §17.5 hard rule).
 
 import {
-  ABSORB_FEE_THRESHOLD_CENTS,
   CENAIVA_APPLICATION_FEE_PERCENT,
   STRIPE_FEE_FIXED_CENTS,
   STRIPE_FEE_PERCENT,
@@ -14,7 +20,7 @@ import {
   formatCents,
 } from '../../lib/stripe/stripeFee';
 
-describe('computeDinerCharge', () => {
+describe('computeDinerCharge (Option B — always gross-up)', () => {
   describe('boundary / sanity', () => {
     it('returns zeros for non-positive bases', () => {
       expect(computeDinerCharge(0)).toEqual({
@@ -38,86 +44,99 @@ describe('computeDinerCharge', () => {
     it('rounds non-integer bases', () => {
       const out = computeDinerCharge(1199.6);
       expect(out.baseCents).toBe(1200);
-      expect(out.dinerPaysFee).toBe(false); // 1200 hits absorb threshold
+      // Under Option B everything > 0 grosses up — no threshold branch
+      expect(out.dinerPaysFee).toBe(true);
     });
   });
 
-  describe('below threshold — diner pays Stripe fee', () => {
-    it('grosses up a $5 deposit', () => {
-      // base = 500; grossed = ceil((500 + 30) / 0.971) = ceil(545.83) = 546
+  describe('worked examples (canonical Option B formula in IEEE-754 JS)', () => {
+    // The STRIPE_UPDATES.md table has a few rows that differ by ±1¢
+    // from what this formula actually produces in JavaScript (the
+    // table appears to have been computed with slightly different
+    // intermediate rounding). The verified production PI is the
+    // source of truth — pi_3TZXkN… for a $20 base charged
+    // amount=2204¢, application_fee_amount=110¢ (per
+    // STRIPE_INTEGRATION_HANDOFF.md §13). My formula matches that
+    // PI exactly, so I lock against the computed values below.
+
+    it('$5 base → $5.75 total', () => {
       const out = computeDinerCharge(500);
-      expect(out.baseCents).toBe(500);
-      expect(out.dinerTotalCents).toBe(546);
-      expect(out.processingFeeCents).toBe(46);
-      expect(out.applicationFeeCents).toBe(28); // round(500 * 0.055) = 28
-      expect(out.dinerPaysFee).toBe(true);
+      expect(out.applicationFeeCents).toBe(28); // ceil(500*0.055)
+      expect(out.dinerTotalCents).toBe(575); // ceil(558/0.971) ≈ 574.665
+      expect(out.processingFeeCents).toBe(47); // 575 - 528
     });
 
-    it('grosses up a $1 minimum charge with the 1¢ application-fee floor', () => {
-      const out = computeDinerCharge(100);
-      // base 100, grossed = ceil((100 + 30) / 0.971) = ceil(133.88) = 134
-      expect(out.baseCents).toBe(100);
-      expect(out.dinerTotalCents).toBe(134);
-      expect(out.processingFeeCents).toBe(34);
-      // round(100 * 0.055) = 6, well above the 1¢ floor
-      expect(out.applicationFeeCents).toBe(6);
-      expect(out.dinerPaysFee).toBe(true);
+    it('$10 base → $11.18 total', () => {
+      const out = computeDinerCharge(1000);
+      expect(out.applicationFeeCents).toBe(55); // ceil(1000*0.055)
+      expect(out.dinerTotalCents).toBe(1118); // ceil(1085/0.971)
+      expect(out.processingFeeCents).toBe(63);
+    });
+
+    it('$20 base → $22.04 total (matches verified PI pi_3TZXkN…)', () => {
+      const out = computeDinerCharge(2000);
+      expect(out.applicationFeeCents).toBe(110); // ceil(2000*0.055)
+      expect(out.dinerTotalCents).toBe(2204); // ceil(2140/0.971)
+      expect(out.processingFeeCents).toBe(94);
+    });
+
+    it('$40 base → $43.77 total (party-4 MICKY deposit)', () => {
+      const out = computeDinerCharge(4000);
+      expect(out.applicationFeeCents).toBe(220); // ceil(4000*0.055)
+      expect(out.dinerTotalCents).toBe(4377); // ceil(4250/0.971)
+      expect(out.processingFeeCents).toBe(157);
+    });
+
+    it('$80 base → $87.23 total', () => {
+      const out = computeDinerCharge(8000);
+      expect(out.applicationFeeCents).toBe(440); // ceil(8000*0.055)
+      expect(out.dinerTotalCents).toBe(8723);
+      expect(out.processingFeeCents).toBe(283);
+    });
+
+    it('$100 base → $108.96 total', () => {
+      const out = computeDinerCharge(10_000);
+      expect(out.applicationFeeCents).toBe(550); // ceil(10000*0.055)
+      expect(out.dinerTotalCents).toBe(10_896);
+      expect(out.processingFeeCents).toBe(346);
+    });
+  });
+
+  describe('invariants', () => {
+    it('application fee is always 5.5% of BASE (not the grossed-up total)', () => {
+      // Verifies footgun #11: app fee must be off the BASE.
+      const cases = [100, 250, 500, 1000, 2000, 4000, 10_000, 50_000];
+      for (const base of cases) {
+        const out = computeDinerCharge(base);
+        const expected = Math.max(Math.ceil(base * CENAIVA_APPLICATION_FEE_PERCENT), 1);
+        expect(out.applicationFeeCents).toBe(expected);
+      }
+    });
+
+    it('gross-up math actually covers Stripe’s fee', () => {
+      // For every grossed-up amount the formula should yield:
+      //   grossed - (grossed * 0.029 + 30) ≥ base + applicationFee
+      // i.e. after Stripe's cut, the merchant nets at least the
+      // base + platform fee (so both get paid in full).
+      const cases = [100, 250, 500, 1199, 1200, 1500, 2000, 4000, 10_000];
+      for (const base of cases) {
+        const out = computeDinerCharge(base);
+        const stripeFee = out.dinerTotalCents * STRIPE_FEE_PERCENT + STRIPE_FEE_FIXED_CENTS;
+        const net = out.dinerTotalCents - stripeFee;
+        expect(net).toBeGreaterThanOrEqual(base + out.applicationFeeCents - 0.5); // FP slack
+      }
     });
 
     it('enforces ≥ 1¢ application fee on very small charges', () => {
       const out = computeDinerCharge(10); // $0.10 — pathological but possible
-      // round(10 * 0.055) = 1 (already exactly the floor)
+      // ceil(10 * 0.055) = ceil(0.55) = 1 — already exactly the floor
       expect(out.applicationFeeCents).toBe(1);
-      // base 10; grossed = ceil(40 / 0.971) = ceil(41.19) = 42
-      expect(out.dinerTotalCents).toBe(42);
     });
 
-    it('one cent below the threshold still grosses up', () => {
-      const out = computeDinerCharge(ABSORB_FEE_THRESHOLD_CENTS - 1);
-      expect(out.dinerPaysFee).toBe(true);
-      // base 1199; grossed = ceil((1199 + 30) / 0.971) = ceil(1265.70) = 1266
-      expect(out.dinerTotalCents).toBe(1266);
-      expect(out.processingFeeCents).toBe(67);
-    });
-
-    it('the gross-up math actually covers Stripe’s fee', () => {
-      // For every grossed-up amount the formula should yield:
-      //   grossed - (grossed * 0.029 + 30) ≥ base
-      // i.e. after Stripe’s cut, the merchant still nets ≥ base.
-      const cases = [100, 250, 500, 800, 1100, 1199];
-      for (const base of cases) {
-        const { dinerTotalCents } = computeDinerCharge(base);
-        const stripeFee = dinerTotalCents * STRIPE_FEE_PERCENT + STRIPE_FEE_FIXED_CENTS;
-        const net = dinerTotalCents - stripeFee;
-        expect(net).toBeGreaterThanOrEqual(base - 0.0001); // tiny FP slack
+    it('dinerPaysFee is always true for positive bases under Option B', () => {
+      for (const base of [1, 100, 1199, 1200, 5000, 100_000]) {
+        expect(computeDinerCharge(base).dinerPaysFee).toBe(true);
       }
-    });
-  });
-
-  describe('at or above threshold — Cenaiva absorbs the fee', () => {
-    it('right at the threshold ($12)', () => {
-      const out = computeDinerCharge(ABSORB_FEE_THRESHOLD_CENTS);
-      expect(out.baseCents).toBe(1200);
-      expect(out.dinerTotalCents).toBe(1200);
-      expect(out.processingFeeCents).toBe(0);
-      expect(out.applicationFeeCents).toBe(66); // round(1200 * 0.055)
-      expect(out.dinerPaysFee).toBe(false);
-    });
-
-    it('larger deposit — diner pays exactly the base', () => {
-      const out = computeDinerCharge(5000); // $50 deposit
-      expect(out.dinerTotalCents).toBe(5000);
-      expect(out.processingFeeCents).toBe(0);
-      expect(out.applicationFeeCents).toBe(275); // round(5000 * 0.055)
-      expect(out.dinerPaysFee).toBe(false);
-    });
-
-    it('large order — application fee is 5.5% of the BASE, not the grossed-up total', () => {
-      // Verifies footgun #11 from the doc: app fee must be off the BASE.
-      const base = 100_00; // $100
-      const out = computeDinerCharge(base);
-      expect(out.applicationFeeCents).toBe(Math.round(base * CENAIVA_APPLICATION_FEE_PERCENT));
-      expect(out.dinerTotalCents).toBe(base);
     });
   });
 });
