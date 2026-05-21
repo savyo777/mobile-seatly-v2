@@ -444,11 +444,22 @@ export function SplitTenderCheckout({
             customer_name: i === 0 ? (diner.name ?? null) : null,
             save_card: false,
             deposit_payment_ids: [rowId],
-            // hold_id ONLY on slot 0 per guide §2.2 + §10.4
-            hold_id: i === 0 ? (holdId ?? undefined) : undefined,
-            // Bug #110 fix: fresh UUID PER SLOT so each payer's PI
-            // dedups independently. Without this, 4 payers paying $20
-            // each on the same card would collapse into one $20 PI.
+            // DO NOT send hold_id on any split-tender slot.
+            //
+            // Why: the server's hold-aware branch validates
+            // amount_cents against hold.deposit_amount_cents (the
+            // FULL deposit) or hold.total_amount_cents. For
+            // split-tender we send PER-SHARE amounts (deposit/N).
+            // The full-deposit validation fails with `amount_mismatch`
+            // for share != full-deposit, so every split-tender slot
+            // 0 was being declined before PaymentSheet even opened.
+            //
+            // Skipping hold_id routes the PI through the standard
+            // deposit-row path, which validates amount_cents against
+            // the SHARE (per row.amount_cents in confirm-deposit-paid).
+            // The hold itself was already consumed when
+            // create-public-booking created the reservation upstream
+            // — splitting payments doesn't need to re-link the hold.
             idempotency_key: secureRandomUuidV4(),
           });
         } catch (err) {
