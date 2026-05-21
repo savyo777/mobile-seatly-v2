@@ -1,59 +1,29 @@
-// @ts-nocheck
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "npm:@supabase/supabase-js@2";
 import { enforceRateLimit, rateLimitIdentifier, RateLimitError } from "../_shared/rate-limit.ts";
-import { sendSmsOrEmail, logCommunication, sanitizeForSmsField } from "../_shared/sms.ts";
-import { sendExpoPush } from "../_shared/expo-push.ts";
+import { Resend } from "npm:resend@4.0.0";
+import twilio from "npm:twilio@5.0.0";
+import { isPhoneOptedOut } from "../_shared/sms.ts";
 import {
   closureUnavailableMessage,
   findClosedSpecialDayForDate,
   localDateForDateTime,
 } from "../_shared/closures.ts";
-import {
-  readJsonObject,
-  validationResponse,
-  asText as validatedText,
-  asEmail as validatedEmail,
-  asUuid as validatedUuid,
-  normalizePhoneToE164 as validatedPhone,
-} from "../_shared/input-validation.ts";
+import { parseJsonBody } from "../_shared/validation/parse.ts";
+import { BookingInputSchema } from "../_shared/validation/booking.ts";
+import { notifyOwnerNewReservation } from "../_shared/owner-notifications.ts";
 
-// CORS is enforced via the shared allowlist (set ALLOWED_ORIGINS env on
-// the function). Mobile callers don't send Origin so they're unaffected;
-// only browser callers get the allowlist restriction. The previous local
-// wildcard ("Access-Control-Allow-Origin: *") was a P0 finding in the
-// 2026-05-17 security audit — replaced here.
-import { corsHeaders, buildCorsHeaders } from "../_shared/cors.ts";
+const corsHeaders = {
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+  "Access-Control-Allow-Methods": "POST, OPTIONS",
+};
 
 type CartItemInput = {
   menu_item_id?: unknown;
   name?: unknown;
   quantity?: unknown;
   unit_price?: unknown;
-};
-
-type BookingPayload = {
-  restaurant_id?: unknown;
-  date_time?: unknown;
-  shift_id?: unknown;
-  party_size?: unknown;
-  guest_name?: unknown;
-  guest_email?: unknown;
-  guest_phone?: unknown;
-  allergies?: unknown;
-  seating_preference?: unknown;
-  occasion?: unknown;
-  confirmation_code?: unknown;
-  cart_items?: CartItemInput[];
-  subtotal?: unknown;
-  tax_amount?: unknown;
-  tip_amount?: unknown;
-  total_amount?: unknown;
-  discount_amount?: unknown;
-  discount_reason?: unknown;
-  promotion_id?: unknown;
-  applied_promo_code?: unknown;
-  payment_method?: unknown;
 };
 
 function jsonResponse(body: Record<string, unknown>, status = 200): Response {
@@ -64,15 +34,14 @@ function jsonResponse(body: Record<string, unknown>, status = 200): Response {
 }
 
 function asText(value: unknown): string | null {
-  return validatedText(value, "text", { maxLength: 1000, multiline: true });
-}
-
-function normalizeEmail(value: string | null): string | null {
-  return value ? validatedEmail(value, "email") : null;
+  return typeof value === "string" && value.trim() ? value.trim() : null;
 }
 
 function asUuid(value: unknown): string | null {
-  return validatedUuid(value, "id");
+  const text = asText(value);
+  return text && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(text)
+    ? text
+    : null;
 }
 
 function asNumber(value: unknown, fallback = 0): number {
@@ -82,153 +51,6 @@ function asNumber(value: unknown, fallback = 0): number {
 
 function roundMoney(value: unknown): number {
   return Math.round(asNumber(value) * 100) / 100;
-}
-
-type NormalizedCartItem = {
-  menu_item_id: string | null;
-  name: string;
-  quantity: number;
-  unit_price: number;
-  line_total: number;
-};
-
-/**
- * Server-side amount validation. Reload each cart item's canonical
- * unit_price from menu_items + the restaurant's tax_rate, recompute
- * the totals, and reject the request if the caller's claimed amounts
- * deviate from server-computed by more than a cent.
- *
- * Added 2026-05-17 in response to the security audit P0 finding:
- * mobile clients sent subtotal/tax/tip/total fields that the server
- * stored verbatim, so a tampered client could pay $0.10 for a $100
- * order. The server is now authoritative for prices.
- *
- * Cart items without a menu_item_id (ad-hoc add-ons) keep their
- * claimed unit_price — but we cap tip + discount at 100% of subtotal
- * so even those can't be used to gain net value.
- */
-async function validateAndRecomputeAmounts(
-  supabase: ReturnType<typeof createClient>,
-  restaurantId: string,
-  cartItems: NormalizedCartItem[],
-  claimed: {
-    subtotal: number;
-    tax_amount: number;
-    tip_amount: number;
-    total_amount: number;
-    discount_amount: number;
-  },
-): Promise<
-  | { ok: true; recomputed: typeof claimed; cartItems: NormalizedCartItem[] }
-  | { ok: false; error: string; detail: Record<string, unknown> }
-> {
-  const TOLERANCE_CENTS = 1;
-  const TOLERANCE = TOLERANCE_CENTS / 100;
-
-  // 1. Restaurant tax rate.
-  const { data: restRow, error: restErr } = await supabase
-    .from("restaurants")
-    .select("tax_rate")
-    .eq("id", restaurantId)
-    .maybeSingle();
-  if (restErr) {
-    return {
-      ok: false,
-      error: "tax_rate_lookup_failed",
-      detail: { message: restErr.message },
-    };
-  }
-  const taxRate = Number(restRow?.tax_rate ?? 0);
-  const safeTaxRate = Number.isFinite(taxRate) && taxRate >= 0 ? taxRate : 0;
-
-  // 2. Canonical menu prices.
-  const menuItemIds = cartItems
-    .map((c) => c.menu_item_id)
-    .filter((id): id is string => !!id);
-  const priceById = new Map<string, number>();
-  if (menuItemIds.length > 0) {
-    const { data: menuRows, error: menuErr } = await supabase
-      .from("menu_items")
-      .select("id, price")
-      .in("id", menuItemIds);
-    if (menuErr) {
-      return {
-        ok: false,
-        error: "menu_price_lookup_failed",
-        detail: { message: menuErr.message },
-      };
-    }
-    for (const row of menuRows ?? []) {
-      const p = Number((row as { price?: unknown }).price ?? NaN);
-      if (Number.isFinite(p) && p >= 0) {
-        priceById.set((row as { id: string }).id, p);
-      }
-    }
-  }
-
-  // 3. Recompute each item with canonical price; sum subtotal.
-  const recomputedItems: NormalizedCartItem[] = cartItems.map((c) => {
-    const canonical = c.menu_item_id ? priceById.get(c.menu_item_id) : undefined;
-    const unitPrice = canonical !== undefined ? canonical : c.unit_price;
-    return {
-      menu_item_id: c.menu_item_id,
-      name: c.name,
-      quantity: c.quantity,
-      unit_price: roundMoney(unitPrice),
-      line_total: roundMoney(unitPrice * c.quantity),
-    };
-  });
-  const computedSubtotal = roundMoney(
-    recomputedItems.reduce((sum, item) => sum + item.line_total, 0),
-  );
-
-  // 4. Tax derives from subtotal × restaurant tax_rate.
-  const computedTax = roundMoney(computedSubtotal * safeTaxRate);
-
-  // 5. Tip + discount are user-controlled but capped at 100% of
-  //    (subtotal + tax) so they can't be used to manipulate net value.
-  const cap = computedSubtotal + computedTax;
-  const computedTip = roundMoney(
-    Math.max(0, Math.min(claimed.tip_amount, cap)),
-  );
-  const computedDiscount = roundMoney(
-    Math.max(0, Math.min(claimed.discount_amount, cap)),
-  );
-
-  // 6. Total = subtotal + tax + tip - discount.
-  const computedTotal = roundMoney(
-    computedSubtotal + computedTax + computedTip - computedDiscount,
-  );
-
-  // 7. Compare claimed vs computed total. Subtotal/tax/tip/discount
-  //    are each derived above; the user-facing reject reason is on
-  //    total.
-  if (Math.abs(claimed.total_amount - computedTotal) > TOLERANCE) {
-    return {
-      ok: false,
-      error: "payment_amount_mismatch",
-      detail: {
-        claimed_total: claimed.total_amount,
-        computed_total: computedTotal,
-        computed_subtotal: computedSubtotal,
-        computed_tax: computedTax,
-        computed_tip: computedTip,
-        computed_discount: computedDiscount,
-      },
-    };
-  }
-
-  return {
-    ok: true,
-    recomputed: {
-      subtotal: computedSubtotal,
-      tax_amount: computedTax,
-      tip_amount: computedTip,
-      total_amount: computedTotal,
-      discount_amount: computedDiscount,
-    },
-    cartItems: recomputedItems,
-  };
 }
 
 function normalizeCartItems(value: unknown): Array<{
@@ -264,41 +86,53 @@ function formatReservationDate(date: Date): string {
   }).format(date);
 }
 
+function normalizeNorthAmericanPhone(phone: string | null): string | null {
+  if (!phone) return null;
+  if (phone.trim().startsWith("+")) return phone.trim();
+  const digits = phone.replace(/\D/g, "");
+  if (digits.length === 10) return `+1${digits}`;
+  if (digits.length === 11 && digits.startsWith("1")) return `+${digits}`;
+  return phone.trim();
+}
+
 Deno.serve(async (req: Request) => {
-  if (req.method === "OPTIONS") return new Response(null, { headers: buildCorsHeaders(req) });
+  if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
   if (req.method !== "POST") return jsonResponse({ error: "POST required" }, 405);
 
   try {
-    const payload = (await readJsonObject(req)) as BookingPayload;
-    const restaurantId = asUuid(payload.restaurant_id);
-    const shiftId = asUuid(payload.shift_id);
-    const dateTime = asText(payload.date_time);
-    const guestName = asText(payload.guest_name);
-    const guestEmail = normalizeEmail(asText(payload.guest_email));
-    const guestPhone = validatedPhone(payload.guest_phone, "guest_phone") ?? asText(payload.guest_phone);
-    const allergies = asText(payload.allergies);
-    const seatingPreference = asText(payload.seating_preference);
-    const occasion = asText(payload.occasion);
-    const promotionId = asUuid(payload.promotion_id);
-    const appliedPromoCode = asText(payload.applied_promo_code);
-    const confirmationCode =
-      asText(payload.confirmation_code) ?? `SEAT-${Math.random().toString(36).slice(2, 6).toUpperCase()}`;
-    const partySize = Math.max(1, Math.floor(asNumber(payload.party_size, 1)));
+    const parsed = await parseJsonBody(req, BookingInputSchema, {
+      jsonRes: (b, s) => jsonResponse(b as Record<string, unknown>, s),
+    });
+    if ("response" in parsed) return parsed.response;
+    const payload = parsed.data;
 
-    if (!restaurantId || !shiftId || !dateTime || !guestName || !guestEmail) {
-      return jsonResponse({ error: "restaurant_id, shift_id, date_time, guest_name, and guest_email are required." }, 400);
-    }
+    const restaurantId = payload.restaurant_id;
+    const shiftId = payload.shift_id;
+    const dateTime = payload.date_time;
+    const guestName = payload.guest_name;
+    const guestEmail = payload.guest_email;
+    const guestPhone = payload.guest_phone;
+    const allergies = payload.allergies ?? null;
+    const seatingPreference = payload.seating_preference ?? null;
+    const occasion = payload.occasion ?? null;
+    const confirmationCode =
+      payload.confirmation_code ?? `SEAT-${Math.random().toString(36).slice(2, 6).toUpperCase()}`;
+    const partySize = payload.party_size;
 
     const reservedAt = new Date(dateTime);
-    if (Number.isNaN(reservedAt.getTime())) {
-      return jsonResponse({ error: "date_time must be a valid ISO timestamp." }, 400);
-    }
 
     const supabase = createClient(
       Deno.env.get("SUPABASE_URL")!,
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
       { auth: { autoRefreshToken: false, persistSession: false } },
     );
+
+    const resendKey = Deno.env.get("RESEND_API_KEY");
+    const resend = resendKey ? new Resend(resendKey) : null;
+    const twilioSid = Deno.env.get("TWILIO_ACCOUNT_SID");
+    const twilioToken = Deno.env.get("TWILIO_AUTH_TOKEN");
+    const twilioFromPhone = Deno.env.get("TWILIO_PHONE_NUMBER");
+    const twilioClient = twilioSid && twilioToken ? twilio(twilioSid, twilioToken) : null;
 
     let userProfileId: string | null = null;
     const authorization = req.headers.get("authorization");
@@ -348,9 +182,12 @@ Deno.serve(async (req: Request) => {
 
     const { data: restaurant } = await supabase
       .from("restaurants")
-      .select("id, name, slug, timezone, hours_json")
+      .select("id, name, slug, timezone, hours_json, phone")
       .eq("id", restaurantId)
       .maybeSingle();
+    const restaurantPhone = typeof restaurant?.phone === "string" && restaurant.phone.trim()
+      ? restaurant.phone.trim()
+      : null;
     const restaurantName = typeof restaurant?.name === "string" && restaurant.name.trim()
       ? restaurant.name.trim()
       : "the restaurant";
@@ -501,30 +338,16 @@ Deno.serve(async (req: Request) => {
 
     // Diner double-book guard. Blocks a diner from holding two overlapping
     // reservations whether they're at the same restaurant or different ones.
-    //
-    // Signed-in: only matches by user_profile_id. We trust the authenticated
-    // identity over the phone/email — if a user has multiple profiles sharing
-    // a phone (e.g. test accounts, family members on the same household
-    // number), each profile gets its own booking calendar. The DB's
-    // `reservations_user_no_overlap` exclusion constraint enforces the same
-    // rule at the row level.
-    //
-    // Guest checkout: matches by phone OR email since there's no user_profile
-    // to scope to. Mirrors the `reservations_guest_email_no_overlap` and
-    // `reservations_guest_phone_no_overlap` exclusion constraints.
-    //
-    // The exact-match idempotency check above already returns the existing
-    // reservation when this is a re-submit of the same slot/party, so
-    // reaching this guard means the new request is a genuinely different
+    // Logged-in: matches by user_profile_id. Guest checkout: matches by phone
+    // OR email. The exact-match idempotency check above already returns the
+    // existing reservation when this is a re-submit of the same slot/party,
+    // so reaching this guard means the new request is a genuinely different
     // booking that overlaps an existing one.
     {
       const idClauses: string[] = [];
-      if (userProfileId) {
-        idClauses.push(`user_profile_id.eq.${userProfileId}`);
-      } else {
-        if (guestEmail) idClauses.push(`guest_email.eq.${guestEmail}`);
-        if (guestPhone) idClauses.push(`guest_phone.eq.${guestPhone}`);
-      }
+      if (userProfileId) idClauses.push(`user_profile_id.eq.${userProfileId}`);
+      if (guestEmail) idClauses.push(`guest_email.eq.${guestEmail}`);
+      if (guestPhone) idClauses.push(`guest_phone.eq.${guestPhone}`);
       if (idClauses.length > 0) {
         const slotStart = reservedAt;
         const slotEnd = new Date(slotStart.getTime() + turnMinutes * 60_000);
@@ -561,12 +384,115 @@ Deno.serve(async (req: Request) => {
       }
     }
 
+    // Hold-conversion branch (CENAIVA_HOLDS_ENABLED). When the flag is on AND
+    // the request carries a hold_id, convert the existing hold instead of
+    // running book_reservation. The hold already owns the advisory lock /
+    // table assignment / cover-cap recheck from when it was created, so this
+    // path is purely a state transition + side-effect dispatch. No payment
+    // intent is attached here — this endpoint is the no-payment path; the
+    // payment-required path goes through confirm-hold-paid instead.
+    const holdsEnabled = Deno.env.get("CENAIVA_HOLDS_ENABLED") === "true";
+    const holdId = asUuid(payload.hold_id);
+
+    if (holdsEnabled && holdId) {
+      const { data: convertData, error: convertError } = await supabase.rpc(
+        "convert_reservation_hold_to_reservation",
+        { p_hold_id: holdId, p_payment_intent_id: null, p_grace_seconds: 120 },
+      );
+      if (convertError) {
+        const code = (convertError as { code?: string }).code;
+        if (code === "P0010") return jsonResponse({ error: "hold_not_found" }, 404);
+        if (code === "P0011") {
+          return jsonResponse(
+            { error: "hold_expired", unavailable_reason: "hold_expired" },
+            410,
+          );
+        }
+        if (code === "P0012") return jsonResponse({ error: "hold_not_convertible" }, 409);
+        if (code === "P0006" || code === "23P01") {
+          return jsonResponse(
+            { error: "diner_double_book", unavailable_reason: "diner_double_book" },
+            409,
+          );
+        }
+        console.error("convert_reservation_hold_to_reservation failed", convertError);
+        return jsonResponse(
+          { error: convertError.message ?? "conversion_failed" },
+          500,
+        );
+      }
+      const convertedRows = convertData as Array<{
+        reservation_id: string;
+        confirmation_code: string;
+        table_ids: string[];
+        duration_minutes: number;
+        idempotent: boolean;
+      }> | null;
+      const row = convertedRows?.[0];
+      if (!row) return jsonResponse({ error: "conversion_returned_empty" }, 500);
+
+      // Post-conversion side effects (orders/items + promotion usage) — only
+      // run on a fresh conversion; the idempotent path is a re-entry by the
+      // same caller, so the side effects have already fired.
+      if (!row.idempotent) {
+        const { runPostHoldConversion } = await import("../_shared/hold-conversion.ts");
+        await runPostHoldConversion({
+          supabase,
+          holdId,
+          reservationId: row.reservation_id,
+          paymentIntentId: null,
+        });
+        // Owner notification (fire-and-forget). Hold-conversion path doesn't
+        // carry guest/party details in scope — query the reservation row for
+        // them. Skip silently if the owner has the toggle off (the helper
+        // handles preference + restaurants.email bypass internally).
+        void (async () => {
+          try {
+            const { data: r } = await supabase
+              .from("reservations")
+              .select("restaurant_id, reserved_at, party_size, guest_full_name, confirmation_code")
+              .eq("id", row.reservation_id)
+              .maybeSingle();
+            if (!r) return;
+            await notifyOwnerNewReservation({
+              supabase,
+              restaurant_id: (r as any).restaurant_id,
+              reservation_id: row.reservation_id,
+              reserved_at: (r as any).reserved_at,
+              party_size: (r as any).party_size,
+              guest_full_name: (r as any).guest_full_name ?? null,
+              confirmation_code: (r as any).confirmation_code ?? null,
+            });
+          } catch (err) {
+            console.error("[create-public-booking.hold-convert] notifyOwnerNewReservation failed", err);
+          }
+        })();
+      }
+
+      return jsonResponse({
+        reservation_id: row.reservation_id,
+        confirmation_code: row.confirmation_code,
+        table_ids: row.table_ids,
+        duration_minutes: row.duration_minutes,
+        deposit_required: false,
+        deposit_amount_cents: 0,
+      });
+    }
+
     // Atomic booking: cover-cap re-check, table selection, reservation insert,
     // and reservation_tables insert all happen under a single advisory lock
     // keyed on (restaurant_id, reserved_at). Two concurrent callers for the
     // same slot serialize cleanly here. The exclusion constraint on
     // reservation_tables is the unbreakable backstop if the lock is somehow
     // bypassed (e.g. direct DB write).
+    // Event / promotion linkage (2026-05-11). When the diner came in via the
+    // /deals event/promotion card, the URL pre-fills `event_id` /
+    // `promotion_id` and we forward those to book_reservation so the
+    // reservation row is tagged + appears under the right event's attendees
+    // list on the owner dashboard.
+    const reservationEventId = asUuid(payload.event_id);
+    const reservationPromotionId = asUuid(payload.promotion_id);
+    const reservationPromoCode = asText(payload.applied_promo_code) ?? null;
     const { data: bookingRows, error: bookingError } = await supabase.rpc("book_reservation", {
       p_restaurant_id: restaurantId,
       p_shift_id: shiftId,
@@ -584,9 +510,22 @@ Deno.serve(async (req: Request) => {
       p_guest_full_name: guestName,
       p_guest_email: guestEmail,
       p_guest_phone: guestPhone,
-      p_event_id: null,
-      p_promotion_id: promotionId,
-      p_applied_promo_code: appliedPromoCode,
+      p_event_id: reservationEventId,
+      p_promotion_id: reservationPromotionId,
+      p_applied_promo_code: reservationPromoCode,
+      // Web bookings are confirmed at creation. Deposit-required parties are
+      // hand-offed pre-RPC by the orchestrator and pre-form by the public
+      // page, so by the time we reach book_reservation, the booking is
+      // ready to go. Without p_status='confirmed', the RPC default is
+      // 'pending' and the diner sees an ambiguous "not yet confirmed"
+      // state on /bookings.
+      //
+      // Split-tender exception (2026-05-20): when N payers are sharing the
+      // deposit, the reservation must stay 'pending_payment' until all N
+      // deposit rows are charged. The settle trigger on
+      // reservation_deposit_payments flips it to 'confirmed' once the last
+      // row settles.
+      p_status: payload.split_tender_payers ? "pending_payment" : "confirmed",
     });
 
     if (bookingError) {
@@ -634,19 +573,6 @@ Deno.serve(async (req: Request) => {
           409,
         );
       }
-      // Map the catch-all "invalid_status" path (raised by book_reservation
-      // when an unexpected hold/diner state is detected) to the standard
-      // diner_double_book unavailable_reason so the client's friendlyError
-      // mapper surfaces an actionable message. Added 2026-05-21.
-      if (bookingError.message?.toLowerCase().includes("invalid_status")) {
-        return jsonResponse(
-          {
-            error: "You already have a reservation around this time. Cancel that one first or pick a different slot.",
-            unavailable_reason: "diner_double_book",
-          },
-          409,
-        );
-      }
       return jsonResponse({ error: `Reservation: ${bookingError.message}` }, 400);
     }
 
@@ -684,33 +610,63 @@ Deno.serve(async (req: Request) => {
       }
     }
 
-    let orderId: string | null = null;
-    let cartItems = normalizeCartItems(payload.cart_items);
-    if (cartItems.length > 0) {
-      // Server-side amount validation (security audit P0). Reject the
-      // request if the caller's claimed totals deviate from what the
-      // server computes from canonical menu prices + restaurant tax.
-      const amountCheck = await validateAndRecomputeAmounts(
-        supabase,
-        restaurantId,
-        cartItems,
-        {
-          subtotal: roundMoney(payload.subtotal),
-          tax_amount: roundMoney(payload.tax_amount),
-          tip_amount: roundMoney(payload.tip_amount),
-          total_amount: roundMoney(payload.total_amount),
-          discount_amount: roundMoney(payload.discount_amount),
-        },
+    // Split-tender deposit rows (2026-05-20). When the diner picked
+    // "Split tender", we create N reservation_deposit_payments rows here —
+    // each `pending` until SplitTenderPaymentForm charges them via the
+    // standard create-public-payment-intent + confirm-deposit-paid path
+    // (with the strict deposit_payment_ids metadata check). The settle
+    // trigger flips the reservation to 'confirmed' once every row is
+    // 'charged'. Even share split: ceil(deposit / N) so rounding leans
+    // toward Cenaiva rather than under-collecting.
+    let splitTenderDepositRowIds: string[] = [];
+    if (payload.split_tender_payers && depositAmountCents > 0) {
+      const n = payload.split_tender_payers;
+      const baseShare = Math.floor(depositAmountCents / n);
+      const remainder = depositAmountCents - baseShare * n;
+      const shares = Array.from({ length: n }, (_, i) =>
+        i === 0 ? baseShare + remainder : baseShare,
       );
-      if (!amountCheck.ok) {
-        return jsonResponse(
-          { error: amountCheck.error, detail: amountCheck.detail },
-          400,
-        );
+      // FIX 2026-05-21: populate payer_email + payer_full_name on every
+      // row so the `reservation_deposit_payments_payer_required` CHECK
+      // constraint passes. Without this, the insert silently fails
+      // (PostgreSQL 23514) and the endpoint returns 200 with an empty
+      // split_tender_deposit_row_ids[], leaving the mobile diner with
+      // an orphan reservation in `pending_payment` status and no rows
+      // to charge. The booking diner is row 0 (signed in via JWT or
+      // via the guest_email payload); the rest get auto-generated
+      // placeholders that the diner overrides when they share the link
+      // with each friend (handled by the SplitTender UI, not here).
+      const bookingDinerEmail = payload.guest_email ?? null;
+      const bookingDinerName = payload.guest_name ?? null;
+      const { data: insertedRows, error: insertErr } = await supabase
+        .from("reservation_deposit_payments")
+        .insert(
+          shares.map((amount_cents, i) => ({
+            reservation_id: reservationId,
+            amount_cents,
+            status: "pending",
+            payer_email: i === 0
+              ? bookingDinerEmail
+              : `payer-${i + 1}+${reservationId.slice(0, 8)}@cenaiva.test`,
+            payer_full_name: i === 0
+              ? bookingDinerName
+              : `Diner ${i + 1}`,
+            payer_user_profile_id: i === 0 ? userProfileId : null,
+          })),
+        )
+        .select("id");
+      if (insertErr) {
+        console.error("[split-tender] deposit row insert failed", insertErr);
+      } else if (Array.isArray(insertedRows)) {
+        splitTenderDepositRowIds = insertedRows
+          .map((r) => (r as { id?: unknown }).id)
+          .filter((id): id is string => typeof id === "string");
       }
-      cartItems = amountCheck.cartItems;
-      const verified = amountCheck.recomputed;
+    }
 
+    let orderId: string | null = null;
+    const cartItems = normalizeCartItems(payload.cart_items);
+    if (cartItems.length > 0) {
       const { data: order, error: orderError } = await supabase
         .from("orders")
         .insert({
@@ -720,13 +676,13 @@ Deno.serve(async (req: Request) => {
           is_preorder: true,
           order_type: "dine_in",
           status: "pending",
-          subtotal: verified.subtotal,
-          tax_amount: verified.tax_amount,
-          tip_amount: verified.tip_amount,
-          total_amount: verified.total_amount,
-          discount_amount: verified.discount_amount > 0 ? verified.discount_amount : null,
+          subtotal: roundMoney(payload.subtotal),
+          tax_amount: roundMoney(payload.tax_amount),
+          tip_amount: roundMoney(payload.tip_amount),
+          total_amount: roundMoney(payload.total_amount),
+          discount_amount: roundMoney(payload.discount_amount) > 0 ? roundMoney(payload.discount_amount) : null,
           discount_reason: asText(payload.discount_reason),
-          promotion_id: promotionId,
+          promotion_id: asUuid(payload.promotion_id),
           payment_method: asText(payload.payment_method) ?? "card",
           confirmation_code: savedConfirmationCode,
           source: "web",
@@ -748,6 +704,7 @@ Deno.serve(async (req: Request) => {
       }
     }
 
+    const promotionId = asUuid(payload.promotion_id);
     if (promotionId) {
       const { data: promo } = await supabase
         .from("promotions")
@@ -764,36 +721,92 @@ Deno.serve(async (req: Request) => {
     }
 
     const reservationDateLabel = formatReservationDate(reservedAt);
-    // Sanitize user-controlled name fields before interpolating into
-    // SMS / email bodies — strips control chars + non-cenaiva URLs so
-    // a maliciously chosen guest_name can't smuggle a phishing payload
-    // into the restaurant's outbound notifications. Restaurant_name
-    // is owner-controlled (less hostile) but we still sanitize as
-    // defense-in-depth.
-    const safeGuestName = sanitizeForSmsField(guestName);
-    const safeRestaurantName = sanitizeForSmsField(restaurantName);
-    const confirmationSubject = `Your reservation at ${safeRestaurantName}`;
+    const confirmationSubject = `Your reservation at ${restaurantName}`;
     const manageLink = restaurantSlug && savedConfirmationCode
       ? `https://cenaiva.com/${restaurantSlug}?confirmation=${encodeURIComponent(savedConfirmationCode)}`
       : null;
+    // Enrich the SMS body with event/promo context so diners see what they
+    // actually booked. Mirrors the same enrichment in _shared/booking.ts.
+    let eventLine = "";
+    let promoLine = "";
+    if (reservationEventId) {
+      const { data: ev } = await supabase
+        .from("events").select("name").eq("id", reservationEventId).maybeSingle();
+      if (ev?.name) eventLine = ` Event: ${ev.name}.`;
+    }
+    if (reservationPromotionId) {
+      const { data: pr } = await supabase
+        .from("promotions").select("title, promo_code").eq("id", reservationPromotionId).maybeSingle();
+      if (pr?.title) {
+        const codePart = pr.promo_code ? ` (code ${pr.promo_code})` : "";
+        promoLine = ` Promo: ${pr.title}${codePart}.`;
+      }
+    } else if (reservationPromoCode) {
+      promoLine = ` Promo code: ${reservationPromoCode}.`;
+    }
+    const guestLabel = partySize === 1 ? "guest" : "guests";
+    // Phase 11 (2026-05-15): multi-line confirmation body. The blank line
+    // after the booking summary separates the body from the confirmation
+    // code block; another blank line separates code+manage from the
+    // recovery hint + restaurant phone. Renders cleanly in both SMS
+    // (Twilio preserves \n) and email plaintext bodies.
+    const restaurantPhoneLine = restaurantPhone
+      ? `\nNeed to reach the restaurant directly? Call ${restaurantPhone}.`
+      : "";
     const confirmationBody =
-      `Hi ${safeGuestName}, your table at ${safeRestaurantName} is booked for ${partySize} ` +
-      `${partySize === 1 ? "guest" : "guests"} on ${reservationDateLabel}. ` +
-      `Confirmation code: ${savedConfirmationCode}.` +
-      (manageLink ? ` Manage: ${manageLink}` : "");
-    const confirmationResult = await sendSmsOrEmail({
-      phone: guestPhone,
-      email: guestEmail,
-      smsBody: confirmationBody,
-      emailSubject: confirmationSubject,
-      emailBody: confirmationBody,
-    });
-    const confirmationChannel = confirmationResult.channel;
-    const confirmationStatus = confirmationResult.status;
+      `Hi ${guestName},\n\n` +
+      `Your table at ${restaurantName} is booked for ${partySize} ${guestLabel} on ${reservationDateLabel}.` +
+      eventLine + promoLine + `\n\n` +
+      `Confirmation code: ${savedConfirmationCode}\n` +
+      (manageLink ? `Manage or cancel: ${manageLink}\n` : "") +
+      `\nLost this message? Visit https://cenaiva.com/find-reservation` +
+      restaurantPhoneLine;
+    let confirmationChannel: "email" | "sms" | null = null;
+    let confirmationStatus: "sent" | "skipped" | "failed" = "skipped";
+
+    const smsToPhone = normalizeNorthAmericanPhone(guestPhone);
+    if (smsToPhone && twilioClient && twilioFromPhone) {
+      if (await isPhoneOptedOut(supabase, smsToPhone)) {
+        console.log(
+          `[create-public-booking] phone opted out, skipping SMS to ${smsToPhone.slice(-4)}`,
+        );
+        // fall through to email
+      } else {
+        try {
+          await twilioClient.messages.create({
+            body: confirmationBody,
+            from: twilioFromPhone,
+            to: smsToPhone,
+          });
+          confirmationChannel = "sms";
+          confirmationStatus = "sent";
+        } catch (err) {
+          console.error("Reservation confirmation SMS failed", err);
+          confirmationChannel = "sms";
+          confirmationStatus = "failed";
+        }
+      }
+    }
+
+    if (confirmationStatus !== "sent" && guestEmail && resend) {
+      try {
+        await resend.emails.send({
+          from: Deno.env.get("RESEND_FROM_EMAIL") ?? "Cenaiva <noreply@cenaiva.com>",
+          to: guestEmail,
+          subject: confirmationSubject,
+          text: confirmationBody,
+        });
+        confirmationChannel = "email";
+        confirmationStatus = "sent";
+      } catch (err) {
+        console.error("Reservation confirmation email failed", err);
+        confirmationChannel = "email";
+        confirmationStatus = "failed";
+      }
+    }
 
     if (confirmationChannel) {
-      await logCommunication({
-        supabase,
+      await supabase.from("communication_log").insert({
         guest_id: guestId,
         restaurant_id: restaurantId,
         channel: confirmationChannel,
@@ -801,55 +814,26 @@ Deno.serve(async (req: Request) => {
         subject: confirmationSubject,
         body: confirmationBody,
         status: confirmationStatus,
+        sent_at: confirmationStatus === "sent" ? new Date().toISOString() : null,
         campaign_id: reservationId,
       });
     }
 
-    // Additive push: if this booking is tied to a signed-in diner with an
-    // Expo push token, deliver a notification alongside the SMS/email so
-    // they get an instant banner. Per MVP plan §B2: additive, not strict
-    // primary — SMS still fires so launch isn't gated on push reliability.
-    try {
-      const { data: guestRow } = await supabase
-        .from("guests")
-        .select("auth_user_id")
-        .eq("id", guestId)
-        .maybeSingle();
-      const authUserId = (guestRow as { auth_user_id?: string | null } | null)?.auth_user_id;
-      if (authUserId) {
-        const { data: profileRow } = await supabase
-          .from("user_profiles")
-          .select("expo_push_token")
-          .eq("auth_user_id", authUserId)
-          .maybeSingle();
-        const token = (profileRow as { expo_push_token?: string | null } | null)?.expo_push_token;
-        if (token) {
-          const pushResult = await sendExpoPush({
-            tokens: [token],
-            title: "Reservation confirmed",
-            body: `Your table at ${safeRestaurantName} is booked. Confirmation: ${savedConfirmationCode}.`,
-            data: {
-              kind: "booking_confirmed",
-              reservationId,
-              restaurantId,
-            },
-          });
-          await logCommunication({
-            supabase,
-            guest_id: guestId,
-            restaurant_id: restaurantId,
-            channel: "push",
-            type: "reservation_confirmation",
-            subject: confirmationSubject,
-            body: confirmationBody,
-            status: pushResult.sentCount > 0 ? "sent" : "failed",
-            campaign_id: reservationId,
-          });
-        }
-      }
-    } catch (pushErr) {
-      console.error("[create-public-booking] push send threw", pushErr);
-    }
+    // Owner notification (fire-and-forget). Honors the owner's
+    // notification_preferences_json.new_reservation_email toggle internally
+    // — no need to gate here. Goes to the owner's user_profile.email, never
+    // restaurants.email (the shared inbox).
+    void notifyOwnerNewReservation({
+      supabase,
+      restaurant_id: restaurantId,
+      reservation_id: reservationId,
+      reserved_at: reservedAt.toISOString(),
+      party_size: partySize,
+      guest_full_name: guestName,
+      confirmation_code: savedConfirmationCode,
+    }).catch((err) => {
+      console.error("[create-public-booking] notifyOwnerNewReservation failed", err);
+    });
 
     return jsonResponse({
       reservation_id: reservationId,
@@ -861,10 +845,9 @@ Deno.serve(async (req: Request) => {
       confirmation_delivery_channel: confirmationChannel,
       deposit_amount_cents: depositAmountCents,
       deposit_required: depositAmountCents > 0,
+      split_tender_deposit_row_ids: splitTenderDepositRowIds,
     });
   } catch (err) {
-    const validation = validationResponse(err, corsHeaders);
-    if (validation) return validation;
     return jsonResponse({ error: err instanceof Error ? err.message : String(err) }, 500);
   }
 });
