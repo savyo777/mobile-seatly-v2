@@ -286,6 +286,7 @@ export function SplitTenderCheckout({
     let activeReservationId = reservationId;
     let activeConfirmationCode = confirmationCode;
     let activeRowIds: (string | null)[] = slots.map((s) => s.rowId);
+    let paidThisRun = 0;
 
     try {
       // Step 1: create the reservation + N pending deposit rows IF this
@@ -438,6 +439,24 @@ export function SplitTenderCheckout({
           }
         }
         updateSlot(i, { status: 'paid', errorMsg: null, piId, rowId });
+        paidThisRun += 1;
+      }
+
+      // Count slots paid prior to THIS run (any retries-after-partial-failure
+      // would already have those marked 'paid' in state). The closure-
+      // captured `slots` is stale but it's the value at the start of THIS
+      // placeOrder invocation, so `(prev paid count) + paidThisRun` is
+      // the true number paid AFTER this run completes.
+      const previouslyPaid = slots.filter((s) => s?.status === 'paid').length;
+      const totalPaid = previouslyPaid + paidThisRun;
+      if (totalPaid >= splitCount && activeReservationId && activeConfirmationCode) {
+        // All slots settled. Hand off to parent. Side effect lives OUTSIDE
+        // any setState updater so React doesn't surface a "setState during
+        // render" warning when parent calls router.push.
+        onAllPaid({
+          reservationId: activeReservationId,
+          confirmationCode: activeConfirmationCode,
+        });
       }
     } catch (err) {
       Alert.alert(
@@ -453,20 +472,6 @@ export function SplitTenderCheckout({
     } finally {
       setSubmitting(false);
     }
-
-    // Use a microtask-deferred slot read so the setState updates above
-    // have time to flush. We can't trust the closure-captured `slots`
-    // array — read fresh via a functional setState after the loop ends.
-    setSlots((latest) => {
-      const allPaid = latest.length === splitCount && latest.every((s) => s.status === 'paid');
-      if (allPaid && activeReservationId && activeConfirmationCode) {
-        onAllPaid({
-          reservationId: activeReservationId,
-          confirmationCode: activeConfirmationCode,
-        });
-      }
-      return latest;
-    });
   }, [
     submitting,
     reservationId,
