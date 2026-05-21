@@ -35,6 +35,7 @@ import type { DateKey } from '@/lib/booking/availabilityTypes';
 import { useReservationHoldContext } from '@/lib/booking/ReservationHoldProvider';
 import { isHoldsEnabled } from '@/lib/config/holdsFeature';
 import { friendlyError } from '@/lib/errors/friendlyError';
+import { useTranslation } from 'react-i18next';
 
 const useStyles = createStyles((c) => ({
   container: { flex: 1, backgroundColor: c.bgBase },
@@ -298,6 +299,7 @@ export default function Step7Confirmation() {
   const insets = useSafeAreaInsets();
   const c = useColors();
   const styles = useStyles();
+  const { t } = useTranslation();
   const rid = restaurantId ?? '';
 
   const hold = useReservationHoldContext();
@@ -371,10 +373,16 @@ export default function Step7Confirmation() {
         // If the user landed on step7 while the hold was still being created
         // (e.g. tapped Skip on step4 within ~200ms of mount), wait briefly for
         // it to materialize. Falls through to the legacy path on timeout.
+        // 2026-05-21: also break explicitly on 'error' so a known-failed hold
+        // doesn't keep spinning, and cap the wait at 3s so a stuck-creating
+        // state never blocks the booking call indefinitely (Android Hermes
+        // can lag state propagation enough to matter).
         if (isHoldsEnabled() && hold.state.status === 'creating') {
           for (let i = 0; i < 30; i++) {
             if (cancelled) return;
-            if (hold.state.status !== 'creating') break;
+            const currentStatus = hold.state.status as string;
+            if (currentStatus === 'error') break;
+            if (currentStatus !== 'creating') break;
             await new Promise((resolve) => setTimeout(resolve, 100));
           }
         }
@@ -474,6 +482,22 @@ export default function Step7Confirmation() {
     };
   }, [cart, date, email, guests, name, notes, occasion, paymentMethod, phone, preorderSubtotal, restaurant, rid, router, seatingPreference, shiftId, slotDateTime]);
 
+  // Watchdog: if neither confirmation nor submitError lands within 18s
+  // (e.g. Android Hermes swallowed an abort/timeout from createPublicBooking),
+  // force-surface the failure so the user sees something instead of an
+  // infinite spinner. The chain itself may still eventually settle; this
+  // is a UX safety net, not a real cancellation.
+  useEffect(() => {
+    if (confirmation || submitError) return;
+    const timeoutId = setTimeout(() => {
+      if (confirmation || submitError) return;
+      const msg = 'Confirmation is taking longer than expected. Please go back and try again.';
+      setSubmitError(msg);
+      Alert.alert(t('common.error') as string, msg);
+    }, 18_000);
+    return () => clearTimeout(timeoutId);
+  }, [confirmation, submitError, t]);
+
   useEffect(() => {
     Animated.sequence([
       Animated.spring(scaleAnim, {
@@ -522,7 +546,24 @@ export default function Step7Confirmation() {
             <>
               <Ionicons name="alert-circle-outline" size={42} color={c.danger} />
               <Text style={styles.errorText}>{submitError}</Text>
-              <Button title="Choose another time" onPress={() => router.replace(`/booking/${rid}/step2-time?date=${encodeURIComponent(date ?? '')}`)} />
+              <Button
+                title={t('common.retry') as string}
+                onPress={() => {
+                  setSubmitError(null);
+                  savedReservationRef.current = false;
+                  // Pop back to step6-payment which still holds all the
+                  // form state in its URL params. The diner can tap
+                  // Confirm Booking again — if the underlying server
+                  // issue persists, the loud-fail path there surfaces
+                  // a clear Alert instead of the silent spinner here.
+                  router.back();
+                }}
+              />
+              <Button
+                title="Choose another time"
+                variant="outlined"
+                onPress={() => router.replace(`/booking/${rid}/step2-time?date=${encodeURIComponent(date ?? '')}`)}
+              />
             </>
           ) : (
             <>

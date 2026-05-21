@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Alert, View, Text, TouchableOpacity, ScrollView, Platform, Modal, Pressable } from 'react-native';
+import { Alert, View, Text, TouchableOpacity, ScrollView, Platform, Modal, Pressable, StyleSheet } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -26,6 +26,7 @@ import { useCurrentUserId } from '@/lib/auth/currentUserId';
 import { stripeAttachPaymentMethod } from '@/lib/stripe/stripeAttachPaymentMethod';
 import { usePreventScreenCapture } from '@/lib/security/usePreventScreenCapture';
 import { SplitTenderCheckout } from '@/components/booking/SplitTenderCheckout';
+import { computeDinerCharge } from '@/lib/stripe/stripeFee';
 
 type PaymentMethod = 'card' | 'apple_pay' | 'google_pay';
 
@@ -45,6 +46,15 @@ const useStyles = createStyles((c) => ({
   totalLine: { marginTop: 8, paddingTop: 12, borderTopWidth: 1, borderTopColor: c.border },
   totalLabel: { fontSize: 16, fontWeight: '700', color: c.textPrimary },
   totalValue: { fontSize: 18, fontWeight: '700', color: c.gold },
+  feeDisclosure: {
+    marginTop: 10,
+    paddingTop: 10,
+    borderTopWidth: StyleSheet.hairlineWidth,
+    borderTopColor: c.border,
+    fontSize: 11,
+    color: c.textMuted,
+    lineHeight: 16,
+  },
   sectionTitle: { fontSize: 16, fontWeight: '600', color: c.textPrimary, marginTop: 24, marginBottom: 12 },
   modeToggleRow: {
     flexDirection: 'row',
@@ -235,7 +245,16 @@ export default function Step6Payment() {
   const depositCents = previewDepositCents(depositTiers, partySizeNum);
   const depositAmount = depositCents / 100;
   const hasDeposit = depositCents > 0;
-  const totalDue = preorderTotal + taxAmount + depositAmount;
+  const baseTotalDue = preorderTotal + taxAmount + depositAmount;
+  // Apply Stripe's gross-up policy so the displayed Total matches what
+  // the diner's card actually gets charged. For < $12 the diner covers
+  // the Stripe processing fee on top; for $12+ Cenaiva absorbs it.
+  // The 5.5% application_fee is taken from the restaurant's payout —
+  // NOT added to the diner's total. We surface it as a disclosure
+  // note under the breakdown so there are no hidden fees.
+  const baseTotalCents = Math.round(baseTotalDue * 100);
+  const dinerCharge = computeDinerCharge(baseTotalCents);
+  const totalDue = dinerCharge.dinerTotalCents / 100;
   // Split-tender is offered only when there's a deposit (food + tax flow
   // through the diner running checkout, never split) AND party >= 2.
   // Guard from MOBILE_SPLIT_TENDER_GUIDE.md §1.
@@ -532,10 +551,23 @@ export default function Step6Payment() {
               <Text style={styles.lineValue}>No payment due now</Text>
             </View>
           )}
+          {dinerCharge.dinerPaysFee && dinerCharge.processingFeeCents > 0 ? (
+            <View style={styles.lineItem}>
+              <Text style={styles.lineLabel}>{t('booking.processingFeeLabel') as string}</Text>
+              <Text style={styles.lineValue}>{formatCurrency(dinerCharge.processingFeeCents / 100)}</Text>
+            </View>
+          ) : null}
           <View style={[styles.lineItem, styles.totalLine]}>
             <Text style={styles.totalLabel}>{t('orders.total')}</Text>
             <Text style={styles.totalValue}>{formatCurrency(totalDue)}</Text>
           </View>
+          {(hasDeposit || hasPreorder) && dinerCharge.applicationFeeCents > 0 ? (
+            <Text style={styles.feeDisclosure}>
+              {t('booking.serviceFeeNote', {
+                fee: formatCurrency(dinerCharge.applicationFeeCents / 100),
+              }) as string}
+            </Text>
+          ) : null}
         </Card>
 
         {canSplit ? (
@@ -585,7 +617,14 @@ export default function Step6Payment() {
               discount_amount: null,
               discount_reason: null,
               promotion_id: null,
-              hold_id: hold.state.status === 'active' ? hold.state.holdId : null,
+              // NOTE: do NOT pass hold_id here. Per MOBILE_SPLIT_TENDER_GUIDE
+              // §10.4, split-tender uses the hold ONLY on slot 0's
+              // create-public-payment-intent (server consumes it atomically
+              // during PI mint). If we ALSO pass it to create-public-booking,
+              // book_reservation rejects with "Reservation: invalid_status"
+              // when the hold gets converted server-side from slot 0's PI
+              // before the booking row finishes inserting.
+              hold_id: null,
             }}
             holdId={hold.state.status === 'active' ? hold.state.holdId : null}
             diner={{ name, email, phone }}

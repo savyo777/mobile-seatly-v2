@@ -410,7 +410,7 @@ export function SplitTenderCheckout({
       }
     } catch (err) {
       Alert.alert(
-        t('common.somethingWentWrong') as string,
+        t('common.error') as string,
         friendlyError(err, 'Could not start the split payment. Please try again.'),
       );
     } finally {
@@ -490,7 +490,7 @@ export function SplitTenderCheckout({
         </View>
 
         <View style={styles.shareSummary}>
-          <View>
+          <View style={{ flex: 1, paddingRight: 8 }}>
             <Text style={styles.shareLabel}>{t('booking.paymentSplitPerShare')}</Text>
             {dinerCharge.dinerPaysFee ? (
               <Text style={styles.shareHint}>
@@ -498,6 +498,13 @@ export function SplitTenderCheckout({
                   base: formatCents(dinerCharge.baseCents),
                   fee: formatCents(dinerCharge.processingFeeCents),
                 })}
+              </Text>
+            ) : null}
+            {dinerCharge.applicationFeeCents > 0 ? (
+              <Text style={styles.shareHint}>
+                {t('booking.serviceFeeNote', {
+                  fee: formatCents(dinerCharge.applicationFeeCents),
+                }) as string}
               </Text>
             ) : null}
           </View>
