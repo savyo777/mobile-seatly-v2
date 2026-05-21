@@ -414,15 +414,47 @@ export default function Step6Payment() {
       );
       return;
     }
-    if (!isHoldsEnabled() || hold.state.status !== 'active') {
+    // Real-device reality: users frequently take >30min between
+    // step2 (time pick) and step6 (confirm) — browsing the menu,
+    // getting distracted, coming back. The 30-min hold timer
+    // expires + this gate used to fire a dead-end "go back to step2"
+    // Alert, forcing them to redo the whole flow. Now: try to
+    // re-acquire the hold in-place first; only fall back to the
+    // Alert if the re-acquire also fails (e.g. slot now taken by
+    // someone else).
+    let effectiveHoldId: string | null =
+      hold.state.status === 'active' ? hold.state.holdId : null;
+    if (!isHoldsEnabled() || !effectiveHoldId) {
+      setPaying(true);
+      try {
+        const reacquired = await hold.grabAgain();
+        if (!reacquired) {
+          Alert.alert(
+            t('booking.holdExpiredTitle') as string,
+            'We couldn’t hold your table for payment. Please go back and pick the time again so we can re-secure your spot.',
+          );
+          return;
+        }
+        // Use the holdId from grabAgain's return value DIRECTLY —
+        // hold.state is React state which won't be refreshed until
+        // the next render, but the underlying state machine already
+        // has the new hold. createHold inside grabAgain has already
+        // called setState({status:'active', holdId:...}) so the next
+        // render will line up.
+        effectiveHoldId = reacquired.holdId;
+      } finally {
+        setPaying(false);
+      }
+    }
+
+    const holdId = effectiveHoldId;
+    if (!holdId) {
       Alert.alert(
         t('booking.holdExpiredTitle') as string,
         'We couldn’t hold your table for payment. Please go back and pick the time again so we can re-secure your spot.',
       );
       return;
     }
-
-    const holdId = hold.state.holdId;
     setPaying(true);
     let createdPaymentIntentId: string | null = null;
     try {

@@ -73,7 +73,7 @@ export interface UseReservationHoldReturn {
   confirmHoldPayment: (
     paymentIntentId: string,
   ) => Promise<ConfirmHoldPaidResponse | null>;
-  grabAgain: () => Promise<boolean>;
+  grabAgain: () => Promise<{ holdId: string; expiresAt: string } | null>;
   cancelHold: () => Promise<void>;
   confirmConverted: (reservationId: string, confirmationCode: string) => void;
 }
@@ -294,13 +294,25 @@ export function useReservationHold(args: UseReservationHoldArgs): UseReservation
       }
       if (cancelled) return;
       const current = stateRef.current;
-      // Retry from 'error' too. Without this, a failed hold creation
-      // on one booking attempt (transient 400, network blip, prior
-      // bug #5 victim) permanently bricks the holds path for the rest
-      // of the JS runtime — every subsequent booking lands on step6
-      // with "Your hold ended" because auto-create only fires for
-      // status='idle' and an errored hook stays errored.
-      if (current.status === 'idle' || current.status === 'error') {
+      // Retry from 'error' and 'expired' too. Without this:
+      //   - error: a failed hold creation on one booking attempt
+      //     (transient 400, network blip, prior bug #5 victim)
+      //     permanently bricks the holds path for the rest of the JS
+      //     runtime — every subsequent booking lands on step6 with
+      //     "Your hold ended" because auto-create only fires for
+      //     status='idle' and an errored hook stays errored.
+      //   - expired: when the user takes >30min between picking a
+      //     time and tapping Confirm Booking (real-device reality:
+      //     they navigate to menu, browse, get distracted, come
+      //     back), the 30-min hold timer ticks down to 0 and the
+      //     hook flips to 'expired'. Without this branch, the user
+      //     is stuck on step6 with no path forward except backing
+      //     all the way out to step2-time and starting over.
+      //     Re-acquiring is cheap (single edge-fn call) and the
+      //     server will simply 409 if the slot's now taken — at
+      //     which point we surface the standard slot-conflict
+      //     error rather than a dead-end "couldn't hold" Alert.
+      if (current.status === 'idle' || current.status === 'error' || current.status === 'expired') {
         void createHold();
       }
     })();
@@ -473,8 +485,13 @@ export function useReservationHold(args: UseReservationHoldArgs): UseReservation
   const grabAgain = useCallback(async () => {
     await clearPersistedHold();
     setState({ status: 'idle' });
-    const result = await createHold();
-    return Boolean(result);
+    // Return the actual createHold result so callers can use the new
+    // holdId synchronously without waiting for a React re-render.
+    // Boolean coercion via Boolean(result) is preserved for backwards
+    // compat — callers that only need success/fail can do `if (await
+    // hold.grabAgain())`. Callers that need the holdId can read it
+    // off the result.
+    return await createHold();
   }, [clearPersistedHold, createHold]);
 
   const cancelHoldImpl = useCallback(async () => {
