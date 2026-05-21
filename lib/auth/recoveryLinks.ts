@@ -79,9 +79,9 @@ const RECOVERY_FRESHNESS_MS = 60 * 60 * 1000;
 export async function isRecoveryRecentlyInitiated(email: string): Promise<boolean> {
   if (!email) return false;
   try {
-    const AsyncStorage = (await import('@react-native-async-storage/async-storage')).default;
+    const { secureGetString } = await import('@/lib/storage/secureKvStore');
     const key = `@cenaiva/recovery_initiated:${email.trim().toLowerCase()}`;
-    const raw = await AsyncStorage.getItem(key);
+    const raw = await secureGetString(key);
     if (!raw) return false;
     const initiatedMs = Number(raw);
     if (!Number.isFinite(initiatedMs)) return false;

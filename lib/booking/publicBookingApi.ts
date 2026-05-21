@@ -428,6 +428,20 @@ export async function createPublicBooking(
 export async function prepareDeposit(params: {
   reservation_id: string;
   payers: DepositPayer[];
+  /**
+   * Optional. When the caller has already minted a PaymentIntent for
+   * this deposit (e.g. the inline split-pay flow charges BEFORE rows
+   * exist), pass it here so the server stamps
+   * `pi.metadata.deposit_payment_ids` with the freshly inserted row
+   * IDs. confirm-deposit-paid validates that metadata, so missing it
+   * would otherwise force the legacy less-strict restaurant_id check.
+   *
+   * Mobile holds path doesn't use this (the holds flow charges via
+   * confirm-hold-paid which validates `pi.metadata.hold_id` instead).
+   * Added for parity with MOBILE_SECURITY_HARDENING.md §2b on
+   * 2026-05-20.
+   */
+  payment_intent_id?: string;
 }): Promise<PrepareDepositResponse> {
   // `prepare-deposit` IS deployed (since 2026-04). Returning an empty
   // payments array here would silently skip the deposit collection

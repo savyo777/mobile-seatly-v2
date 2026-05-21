@@ -44,6 +44,24 @@ function resolveRoleFromMetadata(user: User | null): string | null {
   // malicious client could spoof their own role to 'owner' and flash
   // owner chrome before the user_profiles lookup completes. This was
   // closed in the 2026-05-17 security audit.
+  //
+  // 2026-05-20 defense-in-depth: explicitly assert that user_metadata
+  // does NOT contain a `role` key. If Supabase ever auto-mirrors
+  // metadata between app_metadata and user_metadata (a config that's
+  // been proposed in their issues queue), this guard catches the
+  // regression at runtime rather than letting a forged role slip in.
+  // Logs and refuses to elevate; falls back to no-role + user_profiles
+  // lookup, which is the safe legacy path.
+  const userMeta = user.user_metadata as Record<string, unknown> | undefined;
+  if (userMeta && 'role' in userMeta && userMeta.role != null) {
+    if (__DEV__) {
+      // eslint-disable-next-line no-console
+      console.warn(
+        '[AuthContext] user_metadata.role is set — refusing to read it. Roles must come from app_metadata only.',
+      );
+    }
+    return null;
+  }
   const roleFromMetadata = user.app_metadata?.role as string | undefined;
   if (!roleFromMetadata) return null;
   const normalized = roleFromMetadata.toLowerCase();

@@ -51,6 +51,7 @@ import {
   getRecoveryTokenHashFromUrl,
   getRecoveryTokensFromUrl,
 } from '@/lib/auth/recoveryLinks';
+import { classifyDeepLink, logDeepLinkReject } from '@/lib/auth/deepLinkPolicy';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import {
   OWNER_REFERRAL_DEEP_LINK_PATH,
@@ -74,6 +75,23 @@ function RecoveryLinkHandler() {
     if (!supabase) return;
 
     const handleUrl = async (url: string) => {
+      // Defense in depth: gate every dispatch through the deep-link
+      // allowlist before calling Supabase/Stripe. The handlers below
+      // already do their own server-side token validation, but the
+      // allowlist prevents a hostile URL from EVEN REACHING those
+      // handlers — drops the attack surface to just the route shapes
+      // we explicitly opted in to.
+      const policy = classifyDeepLink(url);
+      if (!policy) {
+        logDeepLinkReject(url);
+        return;
+      }
+      // Only the recovery + auth_callback kinds need the Supabase token
+      // verification dance below. Other kinds are owned by their own
+      // handlers (referral, stripe redirects, router navigation).
+      if (policy.kind !== 'recovery' && policy.kind !== 'auth_callback') {
+        return;
+      }
       try {
         const clearIfUnusableAuthError = async (error: unknown) => {
           if (isUnusablePersistedSupabaseAuthError(error)) {

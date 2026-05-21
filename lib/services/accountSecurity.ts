@@ -177,15 +177,23 @@ export async function sendPasswordResetEmail(email: string): Promise<void> {
   // handler uses this to flag deep-links that arrive without a
   // matching local request — those are still allowed (cross-device
   // reset is legitimate) but a server-side notice is logged for ops
-  // visibility. Added 2026-05-17 in the security audit.
+  // visibility.
+  //
+  // 2026-05-20 hardening: persist via expo-secure-store (iOS Keychain /
+  // Android EncryptedSharedPreferences) instead of AsyncStorage. The
+  // timestamp itself isn't a credential, but a jailbroken device could
+  // read AsyncStorage and forge "recently initiated" state to bypass
+  // the cross-device freshness check. SecureStore raises the bar.
+  // Falls back to AsyncStorage if the native module isn't linked
+  // (mismatched dev build) so the recovery flow never hard-breaks.
   try {
-    const AsyncStorage = (await import('@react-native-async-storage/async-storage')).default;
-    await AsyncStorage.setItem(
+    const { secureSetString } = await import('@/lib/storage/secureKvStore');
+    await secureSetString(
       `@cenaiva/recovery_initiated:${email.trim().toLowerCase()}`,
       String(Date.now()),
     );
   } catch {
-    /* AsyncStorage write is best-effort; do not surface errors */
+    /* best-effort; do not surface errors */
   }
 }
 
