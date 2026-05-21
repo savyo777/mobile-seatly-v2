@@ -6,7 +6,6 @@ import {
   cancelReservationHold,
   confirmHoldPaid,
   createReservationHold,
-  fireAndForgetCancel,
   heartbeatReservationHold,
   mapHoldErrorCode,
   updateReservationHold,
@@ -165,8 +164,17 @@ export function useReservationHold(args: UseReservationHoldArgs): UseReservation
     (resp: CreateHoldResponse | StoredHold, persisted: StoredHold) => {
       const secondsLeft = computeSecondsLeft(persisted.expiresAt, persisted.serverSkewMs);
       if (secondsLeft <= 0) {
+        if (__DEV__) {
+          console.log(
+            '[hold] transitionToActive saw negative secondsLeft on hydration → expired',
+            { expiresAt: persisted.expiresAt, serverSkewMs: persisted.serverSkewMs, secondsLeft },
+          );
+        }
         setState({ status: 'expired', holdId: persisted.holdId });
         return;
+      }
+      if (__DEV__) {
+        console.log('[hold] transitionToActive →', { holdId: persisted.holdId, secondsLeft });
       }
       setState({
         status: 'active',
@@ -332,6 +340,12 @@ export function useReservationHold(args: UseReservationHoldArgs): UseReservation
       if (current.status !== 'active') return;
       const secondsLeft = computeSecondsLeft(current.expiresAt, current.serverSkewMs);
       if (secondsLeft <= 0) {
+        if (__DEV__) {
+          console.log(
+            '[hold] client-tick expired',
+            { expiresAt: current.expiresAt, serverSkewMs: current.serverSkewMs, holdId: current.holdId },
+          );
+        }
         setState({ status: 'expired', holdId: current.holdId });
         return;
       }
@@ -376,11 +390,37 @@ export function useReservationHold(args: UseReservationHoldArgs): UseReservation
     const fireHeartbeat = () => {
       // TODO(activity-gated heartbeat): only fire when there's been recent
       // user input; for v1 we beat unconditionally while foregrounded.
-      heartbeatReservationHold(holdId, 120).catch((error) => {
-        if (error instanceof HoldApiError && error.status === 410) {
-          setState({ status: 'expired', holdId });
-        }
-      });
+      heartbeatReservationHold(holdId, 120)
+        .then((resp) => {
+          // CRITICAL: apply the server-returned expires_at to state so
+          // the local timer reflects the heartbeat extension. Before
+          // this fix the success response was discarded, which meant
+          // the client timer always counted down from the ORIGINAL
+          // expires_at — every active heartbeat call moved the
+          // server-side TTL forward but the diner saw the clock
+          // approach zero anyway, then the client-side tick fired
+          // setState({status:'expired'}) and dead-ended them at
+          // step6 even though the server hold was still alive.
+          const current = stateRef.current;
+          if (current.status !== 'active') return;
+          if (current.holdId !== holdId) return;
+          if (!resp?.expires_at) return;
+          if (resp.expires_at === current.expiresAt) return;
+          const secondsLeft = computeSecondsLeft(resp.expires_at, current.serverSkewMs);
+          if (secondsLeft <= 0) return;
+          if (__DEV__) {
+            console.log('[hold] heartbeat extended expires_at:', resp.expires_at, '→ secondsLeft:', secondsLeft);
+          }
+          setState({ ...current, expiresAt: resp.expires_at, secondsLeft });
+        })
+        .catch((error) => {
+          if (error instanceof HoldApiError && error.status === 410) {
+            if (__DEV__) console.log('[hold] heartbeat 410 → expiring locally');
+            setState({ status: 'expired', holdId });
+          } else if (__DEV__) {
+            console.log('[hold] heartbeat error (kept alive):', error?.message ?? error);
+          }
+        });
     };
 
     const startHeartbeat = () => {
@@ -518,17 +558,33 @@ export function useReservationHold(args: UseReservationHoldArgs): UseReservation
     [clearPersistedHold],
   );
 
-  // Best-effort cancel on unmount when the hold is still active.
-  useEffect(() => {
-    return () => {
-      const current = stateRef.current;
-      if (current.status === 'active') {
-        fireAndForgetCancel(current.holdId);
-        // Don't await — the layout is unmounting.
-        void clearPersistedHold();
-      }
-    };
-  }, [clearPersistedHold]);
+  // DELIBERATELY DO NOT cancel the hold on unmount.
+  //
+  // Previously this effect fired `fireAndForgetCancel(holdId)` + cleared
+  // the persisted hold from AsyncStorage whenever it unmounted. That
+  // sounds polite (release the slot when the user leaves) but in
+  // practice it nuked holds at the wrong times:
+  //   - the cleanup depended on `clearPersistedHold` identity, which
+  //     changes whenever `persistedKey` changes — and persistedKey
+  //     changes whenever restaurantId/dateTime/Provider deps shift
+  //     (e.g. on Metro Fast Refresh, AppState transitions, or a
+  //     parent re-render that flips a prop momentarily). One real
+  //     user reported the hold expired in 2 minutes despite the 30-min
+  //     server TTL.
+  //   - even on a clean unmount the server-side hold has a 30-min TTL
+  //     that the server enforces — we don't need to be a "good
+  //     citizen" by force-cancelling it. The slot frees itself.
+  //   - users WANT the hold to survive backgrounding the app for a
+  //     few minutes (kids interrupt, doorbell, etc.). Aggressive
+  //     cleanup punishes them.
+  //
+  // The user-initiated cancel path (`cancelHoldImpl` above + the
+  // `cancelHold()` exposed in the return value) still exists for
+  // surfaces that explicitly want to release the slot. Anything else
+  // — server natural expiry covers it.
+  //
+  // If you re-add a cleanup here, gate it behind an explicit
+  // "user-leaving-the-flow" signal from the parent, NOT mere unmount.
 
   const visualState = useMemo<HoldVisualState>(() => {
     if (state.status !== 'active') return 'calm';
