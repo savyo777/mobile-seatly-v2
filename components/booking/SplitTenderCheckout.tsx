@@ -24,7 +24,7 @@
  * to `confirmed`.
  */
 
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Alert, ActivityIndicator, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
@@ -37,6 +37,7 @@ import { secureRandomUuidV4 } from '@/lib/utils/secureRandom';
 import {
   createPublicBooking,
   confirmDepositPaid,
+  cancelReservation,
   type PublicBookingPayload,
 } from '@/lib/booking/publicBookingApi';
 import { createHoldPaymentIntent } from '@/lib/booking/holdApi';
@@ -276,6 +277,55 @@ export function SplitTenderCheckout({
   const [reservationId, setReservationId] = useState<string | null>(null);
   const [confirmationCode, setConfirmationCode] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
+
+  // Track latest state for the unmount-cleanup effect. useEffect's
+  // cleanup captures the closure at mount time, so we need a ref that
+  // always reflects the latest reservationId + paidCount.
+  const cleanupRef = useRef<{
+    reservationId: string | null;
+    confirmationCode: string | null;
+    anyPaid: boolean;
+  }>({ reservationId: null, confirmationCode: null, anyPaid: false });
+  useEffect(() => {
+    cleanupRef.current = {
+      reservationId,
+      confirmationCode,
+      anyPaid: slots.some((s) => s.status === 'paid'),
+    };
+  });
+
+  // Auto-cancel orphan reservations when the user backs out of the
+  // split-tender flow WITHOUT paying any slot. Before this, every
+  // partial split attempt (open PaymentSheet → dismiss → back out)
+  // left the reservation in `pending_payment` status, which the
+  // diner_double_book check then used to block all future bookings
+  // at that slot. Real user report from 2026-05-21: "if a user stops
+  // the prepay halfway, it shouldnt block him from prepaying."
+  //
+  // Rules:
+  //   - If at least one slot has been PAID, do NOT cancel — the diner
+  //     has committed money and the booking should stay alive for
+  //     them to complete the remaining payers (or surface a partial-
+  //     payment refund flow if they give up).
+  //   - If NO slot has been paid and we have a reservation_id, cancel
+  //     it. The server's cancel-reservation refunds nothing (nothing
+  //     to refund) and flips status to 'cancelled' so the slot
+  //     reopens.
+  useEffect(() => {
+    return () => {
+      const snapshot = cleanupRef.current;
+      if (!snapshot.reservationId || snapshot.anyPaid) return;
+      // Fire-and-forget. The caller is unmounting; we can't await.
+      cancelReservation({
+        reservation_id: snapshot.reservationId,
+        confirmation_code: snapshot.confirmationCode ?? undefined,
+      }).catch((err) => {
+        if (__DEV__) {
+          console.log('[split-tender] orphan cleanup failed (non-fatal):', err?.message ?? err);
+        }
+      });
+    };
+  }, []);
 
   // Keep slots length in sync with splitCount. Changing the count RESETS
   // everything per guide §5.2 — any mid-flow charge is cancelled.
@@ -541,7 +591,14 @@ export function SplitTenderCheckout({
   const ctaLabel = allPaid
     ? (t('booking.paymentSplitAllPaid') as string)
     : failedCount > 0
-      ? (t('booking.paymentSplitRetryFailed', { count: failedCount }) as string)
+      // Friendly retry copy — ICU plural template was broken (i18next
+      // not configured for plural rules), so we manually pick the
+      // count-aware string. "Try again" reads better than "Retry N
+      // declined cards" especially when the diner just dismissed
+      // PaymentSheet (cancelled, not declined).
+      ? (failedCount > 1
+          ? (t('booking.paymentSplitRetryFailedWithCount', { count: failedCount }) as string)
+          : (t('booking.paymentSplitRetryFailed') as string))
       : (t('booking.paymentSplitPlaceOrder') as string);
 
   return (
