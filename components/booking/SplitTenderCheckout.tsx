@@ -484,27 +484,34 @@ export function SplitTenderCheckout({
         });
       }
     } catch (err) {
-      // Surface the SERVER's actual error message when present
-      // (`friendlyError` already prefers raw Error.message over the
-      // fallback) — most failures during split-tender are useful
-      // diagnostics that the user can act on:
+      // Surface the SERVER's actual error message when it's well-formed,
+      // bypassing friendlyError's code-table lookup which would
+      // default to the fallback for plain Error('message') throws.
+      // The server's diagnostics are user-actionable:
       //   - "You already have a reservation at this restaurant
       //     during that window" → tell them which booking to cancel
       //   - "Could not create reservation" → genuine server error
-      //     they should retry
-      //   - "create-public-booking returned 0 split_tender_deposit
-      //     _row_ids" → server-side native split-tender not deployed,
-      //     coordinate with web team
-      // Previously this catch always defaulted to "Couldn't start
-      // the split payment. If you already have a booking around this
-      // time…" which buried the specific reason. The fallback stays
-      // for cases where we genuinely have no diagnostic — e.g. a
-      // network timeout where err.message is unhelpful.
-      const friendly = friendlyError(
-        err,
-        "Couldn't start the split payment. Please try again.",
-      );
-      Alert.alert(t('common.error') as string, friendly);
+      //   - "create-public-booking returned 0 split_tender_deposit_row_ids"
+      //     → server-side native split-tender not deployed
+      //
+      // We only bypass friendlyError when:
+      //   - err is an Error with a useful, non-network message
+      //   - that message looks meant for end users (has a period, not
+      //     a stack trace, not a code identifier like "PGRST114")
+      // Otherwise we fall back to friendlyError for the
+      // network/auth/code-table cases it handles well.
+      const rawMessage = err instanceof Error ? err.message : null;
+      const looksUserFacing =
+        rawMessage !== null &&
+        rawMessage.length > 10 &&
+        rawMessage.length < 240 &&
+        !/^[A-Z][A-Z0-9_]+$/.test(rawMessage) &&
+        !rawMessage.toLowerCase().startsWith('network') &&
+        !rawMessage.toLowerCase().includes('fetch');
+      const message = looksUserFacing
+        ? rawMessage
+        : friendlyError(err, "Couldn't start the split payment. Please try again.");
+      Alert.alert(t('common.error') as string, message);
     } finally {
       setSubmitting(false);
     }
