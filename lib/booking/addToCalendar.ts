@@ -176,10 +176,33 @@ async function writeEventToDeviceCalendar(booking: CalendarBooking): Promise<boo
     return false;
   }
 
+  // Defensive sanity check: in dev clients where the native bridge is
+  // partially linked (require() resolves but the methods aren't fully
+  // wired), the expected API functions can be undefined. Calling them
+  // would throw a native rejection that escapes our try/catch. Bail
+  // early to the ICS fallback instead.
+  if (
+    typeof Calendar.requestCalendarPermissionsAsync !== 'function' ||
+    typeof Calendar.getCalendarsAsync !== 'function' ||
+    typeof Calendar.createEventAsync !== 'function'
+  ) {
+    return false;
+  }
+
   // Ask for permission. On Android (API 33+) and iOS 17+ the OS allows
   // limited / write-only access; expo-calendar resolves that to a single
   // permission. Bail early if user denies.
-  const { status } = await Calendar.requestCalendarPermissionsAsync();
+  let status: string | undefined;
+  try {
+    const resp = await Calendar.requestCalendarPermissionsAsync();
+    status = resp?.status;
+  } catch (permErr) {
+    // iOS will reject with a fatal-looking native error if the
+    // NSCalendars* keys weren't compiled into the binary. Treat as
+    // "permission unavailable" → fall through to ICS share.
+    console.warn('[addToCalendar] requestCalendarPermissionsAsync rejected', permErr);
+    return false;
+  }
   if (status !== 'granted') {
     Alert.alert(
       i18n.t('calendar.permissionDeniedTitle'),
@@ -287,18 +310,54 @@ export async function addBookingToCalendar(booking: CalendarBooking): Promise<vo
   }
 
   // Try the direct device-calendar write first (one tap → event lives in
-  // the user's primary calendar). If permission is denied or the device
-  // has no writable calendar, fall back to the .ics share sheet which
-  // routes through whatever calendar app the user picks.
+  // the user's primary calendar). If permission is denied, the device
+  // has no writable calendar, OR the native module isn't fully linked
+  // (older dev client builds, missing Info.plist permissions before
+  // rebuild), fall through to the .ics share sheet which routes through
+  // whatever calendar app the user picks.
+  //
+  // Wrap in a Promise.race-style isolation: native modules can reject
+  // with empty Error objects that escape `await` to the global handler
+  // (caught by installCrashGuards as a fatal "global-error" with
+  // `error: {}`). The defensive double-wrap converts any escape into a
+  // captured rejection that the catch block sees.
   try {
-    const wrote = await writeEventToDeviceCalendar(booking);
+    const wrote = await Promise.resolve()
+      .then(() => writeEventToDeviceCalendar(booking))
+      .catch((nativeErr) => {
+        // Re-throw with a real Error so the outer catch always sees a
+        // useful object. Without this, native bridge rejections come
+        // through as undefined/null/empty and slip the try/catch.
+        const msg = nativeErr instanceof Error
+          ? nativeErr.message
+          : typeof nativeErr === 'string'
+            ? nativeErr
+            : 'native calendar bridge rejected without a message';
+        throw new Error(msg);
+      });
     if (wrote) return;
   } catch (err) {
-    // expo-calendar can throw on edge devices (no calendar account on a
-    // bare Android emulator). Silently fall through to the ICS path so
-    // the user still gets a way to save the event.
     console.warn('[addToCalendar] direct write failed, falling back to ICS share', err);
   }
 
-  await shareIcsFallback(booking);
+  // ICS share-sheet fallback. iOS's share sheet always offers Calendar.app
+  // as a destination for .ics files, so this path works even when
+  // expo-calendar's native bridge is unavailable.
+  try {
+    await shareIcsFallback(booking);
+  } catch (icsErr) {
+    // Last-resort: show a friendly Alert instead of letting the error
+    // bubble to the global crash guard. The Google-Calendar URL fallback
+    // inside shareIcsFallback handles most "no sharing available" cases,
+    // but if even that throws we want the user to see SOMETHING, not a
+    // red CrashGuard overlay.
+    console.warn('[addToCalendar] ICS fallback failed', icsErr);
+    const msg = icsErr instanceof Error
+      ? icsErr.message
+      : 'Could not add the booking to your calendar.';
+    Alert.alert(
+      i18n.t('calendar.permissionDeniedTitle'),
+      `${msg} Tap your reservation in Bookings to try again.`,
+    );
+  }
 }
