@@ -1,11 +1,16 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { View, StyleSheet, Alert } from 'react-native';
+import { useRouter } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import { ProfileStackScreen } from '@/components/profile/ProfileStackScreen';
 import { ProfileSectionTitle } from '@/components/profile/ProfileSectionTitle';
 import { ChevronSettingRow } from '@/components/profile/ChevronSettingRow';
 import { ToggleRow } from '@/components/profile/ToggleRow';
 import { createStyles, spacing, borderRadius, shadows } from '@/lib/theme';
+import { requestMyDataExport } from '@/lib/privacy/dataExport';
+import { friendlyError } from '@/lib/errors/friendlyError';
+import { getAnalyticsOptIn, setAnalyticsOptIn } from '@/lib/analytics/privacyPrefs';
+import { setPosthogEnabled } from '@/lib/analytics/posthog';
 
 const useStyles = createStyles((c) => ({
   group: {
@@ -21,11 +26,75 @@ const useStyles = createStyles((c) => ({
 
 export default function PrivacyScreen() {
   const { t } = useTranslation();
+  const router = useRouter();
   const styles = useStyles();
 
   const [adPersonalization, setAdPersonalization] = useState(true);
   const [analytics, setAnalytics] = useState(true);
   const [recommendations, setRecommendations] = useState(true);
+  const [exporting, setExporting] = useState(false);
+
+  // Build 3e — hydrate the persisted analytics-opt-in preference on mount,
+  // then keep PostHog SDK in sync whenever the user flips the toggle.
+  useEffect(() => {
+    let cancelled = false;
+    void (async () => {
+      const optedIn = await getAnalyticsOptIn();
+      if (!cancelled) setAnalytics(optedIn);
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  const handleAnalyticsToggle = (next: boolean) => {
+    setAnalytics(next);
+    setPosthogEnabled(next);
+    void setAnalyticsOptIn(next);
+  };
+
+  const handleDownloadData = async () => {
+    if (exporting) return;
+    setExporting(true);
+    try {
+      const result = await requestMyDataExport();
+      if (result.delivered_to === 'email') {
+        Alert.alert(
+          'Export ready',
+          `We've emailed you a download link. It expires in 24 hours.`,
+        );
+      } else {
+        Alert.alert(
+          'Export ready',
+          `Your data export is ready. Tap OK to open the download link (valid 24h).`,
+          [
+            { text: 'Cancel', style: 'cancel' },
+            {
+              text: 'OK',
+              onPress: () => {
+                if (result.download_url) {
+                  // Best effort; the share-sheet route below handles missing Linking gracefully.
+                  void import('react-native').then(({ Linking }) => {
+                    void Linking.openURL(result.download_url!);
+                  });
+                }
+              },
+            },
+          ],
+        );
+      }
+    } catch (err) {
+      Alert.alert(
+        'Could not start export',
+        friendlyError(
+          err,
+          'Your data export could not be started. Please try again in a few minutes.',
+        ),
+      );
+    } finally {
+      setExporting(false);
+    }
+  };
 
   return (
     <ProfileStackScreen
@@ -50,7 +119,7 @@ export default function PrivacyScreen() {
           title="Analytics & crash reporting"
           subtitle="Help improve Cenaiva by sharing anonymous usage data"
           value={analytics}
-          onValueChange={setAnalytics}
+          onValueChange={handleAnalyticsToggle}
           isLast
         />
       </View>
@@ -58,11 +127,17 @@ export default function PrivacyScreen() {
       <ProfileSectionTitle>Your data</ProfileSectionTitle>
       <View style={styles.group}>
         <ChevronSettingRow
+          title="What restaurants see about me"
+          subtitle="View your auto-tags, lifetime value, and no-show risk"
+          icon="eye-outline"
+          onPress={() => router.push('/(customer)/profile/my-profile-data')}
+        />
+        <ChevronSettingRow
           title="Download account data"
-          subtitle="Get a copy of your reservations, orders, and profile"
+          subtitle={exporting ? 'Preparing your export…' : 'Get a copy of your reservations, photos, and profile'}
           icon="download-outline"
           isLast
-          onPress={() => Alert.alert('Download data', 'We will email a link when your export is ready (demo).')}
+          onPress={handleDownloadData}
         />
       </View>
     </ProfileStackScreen>

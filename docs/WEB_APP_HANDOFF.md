@@ -2,7 +2,9 @@
 
 **Audience**: Cenaiva web team lead.
 **Created**: 2026-05-21 by mobile team.
-**Status**: Mobile shipped Phase 1 (ToS edits) + Phase 2 (small code fixes) + Phase 4 (TOS_COVERAGE.md). Web team needs to mirror.
+**Status**: Mobile shipped Phase 1 (ToS edits) + Phase 2 (small code fixes) + Phase 4 (TOS_COVERAGE.md) + **Phase 3 builds 3a-3f (live!)**. Phase 3 builds 3g (Loyalty) and 3h (Events) deferred — multi-week product work. Web team needs to mirror.
+
+**Scope of this document**: ONLY work from the ToS audit + remediation task started 2026-05-21. Does not cover any other mobile work (split-tender shipping, security hardening, etc. — those are separate threads).
 
 ---
 
@@ -47,18 +49,18 @@ For each row: **DB** lists shared DB tables/columns. **Backend** lists shared Su
 | 2b | New `lib/billing/canadianTax.ts` centralizes province → tax-label map (HST/GST/GST+PST/GST+QST). Wired into `app/booking/[restaurantId]/step6-payment.tsx` so the checkout breakdown shows e.g. "HST (13%)" for Ontario instead of generic "Tax". | none | none | **Adopt the same mapper in your web checkout.** Recommend copying `lib/billing/canadianTax.ts` verbatim into the web repo (or extract to a shared package). Required for ToS §10.1 "GST/HST/QST/PST as indicated at checkout" claim. | ☐ |
 | 2c | Added refund-disclosure one-liner on cancel-confirmation Alert in `app/(customer)/bookings/[id].tsx`: "If the deposit was charged, the refund is issued to your original card and will appear on your statement within 5 business days." Only shown when `liveDepositStatus === 'charged'`. | none | none | **Add same disclosure** on web booking-detail cancel flow. Same condition: only when deposit is charged. | ☐ |
 
-### Phase 3 — builds (mobile sprint queue; coordinate on each)
+### Phase 3 — builds (✅ = mobile shipped; web team mirrors)
 
-| Build | What ships | DB | Backend (edge fns) | Frontend (web mirror) | Sign-off |
-|---|---|---|---|---|---|
-| **3a — SMS STOP/HELP webhook (TCPA)** | New `supabase/functions/twilio-incoming-sms/index.ts` parses inbound SMS, matches STOP/UNSUBSCRIBE/HELP, sets `user_profiles.sms_opt_out=true`, replies with HELP info. | New column `user_profiles.sms_opt_out BOOLEAN NOT NULL DEFAULT false`. Migration `<ts>_user_profiles_sms_opt_out.sql`. | New fn `twilio-incoming-sms` (Twilio webhook). All existing SMS-send paths (`supabase/functions/_shared/sms.ts`) gate on `sms_opt_out`. | **Web's SMS-send paths must also gate on `sms_opt_out`**. The Twilio inbound webhook is shared (one endpoint serves both). Mobile team will register the URL in Twilio console. | ☐ |
-| **3b — Self-service data export (PIPEDA/Law 25)** | New `supabase/functions/export-my-data/index.ts` gathers all user_id rows from canonical tables, produces JSON, uploads to Supabase Storage (24h TTL), emails the link via Resend. New `app/(customer)/profile/privacy/download-data.tsx` button. | Uses existing tables; signed Storage URLs (TTL 24h). | New fn `export-my-data`. Rate-limited 1/24h via `_shared/cenaiva-limits.ts`. | **Add "Download my data" button to your web profile/privacy page** that calls the same edge fn. Same email-link UX. | ☐ |
-| **3c — In-app refund request** | New `app/(customer)/profile/bookings/[id]/request-refund.tsx` form (reason picker + free text). New `supabase/functions/request-refund/index.ts` posts to new `refund_requests` table + queues support@cenaiva.com email. Auto-issue for duplicate-PI cases via existing `refund-payment-intent`. | New table `refund_requests` (id, user_id, reservation_id, payment_intent_id, reason_code, reason_text, status, created_at). | New fn `request-refund`. Reuses existing `refund-payment-intent` for auto-cases. | **Add refund-request form to web booking pages** that posts to the same fn. Same reason picker / free-text shape. | ☐ |
-| **3d — Profile-tags review UI** | New `app/(customer)/profile/privacy/profile-tags.tsx` shows diner's auto-tags + no-show risk + LTV (empty until scoring engine ships per §6.4). Correction-request form posts to support queue. | Reads existing `lifetime_value_score`, `no_show_risk_score` columns. | New fn `get-my-profile-tags` (returns the row for the authenticated user only). | **Mirror the privacy page** showing the user their own tags. | ☐ |
-| **3e — PostHog SDK** | `npm install posthog-react-native` + init in `app/_layout.tsx`. Gate on Profile > Privacy "Allow analytics" toggle. | none | none | **If web doesn't already use PostHog**, install `posthog-js` and init with the SAME PostHog project ID + same event taxonomy. Coordinate event names before either side ships. **If web already uses PostHog**, share the project ID + send mobile team the event taxonomy. | ☐ |
-| **3f — Diner referrals** | New `app/(customer)/profile/referrals.tsx` showing diner's referral code + share link. Server-side reward issuance on first booking by referred user. | New table `referrals` (referrer_user_id, referred_user_id, code, status, rewarded_at). Migration `<ts>_referrals_table.sql`. | Extend `register-restaurant-owner`-style hook on signup to record referral code if present. Reward issuance fn. | **Add referrals page + share-link generator to web profile**. Same code format. | ☐ |
-| **3g — Loyalty + Snap Rewards** | Flip `lib/config/loyaltyFeature.ts:isLoyaltyEnabled()` to true after building. Build tier definitions (already in `lib/loyalty/tiers.ts`), points ledger, qualifying-action events, tier-change push notifications, rewards catalog, redemption flow. Snap Rewards: award points for posting a Snap (rate-limited). | New tables `loyalty_points_ledger`, `loyalty_rewards`, etc. Migration <ts>_loyalty_*. | New fns for tier qualification, reward issuance, redemption. | **Web mirrors tier badge, points ledger UI, rewards redemption flow**. Multi-week build — coordinate sprints with web team. | ☐ |
-| **3h — Events & Ticketing** | New `events` + `event_tickets` schemas. Customer browse + buy flow (Stripe Connect destination charge to restaurant). Restaurant event-create UI. | New tables `events` (id, restaurant_id, name, starts_at, ends_at, price_cents, capacity, status), `event_tickets` (id, event_id, user_id, status, stripe_pi_id). | New fns: `create-event` (restaurant), `purchase-event-ticket` (diner). | **Web adds events browse + buy + restaurant create UI**. Per user note: mock event data getting removed from mobile soon — coordinate before either side launches. | ☐ |
+| Build | Status | What shipped | DB | Backend (edge fns) | Frontend (web mirror) | Sign-off |
+|---|---|---|---|---|---|---|
+| **3a — SMS STOP/HELP webhook (TCPA)** | ✅ MOBILE LIVE | `supabase/functions/twilio-incoming-sms/index.ts` parses inbound SMS, matches STOP/UNSUBSCRIBE/CANCEL/END/QUIT (opt-out) + START/UNSTOP/YES (re-opt-in) + HELP/INFO (reply with help). Updates `user_profiles.sms_opt_out`. Returns TwiML. | New column `user_profiles.sms_opt_out BOOLEAN NOT NULL DEFAULT false`. Migration `user_profiles_sms_opt_out`. | New fn `twilio-incoming-sms` deployed (verify_jwt=false). Existing fn `_shared/sms.ts` now gates `sendSmsOrEmail()` via `isPhoneOptedOut()`. | **Web's SMS-send paths must also gate on `sms_opt_out`** — read the column before sending. The Twilio inbound webhook is shared (one URL serves both surfaces). **Ops step (not code)**: register `https://exbjodmnpdiayfzrdyux.supabase.co/functions/v1/twilio-incoming-sms` in Twilio Console → Phone Numbers → Active numbers → Messaging webhook. | ☐ |
+| **3b — Self-service data export (PIPEDA/Law 25)** | ✅ MOBILE LIVE | New `supabase/functions/export-my-data/index.ts` aggregates rows for the authenticated user from 10 canonical tables (user_profiles, reservations, reservation_deposit_payments, reservation_holds, visit_photos, saved_cards, auth_sign_in_events, post_turn_visit_requests, allergy_incidents, audit_log), uploads to `user-data-exports` Storage bucket with 24h signed URL, emails via Resend. Profile > Privacy > "Download account data" button calls it. | New Storage bucket `user-data-exports` (service-role only access). Migration `user_data_exports_bucket`. | New fn `export-my-data` deployed. Rate-limited 1/24h via `_shared/cenaiva-limits.ts`. Client helper at `lib/privacy/dataExport.ts`. | **Add "Download my data" button to your web profile/privacy page** that calls the SAME `export-my-data` edge fn (it works server-side regardless of caller). Same email-link UX. | ☐ |
+| **3c — In-app refund request** | ✅ MOBILE LIVE | New `app/(customer)/refund-request/[bookingId].tsx` form (3 reason options + free text). New `supabase/functions/request-refund/index.ts` posts to new `refund_requests` table + auto-resolves duplicate-PI cases via `refund-payment-intent` + emails support@cenaiva.com for everything else. Inline link added to booking-detail screen when `deposit_status=charged`. | New table `refund_requests` (id, user_id, reservation_id, payment_intent_id, reason_code, reason_text, status, resolution_note, created_at, resolved_at) + RLS for own-read + own-insert. Migration `refund_requests_table`. | New fn `request-refund` deployed. Reuses `refund-payment-intent` for auto-cases. Client helper at `lib/refunds/refundRequests.ts`. | **Add refund-request form to web booking pages**. Same `refund_requests` table + `request-refund` edge fn. Same 3-reason picker (duplicate / failed / other). Inline link should appear on bookings where deposit was charged. | ☐ |
+| **3d — Profile-tags review UI** | ✅ MOBILE LIVE | New `app/(customer)/profile/my-profile-data.tsx` shows the diner's auto-tags + no-show risk + LTV across all restaurants. Until §6.4 scoring engine ships, most diners see empty tags + zero scores. Correction request via privacy@cenaiva.com (manual link). | Reads existing `guests.tags / no_show_risk_score / lifetime_value_score / total_visits / no_show_count / last_visit_at` columns. No schema change. | New fn `get-my-profile-tags` deployed. Client helper at `lib/privacy/profileTags.ts`. | **Mirror the "What restaurants see about me" page on web profile**. Same edge fn. | ☐ |
+| **3e — PostHog SDK** | ✅ MOBILE LIVE | `posthog-react-native` installed. New `lib/analytics/posthog.ts` exports `initPosthog/setPosthogEnabled/capture/identifyUser/resetIdentity`. SDK starts in disabled state and only enables when user's persisted Privacy toggle is on. New `lib/analytics/privacyPrefs.ts` persists the toggle to AsyncStorage. Boot init wired in `app/_layout.tsx`. Toggle wired in `app/(customer)/profile/privacy.tsx`. `.env.example` adds `EXPO_PUBLIC_POSTHOG_KEY` + `EXPO_PUBLIC_POSTHOG_HOST`. | none | none | **If web doesn't already use PostHog**, install `posthog-js` + init pointing at the SAME PostHog project (use same `EXPO_PUBLIC_POSTHOG_KEY` value). Wrap with the same user opt-in toggle. **If web already uses PostHog**, share the project key with mobile team. Coordinate event taxonomy doc before either side adds custom events. | ☐ |
+| **3f — Diner referrals (code + share)** | ✅ MOBILE LIVE (reward issuance gated on 3g) | New `referrals` table + `user_profiles.referral_code` column. New edge fns `get-my-referral-code` (lazy-mints code in `CENA-XXXXXX` format) and `redeem-referral` (records relationship at signup). Updated `app/(customer)/profile/invite.tsx` to fetch + share the live code with a `cenaiva.com/r/<code>` share link. Client helpers at `lib/referrals/dinerReferrals.ts`. | New table `referrals` (referrer_user_id, referred_user_id, code, status, qualifying_reservation_id, reward_note, created_at/qualified_at/rewarded_at). UNIQUE constraint on referred_user_id (one-referrer-per-user) + CHECK no_self_referral. New column `user_profiles.referral_code TEXT UNIQUE`. Migration `diner_referrals`. | New fns `get-my-referral-code` + `redeem-referral` deployed. | **Add referral page to web profile** that calls the same `get-my-referral-code` fn + uses the same `CENA-XXXXXX` format. Web signup flow should call `redeem-referral` if the new user came in via a `?ref=CENA-XXXXXX` URL parameter. Reward issuance is intentionally deferred until Build 3g loyalty lands. | ☐ |
+| **3g — Loyalty + Snap Rewards** | ❌ NOT YET (next sprint) | Will flip `lib/config/loyaltyFeature.ts:isLoyaltyEnabled()` to true after building. Build tier definitions (already in `lib/loyalty/tiers.ts`), points ledger, qualifying-action events, tier-change push notifications, rewards catalog, redemption flow. Snap Rewards: award points for posting a Snap (rate-limited). Reward issuance hook for Build 3f referrals. | New tables `loyalty_points_ledger`, `loyalty_rewards`, etc. | New fns for tier qualification, reward issuance, redemption. | **Web mirrors tier badge, points ledger UI, rewards redemption flow**. Multi-week build — coordinate sprints with web team. | ☐ |
+| **3h — Events & Ticketing** | ❌ NOT YET (next sprint, coordinate with mock-data removal) | New `events` + `event_tickets` schemas. Customer browse + buy flow (Stripe Connect destination charge to restaurant). Restaurant event-create UI. | New tables `events` (id, restaurant_id, name, starts_at, ends_at, price_cents, capacity, status), `event_tickets` (id, event_id, user_id, status, stripe_pi_id). | New fns: `create-event` (restaurant), `purchase-event-ticket` (diner). | **Web adds events browse + buy + restaurant create UI**. Per user note: mock event data getting removed from mobile soon — coordinate before either side launches. | ☐ |
 
 ---
 
@@ -74,18 +76,84 @@ For each row: **DB** lists shared DB tables/columns. **Backend** lists shared Su
 
 ---
 
-## Files mobile created or changed
+## Files mobile created or changed (scoped to ToS audit + builds; no other work)
 
+### Phase 1 (ToS text)
 | File | Change |
 |---|---|
 | `app/(customer)/profile/legal/terms.tsx` | Replaced stub → full 39-section ToS |
+
+### Phase 2 (small code fixes)
+| File | Change |
+|---|---|
 | `app.json` | Removed `locationAlwaysAndWhenInUsePermission` |
 | `lib/billing/canadianTax.ts` | NEW — province → tax label mapper |
 | `app/booking/[restaurantId]/step6-payment.tsx` | Wired `canadianTaxLabel()`, added `taxProvince` state |
-| `app/(customer)/bookings/[id].tsx` | Refund disclosure on cancel Alert |
+| `app/(customer)/bookings/[id].tsx` | Refund disclosure on cancel Alert + inline refund-request link |
+
+### Phase 3a — SMS STOP/HELP
+| File | Change |
+|---|---|
+| `supabase/functions/twilio-incoming-sms/index.ts` | NEW — TwiML webhook handler |
+| `supabase/functions/_shared/sms.ts` | Added `isPhoneOptedOut()` gate before SMS send |
+| DB migration | NEW — `user_profiles.sms_opt_out` column |
+
+### Phase 3b — Data export
+| File | Change |
+|---|---|
+| `supabase/functions/export-my-data/index.ts` | NEW — gathers user_id rows + uploads to Storage + emails link |
+| `lib/privacy/dataExport.ts` | NEW — client wrapper |
+| `app/(customer)/profile/privacy.tsx` | Wired "Download account data" row to live fn |
+| DB migration | NEW — `user-data-exports` Storage bucket + service-role policy |
+
+### Phase 3c — In-app refund request
+| File | Change |
+|---|---|
+| `supabase/functions/request-refund/index.ts` | NEW — inserts row + auto-resolves duplicates + emails support |
+| `lib/refunds/refundRequests.ts` | NEW — client wrapper |
+| `app/(customer)/refund-request/[bookingId].tsx` | NEW — refund request form (reason picker + free text) |
+| `app/(customer)/bookings/[id].tsx` | NEW — inline "Request a refund" link when deposit charged |
+| DB migration | NEW — `refund_requests` table + RLS policies |
+
+### Phase 3d — Profile-tags review
+| File | Change |
+|---|---|
+| `supabase/functions/get-my-profile-tags/index.ts` | NEW — returns user's auto-tags + scores per restaurant + aggregate |
+| `lib/privacy/profileTags.ts` | NEW — client wrapper |
+| `app/(customer)/profile/my-profile-data.tsx` | NEW — "What restaurants see about me" screen + correction link |
+| `app/(customer)/profile/privacy.tsx` | Added "What restaurants see" row pointing to the new screen |
+
+### Phase 3e — PostHog SDK
+| File | Change |
+|---|---|
+| `package.json` | NEW dep `posthog-react-native` |
+| `lib/analytics/posthog.ts` | NEW — init / enable / capture / identify / reset helpers |
+| `lib/analytics/privacyPrefs.ts` | NEW — AsyncStorage opt-in persistence |
+| `app/_layout.tsx` | NEW boot effect: initPosthog + hydrate opt-in pref |
+| `app/(customer)/profile/privacy.tsx` | Wired Analytics toggle to persist + setPosthogEnabled |
+| `.env.example` | NEW vars `EXPO_PUBLIC_POSTHOG_KEY` + `EXPO_PUBLIC_POSTHOG_HOST` |
+
+### Phase 3f — Diner referrals
+| File | Change |
+|---|---|
+| `supabase/functions/get-my-referral-code/index.ts` | NEW — lazy-mints `CENA-XXXXXX` code |
+| `supabase/functions/redeem-referral/index.ts` | NEW — applies referrer relationship at signup |
+| `lib/referrals/dinerReferrals.ts` | NEW — client wrapper + share-link builder |
+| `app/(customer)/profile/invite.tsx` | Wired to fetch live code + include share link in Share text |
+| DB migration | NEW — `referrals` table + `user_profiles.referral_code` column |
+
+### Phase 4 (docs)
+| File | Change |
+|---|---|
 | `docs/TOS_COVERAGE.md` | NEW — canonical ToS-section → implementation map |
 | `docs/UNHARDCODE_CHECKLIST.md` | Phase K entry |
+
+### Phase 5 (handoff)
+| File | Change |
+|---|---|
 | `docs/WEB_APP_HANDOFF.md` | THIS DOC |
+
+**Scope guarantee**: every file change above is part of the ToS audit + remediation task started 2026-05-21. No unrelated mobile work is bundled here. If you see ANY change in the mobile repo's git log that's not in this table, it's NOT in scope for this handoff.
 
 ---
 

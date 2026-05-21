@@ -87,6 +87,19 @@ const useStyles = createStyles((c) => ({
     gap: spacing.sm,
     marginBottom: spacing.sm,
   },
+  refundLinkRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+    marginTop: -spacing.xs,
+    marginBottom: spacing.md,
+  },
+  refundLinkText: {
+    fontSize: 13,
+    color: c.gold,
+    textDecorationLine: 'underline',
+    flex: 1,
+  },
   detailValue: {
     ...typography.bodyLarge,
     color: c.textPrimary,
@@ -463,21 +476,36 @@ export default function BookingDetailScreen() {
         </View>
 
         {liveDepositStatus && liveDepositStatus !== 'none' ? (
-          <View style={styles.detailRow}>
-            <Ionicons name="card-outline" size={18} color={c.textSecondary} />
-            <Text style={styles.detailValue}>
-              Deposit:{' '}
-              {liveDepositStatus === 'charged'
-                ? 'Paid'
-                : liveDepositStatus === 'pending'
-                  ? 'Pending'
-                  : liveDepositStatus === 'failed'
-                    ? 'Failed'
-                    : liveDepositStatus === 'waived'
-                      ? 'Waived'
-                      : 'Refunded'}
-            </Text>
-          </View>
+          <>
+            <View style={styles.detailRow}>
+              <Ionicons name="card-outline" size={18} color={c.textSecondary} />
+              <Text style={styles.detailValue}>
+                Deposit:{' '}
+                {liveDepositStatus === 'charged'
+                  ? 'Paid'
+                  : liveDepositStatus === 'pending'
+                    ? 'Pending'
+                    : liveDepositStatus === 'failed'
+                      ? 'Failed'
+                      : liveDepositStatus === 'waived'
+                        ? 'Waived'
+                        : 'Refunded'}
+              </Text>
+            </View>
+            {liveDepositStatus === 'charged' ? (
+              <Pressable
+                onPress={() => router.push(`/(customer)/refund-request/${reservation.id}` as Href)}
+                style={({ pressed }) => [styles.refundLinkRow, pressed && { opacity: 0.7 }]}
+                accessibilityRole="button"
+                accessibilityLabel="Request a refund"
+              >
+                <Ionicons name="help-circle-outline" size={18} color={c.gold} />
+                <Text style={styles.refundLinkText}>
+                  Something wrong with the charge? Request a refund
+                </Text>
+              </Pressable>
+            ) : null}
+          </>
         ) : null}
 
         {reservation.status === 'cancelled' && liveCancellationReason ? (

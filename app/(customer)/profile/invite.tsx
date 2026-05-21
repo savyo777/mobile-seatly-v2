@@ -23,6 +23,7 @@ import {
 } from '@/lib/storage/referralLimits';
 import { useColors, createStyles, spacing, typography, borderRadius, shadows } from '@/lib/theme';
 import { friendlyError } from '@/lib/errors/friendlyError';
+import { getMyReferralCode, buildReferralShareLink } from '@/lib/referrals/dinerReferrals';
 
 const useStyles = createStyles((c) => ({
   hero: {
@@ -168,10 +169,30 @@ export default function InviteScreen() {
   const c = useColors();
   const styles = useStyles();
   const [limits, setLimits] = useState<ReferralLimitsSnapshot | null>(null);
+  const [liveCode, setLiveCode] = useState<string | null>(null);
 
   const refresh = useCallback(async () => {
     const snapshot = await getReferralLimits();
     setLimits(snapshot);
+  }, []);
+
+  // Build 3f — fetch (or lazily mint) the diner's real referral code.
+  // Falls back to the demo REFERRAL_CODE in demo mode so the mock UI
+  // still renders without a network call.
+  useEffect(() => {
+    let cancelled = false;
+    if (isDemoModeEnabled()) return;
+    void (async () => {
+      try {
+        const code = await getMyReferralCode();
+        if (!cancelled) setLiveCode(code);
+      } catch {
+        // best-effort; UI shows the demo code as a fallback so the screen still works
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   useEffect(() => {
@@ -210,8 +231,10 @@ export default function InviteScreen() {
       return;
     }
     try {
+      const codeForShare = liveCode ?? REFERRAL_CODE;
+      const shareLink = buildReferralShareLink(codeForShare);
       const result = await Share.share({
-        message: `Join me on Cenaiva — book incredible tables and earn rewards. Use my code ${REFERRAL_CODE} when you sign up.`,
+        message: `Join me on Cenaiva — book incredible tables and earn rewards. Use my code ${codeForShare} when you sign up: ${shareLink}`,
         title: 'Cenaiva referral',
       });
       if (result.action !== Share.dismissedAction) {

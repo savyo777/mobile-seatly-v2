@@ -8,6 +8,8 @@ import * as Linking from 'expo-linking';
 import Constants from 'expo-constants';
 import { StripeProvider } from '@stripe/stripe-react-native';
 import * as Sentry from '@sentry/react-native';
+import { initPosthog, setPosthogEnabled } from '@/lib/analytics/posthog';
+import { getAnalyticsOptIn } from '@/lib/analytics/privacyPrefs';
 import '@/lib/i18n';
 
 // Crash reporting. DSN comes from EXPO_PUBLIC_SENTRY_DSN — empty in dev
@@ -361,6 +363,24 @@ function ThemedRootShell() {
 export default function RootLayout() {
   const { publishableKey } = getStripeEnv();
   const isExpoGo = Constants.appOwnership === 'expo';
+
+  // Build 3e — PostHog product analytics. Init once at app boot,
+  // then enable/disable based on the user's persisted Privacy
+  // toggle. SDK starts in disabled state, so until this resolves
+  // no events are sent. Per ToS §19 + §20: opt-in only, with the
+  // Privacy toggle as the user's lever.
+  useEffect(() => {
+    let cancelled = false;
+    void (async () => {
+      const ph = await initPosthog();
+      if (cancelled || !ph) return;
+      const optedIn = await getAnalyticsOptIn();
+      setPosthogEnabled(optedIn);
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
   const providers = (
     <ThemeProvider>
       <AuthProvider>

@@ -41,22 +41,22 @@ Legend:
 | 8.4 | Snap Rewards | ❌ NOT YET | `lib/config/loyaltyFeature.ts` flag = false | Build 3g — needs loyalty system live first |
 | 9 | Loyalty Program | ❌ NOT YET | `lib/loyalty/tiers.ts`, `lib/config/loyaltyFeature.ts` (flag off) | Build 3g — multi-week product work |
 | 9.2 | Loyalty Waitlist | ❌ NOT YET | (depends on 9) | |
-| 9.3 | Diner Referrals | ❌ NOT YET | (owner referrals exist at `lib/owner/referralPolicy.ts`; diner ones TBD) | Build 3f |
+| 9.3 | Diner Referrals | 🟡 PARTIAL | `supabase/functions/get-my-referral-code/`, `supabase/functions/redeem-referral/`, `lib/referrals/dinerReferrals.ts`, `app/(customer)/profile/invite.tsx`, `referrals` table | Build 3f shipped: code + share + relationship tracking. Reward issuance deferred to Build 3g. |
 | 10.1 | Pricing Transparency | ✅ BUILT | `app/booking/[restaurantId]/step6-payment.tsx`, `lib/stripe/stripeFee.ts`, `lib/billing/canadianTax.ts` (new) | Deposit, service fee, processing fee, provincial tax all shown |
 | 10.2 | Payment Processing + Saved Cards | ✅ BUILT | `lib/stripe/stripeSavedCards.ts:19-32`, `supabase/functions/create-public-payment-intent/index.ts` | Only id/brand/last4/expMonth/expYear stored; Stripe = source of truth |
-| 10.3 | Refunds + Cancellations | 🟡 PARTIAL | `lib/booking/holdApi.ts:252-256`, `supabase/functions/refund-payment-intent/index.ts`, `app/(customer)/bookings/[id].tsx` cancel-confirm | Backend works + 5-business-day disclosure on cancel screen live; in-app self-service refund-request UI is Build 3c |
+| 10.3 | Refunds + Cancellations | ✅ BUILT | `lib/booking/holdApi.ts:252-256`, `supabase/functions/refund-payment-intent/`, `supabase/functions/request-refund/`, `app/(customer)/refund-request/[bookingId].tsx`, `app/(customer)/bookings/[id].tsx` cancel-confirm + inline refund link | Build 3c shipped: in-app refund request form + auto-resolve for duplicate PIs + support email queue + 5-business-day SLA disclosure. |
 | 10.4 | Events + Ticketing | ❌ NOT YET | (no schema, no UI) | Build 3h |
 | 10.5 | Chargebacks | ✅ BUILT | (descriptive) | |
 | 11 | Restaurant Communications + Guest Data Sharing | ✅ BUILT | `app/(staff)/guests/*` reads guest data; opt-in/out via `app/(customer)/profile/notifications.tsx` | |
 | 12 | User Conduct | ✅ BUILT | (enforcement via support@cenaiva.com + abuse handling) | |
 | 13 | Account Security + Device Monitoring | ✅ BUILT | `supabase/migrations/20260517194451_auth_sign_in_events_and_alert.sql`, `supabase/functions/notify-new-device-sign-in/index.ts`, `lib/auth/lockoutPolicy.ts`, `supabase/migrations/20260517192645_audit_log_for_sensitive_tables.sql` | All three: sign-in events, new-device alerts, lockout, audit log |
 | 14 | Device Permissions | ✅ BUILT | `app.json:23-67, 86-163` | Mic/Camera/Photo/Location-when-in-use/Push. Background location REMOVED 2026-05-21. |
-| 15 | SMS Communications | 🟡 PARTIAL | `supabase/functions/_shared/sms.ts`, Twilio integrated | Transactional SMS works. STOP/HELP webhook is Build 3a — until that ships, STOP doesn't auto-unsubscribe. |
+| 15 | SMS Communications | ✅ BUILT | `supabase/functions/_shared/sms.ts`, `supabase/functions/twilio-incoming-sms/`, `user_profiles.sms_opt_out` column | Build 3a shipped: STOP/UNSUBSCRIBE → `sms_opt_out=true`, START/UNSTOP → re-subscribe, HELP → reply with support info. `sendSmsOrEmail()` gates on the opt-out flag. **Ops: Twilio Console webhook URL registration is a one-time manual step.** |
 | 16 | Push Notifications | ✅ BUILT | `supabase/functions/_shared/expo-push.ts`, `package.json:62 expo-notifications` | |
 | 17 | Cross-Border Data Transfers | ✅ BUILT | (legal text; matches actual third-party list) | Vercel removed; PostHog marked "integration in progress" |
-| 18 | Your Data Rights | 🟡 PARTIAL | (manual via privacy@cenaiva.com; Build 3b adds self-service export) | |
+| 18 | Your Data Rights | ✅ BUILT | `supabase/functions/export-my-data/`, `supabase/functions/get-my-profile-tags/`, `app/(customer)/profile/privacy.tsx`, `app/(customer)/profile/my-profile-data.tsx`, `lib/privacy/dataExport.ts`, `lib/privacy/profileTags.ts` | Build 3b shipped data portability (Download my data → JSON via signed Storage URL). Build 3d shipped "What restaurants see about me" + correction-request path. |
 | 19 | Third-Party Services | ✅ BUILT | (legal text matches integrations) | Vercel removed; PostHog flagged as in-progress |
-| 20 | Analytics + Error Monitoring | 🟡 PARTIAL | `app/_layout.tsx:10-100` Sentry init; PostHog SDK is Build 3e | Sentry confirmed live |
+| 20 | Analytics + Error Monitoring | ✅ BUILT | `app/_layout.tsx` Sentry init + PostHog boot; `lib/analytics/posthog.ts`; `lib/analytics/privacyPrefs.ts`; `app/(customer)/profile/privacy.tsx` analytics toggle | Build 3e shipped: PostHog SDK installed + init + opt-in toggle wired. SDK starts disabled and only enables on user consent. Sentry stays always-on for crash reporting per ToS §19. |
 | 21 | AI Usage Limits | ✅ BUILT | `supabase/functions/_shared/cenaiva-limits.ts`, `lib/errors/friendlyError.ts` rate-limit codes | |
 | 22 | App Store Terms | ✅ BUILT | (legal text only) | |
 | 23 | Privacy | ✅ BUILT | (reference to cenaiva.com/privacy) | |
@@ -79,20 +79,20 @@ Legend:
 
 ---
 
-## Phase 3 build backlog (turns 🔵/❌ into ✅)
+## Phase 3 build status
 
 Track in `docs/WEB_APP_HANDOFF.md` for the parallel web-team work.
 
-| Build | Covers § | Priority |
+| Build | Covers § | Status |
 |---|---|---|
-| 3a SMS STOP/HELP webhook + sms_opt_out column | §15 | HIGH (TCPA compliance) |
-| 3b Self-service data export | §18 | HIGH (PIPEDA/Law 25) |
-| 3c In-app refund request UI | §10.3 | MEDIUM |
-| 3d Profile-tags review UI | §18 + §6.4 | MEDIUM |
-| 3e PostHog SDK | §19 + §20 | MEDIUM |
-| 3f Diner referrals | §9.3 | LOW |
-| 3g Loyalty + Snap Rewards | §9 + §8.4 | LOW (multi-week) |
-| 3h Events + Ticketing | §10.4 | LOW |
+| 3a SMS STOP/HELP webhook + sms_opt_out column | §15 | ✅ SHIPPED (2026-05-21) |
+| 3b Self-service data export | §18 | ✅ SHIPPED (2026-05-21) |
+| 3c In-app refund request UI | §10.3 | ✅ SHIPPED (2026-05-21) |
+| 3d Profile-tags review UI | §18 + §6.4 | ✅ SHIPPED (2026-05-21) |
+| 3e PostHog SDK | §19 + §20 | ✅ SHIPPED (2026-05-21) |
+| 3f Diner referrals (code + share + tracking) | §9.3 | 🟡 PARTIAL (2026-05-21) — reward issuance gated on 3g |
+| 3g Loyalty + Snap Rewards | §9 + §8.4 | ❌ NOT YET (multi-week product work) |
+| 3h Events + Ticketing | §10.4 | ❌ NOT YET (coordinate with mock-data removal) |
 
 ---
 

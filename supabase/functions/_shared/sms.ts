@@ -9,8 +9,45 @@
 
 import { Resend } from "npm:resend@4.0.0";
 import twilio from "npm:twilio@5.0.0";
+import { createClient } from "npm:@supabase/supabase-js@2";
 import type { SupabaseClient } from "npm:@supabase/supabase-js@2";
 import { normalizePhoneToE164 } from "./phone.ts";
+
+/**
+ * TCPA opt-out check: returns true if the user_profiles row matching
+ * this phone has `sms_opt_out = true` (set by the twilio-incoming-sms
+ * webhook when user texted STOP). Build 3a; ToS §15.
+ *
+ * Fails OPEN (returns false) on any error so a transient DB hiccup
+ * doesn't suppress legitimate notifications. The Twilio inbound
+ * webhook is the strict gate; this client-side check is best-effort
+ * defense-in-depth that avoids sending to known opt-outs.
+ */
+async function isPhoneOptedOut(phoneE164: string): Promise<boolean> {
+  const url = Deno.env.get("SUPABASE_URL");
+  const key = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
+  if (!url || !key) return false;
+  try {
+    const supabase = createClient(url, key, { auth: { persistSession: false } });
+    const candidates = phoneE164.startsWith("+")
+      ? [phoneE164, phoneE164.slice(1)]
+      : [phoneE164, `+${phoneE164}`];
+    const { data, error } = await supabase
+      .from("user_profiles")
+      .select("sms_opt_out")
+      .in("phone", candidates)
+      .limit(1)
+      .maybeSingle();
+    if (error) {
+      console.warn("[sms] opt-out lookup failed (sending anyway)", error.message);
+      return false;
+    }
+    return Boolean(data?.sms_opt_out);
+  } catch (err) {
+    console.warn("[sms] opt-out lookup threw (sending anyway)", err);
+    return false;
+  }
+}
 
 type TwilioClient = ReturnType<typeof twilio>;
 
@@ -113,7 +150,11 @@ export async function sendSmsOrEmail(args: {
 
   let smsError: string | undefined;
   const normalizedPhone = phone ? normalizePhoneToE164(String(phone).trim()) : null;
-  const twilio = normalizedPhone ? getTwilioClient() : null;
+  // TCPA (Cenaiva ToS §15) + Build 3a: skip SMS entirely if the user
+  // has texted STOP and we've recorded the opt-out. Falls through to
+  // email so the diner still gets booking confirms, OTPs, etc.
+  const smsBlockedByOptOut = normalizedPhone ? await isPhoneOptedOut(normalizedPhone) : false;
+  const twilio = !smsBlockedByOptOut && normalizedPhone ? getTwilioClient() : null;
   if (normalizedPhone && twilio) {
     try {
       await twilio.client.messages.create({
