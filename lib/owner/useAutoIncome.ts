@@ -55,7 +55,6 @@ const DEFAULT_LOOKBACK_DAYS = 30;
 interface DepositRow {
   id: string;
   reservation_id: string | null;
-  restaurant_id: string;
   paid_at: string | null;
   amount_cents: number | null;
   stripe_payment_intent_id: string | null;
@@ -112,15 +111,18 @@ export function useAutoIncome(lookbackDays: number = DEFAULT_LOOKBACK_DAYS): Use
     setError(null);
     void (async () => {
       try {
-        const [depResp, orderResp] = await Promise.all([
+        // reservation_deposit_payments has NO restaurant_id column —
+        // restaurant is on the parent reservation. Two-step query is
+        // simpler than fighting PostgREST embedded-filter syntax:
+        //   step 1: get reservation IDs for the owner's restaurants
+        //   step 2: fetch deposit payments for those reservations
+        // We still fetch orders in parallel since orders DO carry
+        // restaurant_id directly.
+        const [reservationIdResp, orderResp] = await Promise.all([
           supabase
-            .from('reservation_deposit_payments')
-            .select('id, reservation_id, restaurant_id, paid_at, amount_cents, stripe_payment_intent_id')
-            .eq('status', 'charged')
-            .not('paid_at', 'is', null)
-            .gte('paid_at', sinceIso)
-            .in('restaurant_id', restaurantIdFilter)
-            .order('paid_at', { ascending: false }),
+            .from('reservations')
+            .select('id, restaurant_id')
+            .in('restaurant_id', restaurantIdFilter),
           supabase
             .from('orders')
             .select('id, reservation_id, restaurant_id, paid_at, total_amount, stripe_payment_intent_id')
@@ -129,15 +131,38 @@ export function useAutoIncome(lookbackDays: number = DEFAULT_LOOKBACK_DAYS): Use
             .in('restaurant_id', restaurantIdFilter)
             .order('paid_at', { ascending: false }),
         ]);
+        if (reservationIdResp.error) throw reservationIdResp.error;
+        if (orderResp.error) throw orderResp.error;
+        const ridByReservation = new Map<string, string>();
+        for (const row of (reservationIdResp.data as Array<{ id: string; restaurant_id: string }> | null ?? [])) {
+          ridByReservation.set(row.id, row.restaurant_id);
+        }
+        const reservationIds = Array.from(ridByReservation.keys());
+        const depResp = reservationIds.length === 0
+          ? { data: [], error: null as null | Error }
+          : await supabase
+              .from('reservation_deposit_payments')
+              .select('id, reservation_id, paid_at, amount_cents, stripe_payment_intent_id')
+              .eq('status', 'charged')
+              .not('paid_at', 'is', null)
+              .gte('paid_at', sinceIso)
+              .in('reservation_id', reservationIds)
+              .order('paid_at', { ascending: false });
         if (!active) return;
         if (depResp.error) throw depResp.error;
-        if (orderResp.error) throw orderResp.error;
         const depositRows: AutoIncomeRow[] = (depResp.data as DepositRow[] | null ?? [])
-          .filter((r) => r.paid_at && typeof r.amount_cents === 'number' && r.amount_cents > 0)
+          .filter(
+            (r) =>
+              r.paid_at &&
+              typeof r.amount_cents === 'number' &&
+              r.amount_cents > 0 &&
+              r.reservation_id !== null &&
+              ridByReservation.has(r.reservation_id as string),
+          )
           .map((r) => ({
             id: `dep:${r.id}`,
             source: 'deposit' as const,
-            restaurantId: r.restaurant_id,
+            restaurantId: ridByReservation.get(r.reservation_id as string) as string,
             paidAt: r.paid_at as string,
             amountCents: r.amount_cents as number,
             stripePaymentIntentId: r.stripe_payment_intent_id ?? null,
@@ -151,10 +176,11 @@ export function useAutoIncome(lookbackDays: number = DEFAULT_LOOKBACK_DAYS): Use
             source: 'order' as const,
             restaurantId: r.restaurant_id,
             paidAt: r.paid_at as string,
-            // orders.total_amount is dollars in some schemas; on Cenaiva
-            // it's cents per server contract. The web hook treats it as
-            // cents and the math agrees.
-            amountCents: r.total_amount as number,
+            // orders.total_amount is `numeric` in the DB. Per the web
+            // hook + the seed data (a $43.77 order shows as
+            // total_amount=4377), it stores CENTS as an integer cast
+            // to numeric. Treat as cents directly.
+            amountCents: Math.round(Number(r.total_amount)),
             stripePaymentIntentId: r.stripe_payment_intent_id ?? null,
             reservationId: r.reservation_id,
             orderId: r.id,
