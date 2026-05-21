@@ -59,3 +59,30 @@ export function buildReferralShareLink(code: string): string {
   const host = process.env.EXPO_PUBLIC_CENAIVA_REFERRAL_HOST ?? 'https://cenaiva.com';
   return `${host}/r/${encodeURIComponent(code)}`;
 }
+
+export type ReferralCreditSource = 'referrer_reward' | 'referred_reward' | 'manual_grant';
+
+export interface ReferralCreditEntry {
+  id: string;
+  source: ReferralCreditSource;
+  amount_cents: number;
+  remaining_cents: number;
+  expires_at: string | null;
+  created_at: string;
+  referral_id: string | null;
+}
+
+export interface ReferralCreditsResult {
+  ok: true;
+  /** Total redeemable cents (sum of remaining_cents across non-expired rows). */
+  balance_cents: number;
+  /** All-time issued cents (helps the user see what they've earned). */
+  lifetime_earned_cents: number;
+  /** Subset of balance_cents expiring within 90 days. */
+  expiring_soon_cents: number;
+  ledger: ReferralCreditEntry[];
+}
+
+export async function getMyReferralCredits(): Promise<ReferralCreditsResult> {
+  return callEdge<ReferralCreditsResult>('get-my-referral-credits');
+}

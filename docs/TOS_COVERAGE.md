@@ -41,7 +41,7 @@ Legend:
 | 8.4 | Snap Rewards | ❌ NOT YET | `lib/config/loyaltyFeature.ts` flag = false | Build 3g — needs loyalty system live first |
 | 9 | Loyalty Program | ❌ NOT YET | `lib/loyalty/tiers.ts`, `lib/config/loyaltyFeature.ts` (flag off) | Build 3g — multi-week product work |
 | 9.2 | Loyalty Waitlist | ❌ NOT YET | (depends on 9) | |
-| 9.3 | Diner Referrals | 🟡 PARTIAL | `supabase/functions/get-my-referral-code/`, `supabase/functions/redeem-referral/`, `lib/referrals/dinerReferrals.ts`, `app/(customer)/profile/invite.tsx`, `referrals` table | Build 3f shipped: code + share + relationship tracking. Reward issuance deferred to Build 3g. |
+| 9.3 | Diner Referrals | ✅ BUILT | `supabase/functions/get-my-referral-code/`, `supabase/functions/redeem-referral/`, `supabase/functions/get-my-referral-credits/`, `lib/referrals/dinerReferrals.ts`, `app/(customer)/profile/invite.tsx`, `referrals` + `diner_referral_credits` tables, `qualify_pending_referral_trg` DB trigger | Build 3f LIVE: code + share + relationship tracking + automated $10/side credit issuance when referred user's first booking confirms (DB trigger). Balance + ledger visible in invite screen. Redemption is currently support-mediated (email support@cenaiva.com); in-checkout redemption is a future iteration constrained by Stripe destination-charge accounting. |
 | 10.1 | Pricing Transparency | ✅ BUILT | `app/booking/[restaurantId]/step6-payment.tsx`, `lib/stripe/stripeFee.ts`, `lib/billing/canadianTax.ts` (new) | Deposit, service fee, processing fee, provincial tax all shown |
 | 10.2 | Payment Processing + Saved Cards | ✅ BUILT | `lib/stripe/stripeSavedCards.ts:19-32`, `supabase/functions/create-public-payment-intent/index.ts` | Only id/brand/last4/expMonth/expYear stored; Stripe = source of truth |
 | 10.3 | Refunds + Cancellations | ✅ BUILT | `lib/booking/holdApi.ts:252-256`, `supabase/functions/refund-payment-intent/`, `supabase/functions/request-refund/`, `app/(customer)/refund-request/[bookingId].tsx`, `app/(customer)/bookings/[id].tsx` cancel-confirm + inline refund link | Build 3c shipped: in-app refund request form + auto-resolve for duplicate PIs + support email queue + 5-business-day SLA disclosure. |
@@ -90,7 +90,7 @@ Track in `docs/WEB_APP_HANDOFF.md` for the parallel web-team work.
 | 3c In-app refund request UI | §10.3 | ✅ SHIPPED (2026-05-21) |
 | 3d Profile-tags review UI | §18 + §6.4 | ✅ SHIPPED (2026-05-21) |
 | 3e PostHog SDK | §19 + §20 | ✅ SHIPPED (2026-05-21) |
-| 3f Diner referrals (code + share + tracking) | §9.3 | 🟡 PARTIAL (2026-05-21) — reward issuance gated on 3g |
+| 3f Diner referrals (code + share + auto reward issuance) | §9.3 | ✅ SHIPPED (2026-05-21) — automated $10/side credits via DB trigger; in-checkout redemption is the only manual piece |
 | 3g Loyalty + Snap Rewards | §9 + §8.4 | ❌ NOT YET (multi-week product work) |
 | 3h Events + Ticketing | §10.4 | ❌ NOT YET (coordinate with mock-data removal) |
 
