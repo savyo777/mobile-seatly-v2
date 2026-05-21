@@ -75,7 +75,7 @@
     "nativewind": "^4.2.3",
     "openai": "^6.38.0",
     "posthog-react-native": "^4.45.11",
-    "react": "19.2.0",
+    "react": "19.2.6",
     "react-dom": "^19.2.0",
     "react-hook-form": "^7.72.0",
     "react-i18next": "^16.6.6",
