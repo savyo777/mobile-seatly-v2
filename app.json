@@ -19,7 +19,6 @@
       "supportsTablet": true,
       "bundleIdentifier": "com.cenaiva.app",
       "entitlements": {
-        "aps-environment": "production",
         "com.apple.developer.applesignin": ["Default"]
       },
       "usesAppleSignIn": true,
