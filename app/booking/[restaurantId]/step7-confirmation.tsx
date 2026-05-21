@@ -21,7 +21,7 @@ import {
 import { parseDateKeyLocal } from '@/lib/booking/dateUtils';
 import {
   cartSubtotal,
-  confirmDepositStub,
+  confirmDepositPaid,
   createPublicBooking,
   parseBookingCartParam,
   prepareDeposit,
@@ -408,10 +408,26 @@ export default function Step7Confirmation() {
           hold.confirmConverted(result.reservation_id, result.confirmation_code);
         }
 
-        // STRIPE STUB — collect the deposit immediately after the booking
-        // succeeds. On real Stripe, this becomes a confirmPayment call against
-        // the client_secret returned by prepare-deposit.
-        if (result.deposit_required && result.deposit_amount_cents && result.deposit_amount_cents > 0) {
+        // Deposit handling: when the holds path ran (the production flow),
+        // step6 already minted a PaymentIntent, presented Stripe PaymentSheet,
+        // and the confirm-hold-paid edge fn atomically created this
+        // reservation with the deposit already 'charged'. Re-running the
+        // prepareDeposit chain here would be a no-op at best, or worse,
+        // double-charge. Only the no-hold path needs to chase the deposit
+        // post-booking — and even then, we must use confirm-deposit-paid
+        // (real PI) not confirm-deposit-stub (dev-only fake).
+        //
+        // In the no-hold path, the booking doesn't actually have a PI yet
+        // (no Stripe call ever happened upstream), so confirm-deposit-paid
+        // will reject for lack of payment_intent_id. That's the correct
+        // failure — the diner sees "Deposit could not be charged" instead
+        // of a silently-uncollected confirmation. Don't paper over it.
+        if (
+          !activeHoldId
+          && result.deposit_required
+          && result.deposit_amount_cents
+          && result.deposit_amount_cents > 0
+        ) {
           try {
             const { payments } = await prepareDeposit({
               reservation_id: result.reservation_id,
@@ -423,7 +439,15 @@ export default function Step7Confirmation() {
             });
             for (const payment of payments) {
               if (cancelled) return;
-              await confirmDepositStub({ payment_id: payment.id });
+              // payment.stripe_payment_intent_id should be set by
+              // prepare-deposit when STRIPE_SECRET_KEY is configured.
+              // If it isn't, confirm-deposit-paid will reject — surface
+              // that to the diner instead of swallowing it.
+              const pi = (payment as { stripe_payment_intent_id?: string | null }).stripe_payment_intent_id;
+              if (!pi) {
+                throw new Error('Could not start the deposit charge. Please try again.');
+              }
+              await confirmDepositPaid({ payment_id: payment.id, payment_intent_id: pi });
             }
           } catch (depositError) {
             if (cancelled) return;

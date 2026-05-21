@@ -24,7 +24,7 @@ import { mockRestaurants } from '@/lib/mock/restaurants';
 import { fetchMyBookingItems, type MyBookingItem } from '@/lib/booking/myReservations';
 import {
   cancelReservation,
-  confirmDepositStub,
+  confirmDepositPaid,
   prepareDeposit,
   type DepositStatus,
 } from '@/lib/booking/publicBookingApi';
@@ -446,7 +446,11 @@ export default function ActivityScreen() {
         }],
       });
       for (const payment of payments) {
-        await confirmDepositStub({ payment_id: payment.id });
+        const pi = (payment as { stripe_payment_intent_id?: string | null }).stripe_payment_intent_id;
+        if (!pi) {
+          throw new Error('Could not start the deposit charge. Please try again.');
+        }
+        await confirmDepositPaid({ payment_id: payment.id, payment_intent_id: pi });
       }
       await reloadLiveBookings();
       void Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);

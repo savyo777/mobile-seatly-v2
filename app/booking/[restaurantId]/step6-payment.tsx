@@ -330,10 +330,26 @@ export default function Step6Payment() {
       return;
     }
 
-    // Holds disabled — fall through to the legacy stubbed flow handled by
-    // step7-confirmation (which uses prepareDeposit + confirmDepositStub).
-    if (!isHoldsEnabled() || hold.state.status !== 'active' || !restaurantId) {
-      goToConfirmation();
+    // Holds path is the only Stripe-charging code path on mobile. If we
+    // somehow arrive at Confirm with money owed but no active hold (race
+    // on hold creation, the user backed out and re-entered, or the
+    // EXPO_PUBLIC_CENAIVA_HOLDS_ENABLED flag is explicitly off — none of
+    // which should happen in production), fail loud rather than silently
+    // bypassing Stripe via the legacy step7 stub chain. The legacy chain
+    // used to flip reservations to confirmed without charging anyone; that
+    // was a P0 bug fixed when this fallback was removed.
+    if (!restaurantId) {
+      Alert.alert(
+        'Booking error',
+        'We lost track of the restaurant. Please go back and pick a time again.',
+      );
+      return;
+    }
+    if (!isHoldsEnabled() || hold.state.status !== 'active') {
+      Alert.alert(
+        t('booking.holdExpiredTitle') as string,
+        'We couldn’t hold your table for payment. Please go back and pick the time again so we can re-secure your spot.',
+      );
       return;
     }
 

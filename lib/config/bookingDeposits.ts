@@ -1,22 +1,27 @@
 /**
- * Feature flag: booking-deposit Stripe flow.
+ * Booking-deposit Stripe flow gate.
  *
- * The booking flow calls two Supabase edge functions (`prepare-deposit`
- * and `confirm-deposit-stub`) to authorize and capture deposit payments
- * for restaurants that require one. Neither function is deployed yet —
- * the Stripe integration (PaymentIntents API + webhook) needs to land
- * server-side first. Until then, this flag is `false` and the client-side
- * deposit helpers short-circuit to a no-op (return `{ payments: [] }`),
- * so the booking flow completes without a payment instead of crashing
- * against a 404 from the missing function.
+ * Historically this flag short-circuited the `prepare-deposit` /
+ * `confirm-deposit-paid` chain because the server-side fns hadn't shipped
+ * yet. They have since (2026-04 per the addendum), and leaving the flag
+ * off means the legacy booking path skips the real Stripe charge entirely
+ * — reservations get marked confirmed without any deposit moving. That's a
+ * P0 bug that shipped briefly when this defaulted to false.
  *
- * Flip via `EXPO_PUBLIC_BOOKING_DEPOSITS_ENABLED=true` in the EAS / .env
- * once the edge functions are live AND the Stripe webhook is registered.
- * Until then, restaurants that have `depositTiers` configured will still
- * show the "deposit required" copy upstream (in step-prepay-offer), but
- * tapping Continue won't attempt to charge.
+ * Defaults to ENABLED. The production booking flow runs on the holds path
+ * (see isHoldsEnabled in holdsFeature.ts) which mints a real PI directly
+ * via createHoldPaymentIntent + Stripe PaymentSheet, but the legacy
+ * step7-confirmation prepareDeposit chain still needs this gate on so its
+ * fallback charge for $0-hold edge cases hits the real `confirm-deposit-
+ * paid` edge fn instead of no-op'ing.
+ *
+ * Override only for local debugging:
+ * `EXPO_PUBLIC_BOOKING_DEPOSITS_ENABLED=false` in `.env`. Never ship that
+ * to any environment with a real Stripe key.
  */
 
 export function bookingDepositsEnabled(): boolean {
-  return (process.env.EXPO_PUBLIC_BOOKING_DEPOSITS_ENABLED ?? '').trim().toLowerCase() === 'true';
+  const raw = (process.env.EXPO_PUBLIC_BOOKING_DEPOSITS_ENABLED ?? '').trim().toLowerCase();
+  // Default to true; only the explicit string 'false' disables.
+  return raw !== 'false';
 }

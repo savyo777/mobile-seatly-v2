@@ -429,12 +429,11 @@ export async function prepareDeposit(params: {
   reservation_id: string;
   payers: DepositPayer[];
 }): Promise<PrepareDepositResponse> {
-  // The `prepare-deposit` edge function is not deployed yet (Stripe wiring
-  // is still pending). When the EXPO_PUBLIC_BOOKING_DEPOSITS_ENABLED flag
-  // is off, short-circuit to an empty payments array — every caller does
-  // `for (const p of payments) await confirmDepositStub(...)`, so an
-  // empty list cleanly skips the capture step instead of throwing on a
-  // 404 from the missing function.
+  // `prepare-deposit` IS deployed (since 2026-04). Returning an empty
+  // payments array here would silently skip the deposit collection
+  // entirely — reservations end up confirmed without any charge, a
+  // P0 bug we shipped briefly. Only short-circuit if a local debug
+  // override explicitly disables the chain.
   if (!bookingDepositsEnabled()) {
     return { payments: [] };
   }
@@ -472,12 +471,19 @@ export async function prepareDeposit(params: {
   return { payments: body.payments };
 }
 
-export async function confirmDepositStub(params: {
+export async function confirmDepositPaid(params: {
   payment_id: string;
+  payment_intent_id: string;
 }): Promise<{ ok: true }> {
-  // Mirror of prepareDeposit above — when deposits are disabled, treat
-  // every confirm call as a successful no-op so callers can keep their
-  // loop logic without special-casing the flag.
+  // Hits the production confirm-deposit-paid edge fn. The server re-verifies
+  // the PI against Stripe (status must be succeeded/processing AND amount
+  // must be >= the deposit's recorded amount_cents) before flipping the
+  // reservation_deposit_payments row to 'charged' — see addendum §A6 for
+  // why we MUST NOT call confirm-deposit-stub here. That fn is the dev-only
+  // stub that bypasses Stripe; with DEPOSIT_STRIPE_STUB_MODE=false on a
+  // real Stripe key it errors and leaves the deposit row stuck pending,
+  // and with stub mode on it flips status=charged WITHOUT moving money —
+  // the restaurant thinks they collected a deposit but no card was charged.
   if (!bookingDepositsEnabled()) {
     return { ok: true };
   }
@@ -487,7 +493,7 @@ export async function confirmDepositStub(params: {
   const timeout = setTimeout(() => controller.abort(), BOOKING_REQUEST_TIMEOUT_MS);
   let response: Response;
   try {
-    response = await fetch(`${url}/functions/v1/confirm-deposit-stub`, {
+    response = await fetch(`${url}/functions/v1/confirm-deposit-paid`, {
       method: 'POST',
       signal: controller.signal,
       headers: {
@@ -506,8 +512,10 @@ export async function confirmDepositStub(params: {
     clearTimeout(timeout);
   }
 
-  const body = await response.json().catch(() => ({})) as { ok?: boolean; error?: unknown };
-  if (!response.ok || body.error || body.ok !== true) {
+  const body = await response.json().catch(() => ({})) as { ok?: boolean; error?: unknown; deposit?: unknown };
+  // confirm-deposit-paid returns { deposit: {...} } on success (not { ok: true })
+  // — accept either shape so we're forward-compatible with response polish.
+  if (!response.ok || body.error || (!body.deposit && body.ok !== true)) {
     const error = new Error(coerceErrorMessage(body.error, 'Could not charge the deposit.'));
     (error as Error & { status?: number }).status = response.status;
     throw error;
