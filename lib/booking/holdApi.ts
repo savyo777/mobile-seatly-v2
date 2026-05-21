@@ -225,7 +225,7 @@ export type CreateHoldPaymentIntentRequest = {
    * The server stamps `pi.metadata.deposit_payment_ids` with these so
    * `confirm-deposit-paid` can do its strict Vuln 2 cross-check (the
    * deposit row's id must be in that metadata to settle). Per
-   * MOBILE_SPLIT_TENDER_GUIDE.md §2.2 + MOBILE_SECURITY_HARDENING.md §2a.
+   * CLAUDE_SKILLS.md (Split-tender) §2.2 + CLAUDE_SKILLS.md (Security) §2a.
    * Mobile passes exactly one id per slot's PI; the field accepts an
    * array because the magic-link / pre-paid flows can group rows.
    * Omit for single-pay (no deposit) and for the holds path (which
@@ -235,7 +235,7 @@ export type CreateHoldPaymentIntentRequest = {
   /**
    * Per-booking-attempt idempotency key (UUID v4). Required to fix
    * Bug #110 (PI reuse across same-amount bookings with same saved
-   * card). Per STRIPE_INTEGRATION_HANDOFF.md §12 (FIXED 2026-05-21):
+   * card). Per CLAUDE_SKILLS.md (Stripe) §12 (FIXED 2026-05-21):
    * before this fix the server derived its Stripe idempotency key
    * from `${profile.id}_${cardId}_${amount}`, causing identical
    * second-booking PIs to dedup into the FIRST booking's PI. The

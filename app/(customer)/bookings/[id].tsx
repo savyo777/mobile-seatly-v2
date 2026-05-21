@@ -360,7 +360,7 @@ export default function BookingDetailScreen() {
 
   const handleCancel = useCallback(() => {
     if (!reservation) return;
-    // ToS §10.3 + STRIPE_UPDATES.md Option B commitment:
+    // ToS §10.3 + CLAUDE_SKILLS.md (Stripe updates) Option B commitment:
     //   1. 5-business-day refund window for the deposit BASE
     //   2. The Cenaiva platform fee (5.5%) + Stripe processing fee
     //      paid at booking are NON-REFUNDABLE (disclosed at checkout)

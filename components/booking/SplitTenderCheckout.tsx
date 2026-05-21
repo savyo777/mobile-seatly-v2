@@ -2,7 +2,7 @@
  * SplitTenderCheckout — diner-side "pass the phone" UX for splitting a
  * restaurant deposit across N cards on the same device.
  *
- * Flow per MOBILE_SPLIT_TENDER_GUIDE.md §6:
+ * Flow per CLAUDE_SKILLS.md (Split-tender §6):
  *   1. Diner picks split count (2..10).
  *   2. Tap Place Order:
  *      a. POST create-public-booking with split_tender_payers
@@ -15,7 +15,7 @@
  *   3. Partial failure: paid slots stay paid. Failed slots get a chip
  *      + retry. Re-tap Place Order to re-run only the failed slots.
  *
- * Security per MOBILE_SECURITY_HARDENING.md §2a: each PI must be minted
+ * Security per CLAUDE_SKILLS.md (Security section) §2a: each PI must be minted
  * with `deposit_payment_ids: [rowId]` so the server can stamp PI metadata.
  * Without that, confirm-deposit-paid rejects with `pi_payment_id_mismatch`.
  *
@@ -364,7 +364,7 @@ export function SplitTenderCheckout({
       //
       // IMPORTANT: server-side create-public-booking does NOT currently
       // implement the split_tender_payers field documented in
-      // MOBILE_SPLIT_TENDER_GUIDE §2.1. The mobile-side workaround:
+      // CLAUDE_SKILLS.md (Split-tender) §2.1. The mobile-side workaround:
       //   1. Create the booking normally (no split_tender_payers arg).
       //   2. Immediately call prepare-deposit with N evenly-split payers
       //      — that fn IS deployed and inserts N reservation_deposit_
@@ -376,7 +376,7 @@ export function SplitTenderCheckout({
       // this two-call sequence is the only path that actually works.
       if (!activeReservationId) {
         // Native split-tender path per
-        // STRIPE_INTEGRATION_HANDOFF.md §10.4 + PublicBookingResponse
+        // CLAUDE_SKILLS.md (Stripe section) §10.4 + PublicBookingResponse
         // type definition. Pass `split_tender_payers: splitCount` to
         // create-public-booking; the server atomically inserts both
         // the reservation row AND the N reservation_deposit_payments

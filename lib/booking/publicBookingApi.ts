@@ -58,7 +58,7 @@ export type PublicBookingPayload = {
    * `pending_payment` status + N `reservation_deposit_payments` rows in
    * `pending` status. The response includes
    * `split_tender_deposit_row_ids` (length === split_tender_payers).
-   * Per MOBILE_SPLIT_TENDER_GUIDE.md §2.1. Valid range: 2..10.
+   * Per CLAUDE_SKILLS.md (Split-tender) §2.1. Valid range: 2..10.
    * Omit / set null for the single-pay flow.
    */
   split_tender_payers?: number | null;
@@ -456,7 +456,7 @@ export async function prepareDeposit(params: {
    *
    * Mobile holds path doesn't use this (the holds flow charges via
    * confirm-hold-paid which validates `pi.metadata.hold_id` instead).
-   * Added for parity with MOBILE_SECURITY_HARDENING.md §2b on
+   * Added for parity with CLAUDE_SKILLS.md (Security) §2b on
    * 2026-05-20.
    */
   payment_intent_id?: string;

@@ -2,7 +2,7 @@
  * Stripe fee math — mobile mirror of the backend canonical implementation.
  *
  * Source of truth: `supabase/functions/_shared/stripe-fee.ts` (web sister
- * repo). Per STRIPE_INTEGRATION_HANDOFF.md §3.1 the math is Option B:
+ * repo). Per CLAUDE_SKILLS.md (Stripe) §3.1 the math is Option B:
  *
  *   const cenaivaFeeCents = ceil(base * 0.055);
  *   const subtotal        = base + cenaivaFeeCents;
@@ -22,7 +22,7 @@
  * Deposit · Platform fee (5.5%) · Processing fee · Total, with the
  * disclosure that platform + processing fees are non-refundable.
  *
- * Worked examples (from STRIPE_UPDATES.md):
+ * Worked examples (from CLAUDE_SKILLS.md (Stripe updates)):
  *   $5 base   → diner pays $5.84  (platform $0.28, processing $0.56)
  *   $10 base  → diner pays $11.18 (platform $0.55, processing $0.63)
  *   $20 base  → diner pays $22.05 (platform $1.10, processing $0.95)

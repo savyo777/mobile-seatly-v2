@@ -882,7 +882,7 @@ function AssistantInner({ children }: { children: ReactNode }) {
               commit({ type: 'CLOSE' });
               router.push(action.path as never);
             }
-            // STRIPE_INTEGRATION_HANDOFF.md §17 voice-booking wire (added
+            // CLAUDE_SKILLS.md (Stripe section) §17 voice-booking wire (added
             // 2026-05-21). The cenaiva-orchestrate edge fn already emits
             // these actions when the user completes a guided booking via
             // text/voice; without these handlers mobile would silently

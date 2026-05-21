@@ -1,4 +1,4 @@
-// Holds path is the production booking flow per MOBILE_STRIPE_GUIDE.md §4:
+// Holds path is the production booking flow per CLAUDE_SKILLS.md (Stripe section) §4:
 // mobile mints a hold at step 4, mints a PaymentIntent on the platform with
 // transfer_data.destination = restaurant Connect account, presents Stripe
 // PaymentSheet, then converts the hold via confirm-hold-paid once the

@@ -50,7 +50,7 @@ type Props = {
   onPress: (id: string) => void;
 };
 
-// Brand hex tokens (mirror MOBILE_MAPS_GUIDE.md Section 9 — use #C9A84C
+// Brand hex tokens (mirror CLAUDE_SKILLS.md (Maps section) Section 9 — use #C9A84C
 // not #D4AF37; #F5E6C8 is the active/highlight gold).
 const GOLD = '#C9A84C';
 const GOLD_LIGHT = '#F5E6C8';

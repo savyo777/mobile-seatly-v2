@@ -1,6 +1,6 @@
 // Stripe fee math — locks the Option B gross-up policy that BOTH the
 // mobile client AND the server's _shared/stripe-fee.ts implement.
-// Per STRIPE_INTEGRATION_HANDOFF.md §3.1 + STRIPE_UPDATES.md, every
+// Per CLAUDE_SKILLS.md (Stripe section) §3.1 + CLAUDE_SKILLS.md (Stripe updates), every
 // diner-facing PI uses the same formula:
 //
 //   cenaivaFee = ceil(base * 0.055)
@@ -50,13 +50,13 @@ describe('computeDinerCharge (Option B — always gross-up)', () => {
   });
 
   describe('worked examples (canonical Option B formula in IEEE-754 JS)', () => {
-    // The STRIPE_UPDATES.md table has a few rows that differ by ±1¢
+    // The CLAUDE_SKILLS.md (Stripe updates) table has a few rows that differ by ±1¢
     // from what this formula actually produces in JavaScript (the
     // table appears to have been computed with slightly different
     // intermediate rounding). The verified production PI is the
     // source of truth — pi_3TZXkN… for a $20 base charged
     // amount=2204¢, application_fee_amount=110¢ (per
-    // STRIPE_INTEGRATION_HANDOFF.md §13). My formula matches that
+    // CLAUDE_SKILLS.md (Stripe section) §13). My formula matches that
     // PI exactly, so I lock against the computed values below.
 
     it('$5 base → $5.75 total', () => {

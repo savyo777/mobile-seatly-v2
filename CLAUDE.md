@@ -2,7 +2,7 @@
 
 Operational rules for Claude Code working in this repo. Loaded automatically into context — keep terse.
 
-For a longer narrative handoff (background, architecture, lessons learned), see [`AGENTS.md`](./AGENTS.md). For the rolling un-hardcoding plan, see [`docs/UNHARDCODE_CHECKLIST.md`](./docs/UNHARDCODE_CHECKLIST.md).
+For background, architecture, lessons learned, and the full session-skills knowledge transfer, see [`CLAUDE_SKILLS.md`](./CLAUDE_SKILLS.md).
 
 ## Identity
 
@@ -121,7 +121,7 @@ You apply migrations yourself via the Supabase MCP `apply_migration` tool (prefe
 When you spot a hardcoded value during unrelated work:
 
 1. **High risk** (security, data integrity, financial) — fix it inline, don't defer.
-2. **Medium** (drift, brand, business rule) — add a checkbox to `docs/UNHARDCODE_CHECKLIST.md` instead of fixing inline (avoids unrelated diff in your PR).
+2. **Medium** (drift, brand, business rule) — add a checkbox to `CLAUDE_SKILLS.md (Unhardcoding section)` instead of fixing inline (avoids unrelated diff in your PR).
 3. **Low** (style, magic number) — leave it unless the user asks.
 
 The checklist is the system of record for un-hardcoding work. Update it when you land items.
@@ -131,9 +131,9 @@ The checklist is the system of record for un-hardcoding work. Update it when you
 - "I want everything to main" — see Branching above.
 - "Don't show fake numbers to real users" — every fix that gates mock-data behind `isDemoModeEnabled()` traces back to this.
 - "Brand is Cenaiva" — flag and fix any leftover legacy-brand leak in user-visible surfaces (i18n strings, ICS files, support emails). The only intentional legacy artifacts are the `@seatly/` AsyncStorage migration prefix (legacy data) and the `mobile-seatly-v2-2/` folder filter.
-- "Not one thing should be iOS only" — both platforms must be equally functional. The intentional exceptions (Apple Sign-In, Apple Pay vs Google Pay, biometric labels, RN shadow vs elevation) are catalogued in `AGENTS.md` under "Platform parity"; everything else gets a cross-platform code path or doesn't ship.
+- "Not one thing should be iOS only" — both platforms must be equally functional. The intentional exceptions (Apple Sign-In, Apple Pay vs Google Pay, biometric labels, RN shadow vs elevation) are catalogued in `CLAUDE_SKILLS.md`; everything else gets a cross-platform code path or doesn't ship.
 - "Don't put API keys in any code or any MD files" — all keys live in Supabase Secrets / EAS Secrets / gitignored `.env`. Grep the staged diff for `AIza[A-Za-z0-9_-]{20,}` before any commit that touches a secret-adjacent file.
-- **Never enable `DEPOSIT_STRIPE_STUB_MODE=true` against a `sk_live_…` Stripe key** — the stub fn flips `reservation_deposit_payments.status='charged'` without minting a real PaymentIntent, so the restaurant thinks they collected a deposit but no money moves. The diner is "confirmed" on a free booking; the restaurant eats the no-show. Stub mode is dev/staging only. Verify Supabase prod project secrets has it explicitly set to `false` (unset defaults to `true` per `confirm-deposit-stub/index.ts:58`). See `MOBILE_STRIPE_GUIDE_ADDENDUM.md` §A6.
+- **Never enable `DEPOSIT_STRIPE_STUB_MODE=true` against a `sk_live_…` Stripe key** — the stub fn flips `reservation_deposit_payments.status='charged'` without minting a real PaymentIntent, so the restaurant thinks they collected a deposit but no money moves. The diner is "confirmed" on a free booking; the restaurant eats the no-show. Stub mode is dev/staging only. Verify Supabase prod project secrets has it explicitly set to `false` (unset defaults to `true` per `confirm-deposit-stub/index.ts:58`). See `CLAUDE_SKILLS.md` (Stripe section).
 - The user reads commit messages — write descriptive ones.
 
 ## Common gotchas

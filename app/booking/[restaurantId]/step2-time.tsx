@@ -566,7 +566,7 @@ export default function Step2Time() {
         .catch((error) => {
           const reason = (error as Error & { unavailable_reason?: string }).unavailable_reason;
           if (reason === 'modify_requires_card') {
-            // Per doc §7 + Option B (STRIPE_UPDATES.md 2026-05-21):
+            // Per doc §7 + Option B (CLAUDE_SKILLS.md (Stripe updates) 2026-05-21):
             // 402 means the bigger deposit needs a card on file.
             // Disclose that the additional charge will include the
             // Platform fee (5.5%) + processing fee, both non-refundable,

@@ -212,7 +212,7 @@ export default function Step6Payment() {
   // Single-pay (the current flow, one card covers the whole deposit) vs
   // split-tender (N people pay their share on the same device, sequentially).
   // Hidden when the deposit is $0 (no point splitting nothing) and when
-  // partySize < 2. Per MOBILE_SPLIT_TENDER_GUIDE.md §1.
+  // partySize < 2. Per CLAUDE_SKILLS.md (Split-tender §1).
   const [paymentMode, setPaymentMode] = useState<'single' | 'split'>('single');
   const [taxRate, setTaxRate] = useState(0);
   const [taxProvince, setTaxProvince] = useState<string | null>(null);
@@ -495,7 +495,7 @@ export default function Step6Payment() {
         customer_email: email || null,
         customer_name: name || null,
         save_card: canSaveCard && saveCard,
-        // Bug #110 fix per STRIPE_INTEGRATION_HANDOFF.md §12: fresh
+        // Bug #110 fix per CLAUDE_SKILLS.md (Stripe Bug #110): fresh
         // UUID per submit so Stripe doesn't dedup identical-amount
         // bookings with the same saved card into the first PI.
         idempotency_key: secureRandomUuidV4(),
@@ -601,7 +601,7 @@ export default function Step6Payment() {
         <Text style={styles.title}>{t('booking.step6Title')}</Text>
 
         <Card style={styles.breakdownCard}>
-          {/* Web parity (Option B, STRIPE_UPDATES.md 2026-05-21):
+          {/* Web parity (Option B, CLAUDE_SKILLS.md (Stripe updates) 2026-05-21):
               Pre-Order Subtotal → Deposit → Platform fee (5.5%, bold)
               → Tax → Processing fee → Total → disclosure copy. The
               Platform fee was previously rendered as a muted "(included)"
@@ -717,7 +717,7 @@ export default function Step6Payment() {
               discount_amount: null,
               discount_reason: null,
               promotion_id: null,
-              // NOTE: do NOT pass hold_id here. Per MOBILE_SPLIT_TENDER_GUIDE
+              // NOTE: do NOT pass hold_id here. Per CLAUDE_SKILLS.md (Split-tender)
               // §10.4, split-tender uses the hold ONLY on slot 0's
               // create-public-payment-intent (server consumes it atomically
               // during PI mint). If we ALSO pass it to create-public-booking,

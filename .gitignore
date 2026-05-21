@@ -49,3 +49,5 @@ modules/*/android/.cxx/
 # Supabase CLI local link/cache (machine-specific)
 supabase/.temp/
 .claude/
+.mcp.json
+graphify-out/

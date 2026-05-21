@@ -29,7 +29,7 @@ import { borderRadius, createStyles, spacing, typography } from '@/lib/theme';
  *     elements are intentionally omitted rather than stubbed.
  *   - `availableSlots` isn't threaded through `lib/map/mapFilters`,
  *     so the popup always renders the "Booked up tonight" + NotifyMe
- *     branch. Tracked in docs/UNHARDCODE_CHECKLIST.md.
+ *     branch. Tracked in CLAUDE_SKILLS.md (Unhardcoding section).
  */
 
 type Props = {
@@ -285,7 +285,7 @@ export function MapRestaurantPopup({ restaurant, onDismiss, onOpenPreview }: Pro
 
           {/* Slot rail not yet wired into lib/map/mapFilters; always show the
               "Booked up tonight" + NotifyMe path until availableSlots is
-              threaded. Tracked in docs/UNHARDCODE_CHECKLIST.md. */}
+              threaded. Tracked in CLAUDE_SKILLS.md (Unhardcoding section). */}
           <Pressable onPress={(e) => e.stopPropagation()}>
             <Text style={styles.bookedLabel}>Booked up tonight.</Text>
             <NotifyMeButton

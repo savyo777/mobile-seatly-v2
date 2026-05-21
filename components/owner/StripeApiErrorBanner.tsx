@@ -1,7 +1,7 @@
 /**
  * Owner-dashboard inline fallback for Stripe / Supabase outages.
  *
- * Per STRIPE_INTEGRATION_HANDOFF.md §17 (Mobile parity §17.4): when
+ * Per CLAUDE_SKILLS.md (Stripe parity §17) (Mobile parity §17.4): when
  * a billing API call fails (network, 5xx, timeout) the owner sees
  * this inline retry banner instead of bouncing to a generic error
  * screen. Web's pattern is "Could not reach Stripe. [Retry]" — mobile

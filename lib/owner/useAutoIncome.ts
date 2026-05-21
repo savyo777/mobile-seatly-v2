@@ -2,7 +2,7 @@
  * Owner-side auto-tracked income from Stripe-settled charges.
  *
  * Mirrors web's `apps/web/src/hooks/useAutoIncome.ts` (per
- * STRIPE_INTEGRATION_HANDOFF.md §12). Reads two sources:
+ * CLAUDE_SKILLS.md (Stripe section) §12). Reads two sources:
  *   1. `reservation_deposit_payments` where status='charged' AND
  *      paid_at IS NOT NULL — diner-paid deposits via
  *      `create-public-payment-intent` + `confirm-deposit-paid`

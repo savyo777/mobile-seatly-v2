@@ -337,7 +337,7 @@ export default function PaymentMethodScreen() {
       }
     })();
     // Subscription snapshot drives the past-due CTA per
-    // STRIPE_INTEGRATION_HANDOFF.md §17. If the owner is past_due /
+    // CLAUDE_SKILLS.md (Stripe parity §17). If the owner is past_due /
     // unpaid, surface a prominent inline "Update payment method"
     // call-to-action above the card summary so they can self-serve
     // recovery (mirrors web's BillingStatusPill inline link).
@@ -442,7 +442,7 @@ export default function PaymentMethodScreen() {
         </Text>
       </View>
 
-      {/* Past-due / unpaid surfacing per STRIPE_INTEGRATION_HANDOFF.md
+      {/* Past-due / unpaid surfacing per CLAUDE_SKILLS.md (Stripe section)
           §17. When Stripe has reported the subscription as past_due or
           unpaid, surface a red CTA so the owner can self-serve the card
           update immediately. Tapping just scrolls them down to the

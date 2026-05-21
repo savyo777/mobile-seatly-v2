@@ -1,6 +1,6 @@
 // Cenaiva Terms of Service — canonical text shipped 2026-05-21.
 //
-// Source: user-provided canonical content (mobile-legal-handoff.md notes
+// Source: user-provided canonical content (CLAUDE_SKILLS.md (Legal) notes
 // the web sister repo at apps/web/src/lib/legal/termsContent.ts is the
 // upstream source of truth; we keep mobile in sync verbatim).
 //
