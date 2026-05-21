@@ -55,6 +55,8 @@ const useStyles = createStyles((c) => ({
     color: c.textMuted,
     lineHeight: 16,
   },
+  lineLabelMuted: { flex: 1, fontSize: 13, color: c.textMuted, fontStyle: 'italic' },
+  lineValueMuted: { fontSize: 13, color: c.textMuted, fontStyle: 'italic' },
   sectionTitle: { fontSize: 16, fontWeight: '600', color: c.textPrimary, marginTop: 24, marginBottom: 12 },
   modeToggleRow: {
     flexDirection: 'row',
@@ -527,17 +529,15 @@ export default function Step6Payment() {
         <Text style={styles.title}>{t('booking.step6Title')}</Text>
 
         <Card style={styles.breakdownCard}>
+          {/* Order items first (Pre-order + Deposit), then service fee
+              (shown as included so it's transparent without double-
+              charging), then tax, then Stripe processing fee, then
+              Total. User-requested order 2026-05-21. */}
           {hasPreorder && (
-            <>
-              <View style={styles.lineItem}>
-                <Text style={styles.lineLabel}>Pre-Order Subtotal</Text>
-                <Text style={styles.lineValue}>{formatCurrency(preorderTotal)}</Text>
-              </View>
-              <View style={styles.lineItem}>
-                <Text style={styles.lineLabel}>{t('orders.tax')}</Text>
-                <Text style={styles.lineValue}>{formatCurrency(taxAmount)}</Text>
-              </View>
-            </>
+            <View style={styles.lineItem}>
+              <Text style={styles.lineLabel}>Pre-Order Subtotal</Text>
+              <Text style={styles.lineValue}>{formatCurrency(preorderTotal)}</Text>
+            </View>
           )}
           {hasDeposit && (
             <View style={styles.lineItem}>
@@ -549,6 +549,24 @@ export default function Step6Payment() {
             <View style={styles.lineItem}>
               <Text style={styles.lineLabel}>Reservation</Text>
               <Text style={styles.lineValue}>No payment due now</Text>
+            </View>
+          )}
+          {(hasDeposit || hasPreorder) && dinerCharge.applicationFeeCents > 0 ? (
+            <View style={styles.lineItem}>
+              <Text style={styles.lineLabelMuted}>
+                {t('booking.serviceFeeLine') as string}
+              </Text>
+              <Text style={styles.lineValueMuted}>
+                {t('booking.serviceFeeIncluded', {
+                  fee: formatCurrency(dinerCharge.applicationFeeCents / 100),
+                }) as string}
+              </Text>
+            </View>
+          ) : null}
+          {hasPreorder && (
+            <View style={styles.lineItem}>
+              <Text style={styles.lineLabel}>{t('orders.tax')}</Text>
+              <Text style={styles.lineValue}>{formatCurrency(taxAmount)}</Text>
             </View>
           )}
           {dinerCharge.dinerPaysFee && dinerCharge.processingFeeCents > 0 ? (
@@ -563,9 +581,7 @@ export default function Step6Payment() {
           </View>
           {(hasDeposit || hasPreorder) && dinerCharge.applicationFeeCents > 0 ? (
             <Text style={styles.feeDisclosure}>
-              {t('booking.serviceFeeNote', {
-                fee: formatCurrency(dinerCharge.applicationFeeCents / 100),
-              }) as string}
+              {t('booking.serviceFeeInlineNote') as string}
             </Text>
           ) : null}
         </Card>

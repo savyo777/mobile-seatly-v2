@@ -634,6 +634,19 @@ Deno.serve(async (req: Request) => {
           409,
         );
       }
+      // Map the catch-all "invalid_status" path (raised by book_reservation
+      // when an unexpected hold/diner state is detected) to the standard
+      // diner_double_book unavailable_reason so the client's friendlyError
+      // mapper surfaces an actionable message. Added 2026-05-21.
+      if (bookingError.message?.toLowerCase().includes("invalid_status")) {
+        return jsonResponse(
+          {
+            error: "You already have a reservation around this time. Cancel that one first or pick a different slot.",
+            unavailable_reason: "diner_double_book",
+          },
+          409,
+        );
+      }
       return jsonResponse({ error: `Reservation: ${bookingError.message}` }, 400);
     }
 

@@ -411,7 +411,13 @@ export function SplitTenderCheckout({
     } catch (err) {
       Alert.alert(
         t('common.error') as string,
-        friendlyError(err, 'Could not start the split payment. Please try again.'),
+        friendlyError(
+          err,
+          // More diagnostic than "try again" — most repeat failures are
+          // an overlapping reservation on the diner's account. Surface
+          // the actionable next step.
+          "Couldn't start the split payment. If you already have a booking around this time, cancel it first or pick a different slot.",
+        ),
       );
     } finally {
       setSubmitting(false);
@@ -502,9 +508,7 @@ export function SplitTenderCheckout({
             ) : null}
             {dinerCharge.applicationFeeCents > 0 ? (
               <Text style={styles.shareHint}>
-                {t('booking.serviceFeeNote', {
-                  fee: formatCents(dinerCharge.applicationFeeCents),
-                }) as string}
+                {t('booking.serviceFeeInlineNote') as string}
               </Text>
             ) : null}
           </View>

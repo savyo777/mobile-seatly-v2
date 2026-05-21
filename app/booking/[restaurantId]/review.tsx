@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import {
   Alert,
   KeyboardAvoidingView,
@@ -116,6 +116,19 @@ export default function BookingReviewScreen() {
   const [body, setBody] = useState('');
   const [busy, setBusy] = useState(false);
 
+  // Defense against deep-link / notification races: if we landed here
+  // without the bookingId param (e.g. tapped a stale PostTurnPrompt
+  // notification whose AsyncStorage cache lost the id, or a malformed
+  // deep link), silently send the user back to Discover instead of
+  // letting them stare at a 5-star UI that can never submit. The
+  // previous behavior popped an Alert with title "Missing booking" —
+  // user explicitly asked: "this should never show". Added 2026-05-21.
+  useEffect(() => {
+    if (!bookingId || !restaurantId) {
+      router.replace('/(customer)/discover');
+    }
+  }, [bookingId, restaurantId, router]);
+
   const name = useMemo(() => {
     if (restaurantName) return decodeURIComponent(String(restaurantName));
     return restaurantId ? getSnapRestaurantName(restaurantId) : 'Restaurant';
@@ -127,7 +140,10 @@ export default function BookingReviewScreen() {
       return;
     }
     if (!bookingId || !restaurantId) {
-      Alert.alert('Missing booking', friendlyError(undefined, 'This review needs to be linked to a completed booking.'));
+      // The useEffect above already redirects on mount; this is just a
+      // safety net for the (theoretically impossible) case where the
+      // user tapped Submit before the redirect fired.
+      router.replace('/(customer)/discover');
       return;
     }
     setBusy(true);
