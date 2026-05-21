@@ -36,15 +36,8 @@
     "production": {
       "autoIncrement": true,
       "distribution": "store",
-      "ios": {
-        "entitlements": {
-          "aps-environment": "production"
-        },
-        "jsEngine": "hermes"
-      },
       "android": {
-        "buildType": "app-bundle",
-        "jsEngine": "hermes"
+        "buildType": "app-bundle"
       },
       "env": {
         "EXPO_PUBLIC_DEEPGRAM_STT_ENABLED": "true",

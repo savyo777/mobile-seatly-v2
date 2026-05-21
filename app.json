@@ -19,6 +19,9 @@
       "supportsTablet": true,
       "bundleIdentifier": "com.cenaiva.app",
       "buildNumber": "1",
+      "entitlements": {
+        "aps-environment": "production"
+      },
       "infoPlist": {
         "NSMicrophoneUsageDescription": "Cenaiva uses your microphone so you can speak restaurant and booking requests.",
         "NSLocationWhenInUseUsageDescription": "Cenaiva uses your location to find nearby restaurants.",
@@ -148,7 +151,6 @@
           "calendarPermission": "Cenaiva adds your reservation to your primary calendar so you don't forget your dine-in time."
         }
       ],
-      "expo-screen-capture",
       [
         "expo-build-properties",
         {
