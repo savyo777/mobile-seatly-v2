@@ -484,16 +484,27 @@ export function SplitTenderCheckout({
         });
       }
     } catch (err) {
-      Alert.alert(
-        t('common.error') as string,
-        friendlyError(
-          err,
-          // More diagnostic than "try again" — most repeat failures are
-          // an overlapping reservation on the diner's account. Surface
-          // the actionable next step.
-          "Couldn't start the split payment. If you already have a booking around this time, cancel it first or pick a different slot.",
-        ),
+      // Surface the SERVER's actual error message when present
+      // (`friendlyError` already prefers raw Error.message over the
+      // fallback) — most failures during split-tender are useful
+      // diagnostics that the user can act on:
+      //   - "You already have a reservation at this restaurant
+      //     during that window" → tell them which booking to cancel
+      //   - "Could not create reservation" → genuine server error
+      //     they should retry
+      //   - "create-public-booking returned 0 split_tender_deposit
+      //     _row_ids" → server-side native split-tender not deployed,
+      //     coordinate with web team
+      // Previously this catch always defaulted to "Couldn't start
+      // the split payment. If you already have a booking around this
+      // time…" which buried the specific reason. The fallback stays
+      // for cases where we genuinely have no diagnostic — e.g. a
+      // network timeout where err.message is unhelpful.
+      const friendly = friendlyError(
+        err,
+        "Couldn't start the split payment. Please try again.",
       );
+      Alert.alert(t('common.error') as string, friendly);
     } finally {
       setSubmitting(false);
     }
