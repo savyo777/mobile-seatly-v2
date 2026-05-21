@@ -239,6 +239,11 @@ export function useReservationHold(args: UseReservationHoldArgs): UseReservation
     createInflightRef.current = true;
     setState({ status: 'creating' });
     try {
+      // Optional UUID/text fields use `.optional()` on the server zod
+      // schema (Uuid.optional()), which accepts MISSING but rejects an
+      // explicit `null`. Sending `event_id: null` triggers a 400
+      // "Validation failed" with no actionable message. Only include
+      // these fields when they're non-null.
       const resp = await createReservationHold({
         restaurant_id: restaurantId,
         shift_id: shiftId,
@@ -246,9 +251,9 @@ export function useReservationHold(args: UseReservationHoldArgs): UseReservation
         party_size: partySize,
         source,
         idempotency_key: uuidV4(),
-        event_id: eventId,
-        promotion_id: promotionId,
-        applied_promo_code: appliedPromoCode,
+        ...(eventId ? { event_id: eventId } : {}),
+        ...(promotionId ? { promotion_id: promotionId } : {}),
+        ...(appliedPromoCode ? { applied_promo_code: appliedPromoCode } : {}),
       });
       const serverSkewMs = Date.now() - new Date(resp.server_now).getTime();
       const stored: StoredHold = {
