@@ -303,7 +303,13 @@ export function useReservationHold(args: UseReservationHoldArgs): UseReservation
       }
       if (cancelled) return;
       const current = stateRef.current;
-      if (current.status === 'idle') {
+      // Retry from 'error' too. Without this, a failed hold creation
+      // on one booking attempt (transient 400, network blip, prior
+      // bug #5 victim) permanently bricks the holds path for the rest
+      // of the JS runtime — every subsequent booking lands on step6
+      // with "Your hold ended" because auto-create only fires for
+      // status='idle' and an errored hook stays errored.
+      if (current.status === 'idle' || current.status === 'error') {
         void createHold();
       }
     })();
