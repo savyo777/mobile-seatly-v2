@@ -27,6 +27,7 @@ import {
 } from '@/lib/navigation/appShellPreference';
 import { CENAIVA_FOLLOW_URLS } from '@/lib/config/cenaivaSocial';
 import { isLoyaltyEnabled } from '@/lib/config/loyaltyFeature';
+import { isDemoModeEnabled } from '@/lib/config/demoMode';
 import { LOYALTY_TIERS, getLoyaltyTier } from '@/lib/loyalty/tiers';
 
 const TIERS = LOYALTY_TIERS;
@@ -450,7 +451,15 @@ export default function SettingsScreen() {
     {
       title: 'More',
       rows: [
-        { kind: 'nav', icon: 'gift-outline', label: 'Refer & Earn', href: '/(customer)/profile/invite' },
+        // Diner referrals don't exist in Cenaiva — the only referral
+        // program is owner-side ("Refer & Earn" for restaurant
+        // partners, governed by the Restaurant Partner Agreement +
+        // lib/owner/referralPolicy.ts). The invite.tsx screen renders
+        // demo-mode mock data only, so hide the nav row when not in
+        // demo mode to avoid surfacing a phantom feature.
+        ...(isDemoModeEnabled()
+          ? [{ kind: 'nav' as const, icon: 'gift-outline' as const, label: 'Refer & Earn', href: '/(customer)/profile/invite' as const }]
+          : []),
         { kind: 'nav', icon: 'help-circle-outline', label: 'Help & Support', href: '/(customer)/profile/help' },
         {
           kind: 'nav',

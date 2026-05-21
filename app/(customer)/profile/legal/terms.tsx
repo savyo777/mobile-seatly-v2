@@ -28,7 +28,7 @@ export default function TermsScreen() {
         {
           heading: 'Cenaiva — Terms of Service (Consumer)',
           paragraphs: [
-            'Effective Date: May 10, 2026 | Last Updated: May 21, 2026',
+            'Effective Date: May 10, 2026 | Last Updated: May 21, 2026 (rev. 2 — §9.3 corrected to reflect owner-only referrals)',
             'Welcome to Cenaiva. These Terms of Service ("Terms") govern your access to and use of the Cenaiva mobile application and related services ("Services") as a consumer or diner. Restaurant partners and operators are subject to a separate Restaurant Partner Agreement. By creating an account or using the Services, you agree to be bound by these Terms. If you do not agree, you must stop using the Services immediately.',
           ],
         },
@@ -112,7 +112,7 @@ export default function TermsScreen() {
           paragraphs: [
             '9.1 Loyalty Tiers. Cenaiva offers a loyalty program with tiered benefits based on activity. Tier status, benefits, and qualification criteria are set by Cenaiva and may be updated from time to time with reasonable notice. Tier status is non-transferable and has no monetary value.',
             '9.2 Loyalty Waitlist. Certain loyalty program features may be in limited release. If a feature is not yet available to your account, you may join a waitlist. Joining the waitlist does not guarantee access. Cenaiva will notify you via email if and when access becomes available.',
-            '9.3 Referrals. Cenaiva may offer referral incentives for inviting new users. Both the referring user and the referred user must meet eligibility requirements. Referred users must be genuinely new to the platform. Referral abuse — including the creation of fake accounts or self-referrals — will result in forfeiture of rewards and may result in account termination. Cenaiva reserves the right to modify or discontinue the referral program at any time.',
+            '9.3 Restaurant Partner Referrals. Cenaiva offers a referral incentive program for restaurant partners (the "Refer & Earn" program), which provides one month of subscription credit to both the referring restaurant and the referred restaurant. This program is governed by the separate Restaurant Partner Agreement and is not available to consumers. Cenaiva does not currently offer a consumer referral program.',
           ],
         },
         {

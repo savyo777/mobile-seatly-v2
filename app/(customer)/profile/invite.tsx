@@ -23,7 +23,6 @@ import {
 } from '@/lib/storage/referralLimits';
 import { useColors, createStyles, spacing, typography, borderRadius, shadows } from '@/lib/theme';
 import { friendlyError } from '@/lib/errors/friendlyError';
-import { getMyReferralCode, buildReferralShareLink, getMyReferralCredits, type ReferralCreditsResult } from '@/lib/referrals/dinerReferrals';
 
 const useStyles = createStyles((c) => ({
   hero: {
@@ -68,42 +67,6 @@ const useStyles = createStyles((c) => ({
     ...typography.label,
     color: c.textMuted,
     marginBottom: spacing.sm,
-  },
-  balanceCard: {
-    backgroundColor: c.bgSurface,
-    borderRadius: borderRadius.lg,
-    borderWidth: 1,
-    borderColor: 'rgba(201, 168, 76, 0.35)',
-    padding: spacing.lg,
-    marginBottom: spacing.lg,
-    ...shadows.card,
-  },
-  balanceLabel: {
-    ...typography.label,
-    color: c.textMuted,
-    marginBottom: spacing.xs,
-  },
-  balanceValue: {
-    fontSize: 32,
-    fontWeight: '800',
-    color: c.gold,
-    marginBottom: spacing.xs,
-  },
-  balanceMeta: {
-    ...typography.bodySmall,
-    color: c.textSecondary,
-    marginTop: 2,
-  },
-  balanceExpiringNote: {
-    ...typography.bodySmall,
-    color: c.warning,
-    marginTop: spacing.sm,
-  },
-  balanceRedemptionNote: {
-    ...typography.bodySmall,
-    color: c.textMuted,
-    marginTop: spacing.md,
-    lineHeight: 18,
   },
   codeBox: {
     flexDirection: 'row',
@@ -205,42 +168,11 @@ export default function InviteScreen() {
   const c = useColors();
   const styles = useStyles();
   const [limits, setLimits] = useState<ReferralLimitsSnapshot | null>(null);
-  const [liveCode, setLiveCode] = useState<string | null>(null);
-  const [credits, setCredits] = useState<ReferralCreditsResult | null>(null);
 
   const refresh = useCallback(async () => {
     const snapshot = await getReferralLimits();
     setLimits(snapshot);
   }, []);
-
-  // Build 3f — fetch (or lazily mint) the diner's real referral code.
-  // Falls back to the demo REFERRAL_CODE in demo mode so the mock UI
-  // still renders without a network call.
-  useEffect(() => {
-    let cancelled = false;
-    if (isDemoModeEnabled()) return;
-    void (async () => {
-      try {
-        const code = await getMyReferralCode();
-        if (!cancelled) setLiveCode(code);
-      } catch {
-        // best-effort; UI shows the demo code as a fallback so the screen still works
-      }
-      try {
-        const summary = await getMyReferralCredits();
-        if (!cancelled) setCredits(summary);
-      } catch {
-        // best-effort; balance card just doesn't render
-      }
-    })();
-    return () => {
-      cancelled = true;
-    };
-  }, []);
-
-  const balanceDollars = credits ? (credits.balance_cents / 100) : 0;
-  const lifetimeDollars = credits ? (credits.lifetime_earned_cents / 100) : 0;
-  const expiringDollars = credits ? (credits.expiring_soon_cents / 100) : 0;
 
   useEffect(() => {
     void refresh();
@@ -278,10 +210,8 @@ export default function InviteScreen() {
       return;
     }
     try {
-      const codeForShare = liveCode ?? REFERRAL_CODE;
-      const shareLink = buildReferralShareLink(codeForShare);
       const result = await Share.share({
-        message: `Join me on Cenaiva — book incredible tables and earn rewards. Use my code ${codeForShare} when you sign up: ${shareLink}`,
+        message: `Join me on Cenaiva — book incredible tables and earn rewards. Use my code ${REFERRAL_CODE} when you sign up.`,
         title: 'Cenaiva referral',
       });
       if (result.action !== Share.dismissedAction) {
@@ -310,24 +240,6 @@ export default function InviteScreen() {
 
   return (
     <ProfileStackScreen title="Refer & Earn">
-      {credits && credits.lifetime_earned_cents > 0 ? (
-        <View style={styles.balanceCard}>
-          <Text style={styles.balanceLabel}>Your referral credit balance</Text>
-          <Text style={styles.balanceValue}>${balanceDollars.toFixed(2)}</Text>
-          <Text style={styles.balanceMeta}>
-            ${lifetimeDollars.toFixed(2)} lifetime earned · {credits.ledger.length} reward{credits.ledger.length === 1 ? '' : 's'} issued
-          </Text>
-          {expiringDollars > 0 ? (
-            <Text style={styles.balanceExpiringNote}>
-              ${expiringDollars.toFixed(2)} expires within 90 days — use it soon
-            </Text>
-          ) : null}
-          <Text style={styles.balanceRedemptionNote}>
-            Credits are issued automatically when an invited friend completes their first booking. To redeem, email support@cenaiva.com with your booking confirmation code and the credit amount — we'll apply it to your deposit within 1 business day.
-          </Text>
-        </View>
-      ) : null}
-
       <Card style={{ ...styles.hero, ...shadows.goldGlow }}>
         <Text style={styles.heroTitle}>Invite friends and earn dining credits</Text>
         <Text style={styles.heroBody}>

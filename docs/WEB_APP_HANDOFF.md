@@ -2,9 +2,29 @@
 
 **Audience**: Cenaiva web team lead.
 **Created**: 2026-05-21 by mobile team.
-**Status**: Mobile shipped Phase 1 (ToS edits) + Phase 2 (small code fixes) + Phase 4 (TOS_COVERAGE.md) + **Phase 3 builds 3a-3f (live!)**. Phase 3 builds 3g (Loyalty) and 3h (Events) deferred — multi-week product work. Web team needs to mirror.
+**Status**: Mobile shipped Phase 1 (ToS edits) + Phase 2 (small code fixes) + Phase 4 (TOS_COVERAGE.md) + **Phase 3 builds 3a-3e (live)**. Build 3f (Diner Referrals) was **reverted** — see Correction Notice below. Phase 3 builds 3g (Loyalty) and 3h (Events) deferred — multi-week product work. Web team needs to mirror.
 
 **Scope of this document**: ONLY work from the ToS audit + remediation task started 2026-05-21. Does not cover any other mobile work (split-tender shipping, security hardening, etc. — those are separate threads).
+
+---
+
+## ⚠️ Correction Notice — Build 3f Reverted
+
+Build 3f (Diner Referrals) was initially shipped in error. **There is no diner referral system in Cenaiva.** The only referral program is the OWNER-side "Refer & Earn":
+- 30 days subscription credit per side (referrer + referred restaurant owner)
+- Code format `CNV-OWNER-XXXXXX`
+- Stripe-integrated (subscription trial extension at signup)
+- Code lives at `lib/owner/referralPolicy.ts` + `supabase/functions/_shared/referral-policy.ts`
+- Governed by the separate Restaurant Partner Agreement, not the consumer ToS
+
+Build 3f has been **fully reverted**:
+- DB: dropped `diner_referral_credits`, `referrals` tables + `qualify_pending_referral_trg` trigger + `user_profiles.referral_code` column
+- Edge fns deleted: `get-my-referral-code`, `redeem-referral`, `get-my-referral-credits`
+- Files deleted: `lib/referrals/` dir + `supabase/functions/get-my-referral-code/` etc.
+- ToS §9.3 corrected to point at owner-only program: "Cenaiva does not currently offer a consumer referral program"
+- Profile > Settings "Refer & Earn" nav row is now gated on `isDemoModeEnabled()` so live users don't see a path to a non-existent feature
+
+**Web team action**: NO mirror work needed for diner referrals. If your repo has any speculative diner-referral code from the earlier handoff, delete it. The owner referral system is fully implemented + Stripe-integrated; nothing to mirror there.
 
 ---
 
@@ -58,7 +78,7 @@ For each row: **DB** lists shared DB tables/columns. **Backend** lists shared Su
 | **3c — In-app refund request** | ✅ MOBILE LIVE | New `app/(customer)/refund-request/[bookingId].tsx` form (3 reason options + free text). New `supabase/functions/request-refund/index.ts` posts to new `refund_requests` table + auto-resolves duplicate-PI cases via `refund-payment-intent` + emails support@cenaiva.com for everything else. Inline link added to booking-detail screen when `deposit_status=charged`. | New table `refund_requests` (id, user_id, reservation_id, payment_intent_id, reason_code, reason_text, status, resolution_note, created_at, resolved_at) + RLS for own-read + own-insert. Migration `refund_requests_table`. | New fn `request-refund` deployed. Reuses `refund-payment-intent` for auto-cases. Client helper at `lib/refunds/refundRequests.ts`. | **Add refund-request form to web booking pages**. Same `refund_requests` table + `request-refund` edge fn. Same 3-reason picker (duplicate / failed / other). Inline link should appear on bookings where deposit was charged. | ☐ |
 | **3d — Profile-tags review UI** | ✅ MOBILE LIVE | New `app/(customer)/profile/my-profile-data.tsx` shows the diner's auto-tags + no-show risk + LTV across all restaurants. Until §6.4 scoring engine ships, most diners see empty tags + zero scores. Correction request via privacy@cenaiva.com (manual link). | Reads existing `guests.tags / no_show_risk_score / lifetime_value_score / total_visits / no_show_count / last_visit_at` columns. No schema change. | New fn `get-my-profile-tags` deployed. Client helper at `lib/privacy/profileTags.ts`. | **Mirror the "What restaurants see about me" page on web profile**. Same edge fn. | ☐ |
 | **3e — PostHog SDK** | ✅ MOBILE LIVE | `posthog-react-native` installed. New `lib/analytics/posthog.ts` exports `initPosthog/setPosthogEnabled/capture/identifyUser/resetIdentity`. SDK starts in disabled state and only enables when user's persisted Privacy toggle is on. New `lib/analytics/privacyPrefs.ts` persists the toggle to AsyncStorage. Boot init wired in `app/_layout.tsx`. Toggle wired in `app/(customer)/profile/privacy.tsx`. `.env.example` adds `EXPO_PUBLIC_POSTHOG_KEY` + `EXPO_PUBLIC_POSTHOG_HOST`. | none | none | **If web doesn't already use PostHog**, install `posthog-js` + init pointing at the SAME PostHog project (use same `EXPO_PUBLIC_POSTHOG_KEY` value). Wrap with the same user opt-in toggle. **If web already uses PostHog**, share the project key with mobile team. Coordinate event taxonomy doc before either side adds custom events. | ☐ |
-| **3f — Diner referrals (LIVE, automated rewards)** | ✅ MOBILE LIVE | Full end-to-end issuance loop. Sharing: `app/(customer)/profile/invite.tsx` shows live `CENA-XXXXXX` code (lazy-minted) + `cenaiva.com/r/<code>` share link. Signup attribution: `redeem-referral` records the relationship. Reward issuance: a DB trigger (`qualify_pending_referral_trg`) on the `reservations` table watches for the referred user's first booking flipping to `status='confirmed'`, atomically claims the pending referral row, and inserts $10 credits to BOTH sides into a new `diner_referral_credits` ledger (one-year TTL). Balance + ledger surfaced via `get-my-referral-credits` edge fn and rendered as a balance card in the invite screen with lifetime-earned + expiring-soon hints. **Redemption** is currently support-mediated (email support@cenaiva.com with credit + booking confirmation code) — in-checkout redemption is a future iteration constrained by Stripe destination-charge accounting (credit > app_fee_on_booking would need restaurant consent to `reverse_transfer`). | (1) `referrals` table per Phase 3f initial commit. (2) NEW `diner_referral_credits` table (id, user_id, source, source_referral_id, amount_cents, remaining_cents, expires_at, applied_to_reservation_ids[], timestamps) with RLS for own-read. (3) NEW DB trigger `qualify_pending_referral_trg` + function `qualify_pending_referral_on_reservation_confirm()`. (4) `user_profiles.referral_code TEXT UNIQUE` column. | `get-my-referral-code` + `redeem-referral` + NEW `get-my-referral-credits` (all deployed). The DB trigger is the issuance engine — no edge-fn call needed for issuance, it just fires automatically on reservation confirmation. | **Add referral page to web profile** calling the same edge fns. The DB trigger fires regardless of caller — web bookings will issue credits too. Web signup should call `redeem-referral` if the new user came in via `?ref=CENA-XXXXXX`. **Add balance card** rendered from `get-my-referral-credits`. **Mirror the redemption instructions** in your web profile (currently: email support@cenaiva.com). When the in-checkout redemption ships, both sides land it together. | ☐ |
+| **3f — Diner referrals** | ❌ REVERTED | See Correction Notice above. Diner referrals are not a Cenaiva feature. Owner referrals already exist (`lib/owner/referralPolicy.ts`, Stripe-integrated, +30 days per side); they're governed by the Restaurant Partner Agreement, not the consumer ToS. | All Build 3f tables/columns/triggers DROPPED. | All 3f edge fns DELETED from project `exbjodmnpdiayfzrdyux`. | N/A — do nothing for diner referrals. Owner referrals are already shipped (and out of scope for this consumer-side handoff). | N/A |
 | **3g — Loyalty + Snap Rewards** | ❌ NOT YET (next sprint) | Will flip `lib/config/loyaltyFeature.ts:isLoyaltyEnabled()` to true after building. Build tier definitions (already in `lib/loyalty/tiers.ts`), points ledger, qualifying-action events, tier-change push notifications, rewards catalog, redemption flow. Snap Rewards: award points for posting a Snap (rate-limited). Reward issuance hook for Build 3f referrals. | New tables `loyalty_points_ledger`, `loyalty_rewards`, etc. | New fns for tier qualification, reward issuance, redemption. | **Web mirrors tier badge, points ledger UI, rewards redemption flow**. Multi-week build — coordinate sprints with web team. | ☐ |
 | **3h — Events & Ticketing** | ❌ NOT YET (next sprint, coordinate with mock-data removal) | New `events` + `event_tickets` schemas. Customer browse + buy flow (Stripe Connect destination charge to restaurant). Restaurant event-create UI. | New tables `events` (id, restaurant_id, name, starts_at, ends_at, price_cents, capacity, status), `event_tickets` (id, event_id, user_id, status, stripe_pi_id). | New fns: `create-event` (restaurant), `purchase-event-ticket` (diner). | **Web adds events browse + buy + restaurant create UI**. Per user note: mock event data getting removed from mobile soon — coordinate before either side launches. | ☐ |
 
@@ -133,16 +153,16 @@ For each row: **DB** lists shared DB tables/columns. **Backend** lists shared Su
 | `app/(customer)/profile/privacy.tsx` | Wired Analytics toggle to persist + setPosthogEnabled |
 | `.env.example` | NEW vars `EXPO_PUBLIC_POSTHOG_KEY` + `EXPO_PUBLIC_POSTHOG_HOST` |
 
-### Phase 3f — Diner referrals (LIVE end-to-end: code + share + automated rewards)
+### Phase 3f — REVERTED (no diner referrals in Cenaiva)
 | File | Change |
 |---|---|
-| `supabase/functions/get-my-referral-code/index.ts` | NEW — lazy-mints `CENA-XXXXXX` code |
-| `supabase/functions/redeem-referral/index.ts` | NEW — applies referrer relationship at signup |
-| `supabase/functions/get-my-referral-credits/index.ts` | NEW — returns balance + lifetime-earned + expiring-soon + ledger |
-| `lib/referrals/dinerReferrals.ts` | NEW — client wrapper for all three fns + share-link builder + ReferralCreditEntry types |
-| `app/(customer)/profile/invite.tsx` | Wired to fetch live code + include share link in Share text + balance card with lifetime-earned, expiring-soon, redemption instructions |
-| DB migration `diner_referrals` | NEW — `referrals` table + `user_profiles.referral_code` column |
-| DB migration `diner_referral_credits` | NEW — `diner_referral_credits` table + RLS + `qualify_pending_referral_trg` trigger that auto-issues $10/side credits when referred user's first booking confirms |
+| `supabase/functions/get-my-referral-code/` | DELETED + undeployed |
+| `supabase/functions/redeem-referral/` | DELETED + undeployed |
+| `supabase/functions/get-my-referral-credits/` | DELETED + undeployed |
+| `lib/referrals/` | DELETED |
+| `app/(customer)/profile/invite.tsx` | REVERTED to pre-3f mock-only state (screen still exists but is only navigable in demo mode) |
+| `app/(customer)/profile/settings.tsx` | Gated "Refer & Earn" nav row behind `isDemoModeEnabled()` so live users don't see a path to a non-existent feature |
+| DB migration `revert_diner_referrals_misbuilt` | DROPped `diner_referral_credits` + `referrals` tables + `qualify_pending_referral_trg` + `user_profiles.referral_code` column |
 
 ### Phase 4 (docs)
 | File | Change |
