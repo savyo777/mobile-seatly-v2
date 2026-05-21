@@ -367,8 +367,14 @@ function ThemedRootShell() {
     }
 
     // Authenticated user on an auth screen → send them into the app.
+    // Note: 'consent' is NOT exempted here — by the time we reach this
+    // branch, needsLegalConsent has been verified false (the gate
+    // earlier in this effect would have returned otherwise). So a
+    // user sitting on /(auth)/consent after accepting needs to be
+    // bounced into the app. reset-password + verify-phone-otp DO
+    // stay exempt because those are mid-flow auth screens.
     if (isAuthenticated && role !== null && seg0 === '(auth)') {
-      if (seg1 === 'reset-password' || seg1 === 'verify-phone-otp' || seg1 === 'consent') return;
+      if (seg1 === 'reset-password' || seg1 === 'verify-phone-otp') return;
       router.replace(isStaffLike ? '/(staff)' as never : '/(customer)/discover' as never);
       return;
     }
