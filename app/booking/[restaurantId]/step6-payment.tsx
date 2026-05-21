@@ -458,11 +458,21 @@ export default function Step6Payment() {
     setPaying(true);
     let createdPaymentIntentId: string | null = null;
     try {
-      const totalCents = Math.max(50, Math.round(totalDue * 100));
+      // CRITICAL: send the BASE amount (preorder + tax + deposit, no
+      // gross-up) — the server computes the platform fee + Stripe
+      // gross-up itself when it mints the PaymentIntent. If we sent
+      // the grossed-up `totalDue` here, the server would reject with
+      // `amount_mismatch` because the PI amount wouldn't match the
+      // hold's deposit_amount_cents + total_amount_cents.
+      // The cart UI still displays the grossed-up `totalDue` and the
+      // "Confirm Booking · $X" CTA matches what Stripe's PaymentSheet
+      // shows — the diner is charged the grossed-up amount; we just
+      // don't quote that number to the API, the server derives it.
+      const baseAmountCents = Math.max(50, baseTotalCents);
       const intent = await createHoldPaymentIntent({
         hold_id: holdId,
         restaurant_id: restaurantId,
-        amount_cents: totalCents,
+        amount_cents: baseAmountCents,
         currency: 'cad',
         customer_email: email || null,
         customer_name: name || null,
@@ -480,10 +490,11 @@ export default function Step6Payment() {
         // Refresh the PI with the corrected amount and surface a confirm modal.
         // New UUID for the refresh: this is a SEPARATE PI from the
         // pre-refresh attempt and must dedup independently.
+        // Same as above: send the BASE; server grosses up.
         const refreshed = await createHoldPaymentIntent({
           hold_id: holdId,
           restaurant_id: restaurantId,
-          amount_cents: totalCents,
+          amount_cents: baseAmountCents,
           currency: 'cad',
           customer_email: email || null,
           customer_name: name || null,
@@ -492,7 +503,7 @@ export default function Step6Payment() {
         });
         setPendingRetry({
           holdId,
-          oldAmountCents: totalCents,
+          oldAmountCents: baseAmountCents,
           newAmountCents: refreshed.amount_cents,
           clientSecret: refreshed.client_secret,
           paymentIntentId: refreshed.payment_intent_id,
