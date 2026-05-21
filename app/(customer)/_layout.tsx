@@ -199,6 +199,7 @@ export default function CustomerTabsLayout() {
           <Tabs.Screen name="post/camera" options={{ href: null }} />
           <Tabs.Screen name="post/caption" options={{ href: null }} />
           <Tabs.Screen name="post/reward" options={{ href: null }} />
+          <Tabs.Screen name="refund-request/[bookingId]" options={{ href: null }} />
         </Tabs>
         {!hideTabChrome ? <AiChatFab bottomOffset={56 + tabBarPaddingBottom + 16} /> : null}
       </View>
