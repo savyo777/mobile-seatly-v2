@@ -232,6 +232,18 @@ export type CreateHoldPaymentIntentRequest = {
    * uses `metadata.hold_id` instead).
    */
   deposit_payment_ids?: string[];
+  /**
+   * Per-booking-attempt idempotency key (UUID v4). Required to fix
+   * Bug #110 (PI reuse across same-amount bookings with same saved
+   * card). Per STRIPE_INTEGRATION_HANDOFF.md §12 (FIXED 2026-05-21):
+   * before this fix the server derived its Stripe idempotency key
+   * from `${profile.id}_${cardId}_${amount}`, causing identical
+   * second-booking PIs to dedup into the FIRST booking's PI. The
+   * server now uses this client-supplied UUID when present, falling
+   * back to the legacy amount-derived key only for old mobile builds
+   * that don't yet send the field. Generate a FRESH UUID per submit.
+   */
+  idempotency_key?: string;
 };
 
 export type CreateHoldPaymentIntentResponse = {

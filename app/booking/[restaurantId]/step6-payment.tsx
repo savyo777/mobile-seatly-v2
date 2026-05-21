@@ -21,6 +21,7 @@ import {
   createHoldPaymentIntent,
   refundPaymentIntent,
 } from '@/lib/booking/holdApi';
+import { secureRandomUuidV4 } from '@/lib/utils/secureRandom';
 import { friendlyError, isUserCancellation } from '@/lib/errors/friendlyError';
 import { useCurrentUserId } from '@/lib/auth/currentUserId';
 import { stripeAttachPaymentMethod } from '@/lib/stripe/stripeAttachPaymentMethod';
@@ -434,6 +435,10 @@ export default function Step6Payment() {
         customer_email: email || null,
         customer_name: name || null,
         save_card: canSaveCard && saveCard,
+        // Bug #110 fix per STRIPE_INTEGRATION_HANDOFF.md §12: fresh
+        // UUID per submit so Stripe doesn't dedup identical-amount
+        // bookings with the same saved card into the first PI.
+        idempotency_key: secureRandomUuidV4(),
       });
       createdPaymentIntentId = intent.payment_intent_id;
 
@@ -441,6 +446,8 @@ export default function Step6Payment() {
       if (outcome === 'amount_changed') {
         // The hold's total_amount_cents grew between PI mint and confirm-hold-paid.
         // Refresh the PI with the corrected amount and surface a confirm modal.
+        // New UUID for the refresh: this is a SEPARATE PI from the
+        // pre-refresh attempt and must dedup independently.
         const refreshed = await createHoldPaymentIntent({
           hold_id: holdId,
           restaurant_id: restaurantId,
@@ -449,6 +456,7 @@ export default function Step6Payment() {
           customer_email: email || null,
           customer_name: name || null,
           save_card: canSaveCard && saveCard,
+          idempotency_key: secureRandomUuidV4(),
         });
         setPendingRetry({
           holdId,

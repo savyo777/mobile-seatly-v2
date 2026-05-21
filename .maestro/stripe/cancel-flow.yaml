@@ -1,0 +1,134 @@
+# B2 — Diner cancel flow with non-refundable disclosure.
+#
+# Assumes the signed-in test account has at least one upcoming
+# CONFIRMED booking with a CHARGED deposit. If no such booking exists,
+# the flow surfaces a clear failure-to-set-up message (you'll see
+# "No upcoming bookings" instead of the booking card).
+#
+# To seed a charged-deposit booking first, run:
+#   maestro test .maestro/stripe/card-matrix.yaml \
+#     --env MAESTRO_EMAIL=… --env MAESTRO_PASSWORD=… \
+#     --env CARD_NAME=4242-success
+# and complete the Stripe PaymentSheet manually with 4242 4242 4242
+# 4242. Then re-run THIS flow.
+#
+# Verifies:
+#   - The cancel confirmation Alert exposes the Option B disclosure
+#     copy: "Cenaiva platform fee (5.5%)", "Stripe processing fee",
+#     "non-refundable", and the 5-business-day refund window.
+#   - Tapping the destructive confirm flips the booking status to
+#     Cancelled.
+#
+# Screenshots saved to /tmp/maestro-screenshots/:
+#   - cancel-flow-alert.png    (the disclosure Alert mid-confirmation)
+#   - cancel-flow-after.png    (the cancelled-state booking detail)
+
+appId: com.cenaiva.app
+---
+- runFlow: ../_subflows/sign-in-with-creds.yaml
+- runFlow: ../_subflows/switch-to-customer.yaml
+
+# Deep-link straight into the Bookings tab so we don't bounce off
+# the default Discover landing. The (customer) group resolves to the
+# tab navigator; the route is /(customer)/bookings.
+- openLink: "cenaiva:///(customer)/bookings"
+- extendedWaitUntil:
+    visible: "^Bookings$"
+    timeout: 15000
+- assertVisible: "Upcoming"
+
+# The Upcoming list renders booking cards as touchable rows. iOS-26
+# wraps the a11y label with leading commas, hence the .* on each
+# side. If "No upcoming bookings" is what's visible, fail loud — the
+# rest of the flow has nothing to act on.
+- extendedWaitUntil:
+    visible:
+      text: ".*Confirmed.*|.*Reserved.*|No upcoming bookings"
+    timeout: 15000
+
+- runFlow:
+    when:
+      visible: "No upcoming bookings"
+    commands:
+      - takeScreenshot:
+          path: "/tmp/maestro-screenshots/cancel-flow-no-booking.png"
+      # Surface a visible message so the human sees why the test
+      # short-circuited. assertVisible against an impossible string
+      # fails the test cleanly.
+      - assertVisible: "SEED_REQUIRED__NO_UPCOMING_BOOKING_TO_CANCEL"
+
+# Tap the first Confirmed booking card. The card opens the
+# booking-detail screen at app/(customer)/bookings/[id].tsx, which is
+# where the "Cancel Booking" red button lives.
+- tapOn:
+    text: ".*Confirmed.*"
+    index: 0
+
+- extendedWaitUntil:
+    visible: "Cancel Booking"
+    timeout: 15000
+
+# Tap Cancel Booking → an Alert pops with the disclosure body. The
+# Alert title is "Cancel Booking" (i18n: bookings.cancelBooking) and
+# the body is the cancelConfirmMessage + a refund disclosure
+# paragraph (only present when liveDepositStatus === 'charged').
+- tapOn:
+    text: "Cancel Booking"
+
+- extendedWaitUntil:
+    visible:
+      text: "cannot be undone|Are you sure"
+    timeout: 10000
+
+# Disclosure copy assertions — these are the substrings of the body
+# that prove the Option B refund commitment from STRIPE_UPDATES.md is
+# being honoured on mobile. If any assert fails, either the copy
+# drifted from the documented commitment, or the booking was
+# free / waived (in which case the refundLine block is suppressed —
+# see app/(customer)/bookings/[id].tsx:368).
+- assertVisible:
+    text: "Cenaiva platform fee \\(5\\.5%\\)"
+- assertVisible:
+    text: "Stripe processing fee"
+- assertVisible:
+    text: "non-refundable"
+- assertVisible:
+    text: "5 business days"
+
+- takeScreenshot:
+    path: "/tmp/maestro-screenshots/cancel-flow-alert.png"
+
+# Tap the destructive "Yes, Cancel" button (i18n:
+# bookings.confirmCancel). The cancelReservationByIdAsync call
+# flips the row + a Realtime subscription should re-render the
+# booking detail with status="Cancelled".
+- tapOn:
+    text: "Yes, Cancel"
+
+# Verify the status pill switches to Cancelled. Use a long timeout
+# because the Realtime round-trip + the local setCancelledLocally
+# state update can take a couple seconds end-to-end.
+- extendedWaitUntil:
+    visible:
+      text: "^Cancelled$|status\\.reservation\\.cancelled"
+    timeout: 20000
+
+- takeScreenshot:
+    path: "/tmp/maestro-screenshots/cancel-flow-after.png"
+
+# === MANUAL VERIFICATION REQUIRED ===
+# Run the following SQL in Supabase Studio to confirm the cancel hit
+# the database correctly:
+#
+#   select id, status, cancellation_reason, deposit_status, updated_at
+#   from reservations
+#   where id = '<reservation_id_from_url>';
+#
+# Expected:
+#   - status='cancelled'
+#   - cancellation_reason is set (or null if customer didn't enter one)
+#   - deposit_status remains 'charged' UNTIL the stripe-webhook
+#     processes the refund-of-base, then it becomes 'refunded'.
+#
+# Then in Stripe Dashboard, confirm a partial refund was issued for
+# the deposit BASE only (NOT the platform fee or processing fee).

@@ -21,6 +21,10 @@ import {
   type RestaurantCardSummary,
 } from '@/lib/owner/billing';
 import { createRestaurantSetupIntent } from '@/lib/owner/saveSubscriptionPaymentMethod';
+import {
+  getSubscriptionStatus,
+  type RestaurantSubscriptionSnapshot,
+} from '@/lib/owner/subscriptionLifecycle';
 
 function formatBrand(brand: string | null): string {
   if (!brand) return 'Card';
@@ -56,6 +60,29 @@ const useStyles = createStyles((c) => ({
     borderColor: 'rgba(201,168,76,0.18)',
     backgroundColor: 'rgba(255,255,255,0.03)',
     marginBottom: spacing.lg,
+  },
+  pastDueBanner: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: 10,
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+    borderRadius: borderRadius.lg,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 107, 107, 0.45)',
+    backgroundColor: 'rgba(255, 107, 107, 0.08)',
+    marginBottom: spacing.lg,
+  },
+  pastDueTitle: {
+    ...typography.body,
+    color: '#FF6B6B',
+    fontWeight: '700' as const,
+    marginBottom: 2,
+  },
+  pastDueBody: {
+    ...typography.bodySmall,
+    color: c.textSecondary,
+    lineHeight: 18,
   },
   noteText: {
     ...typography.bodySmall,
@@ -270,6 +297,7 @@ export default function PaymentMethodScreen() {
   const [loading, setLoading] = useState(true);
   const [updating, setUpdating] = useState(false);
   const [billingAddress, setBillingAddress] = useState<RestaurantBillingAddress>(EMPTY_BILLING_ADDRESS);
+  const [subscription, setSubscription] = useState<RestaurantSubscriptionSnapshot | null>(null);
   const returnRoute =
     source === 'subscription-plan'
       ? '/(staff)/subscription-plan'
@@ -306,6 +334,18 @@ export default function PaymentMethodScreen() {
         setBillingAddress(await getStoredBillingAddress());
       } catch {
         /* best effort */
+      }
+    })();
+    // Subscription snapshot drives the past-due CTA per
+    // STRIPE_INTEGRATION_HANDOFF.md §17. If the owner is past_due /
+    // unpaid, surface a prominent inline "Update payment method"
+    // call-to-action above the card summary so they can self-serve
+    // recovery (mirrors web's BillingStatusPill inline link).
+    void (async () => {
+      try {
+        setSubscription(await getSubscriptionStatus(restaurantId));
+      } catch {
+        /* best effort — banner stays hidden if snapshot unavailable */
       }
     })();
   }, [restaurantId, refreshCard]);
@@ -401,6 +441,29 @@ export default function PaymentMethodScreen() {
           Your card is collected by Stripe — Cenaiva never sees the full number or CVC.
         </Text>
       </View>
+
+      {/* Past-due / unpaid surfacing per STRIPE_INTEGRATION_HANDOFF.md
+          §17. When Stripe has reported the subscription as past_due or
+          unpaid, surface a red CTA so the owner can self-serve the card
+          update immediately. Tapping just scrolls them down to the
+          Change-card button below (which is already on this screen). */}
+      {subscription?.status === 'past_due' || subscription?.status === 'incomplete' ? (
+        <Pressable
+          onPress={handleChangeCard}
+          style={styles.pastDueBanner}
+          accessibilityRole="button"
+          accessibilityLabel="Update payment method"
+        >
+          <Ionicons name="alert-circle" size={20} color="#FF6B6B" />
+          <View style={{ flex: 1 }}>
+            <Text style={styles.pastDueTitle}>Your subscription is past due</Text>
+            <Text style={styles.pastDueBody}>
+              Tap here to update your payment method now — we’ll retry the failed charge against the new card.
+            </Text>
+          </View>
+          <Ionicons name="chevron-forward" size={18} color="#FF6B6B" />
+        </Pressable>
+      ) : null}
 
       <View style={styles.summaryCard}>
         <Text style={styles.summaryLabel}>Default payment card</Text>

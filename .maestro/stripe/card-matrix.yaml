@@ -1,0 +1,203 @@
+# B1 — Stripe test-card matrix.
+#
+# Walks the customer booking flow to step6-payment 8 times, once per
+# Stripe test card. For each card the flow:
+#   1. Boots app + signs in once (subflow does both)
+#   2. Navigates Discover → Reserve now → step2-time → step6-payment
+#   3. Asserts the 3-line cart breakdown is rendered:
+#        - Deposit (CA$X.XX)
+#        - Platform fee (5.5%)
+#        - Processing fee
+#        - Total (gold-coloured)
+#      Note: "Processing fee" only renders for sub-$12 totals (Stripe
+#      gross-up policy in lib/stripe/stripeFee.ts); the flow tolerates
+#      its absence on $12+ totals.
+#   4. Taps "Confirm Booking · CA$X.XX" → Stripe PaymentSheet opens
+#   5. Screenshots the PaymentSheet for human verification
+#
+# IMPORTANT CONSTRAINT — Stripe PaymentSheet is a native iOS modal and
+# Stripe deliberately marks its text fields non-accessible, so Maestro
+# CANNOT drive the card-number, expiry, CVC, or postal-code fields.
+# The flow stops at "sheet opens + screenshot taken"; a human (or a
+# Stripe webhook fixture replay) must complete each card test manually.
+#
+# Expected Stripe behaviour per card (verify against PaymentSheet
+# screenshot + the resulting Alert / sheet state):
+#   - 4242 4242 4242 4242 → success (PaymentSheet closes, navigates to
+#     step7-confirmation, "You're all set" visible)
+#   - 4000 0000 0000 0002 → generic decline; PaymentSheet shows inline
+#     "Your card was declined" and stays open
+#   - 4000 0027 6000 3184 → 3DS required; PaymentSheet pushes a 3DS
+#     challenge webview (tap "Complete authentication")
+#   - 4000 0000 0000 9995 → insufficient funds; inline "Insufficient
+#     funds" error
+#   - 4000 0000 0000 0069 → expired card; inline "Your card has expired"
+#   - 4000 0000 0000 0127 → incorrect CVC; inline "Card's security code
+#     is incorrect"
+#   - 4000 0000 0000 0119 → processing error; inline "Your card could
+#     not be processed"
+#   - 4000 0000 0000 0010 → AVS fail; inline error mentions address /
+#     ZIP mismatch
+#
+# To run the matrix, repeat this flow 8 times with a sticky note of
+# which test card to manually paste each time. The screenshots are
+# named after the index in the suite (0 through 7) so the human knows
+# which card the screenshot corresponds to.
+#
+# Usage:
+#   maestro test .maestro/stripe/card-matrix.yaml \
+#     --env MAESTRO_EMAIL=… --env MAESTRO_PASSWORD=… \
+#     --env CARD_NAME=4242-success
+#
+# CARD_NAME drives the screenshot filename so a single suite run can
+# capture all 8 PaymentSheet states without overwriting prior shots.
+
+appId: com.cenaiva.app
+---
+# Force the dev launcher onto localhost:8082 so we don't sit on a stale
+# bundle from a previous LAN IP. The dev-client URL form is what Expo
+# uses internally when you tap a server row.
+- openLink: "cenaiva://expo-development-client/?url=http%3A%2F%2Flocalhost%3A8082"
+- runFlow: ../_subflows/sign-in-with-creds.yaml
+- runFlow: ../_subflows/switch-to-customer.yaml
+
+- assertVisible:
+    text: "^Discover(, tab.*)?$"
+
+# Tap the hero "Reserve now" CTA — same target as the existing
+# booking-happy-path flow, so this is the only "tap first available
+# card" target we need.
+- extendedWaitUntil:
+    visible: "Reserve now"
+    timeout: 15000
+- tapOn:
+    id: "discover-hero-reserve-cta"
+
+# step2-time: party 2 is the default, just tap Continue. If no slots
+# render (booking window closed / no availability), the Continue
+# button is disabled — we log the skip and abort cleanly so the next
+# card in the matrix can try.
+- extendedWaitUntil:
+    visible: "Available times"
+    timeout: 20000
+# Conditional skip if "No available times" empty-state is up. The
+# explicit visible-check on the slot pill prevents tap-on-empty races.
+- runFlow:
+    when:
+      notVisible:
+        text: "No available times|No times available|Next available date"
+    commands:
+      - tapOn:
+          text: "Continue"
+          optional: true
+
+# step3 / step4: walk through confirm + preorder skip. The "Continue
+# to menu" + "Skip" buttons match the booking-happy-path flow.
+- extendedWaitUntil:
+    visible: "Continue to menu"
+    timeout: 20000
+    optional: true
+- runFlow:
+    when:
+      visible: "Continue to menu"
+    commands:
+      - tapOn: "Continue to menu"
+- extendedWaitUntil:
+    visible:
+      text: "Skip|Continue to Pre-Pay|Next"
+    timeout: 20000
+    optional: true
+- runFlow:
+    when:
+      visible: "Skip"
+    commands:
+      - tapOn: "Skip"
+
+# step6-payment. If the restaurant has no deposit (most common case
+# from booking-happy-path), Skip routes straight to step7 and there's
+# no PaymentSheet to screenshot. We assert that we landed on either
+# Payment or Confirmation and short-circuit if it's the latter.
+- extendedWaitUntil:
+    visible:
+      text: "Payment|Confirm Booking|You're all set"
+    timeout: 30000
+
+- runFlow:
+    when:
+      visible:
+        text: "You're all set"
+    commands:
+      # No deposit on this restaurant — nothing to test for the card
+      # matrix, exit cleanly so the next card iteration can pick a
+      # different restaurant.
+      - takeScreenshot:
+          path: "/tmp/maestro-screenshots/card-matrix-${CARD_NAME}-no-deposit.png"
+
+# Assert the fee breakdown is present in the cart. The Deposit /
+# Platform fee / Total lines render unconditionally when there's a
+# deposit; the Processing fee line only renders for sub-$12 totals
+# per the Stripe gross-up rule in lib/stripe/stripeFee.ts.
+- runFlow:
+    when:
+      visible:
+        text: "Confirm Booking"
+    commands:
+      - assertVisible:
+          text: "Deposit"
+      - assertVisible:
+          text: "Platform fee \\(5\\.5%\\)"
+      - assertVisible:
+          text: "Total"
+      # Processing fee is optional — Cenaiva absorbs it for $12+.
+      # Don't fail the test if it's absent.
+      - assertVisible:
+          text: "Processing fee"
+          optional: true
+      # Fee-disclosure copy below the Total — confirms the "non-
+      # refundable" wording the user agreed to at checkout.
+      - assertVisible:
+          text: "non-refundable"
+
+      # Screenshot the cart BEFORE the PaymentSheet pops, so the
+      # human reviewer can sanity-check the math against what got
+      # charged.
+      - takeScreenshot:
+          path: "/tmp/maestro-screenshots/card-matrix-${CARD_NAME}-cart.png"
+
+      # Tap the Confirm Booking button. Stripe PaymentSheet will
+      # present as a native modal sliding up from the bottom.
+      - tapOn:
+          text: "Confirm Booking.*"
+      # Give Stripe's SDK ~3s to init + animate the sheet in. The
+      # PaymentSheet doesn't expose a stable a11y identifier so we
+      # screenshot blindly after the wait.
+      - extendedWaitUntil:
+          visible:
+            text: "Card|Pay|Stripe|Pay CA"
+          timeout: 8000
+          optional: true
+      - takeScreenshot:
+          path: "/tmp/maestro-screenshots/card-matrix-${CARD_NAME}-paymentsheet.png"
+
+# === MANUAL VERIFICATION REQUIRED ===
+# Stripe PaymentSheet card fields are non-accessible to Maestro. A
+# human must:
+#   1. Inspect /tmp/maestro-screenshots/card-matrix-${CARD_NAME}-paymentsheet.png
+#      to confirm the sheet rendered with the correct total + Cenaiva
+#      branding (Stripe shows the merchantDisplayName from
+#      initPaymentSheet — "Cenaiva").
+#   2. Manually paste the test card number for this iteration:
+#        success         → 4242 4242 4242 4242 / 12/30 / 123 / M5V 2T6
+#        decline         → 4000 0000 0000 0002 / 12/30 / 123 / M5V 2T6
+#        3ds required    → 4000 0027 6000 3184 / 12/30 / 123 / M5V 2T6
+#        insufficient    → 4000 0000 0000 9995 / 12/30 / 123 / M5V 2T6
+#        expired         → 4000 0000 0000 0069 / 12/30 / 123 / M5V 2T6
+#        bad cvc         → 4000 0000 0000 0127 / 12/30 / 123 / M5V 2T6
+#        processing err  → 4000 0000 0000 0119 / 12/30 / 123 / M5V 2T6
+#        avs fail        → 4000 0000 0000 0010 / 12/30 / 123 / M5V 2T6
+#   3. Verify the resulting Alert / sheet state matches the expected
+#      behaviour comment at the top of this file.
+#   4. Run the corresponding SQL in MOBILE_STRIPE_FINAL_HANDOFF.md to
+#      confirm the reservation row + reservation_deposit_payments row
+#      ended up in the expected status (e.g. cancelled / refunded /
+#      confirmed).

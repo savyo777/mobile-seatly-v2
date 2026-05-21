@@ -882,6 +882,26 @@ function AssistantInner({ children }: { children: ReactNode }) {
               commit({ type: 'CLOSE' });
               router.push(action.path as never);
             }
+            // STRIPE_INTEGRATION_HANDOFF.md §17 voice-booking wire (added
+            // 2026-05-21). The cenaiva-orchestrate edge fn already emits
+            // these actions when the user completes a guided booking via
+            // text/voice; without these handlers mobile would silently
+            // drop them. start_booking → open the date/time picker for
+            // that restaurant so the diner can finish payment in the
+            // visual flow. show_confirmation → jump to the bookings tab
+            // so the diner sees their new reservation.
+            if (action.type === 'start_booking') {
+              voice.stopSpeaking();
+              voice.stopListening();
+              commit({ type: 'CLOSE' });
+              router.push(`/booking/${action.restaurant_id}/step2-time` as never);
+            }
+            if (action.type === 'show_confirmation') {
+              voice.stopSpeaking();
+              voice.stopListening();
+              commit({ type: 'CLOSE' });
+              router.push(`/(customer)/bookings` as never);
+            }
           }
         };
 

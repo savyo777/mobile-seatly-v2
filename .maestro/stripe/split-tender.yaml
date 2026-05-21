@@ -1,0 +1,179 @@
+# B3 — Split-tender party-4 checkout.
+#
+# Walks the customer booking flow to step6-payment with party 4 and a
+# deposit-required restaurant, toggles into Split mode, asserts the
+# 4 per-person slots render with their own fee breakdowns, then taps
+# the first slot's Place Order to open Stripe PaymentSheet.
+#
+# Split-tender is gated by SplitTenderCheckout.tsx + the
+# canSplit boolean in step6-payment.tsx:266 — needs hasDeposit &&
+# partySizeNum >= 2. If the first available restaurant has no
+# deposit, the Split toggle won't render and the test fails the
+# assertVisible check on "Split between guests".
+#
+# IMPORTANT CONSTRAINT — Same as card-matrix.yaml, Stripe
+# PaymentSheet card fields are non-accessible to Maestro. The flow
+# stops after the slot-0 PaymentSheet opens; a human must manually
+# enter 4242 4242 4242 4242 to complete slot 0, then re-tap Place
+# Order for slot 1, etc.
+#
+# Screenshots saved to /tmp/maestro-screenshots/:
+#   - split-tender-setup.png            (post-toggle, 4 slots visible)
+#   - split-tender-slot0-paymentsheet.png (PaymentSheet for first slot)
+
+appId: com.cenaiva.app
+---
+- runFlow: ../_subflows/sign-in-with-creds.yaml
+- runFlow: ../_subflows/switch-to-customer.yaml
+
+- assertVisible:
+    text: "^Discover(, tab.*)?$"
+
+- extendedWaitUntil:
+    visible: "Reserve now"
+    timeout: 15000
+- tapOn:
+    id: "discover-hero-reserve-cta"
+
+# Bump the party-size input to 4 BEFORE picking a slot — that way
+# the availability fetch refreshes with the correct partySize and the
+# server returns a slot that can actually seat 4. The party input is
+# the TextInput at app/booking/[restaurantId]/step2-time.tsx:645 with
+# accessibilityLabel="Number of guests".
+- extendedWaitUntil:
+    visible: "Available times"
+    timeout: 20000
+- tapOn:
+    text: "Number of guests"
+- eraseText: 1
+- inputText: "4"
+# Dismiss the keyboard so it doesn't cover the Continue button. The
+# section label "Guests" is always above the keyboard and is a safe
+# tap target on both platforms (matches the sign-in subflow trick).
+- tapOn:
+    text: "Guests"
+
+# Re-await slots after the partySize change — availability is
+# refetched and the slot grid re-renders. The first available slot
+# is auto-selected by step2-time on render so we can tap Continue
+# immediately. If "No available times" is now visible (no 4-top
+# capacity), the flow fails clean.
+- extendedWaitUntil:
+    visible:
+      text: "Continue|No available times"
+    timeout: 20000
+- runFlow:
+    when:
+      visible: "No available times"
+    commands:
+      - assertVisible: "SEED_REQUIRED__NO_PARTY_OF_4_SLOTS_AVAILABLE"
+- tapOn: "Continue"
+
+# Walk through confirm + preorder skip exactly like the happy path.
+- extendedWaitUntil:
+    visible: "Continue to menu"
+    timeout: 20000
+- tapOn: "Continue to menu"
+- extendedWaitUntil:
+    visible:
+      text: "Skip|Continue to Pre-Pay|Next"
+    timeout: 20000
+- runFlow:
+    when:
+      visible: "Skip"
+    commands:
+      - tapOn: "Skip"
+
+# step6-payment with deposit + party 4 → the Split toggle row renders.
+# The active label comes from i18n booking.paymentSplitSingle = "Single
+# payment" and booking.paymentSplitMulti = "Split between guests".
+- extendedWaitUntil:
+    visible:
+      text: "Split between guests|Confirm Booking"
+    timeout: 30000
+
+# If the restaurant has no deposit, Split toggle won't render and
+# we can't proceed.
+- runFlow:
+    when:
+      notVisible:
+        text: "Split between guests"
+    commands:
+      - assertVisible: "SEED_REQUIRED__RESTAURANT_NEEDS_DEPOSIT_TIER_TO_SPLIT"
+
+- tapOn:
+    text: "Split between guests"
+
+# After toggling, the SplitTenderCheckout renders the per-person
+# share section + 4 slot cards labeled "Person N of 4" (i18n key
+# booking.paymentSplitPersonHeader). Verify all four slots exist.
+- extendedWaitUntil:
+    visible:
+      text: "Person 1 of 4"
+    timeout: 10000
+- assertVisible:
+    text: "Person 2 of 4"
+- assertVisible:
+    text: "Person 3 of 4"
+- assertVisible:
+    text: "Person 4 of 4"
+
+# Verify the per-slot 3-line breakdown: each slot has the base share
+# + platform fee + processing fee shown via i18n keys
+# paymentSplitPerShare, platformFeeLabel, processingFeeLabel.
+- assertVisible:
+    text: "Each person's share"
+- assertVisible:
+    text: "Platform fee \\(5\\.5%\\)"
+# Processing fee only shows for sub-$12 per-share totals; for big
+# parties the per-share can clear $12 so this assertion is best-effort.
+- assertVisible:
+    text: "Processing fee"
+    optional: true
+- assertVisible:
+    text: "non-refundable"
+
+- takeScreenshot:
+    path: "/tmp/maestro-screenshots/split-tender-setup.png"
+
+# Tap Place Order (i18n: booking.paymentSplitPlaceOrder). The slot-0
+# diner's PaymentSheet opens first; subsequent taps re-run the same
+# Place Order action for whichever slot is currently pending (see
+# components/booking/SplitTenderCheckout.tsx:303-514).
+- tapOn:
+    text: "Place Order"
+
+# Wait for the PaymentSheet to slide up. The merchantDisplayName
+# "Cenaiva" + "Pay CA$..." button text are the only stable anchors
+# Stripe exposes in the a11y tree.
+- extendedWaitUntil:
+    visible:
+      text: "Card|Pay|Cenaiva|Pay CA"
+    timeout: 10000
+    optional: true
+
+- takeScreenshot:
+    path: "/tmp/maestro-screenshots/split-tender-slot0-paymentsheet.png"
+
+# === MANUAL VERIFICATION REQUIRED ===
+# Stripe PaymentSheet card fields are non-accessible — a human must:
+#   1. Enter 4242 4242 4242 4242 / 12/30 / 123 / M5V 2T6 for slot 0
+#      and tap Pay. The slot 0 badge should flip to "PAID".
+#   2. Re-tap Place Order → repeat for slots 1, 2, 3. After slot 3
+#      pays, onAllPaid fires and the flow navigates to
+#      step7-confirmation with "split=1" in the URL.
+#   3. Run the following SQL to confirm 4 distinct PaymentIntents
+#      were created and all succeeded:
+#
+#        select reservation_id, payment_intent_id, status,
+#               amount_cents, application_fee_cents
+#        from reservation_deposit_payments
+#        where reservation_id = '<reservation_id>'
+#        order by created_at;
+#
+#      Expected: 4 rows, all status='charged', summed amount_cents =
+#      total deposit + (4 × platform fee 5.5% × per-share base) +
+#      (4 × processing fee where per-share < $12).
+#   4. In Stripe Dashboard, verify 4 charges hit the connected
+#      account and the application_fee on each was forwarded to the
+#      Cenaiva platform account.

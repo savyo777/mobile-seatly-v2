@@ -33,6 +33,7 @@ import { borderRadius, createStyles, spacing, typography, useColors } from '@/li
 import { Card, Button } from '@/components/ui';
 import { computeDinerCharge, formatCents } from '@/lib/stripe/stripeFee';
 import { runSinglePaymentSlot } from '@/lib/stripe/runSinglePaymentSlot';
+import { secureRandomUuidV4 } from '@/lib/utils/secureRandom';
 import {
   createPublicBooking,
   confirmDepositPaid,
@@ -395,6 +396,10 @@ export function SplitTenderCheckout({
             deposit_payment_ids: [rowId],
             // hold_id ONLY on slot 0 per guide §2.2 + §10.4
             hold_id: i === 0 ? (holdId ?? undefined) : undefined,
+            // Bug #110 fix: fresh UUID PER SLOT so each payer's PI
+            // dedups independently. Without this, 4 payers paying $20
+            // each on the same card would collapse into one $20 PI.
+            idempotency_key: secureRandomUuidV4(),
           });
         } catch (err) {
           updateSlot(i, {

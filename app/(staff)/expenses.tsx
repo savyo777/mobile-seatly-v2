@@ -11,6 +11,8 @@ import { ExpenseSummaryCard } from '@/components/owner/ExpenseSummaryCard';
 import { ExpenseListRow } from '@/components/owner/ExpenseListRow';
 import { ExpenseFilterBar } from '@/components/owner/expenses/ExpenseFilterBar';
 import { useExpenses } from '@/lib/context/ExpensesContext';
+import { useAutoIncome } from '@/lib/owner/useAutoIncome';
+import { StripeApiErrorBanner } from '@/components/owner/StripeApiErrorBanner';
 import { setPendingScan } from '@/lib/expenses/pendingScan';
 import {
   EMPTY_EXPENSE_FILTER,
@@ -37,6 +39,7 @@ export default function OwnerExpensesScreen() {
   const styles = useStyles();
   const insets = useSafeAreaInsets();
   const { expenses, loading } = useExpenses();
+  const autoIncome = useAutoIncome();
   const [pickerOpen, setPickerOpen] = useState(false);
   const [loadingFile, setLoadingFile] = useState(false);
   const [filter, setFilter] = useState<ExpenseFilter>(EMPTY_EXPENSE_FILTER);
@@ -129,6 +132,17 @@ export default function OwnerExpensesScreen() {
       </View>
 
       <ExpenseSummaryCard expenses={expenses} />
+
+      <StripeApiErrorBanner
+        message={autoIncome.error}
+        onRetry={autoIncome.refetch}
+        scopeLabel="auto-tracked income"
+      />
+      <AutoIncomeSection
+        rows={autoIncome.rows}
+        totalCents={autoIncome.totalCents}
+        loading={autoIncome.loading}
+      />
 
       <ExpenseFilterBar value={filter} onChange={setFilter} />
     </View>
@@ -253,6 +267,87 @@ export default function OwnerExpensesScreen() {
         </Pressable>
       </Modal>
     </>
+  );
+}
+
+function AutoIncomeSection({
+  rows,
+  totalCents,
+  loading,
+}: {
+  rows: ReturnType<typeof useAutoIncome>['rows'];
+  totalCents: number;
+  loading: boolean;
+}) {
+  const ownerColors = useOwnerColors();
+  // Hide the section entirely when there's no data + no loading state.
+  // Don't bother the owner with an empty "Auto-tracked income $0.00"
+  // card when they haven't taken any Stripe payments yet.
+  if (!loading && rows.length === 0) return null;
+  const formatCents = (cents: number) =>
+    new Intl.NumberFormat('en-CA', { style: 'currency', currency: 'CAD' }).format(cents / 100);
+  const formatPaidAt = (iso: string) => {
+    const d = new Date(iso);
+    if (Number.isNaN(d.getTime())) return '—';
+    return d.toLocaleDateString('en-CA', { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' });
+  };
+  const visible = rows.slice(0, 5);
+  const remaining = Math.max(0, rows.length - visible.length);
+  return (
+    <View style={{
+      marginBottom: 16,
+      padding: 16,
+      borderRadius: 12,
+      backgroundColor: withAlpha(ownerColors.gold, 0.06),
+      borderWidth: StyleSheet.hairlineWidth,
+      borderColor: withAlpha(ownerColors.gold, 0.25),
+    }}>
+      <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 8 }}>
+        <View style={{ flex: 1 }}>
+          <Text style={{ fontSize: 11, fontWeight: '700', letterSpacing: 0.6, color: ownerColors.gold }}>
+            AUTO-TRACKED INCOME · 30 DAYS
+          </Text>
+          <Text style={{ fontSize: 11, color: ownerColors.textMuted, marginTop: 2 }}>
+            From Stripe charges — deposits + post-meal pay-the-bill.
+          </Text>
+        </View>
+        <Text style={{ fontSize: 18, fontWeight: '800', color: ownerColors.text }}>
+          {formatCents(totalCents)}
+        </Text>
+      </View>
+      {loading && rows.length === 0 ? (
+        <Text style={{ fontSize: 12, color: ownerColors.textMuted, marginTop: 6 }}>Loading…</Text>
+      ) : null}
+      {visible.map((r) => (
+        <View key={r.id} style={{
+          flexDirection: 'row',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          paddingVertical: 6,
+          borderTopWidth: StyleSheet.hairlineWidth,
+          borderTopColor: withAlpha(ownerColors.gold, 0.18),
+        }}>
+          <View style={{ flex: 1, paddingRight: 8 }}>
+            <Text style={{ fontSize: 13, color: ownerColors.text, fontWeight: '600' }}>
+              {r.source === 'deposit' ? 'Deposit' : 'Order'} · {formatPaidAt(r.paidAt)}
+            </Text>
+            {r.stripePaymentIntentId ? (
+              <Text style={{ fontSize: 10, color: ownerColors.textMuted, marginTop: 2 }} numberOfLines={1}>
+                {r.stripePaymentIntentId}
+              </Text>
+            ) : null}
+          </View>
+          <Text style={{ fontSize: 13, color: ownerColors.text, fontWeight: '700' }}>
+            {formatCents(r.amountCents)}
+          </Text>
+        </View>
+      ))}
+      {remaining > 0 ? (
+        <Text style={{ fontSize: 11, color: ownerColors.textMuted, marginTop: 8 }}>
+          + {remaining} more in the last 30 days.
+        </Text>
+      ) : null}
+    </View>
   );
 }
 

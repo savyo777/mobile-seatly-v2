@@ -1,0 +1,150 @@
+# B4 — Modify reservation party-2 → party-4 with 402 no-card disclosure.
+#
+# Targets the modify-requires-card path in
+# app/booking/[restaurantId]/step2-time.tsx:566-585: increasing party
+# size on a no-deposit booking can trigger a server 402 with
+# unavailable_reason='modify_requires_card', which surfaces an Alert
+# titled "Add a card first" whose body discloses the additional
+# Cenaiva platform fee + Stripe processing fee that the diner will
+# pay (both non-refundable).
+#
+# Assumes the signed-in test account has at least one upcoming
+# party-2 booking that is `canModify` (status confirmed, future time).
+# If no such booking exists, seed via:
+#   maestro test .maestro/customer/booking-happy-path.yaml \
+#     --env MAESTRO_EMAIL=… --env MAESTRO_PASSWORD=…
+#
+# Also assumes the signed-in account has NO saved payment method
+# (no rows in stripe_customer_payment_methods). If a saved card
+# exists, the server will skip the 402 and just apply the new deposit
+# directly — the test will fail the assertVisible on "Add a card
+# first". Wipe saved cards via Stripe Dashboard → Customers →
+# {customer_id} → Payment methods → delete.
+#
+# Screenshot saved to /tmp/maestro-screenshots/:
+#   - modify-reservation-402-alert.png    (the disclosure Alert)
+
+appId: com.cenaiva.app
+---
+- runFlow: ../_subflows/sign-in-with-creds.yaml
+- runFlow: ../_subflows/switch-to-customer.yaml
+
+# Deep-link into the Bookings tab and pick the first upcoming
+# Confirmed booking. The booking detail screen exposes a "Modify
+# Booking" button (i18n: bookings.modifyBooking) when the
+# isModifiableReservation() check passes.
+- openLink: "cenaiva:///(customer)/bookings"
+- extendedWaitUntil:
+    visible: "^Bookings$"
+    timeout: 15000
+- assertVisible: "Upcoming"
+
+- extendedWaitUntil:
+    visible:
+      text: ".*Confirmed.*|No upcoming bookings"
+    timeout: 15000
+- runFlow:
+    when:
+      visible: "No upcoming bookings"
+    commands:
+      - takeScreenshot:
+          path: "/tmp/maestro-screenshots/modify-reservation-no-booking.png"
+      - assertVisible: "SEED_REQUIRED__NO_UPCOMING_BOOKING_TO_MODIFY"
+
+- tapOn:
+    text: ".*Confirmed.*"
+    index: 0
+
+# "Modify Booking" is the outlined button (i18n: bookings.modifyBooking).
+# It only renders when canModify is true (future time + status
+# confirmed). If the booking is too close to start time / already
+# in-progress, the test surfaces a clean failure here.
+- extendedWaitUntil:
+    visible:
+      text: "Modify Booking"
+    timeout: 15000
+
+- tapOn:
+    text: "Modify Booking"
+
+# Lands on step2-time in modify mode — the screen title flips to
+# "Update your reservation" per step2-time.tsx:613 and the bottom
+# button reads "Update reservation" per step2-time.tsx:761.
+- extendedWaitUntil:
+    visible: "Update your reservation"
+    timeout: 20000
+- assertVisible: "Available times"
+
+# Bump party from 2 → 4. The TextInput's accessibilityLabel is
+# "Number of guests" (step2-time.tsx:654). Erase + type the new value
+# rather than tapping a +/- stepper (the screen uses a numeric input,
+# not a stepper).
+- tapOn:
+    text: "Number of guests"
+- eraseText: 1
+- inputText: "4"
+- tapOn:
+    text: "Guests"
+
+# Wait for the availability fetch to refresh with the new party
+# size — the slot grid re-renders and the previously-selected slot
+# is preserved by selectedSlotId if it can still seat 4.
+- extendedWaitUntil:
+    visible:
+      text: "Update reservation|Updating"
+    timeout: 15000
+
+# Tap Update reservation. The server hits
+# create-public-booking-modify which:
+#   - if the new deposit > old deposit AND the account has no saved
+#     card → returns 402 with unavailable_reason='modify_requires_card'
+#   - the client catches it (step2-time.tsx:566) and renders the
+#     "Add a card first" Alert
+- tapOn:
+    text: "Update reservation"
+
+# === The 402 disclosure Alert ===
+# Title: "Add a card first" (hardcoded in step2-time.tsx:576)
+# Body must contain:
+#   - "Cenaiva platform fee (5.5%)"
+#   - "Stripe processing fee"
+#   - "non-refundable"
+- extendedWaitUntil:
+    visible: "Add a card first"
+    timeout: 20000
+
+- assertVisible:
+    text: "Cenaiva platform fee \\(5\\.5%\\)"
+- assertVisible:
+    text: "Stripe processing fee"
+- assertVisible:
+    text: "non-refundable"
+
+- takeScreenshot:
+    path: "/tmp/maestro-screenshots/modify-reservation-402-alert.png"
+
+# Tap "Not now" so the Alert dismisses and we don't leave a stuck
+# router push into /(customer)/profile/payment from the "Add card"
+# button. The test is done — verified the disclosure copy.
+- tapOn:
+    text: "Not now"
+
+# === MANUAL VERIFICATION REQUIRED ===
+#   1. Inspect the screenshot to confirm the Alert is well-formatted
+#      (no missing translations, no template placeholders leaking).
+#   2. Repeat the flow AFTER adding a card via
+#      /(customer)/profile/payment with 4242 4242 4242 4242. The
+#      modify should now succeed silently — the additional deposit +
+#      platform fee + processing fee is charged to the saved card and
+#      the booking detail re-renders with party_size=4. The
+#      additional charge alert in step2-time.tsx:550 should fire with
+#      the "additional charge breakdown" copy.
+#   3. Verify in Stripe Dashboard that a NEW PaymentIntent was minted
+#      (not a re-use of the original deposit PI) and that the
+#      application_fee on the new PI is 5.5% of just the additional
+#      base (not the full new deposit).
+#   4. Run the following SQL:
+#        select party_size, deposit_amount, deposit_status, updated_at
+#        from reservations where id = '<reservation_id>';
+#      Expected: party_size=4, deposit_amount increased by 2 ×
+#      per-seat tier, deposit_status='charged', updated_at recent.
