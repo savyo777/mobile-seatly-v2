@@ -27,6 +27,7 @@ import { stripeAttachPaymentMethod } from '@/lib/stripe/stripeAttachPaymentMetho
 import { usePreventScreenCapture } from '@/lib/security/usePreventScreenCapture';
 import { SplitTenderCheckout } from '@/components/booking/SplitTenderCheckout';
 import { computeDinerCharge } from '@/lib/stripe/stripeFee';
+import { canadianTaxLabel } from '@/lib/billing/canadianTax';
 
 type PaymentMethod = 'card' | 'apple_pay' | 'google_pay';
 
@@ -213,6 +214,7 @@ export default function Step6Payment() {
   // partySize < 2. Per MOBILE_SPLIT_TENDER_GUIDE.md §1.
   const [paymentMode, setPaymentMode] = useState<'single' | 'split'>('single');
   const [taxRate, setTaxRate] = useState(0);
+  const [taxProvince, setTaxProvince] = useState<string | null>(null);
   const [depositTiers, setDepositTiers] = useState<DepositTier[] | undefined>(undefined);
   const [defaultCard, setDefaultCard] = useState<CustomerPaymentMethod | null>(null);
   const [paying, setPaying] = useState(false);
@@ -290,6 +292,7 @@ export default function Step6Payment() {
       const restaurant = await loadRestaurantForBooking(restaurantId);
       if (!active) return;
       setTaxRate(restaurant?.taxRate ?? 0);
+      setTaxProvince(restaurant?.province ?? null);
       setDepositTiers(restaurant?.depositTiers);
     })();
     return () => {
@@ -565,7 +568,7 @@ export default function Step6Payment() {
           ) : null}
           {hasPreorder && (
             <View style={styles.lineItem}>
-              <Text style={styles.lineLabel}>{t('orders.tax')}</Text>
+              <Text style={styles.lineLabel}>{canadianTaxLabel(taxProvince, taxRate)}</Text>
               <Text style={styles.lineValue}>{formatCurrency(taxAmount)}</Text>
             </View>
           )}

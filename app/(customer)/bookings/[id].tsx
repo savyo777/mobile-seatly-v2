@@ -347,9 +347,17 @@ export default function BookingDetailScreen() {
 
   const handleCancel = useCallback(() => {
     if (!reservation) return;
+    // ToS §10.3 commitment: tell the diner up-front when a charged
+    // deposit will refund + the 5-business-day window. Suppress the
+    // line for free bookings to avoid confusing wording.
+    const depositCharged = liveDepositStatus === 'charged';
+    const baseMessage = t('bookings.cancelConfirmMessage') as string;
+    const refundLine = depositCharged
+      ? '\n\nIf the deposit was charged, the refund is issued to your original card and will appear on your statement within 5 business days.'
+      : '';
     Alert.alert(
       t('bookings.cancelBooking'),
-      t('bookings.cancelConfirmMessage'),
+      `${baseMessage}${refundLine}`,
       [
         { text: t('common.no'), style: 'cancel' },
         {
@@ -368,7 +376,7 @@ export default function BookingDetailScreen() {
         },
       ],
     );
-  }, [reservation, t]);
+  }, [reservation, t, liveDepositStatus]);
 
   if (!reservation) {
     return (

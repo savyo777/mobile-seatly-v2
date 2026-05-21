@@ -110,8 +110,7 @@
       [
         "expo-location",
         {
-          "locationWhenInUsePermission": "Cenaiva uses your location to find nearby restaurants.",
-          "locationAlwaysAndWhenInUsePermission": "Cenaiva uses your location to find nearby restaurants."
+          "locationWhenInUsePermission": "Cenaiva uses your location to find nearby restaurants."
         }
       ],
       "expo-sharing",
