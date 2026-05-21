@@ -15,7 +15,8 @@
       },
       "env": {
         "EXPO_PUBLIC_DEEPGRAM_STT_ENABLED": "true",
-        "EXPO_PUBLIC_ELEVENLABS_ENABLED": "true"
+        "EXPO_PUBLIC_ELEVENLABS_ENABLED": "true",
+        "EAS_SKIP_AUTO_FINGERPRINT": "1"
       }
     },
     "development-simulator": {
@@ -45,7 +46,8 @@
         "EXPO_PUBLIC_ELEVENLABS_ENABLED": "true",
         "EXPO_PUBLIC_CENAIVA_DEMO_MODE": "false",
         "EXPO_PUBLIC_CENAIVA_HOLDS_ENABLED": "true",
-        "EXPO_PUBLIC_CRASH_LOGGER_ENABLED": "true"
+        "EXPO_PUBLIC_CRASH_LOGGER_ENABLED": "true",
+        "EAS_SKIP_AUTO_FINGERPRINT": "1"
       }
     }
   },
