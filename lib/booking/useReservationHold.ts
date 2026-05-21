@@ -17,6 +17,7 @@ import {
 } from '@/lib/booking/holdApi';
 import { key } from '@/lib/storage/keys';
 import { isHoldsEnabled } from '@/lib/config/holdsFeature';
+import { secureRandomUuidV4 } from '@/lib/utils/secureRandom';
 import { friendlyError } from '@/lib/errors/friendlyError';
 
 export type HoldVisualState = 'calm' | 'warning' | 'urgent';
@@ -98,21 +99,11 @@ function storageKey(restaurantId: string, dateTime: string): string {
 }
 
 function uuidV4(): string {
-  // Minimal RFC4122 v4 generator — good enough for an idempotency key.
-  const hex = '0123456789abcdef';
-  let out = '';
-  for (let i = 0; i < 36; i++) {
-    if (i === 8 || i === 13 || i === 18 || i === 23) {
-      out += '-';
-    } else if (i === 14) {
-      out += '4';
-    } else if (i === 19) {
-      out += hex[(Math.floor(Math.random() * 16) & 0x3) | 0x8];
-    } else {
-      out += hex[Math.floor(Math.random() * 16)];
-    }
-  }
-  return out;
+  // OS-backed crypto random via expo-crypto. Idempotency keys must be
+  // unpredictable so an attacker who guesses the next key can't
+  // deduplicate a victim's hold — Math.random in Hermes is xorshift +
+  // seeded from Date.now(), grindable. Phase B+ hardening 2026-05-20.
+  return secureRandomUuidV4();
 }
 
 function computeSecondsLeft(expiresAt: string, serverSkewMs: number): number {

@@ -1,8 +1,8 @@
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import { isDemoModeEnabled } from '@/lib/config/demoMode';
 import { getCurrentUserProfileId } from '@/lib/services/userProfile';
 import { getSupabase } from '@/lib/supabase/client';
 import { key } from '@/lib/storage/keys';
+import { secureGetString, secureSetString } from '@/lib/storage/secureKvStore';
 
 export type CustomerPaymentMethod = {
   id: string;
@@ -43,7 +43,13 @@ function rowLast4(row: Record<string, unknown>): string {
 }
 
 async function readLocalDemoMethods(): Promise<CustomerPaymentMethod[]> {
-  const raw = await AsyncStorage.getItem(STORAGE_KEY);
+  // Encrypted at rest via expo-secure-store (iOS Keychain / Android
+  // EncryptedSharedPreferences). Phase B+ hardening 2026-05-20 —
+  // last4 + expiry + cardholder is enough PII to attempt social-
+  // engineering, so a jailbroken device should not be able to read it
+  // out of plain AsyncStorage. secureKvStore handles the legacy
+  // plaintext → SecureStore migration on first read.
+  const raw = await secureGetString(STORAGE_KEY);
   if (!raw) return [];
   try {
     const parsed = JSON.parse(raw);
@@ -54,7 +60,7 @@ async function readLocalDemoMethods(): Promise<CustomerPaymentMethod[]> {
 }
 
 async function writeMethods(methods: CustomerPaymentMethod[]): Promise<void> {
-  await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(methods));
+  await secureSetString(STORAGE_KEY, JSON.stringify(methods));
 }
 
 export async function getStoredCustomerPaymentMethods(cardholder: string): Promise<CustomerPaymentMethod[]> {

@@ -11,7 +11,7 @@ import {
 import { isUnusablePersistedSupabaseAuthError } from '@/lib/supabase/authErrors';
 import { clearAppShellPreference } from '@/lib/navigation/appShellPreference';
 import { resolveIsStaffLike } from '@/lib/auth/roles';
-import { registerPushTokenForCurrentUser } from '@/lib/notifications/pushToken';
+import { clearPushTokenForCurrentUser, registerPushTokenForCurrentUser } from '@/lib/notifications/pushToken';
 
 type AuthCtx = {
   session: Session | null;
@@ -240,6 +240,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const signOut = async () => {
     const supabase = getSupabase();
     if (!supabase) return;
+    // Clear the push token BEFORE signOut so we still have a valid auth
+    // context for the update query. Best-effort + non-blocking: a failed
+    // clear just means notifications keep landing for a few minutes
+    // until the next sign-in re-registers the token. Phase B+ hardening
+    // 2026-05-20.
+    void clearPushTokenForCurrentUser();
     try {
       await supabase.auth.stopAutoRefresh();
       const { error } = await supabase.auth.signOut({ scope: 'local' });

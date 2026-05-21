@@ -148,6 +148,17 @@
         {
           "calendarPermission": "Cenaiva adds your reservation to your primary calendar so you don't forget your dine-in time."
         }
+      ],
+      "expo-screen-capture",
+      [
+        "expo-build-properties",
+        {
+          "android": {
+            "enableProguardInReleaseBuilds": true,
+            "enableShrinkResourcesInReleaseBuilds": true,
+            "extraProguardRules": "# Phase B+ hardening 2026-05-20\n# See lib/security/README.md for rationale\n\n-keep class com.stripe.android.** { *; }\n-keep interface com.stripe.android.** { *; }\n-keepclassmembers class com.stripe.android.model.** { *; }\n\n-keep class io.github.jan.supabase.** { *; }\n-keepclassmembers class kotlinx.serialization.** { *; }\n-keepclasseswithmembers class * { @kotlinx.serialization.Serializable <fields>; }\n\n-keep class io.sentry.** { *; }\n-keep class io.sentry.android.** { *; }\n\n-keep class expo.modules.** { *; }\n-keep class expo.modules.kotlin.** { *; }\n-keep class expo.modules.securestore.** { *; }\n\n-keep class com.facebook.react.bridge.** { *; }\n-keep class com.facebook.react.fabric.** { *; }\n-keep class com.facebook.hermes.unicode.** { *; }\n-keep class com.facebook.jni.** { *; }\n\n-keepattributes *Annotation*, EnclosingMethod, Signature, InnerClasses, SourceFile, LineNumberTable\n"
+          }
+        }
       ]
     ],
     "extra": {

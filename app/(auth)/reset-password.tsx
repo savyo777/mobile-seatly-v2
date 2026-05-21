@@ -6,6 +6,7 @@ import { ScreenWrapper } from '@/components/ui';
 import { createStyles, useColors, spacing, borderRadius, typography } from '@/lib/theme';
 import { getSupabase } from '@/lib/supabase/client';
 import { friendlyError } from '@/lib/errors/friendlyError';
+import { usePreventScreenCapture } from '@/lib/security/usePreventScreenCapture';
 
 const useStyles = createStyles((c) => ({
   inner: {
@@ -63,6 +64,9 @@ const useStyles = createStyles((c) => ({
 }));
 
 export default function ResetPasswordScreen() {
+  // Block screenshots + recordings while the user is typing a new
+  // password. Phase B+ hardening 2026-05-20.
+  usePreventScreenCapture();
   const { t } = useTranslation();
   const router = useRouter();
   const c = useColors();

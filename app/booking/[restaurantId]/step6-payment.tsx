@@ -24,6 +24,7 @@ import {
 import { friendlyError, isUserCancellation } from '@/lib/errors/friendlyError';
 import { useCurrentUserId } from '@/lib/auth/currentUserId';
 import { stripeAttachPaymentMethod } from '@/lib/stripe/stripeAttachPaymentMethod';
+import { usePreventScreenCapture } from '@/lib/security/usePreventScreenCapture';
 
 type PaymentMethod = 'card' | 'apple_pay' | 'google_pay';
 
@@ -122,6 +123,10 @@ const useStyles = createStyles((c) => ({
 }));
 
 export default function Step6Payment() {
+  // Block screenshots + recordings + App Switcher snapshots while the
+  // payment screen + Stripe PaymentSheet are visible. Phase B+
+  // hardening 2026-05-20.
+  usePreventScreenCapture();
   const {
     restaurantId,
     date,

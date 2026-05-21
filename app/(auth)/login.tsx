@@ -6,6 +6,7 @@ import type { Session } from '@supabase/supabase-js';
 import { useTranslation } from 'react-i18next';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
+import { usePreventScreenCapture } from '@/lib/security/usePreventScreenCapture';
 import { borderRadius, createStyles, spacing, typography, useColors } from '@/lib/theme';
 import { getSupabase } from '@/lib/supabase/client';
 import { key as storageKey } from '@/lib/storage/keys';
@@ -164,6 +165,9 @@ function lockoutKey(email: string) {
 }
 
 export default function LoginScreen() {
+  // Block screenshots + screen recordings + App Switcher snapshots while
+  // a password field is on screen. Phase B+ hardening 2026-05-20.
+  usePreventScreenCapture();
   const { t } = useTranslation();
   const router = useRouter();
   const insets = useSafeAreaInsets();

@@ -5,6 +5,7 @@ import { useRouter } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
+import { usePreventScreenCapture } from '@/lib/security/usePreventScreenCapture';
 import { borderRadius, createStyles, spacing, typography, useColors } from '@/lib/theme';
 import { getSupabase } from '@/lib/supabase/client';
 import { setAppShellPreference } from '@/lib/navigation/appShellPreference';
@@ -24,7 +25,6 @@ import {
   Button,
   SocialAuthButtons,
   TermsFooter,
-  Checkbox,
 } from '@/components/ui';
 
 const useStyles = createStyles((c) => ({
@@ -161,12 +161,14 @@ function lockoutKey(email: string) {
 }
 
 export default function OwnerLoginScreen() {
+  // Block screenshots + screen recordings + App Switcher snapshots while
+  // a password field is on screen. Phase B+ hardening 2026-05-20.
+  usePreventScreenCapture();
   const { t } = useTranslation();
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const c = useColors();
   const styles = useStyles();
-  const [rememberDevice, setRememberDevice] = useState(false);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [phone, setPhone] = useState('');
@@ -411,8 +413,11 @@ export default function OwnerLoginScreen() {
           onChangeText={setPassword}
         />
 
-        <View style={styles.rowBetween}>
-          <Checkbox checked={rememberDevice} onChange={setRememberDevice} label={t('auth.rememberDevice')} />
+        <View style={[styles.rowBetween, { justifyContent: 'flex-end' }]}>
+          {/* Removed unused "remember this device" checkbox 2026-05-20.
+              It rendered but its state was never consulted on sign-in,
+              giving users a false sense of an unimplemented security
+              feature. Re-add when per-device trust (lib/auth/) ships. */}
           <TouchableOpacity onPress={() => router.push('/(auth)/forgot-password')} hitSlop={8}>
             <Text style={styles.forgotText}>{t('auth.forgotPassword')}</Text>
           </TouchableOpacity>

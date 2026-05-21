@@ -125,3 +125,32 @@ export function registerPushTokenForCurrentUser(): Promise<void> {
   })();
   return inflightRegistration;
 }
+
+/**
+ * Clear the current user's push token on signOut. Without this, server-
+ * dispatched notifications addressed to the prior session keep landing on
+ * the device after a different user signs in (or after the same user
+ * signs out and walks away). The next sign-in re-registers the token, so
+ * the only loss is a few seconds of "no notifications" right after
+ * signOut completes.
+ *
+ * Best-effort: failures are swallowed so signOut never blocks on a
+ * network call.
+ *
+ * Phase B+ hardening 2026-05-20.
+ */
+export async function clearPushTokenForCurrentUser(): Promise<void> {
+  try {
+    const supabase = getSupabase();
+    if (!supabase) return;
+    const { data: sessionData } = await supabase.auth.getSession();
+    const authUserId = sessionData.session?.user?.id;
+    if (!authUserId) return;
+    await supabase
+      .from('user_profiles')
+      .update({ expo_push_token: null })
+      .eq('auth_user_id', authUserId);
+  } catch {
+    // Best-effort.
+  }
+}

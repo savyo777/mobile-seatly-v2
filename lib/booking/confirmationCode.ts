@@ -4,16 +4,17 @@
 // server uses for real reservations. The DB column is the source of
 // truth; legacy prefixes (SEAT-, PRE-, CNV-) remain valid for lookup.
 
+import { secureRandomCode } from '@/lib/utils/secureRandom';
+
 const ALPHABET = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; // no I, O, 0, 1
 const PREFIX = 'CEN';
 const LENGTH = 6;
 
 export function makeConfirmationCode(): string {
-  let code = `${PREFIX}-`;
-  for (let i = 0; i < LENGTH; i += 1) {
-    code += ALPHABET[Math.floor(Math.random() * ALPHABET.length)];
-  }
-  return code;
+  // OS-backed randomness via expo-crypto so codes can't be ground out
+  // by an attacker correlating sequential Math.random outputs. Per the
+  // Phase B+ mobile security hardening 2026-05-20.
+  return `${PREFIX}-${secureRandomCode(LENGTH, ALPHABET)}`;
 }
 
 export function isValidConfirmationCode(code: string): boolean {

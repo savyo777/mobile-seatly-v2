@@ -6,6 +6,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { createStyles, spacing, typography, useColors } from '@/lib/theme';
 import { ScreenWrapper, Input, Button } from '@/components/ui';
+import { usePreventScreenCapture } from '@/lib/security/usePreventScreenCapture';
 import { ensureCustomerProfile, ensureOwnerProfile } from '@/lib/services/oauth';
 import { sendPhoneOtp, verifyPhoneOtp } from '@/lib/services/phoneAuth';
 import { getSupabase } from '@/lib/supabase/client';
@@ -68,6 +69,9 @@ const useStyles = createStyles((c) => ({
 }));
 
 export default function VerifyPhoneOtpScreen() {
+  // Block screenshots while the OTP code is visible on screen. Phase B+
+  // hardening 2026-05-20.
+  usePreventScreenCapture();
   const { t } = useTranslation();
   const router = useRouter();
   const insets = useSafeAreaInsets();

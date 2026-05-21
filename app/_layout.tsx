@@ -13,8 +13,68 @@ import '@/lib/i18n';
 // Crash reporting. DSN comes from EXPO_PUBLIC_SENTRY_DSN — empty in dev
 // builds disables the SDK without throwing. PII scrubbing is enabled by
 // default; we explicitly set `sendDefaultPii: false` so no email/IP/
-// device identifiers leave the device.
+// device identifiers leave the device. The beforeSend / beforeBreadcrumb
+// hooks add a second layer of redaction for any future call site that
+// might pass auth tokens or stripe IDs into an exception payload.
+// Phase B+ security hardening 2026-05-20.
 const sentryDsn = process.env.EXPO_PUBLIC_SENTRY_DSN?.trim() || '';
+
+// Patterns we never want shipped to Sentry. JWT-shaped (eyJ…), Stripe
+// secret / live keys, Stripe PI / payment-method / customer ids, Supabase
+// publishable keys, and any Bearer-token-shaped string. Kept narrow: we
+// don't want to scrub random user content that happens to contain a few
+// of these substrings, so each pattern requires the full prefix.
+const SECRET_PATTERNS: ReadonlyArray<{ re: RegExp; replace: string }> = [
+  { re: /eyJ[A-Za-z0-9_\-]+\.[A-Za-z0-9_\-]+\.[A-Za-z0-9_\-]+/g, replace: '[redacted-jwt]' },
+  { re: /\bsk_(?:test|live)_[A-Za-z0-9]{20,}/g, replace: '[redacted-stripe-secret]' },
+  { re: /\brk_(?:test|live)_[A-Za-z0-9]{20,}/g, replace: '[redacted-stripe-restricted]' },
+  { re: /\bpi_[A-Za-z0-9_]{20,}/g, replace: '[redacted-stripe-pi]' },
+  { re: /\bpm_[A-Za-z0-9_]{20,}/g, replace: '[redacted-stripe-pm]' },
+  { re: /\bcus_[A-Za-z0-9_]{12,}/g, replace: '[redacted-stripe-customer]' },
+  { re: /\bseti_[A-Za-z0-9_]{20,}/g, replace: '[redacted-stripe-seti]' },
+  { re: /\bsb_(?:secret|publishable)_[A-Za-z0-9_\-]{20,}/g, replace: '[redacted-supabase-key]' },
+  { re: /Bearer\s+[A-Za-z0-9\-._~+\/]+=*/g, replace: 'Bearer [redacted]' },
+];
+
+function scrubSecretsFromString(input: unknown): unknown {
+  if (typeof input !== 'string') return input;
+  let out = input;
+  for (const { re, replace } of SECRET_PATTERNS) out = out.replace(re, replace);
+  return out;
+}
+
+function scrubObject<T>(obj: T): T {
+  if (obj == null || typeof obj !== 'object') {
+    return scrubSecretsFromString(obj) as T;
+  }
+  if (Array.isArray(obj)) {
+    return obj.map((v) => scrubObject(v)) as unknown as T;
+  }
+  const out: Record<string, unknown> = {};
+  for (const [k, v] of Object.entries(obj as Record<string, unknown>)) {
+    const keyLower = k.toLowerCase();
+    if (
+      keyLower === 'authorization'
+      || keyLower === 'apikey'
+      || keyLower === 'x-api-key'
+      || keyLower === 'cookie'
+      || keyLower === 'set-cookie'
+      || keyLower === 'x-cron-secret'
+      || keyLower === 'stripe-signature'
+      || keyLower === 'x-stripe-signature'
+    ) {
+      out[k] = '[redacted]';
+    } else if (typeof v === 'string') {
+      out[k] = scrubSecretsFromString(v);
+    } else if (v && typeof v === 'object') {
+      out[k] = scrubObject(v as Record<string, unknown>);
+    } else {
+      out[k] = v;
+    }
+  }
+  return out as T;
+}
+
 if (sentryDsn) {
   Sentry.init({
     dsn: sentryDsn,
@@ -23,6 +83,24 @@ if (sentryDsn) {
     sendDefaultPii: false,
     enableAutoSessionTracking: true,
     debug: __DEV__,
+    beforeSend: (event) => {
+      // Scrub headers + breadcrumb data + exception message/value strings.
+      // We mutate via the scrubObject return to avoid touching Sentry's
+      // class instances directly.
+      if (event.request) event.request = scrubObject(event.request);
+      if (event.breadcrumbs) event.breadcrumbs = event.breadcrumbs.map((b) => scrubObject(b));
+      if (event.exception?.values) {
+        event.exception.values = event.exception.values.map((ex) => ({
+          ...ex,
+          value: typeof ex.value === 'string' ? (scrubSecretsFromString(ex.value) as string) : ex.value,
+        }));
+      }
+      if (event.message) event.message = scrubObject(event.message);
+      if (event.extra) event.extra = scrubObject(event.extra);
+      if (event.contexts) event.contexts = scrubObject(event.contexts);
+      return event;
+    },
+    beforeBreadcrumb: (breadcrumb) => scrubObject(breadcrumb),
   });
 }
 import { AuthProvider, useAuthSession } from '@/lib/auth/AuthContext';
