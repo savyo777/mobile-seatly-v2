@@ -260,9 +260,27 @@ export default function Step6Payment() {
   const baseTotalCents = Math.round(baseTotalDue * 100);
   const dinerCharge = computeDinerCharge(baseTotalCents);
   const totalDue = dinerCharge.dinerTotalCents / 100;
-  // Split-tender is offered only when there's a deposit (food + tax flow
-  // through the diner running checkout, never split) AND party >= 2.
-  // Guard from MOBILE_SPLIT_TENDER_GUIDE.md §1.
+  // Split-tender is offered ONLY when there's a deposit + party >= 2.
+  //
+  // Why not also for pre-order-only carts? The deployed server-side
+  // create-public-booking edge fn gates split-tender row creation on
+  // `depositAmountCents > 0` — it only inserts N
+  // reservation_deposit_payments rows when there's a deposit to
+  // split. A pre-order-only request with split_tender_payers: N
+  // returns 200 + a reservation row + ZERO deposit rows → mobile
+  // throws "0 split_tender_deposit_row_ids returned" and the orphan
+  // reservation blocks the slot.
+  //
+  // The diner-friendly fix would be a SEPARATE server feature: split
+  // an `orders` row across N payers. Until that ships, we hide the
+  // toggle for pre-order-only carts to avoid a confusing failure.
+  // The single-pay flow charges the full pre-order amount through
+  // the diner running checkout, which is the only path the server
+  // currently supports.
+  //
+  // When the server gains pre-order split support, change this gate
+  // to `(hasDeposit || hasPreorder) && partySizeNum >= 2` AND update
+  // the server-side handler to accept the `orders` split case.
   const canSplit = hasDeposit && partySizeNum >= 2;
   const qpBase = [
     `date=${encodeURIComponent(date ?? '')}`,
@@ -636,8 +654,14 @@ export default function Step6Payment() {
               }) as string}
             </Text>
           ) : (hasPreorder && dinerCharge.applicationFeeCents > 0) ? (
+            // Pre-order-only carts: no deposit base to refund, but the
+            // platform + processing fees are still non-refundable per
+            // Option B. Use a tailored disclosure that doesn't mention
+            // "seated refund" (which only applies to deposits) but DOES
+            // make the non-refundable nature of the fees explicit, same
+            // as the deposit cart variant.
             <Text style={styles.feeDisclosure}>
-              {t('booking.serviceFeeInlineNote') as string}
+              Platform fee and processing fee are non-refundable. Your pre-order is charged in full at booking.
             </Text>
           ) : null}
         </Card>
@@ -669,6 +693,10 @@ export default function Step6Payment() {
           <SplitTenderCheckout
             restaurantId={restaurantId}
             partySize={partySizeNum}
+            // canSplit gate guarantees depositCents > 0 — server only
+            // seeds split_tender rows from the deposit amount, not
+            // from preorder + tax. See the canSplit comment above
+            // for context on why pre-order split isn't supported yet.
             totalDepositCents={depositCents}
             bookingPayload={{
               restaurant_id: restaurantId,
