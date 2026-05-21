@@ -27,7 +27,6 @@ import {
 } from '@/lib/navigation/appShellPreference';
 import { CENAIVA_FOLLOW_URLS } from '@/lib/config/cenaivaSocial';
 import { isLoyaltyEnabled } from '@/lib/config/loyaltyFeature';
-import { isDemoModeEnabled } from '@/lib/config/demoMode';
 import { LOYALTY_TIERS, getLoyaltyTier } from '@/lib/loyalty/tiers';
 
 const TIERS = LOYALTY_TIERS;
@@ -383,20 +382,13 @@ export default function SettingsScreen() {
       ],
     },
     {
-      title: 'Payments & Rewards',
+      // Wallet (§10) + Gift Cards (§11.4) are NOT Cenaiva features —
+      // both rows and the underlying wallet.tsx screen were deleted on
+      // 2026-05-21. Loyalty stays hidden until isLoyaltyEnabled() flips
+      // (kept for future re-enablement per CLAUDE.md).
+      title: 'Payments & Promotions',
       rows: [
         { kind: 'nav', icon: 'card-outline', label: 'Payment Methods', href: '/(customer)/profile/payment' },
-        // Wallet was CUT from the consumer ToS (§10) — the feature
-        // doesn't exist for diners. The screen ships only mock data
-        // gated on isDemoModeEnabled. Hiding the nav row in live
-        // mode so users don't land on a phantom feature. Gift cards
-        // (also CUT from ToS §11.4) live inside the Wallet screen,
-        // so this single gate covers both. Loyalty is reached via
-        // the Wallet "View rewards" button, so it's transitively
-        // gated too (and isLoyaltyEnabled is false by default).
-        ...(isDemoModeEnabled()
-          ? [{ kind: 'nav' as const, icon: 'wallet-outline' as const, label: 'Wallet', href: '/(customer)/profile/wallet' as const }]
-          : []),
         { kind: 'nav', icon: 'pricetag-outline', label: 'Promotions', href: '/(customer)/profile/promotions' },
       ],
     },
@@ -461,15 +453,10 @@ export default function SettingsScreen() {
     {
       title: 'More',
       rows: [
-        // Diner referrals don't exist in Cenaiva — the only referral
-        // program is owner-side ("Refer & Earn" for restaurant
-        // partners, governed by the Restaurant Partner Agreement +
-        // lib/owner/referralPolicy.ts). The invite.tsx screen renders
-        // demo-mode mock data only, so hide the nav row when not in
-        // demo mode to avoid surfacing a phantom feature.
-        ...(isDemoModeEnabled()
-          ? [{ kind: 'nav' as const, icon: 'gift-outline' as const, label: 'Refer & Earn', href: '/(customer)/profile/invite' as const }]
-          : []),
+        // Diner Refer & Earn nav was deleted on 2026-05-21. There is
+        // no diner referral program in Cenaiva — the only referral
+        // is owner-side (Restaurant Partner Agreement / Stripe trial
+        // extension via register-restaurant-owner edge fn).
         { kind: 'nav', icon: 'help-circle-outline', label: 'Help & Support', href: '/(customer)/profile/help' },
         {
           kind: 'nav',

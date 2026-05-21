@@ -8,23 +8,36 @@
 
 ---
 
-## ⚠️ Correction Notice — Build 3f Reverted
+## 🚫 Hard No-Build List (DELETED features — do not implement)
 
-Build 3f (Diner Referrals) was initially shipped in error. **There is no diner referral system in Cenaiva.** The only referral program is the OWNER-side "Refer & Earn":
-- 30 days subscription credit per side (referrer + referred restaurant owner)
-- Code format `CNV-OWNER-XXXXXX`
-- Stripe-integrated (subscription trial extension at signup)
-- Code lives at `lib/owner/referralPolicy.ts` + `supabase/functions/_shared/referral-policy.ts`
-- Governed by the separate Restaurant Partner Agreement, not the consumer ToS
+The following are NOT Cenaiva consumer features and **must not be built** on web. They were deleted from the mobile codebase on 2026-05-21 with the explicit instruction: "We have no intent of adding these to the app."
 
-Build 3f has been **fully reverted**:
-- DB: dropped `diner_referral_credits`, `referrals` tables + `qualify_pending_referral_trg` trigger + `user_profiles.referral_code` column
-- Edge fns deleted: `get-my-referral-code`, `redeem-referral`, `get-my-referral-credits`
-- Files deleted: `lib/referrals/` dir + `supabase/functions/get-my-referral-code/` etc.
-- ToS §9.3 corrected to point at owner-only program: "Cenaiva does not currently offer a consumer referral program"
-- Profile > Settings "Refer & Earn" nav row is now gated on `isDemoModeEnabled()` so live users don't see a path to a non-existent feature
+| Feature | ToS section | Why deleted | Replacement |
+|---|---|---|---|
+| **Wallet (prepaid balance)** | §10 (CUT) | Never planned. Mobile screen `wallet.tsx` deleted + nav row removed. | None — show only Payment Methods (Stripe saved cards). |
+| **Gift Cards (issuance + redemption)** | §11.4 (CUT) | Never planned. Lived inside the deleted Wallet screen. | None. |
+| **Diner Referrals (consumer-side)** | §9.3 (CORRECTED) | Never planned for diners. Mobile screen `invite.tsx` + `lib/storage/referralLimits.ts` deleted. | The ONLY referral is owner-side "Refer & Earn" (30 days subscription credit per side, Stripe-integrated, code format `CNV-OWNER-XXXXXX`). Code lives at `lib/owner/referralPolicy.ts` + `supabase/functions/_shared/referral-policy.ts` + `register-restaurant-owner` edge fn. Governed by the Restaurant Partner Agreement, NOT the consumer ToS. |
 
-**Web team action**: NO mirror work needed for diner referrals. If your repo has any speculative diner-referral code from the earlier handoff, delete it. The owner referral system is fully implemented + Stripe-integrated; nothing to mirror there.
+**If your web codebase has ANY of the following, delete it:**
+- A consumer/diner wallet page, balance ledger, or top-up flow
+- A diner gift-card purchase/redemption UI
+- A diner referral page, share-link generator, or "earn $X for inviting" UI
+- A `referrals` table, `diner_referral_credits` table, `user_profiles.referral_code` column, or any `qualify_pending_referral` trigger
+- Edge functions named `get-my-referral-code`, `redeem-referral`, `get-my-referral-credits` (all undeployed from `exbjodmnpdiayfzrdyux`)
+- Imports from a `lib/referrals/dinerReferrals.ts` equivalent
+
+**The mobile mock data exports for these were also deleted** from `lib/mock/profileScreens.ts`: `mockGiftCards`, `mockWalletCredits`, `mockInviteRecords`, `REFERRAL_CODE`, `REFERRAL_YOU_GET`, `REFERRAL_THEY_GET`. Don't re-introduce them.
+
+---
+
+## ⚠️ Mock-data removal for launch (2026-05-21)
+
+Mock data was deleted for the launch-ready surfaces while the live backend wiring stayed intact:
+- **Events** (`lib/mock/events.ts` deleted entirely; types moved to `lib/events/types.ts`). Live data via `fetchUpcomingEvents` from `lib/events/getEvents.ts`. EventCard no longer shows a "Save" bookmark button (was mock-only with no backend). Web should mirror — use live event rows only.
+- **Promotions** (`mockPromotions` deleted from `lib/mock/profileScreens.ts`). Live data via `fetchActivePromotions` from `lib/promotions/getPromotions.ts`. The `PromotionOffer` TYPE is kept since live mappers reference it.
+- **Tickets** — no mock data existed; events.id is the booking handle for event reservations. No change.
+
+**Web team action**: strip any equivalent mock fallbacks in your web event/promotion screens. The backend tables (`events`, `promotions`) are shared via the Supabase project; your reads should already hit live data.
 
 ---
 

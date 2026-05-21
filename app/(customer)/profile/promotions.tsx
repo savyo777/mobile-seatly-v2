@@ -3,12 +3,14 @@ import { Pressable, StyleSheet, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { ProfileStackScreen } from '@/components/profile/ProfileStackScreen';
 import { PromotionOfferCard } from '@/components/profile/PromotionOfferCard';
-import { mockPromotions as DEMO_PROMOTIONS, type PromotionOffer } from '@/lib/mock/profileScreens';
-import { isDemoModeEnabled } from '@/lib/config/demoMode';
+import { type PromotionOffer } from '@/lib/mock/profileScreens';
 import { fetchActivePromotions, type PromotionRow } from '@/lib/promotions/getPromotions';
 import { incrementPromotionClicks } from '@/lib/promotions/incrementPromotionClicks';
 
-const initialPromotions: PromotionOffer[] = isDemoModeEnabled() ? DEMO_PROMOTIONS : [];
+// Always start empty; live promotions are fetched from Supabase in the
+// effect below. The demo-mode mockPromotions array was deleted on
+// 2026-05-21 as part of the "launch-ready, no mock data" cleanup.
+const initialPromotions: PromotionOffer[] = [];
 
 function formatExpires(endsAt: string | null): string {
   if (!endsAt) return 'No expiration';
@@ -57,7 +59,6 @@ export default function PromotionsScreen() {
   const countedRef = useRef<Set<string>>(new Set());
 
   useEffect(() => {
-    if (isDemoModeEnabled()) return;
     let active = true;
     void (async () => {
       try {

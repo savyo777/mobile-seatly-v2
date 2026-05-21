@@ -1,7 +1,7 @@
 import React from 'react';
 import { View, Text, Pressable, ScrollView, StyleSheet } from 'react-native';
 import { useColors, createStyles, spacing, borderRadius } from '@/lib/theme';
-import type { DateFilter, EventType } from '@/lib/mock/events';
+import type { DateFilter, EventType } from '@/lib/events/types';
 
 type TypeFilterKey = EventType | 'all';
 

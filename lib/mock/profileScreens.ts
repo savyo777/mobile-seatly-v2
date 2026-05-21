@@ -41,6 +41,9 @@ export const mockNotificationPrefs: NotificationPref[] = [
   { id: 'n8', title: 'Push notifications', subtitle: 'In-app alerts on this device', defaultOn: true },
 ];
 
+// Promotions are LIVE — the type stays so callers can import it,
+// but the mockPromotions data was deleted on 2026-05-21. Live data
+// comes from `lib/promotions/getPromotions.ts` (fetchActivePromotions).
 export type PromotionOffer = {
   id: string;
   headline: string;
@@ -49,39 +52,6 @@ export type PromotionOffer = {
   terms: string;
   badge?: string;
 };
-
-export const mockPromotions: PromotionOffer[] = [
-  {
-    id: 'p1',
-    headline: '20% off your next booking',
-    description: 'Use at checkout on reservations made before April 15.',
-    expiresLabel: 'Expires Apr 15, 2026',
-    terms: 'One use per account. Participating restaurants only.',
-    badge: 'Limited',
-  },
-  {
-    id: 'p2',
-    headline: 'Free dessert',
-    description: 'Complimentary dessert with two mains at participating venues.',
-    expiresLabel: 'Expires Mar 31, 2026',
-    terms: 'Dine-in only. Menu items up to $14.',
-  },
-  {
-    id: 'p3',
-    headline: 'Double points this weekend',
-    description: 'Earn 2× loyalty points on all bookings Fri–Sun.',
-    expiresLabel: 'Ends Mar 30, 2026',
-    terms: 'Points post within 48 hours of completed visit.',
-    badge: 'Hot',
-  },
-  {
-    id: 'p4',
-    headline: '$25 off date-night package',
-    description: 'Bundle: dinner for two + welcome drink at select restaurants.',
-    expiresLabel: 'Expires May 1, 2026',
-    terms: 'Min spend $120 before discount. Taxes extra.',
-  },
-];
 
 export type HelpTopic = {
   id: string;
@@ -156,39 +126,18 @@ export const mockFaqs: FaqItem[] = [
   },
 ];
 
-export type WalletGiftCard = { id: string; label: string; balance: number; codeLast4: string };
-export const mockGiftCards: WalletGiftCard[] = [
-  { id: 'g1', label: 'Cenaiva Gift', balance: 50, codeLast4: '8821' },
-  { id: 'g2', label: 'Holiday Promo', balance: 25, codeLast4: '4402' },
-];
-
-export type WalletCredit = { id: string; label: string; amount: number; expires?: string };
-export const mockWalletCredits: WalletCredit[] = [
-  { id: 'c1', label: 'Referral bonus', amount: 15, expires: 'Jun 2026' },
-  { id: 'c2', label: 'Compensation credit', amount: 20 },
-];
-
-export type InviteRecord = {
-  id: string;
-  name: string;
-  email: string;
-  status: 'Joined' | 'Pending';
-  dateLabel: string;
-  youEarned?: number;
-};
-
-export const mockInviteRecords: InviteRecord[] = [
-  { id: 'i1', name: 'Sam Lee', email: 'sam.l@email.com', status: 'Joined', dateLabel: 'Mar 12, 2026', youEarned: 15 },
-  { id: 'i2', name: 'Jordan Kim', email: 'j.kim@email.com', status: 'Pending', dateLabel: 'Mar 18, 2026' },
-  { id: 'i3', name: 'Priya Shah', email: 'priya.s@email.com', status: 'Joined', dateLabel: 'Feb 4, 2026', youEarned: 15 },
-];
-
-export const REFERRAL_CODE = 'ALEX-CENAIVA-24';
-// Pricing: symmetric $10 each, capped at $100 lifetime to avoid runaway costs.
-// Daily share rate limit and short per-share cooldown live in
-// `lib/storage/referralLimits.ts`.
-export const REFERRAL_YOU_GET = 10;
-export const REFERRAL_THEY_GET = 10;
+// Wallet, Gift Cards, and Diner Referrals are NOT Cenaiva features.
+// Per consumer ToS audit 2026-05-21:
+//   - §10 Wallet — DELETED (not a planned product)
+//   - §11.4 Gift Cards — DELETED (not a planned product)
+//   - §9.3 Diner Referrals — DELETED (the ONLY referral program is
+//     owner-side "Refer & Earn" via lib/owner/referralPolicy.ts +
+//     register-restaurant-owner edge fn, Stripe-integrated as a
+//     +30-day subscription trial; governed by the Restaurant Partner
+//     Agreement, not the consumer ToS)
+// The mockGiftCards / mockWalletCredits / mockInviteRecords /
+// REFERRAL_* exports that previously lived here were removed.
+// Do NOT re-introduce them.
 
 export type DietaryPreferenceOption = { id: string; label: string };
 export const mockDietaryPreferenceOptions: DietaryPreferenceOption[] = [

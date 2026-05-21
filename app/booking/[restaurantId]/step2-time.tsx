@@ -40,12 +40,7 @@ import {
   getCachedRestaurantById,
   loadRestaurantForBooking,
 } from '@/lib/data/restaurantCatalog';
-import { getEventById as DEMO_getEventById } from '@/lib/mock/events';
-import { isDemoModeEnabled } from '@/lib/config/demoMode';
 import { friendlyError } from '@/lib/errors/friendlyError';
-
-const getEventById: typeof DEMO_getEventById = (id) =>
-  isDemoModeEnabled() ? DEMO_getEventById(id) : undefined;
 import { useColors, createStyles, spacing, borderRadius } from '@/lib/theme';
 import type { DateKey } from '@/lib/booking/availabilityTypes';
 import { NotifyMeButton } from '@/components/customer/NotifyMeButton';
@@ -338,10 +333,14 @@ export default function Step2Time() {
   const [conflictWindows, setConflictWindows] = useState<ConflictWindow[]>([]);
   const [submitting, setSubmitting] = useState(false);
   const [availableDates, setAvailableDates] = useState<string[] | null>(null);
-  const eventContext = useMemo(
-    () => (typeof eventId === 'string' ? getEventById(eventId) : undefined),
-    [eventId],
-  );
+  // Event detail context for the time-picker preamble was previously
+  // sourced from the deleted lib/mock/events.ts. The booking flow still
+  // honors the ?eventId= URL param + forwards it to subsequent steps;
+  // we just don't render an event-info preamble until a live
+  // `fetchEventById` is added.
+  const eventContext = undefined as
+    | { id: string; title: string; date: string; price?: number; spotsLeft?: number }
+    | undefined;
 
   const pillLabel = useMemo(() => {
     const d = parseDateKeyLocal(dateKey);

@@ -13,20 +13,8 @@ import { useColors, createStyles, spacing, borderRadius } from '@/lib/theme';
 import {
   type DiningEvent,
   type EventType,
-  getRestaurantForEvent as DEMO_getRestaurantForEvent,
-  isEventSaved as DEMO_isEventSaved,
-  toggleSaveEvent as DEMO_toggleSaveEvent,
-} from '@/lib/mock/events';
-import { isDemoModeEnabled } from '@/lib/config/demoMode';
+} from '@/lib/events/types';
 import { NotifyMeButton } from '@/components/customer/NotifyMeButton';
-
-const getRestaurantForEvent: typeof DEMO_getRestaurantForEvent = (id) =>
-  isDemoModeEnabled() ? DEMO_getRestaurantForEvent(id) : undefined;
-const isEventSaved: typeof DEMO_isEventSaved = (...args) =>
-  isDemoModeEnabled() ? DEMO_isEventSaved(...args) : false;
-const toggleSaveEvent: typeof DEMO_toggleSaveEvent = (...args) =>
-  isDemoModeEnabled() ? DEMO_toggleSaveEvent(...args) : false;
-import { useCurrentUserId } from '@/lib/auth/currentUserId';
 
 const TYPE_LABEL: Record<EventType, string> = {
   event: 'Event',
@@ -196,9 +184,10 @@ export function EventCard({ event, isHero = false, onPressed }: Props) {
   const router = useRouter();
   const c = useColors();
   const styles = useStyles();
-  const restaurant = getRestaurantForEvent(event.restaurantId);
-  const me = useCurrentUserId();
-  const [saved, setSaved] = useState(() => (me ? isEventSaved(me, event.id) : false));
+  // Event-save and restaurant-name-on-card were previously sourced from
+  // the deleted lib/mock/events.ts. Saved events isn't a shipped feature
+  // (no backend); the restaurant name comes from the live join already
+  // performed by mapEventRowToDining in app/(customer)/events/index.tsx.
 
   const TYPE_COLOR: Record<EventType, string> = {
     event: c.gold,
@@ -209,12 +198,6 @@ export function EventCard({ event, isHero = false, onPressed }: Props) {
 
   const typeColor = TYPE_COLOR[event.type];
   const cardHeight = isHero ? 320 : 220;
-
-  const handleSave = useCallback(() => {
-    if (!me) return;
-    toggleSaveEvent(me, event.id);
-    setSaved((s) => !s);
-  }, [event.id, me]);
 
   const handleBook = useCallback(() => {
     onPressed?.(event);
@@ -232,7 +215,7 @@ export function EventCard({ event, isHero = false, onPressed }: Props) {
       onPress={isSoldOut ? undefined : handleBook}
       style={({ pressed }) => [styles.card, isHero && styles.cardHero, pressed && !isSoldOut && { opacity: 0.95 }]}
       accessibilityRole="button"
-      accessibilityLabel={`${event.title} at ${restaurant?.name}`}
+      accessibilityLabel={event.title}
     >
       {event.coverImage ? (
         <Image source={{ uri: event.coverImage }} style={[styles.photo, { height: cardHeight }]} />
@@ -259,23 +242,7 @@ export function EventCard({ event, isHero = false, onPressed }: Props) {
         )}
       </View>
 
-      <Pressable
-        onPress={handleSave}
-        hitSlop={10}
-        style={({ pressed }) => [styles.saveBtn, pressed && { opacity: 0.7 }]}
-        accessibilityLabel={saved ? 'Unsave event' : 'Save event'}
-      >
-        <Ionicons
-          name={saved ? 'bookmark' : 'bookmark-outline'}
-          size={20}
-          color={saved ? c.gold : '#fff'}
-        />
-      </Pressable>
-
       <View style={styles.bottom}>
-        {restaurant && (
-          <Text style={styles.restaurantName} numberOfLines={1}>{restaurant.name}</Text>
-        )}
         <Text style={styles.eventTitle} numberOfLines={2}>{event.title}</Text>
 
         <View style={styles.metaRow}>

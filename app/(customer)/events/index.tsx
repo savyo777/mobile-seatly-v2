@@ -15,25 +15,15 @@ import { useRouter, Href } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import { useColors, createStyles, spacing, borderRadius } from '@/lib/theme';
 import {
-  listEvents as DEMO_listEvents,
   filterEvents,
-  getRestaurantForEvent as DEMO_getRestaurantForEvent,
   type DiningEvent,
   type DateFilter,
   type EventType,
-} from '@/lib/mock/events';
-import { isDemoModeEnabled } from '@/lib/config/demoMode';
+} from '@/lib/events/types';
 import { fetchUpcomingEvents, type EventRow } from '@/lib/events/getEvents';
 import { fetchActivePromotions, type PromotionRow } from '@/lib/promotions/getPromotions';
 import { incrementPromotionClicks } from '@/lib/promotions/incrementPromotionClicks';
 import { sanitizeSearchInput } from '@/lib/validation/input';
-
-const listEvents: typeof DEMO_listEvents = (...args) =>
-  isDemoModeEnabled() ? DEMO_listEvents(...args) : [];
-// `filterEvents` is a pure function over the array we pass in, safe to use
-// for both real and mock event lists.
-const getRestaurantForEvent: typeof DEMO_getRestaurantForEvent = (id) =>
-  isDemoModeEnabled() ? DEMO_getRestaurantForEvent(id) : undefined;
 
 // Empty string when neither a cover_image_url nor media_url is set;
 // EventCard renders a plain dark View in place of the Image so the
@@ -137,9 +127,6 @@ function matchesQuery(event: DiningEvent, q: string): boolean {
   if (event.title.toLowerCase().includes(lower)) return true;
   if (event.description.toLowerCase().includes(lower)) return true;
   if (event.tags.some((t) => t.toLowerCase().includes(lower))) return true;
-  const rest = getRestaurantForEvent(event.restaurantId);
-  if (rest?.name.toLowerCase().includes(lower)) return true;
-  if (rest?.cuisineType.toLowerCase().includes(lower)) return true;
   return false;
 }
 
@@ -308,7 +295,6 @@ export default function EventsScreen() {
   const [realEvents, setRealEvents] = useState<DiningEvent[]>([]);
 
   useEffect(() => {
-    if (isDemoModeEnabled()) return;
     let active = true;
     void (async () => {
       try {
@@ -331,10 +317,7 @@ export default function EventsScreen() {
     };
   }, []);
 
-  const allEvents = useMemo(
-    () => (isDemoModeEnabled() ? listEvents() : realEvents),
-    [realEvents],
-  );
+  const allEvents = realEvents;
 
   const events = useMemo(() => {
     const filtered = filterEvents(allEvents, query ? 'all' : dateFilter, query ? 'all' : typeFilter);

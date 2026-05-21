@@ -13,9 +13,12 @@ type ActionItem = {
   href: Href;
 };
 
-/** Order: Payments, Saved Places, Rewards (loyalty-gated), Activity — compact shortcuts */
+/** Order: Payments, Saved Places, Rewards (loyalty-gated), Activity — compact shortcuts.
+ *  Wallet (§10) was deleted from the consumer ToS + codebase on 2026-05-21,
+ *  so the Payments tile now routes to /profile/payment (the real Stripe
+ *  saved-cards screen) instead of /profile/wallet. */
 const ALL_ACTIONS: ActionItem[] = [
-  { key: 'pay', labelKey: 'quickPayments', icon: 'wallet-outline', href: '/(customer)/profile/wallet' },
+  { key: 'pay', labelKey: 'quickPayments', icon: 'card-outline', href: '/(customer)/profile/payment' },
   { key: 'saved', labelKey: 'quickSavedPlaces', icon: 'bookmark-outline', href: '/(customer)/profile/favorites' },
   { key: 'rew', labelKey: 'quickRewardsHub', icon: 'gift-outline', href: '/(customer)/profile/loyalty' },
   { key: 'hist', labelKey: 'quickHistory', icon: 'time-outline', href: '/(customer)/activity' },
