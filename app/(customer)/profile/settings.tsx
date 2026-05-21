@@ -386,7 +386,17 @@ export default function SettingsScreen() {
       title: 'Payments & Rewards',
       rows: [
         { kind: 'nav', icon: 'card-outline', label: 'Payment Methods', href: '/(customer)/profile/payment' },
-        { kind: 'nav', icon: 'wallet-outline', label: 'Wallet', href: '/(customer)/profile/wallet' },
+        // Wallet was CUT from the consumer ToS (§10) — the feature
+        // doesn't exist for diners. The screen ships only mock data
+        // gated on isDemoModeEnabled. Hiding the nav row in live
+        // mode so users don't land on a phantom feature. Gift cards
+        // (also CUT from ToS §11.4) live inside the Wallet screen,
+        // so this single gate covers both. Loyalty is reached via
+        // the Wallet "View rewards" button, so it's transitively
+        // gated too (and isLoyaltyEnabled is false by default).
+        ...(isDemoModeEnabled()
+          ? [{ kind: 'nav' as const, icon: 'wallet-outline' as const, label: 'Wallet', href: '/(customer)/profile/wallet' as const }]
+          : []),
         { kind: 'nav', icon: 'pricetag-outline', label: 'Promotions', href: '/(customer)/profile/promotions' },
       ],
     },
