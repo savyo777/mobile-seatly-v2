@@ -541,14 +541,18 @@ export default function Step2Time() {
             const formatCents = (cents: number) =>
               new Intl.NumberFormat('en-CA', { style: 'currency', currency: 'CAD' }).format(cents / 100);
             if (adjustment.kind === 'charged') {
+              // Option B disclosure: platform + processing fees are
+              // non-refundable, only the deposit base refunds on
+              // cancel/seat. The server returns total charged
+              // (deposit + fees grossed up).
               Alert.alert(
                 'Reservation updated',
-                `Your party size increased, so we charged ${formatCents(adjustment.amount_cents)} to the card on file.`,
+                `Your party size increased. We charged ${formatCents(adjustment.amount_cents)} to your card on file (includes Cenaiva platform fee 5.5% + Stripe processing fee, both non-refundable). The base deposit portion refunds in full when the restaurant marks you seated.`,
               );
             } else if (adjustment.kind === 'refunded') {
               Alert.alert(
                 'Reservation updated',
-                `Your party size decreased, so we’re refunding ${formatCents(adjustment.amount_cents)} to the card you used. Refunds settle within ~5 days.`,
+                `Your party size decreased. We refunded ${formatCents(adjustment.amount_cents)} (the base deposit for the seats that fell off) to the card you used. Refunds settle within ~5 days. The platform and processing fees paid at booking are non-refundable.`,
               );
             } else if (adjustment.kind === 'failed') {
               Alert.alert(
@@ -562,12 +566,15 @@ export default function Step2Time() {
         .catch((error) => {
           const reason = (error as Error & { unavailable_reason?: string }).unavailable_reason;
           if (reason === 'modify_requires_card') {
-            // Per doc §7: 402 from modify-reservation means the diner needs a
-            // saved card to cover the bigger deposit. Offer to jump straight
-            // into the Add-card flow instead of just telling them where to go.
+            // Per doc §7 + Option B (STRIPE_UPDATES.md 2026-05-21):
+            // 402 means the bigger deposit needs a card on file.
+            // Disclose that the additional charge will include the
+            // Platform fee (5.5%) + processing fee, both non-refundable,
+            // so the diner knows what they're agreeing to before they
+            // add a card.
             Alert.alert(
               'Add a card first',
-              'Increasing your party size needs a card on file. Add one now, then try the change again.',
+              'Increasing your party size needs a card on file. The additional charge will include the deposit for the extra seats plus a Cenaiva platform fee (5.5%) and Stripe processing fee — both non-refundable. The deposit portion refunds in full when you’re seated. Add a card now, then try the change again.',
               [
                 { text: 'Not now', style: 'cancel' },
                 {

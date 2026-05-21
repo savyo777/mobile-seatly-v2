@@ -532,10 +532,12 @@ export default function Step6Payment() {
         <Text style={styles.title}>{t('booking.step6Title')}</Text>
 
         <Card style={styles.breakdownCard}>
-          {/* Order items first (Pre-order + Deposit), then service fee
-              (shown as included so it's transparent without double-
-              charging), then tax, then Stripe processing fee, then
-              Total. User-requested order 2026-05-21. */}
+          {/* Web parity (Option B, STRIPE_UPDATES.md 2026-05-21):
+              Pre-Order Subtotal → Deposit → Platform fee (5.5%, bold)
+              → Tax → Processing fee → Total → disclosure copy. The
+              Platform fee was previously rendered as a muted "(included)"
+              line; web flipped to a bold standalone item for refund
+              transparency. Mobile follows. */}
           {hasPreorder && (
             <View style={styles.lineItem}>
               <Text style={styles.lineLabel}>Pre-Order Subtotal</Text>
@@ -556,14 +558,8 @@ export default function Step6Payment() {
           )}
           {(hasDeposit || hasPreorder) && dinerCharge.applicationFeeCents > 0 ? (
             <View style={styles.lineItem}>
-              <Text style={styles.lineLabelMuted}>
-                {t('booking.serviceFeeLine') as string}
-              </Text>
-              <Text style={styles.lineValueMuted}>
-                {t('booking.serviceFeeIncluded', {
-                  fee: formatCurrency(dinerCharge.applicationFeeCents / 100),
-                }) as string}
-              </Text>
+              <Text style={styles.lineLabel}>{t('booking.platformFeeLabel') as string}</Text>
+              <Text style={styles.lineValue}>{formatCurrency(dinerCharge.applicationFeeCents / 100)}</Text>
             </View>
           ) : null}
           {hasPreorder && (
@@ -582,7 +578,13 @@ export default function Step6Payment() {
             <Text style={styles.totalLabel}>{t('orders.total')}</Text>
             <Text style={styles.totalValue}>{formatCurrency(totalDue)}</Text>
           </View>
-          {(hasDeposit || hasPreorder) && dinerCharge.applicationFeeCents > 0 ? (
+          {hasDeposit && dinerCharge.applicationFeeCents > 0 ? (
+            <Text style={styles.feeDisclosure}>
+              {t('booking.feeDisclosureV2', {
+                depositAmount: depositAmount.toFixed(2),
+              }) as string}
+            </Text>
+          ) : (hasPreorder && dinerCharge.applicationFeeCents > 0) ? (
             <Text style={styles.feeDisclosure}>
               {t('booking.serviceFeeInlineNote') as string}
             </Text>

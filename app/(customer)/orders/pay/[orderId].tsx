@@ -253,6 +253,14 @@ export default function PayTheBillScreen() {
             <Text style={styles.label}>Tip</Text>
             <Text style={styles.value}>{formatCents(tipCents)}</Text>
           </View>
+          {/* Web parity (Option B): surface Platform fee as a bold
+              standalone line, not hidden inside the total. */}
+          {dinerCharge.applicationFeeCents > 0 ? (
+            <View style={styles.row}>
+              <Text style={styles.label}>Platform fee (5.5%)</Text>
+              <Text style={styles.value}>{formatCents(dinerCharge.applicationFeeCents)}</Text>
+            </View>
+          ) : null}
           {dinerCharge.processingFeeCents > 0 ? (
             <View style={styles.row}>
               <Text style={styles.label}>Processing fee</Text>
@@ -290,9 +298,9 @@ export default function PayTheBillScreen() {
         </View>
 
         <Text style={styles.feeNote}>
-          {dinerCharge.dinerPaysFee
-            ? 'Small-charge processing fee is added so we cover Stripe’s 2.9% + $0.30. Larger tabs absorb it automatically.'
-            : 'Stripe’s processing fee is covered by Cenaiva — what you see is what you pay.'}
+          Platform fee covers Cenaiva&apos;s marketplace cost. Processing
+          fee covers Stripe&apos;s per-transaction charge. Both are
+          non-refundable.
         </Text>
       </ScrollView>
 

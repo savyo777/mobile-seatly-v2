@@ -77,33 +77,51 @@ function scrubObject<T>(obj: T): T {
   return out as T;
 }
 
-if (sentryDsn) {
-  Sentry.init({
-    dsn: sentryDsn,
-    environment: process.env.EXPO_PUBLIC_SENTRY_ENV?.trim() || 'production',
-    tracesSampleRate: 0.1,
-    sendDefaultPii: false,
-    enableAutoSessionTracking: true,
-    debug: __DEV__,
-    beforeSend: (event) => {
-      // Scrub headers + breadcrumb data + exception message/value strings.
-      // We mutate via the scrubObject return to avoid touching Sentry's
-      // class instances directly.
-      if (event.request) event.request = scrubObject(event.request);
-      if (event.breadcrumbs) event.breadcrumbs = event.breadcrumbs.map((b) => scrubObject(b));
-      if (event.exception?.values) {
-        event.exception.values = event.exception.values.map((ex) => ({
-          ...ex,
-          value: typeof ex.value === 'string' ? (scrubSecretsFromString(ex.value) as string) : ex.value,
-        }));
-      }
-      if (event.message) event.message = scrubObject(event.message);
-      if (event.extra) event.extra = scrubObject(event.extra);
-      if (event.contexts) event.contexts = scrubObject(event.contexts);
-      return event;
-    },
-    beforeBreadcrumb: (breadcrumb) => scrubObject(breadcrumb),
-  });
+// Sentry.init throws synchronously on a malformed DSN. A valid DSN must
+// start with https:// — bare keys (just the project ID) or http:// values
+// cause the init to throw and the whole app to fail to boot. Guard with
+// both a format check AND a try/catch so a misconfigured env never takes
+// the app down; we lose crash reporting in that window but keep the app
+// usable, with a dev-only warning to surface the misconfiguration.
+const sentryDsnLooksValid = typeof sentryDsn === 'string' && /^https:\/\//i.test(sentryDsn);
+if (sentryDsn && !sentryDsnLooksValid && __DEV__) {
+  console.warn(
+    '[sentry] EXPO_PUBLIC_SENTRY_DSN is set but does not look like a valid DSN (expected to start with https://). Skipping Sentry init.',
+  );
+}
+if (sentryDsn && sentryDsnLooksValid) {
+  try {
+    Sentry.init({
+      dsn: sentryDsn,
+      environment: process.env.EXPO_PUBLIC_SENTRY_ENV?.trim() || 'production',
+      tracesSampleRate: 0.1,
+      sendDefaultPii: false,
+      enableAutoSessionTracking: true,
+      debug: __DEV__,
+      beforeSend: (event) => {
+        // Scrub headers + breadcrumb data + exception message/value strings.
+        // We mutate via the scrubObject return to avoid touching Sentry's
+        // class instances directly.
+        if (event.request) event.request = scrubObject(event.request);
+        if (event.breadcrumbs) event.breadcrumbs = event.breadcrumbs.map((b) => scrubObject(b));
+        if (event.exception?.values) {
+          event.exception.values = event.exception.values.map((ex) => ({
+            ...ex,
+            value: typeof ex.value === 'string' ? (scrubSecretsFromString(ex.value) as string) : ex.value,
+          }));
+        }
+        if (event.message) event.message = scrubObject(event.message);
+        if (event.extra) event.extra = scrubObject(event.extra);
+        if (event.contexts) event.contexts = scrubObject(event.contexts);
+        return event;
+      },
+      beforeBreadcrumb: (breadcrumb) => scrubObject(breadcrumb),
+    });
+  } catch (err) {
+    if (__DEV__) {
+      console.warn('[sentry] init failed, continuing without crash reporting:', err);
+    }
+  }
 }
 import { AuthProvider, useAuthSession } from '@/lib/auth/AuthContext';
 import { ThemeProvider, useColors } from '@/lib/theme';

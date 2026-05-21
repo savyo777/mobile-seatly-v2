@@ -333,6 +333,13 @@ export default {
     amountChangedCancel: 'Annuler',
     amountChangedRefundNote: "Vous verrez brièvement l'ancien montant sur votre relevé — il sera remboursé automatiquement sous environ 3 jours ouvrables.",
     amountChangedAgainFallback: 'un montant mis à jour',
+    platformFeeLabel: 'Frais de plateforme (5,5 %)',
+    feeDisclosureV2: 'Les frais de plateforme et de traitement ne sont pas remboursables. Votre acompte de {{depositAmount}} $ CA est entièrement remboursable lorsque le restaurant vous attribue votre table.',
+    payTheBillFeeNote: 'Les frais de plateforme couvrent le coût de la place de marché Cenaiva. Les frais de traitement couvrent la commission par transaction de Stripe. Les deux sont non remboursables.',
+    modifyFeePreviewTitle: 'Confirmer la modification du nombre de convives',
+    modifyFeePreviewBody: 'Nouvel acompte {{newBase}} $ CA. Montant à charger aujourd’hui : {{deltaTotal}} $ CA (frais de plateforme {{deltaPlatform}} $ CA, frais de traitement {{deltaProcessing}} $ CA).',
+    modifyNoCardPreviewBody: 'Le nouvel acompte sera de {{newBase}} $ CA (plus frais de plateforme et de traitement, non remboursables). Ajoutez une carte pour continuer.',
+    cancelRefundNote: 'Vous serez remboursé(e) de {{baseRefund}} $ CA. Les frais de plateforme ({{platformFee}} $ CA) et de traitement ({{processingFee}} $ CA) payés à la réservation ne sont pas remboursables.',
   },
   bookings: {
     title: 'Mes réservations',

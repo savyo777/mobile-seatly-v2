@@ -123,9 +123,21 @@ const useStyles = createStyles((c) => ({
     paddingTop: spacing.sm,
     borderTopWidth: StyleSheet.hairlineWidth,
     borderTopColor: c.border,
+    gap: 6,
+  },
+  shareRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
+  },
+  shareTotalRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingTop: 6,
+    marginTop: 2,
+    borderTopWidth: StyleSheet.hairlineWidth,
+    borderTopColor: c.border,
   },
   shareLabel: {
     ...typography.bodySmall,
@@ -135,6 +147,14 @@ const useStyles = createStyles((c) => ({
     ...typography.body,
     color: c.gold,
     fontWeight: '700',
+  },
+  shareLineLabel: {
+    ...typography.bodySmall,
+    color: c.textPrimary,
+  },
+  shareLineValue: {
+    ...typography.bodySmall,
+    color: c.textPrimary,
   },
   shareHint: {
     fontSize: 11,
@@ -532,25 +552,37 @@ export function SplitTenderCheckout({
         </View>
 
         <View style={styles.shareSummary}>
-          <View style={{ flex: 1, paddingRight: 8 }}>
-            <Text style={styles.shareLabel}>{t('booking.paymentSplitPerShare')}</Text>
-            {dinerCharge.dinerPaysFee ? (
-              <Text style={styles.shareHint}>
-                {t('booking.paymentSplitFeeHint', {
-                  base: formatCents(dinerCharge.baseCents),
-                  fee: formatCents(dinerCharge.processingFeeCents),
-                })}
-              </Text>
-            ) : null}
-            {dinerCharge.applicationFeeCents > 0 ? (
-              <Text style={styles.shareHint}>
-                {t('booking.serviceFeeInlineNote') as string}
-              </Text>
-            ) : null}
+          {/* Web parity (Option B): each payer sees the full 3-line
+              breakdown of their share — Deposit + Platform fee +
+              Processing fee — and the sum on the right. Matches the
+              cart UX on step6-payment.tsx. */}
+          <View style={styles.shareRow}>
+            <Text style={styles.shareLineLabel}>{t('booking.paymentSplitPerShare')}</Text>
+            <Text style={styles.shareLineValue}>{formatCents(dinerCharge.baseCents)}</Text>
           </View>
-          <Text style={styles.shareValue}>
-            {formatCents(dinerCharge.dinerTotalCents)}
-          </Text>
+          {dinerCharge.applicationFeeCents > 0 ? (
+            <View style={styles.shareRow}>
+              <Text style={styles.shareLineLabel}>{t('booking.platformFeeLabel') as string}</Text>
+              <Text style={styles.shareLineValue}>{formatCents(dinerCharge.applicationFeeCents)}</Text>
+            </View>
+          ) : null}
+          {dinerCharge.dinerPaysFee && dinerCharge.processingFeeCents > 0 ? (
+            <View style={styles.shareRow}>
+              <Text style={styles.shareLineLabel}>{t('booking.processingFeeLabel') as string}</Text>
+              <Text style={styles.shareLineValue}>{formatCents(dinerCharge.processingFeeCents)}</Text>
+            </View>
+          ) : null}
+          <View style={styles.shareTotalRow}>
+            <Text style={styles.shareLabel}>{t('orders.total')}</Text>
+            <Text style={styles.shareValue}>{formatCents(dinerCharge.dinerTotalCents)}</Text>
+          </View>
+          {dinerCharge.applicationFeeCents > 0 ? (
+            <Text style={styles.shareHint}>
+              {t('booking.feeDisclosureV2', {
+                depositAmount: (dinerCharge.baseCents / 100).toFixed(2),
+              }) as string}
+            </Text>
+          ) : null}
         </View>
       </Card>
 
