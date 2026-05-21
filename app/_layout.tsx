@@ -329,7 +329,7 @@ function ThemedRootShell() {
   const router = useRouter();
   const pathname = usePathname();
   const segments = useSegments() as string[];
-  const { loading, isAuthenticated, isStaffLike, role } = useAuthSession();
+  const { loading, isAuthenticated, isStaffLike, role, needsLegalConsent } = useAuthSession();
   const handleGoHome = React.useCallback(() => {
     router.replace('/' as never);
   }, [router]);
@@ -341,9 +341,34 @@ function ThemedRootShell() {
     const seg0 = segments[0] as string | undefined;
     const seg1 = segments[1] as string | undefined;
 
+    // Legal consent gate. When an authenticated user has not accepted
+    // the current Terms + Privacy version (user_profiles.tos_version
+    // doesn't match LATEST_LEGAL_VERSION), funnel them to the consent
+    // screen before any /(customer) or /(staff) screen renders.
+    //
+    // - `needsLegalConsent === null` means we're still loading the
+    //   profile row; do nothing this tick (the splash is still up).
+    // - `true` means the gate is hot — redirect unless they're already
+    //   on the consent screen (or on a route that needs to function
+    //   without consent: password reset, phone OTP verify, the legal
+    //   docs themselves so they can read what they're agreeing to).
+    // - `false` means accepted; fall through to the existing nav rules.
+    if (isAuthenticated && needsLegalConsent === true) {
+      const isOnConsent = seg0 === '(auth)' && seg1 === 'consent';
+      const isOnAuthExempt =
+        seg0 === '(auth)' && (seg1 === 'reset-password' || seg1 === 'verify-phone-otp');
+      // Diner may want to read the docs from the consent screen — allow
+      // /(customer)/profile/legal/* deep-links without re-gating.
+      const isReadingLegal = seg0 === '(customer)' && segments[1] === 'profile' && segments[2] === 'legal';
+      if (!isOnConsent && !isOnAuthExempt && !isReadingLegal) {
+        router.replace('/(auth)/consent' as never);
+      }
+      return;
+    }
+
     // Authenticated user on an auth screen → send them into the app.
     if (isAuthenticated && role !== null && seg0 === '(auth)') {
-      if (seg1 === 'reset-password' || seg1 === 'verify-phone-otp') return;
+      if (seg1 === 'reset-password' || seg1 === 'verify-phone-otp' || seg1 === 'consent') return;
       router.replace(isStaffLike ? '/(staff)' as never : '/(customer)/discover' as never);
       return;
     }
@@ -352,7 +377,7 @@ function ThemedRootShell() {
     if (!isAuthenticated && (seg0 === '(customer)' || seg0 === '(staff)')) {
       router.replace('/(auth)/welcome' as never);
     }
-  }, [loading, isAuthenticated, role, isStaffLike, segments, router]);
+  }, [loading, isAuthenticated, role, isStaffLike, needsLegalConsent, segments, router]);
 
   return (
     <>

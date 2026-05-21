@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useEffect, useMemo, useState } from 'react';
+import React, { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
 import type { Session, User } from '@supabase/supabase-js';
 import { AppState } from 'react-native';
 import i18n from '@/lib/i18n';
@@ -12,6 +12,7 @@ import { isUnusablePersistedSupabaseAuthError } from '@/lib/supabase/authErrors'
 import { clearAppShellPreference } from '@/lib/navigation/appShellPreference';
 import { resolveIsStaffLike } from '@/lib/auth/roles';
 import { clearPushTokenForCurrentUser, registerPushTokenForCurrentUser } from '@/lib/notifications/pushToken';
+import { LATEST_LEGAL_VERSION } from '@/lib/legal/versions';
 
 type AuthCtx = {
   session: Session | null;
@@ -21,6 +22,24 @@ type AuthCtx = {
   isStaffLike: boolean;
   role: string | null;
   signOut: () => Promise<void>;
+  /**
+   * Diner has not yet accepted the current Terms + Privacy version
+   * (user_profiles.tos_version !== LATEST_LEGAL_VERSION). Drives the
+   * acceptance gate in app/_layout.tsx that redirects to
+   * /(auth)/consent before any /(customer) or /(staff) screen renders.
+   *
+   * `null` while we're still loading the profile row — render the
+   * splash + don't gate yet. `true` blocks the app. `false` lets
+   * the existing redirect-to-app logic fire.
+   */
+  needsLegalConsent: boolean | null;
+  /**
+   * Writes now() + LATEST_LEGAL_VERSION to user_profiles.tos_accepted_at +
+   * tos_version. Called from /(auth)/consent.tsx after the diner ticks
+   * "I agree" and taps Accept. Updates local state so the gate clears
+   * without waiting for a Supabase re-fetch.
+   */
+  recordLegalConsent: () => Promise<void>;
 };
 
 const Ctx = createContext<AuthCtx>({
@@ -31,6 +50,8 @@ const Ctx = createContext<AuthCtx>({
   isStaffLike: false,
   role: null,
   signOut: async () => {},
+  needsLegalConsent: null,
+  recordLegalConsent: async () => {},
 });
 
 const ROLE_LOOKUP_FALLBACK_MS = 450;
@@ -93,6 +114,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [session, setSession] = useState<Session | null>(null);
   const [role, setRole] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
+  // Legal consent state — null while loading the profile row, then
+  // boolean once we know whether the diner's tos_version matches.
+  const [tosVersion, setTosVersion] = useState<string | null | undefined>(undefined);
 
   useEffect(() => {
     let cancelled = false;
@@ -205,13 +229,23 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     const loadRole = async () => {
       try {
+        // Pull both role AND tos_version in the same query so the
+        // consent gate has its data without a second round-trip.
         const { data, error } = await supabase
           .from('user_profiles')
-          .select('role')
+          .select('role, tos_version')
           .eq('auth_user_id', currentUser.id)
           .maybeSingle();
         if (!cancelled) {
           const profileRole = typeof data?.role === 'string' ? data.role.toLowerCase() : null;
+          // Tos version: `null` is a real value (means never accepted).
+          // `undefined` from an absent row means "no row yet" — treat
+          // as never-accepted (gate will fire).
+          const profileTosVersion =
+            data && 'tos_version' in data && typeof data.tos_version === 'string'
+              ? data.tos_version
+              : null;
+          setTosVersion(profileTosVersion);
           if (profileRole) {
             setRole(profileRole);
             return;
@@ -225,7 +259,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           if (!cancelled) setRole(fallbackRole);
         }
       } catch {
-        if (!cancelled) setRole(fallbackRole);
+        if (!cancelled) {
+          setRole(fallbackRole);
+          setTosVersion(null);
+        }
       } finally {
         clearTimeout(fallbackTimer);
       }
@@ -267,15 +304,52 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       await clearAppShellPreference();
       setSession(null);
       setRole(null);
+      setTosVersion(undefined);
     }
   };
+
+  const recordLegalConsent = useCallback(async () => {
+    const supabase = getSupabase();
+    const currentUser = session?.user;
+    if (!supabase || !currentUser) return;
+    const { error } = await supabase
+      .from('user_profiles')
+      .update({
+        tos_accepted_at: new Date().toISOString(),
+        tos_version: LATEST_LEGAL_VERSION,
+      })
+      .eq('auth_user_id', currentUser.id);
+    if (error) {
+      throw new Error(error.message ?? 'Could not record consent.');
+    }
+    setTosVersion(LATEST_LEGAL_VERSION);
+  }, [session?.user]);
 
   const user = session?.user ?? null;
   const isAuthenticated = Boolean(session);
   const isStaffLike = resolveIsStaffLike(role);
+  // needsLegalConsent:
+  //   - null while we're still loading the profile row (tosVersion === undefined)
+  //   - true when the user's stored tos_version doesn't match the latest
+  //   - false when accepted (matching version) or when not authenticated
+  const needsLegalConsent: boolean | null = !isAuthenticated
+    ? false
+    : tosVersion === undefined
+      ? null
+      : tosVersion !== LATEST_LEGAL_VERSION;
   const value = useMemo(
-    () => ({ session, user, loading, isAuthenticated, isStaffLike, role, signOut }),
-    [session, user, loading, isAuthenticated, isStaffLike, role],
+    () => ({
+      session,
+      user,
+      loading,
+      isAuthenticated,
+      isStaffLike,
+      role,
+      signOut,
+      needsLegalConsent,
+      recordLegalConsent,
+    }),
+    [session, user, loading, isAuthenticated, isStaffLike, role, needsLegalConsent, recordLegalConsent],
   );
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;
 }

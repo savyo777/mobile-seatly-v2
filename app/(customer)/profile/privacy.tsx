@@ -6,11 +6,12 @@ import { ProfileStackScreen } from '@/components/profile/ProfileStackScreen';
 import { ProfileSectionTitle } from '@/components/profile/ProfileSectionTitle';
 import { ChevronSettingRow } from '@/components/profile/ChevronSettingRow';
 import { ToggleRow } from '@/components/profile/ToggleRow';
-import { createStyles, spacing, borderRadius, shadows } from '@/lib/theme';
+import { createStyles, spacing, borderRadius, shadows, useColors } from '@/lib/theme';
 import { requestMyDataExport } from '@/lib/privacy/dataExport';
 import { friendlyError } from '@/lib/errors/friendlyError';
 import { getAnalyticsOptIn, setAnalyticsOptIn } from '@/lib/analytics/privacyPrefs';
 import { setPosthogEnabled } from '@/lib/analytics/posthog';
+import { deleteAccount } from '@/lib/services/accountSecurity';
 
 const useStyles = createStyles((c) => ({
   group: {
@@ -140,6 +141,46 @@ export default function PrivacyScreen() {
           onPress={handleDownloadData}
         />
       </View>
+
+      <ProfileSectionTitle>Delete account</ProfileSectionTitle>
+      <View style={styles.group}>
+        {/* Per Terms §3 and Privacy §11: deletion path MUST be
+            Profile → Privacy → Delete Account. Mirrors the existing
+            implementation in Profile → Settings → Delete account so
+            both entry points use the same confirm + Supabase call. */}
+        <ChevronSettingRow
+          title="Delete account"
+          subtitle="Permanently remove your account, bookings, and personal data. This cannot be undone."
+          icon="trash-outline"
+          isLast
+          onPress={handleDeleteAccount}
+        />
+      </View>
     </ProfileStackScreen>
   );
+
+  function handleDeleteAccount() {
+    Alert.alert(
+      'Delete account',
+      'This is irreversible. Your account, bookings, conversations, photos, and any unredeemed rewards or wallet balance will be permanently deleted. We recommend withdrawing or using any remaining balance before continuing.',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Delete account',
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              await deleteAccount();
+              router.replace('/onboarding' as never);
+            } catch (e: any) {
+              Alert.alert(
+                'Delete failed',
+                friendlyError(e, 'Could not delete your account. Please try again.'),
+              );
+            }
+          },
+        },
+      ],
+    );
+  }
 }

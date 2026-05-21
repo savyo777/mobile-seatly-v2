@@ -1,0 +1,284 @@
+// Cenaiva Privacy Policy v1.1 — canonical text shipped 2026-05-21.
+//
+// AGE OVERRIDE: original §13 said "13" — substituted with "16" per
+// user/legal owner confirmation 2026-05-21 (same as Terms §1).
+
+import type { LegalSection, SubProcessor } from './types';
+import {
+  PRIVACY_VERSION,
+  PRIVACY_EFFECTIVE_DATE,
+  PRIVACY_LAST_UPDATED,
+} from './versions';
+
+export { PRIVACY_VERSION, PRIVACY_EFFECTIVE_DATE, PRIVACY_LAST_UPDATED };
+
+export const PRIVACY_INTRO =
+  'This Privacy Policy explains how Cenaiva ("Cenaiva", "we", "us") collects, uses, shares, and protects personal information when you use the Cenaiva mobile app (iOS and Android), our website at cenaiva.com, and related services (collectively, the "Services") as a diner. Restaurant partners and staff are covered by a separate Restaurant Partner Agreement.\n\nThis Policy is incorporated by reference into the Cenaiva Terms of Service. Capitalized terms not defined here have the meaning given in the Terms. If you do not agree with this Policy, do not use the Services, and contact us to delete any account you have created.\n\nThis Policy is available in English and French. Cette politique de confidentialité est disponible en anglais et en français.';
+
+/**
+ * 5-bullet plain-language summary shown as a callout above §1 on the
+ * Privacy Policy screen.
+ */
+export const PRIVACY_PLAIN_LANGUAGE_SUMMARY: string[] = [
+  'We collect the information needed to take your bookings, run Cenaiva AI, and keep your account safe — and nothing more.',
+  'We never sell your information and never use it for cross-context behavioural advertising.',
+  'Your card details live with Stripe, not with us.',
+  'You can delete your account at any time from Profile → Privacy → Delete Account, and request access, correction, or human review of automated decisions by emailing privacy@cenaiva.com.',
+  'We use third-party AI providers (OpenAI, Deepgram, ElevenLabs) to run Cenaiva AI. They process your voice and chat only to return responses to us, and do not use your data to train their models.',
+];
+
+export const PRIVACY_SECTIONS: LegalSection[] = [
+  {
+    heading: '1. Who is responsible for your data',
+    paragraphs: [
+      'Cenaiva is the controller of the personal information described in this Policy, except where data is processed on behalf of a restaurant partner — in which case the restaurant is the controller of its own guest records and Cenaiva acts as a processor for that restaurant.',
+      'Privacy questions, complaints, and rights requests: privacy@cenaiva.com. General support: help@cenaiva.com. Intellectual property and legal: legal@cenaiva.com. Security vulnerability reports: security@cenaiva.com.',
+    ],
+  },
+  {
+    heading: '2. Information you provide directly',
+    paragraphs: [
+      'We collect only the information we need to provide and improve the Services, in the categories below.',
+      'Account information: your name, email address, phone number, password (stored only as a salted hash by our auth provider), preferred language, and — if you choose — date of birth, anniversary, profile photo, and dining preferences such as cuisines, dietary restrictions, and vibe preferences.',
+      'Reservation information: party size, requested time, special requests, allergy notes, occasion, and any pre-order selections you submit.',
+      'Payment information: when you save a card or pay a deposit, your card is collected directly by Stripe. Cenaiva never sees or stores your full card number or CVV. We store only a tokenized reference, the card brand, the last four digits, and the expiry month and year. Stripe processes the payment under its own privacy policy.',
+      'Content you submit: reviews, star ratings, visit photos, "Snap" social posts (including any in-app story filter applied), survey responses, allergy incident reports, in-app messages to support, and any image you submit to the receipt or photo scanner.',
+      'Voice and chat input: when you use Cenaiva AI, the words you speak or type, the audio of your voice while a session is active, and the conversation context needed to answer you.',
+      'Referral information: when you invite someone using a referral code, we record that you sent the invite and whether the invitee signed up so the bonus can be granted to the right account.',
+    ],
+  },
+  {
+    heading: '3. Information collected automatically',
+    paragraphs: [
+      'Device and app data: device model, operating system and version, app version, language and region, time zone, and a non-resettable device fingerprint used for fraud prevention and new-device security alerts.',
+      "Sign-in events: each successful and failed sign-in is logged with the device fingerprint, platform, app version, IP-derived approximate location, and timestamp. This log powers the new-device security alert you receive by push or email when we see a sign-in we don't recognize.",
+      'Usage and product analytics: screens viewed, actions taken (for example, "viewed restaurant", "started booking", "voice session started"), feature interactions, and session duration. We use PostHog for product analytics and apply pseudonymization where feasible.',
+      'Crash and error data: when the app crashes or hits an unhandled error, we capture the current screen, app version, platform, and a stack trace via Sentry and our internal crash log. Crash records are typically retained for 90 days and then purged automatically.',
+      'Rate limiting and abuse prevention: we log per-user counts of paid AI and voice calls (transcription, language model, text-to-speech) so we can enforce per-minute and per-day usage limits and a per-user daily AI budget.',
+      'Approximate location: when you grant location permission, we use your device location only while the app is in the foreground to surface nearby restaurants and to show your position on the map. We do not track your location in the background.',
+      'Local storage on mobile: equivalent on-device storage (such as AsyncStorage) is used for session, authentication, and preferences. Optional analytics and marketing communications are governed by your in-app notification preferences (Profile → Privacy) and any marketing consent you give to individual restaurants, which we record in a consent log.',
+      'Cookies on the web: our website uses essential storage for session and authentication, and — only with your consent — optional analytics and marketing storage. You can change your preferences any time in the cookie banner on the web app.',
+      'We do not currently respond to "Do Not Track" or "Global Privacy Control" signals; you can achieve the same outcome by turning off optional analytics and marketing in your Profile → Privacy settings on mobile or in the cookie banner on the web.',
+    ],
+  },
+  {
+    heading: '4. Cenaiva AI — voice, chat, and automated decisions',
+    paragraphs: [
+      'Cenaiva AI lets you discover restaurants and book tables by voice or chat. It relies on third-party AI providers: OpenAI for language understanding, Deepgram for speech-to-text, ElevenLabs for text-to-speech, and — for receipt and photo scanning — OpenAI vision. On some devices, speech recognition may be handled on-device by Apple or Google in accordance with their own policies.',
+      'When you use a voice session, we capture audio from your microphone, transcribe it to text, send the text and recent conversation context to the AI provider, and play the generated response back as audio. Chat sessions follow the same flow without the audio step.',
+      'Retention. Voice recordings, transcripts, and chat messages are stored for as long as your account is active so you can review past conversations, and they are deleted when you delete your account. We may retain a shorter rolling sample for up to 90 days for safety and abuse review, after which it is deleted or anonymized. You may request earlier deletion of your voice data at any time at privacy@cenaiva.com; verified requests are completed within 30 days.',
+      'Quality monitoring. We automatically score a sample of AI conversations and, in limited cases, have staff review individual exchanges so we can detect errors, unsafe responses, and policy violations. Reviewers see only the conversation, not your account password or payment data.',
+      "Receipt and photo scanning. Images you submit to the receipt or photo scanner are sent to OpenAI's vision model to extract structured data (merchant, total, line items, date). The extracted data is stored on your account; the image itself is retained only as long as needed to validate the scan and is then deleted on a rolling schedule.",
+      'Automated profiling. We derive a no-show risk score, behavioural tags (for example, "frequent diner"), and a lifetime value estimate from your booking and visit history. Each of these signals is shared only with a restaurant when you actively book or visit that restaurant — it is not shared across the network. Restaurants may use the no-show risk score to decide whether to require a deposit. Cenaiva does not use these signals to refuse you access to the app. You can ask us to review or correct an automated tag or score at privacy@cenaiva.com; we maintain a data correction request log so we can track and respond to every request.',
+      'Use for AI improvement. We use aggregated, de-identified data derived from your interactions to evaluate and improve our own AI features. We do not use the content of your conversations to train AI models that we offer to third parties, and we do not sell your conversations to AI providers. Third-party providers (OpenAI, Deepgram, ElevenLabs) process your input solely to return a response to us, under API terms that prohibit them from using your data to train their own models.',
+    ],
+  },
+  {
+    heading: '5. How we use your information',
+    paragraphs: [
+      'To deliver the Services: create and authenticate your account, hold and confirm reservations, process deposits and payments, run Cenaiva AI, send booking reminders and waitlist notifications, and operate the receipt and photo scanner.',
+      'To keep you and the platform safe: detect fraud and abuse, enforce rate limits and per-user AI budgets, log new-device sign-ins, send security alerts, and maintain an internal audit trail of sensitive actions.',
+      'To improve the Services: aggregate analytics, A/B test new features, diagnose crashes, and review a sample of AI conversations for accuracy and safety.',
+      'To communicate with you: send transactional messages (booking confirmations, one-time passcodes, security alerts, refund updates) by push, email, or SMS. We send promotional messages only where you have separately opted in, and you can withdraw consent at any time without affecting transactional messages.',
+      'To meet legal and tax obligations: keep records required by tax, accounting, payments, and consumer protection law, respond to lawful requests from regulators or courts, and enforce our Terms.',
+    ],
+  },
+  {
+    heading: '6. Legal bases (where applicable)',
+    paragraphs: [
+      'For users in jurisdictions that require a legal basis (for example, Quebec under Law 25), we rely on: your consent (for voice capture, optional analytics, marketing communications, and the optional sharing of your data with individual restaurants); performance of our contract with you (account, reservations, payments, support); compliance with a legal obligation (tax, financial record-keeping, regulator requests); and our legitimate interests in operating, securing, and improving the Services in a way that does not override your fundamental rights.',
+    ],
+  },
+  {
+    heading: '7. How we share your information',
+    paragraphs: [
+      'With restaurants you book or visit: your first and last name, contact details, party size, time, special requests, allergy notes, visit history at that restaurant, the no-show risk score, lifetime value estimate, and any behavioural tags relevant to hosting you. Restaurants act as independent controllers of the guest records they keep about you and are bound by data-use restrictions in the Restaurant Partner Agreement.',
+      "With other guests in a group deposit: when a booking organizer invites you to contribute to a deposit, we share the organizer's name, restaurant, booking time, and amount due, and we process your individual contribution through Stripe.",
+      'With service providers we rely on to run the Services: Supabase (database, authentication, edge functions), Stripe and Stripe Canada (payment processing, saved cards via tokenization, deposit collection on behalf of restaurants), OpenAI (language and vision), ElevenLabs (text-to-speech), Deepgram (speech-to-text), Twilio (SMS and one-time passcodes), Resend (transactional email), Expo / EAS (mobile delivery and push notifications), PostHog (product analytics), Sentry (error monitoring), Vercel (web hosting), Google (OAuth sign-in, Maps Platform, and on Android, push and on-device speech), and Apple (Sign in with Apple and on iOS, push and on-device speech). Each provider is contractually limited to using your data to deliver its service to us.',
+      'A current and dated list of our sub-processors is published at https://cenaiva.com/legal/sub-processors and also appears in Schedule A below. We will give at least 30 days\' notice in the app or by email before adding a sub-processor that processes personal information in a materially new way.',
+      'For legal reasons: where we believe in good faith that disclosure is required by law, court order, or regulator request, or is necessary to investigate fraud, protect the safety of users, or enforce our Terms.',
+      'In a corporate transaction: if Cenaiva is involved in a merger, acquisition, financing, or sale of assets, your information may be transferred to the surviving or acquiring entity, subject to this Policy or a notice of any material change.',
+      'We do not sell your personal information. We do not share your personal information with third-party advertisers for cross-context behavioural advertising.',
+    ],
+  },
+  {
+    heading: '8. International data transfers',
+    paragraphs: [
+      'Cenaiva is based in Canada. Several of our service providers process personal information outside Canada, including in the United States and the European Union. This includes OpenAI, ElevenLabs, Deepgram, Stripe, Twilio, Resend, PostHog, Sentry, Vercel, Google, and Apple.',
+      'Data transferred outside Canada may be subject to the laws of the receiving jurisdiction, which may differ from Canadian privacy law. We require each provider to maintain commercially reasonable safeguards, including contractual data protection terms, and we evaluate the privacy practices of new providers before adding them.',
+      'By using the Services — and in particular Cenaiva AI — you consent to these transfers.',
+    ],
+  },
+  {
+    heading: '9. Data retention',
+    paragraphs: [
+      '• Account, reservations, visit history, reviews, and visit photos: retained while your account is active, and deleted or anonymized when you delete your account, except where retention is required by law (for example, tax and financial records).',
+      '• Snap social posts: retained while your account is active and you have not removed the Snap. When you delete a Snap from the app, it is removed from your account within 30 days. Account deletion removes all your Snaps.',
+      '• Voice recordings, transcripts, and chat messages: retained while your account is active so you can review past conversations, with up to 90 days of additional safety review for sampled material. You may request earlier deletion at any time.',
+      '• Sign-in events, audit logs, and security findings: retained for up to 24 months to investigate fraud and security incidents, then deleted or further aggregated.',
+      '• Crash and error reports: typically retained for 90 days and then purged automatically.',
+      '• Payment records and tax-related transaction history: retained for the period required by Canadian tax and consumer protection law (generally six years).',
+      '• Backups: encrypted backups are typically retained for up to 35 days after deletion, until the backup itself is overwritten.',
+      '• Aggregated and anonymized data — meaning data from which it is no longer possible, in light of reasonably foreseeable means, to identify you — may be retained indefinitely for analytics and product improvement. Depersonalized data that may still allow re-identification is treated as personal information for retention purposes.',
+    ],
+  },
+  {
+    heading: '10. Your rights and choices',
+    paragraphs: [
+      "Depending on where you live — including under Canada's PIPEDA and Quebec Law 25 — you may have the right to:",
+      '• Access the personal information we hold about you.',
+      '• Correct information that is inaccurate or incomplete.',
+      '• Withdraw consent for processing that is based on consent (such as voice capture, optional analytics, marketing communications, or sharing with a specific restaurant).',
+      '• Request portability of your personal data in a structured, commonly used format.',
+      '• Request review or correction of an automated decision or profile (no-show risk, lifetime value, behavioural tags).',
+      '• Request deletion of your account and associated personal information.',
+      'Right of human review (Quebec Law 25). Where a decision concerning you is made exclusively on the basis of automated processing of your personal information (for example, a no-show risk score that triggers an automatic deposit requirement), you may, on request, obtain a human review of that decision and the opportunity to present your observations.',
+      'How to exercise these rights. Contact privacy@cenaiva.com. We respond within 30 days, with extension as permitted by law. We may ask you to verify your identity by confirming details associated with your account before we act. We may refuse or limit a request that is manifestly unfounded, excessive, or that would reveal personal information about another person — where we refuse, we will tell you why and how to escalate.',
+      'In-app privacy controls. You can also manage your data directly in the app at:',
+      '• Profile → Privacy — delete account, download account data, personalized recommendations toggle, ad personalization toggle, analytics & crash reporting toggle.',
+      '• Profile → Notifications — push, email, and SMS preferences by category.',
+      '• Profile → Restaurant Communications — per-restaurant marketing preferences.',
+      'You can also disable location, microphone, camera, or photo access in your device settings, reply STOP to opt out of transactional SMS, and adjust cookie preferences from the banner on the web app.',
+      "If you have an unresolved concern, you may contact the Office of the Privacy Commissioner of Canada (priv.gc.ca) or, if you live in Quebec, the Commission d'accès à l'information du Québec (cai.gouv.qc.ca).",
+    ],
+  },
+  {
+    heading: '11. Account deletion — what happens',
+    paragraphs: [
+      'When you delete your account at Profile → Privacy → Delete Account, we soft-delete your auth record, detach saved payment methods at Stripe, cancel any active subscriptions, and remove or scrub your personal data across reservations, visits, chats, orders, surveys, Snaps, and other linked records.',
+      'Unredeemed in-app rewards and any prepaid wallet balance are forfeited at deletion — withdraw or use any remaining balance first if you want to keep it. Booking history, conversation history, and personal data cannot be restored after deletion.',
+      'Information we are required to retain by law (for example, tax and payments records) is preserved for the minimum period required and is not used for any other purpose.',
+      'Account merges. If you sign in using two different methods that we determine belong to the same person (for example, an email and a phone number), we may offer to merge the accounts. A minimal audit record of any merge is retained for fraud prevention.',
+    ],
+  },
+  {
+    heading: '12. Security',
+    paragraphs: [
+      'Personal information is stored in Supabase Postgres with row-level security policies enforcing per-user access. Passwords are stored only as salted hashes by our auth provider. Payment cards are stored only as tokens at Stripe, a PCI-DSS Level 1 service provider. Transport is encrypted with TLS.',
+      'We log sensitive actions to an append-only audit trail, monitor unusual sign-in behaviour, and send a security alert when we detect a sign-in from a new or unrecognized device. We run automated security scans against our database and review findings on a regular cadence.',
+      'Cenaiva personnel access to your personal information is logged in an append-only audit trail, role-restricted under the principle of least privilege, and limited to support, safety, security, and quality-review purposes. Access is reviewed on a periodic basis.',
+      "Breach notification. No system is perfectly secure. Where an incident creates a real risk of significant harm, we will notify affected users and the relevant regulators (the Office of the Privacy Commissioner of Canada and, where applicable, the Commission d'accès à l'information du Québec) without unreasonable delay, and in any event within 72 hours of becoming aware of the breach.",
+      "Reporting a vulnerability. If you discover a security vulnerability in the Services, please report it in good faith to security@cenaiva.com. We will not pursue legal action against good-faith security researchers who report vulnerabilities responsibly and do not access or modify other users' data.",
+    ],
+  },
+  {
+    heading: '13. Children',
+    paragraphs: [
+      'Cenaiva is intended for users 16 and over. We do not knowingly collect personal information from children under 16. Users between 16 and 18 may use the Services only with parental or guardian consent, and users who make payments, hold a wallet balance, or buy event tickets must be 18 or have express parental authorization.',
+      'If you believe a child under 16 has provided us personal information without parental consent, contact privacy@cenaiva.com and we will promptly investigate and, where appropriate, delete the information.',
+    ],
+  },
+  {
+    heading: '14. Marketing and communications',
+    paragraphs: [
+      'Transactional messages (booking confirmations, one-time passcodes, security alerts, refund and waitlist updates) are sent by push, email, or SMS as needed to operate your account. Disabling these may break booking, sign-in, or security features.',
+      "Promotional emails and per-restaurant marketing messages are only sent where you have opted in. Each marketing opt-in (per restaurant, per channel) is recorded in our subscription consent log so we have a verifiable record of when and how you consented, as Canada's Anti-Spam Legislation (CASL) requires. You can opt out at any time in the app, by replying STOP to an SMS, or by using the unsubscribe link in an email — this does not affect transactional messages.",
+      'We do not sell your contact information to advertisers and do not use it for cross-context behavioural advertising.',
+    ],
+  },
+  {
+    heading: '15. Third-party links and services',
+    paragraphs: [
+      "The Services may link to third-party websites or services we do not control (for example, when you share a Snap to Instagram, TikTok, Snapchat, or YouTube, or open a restaurant's own website). This Policy does not apply to those third parties, and we are not responsible for their privacy practices. Review their privacy policies before using them.",
+    ],
+  },
+  {
+    heading: '16. Changes to this Policy',
+    paragraphs: [
+      'We may update this Policy from time to time. For minor changes, we will update the "Last updated" date at the top. For material changes, we will give at least 30 days\' notice by in-app message or email before the change takes effect, and where required by law we will ask for your renewed consent. Prior versions are available on request at privacy@cenaiva.com.',
+    ],
+  },
+  {
+    heading: '17. Related documents',
+    paragraphs: [
+      '• Consumer Terms of Service: https://cenaiva.com/terms',
+      '• Restaurant Partner Agreement (the contract every restaurant on Cenaiva accepts): https://cenaiva.com/partners/agreement',
+      '• Sub-processor list: https://cenaiva.com/legal/sub-processors',
+    ],
+  },
+  {
+    heading: '18. Contact',
+    paragraphs: [
+      '• Privacy questions and rights requests: privacy@cenaiva.com',
+      '• General support: help@cenaiva.com',
+      '• Legal and intellectual property complaints: legal@cenaiva.com',
+      '• Security vulnerability reports: security@cenaiva.com',
+      'Cenaiva is operated from Canada. Support is available in English and French. Le soutien est offert en anglais et en français.',
+    ],
+  },
+];
+
+/**
+ * Schedule A — Sub-Processors. 13 rows, exactly matching the Partner
+ * Agreement's Schedule A. Single source for the table cells.
+ */
+export const PRIVACY_SUB_PROCESSORS: SubProcessor[] = [
+  {
+    name: 'Supabase',
+    service: 'Database, authentication, edge functions',
+    region: 'United States, with regional options',
+  },
+  {
+    name: 'Stripe / Stripe Canada',
+    service: 'Payment processing, saved cards, deposit collection',
+    region: 'Canada, United States',
+  },
+  {
+    name: 'OpenAI',
+    service: 'AI language understanding and vision (receipts)',
+    region: 'United States',
+  },
+  {
+    name: 'ElevenLabs',
+    service: 'Text-to-speech voice synthesis',
+    region: 'United States',
+  },
+  {
+    name: 'Deepgram',
+    service: 'Speech-to-text transcription',
+    region: 'United States',
+  },
+  {
+    name: 'Twilio',
+    service: 'SMS messaging and one-time passcodes',
+    region: 'United States',
+  },
+  {
+    name: 'Resend',
+    service: 'Transactional email',
+    region: 'United States',
+  },
+  {
+    name: 'Expo (EAS)',
+    service: 'Mobile app delivery and push notifications',
+    region: 'United States',
+  },
+  {
+    name: 'PostHog',
+    service: 'Product analytics and usage insights',
+    region: 'United States, European Union',
+  },
+  {
+    name: 'Sentry',
+    service: 'Error monitoring and crash reporting',
+    region: 'United States',
+  },
+  {
+    name: 'Vercel',
+    service: 'Web hosting and infrastructure',
+    region: 'United States, global edge',
+  },
+  {
+    name: 'Google LLC',
+    service: 'Google OAuth sign-in, Google Maps Platform, on-device speech (Android), Android push',
+    region: 'United States',
+  },
+  {
+    name: 'Apple Inc.',
+    service: 'Sign in with Apple, on-device speech (iOS), iOS push',
+    region: 'United States',
+  },
+];
+
+export const PRIVACY_SUB_PROCESSORS_LAST_REVIEWED = 'May 21, 2026';
+export const PRIVACY_SUB_PROCESSORS_NOTICE_DAYS = 30;
