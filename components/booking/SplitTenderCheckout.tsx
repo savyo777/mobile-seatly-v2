@@ -36,6 +36,7 @@ import { runSinglePaymentSlot } from '@/lib/stripe/runSinglePaymentSlot';
 import {
   createPublicBooking,
   confirmDepositPaid,
+  prepareDeposit,
   type PublicBookingPayload,
 } from '@/lib/booking/publicBookingApi';
 import { createHoldPaymentIntent } from '@/lib/booking/holdApi';
@@ -289,19 +290,49 @@ export function SplitTenderCheckout({
     try {
       // Step 1: create the reservation + N pending deposit rows IF this
       // is the first attempt. Retries reuse the same reservation.
+      //
+      // IMPORTANT: server-side create-public-booking does NOT currently
+      // implement the split_tender_payers field documented in
+      // MOBILE_SPLIT_TENDER_GUIDE §2.1. The mobile-side workaround:
+      //   1. Create the booking normally (no split_tender_payers arg).
+      //   2. Immediately call prepare-deposit with N evenly-split payers
+      //      — that fn IS deployed and inserts N reservation_deposit_
+      //      payments rows with status='pending' + returns their UUIDs.
+      //   3. Feed each row UUID into the per-slot
+      //      create-public-payment-intent's `deposit_payment_ids: [rowId]`
+      //      so confirm-deposit-paid's Vuln-2 strict check passes.
+      // Until create-public-booking ships native split_tender support,
+      // this two-call sequence is the only path that actually works.
       if (!activeReservationId) {
         const bookResp = await createPublicBooking({
           ...bookingPayload,
           payment_method: 'split',
-          split_tender_payers: splitCount,
         });
         if (!bookResp.reservation_id) {
           throw new Error(bookResp.error || 'Could not create reservation');
         }
-        const rowIds = bookResp.split_tender_deposit_row_ids ?? [];
+        // Split totalDepositCents evenly. Round-down per slot; last slot
+        // absorbs the remainder so the sum is exact (avoids fractional
+        // cent loss when N doesn't divide totalDepositCents cleanly).
+        const baseShare = Math.floor(totalDepositCents / splitCount);
+        const lastShare = totalDepositCents - baseShare * (splitCount - 1);
+        const payers = Array.from({ length: splitCount }, (_, i) => ({
+          email: i === 0
+            ? (diner.email || `payer-${i + 1}@cenaiva.test`)
+            : `payer-${i + 1}-${Date.now()}@cenaiva.test`,
+          full_name: i === 0
+            ? (diner.name || `Diner ${i + 1}`)
+            : `Diner ${i + 1}`,
+          amount_cents: i === splitCount - 1 ? lastShare : baseShare,
+        }));
+        const prepResp = await prepareDeposit({
+          reservation_id: bookResp.reservation_id,
+          payers,
+        });
+        const rowIds = (prepResp.payments ?? []).map((p) => p.id);
         if (rowIds.length !== splitCount) {
           throw new Error(
-            `Server returned ${rowIds.length} payer slots but we asked for ${splitCount}.`,
+            `prepare-deposit returned ${rowIds.length} rows but we asked for ${splitCount}.`,
           );
         }
         activeReservationId = bookResp.reservation_id;
