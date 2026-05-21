@@ -25,6 +25,7 @@ import { friendlyError, isUserCancellation } from '@/lib/errors/friendlyError';
 import { useCurrentUserId } from '@/lib/auth/currentUserId';
 import { stripeAttachPaymentMethod } from '@/lib/stripe/stripeAttachPaymentMethod';
 import { usePreventScreenCapture } from '@/lib/security/usePreventScreenCapture';
+import { SplitTenderCheckout } from '@/components/booking/SplitTenderCheckout';
 
 type PaymentMethod = 'card' | 'apple_pay' | 'google_pay';
 
@@ -45,6 +46,35 @@ const useStyles = createStyles((c) => ({
   totalLabel: { fontSize: 16, fontWeight: '700', color: c.textPrimary },
   totalValue: { fontSize: 18, fontWeight: '700', color: c.gold },
   sectionTitle: { fontSize: 16, fontWeight: '600', color: c.textPrimary, marginTop: 24, marginBottom: 12 },
+  modeToggleRow: {
+    flexDirection: 'row',
+    backgroundColor: c.bgSurface,
+    borderRadius: borderRadius.md,
+    borderWidth: 1,
+    borderColor: c.border,
+    padding: 4,
+    marginTop: 20,
+    marginBottom: 12,
+    gap: 4,
+  },
+  modePill: {
+    flex: 1,
+    paddingVertical: 10,
+    borderRadius: borderRadius.sm,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  modePillActive: {
+    backgroundColor: 'rgba(201, 168, 76, 0.16)',
+  },
+  modePillLabel: {
+    fontSize: 14,
+    color: c.textSecondary,
+    fontWeight: '600',
+  },
+  modePillLabelActive: {
+    color: c.gold,
+  },
   methodCard: { flexDirection: 'row', alignItems: 'center', padding: 16, backgroundColor: c.bgSurface, borderRadius: borderRadius.md, borderWidth: 1, borderColor: c.border, marginBottom: 10, gap: 14 },
   methodCardSelected: { borderColor: c.gold, backgroundColor: 'rgba(201, 168, 76, 0.08)' },
   methodLabel: { flex: 1, fontSize: 15, color: c.textPrimary },
@@ -165,6 +195,11 @@ export default function Step6Payment() {
   const c = useColors();
   const styles = useStyles();
   const [selectedMethod, setSelectedMethod] = useState<PaymentMethod>('card');
+  // Single-pay (the current flow, one card covers the whole deposit) vs
+  // split-tender (N people pay their share on the same device, sequentially).
+  // Hidden when the deposit is $0 (no point splitting nothing) and when
+  // partySize < 2. Per MOBILE_SPLIT_TENDER_GUIDE.md §1.
+  const [paymentMode, setPaymentMode] = useState<'single' | 'split'>('single');
   const [taxRate, setTaxRate] = useState(0);
   const [depositTiers, setDepositTiers] = useState<DepositTier[] | undefined>(undefined);
   const [defaultCard, setDefaultCard] = useState<CustomerPaymentMethod | null>(null);
@@ -201,6 +236,10 @@ export default function Step6Payment() {
   const depositAmount = depositCents / 100;
   const hasDeposit = depositCents > 0;
   const totalDue = preorderTotal + taxAmount + depositAmount;
+  // Split-tender is offered only when there's a deposit (food + tax flow
+  // through the diner running checkout, never split) AND party >= 2.
+  // Guard from MOBILE_SPLIT_TENDER_GUIDE.md §1.
+  const canSplit = hasDeposit && partySizeNum >= 2;
   const qpBase = [
     `date=${encodeURIComponent(date ?? '')}`,
     `time=${encodeURIComponent(time ?? '')}`,
@@ -499,6 +538,67 @@ export default function Step6Payment() {
           </View>
         </Card>
 
+        {canSplit ? (
+          <View style={styles.modeToggleRow}>
+            <TouchableOpacity
+              onPress={() => setPaymentMode('single')}
+              style={[styles.modePill, paymentMode === 'single' && styles.modePillActive]}
+              accessibilityRole="button"
+            >
+              <Text style={[styles.modePillLabel, paymentMode === 'single' && styles.modePillLabelActive]}>
+                {t('booking.paymentSplitSingle')}
+              </Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              onPress={() => setPaymentMode('split')}
+              style={[styles.modePill, paymentMode === 'split' && styles.modePillActive]}
+              accessibilityRole="button"
+            >
+              <Text style={[styles.modePillLabel, paymentMode === 'split' && styles.modePillLabelActive]}>
+                {t('booking.paymentSplitMulti')}
+              </Text>
+            </TouchableOpacity>
+          </View>
+        ) : null}
+
+        {paymentMode === 'split' ? (
+          <SplitTenderCheckout
+            restaurantId={restaurantId}
+            partySize={partySizeNum}
+            totalDepositCents={depositCents}
+            bookingPayload={{
+              restaurant_id: restaurantId,
+              shift_id: shiftId ?? '',
+              date_time: slotDateTime ?? '',
+              party_size: partySizeNum,
+              guest_name: name ?? '',
+              guest_email: email ?? '',
+              guest_phone: phone ?? null,
+              allergies: notes ?? null,
+              seating_preference: seatingPreference ?? null,
+              occasion: occasion ?? null,
+              cart_items: cart,
+              subtotal: preorderTotal,
+              tax_amount: taxAmount,
+              tip_amount: 0,
+              total_amount: totalDue,
+              discount_amount: null,
+              discount_reason: null,
+              promotion_id: null,
+              hold_id: hold.state.status === 'active' ? hold.state.holdId : null,
+            }}
+            holdId={hold.state.status === 'active' ? hold.state.holdId : null}
+            diner={{ name, email, phone }}
+            onAllPaid={({ reservationId, confirmationCode }) => {
+              goToConfirmation(
+                `paid=1&reservationId=${encodeURIComponent(reservationId)}` +
+                  `&confirmationCode=${encodeURIComponent(confirmationCode)}` +
+                  `&split=1`,
+              );
+            }}
+          />
+        ) : (
+          <>
         <Text style={styles.sectionTitle}>Payment Method</Text>
         {paymentMethods.map((method) => (
           <TouchableOpacity
@@ -552,8 +652,11 @@ export default function Step6Payment() {
         <Text style={styles.secureText}>
           <Ionicons name="lock-closed" size={12} color={c.textMuted} /> Secured by Stripe. Your payment information is encrypted.
         </Text>
+          </>
+        )}
       </ScrollView>
 
+      {paymentMode === 'single' ? (
       <View style={[styles.footer, { paddingBottom: insets.bottom + 16 }]}>
         <Button
           title={paying ? t('common.loading', 'Please wait…') as string : `${t('booking.confirmBooking')} · ${formatCurrency(totalDue)}`}
@@ -561,6 +664,7 @@ export default function Step6Payment() {
           disabled={paying}
         />
       </View>
+      ) : null}
 
       <Modal
         visible={pendingRetry !== null}

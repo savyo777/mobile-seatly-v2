@@ -52,6 +52,16 @@ export type PublicBookingPayload = {
   // is created by converting an existing reservation_holds row. Otherwise the
   // legacy book_reservation path runs unchanged.
   hold_id?: string | null;
+  /**
+   * Split-tender: the diner is splitting the deposit across N cards on
+   * the same device. The server creates the reservation in
+   * `pending_payment` status + N `reservation_deposit_payments` rows in
+   * `pending` status. The response includes
+   * `split_tender_deposit_row_ids` (length === split_tender_payers).
+   * Per MOBILE_SPLIT_TENDER_GUIDE.md §2.1. Valid range: 2..10.
+   * Omit / set null for the single-pay flow.
+   */
+  split_tender_payers?: number | null;
 };
 
 export type PublicBookingResponse = {
@@ -66,6 +76,14 @@ export type PublicBookingResponse = {
   deposit_required?: boolean;
   deposit_amount_cents?: number;
   deposit_status?: DepositStatus;
+  /**
+   * Present when the request set `split_tender_payers`. One UUID per
+   * payer share, in the order the server created them. Length matches
+   * the requested `split_tender_payers`. Pass each id to
+   * create-public-payment-intent's `deposit_payment_ids: [rowId]`
+   * field, then to confirm-deposit-paid's `payment_id`.
+   */
+  split_tender_deposit_row_ids?: string[];
   error?: string;
 };
 
