@@ -10,15 +10,153 @@ This doc covers ONLY the work shipped in this session. For everything else Strip
 
 ## TL;DR
 
-Mobile is now **fully caught up** to the web app's Stripe model (Option B 3-line fee disclosure + the §17 mobile-parity items). Backend was NOT touched — every change is in the mobile React Native code. The fee math (`lib/stripe/stripeFee.ts`) was already correct; what was missing was the UI surfaces + a critical idempotency-key bug + an auto-income feed for the owner dashboard.
+Mobile is now **mostly caught up** to the web app's Stripe model. **Two big findings during this session you need to know about:**
 
-**Commit chain (newest → oldest, both pushes to `main`):**
+1. 🚨 **Critical math drift FIXED** (`613921d`). Mobile's `lib/stripe/stripeFee.ts` had an old "absorb-above-$12-threshold" branch that the backend (Option B) no longer has. Cart showed $40 total for a $40 deposit, but the server would have actually charged $43.77 → diners would have hit Stripe's "amount does not match" rejection. Mobile now matches the backend's gross-up formula line-for-line, verified against production PI `pi_3TZXkN…` (amount=2204¢, app_fee=110¢ for a $20 base). 14 unit tests passing.
+
+2. 🚨 **Backend split-tender bug DISCOVERED — needs web-team fix.** `create-public-booking` with `split_tender_payers: 4` returns 200 with a reservation_id BUT doesn't actually seed the 4 `reservation_deposit_payments` rows that the per-slot PI mints need. Mobile then fails on "missing payer slot id" → shows generic "Couldn't start the split payment" Alert. Worse: the reservation row that DID get created sits as `confirmed` / `deposit_status=pending` and BLOCKS the slot for retry. See "Backend bug report" below for the precise reproduction + DB evidence. Mobile is correctly calling the documented API per `STRIPE_INTEGRATION_HANDOFF.md` §5.1; the bug is server-side.
+
+Beyond those two: mobile shipped all §17 parity items (idempotency keys, auto-income hook, past-due CTA, Stripe-API-down banner, voice-booking action wire). Backend (the rest of `supabase/functions/`) was NOT touched.
+
+**Commit chain (newest → oldest, all pushed to `main`):**
 
 | Commit | Scope |
 |---|---|
+| `bce25ef` | **Real-device fix** — auto-recover from expired holds at Confirm-Booking instead of dead-ending the user with "We couldn't hold your table for payment" |
+| `613921d` | **CRITICAL** — align mobile stripeFee.ts to backend Option B (always gross-up, no $12 threshold) + rewrite 14 unit tests against the canonical formula |
 | `06fb02d` | Fix useAutoIncome hook — JOIN via reservations (deposits don't carry restaurant_id) |
 | `f665e1b` | Mobile §17 parity in one shot: Bug #110 + auto-income + past-due CTA + Stripe API down banner + voice booking wire + 4 Maestro flows |
 | `bf6ba65` | Mirror web's Option B (3-line fee disclosure) across every mobile checkout surface |
+
+---
+
+## 0. CRITICAL — Math drift fix (commit `613921d`)
+
+The very first thing the next agent should read about. Mobile's `lib/stripe/stripeFee.ts` was implementing the **wrong fee model**.
+
+### Before
+
+```ts
+// lib/stripe/stripeFee.ts (pre-613921d)
+export const ABSORB_FEE_THRESHOLD_CENTS = 1200; // $12 CAD
+
+export function computeDinerCharge(baseCents: number) {
+  // …
+  if (base >= ABSORB_FEE_THRESHOLD_CENTS) {
+    return { dinerTotalCents: base, processingFeeCents: 0, dinerPaysFee: false, … };
+  }
+  // gross-up only when base < $12
+  const grossed = Math.ceil((base + 30) / 0.971);
+  // …
+}
+```
+
+For a $40 deposit (party 4 × $10/p at MICKY):
+- Mobile cart showed: Deposit $40.00 · Platform fee $2.20 (informational) · **Total $40.00**
+- Backend would actually charge: `ceil((4000 + 220 + 30) / 0.971) = 4377` → **$43.77**
+- Diner sees $40 in cart, then PaymentSheet says $43.77 → confusion + likely Stripe-side rejection (`amount does not match`)
+
+### After
+
+Mobile mirrors backend Option B exactly per `STRIPE_INTEGRATION_HANDOFF.md` §3.1:
+
+```ts
+const applicationFee = Math.max(Math.ceil(base * 0.055), 1);
+const subtotal       = base + applicationFee;
+const dinerTotal     = Math.ceil((subtotal + 30) / 0.971);
+const processingFee  = dinerTotal - subtotal;
+```
+
+Verified against the canonical worked examples + the live PI in the DB:
+
+| Base | App fee | Processing | Diner total | Source of truth |
+|---|---|---|---|---|
+| $5  | $0.28 | $0.47 | $5.75   | formula |
+| $10 | $0.55 | $0.63 | $11.18  | formula |
+| $20 | $1.10 | $0.94 | $22.04  | **matches verified PI `pi_3TZXkN…` (amount=2204¢, app_fee=110¢)** |
+| $40 | $2.20 | $1.57 | $43.77  | formula |
+| $80 | $4.40 | $2.83 | $87.23  | formula |
+| $100 | $5.50 | $3.46 | $108.96 | formula |
+
+14 boundary unit tests in `__tests__/stripe/stripeFee.test.ts` lock these values + the invariants (app fee = 5.5% of base, gross-up covers Stripe's cut, 1¢ floor, dinerPaysFee always true).
+
+### Live verification on iOS sim (2026-05-21)
+
+Party 4 at MICKY → Step 6 cart shows:
+- Deposit (4 × $10.00) = **$40.00**
+- Platform fee (5.5%) = **$2.20**
+- Processing fee = **$1.57**
+- **Total $43.77** ✓
+- Confirm Booking · $43.77
+
+Party 2 at MICKY → Step 6 cart shows:
+- Deposit (2 × $10.00) = **$20.00**
+- Platform fee (5.5%) = **$1.10**
+- Processing fee = **$0.94**
+- **Total $22.04** ✓ (matches `pi_3TZXkN…` charged amount)
+
+This was a launch blocker. If you ever see the cart total equal to the deposit base when there's also a Platform fee row, regression has reverted — re-check `lib/stripe/stripeFee.ts`.
+
+---
+
+## 0.5. CRITICAL — Backend split-tender bug (for web team)
+
+**Discovered while testing T1 on 2026-05-21.** Mobile is not at fault — the split-tender server flow has a partial-failure bug.
+
+### Reproduction
+
+1. Diner authenticated (`user_profile_id` = `715b34cc-84e7-4809-8950-6d331fdae2a4`)
+2. Mobile POSTs `create-public-booking` to MICKY (`a96653d5-7ca3-4d46-89a1-7a0316d0429a`) with:
+   - `party_size: 4`
+   - `slot_date_time: '2026-05-22T21:00:00Z'`
+   - `split_tender_payers: 4`
+   - `payment_method: 'split'`
+3. **Server returns 200** with `reservation_id`, `confirmation_code`
+4. **DB state after**: `reservations` row created (`status='confirmed'`, `deposit_status='pending'`), but **`reservation_deposit_payments` has ZERO rows for that reservation_id**
+
+### Evidence
+
+Two real reservations created during testing (now cancelled via the diner cancel flow):
+
+| reservation_id | confirmation_code | created_at | deposit rows |
+|---|---|---|---|
+| `8f33196e-7ced-4d27-a59f-e48396ea2e53` | SEAT-U16Y | 2026-05-21 17:21:45 | 0 |
+| `a198b3a2-6e72-44de-ade7-fb527c00e4d6` | SEAT-YU47 | 2026-05-21 17:37:03 | 0 |
+
+Verified via:
+```sql
+SELECT * FROM reservation_deposit_payments
+WHERE reservation_id IN ('8f33196e-7ced-4d27-a59f-e48396ea2e53', 'a198b3a2-6e72-44de-ade7-fb527c00e4d6');
+-- 0 rows
+```
+
+### Downstream impact on mobile
+
+Mobile's `components/booking/SplitTenderCheckout.tsx` then iterates the (empty) `activeRowIds` array. Slot 0 fails with `Missing payer slot id` → user-facing Alert shows generic "Couldn't start the split payment". The orphaned reservation row sits in the DB at `status='confirmed'`, blocking the slot for any retry attempt.
+
+### What the contract says
+
+Per `STRIPE_INTEGRATION_HANDOFF.md` §5.1:
+> `create-public-booking` — **Atomically reserves a slot + inserts `reservation_deposit_payments` rows.** Supports `split_tender_payers: N` for split tender.
+
+The atomicity contract is broken. Either:
+- The reservation row should NOT be created when row insert fails (server should roll back the transaction), OR
+- The deposit_payment rows MUST be seeded as part of the same transaction (current observation suggests they aren't being seeded at all for split tender).
+
+### Where to look
+
+- `supabase/functions/create-public-booking/index.ts` — the `split_tender_payers > 1` branch
+- `book_reservation` RPC — per handoff Wave 5 note: "RPC whitelist updated to accept 'pending_payment' status — split tender no longer 400s with invalid_status". Possibly the deposit-row seeding got dropped during that fix.
+- Migration `reservations_allow_pending_payment_status` (per handoff §12.5, Blocker B) — same area.
+
+### Suggested fix path for web team
+
+1. Open `create-public-booking/index.ts`, find the `split_tender_payers` handling branch
+2. Confirm whether `INSERT INTO reservation_deposit_payments` is being attempted N times AFTER the reservation insert
+3. If it's a separate INSERT (not inside the same transaction), wrap both in `BEGIN; … COMMIT;`
+4. Add an integration test that creates a split-tender booking + asserts `SELECT count(*) FROM reservation_deposit_payments WHERE reservation_id = <new>` = N
+
+Until fixed, **split tender is broken end-to-end** on mobile (and likely on web too, since they share the edge fn). The diner-facing 3-line cart UI is correct, but the underlying transaction never completes a charge.
 
 ---
 
@@ -167,14 +305,21 @@ Per `STRIPE_INTEGRATION_HANDOFF.md` §13, this was already verified by the web t
 
 ### 4.1 Live sim verification (iOS sim, dev client, Stripe test mode)
 
+Driven on iPhone 16e UDID `960DC9A6-FE34-4D68-B5FA-490C6476889F`, logged in as Steven Georgy (`user_profile_id` `715b34cc-…`) with saved Visa 4242 (`pm_1TZGFE…`) on file.
+
 | Surface | Verified | Result |
 |---|---|---|
-| Customer Discover loads | ✓ | Cenaiva launches cleanly after the Sentry-DSN guard from earlier today |
-| Owner Expenses · Auto-Income section renders | ✓ | $690.28 across 2 deposits + 3 orders for Georgy Inc, screenshot at `/tmp/cenaiva-stripe-e2e/owner-expenses-v3-thumb.png` |
-| Booking flow 3-line cart on step6 | (verified earlier in `bf6ba65`) | Cart shows Pre-Order · Deposit · Platform fee (5.5%) · Tax · Processing fee · Total |
-| Cancel Alert new disclosure | (code-verified, sim run pending fresh charge) | Alert body includes the 4 substrings per the Maestro assertion |
-| Modify-reservation 402 Alert | (code-verified, sim run requires no-saved-card account) | Alert body mentions both fees non-refundable |
-| TypeScript | ✓ | `npx tsc --noEmit` clean (ignoring `mobile-seatly-v2-2/`) |
+| Customer Discover loads | ✓ | Cenaiva launches cleanly |
+| Owner Expenses · Auto-Income section renders | ✓ | **$690.28 across 2 deposits + 3 orders** for Georgy Inc — pulled live from the real Supabase test project. Matches `SELECT SUM(amount_cents)` exactly. Screenshot `/tmp/cenaiva-stripe-e2e/owner-expenses-v3-thumb.png`. |
+| Cart 3-line rendering, party 2 ($20 base) | ✓ | **Deposit $20.00 · Platform fee $1.10 · Processing fee $0.94 · Total $22.04** — matches the canonical formula + verified PI `pi_3TZXkN…`. Disclosure copy includes "Platform and processing fees are non-refundable. Your CA$20.00 deposit is fully refundable when the restaurant marks you seated." |
+| Cart 3-line rendering, party 4 ($40 base) | ✓ | **Deposit $40.00 · Platform fee $2.20 · Processing fee $1.57 · Total $43.77** — matches `computeDinerCharge(4000)` |
+| Split-tender per-payer 3-line breakdown | ✓ | **4 payers × $11.18 = $44.72** (each payer: $10 base + $0.55 platform + $0.63 processing). UI toggles, slot list, "Place Order" CTA all correct. |
+| Split-tender end-to-end PaymentSheet | ❌ blocked by backend bug (see §0.5) | `create-public-booking` returns 200 but doesn't seed deposit rows; mobile fails to mint slot-0 PI |
+| Diner cancel Alert + DB write | ✓ | Cancelled `SEAT-U16Y` via the cancel flow → DB confirms `status='cancelled'`, `cancelled_at=2026-05-21 17:32:13`, `cancellation_reason='Cancelled by diner'`. Because that reservation's `deposit_status='pending'` (no charge had been made), the refund-disclosure line was correctly suppressed. The full disclosure language ships in the code path that fires when `liveDepositStatus === 'charged'`. |
+| Auto-income hook query shape | ✓ | Two-step query (reservations → deposit_payments) verified working live (see §1.2) |
+| Single-pay end-to-end charge | ❌ Sim flakiness | Hold-timeout race + Maestro/PaymentSheet handoff issues prevented a fresh $22.04 charge from completing on the sim. Math is verified by unit tests + the existing 5 PIs already in MICKY's DB ($20 each, matching what `computeDinerCharge(2000)` would have minted). Real-device verification is the next step. |
+| TypeScript | ✓ | `npx tsc --noEmit` clean (ignoring `mobile-seatly-v2-2/`) across all commits |
+| Unit tests (Stripe fee math) | ✓ | 14/14 passing in `__tests__/stripe/stripeFee.test.ts` against the new Option B formula |
 
 ### 4.2 Maestro flow status
 
