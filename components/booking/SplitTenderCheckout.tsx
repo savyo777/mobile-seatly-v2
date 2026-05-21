@@ -37,7 +37,6 @@ import { secureRandomUuidV4 } from '@/lib/utils/secureRandom';
 import {
   createPublicBooking,
   confirmDepositPaid,
-  prepareDeposit,
   type PublicBookingPayload,
 } from '@/lib/booking/publicBookingApi';
 import { createHoldPaymentIntent } from '@/lib/booking/holdApi';
@@ -326,35 +325,36 @@ export function SplitTenderCheckout({
       // Until create-public-booking ships native split_tender support,
       // this two-call sequence is the only path that actually works.
       if (!activeReservationId) {
+        // Native split-tender path per
+        // STRIPE_INTEGRATION_HANDOFF.md §10.4 + PublicBookingResponse
+        // type definition. Pass `split_tender_payers: splitCount` to
+        // create-public-booking; the server atomically inserts both
+        // the reservation row AND the N reservation_deposit_payments
+        // rows, then returns the row UUIDs in
+        // `split_tender_deposit_row_ids` (length === splitCount).
+        //
+        // The earlier 2-step workaround (create-public-booking +
+        // prepare-deposit) was retained from before the server shipped
+        // native split-tender. The workaround is now broken: server
+        // returns empty `prepare-deposit` payments arrays for split
+        // bookings, so the per-slot PI mint fails with "Missing payer
+        // slot id" and the orphan reservation blocks the slot for
+        // retry. Switching to the native path fixes both: rows are
+        // guaranteed to exist alongside the reservation, and no
+        // orphan reservations get created on partial-failure paths.
         const bookResp = await createPublicBooking({
           ...bookingPayload,
           payment_method: 'split',
+          split_tender_payers: splitCount,
         });
         if (!bookResp.reservation_id) {
           throw new Error(bookResp.error || 'Could not create reservation');
         }
-        // Split totalDepositCents evenly. Round-down per slot; last slot
-        // absorbs the remainder so the sum is exact (avoids fractional
-        // cent loss when N doesn't divide totalDepositCents cleanly).
-        const baseShare = Math.floor(totalDepositCents / splitCount);
-        const lastShare = totalDepositCents - baseShare * (splitCount - 1);
-        const payers = Array.from({ length: splitCount }, (_, i) => ({
-          email: i === 0
-            ? (diner.email || `payer-${i + 1}@cenaiva.test`)
-            : `payer-${i + 1}-${Date.now()}@cenaiva.test`,
-          full_name: i === 0
-            ? (diner.name || `Diner ${i + 1}`)
-            : `Diner ${i + 1}`,
-          amount_cents: i === splitCount - 1 ? lastShare : baseShare,
-        }));
-        const prepResp = await prepareDeposit({
-          reservation_id: bookResp.reservation_id,
-          payers,
-        });
-        const rowIds = (prepResp.payments ?? []).map((p) => p.id);
+        const rowIds = bookResp.split_tender_deposit_row_ids ?? [];
         if (rowIds.length !== splitCount) {
           throw new Error(
-            `prepare-deposit returned ${rowIds.length} rows but we asked for ${splitCount}.`,
+            `create-public-booking returned ${rowIds.length} split_tender_deposit_row_ids but we asked for ${splitCount}. ` +
+              'This usually means the server is on an older deployment that does not yet support native split-tender — coordinate with the web team to confirm create-public-booking has the split_tender branch shipped.',
           );
         }
         activeReservationId = bookResp.reservation_id;
