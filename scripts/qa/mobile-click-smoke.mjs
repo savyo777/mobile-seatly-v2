@@ -21,7 +21,6 @@ const DEFAULT_ROUTES = [
 
 const DEFAULT_BUNDLE_IDS = [
   'com.cenaiva.app',
-  'com.savyo.cenaiva',
 ];
 
 const fatalPatterns = [

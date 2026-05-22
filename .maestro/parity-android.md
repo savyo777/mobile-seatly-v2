@@ -60,7 +60,7 @@ No screen rendered with content under the Pixel 7 status bar. No RN red-screen /
 
 ## Android-specific findings (non-blocker)
 
-1. **`com.cenaiva.app` package name on Android, `com.savyo.cenaiva` on iOS.** Already flagged in the existing audit. Not new.
+1. **`com.cenaiva.app` package name on Android, `com.savyo.cenaiva` on iOS.** RESOLVED 2026-05-21: the 2026-05-21 prebuild (during the expo-calendar work) regenerated `ios/Cenaiva.xcodeproj/project.pbxproj` with `PRODUCT_BUNDLE_IDENTIFIER = com.cenaiva.app`, matching Android. Only `com.cenaiva.app` is installed on simulators going forward.
 2. **Customer Bookings card confirmation code is `SEAT-C90R`** (legacy `SEAT-` prefix, not the centralized `CNV-NNNNNN` / `PRE-XXXX` format from `_shared/confirmation-code.ts`). Not Android-specific; the same code shows on iOS. Logging in this report for hardcoding-hygiene follow-up — not for this PR.
 3. **Snapchat-Story share is a hard-throw on Android** (`SNAP_KIT_CONFIGURATION_REQUIRED`) by design until Snap Kit is configured. iOS likewise throws when invoked. Not exercised in the parity flows.
 

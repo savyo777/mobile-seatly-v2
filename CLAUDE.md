@@ -10,7 +10,7 @@ For background, architecture, lessons learned, and the full session-skills knowl
 - Folder name: `mobile-seatly-v2-15` (don't be confused; the brand is **Cenaiva**, not Seatly)
 - `package.json.name`: `mobile-cenaiva-v2`
 - Brand domain: `cenaiva.com`
-- Bundle/scheme: `com.cenaiva.app` / `cenaiva://` (iOS bundle is currently `com.savyo.cenaiva` — known mismatch flagged in audit)
+- Bundle/scheme: `com.cenaiva.app` / `cenaiva://` (iOS bundle + Android package both unified to `com.cenaiva.app` as of 2026-05-21)
 
 ## Branching & commits — IMPORTANT
 

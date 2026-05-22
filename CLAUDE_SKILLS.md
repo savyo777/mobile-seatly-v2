@@ -12,7 +12,7 @@ Source material distilled from 23+ handoff docs (now deleted), every commit of t
 - **Repo**: `savyo777/mobile-seatly-v2` on GitHub. Working dir on disk: `mobile-seatly-v2-5/` (the trailing number changes; don't be confused).
 - **package.json.name**: `mobile-cenaiva-v2`
 - **Brand domain**: `cenaiva.com`
-- **Bundle / scheme**: `com.cenaiva.app` / `cenaiva://`. iOS bundle identifier is currently `com.savyo.cenaiva` (known mismatch, flagged in security audit).
+- **Bundle / scheme**: `com.cenaiva.app` / `cenaiva://`. Both iOS bundle and Android package unified to `com.cenaiva.app` (the legacy `com.savyo.cenaiva` iOS identifier was retired on the 2026-05-21 prebuild that added expo-calendar; only `com.cenaiva.app` is installed on the sim now).
 - **Branching**: COMMIT DIRECTLY TO `main`. Solo user, reviews by running the app. No feature branches, no PRs unless explicitly asked. `git push origin main` after every batch.
 - **Commit messages**: HEREDOC, sentence-case, no conventional-commit prefix. Co-Authored-By line: `Claude Opus 4.7 (1M context) <noreply@anthropic.com>`.
 - **What NOT to touch**: `mobile-seatly-v2-2/` (stale duplicate, ~hundreds of pre-existing TS errors), `ios/` and `android/` (Expo-managed; only edit on explicit ask), `.claude/worktrees/` (harness-generated).
