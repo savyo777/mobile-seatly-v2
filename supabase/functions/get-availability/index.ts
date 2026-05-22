@@ -1,11 +1,31 @@
 // @ts-nocheck
+//
+// get-availability — diner's hot read path for "show me open slots."
+//
+// 2026-05-21 rewrite: replaced 4 parallel queries + an in-process slot-by-slot
+// loop with ONE rpc() call to `get_available_slots_cached`. The RPC already
+// runs the slot computation + table assignment + live-reservation conflict
+// check + Postgres-level 20s cache. The edge fn was redundantly re-fetching
+// data the RPC already returns (timezone, floor_capacity, slot table_ids),
+// which is why k6 measured edge-fn p95=2.45s vs direct-RPC p95=66ms — a 37×
+// gap. After this swap the edge fn becomes a thin pass-through that adds:
+//   - request validation
+//   - in-memory cache (collapses repeat hits on the same warm instance)
+//   - HTTP Cache-Control headers (CDN-level cache for popular tuples)
+//   - display_time synthesis per slot (using the timezone the RPC returns)
+//   - response-shape compatibility for the existing mobile clients
+//     (keeps `hours_window` even though the RPC calls it
+//      `configured_hours_window`)
+//
+// Expected: p95 drops from 2.45s to ~300ms. Connection-pool budget at
+// 1500 VUs drops from 3,675 to 450 conn-seconds — comfortably under the
+// Supabase Pro PGBouncer ceiling.
+
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { corsHeaders } from "../_shared/cors.ts";
 import { jsonRes } from "../_shared/json-response.ts";
-import { getAvailability } from "../_shared/availability.ts";
-import { localBookingParts } from "../_shared/hours.ts";
 import { supabaseAdmin } from "../_shared/supabase.ts";
-import { DEFAULT_TURN_MINUTES, DEFAULT_TIMEZONE } from "../_shared/booking-defaults.ts";
+import { DEFAULT_TURN_MINUTES } from "../_shared/booking-defaults.ts";
 import {
   validationResponse,
   asText as validatedText,
@@ -13,92 +33,49 @@ import {
   asInteger,
 } from "../_shared/input-validation.ts";
 
-type PublicAvailabilitySlot = {
+type CachedSlot = {
   shift_id: string;
   shift_name: string;
   date_time: string;
-  display_time: string;
   table_ids?: string[];
   duration_minutes?: number;
-  floor_capacity?: number;
 };
 
-function numberParam(value: string | null, fallback: number): number {
-  if (!value) return fallback;
-  const parsed = Number(value);
-  return Number.isFinite(parsed) ? parsed : fallback;
-}
+type CachedResponse = {
+  slots: CachedSlot[];
+  message: string | null;
+  timezone: string | null;
+  floor_capacity: number | null;
+  unavailable_reason: string | null;
+  configured_hours_window: string | null;
+};
 
-async function getRestaurantTimezone(restaurantId: string): Promise<string> {
-  const { data } = await supabaseAdmin
-    .from("restaurants")
-    .select("timezone")
-    .eq("id", restaurantId)
-    .single();
-  return data?.timezone || DEFAULT_TIMEZONE;
-}
-
-async function getFloorCapacity(restaurantId: string): Promise<number | null> {
-  const { data, error } = await supabaseAdmin
-    .from("tables")
-    .select("capacity")
-    .eq("restaurant_id", restaurantId)
-    .eq("is_active", true);
-  if (error || !data?.length) return null;
-  return data.reduce((sum, row) => sum + (Number(row.capacity) || 0), 0);
-}
-
-type CapacityTable = { id: string; capacity: number };
-type LiveReservation = { table_id: string; reserved_at: string };
-
-// Picks the smallest table that fits the party and isn't blocked by any
-// reservation overlapping [dateTime, dateTime + durationMinutes). Operates
-// on pre-fetched arrays so the caller only hits Postgres twice per request
-// (instead of 2×N — see the loop in the handler below).
-function pickAvailableTableId(
-  tables: CapacityTable[],
-  reservations: LiveReservation[],
-  partySize: number,
-  dateTime: string,
-  durationMinutes: number,
-): string | null {
-  const start = new Date(dateTime).getTime();
-  const end = start + durationMinutes * 60_000;
-
-  const blocked = new Set<string>();
-  for (const reservation of reservations) {
-    if (!reservation.table_id || !reservation.reserved_at) continue;
-    const reservationStart = new Date(reservation.reserved_at).getTime();
-    const reservationEnd = reservationStart + durationMinutes * 60_000;
-    if (start < reservationEnd && end > reservationStart) {
-      blocked.add(reservation.table_id);
-    }
-  }
-
-  // tables already sorted by capacity ascending — picks smallest fitting.
-  for (const table of tables) {
-    if (table.capacity < partySize) continue;
-    if (!blocked.has(table.id)) return table.id;
-  }
-  return null;
-}
+type PublicAvailabilitySlot = CachedSlot & {
+  display_time?: string;
+  floor_capacity?: number;
+};
 
 // Module-scope in-memory cache. Supabase keeps each function instance warm
 // for several minutes between invocations, so this cache survives across
 // calls served by the same worker. Auto-scaling spins up new instances at
 // load, each with its own empty cache — that's still a big win because
 // each instance amortizes its own hot keys.
+//
+// We keep this even though the RPC has its own 20s Postgres cache because:
+// - Skipping the RPC round-trip entirely saves ~50ms per request
+// - At 1500 VUs hitting popular tuples, this absorbs huge chunks of traffic
+//   before they ever cross the Supabase boundary
 const CACHE_TTL_MS = 30_000;
-type CachedResponse = { value: unknown; expiresAt: number };
-const responseCache = new Map<string, CachedResponse>();
+type InMemoryEntry = { value: unknown; expiresAt: number };
+const responseCache = new Map<string, InMemoryEntry>();
 
 function buildCacheKey(restaurantId: string, date: string, partySize: number): string {
   return `${restaurantId}|${date}|${partySize}`;
 }
 
 const CACHE_HEADERS = {
-  // Browser/RN-fetch + any CDN in front honors these. SWR keeps things
-  // responsive even when the cache misses upstream.
+  // Browser/RN-fetch + the Supabase CDN honor these. SWR keeps things
+  // responsive even when the upstream cache misses.
   "Cache-Control": "public, max-age=30, s-maxage=60, stale-while-revalidate=120",
 };
 
@@ -126,110 +103,66 @@ Deno.serve(async (req) => {
       return jsonRes({ error: "restaurant_id and date required" }, 400);
     }
 
-    // Serve a recent identical response from the warm-instance cache if we
-    // have one. Mobile diners pile up on popular (restaurant, date) combos
-    // so this collapses huge waves of traffic into a single DB read.
+    // L1: in-memory cache. Mobile diners pile up on popular (restaurant,
+    // date, party_size) combos so this collapses huge waves into a single
+    // RPC call (and even that is then absorbed by the RPC's L2 Postgres
+    // cache for 20s).
     const cacheKey = buildCacheKey(restaurantId, date, partySize);
     const cached = responseCache.get(cacheKey);
     if (cached && cached.expiresAt > Date.now()) {
       return jsonRes(cached.value, 200, CACHE_HEADERS);
     }
 
-    const [availability, timezone, floorCapacity] = await Promise.all([
-      getAvailability(restaurantId, date, partySize),
-      getRestaurantTimezone(restaurantId),
-      getFloorCapacity(restaurantId),
-    ]);
-
-    const shiftIds = Array.from(new Set((availability.slots ?? []).map((slot) => slot.shift_id)));
-
-    // Day window for the live-reservations fetch. Use the date string in the
-    // restaurant timezone, expanded to ±1 day to catch overnight services
-    // that cross midnight.
-    const dayPivot = new Date(`${date}T12:00:00.000Z`);
-    const dayStart = new Date(dayPivot);
-    dayStart.setUTCDate(dayPivot.getUTCDate() - 1);
-    const dayEnd = new Date(dayPivot);
-    dayEnd.setUTCDate(dayPivot.getUTCDate() + 1);
-
-    // ONE batch per request: tables + reservations + shifts. Eliminates the
-    // previous 2×N per-slot loop that ran ~80ms × 40-60 calls = ~3-5s.
-    const [tablesResult, reservationsResult, shiftsResult] = await Promise.all([
-      supabaseAdmin
-        .from("tables")
-        .select("id,capacity")
-        .eq("restaurant_id", restaurantId)
-        .eq("is_active", true)
-        .gte("capacity", partySize)
-        .order("capacity", { ascending: true }),
-      supabaseAdmin
-        .from("reservations")
-        .select("table_id,reserved_at")
-        .eq("restaurant_id", restaurantId)
-        .in("status", ["pending", "confirmed", "seated"])
-        .not("table_id", "is", null)
-        .gte("reserved_at", dayStart.toISOString())
-        .lte("reserved_at", dayEnd.toISOString()),
-      shiftIds.length
-        ? supabaseAdmin.from("shifts").select("id,turn_time_minutes").in("id", shiftIds)
-        : Promise.resolve({ data: [] as Array<{ id: string; turn_time_minutes: number | null }> }),
-    ]);
-
-    const tables: CapacityTable[] = (tablesResult.data ?? []).map((row: { id: string; capacity: number | null }) => ({
-      id: row.id,
-      capacity: Number(row.capacity) || 0,
-    }));
-    const liveReservations: LiveReservation[] = (reservationsResult.data ?? [])
-      .filter((row: { table_id: string | null; reserved_at: string | null }) => row.table_id && row.reserved_at)
-      .map((row: { table_id: string; reserved_at: string }) => ({
-        table_id: row.table_id,
-        reserved_at: row.reserved_at,
-      }));
-    const turnMinutesByShift = new Map(
-      (shiftsResult.data ?? []).map(
-        (shift: { id: string; turn_time_minutes: number | null }) =>
-          [shift.id, Number(shift.turn_time_minutes) || DEFAULT_TURN_MINUTES] as const,
-      ),
+    // L2: cached RPC. The Postgres function get_available_slots_cached
+    // already does:
+    //   - 20s row-level cache via availability_cache table
+    //   - slot generation per shift hours
+    //   - table assignment per slot (smallest-fit) with live-reservation
+    //     conflict checking
+    //   - returns timezone + floor_capacity + hours_window in the SAME
+    //     response (eliminates the 4 supplementary edge-fn queries the
+    //     pre-rewrite version made).
+    const { data: rpcData, error: rpcError } = await supabaseAdmin.rpc(
+      "get_available_slots_cached",
+      {
+        p_restaurant_id: restaurantId,
+        p_date: date,
+        p_party_size: partySize,
+      },
     );
+    if (rpcError) throw rpcError;
+    const payload = (rpcData ?? {}) as CachedResponse;
 
+    // Synthesize display_time per slot using the timezone the RPC returned.
+    // Format matches _shared/availability.ts:244-249 exactly so existing
+    // mobile rendering stays bit-identical (e.g. "5:00 PM").
+    const timezone = payload.timezone ?? "America/Toronto";
+    const floorCapacity = payload.floor_capacity ?? null;
     const slots: PublicAvailabilitySlot[] = [];
-    let tableBlockedCount = 0;
-    for (const slot of availability.slots ?? []) {
-      const durationMinutes = turnMinutesByShift.get(slot.shift_id) ?? DEFAULT_TURN_MINUTES;
-      const localParts = localBookingParts(slot.date_time, timezone);
-      if (!localParts) continue;
-      const tableId = pickAvailableTableId(
-        tables,
-        liveReservations,
-        partySize,
-        slot.date_time,
-        durationMinutes,
-      );
-      if (!tableId && floorCapacity) {
-        tableBlockedCount += 1;
-        continue;
-      }
+    for (const slot of payload.slots ?? []) {
+      const slotStart = new Date(slot.date_time);
+      if (Number.isNaN(slotStart.getTime())) continue;
+      const displayTime = slotStart.toLocaleTimeString("en-US", {
+        timeZone: timezone,
+        hour: "numeric",
+        minute: "2-digit",
+        hour12: true,
+      });
       slots.push({
         ...slot,
-        ...(tableId ? { table_ids: [tableId] } : {}),
-        duration_minutes: durationMinutes,
+        display_time: displayTime,
+        duration_minutes: slot.duration_minutes ?? DEFAULT_TURN_MINUTES,
         floor_capacity: floorCapacity ?? undefined,
       });
     }
 
-    const tableCapacityBlocked =
-      slots.length === 0 &&
-      (availability.slots ?? []).length > 0 &&
-      tableBlockedCount >= (availability.slots ?? []).length;
-
     const responseBody = {
       slots,
       floor_capacity: floorCapacity,
-      hours_window: availability.hours_window ?? null,
-      unavailable_reason: tableCapacityBlocked ? "fully_booked" : availability.unavailable_reason ?? null,
-      message: tableCapacityBlocked
-        ? "The restaurant is fully booked for that date."
-        : availability.message ?? null,
+      // Mobile clients read `hours_window` — keep the legacy field name.
+      hours_window: payload.configured_hours_window ?? null,
+      unavailable_reason: payload.unavailable_reason ?? null,
+      message: payload.message ?? null,
     };
 
     responseCache.set(cacheKey, { value: responseBody, expiresAt: Date.now() + CACHE_TTL_MS });
