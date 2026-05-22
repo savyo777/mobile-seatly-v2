@@ -480,7 +480,29 @@ export default function Step7Confirmation() {
     return () => {
       cancelled = true;
     };
-  }, [cart, date, email, guests, name, notes, occasion, paymentMethod, phone, preorderSubtotal, restaurant, rid, router, seatingPreference, shiftId, slotDateTime]);
+    // CRITICAL: `restaurant` is INTENTIONALLY excluded from this deps
+    // array. The booking flow reads restaurant data via getCachedRestaurantById
+    // and loadRestaurantForBooking inside the effect — it does NOT depend on
+    // restaurant state for triggering re-runs. Including `restaurant` here
+    // causes a vicious bug:
+    //   1. submitBooking() calls setRestaurant(currentRestaurant) at line 355
+    //      to seed the local state for the success render below.
+    //   2. That state change re-triggers this useEffect (because restaurant
+    //      is in deps).
+    //   3. The cleanup fires, setting cancelled = true.
+    //   4. The in-flight `await createPublicBooking(...)` finishes successfully
+    //      (~1.3s server-side, reservation IS created in DB).
+    //   5. But `if (cancelled) return;` at line 413 short-circuits BEFORE
+    //      setConfirmation runs.
+    //   6. confirmation stays null → the 18s watchdog fires → user sees
+    //      "Could not confirm your reservation. Please try again." even
+    //      though their reservation was created.
+    // The new effect run no-ops (savedReservationRef.current is true), so
+    // there's no second booking attempt. But the user never sees success.
+    // Verified in production TestFlight build 13/15 on 2026-05-22 against
+    // appreview@cenaiva.com + Steven's account.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [cart, date, email, guests, name, notes, occasion, paymentMethod, phone, preorderSubtotal, rid, router, seatingPreference, shiftId, slotDateTime]);
 
   // Watchdog: if neither confirmation nor submitError lands within 18s
   // (e.g. Android Hermes swallowed an abort/timeout from createPublicBooking),
