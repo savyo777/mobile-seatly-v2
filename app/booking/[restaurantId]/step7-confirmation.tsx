@@ -480,29 +480,36 @@ export default function Step7Confirmation() {
     return () => {
       cancelled = true;
     };
-    // CRITICAL: `restaurant` is INTENTIONALLY excluded from this deps
-    // array. The booking flow reads restaurant data via getCachedRestaurantById
-    // and loadRestaurantForBooking inside the effect — it does NOT depend on
-    // restaurant state for triggering re-runs. Including `restaurant` here
-    // causes a vicious bug:
-    //   1. submitBooking() calls setRestaurant(currentRestaurant) at line 355
-    //      to seed the local state for the success render below.
-    //   2. That state change re-triggers this useEffect (because restaurant
-    //      is in deps).
-    //   3. The cleanup fires, setting cancelled = true.
-    //   4. The in-flight `await createPublicBooking(...)` finishes successfully
-    //      (~1.3s server-side, reservation IS created in DB).
-    //   5. But `if (cancelled) return;` at line 413 short-circuits BEFORE
-    //      setConfirmation runs.
-    //   6. confirmation stays null → the 18s watchdog fires → user sees
-    //      "Could not confirm your reservation. Please try again." even
-    //      though their reservation was created.
-    // The new effect run no-ops (savedReservationRef.current is true), so
-    // there's no second booking attempt. But the user never sees success.
-    // Verified in production TestFlight build 13/15 on 2026-05-22 against
-    // appreview@cenaiva.com + Steven's account.
+    // CRITICAL: deps array is INTENTIONALLY just [rid].
+    //
+    // The booking effect must run ONCE per restaurant. Every other "dep"
+    // (cart, date, email, guests, name, notes, occasion, paymentMethod,
+    // phone, preorderSubtotal, restaurant, etc.) is captured at first
+    // render via closure — values come from URL params or from-mount
+    // state that doesn't change while the user is on step7.
+    //
+    // Why we can't list those deps: several of them recompute a fresh
+    // reference on every parent render (cart = parseBookingCartParam(...)
+    // returns a new array each time; preorderSubtotal recomputes; and
+    // setRestaurant fires mid-effect to seed the success render). With
+    // any of those in the deps array, the effect re-runs on every
+    // render. The cleanup fires, setting `cancelled = true`, and the
+    // in-flight `await createPublicBooking(...)` — which actually
+    // succeeded and wrote a reservation to the DB — hits
+    // `if (cancelled) return;` at line 413 BEFORE setConfirmation runs.
+    // confirmation stays null, the 18s watchdog fires, the user sees
+    // "Confirmation is taking longer than expected" while their
+    // reservation sits confirmed in Supabase. Reproduced and confirmed
+    // multiple times on 2026-05-22 with both the appreview account and
+    // Steven's account — every failing test left a real reservation
+    // in the DB (e.g., 6A0EF3DC at The Keg Mansion, 8ADB0542 at STK).
+    //
+    // Don't "fix" the missing deps — there's a savedReservationRef.current
+    // guard at line 348 that prevents the effect from running submitBooking
+    // a second time anyway, so re-runs are guaranteed no-ops, which means
+    // the deps don't need to track those values.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [cart, date, email, guests, name, notes, occasion, paymentMethod, phone, preorderSubtotal, rid, router, seatingPreference, shiftId, slotDateTime]);
+  }, [rid]);
 
   // Watchdog: if neither confirmation nor submitError lands within 18s
   // (e.g. Android Hermes swallowed an abort/timeout from createPublicBooking),
