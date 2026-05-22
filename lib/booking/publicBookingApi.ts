@@ -432,11 +432,29 @@ export async function createPublicBooking(
     clearTimeout(timeout);
   }
 
-  const body = await response.json().catch(() => ({})) as Partial<PublicBookingResponse> & { error?: unknown };
+  const body = await response.json().catch(() => ({})) as Partial<PublicBookingResponse> & {
+    error?: unknown;
+    unavailable_reason?: string;
+  };
   if (!response.ok || body.error || !body.reservation_id) {
     if (demoFallback) return demoFallback;
     const error = new Error(coerceErrorMessage(body.error, 'Reservation failed.'));
-    (error as Error & { status?: number }).status = response.status;
+    // Propagate the server's code + status so friendlyError can map them
+    // to the right user-facing message. Without this, a 409 with
+    // body.error="diner_double_book" surfaces as the generic "Reservation
+    // failed" fallback instead of "You already have a booking at this
+    // time." — that was the production TestFlight regression observed
+    // 2026-05-22.
+    (error as Error & { status?: number; unavailable_reason?: string; code?: string }).status =
+      response.status;
+    if (typeof body.unavailable_reason === 'string') {
+      (error as Error & { unavailable_reason?: string }).unavailable_reason = body.unavailable_reason;
+    }
+    if (typeof body.error === 'string' && /^[a-z_]+$/.test(body.error)) {
+      // body.error is itself the code (e.g. "diner_double_book"); expose
+      // it as `code` so friendlyError's lookup picks it up.
+      (error as Error & { code?: string }).code = body.error;
+    }
     throw error;
   }
 
