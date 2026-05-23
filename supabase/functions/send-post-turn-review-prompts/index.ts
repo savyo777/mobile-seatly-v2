@@ -127,15 +127,23 @@ Deno.serve(async (req: Request) => {
       }
 
       try {
-        // Look up the diner's expo_push_token.
+        // Look up the diner's expo_push_token AND auth_user_id.
+        // post_turn_visit_requests.user_id has an FK to auth.users(id),
+        // NOT user_profiles(id) — those are different uuids in this
+        // codebase. Reading profileRow.id (= user_profiles.id) would
+        // FK-violate at upsert time, silently fail (the upsert error
+        // wasn't surfaced), and the dedup row would never get written
+        // → the 15-min cron would re-fire the same review-prompt push
+        // for the same reservation every cycle. Confirmed reproduced on
+        // production 2026-05-22 against Steven's account.
         const { data: profileRow } = await supabaseAdmin
           .from("user_profiles")
-          .select("id, expo_push_token")
+          .select("auth_user_id, expo_push_token")
           .eq("id", r.user_profile_id)
           .maybeSingle();
         const token = (profileRow as { expo_push_token?: string | null } | null)?.expo_push_token;
-        const userProfileId = (profileRow as { id?: string } | null)?.id;
-        if (!token || !userProfileId) {
+        const authUserId = (profileRow as { auth_user_id?: string | null } | null)?.auth_user_id;
+        if (!token || !authUserId) {
           skipped += 1;
           continue;
         }
@@ -162,12 +170,19 @@ Deno.serve(async (req: Request) => {
         // subsequent runs even if push itself failed. The mobile
         // PostTurnPromptHost reads this same table and will surface the
         // in-app modal as a fallback.
-        await supabaseAdmin
+        //
+        // CRITICAL: surface upsert errors. The previous version awaited
+        // the upsert without inspecting the return value, which masked
+        // a silent FK violation (see auth_user_id lookup above) and let
+        // the cron re-fire the same push every 15 min. Treat an upsert
+        // failure as a hard failure for this row so the operator can
+        // see it in edge-function logs.
+        const upsertRes = await supabaseAdmin
           .from("post_turn_visit_requests")
           .upsert(
             {
               booking_id: r.id,
-              user_id: userProfileId,
+              user_id: authUserId,
               restaurant_id: r.restaurant_id,
               request_type: REQUEST_TYPE,
               status: "pending",
@@ -175,6 +190,15 @@ Deno.serve(async (req: Request) => {
             },
             { onConflict: "booking_id,user_id,request_type" },
           );
+        if (upsertRes.error) {
+          console.error(
+            "[post-turn-review-prompt] upsert failed for reservation",
+            r.id,
+            upsertRes.error,
+          );
+          failed += 1;
+          continue;
+        }
 
         await logCommunication({
           supabase: supabaseAdmin,
