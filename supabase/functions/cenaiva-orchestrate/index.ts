@@ -80,12 +80,33 @@ function createLatencyTimer(label: string) {
     },
     done(extra: Record<string, unknown> = {}) {
       if (!LATENCY_DEBUG) return;
+      // 2026-05-22 audit hardening (#19): only the keys explicitly
+      // allowlisted below are merged into the log payload. Previously
+      // we spread the entire `extra` object, so a future caller passing
+      // user IDs, model context, tool-call results, etc. would leak
+      // PII into ops logs. Add new keys here intentionally.
+      const ALLOWED_EXTRA_KEYS = new Set([
+        "intent",
+        "step",
+        "tool_count",
+        "model",
+        "tokens_in",
+        "tokens_out",
+        "ttfb_ms",
+        "stream_chunks",
+      ]);
+      const safeExtra: Record<string, unknown> = {};
+      for (const [k, v] of Object.entries(extra)) {
+        if (ALLOWED_EXTRA_KEYS.has(k) && (typeof v === "string" || typeof v === "number" || typeof v === "boolean")) {
+          safeExtra[k] = v;
+        }
+      }
       console.log(JSON.stringify({
         kind: "latency",
         label,
         total_ms: Math.round(performance.now() - start),
         marks,
-        ...extra,
+        ...safeExtra,
       }));
     },
   };

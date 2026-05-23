@@ -3,6 +3,7 @@ import { Alert, View, Text, TouchableOpacity, ScrollView, TextInput } from 'reac
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useStepContentTopPadding } from '@/lib/booking/useStepContentTopPadding';
 import { useTranslation } from 'react-i18next';
 import { Button, Card } from '@/components/ui';
 import { getCachedRestaurantById, loadRestaurantForBooking } from '@/lib/data/restaurantCatalog';
@@ -93,6 +94,7 @@ export default function Step5Review() {
   }>();
   const router = useRouter();
   const insets = useSafeAreaInsets();
+  const stepTopPad = useStepContentTopPadding();
   const { t } = useTranslation();
   const c = useColors();
   const styles = useStyles();
@@ -173,7 +175,7 @@ export default function Step5Review() {
   ].join('&');
 
   return (
-    <View style={[styles.container, { paddingTop: insets.top }]}>
+    <View style={[styles.container, { paddingTop: stepTopPad }]}>
       <View style={styles.header}>
         <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
           <Ionicons name="chevron-back" size={24} color={c.textPrimary} />

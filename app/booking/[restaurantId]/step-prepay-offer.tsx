@@ -3,6 +3,7 @@ import { View, Text, ScrollView, Pressable } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useStepContentTopPadding } from '@/lib/booking/useStepContentTopPadding';
 import { Button } from '@/components/ui';
 import { mockRestaurants as DEMO_RESTAURANTS } from '@/lib/mock/restaurants';
 import { isDemoModeEnabled } from '@/lib/config/demoMode';
@@ -95,6 +96,7 @@ const useStyles = createStyles((c) => ({
 export default function StepPrepayOfferScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
+  const stepTopPad = useStepContentTopPadding();
   const c = useColors();
   const styles = useStyles();
   const { restaurantId, date, time, partySize, occasion, notes, cartTotal, cartCount, cart } =
@@ -145,7 +147,7 @@ export default function StepPrepayOfferScreen() {
   };
 
   return (
-    <View style={[styles.container, { paddingTop: insets.top }]}>
+    <View style={[styles.container, { paddingTop: stepTopPad }]}>
       <View style={styles.header}>
         <Pressable onPress={() => router.back()} style={styles.backBtn} hitSlop={12}>
           <Ionicons name="chevron-back" size={24} color={c.textPrimary} />

@@ -3,6 +3,7 @@ import { Alert, View, Text, TouchableOpacity, ScrollView, Platform, Modal, Press
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useStepContentTopPadding } from '@/lib/booking/useStepContentTopPadding';
 import { useTranslation } from 'react-i18next';
 import { useStripe } from '@stripe/stripe-react-native';
 import { Button, Card } from '@/components/ui';
@@ -205,6 +206,7 @@ export default function Step6Payment() {
   }>();
   const router = useRouter();
   const insets = useSafeAreaInsets();
+  const stepTopPad = useStepContentTopPadding();
   const { t } = useTranslation();
   const c = useColors();
   const styles = useStyles();
@@ -582,7 +584,7 @@ export default function Step6Payment() {
   };
 
   return (
-    <View style={[styles.container, { paddingTop: insets.top }]}>
+    <View style={[styles.container, { paddingTop: stepTopPad }]}>
       <View style={styles.header}>
         <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
           <Ionicons name="chevron-back" size={24} color={c.textPrimary} />

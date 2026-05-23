@@ -146,7 +146,7 @@ export function useAiVoiceInput({ lang, onSessionEnd }: UseAiVoiceInputOptions) 
       }
       return;
     }
-    let t0 = Date.now();
+    const t0 = Date.now();
     const tick = () => {
       const t = (Date.now() - t0) / 280;
       const v = 0.35 + 0.65 * (0.5 + 0.5 * Math.sin(t * 1.7) * Math.sin(t * 2.3));

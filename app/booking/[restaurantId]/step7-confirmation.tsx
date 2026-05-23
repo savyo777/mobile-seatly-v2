@@ -13,6 +13,7 @@ import {
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useStepContentTopPadding } from '@/lib/booking/useStepContentTopPadding';
 import { Button } from '@/components/ui';
 import {
   getCachedRestaurantById,
@@ -297,6 +298,7 @@ export default function Step7Confirmation() {
   }>();
   const router = useRouter();
   const insets = useSafeAreaInsets();
+  const stepTopPad = useStepContentTopPadding();
   const c = useColors();
   const styles = useStyles();
   const { t } = useTranslation();
@@ -569,7 +571,7 @@ export default function Step7Confirmation() {
 
   if (!confirmation) {
     return (
-      <View style={[styles.container, { paddingTop: insets.top }]}>
+      <View style={[styles.container, { paddingTop: stepTopPad }]}>
         <View style={[styles.body, styles.loadingBox, { paddingBottom: insets.bottom + 32 }]}>
           {submitError ? (
             <>
@@ -606,7 +608,7 @@ export default function Step7Confirmation() {
   }
 
   return (
-    <View style={[styles.container, { paddingTop: insets.top }]}>
+    <View style={[styles.container, { paddingTop: stepTopPad }]}>
       <ScrollView
         showsVerticalScrollIndicator={false}
         contentContainerStyle={[styles.body, { paddingBottom: insets.bottom + 32 }]}

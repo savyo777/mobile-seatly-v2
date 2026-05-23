@@ -24,7 +24,8 @@
     "e2e:auth": "maestro test .maestro/auth/",
     "e2e:customer": "maestro test .maestro/customer/",
     "e2e:staff": "maestro test .maestro/staff/",
-    "postinstall": "patch-package"
+    "postinstall": "patch-package",
+    "lint": "eslint --ext .ts,.tsx app lib components hooks"
   },
   "dependencies": {
     "@cenaiva/assistant": "file:packages/assistant",
@@ -97,7 +98,14 @@
   "devDependencies": {
     "@types/jest": "^29.5.14",
     "@types/react": "~19.2.2",
+    "@typescript-eslint/eslint-plugin": "^7.18.0",
+    "@typescript-eslint/parser": "^7.18.0",
+    "eslint": "^8.57.1",
+    "eslint-plugin-react": "^7.37.5",
+    "eslint-plugin-react-hooks": "^4.6.2",
+    "eslint-plugin-react-native": "^4.1.0",
     "jest": "~29.7.0",
+    "jest-expo": "~52.0.0",
     "patch-package": "^8.0.1",
     "ts-jest": "^29.4.5",
     "typescript": "~5.9.2"

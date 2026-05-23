@@ -265,6 +265,24 @@ export function useReservationHold(args: UseReservationHoldArgs): UseReservation
         serverSkewMs,
         createdAt: new Date().toISOString(),
       };
+      // Always-on diagnostic for the "hold expired much faster than 30 min"
+      // user report (2026-05-22). Logs the exact timestamps + computed
+      // duration so when a future expiration fires we can correlate the
+      // creation-side numbers against the trigger (heartbeat 410 vs
+      // client-tick countdown vs hydration-time-skew). NOT gated on __DEV__
+      // because TestFlight users hit the bug on prod builds.
+      // eslint-disable-next-line no-console
+      console.log('[hold] created', {
+        holdId: stored.holdId,
+        serverNow: resp.server_now,
+        clientNow: new Date().toISOString(),
+        expiresAt: resp.expires_at,
+        serverSkewMs,
+        durationMinutes: resp.duration_minutes,
+        secondsUntilExpiry: Math.floor(
+          (new Date(resp.expires_at).getTime() - (Date.now() - serverSkewMs)) / 1000,
+        ),
+      });
       await persistHold(stored);
       transitionToActive(resp, stored);
       return { holdId: resp.hold_id, expiresAt: resp.expires_at };
@@ -340,12 +358,21 @@ export function useReservationHold(args: UseReservationHoldArgs): UseReservation
       if (current.status !== 'active') return;
       const secondsLeft = computeSecondsLeft(current.expiresAt, current.serverSkewMs);
       if (secondsLeft <= 0) {
-        if (__DEV__) {
-          console.log(
-            '[hold] client-tick expired',
-            { expiresAt: current.expiresAt, serverSkewMs: current.serverSkewMs, holdId: current.holdId },
-          );
-        }
+        // Always-on (TestFlight diagnostic for the user-reported
+        // "expired much faster than 30 min" issue). Logs the exact
+        // timestamps so we can correlate with the [hold] created log
+        // above + figure out whether the device clock drifted, the
+        // serverSkewMs was wrong from the start, or the expires_at
+        // really did pass in the elapsed time.
+        // eslint-disable-next-line no-console
+        console.log('[hold] client-tick expired', {
+          holdId: current.holdId,
+          expiresAt: current.expiresAt,
+          clientNow: new Date().toISOString(),
+          serverSkewMs: current.serverSkewMs,
+          computedServerNow: new Date(Date.now() - current.serverSkewMs).toISOString(),
+          secondsLeft,
+        });
         setState({ status: 'expired', holdId: current.holdId });
         return;
       }
@@ -415,7 +442,14 @@ export function useReservationHold(args: UseReservationHoldArgs): UseReservation
         })
         .catch((error) => {
           if (error instanceof HoldApiError && error.status === 410) {
-            if (__DEV__) console.log('[hold] heartbeat 410 → expiring locally');
+            // Always-on diagnostic — server says the hold is gone, but we
+            // need to know WHEN to debug "expired much faster than 30 min".
+            // eslint-disable-next-line no-console
+            console.log('[hold] heartbeat 410 → expiring locally', {
+              holdId,
+              clientNow: new Date().toISOString(),
+              reason: error.reason ?? null,
+            });
             setState({ status: 'expired', holdId });
           } else if (__DEV__) {
             console.log('[hold] heartbeat error (kept alive):', error?.message ?? error);

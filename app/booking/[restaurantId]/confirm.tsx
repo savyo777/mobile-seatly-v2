@@ -14,6 +14,7 @@ import {
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useStepContentTopPadding } from '@/lib/booking/useStepContentTopPadding';
 import * as Haptics from 'expo-haptics';
 import { Button } from '@/components/ui';
 import { BookingCalendarModal } from '@/components/booking/BookingCalendarModal';
@@ -269,6 +270,7 @@ export default function ConfirmScreen() {
   }>();
   const router = useRouter();
   const insets = useSafeAreaInsets();
+  const stepTopPad = useStepContentTopPadding();
   const c = useColors();
   const styles = useStyles();
 
@@ -395,7 +397,7 @@ export default function ConfirmScreen() {
   }, [guests, guestError]);
 
   return (
-    <View style={[styles.container, { paddingTop: insets.top }]}>
+    <View style={[styles.container, { paddingTop: stepTopPad }]}>
       {/* Header */}
       <View style={styles.header}>
         <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>

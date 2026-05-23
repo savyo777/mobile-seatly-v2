@@ -3,6 +3,7 @@ import { View, Text, TouchableOpacity, ScrollView, Image, FlatList, Alert } from
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useStepContentTopPadding } from '@/lib/booking/useStepContentTopPadding';
 import { useTranslation } from 'react-i18next';
 import { Button, Badge } from '@/components/ui';
 import { mockMenuItems } from '@/lib/mock/menuItems';
@@ -112,6 +113,7 @@ export default function Step4Preorder() {
   }>();
   const router = useRouter();
   const insets = useSafeAreaInsets();
+  const stepTopPad = useStepContentTopPadding();
   const { t } = useTranslation();
   const c = useColors();
   const styles = useStyles();
@@ -343,7 +345,7 @@ export default function Step4Preorder() {
   };
 
   return (
-    <View style={[styles.container, { paddingTop: insets.top }]}>
+    <View style={[styles.container, { paddingTop: stepTopPad }]}>
       <View style={styles.header}>
         <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
           <Ionicons name="chevron-back" size={24} color={c.textPrimary} />

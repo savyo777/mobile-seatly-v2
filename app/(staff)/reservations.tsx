@@ -949,8 +949,8 @@ export default function OwnerReservationsScreen() {
       .order('reserved_at', { ascending: true });
     if (error || !data) return;
     const reservationIds = data.map((row) => String((row as Record<string, unknown>).id ?? '')).filter(Boolean);
-    let tableAssignments = new Map<string, string[]>();
-    let tableLabelById = new Map<string, string>();
+    const tableAssignments = new Map<string, string[]>();
+    const tableLabelById = new Map<string, string>();
     if (reservationIds.length) {
       const { data: rtRows } = await supabase
         .from('reservation_tables')
