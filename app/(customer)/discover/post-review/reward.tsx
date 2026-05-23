@@ -149,6 +149,11 @@ export default function ReviewRewardScreen() {
               city={previewRestaurantCity}
               area={previewRestaurantArea}
               autoSaveToCameraRoll
+              // Photo coming in from connect.tsx::postSnap is already a
+              // captureStyledSnapToTmpFile composite — the filter is baked
+              // INTO the JPEG. Tell the share sheet so it doesn't overlay
+              // the filter a second time on top. User-reported 2026-05-23.
+              imageIncludesStoryFilter={!!selectedFilterId}
             />
           ) : null}
 

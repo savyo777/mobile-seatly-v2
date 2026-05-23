@@ -44,6 +44,16 @@ interface SnapShareSheetProps {
   city?: string;
   area?: string;
   autoSaveToCameraRoll?: boolean;
+  /**
+   * When true, `imageUrl` already has the chosen story filter baked into
+   * the JPEG (e.g. the reward screen receives the captured composite from
+   * connect.tsx::postSnap, which already ran captureStyledSnapToTmpFile).
+   * Without this flag SnapShareSheet would wrap the image in another
+   * StoryFilterFrame, layering the same filter overlay a SECOND time —
+   * the user sees `$$$ · 24` / `by Cenaiva` etc. rendered twice at the
+   * top of the preview. User-reported 2026-05-23.
+   */
+  imageIncludesStoryFilter?: boolean;
 }
 
 type ShareOption = {
@@ -208,6 +218,7 @@ export function SnapShareSheet({
   city,
   area,
   autoSaveToCameraRoll = false,
+  imageIncludesStoryFilter = false,
 }: SnapShareSheetProps) {
   const c = useColors();
   const styles = useStyles();
@@ -216,8 +227,16 @@ export function SnapShareSheet({
   const autoSaveAttemptedRef = useRef(false);
   const [pendingDestination, setPendingDestination] = useState<SocialShareDestination | null>(null);
   const [isSystemSharePending, setIsSystemSharePending] = useState(false);
-  const [localMediaUri, setLocalMediaUri] = useState<string | null>(null);
-  const [localMediaIncludesStoryFilter, setLocalMediaIncludesStoryFilter] = useState(false);
+  // Seed localMediaUri with imageUrl when the caller tells us it's
+  // already a composited snap (filter baked in). That way the share
+  // path skips re-capturing the preview via captureStyledSnapToTmpFile
+  // — which would (a) duplicate the filter and (b) waste CPU.
+  const [localMediaUri, setLocalMediaUri] = useState<string | null>(
+    imageIncludesStoryFilter ? imageUrl : null,
+  );
+  const [localMediaIncludesStoryFilter, setLocalMediaIncludesStoryFilter] = useState(
+    imageIncludesStoryFilter,
+  );
   const [prepareError, setPrepareError] = useState<string | null>(null);
   const [isPreparingMedia, setIsPreparingMedia] = useState(false);
   const [isSavingToCameraRoll, setIsSavingToCameraRoll] = useState(false);
@@ -527,7 +546,7 @@ export function SnapShareSheet({
 
       {imageUrl ? (
         <View style={[styles.preview, { width: previewW, height: previewH }]}>
-          {hasStoryFilter ? (
+          {hasStoryFilter && !imageIncludesStoryFilter ? (
             <View
               ref={storyFrameRef}
               collapsable={false}
