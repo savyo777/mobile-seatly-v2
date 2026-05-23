@@ -59,6 +59,27 @@ function routeToRegExp(route: string): RegExp {
   return new RegExp(`^${escaped}$`);
 }
 
+// String fragments that LOOK like routes (begin with `/`) but are NOT
+// router targets. The audit regex is intentionally broad so it catches
+// drift; this list documents the false positives explicitly so the
+// signal stays useful.
+//
+// Added 2026-05-23 (test was already broken before the audit cleanup
+// — these matched in the source but had no Expo Router file behind
+// them because they were never routes to begin with):
+const KNOWN_NON_ROUTE_FRAGMENTS = new Set([
+  '/__DYNAMIC__',                      // template literals truncated by stripRouteNoise — eg `/${id}`
+  '/<slug>',                           // doc placeholder in lib/alerts/parseSlotOpenedRoute.ts
+  '/[anything]',                       // doc placeholder in lib/auth/deepLinkPolicy.ts
+  '/deals',                            // doc-string example in parseSlotOpenedRoute.ts
+  '/review',                           // post-visit deep-link prefix, not a router file
+  '/visit-photos',                     // storage subpath in lib/reviews/deleteMyReview.ts
+  '/g, \'',                            // regex literal: .replace(/g, '...')
+  '/ mo',                              // date format string in settings.tsx
+  '/ month',                           // same
+  '/booking/__DYNAMIC__/step2-time${qs.length ', // truncated template literal
+]);
+
 function extractRouteStrings(file: string): string[] {
   const source = fs.readFileSync(file, 'utf8');
   const out: string[] = [];
@@ -68,7 +89,9 @@ function extractRouteStrings(file: string): string[] {
     const raw = match[2];
     if (!raw || raw.startsWith('//') || raw.includes('\n')) continue;
     if (raw.startsWith('/rest/') || raw.startsWith('/v1/')) continue;
-    out.push(stripRouteNoise(raw));
+    const stripped = stripRouteNoise(raw);
+    if (KNOWN_NON_ROUTE_FRAGMENTS.has(stripped)) continue;
+    out.push(stripped);
   }
   return Array.from(new Set(out));
 }

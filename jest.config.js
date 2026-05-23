@@ -24,6 +24,16 @@ module.exports = {
   moduleNameMapper: {
     '^(\\.{1,2}/.*)\\.js$': '$1',
     '^react-native$': '<rootDir>/__tests__/mocks/react-native.js',
+    // Mock the expo runtime layers that pull in React-Native native
+    // modules (TurboModuleRegistry, NativeEventEmitter) which don't
+    // exist in Node test env. Without these, any test that
+    // transitively imports lib/auth/AuthContext → lib/notifications
+    // /pushToken → expo-constants → expo-modules-core dies with
+    // "Cannot read properties of undefined (reading 'EventEmitter')".
+    // Audit fix 2026-05-23 item #14 leftover.
+    '^expo-constants$': '<rootDir>/__tests__/mocks/expo-constants.js',
+    '^expo-modules-core$': '<rootDir>/__tests__/mocks/expo-modules-core.js',
+    '^expo-crypto$': '<rootDir>/__tests__/mocks/expo-crypto.js',
     '^@/(.*)$': '<rootDir>/$1',
     '^@cenaiva/assistant$': '<rootDir>/packages/assistant/src/index.ts',
     '^@cenaiva/types$': '<rootDir>/packages/types/index.ts',
@@ -36,4 +46,6 @@ module.exports = {
   globals: {
     __DEV__: false,
   },
+  // Populates EXPO_PUBLIC_* env vars tests assume exist (voice IDs etc).
+  setupFiles: ['<rootDir>/__tests__/setup.js'],
 };

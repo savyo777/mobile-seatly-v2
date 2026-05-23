@@ -267,24 +267,10 @@ export function refundPaymentIntent(payment_intent_id: string): Promise<RefundPa
   });
 }
 
-// Fire-and-forget cancel for unmount cleanup. React Native's fetch doesn't
-// reliably support `{ keepalive: true }` across Hermes versions, so we just
-// kick off the request synchronously and let the OS deliver it during the
-// brief window before backgrounding. If it's dropped, the cron expires the
-// hold after 30 min anyway.
-export function fireAndForgetCancel(hold_id: string): void {
-  if (!isSupabaseConfigured()) return;
-  const { url, anonKey } = getSupabaseEnv();
-  try {
-    void fetch(`${url}/functions/v1/cancel-reservation-hold`, {
-      method: 'POST',
-      headers: {
-        apikey: anonKey,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({ hold_id }),
-    }).catch(() => {});
-  } catch {
-    /* best effort */
-  }
-}
+// DELETED 2026-05-23: fireAndForgetCancel was unused dead code (only
+// referenced in a useReservationHold comment explaining why the
+// unmount-cleanup effect was removed). The function also bypassed the
+// Authorization header, which is incompatible with the new mandatory
+// JWT gating on cancel-reservation-hold. Use cancelReservationHold
+// (the awaited, JWT-bearing variant above) from explicit user actions
+// only — there is no longer an anon path.

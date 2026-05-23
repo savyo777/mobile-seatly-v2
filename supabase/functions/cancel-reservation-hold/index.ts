@@ -1,10 +1,17 @@
 // @ts-nocheck
 // cancel-reservation-hold — explicit user-initiated cancel (back
-// button, page close beacon, "give up my hold" click).
+// button, "give up my hold" click, HoldExpiredDialog → "Pick another time").
 //
-// Anon-callable. Fire-and-forget on the client side via
-// navigator.sendBeacon, so the response may never be observed — we
-// always return ok: true unless the request itself is malformed.
+// Auth: MANDATORY JWT. Reject 401 if no Bearer token. Hold ownership
+// is then enforced: a user can only cancel a hold whose
+// user_profile_id matches their own (or null = legacy anon hold). The
+// 2026-05-23 hardening removed the original anon-callable fallback
+// that was only there for navigator.sendBeacon page-close calls from a
+// hypothetical web client. In practice (a) we have no web client
+// shipping today, and (b) lib/booking/holdApi.ts::postHoldEndpoint
+// already attaches the access token for every mobile call. The old
+// `fireAndForgetCancel` no-auth path was deleted along with this.
+//
 // cancel_reservation_hold is idempotent (UPDATE … WHERE status IN
 // ('active','converting')), so repeated calls are safe.
 //
@@ -110,19 +117,28 @@ Deno.serve(async (req: Request) => {
     if ("response" in parsed) return parsed.response;
     const holdId = parsed.data.hold_id;
 
-    let userProfileId: string | null = null;
+    // MANDATORY JWT. Reject 401 if the caller didn't attach a Bearer
+    // token. This is the 2026-05-23 hardening — previously we'd fall
+    // through to an anon path that allowed an attacker to cancel
+    // arbitrary holds just by guessing the uuid.
     const authorization = req.headers.get("authorization");
     const token = authorization?.match(/^Bearer\s+(.+)$/i)?.[1] ?? null;
-    if (token) {
-      const { data: { user }, error: authError } = await supabaseAdmin.auth.getUser(token);
-      if (!authError && user) {
-        const { data: profile } = await supabaseAdmin
-          .from("user_profiles")
-          .select("id")
-          .eq("auth_user_id", user.id)
-          .maybeSingle();
-        userProfileId = profile?.id ?? null;
-      }
+    if (!token) {
+      return jsonResponse({ error: "Authentication required", unavailable_reason: "unauthorized" }, 401);
+    }
+    const { data: { user }, error: authError } = await supabaseAdmin.auth.getUser(token);
+    if (authError || !user) {
+      return jsonResponse({ error: "Invalid or expired token", unavailable_reason: "unauthorized" }, 401);
+    }
+    const { data: profile } = await supabaseAdmin
+      .from("user_profiles")
+      .select("id")
+      .eq("auth_user_id", user.id)
+      .maybeSingle();
+    const userProfileId: string | null = profile?.id ?? null;
+    if (!userProfileId) {
+      // Authenticated user has no user_profiles row → can't own any hold.
+      return jsonResponse({ error: "User profile not found", unavailable_reason: "unauthorized" }, 401);
     }
 
     try {
@@ -157,11 +173,9 @@ Deno.serve(async (req: Request) => {
       .eq("id", holdId)
       .maybeSingle();
 
-    if (userProfileId && holdRow?.user_profile_id && holdRow.user_profile_id !== userProfileId) {
+    if (holdRow?.user_profile_id && holdRow.user_profile_id !== userProfileId) {
       // Authenticated user is trying to cancel a hold that belongs to
-      // someone else. Reject loudly. Random unauthenticated callers
-      // (beacons, anon clients) still fall through to the legacy path
-      // so we don't break that flow.
+      // someone else. Reject loudly.
       console.warn("[cancel-reservation-hold] ownership rejection", { holdId, requester: userProfileId });
       return jsonResponse({ error: "Not your hold", unavailable_reason: "forbidden" }, 403);
     }

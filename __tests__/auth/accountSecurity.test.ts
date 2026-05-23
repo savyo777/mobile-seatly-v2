@@ -1,14 +1,14 @@
 import { deleteAccount } from '@/lib/services/accountSecurity';
-import { clearPersistedSupabaseSession, getSupabase } from '@/lib/supabase/client';
+import { clearSupabaseStorageOnly, getSupabase } from '@/lib/supabase/client';
 
 jest.mock('@/lib/supabase/client', () => ({
-  clearPersistedSupabaseSession: jest.fn(),
+  clearSupabaseStorageOnly: jest.fn(),
   getSupabase: jest.fn(),
 }));
 
 const mockedGetSupabase = getSupabase as jest.MockedFunction<typeof getSupabase>;
-const mockedClearPersistedSupabaseSession =
-  clearPersistedSupabaseSession as jest.MockedFunction<typeof clearPersistedSupabaseSession>;
+const mockedClearStorage =
+  clearSupabaseStorageOnly as jest.MockedFunction<typeof clearSupabaseStorageOnly>;
 
 function makeSupabaseMock(options: {
   invokeResult: {
@@ -32,7 +32,7 @@ function makeSupabaseMock(options: {
 describe('account security helpers', () => {
   beforeEach(() => {
     jest.clearAllMocks();
-    mockedClearPersistedSupabaseSession.mockResolvedValue(undefined);
+    mockedClearStorage.mockResolvedValue(undefined);
   });
 
   it('deletes the current account, signs out, and clears persisted auth state', async () => {
@@ -44,7 +44,7 @@ describe('account security helpers', () => {
 
     expect(invoke).toHaveBeenCalledWith('delete-account', { method: 'POST' });
     expect(signOut).toHaveBeenCalledWith({ scope: 'local' });
-    expect(mockedClearPersistedSupabaseSession).toHaveBeenCalledTimes(1);
+    expect(mockedClearStorage).toHaveBeenCalledTimes(1);
   });
 
   it('clears persisted auth state even when sign out fails after deletion', async () => {
@@ -58,7 +58,7 @@ describe('account security helpers', () => {
     await expect(deleteAccount()).resolves.toBeUndefined();
 
     expect(signOut).toHaveBeenCalledTimes(1);
-    expect(mockedClearPersistedSupabaseSession).toHaveBeenCalledTimes(1);
+    expect(mockedClearStorage).toHaveBeenCalledTimes(1);
   });
 
   it('surfaces function error response bodies when deletion fails', async () => {
@@ -74,7 +74,7 @@ describe('account security helpers', () => {
 
     await expect(deleteAccount()).rejects.toThrow('Account could not be deleted.');
     expect(signOut).not.toHaveBeenCalled();
-    expect(mockedClearPersistedSupabaseSession).not.toHaveBeenCalled();
+    expect(mockedClearStorage).not.toHaveBeenCalled();
   });
 
   it('does not show raw non-2xx Edge Function errors', async () => {
