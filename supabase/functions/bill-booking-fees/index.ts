@@ -83,7 +83,8 @@ Deno.serve(async (req) => {
     );
 
     const { default: Stripe } = await import("npm:stripe@17");
-    const stripe = new Stripe(stripeKey, { apiVersion: "2024-11-20.acacia" });
+    const { STRIPE_API_VERSION } = await import("../_shared/stripe.ts");
+    const stripe = new Stripe(stripeKey, { apiVersion: STRIPE_API_VERSION });
 
     let billed = 0;
     let failed = 0;

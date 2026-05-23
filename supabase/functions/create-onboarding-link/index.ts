@@ -96,7 +96,8 @@ Deno.serve(async (req: Request) => {
     if (!stripeKey) return jsonRes({ error: "Stripe is not configured on the server" }, 500);
 
     const { default: Stripe } = await import("npm:stripe@17");
-    const stripe = new Stripe(stripeKey, { apiVersion: "2024-11-20.acacia" });
+    const { STRIPE_API_VERSION } = await import("../_shared/stripe.ts");
+    const stripe = new Stripe(stripeKey, { apiVersion: STRIPE_API_VERSION });
 
     let accountId = restaurant.stripe_account_id;
     if (!accountId) {

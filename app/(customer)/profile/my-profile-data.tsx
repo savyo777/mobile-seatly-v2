@@ -19,6 +19,7 @@ import { ProfileSectionTitle } from '@/components/profile/ProfileSectionTitle';
 import { useColors, createStyles, spacing, borderRadius, shadows, typography } from '@/lib/theme';
 import { getMyProfileTags, type MyProfileTagsResult } from '@/lib/privacy/profileTags';
 import { friendlyError } from '@/lib/errors/friendlyError';
+import { PRIVACY_EMAIL } from '@/lib/config/contactInfo';
 
 const useStyles = createStyles((c) => ({
   intro: { fontSize: 13, color: c.textSecondary, lineHeight: 19, marginBottom: spacing.lg },
@@ -99,7 +100,7 @@ export default function MyProfileDataScreen() {
   const handleRequestCorrection = () => {
     Alert.alert(
       'Request a correction',
-      'Email privacy@cenaiva.com describing what should be changed and we will respond within 30 days, per our Privacy Policy.',
+      `Email ${PRIVACY_EMAIL} describing what should be changed and we will respond within 30 days, per our Privacy Policy.`,
       [
         { text: 'Close', style: 'cancel' },
         {
@@ -107,7 +108,7 @@ export default function MyProfileDataScreen() {
           onPress: () => {
             void import('react-native').then(({ Clipboard }) => {
               try {
-                Clipboard.setString?.('privacy@cenaiva.com');
+                Clipboard.setString?.(PRIVACY_EMAIL);
               } catch {
                 /* best effort */
               }
@@ -216,7 +217,7 @@ export default function MyProfileDataScreen() {
             <Pressable onPress={handleRequestCorrection} style={styles.correctionRow} accessibilityRole="button">
               <Ionicons name="create-outline" size={18} color={c.gold} />
               <Text style={styles.correctionText}>
-                Request a correction (email privacy@cenaiva.com)
+                {`Request a correction (email ${PRIVACY_EMAIL})`}
               </Text>
             </Pressable>
           </>

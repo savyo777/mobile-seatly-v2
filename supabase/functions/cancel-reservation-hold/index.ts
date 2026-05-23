@@ -62,7 +62,8 @@ async function refundOrphanPaymentIntent(
   }
   try {
     const { default: Stripe } = await import("npm:stripe@17");
-    const stripe = new Stripe(stripeKey, { apiVersion: "2024-11-20.acacia" });
+    const { STRIPE_API_VERSION } = await import("../_shared/stripe.ts");
+    const stripe = new Stripe(stripeKey, { apiVersion: STRIPE_API_VERSION });
     const pi = await stripe.paymentIntents.retrieve(paymentIntentId);
     if (pi.status !== "succeeded") {
       // Nothing captured to refund — uncaptured PIs are auto-released

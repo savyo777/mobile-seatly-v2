@@ -20,6 +20,7 @@ import { Button, ScreenWrapper } from '@/components/ui';
 import { useColors, createStyles, spacing, borderRadius } from '@/lib/theme';
 import { submitRefundRequest, type RefundReasonCode } from '@/lib/refunds/refundRequests';
 import { friendlyError } from '@/lib/errors/friendlyError';
+import { SUPPORT_EMAIL } from '@/lib/config/contactInfo';
 
 const REASONS: Array<{ code: RefundReasonCode; title: string; subtitle: string }> = [
   {
@@ -111,7 +112,7 @@ export default function RequestRefundScreen() {
     } catch (err) {
       Alert.alert(
         'Could not submit',
-        friendlyError(err, 'Your refund request could not be submitted. Please try again or email support@cenaiva.com.'),
+        friendlyError(err, `Your refund request could not be submitted. Please try again or email ${SUPPORT_EMAIL}.`),
       );
     } finally {
       setSubmitting(false);

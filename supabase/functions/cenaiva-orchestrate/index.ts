@@ -102,6 +102,26 @@ function deferTask(label: string, task: Promise<unknown>) {
   if (runtime?.waitUntil) runtime.waitUntil(guarded);
 }
 
+// Wraps the chat_messages.insert pattern with structured error logging.
+// 2026-05-22 audit found 12 bare-await call sites that silently dropped
+// any insert failure (RLS rejection, schema drift, transient outage),
+// leaving conversation history gapped → "Hey Cenaiva" loses context
+// mid-conversation + dedup/replay logic breaks. Use this helper instead
+// of calling `.insert()` directly so failures land in edge-fn logs.
+async function chatMessagesInsertSafe(
+  supabase: { from: (t: string) => { insert: (row: Record<string, unknown>) => Promise<{ error?: { message?: string } | null }> } },
+  row: Record<string, unknown>,
+): Promise<void> {
+  const res = await supabase.from("chat_messages").insert(row);
+  if (res.error) {
+    console.error("[orchestrate] chat_messages.insert failed", {
+      conversation_id: row.conversation_id,
+      role: row.role,
+      err: res.error.message,
+    });
+  }
+}
+
 // ── SSE response helper ──────────────────────────────────────────────────────
 // Streams a sequence of frames to the client as Server-Sent Events.
 // Frame shapes used by this function:
@@ -1492,13 +1512,13 @@ async function sendEarlyFinal(
   }
   send({ type: "final", payload });
   deferTask("deterministic_persist", (async () => {
-    await supabaseAdmin.from("chat_messages").insert({
+    await chatMessagesInsertSafe(supabaseAdmin, {
       conversation_id: conversationId,
       role: "user",
       content: userContent,
       metadata: { kind: "orchestrator", deterministic: true },
     });
-    await supabaseAdmin.from("chat_messages").insert({
+    await chatMessagesInsertSafe(supabaseAdmin, {
       conversation_id: conversationId,
       role: "assistant",
       content: payload.spoken_text,
@@ -4266,13 +4286,13 @@ Deno.serve(async (req) => {
 
       send({ type: "final", payload });
       deferTask("small_prompt_persist", (async () => {
-        await supabaseAdmin.from("chat_messages").insert({
+        await chatMessagesInsertSafe(supabaseAdmin, {
           conversation_id: activeConversationId,
           role: "user",
           content: userContentForPersistence,
           metadata: { kind: "orchestrator", fast_small_prompt: true },
         });
-        await supabaseAdmin.from("chat_messages").insert({
+        await chatMessagesInsertSafe(supabaseAdmin, {
           conversation_id: activeConversationId,
           role: "assistant",
           content: payload.spoken_text,
@@ -4582,7 +4602,7 @@ Deno.serve(async (req) => {
     messages.push({ role: "user", content: userContent });
 
     await latency.time("user_persist", () =>
-      supabaseAdmin.from("chat_messages").insert({
+      chatMessagesInsertSafe(supabaseAdmin, {
         conversation_id: conversationId,
         role: "user",
         content: userContent,
@@ -5192,13 +5212,13 @@ Deno.serve(async (req) => {
                   "Cannot create the reservation yet. A live slot must be selected, booking_state.status must be confirming, and the latest user message must clearly confirm the exact booking summary. Do not call complete_booking yet.",
               });
               messages.push({ role: "tool", tool_call_id: tc.id, content: toolResult });
-              await supabaseAdmin.from("chat_messages").insert({
+              await chatMessagesInsertSafe(supabaseAdmin, {
                 conversation_id: conversationId,
                 role: "tool_call",
                 content: JSON.stringify(toolInput),
                 metadata: { kind: "orchestrator", tool_use_id: tc.id, tool_name: toolName, input: toolInput },
               });
-              await supabaseAdmin.from("chat_messages").insert({
+              await chatMessagesInsertSafe(supabaseAdmin, {
                 conversation_id: conversationId,
                 role: "tool_result",
                 content: toolResult,
@@ -5222,13 +5242,13 @@ Deno.serve(async (req) => {
               derivedActions.push({ type: "load_availability" });
               bookingDelta.status = "loading_availability";
               messages.push({ role: "tool", tool_call_id: tc.id, content: toolResult });
-              await supabaseAdmin.from("chat_messages").insert({
+              await chatMessagesInsertSafe(supabaseAdmin, {
                 conversation_id: conversationId,
                 role: "tool_call",
                 content: JSON.stringify(toolInput),
                 metadata: { kind: "orchestrator", tool_use_id: tc.id, tool_name: toolName, input: toolInput },
               });
-              await supabaseAdmin.from("chat_messages").insert({
+              await chatMessagesInsertSafe(supabaseAdmin, {
                 conversation_id: conversationId,
                 role: "tool_result",
                 content: toolResult,
@@ -5251,13 +5271,13 @@ Deno.serve(async (req) => {
               bookingDelta.reservation_id = duplicate.id;
               bookingDelta.confirmation_code = duplicate.confirmation_code ?? null;
               messages.push({ role: "tool", tool_call_id: tc.id, content: toolResult });
-              await supabaseAdmin.from("chat_messages").insert({
+              await chatMessagesInsertSafe(supabaseAdmin, {
                 conversation_id: conversationId,
                 role: "tool_call",
                 content: JSON.stringify(toolInput),
                 metadata: { kind: "orchestrator", tool_use_id: tc.id, tool_name: toolName, input: toolInput },
               });
-              await supabaseAdmin.from("chat_messages").insert({
+              await chatMessagesInsertSafe(supabaseAdmin, {
                 conversation_id: conversationId,
                 role: "tool_result",
                 content: toolResult,
@@ -5489,8 +5509,23 @@ Deno.serve(async (req) => {
                   .from("order_items")
                   .insert(orderItems);
                 if (itemsErr) {
-                  console.error("order_items insert failed:", itemsErr, orderItems);
-                  await supabaseAdmin.from("orders").delete().eq("id", order.id);
+                  // 2026-05-22 audit: was logging the full orderItems array
+                  // (prices + item names + customer context) which leaks to
+                  // ops dashboards and any future SIEM. Log shape/count only
+                  // and rely on the structured DB error for the actual fault.
+                  console.error("order_items insert failed:", {
+                    err: itemsErr.message,
+                    code: (itemsErr as { code?: string }).code ?? null,
+                    item_count: orderItems.length,
+                    order_id: order.id,
+                  });
+                  const delRes = await supabaseAdmin.from("orders").delete().eq("id", order.id);
+                  if (delRes.error) {
+                    console.error("[orchestrate] orders.delete rollback after items failure failed", {
+                      order_id: order.id,
+                      err: delRes.error.message,
+                    });
+                  }
                   toolResult = JSON.stringify({
                     error: `Order items insert failed: ${itemsErr.message}`,
                   });
@@ -5703,13 +5738,13 @@ Deno.serve(async (req) => {
           // insert gives both rows the same timestamp, and when we later
           // reload history the `tool` message can land BEFORE its
           // parent `tool_call`, which OpenAI rejects with a 400.
-          await supabaseAdmin.from("chat_messages").insert({
+          await chatMessagesInsertSafe(supabaseAdmin, {
             conversation_id: conversationId,
             role: "tool_call",
             content: JSON.stringify(toolInput),
             metadata: { kind: "orchestrator", tool_use_id: tc.id, tool_name: toolName, input: toolInput },
           });
-          await supabaseAdmin.from("chat_messages").insert({
+          await chatMessagesInsertSafe(supabaseAdmin, {
             conversation_id: conversationId,
             role: "tool_result",
             content: toolResult,
@@ -6485,7 +6520,7 @@ Deno.serve(async (req) => {
     });
 
     await latency.time("assistant_persist", () =>
-      supabaseAdmin.from("chat_messages").insert({
+      chatMessagesInsertSafe(supabaseAdmin, {
         conversation_id: conversationId,
         role: "assistant",
         content: (parsed.spoken_text as string) ?? "",
