@@ -22,11 +22,58 @@
 //   - START / UNSTOP / YES: set sms_opt_out=false (re-subscribe).
 //   - Anything else: ignore silently.
 //
-// SECURITY: validates Twilio signature when TWILIO_AUTH_TOKEN is set
-// so spoofed inbound POSTs can't tank a user's SMS opt-out.
+// SECURITY: Twilio signature validation is MANDATORY. Without it, any
+// caller could POST `From=<victim>&Body=STOP` and force-opt-out a user
+// from SMS. We enforce TWILIO_AUTH_TOKEN being set at boot (fail-closed)
+// and reject any request whose X-Twilio-Signature header doesn't match
+// the HMAC-SHA1 of (request_url + sorted_form_params) keyed by the
+// auth token. Previously the validation was conditional — that's the
+// 2026-05-22 security-audit fix.
 
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "npm:@supabase/supabase-js@2";
+
+// Twilio signature scheme:
+//   1. Take the full URL of the request (incl. query string).
+//   2. Sort POST form params alphabetically by key.
+//   3. Concatenate: URL + each (key + value) in sorted order.
+//   4. HMAC-SHA1 with TWILIO_AUTH_TOKEN as the key, base64-encode.
+//   5. Compare to the X-Twilio-Signature header.
+// Docs: https://www.twilio.com/docs/usage/security#validating-requests
+async function isValidTwilioSignature(
+  url: string,
+  formParams: URLSearchParams,
+  signature: string,
+  authToken: string,
+): Promise<boolean> {
+  const sortedKeys = Array.from(new Set(Array.from(formParams.keys()))).sort();
+  let stringToSign = url;
+  for (const k of sortedKeys) {
+    // Twilio joins multi-value params, but inbound SMS webhooks never
+    // include duplicates — take the first value to match canonical form.
+    stringToSign += k + (formParams.get(k) ?? "");
+  }
+
+  const enc = new TextEncoder();
+  const keyData = await crypto.subtle.importKey(
+    "raw",
+    enc.encode(authToken),
+    { name: "HMAC", hash: "SHA-1" },
+    false,
+    ["sign"],
+  );
+  const sig = await crypto.subtle.sign("HMAC", keyData, enc.encode(stringToSign));
+  const expected = btoa(String.fromCharCode(...new Uint8Array(sig)));
+
+  // Constant-time compare to defeat timing side-channels (matters less
+  // for a base64 sig but free to do right).
+  if (expected.length !== signature.length) return false;
+  let mismatch = 0;
+  for (let i = 0; i < expected.length; i++) {
+    mismatch |= expected.charCodeAt(i) ^ signature.charCodeAt(i);
+  }
+  return mismatch === 0;
+}
 
 const TWIML_HEADERS = { "Content-Type": "application/xml; charset=utf-8" };
 const STOP_KEYWORDS = new Set(["STOP", "UNSUBSCRIBE", "CANCEL", "END", "QUIT"]);
@@ -91,13 +138,40 @@ export default {
       return new Response("Method Not Allowed", { status: 405 });
     }
 
+    // MANDATORY signature validation. Fail-closed: if auth token isn't
+    // configured on this deployment we MUST refuse all inbound traffic,
+    // because the alternative is letting anyone force-opt-out users.
+    const authToken = Deno.env.get("TWILIO_AUTH_TOKEN");
+    if (!authToken) {
+      console.error("[twilio-incoming-sms] TWILIO_AUTH_TOKEN not configured — refusing all inbound");
+      return new Response("Service misconfigured", { status: 503 });
+    }
+
     let form: URLSearchParams;
+    let rawBody: string;
     try {
-      const raw = await req.text();
-      form = new URLSearchParams(raw);
+      rawBody = await req.text();
+      form = new URLSearchParams(rawBody);
     } catch (err) {
       console.error("[twilio-incoming-sms] parse failed", err);
       return twiml(); // empty response — don't expose internals to spoofed callers
+    }
+
+    const signature = req.headers.get("x-twilio-signature");
+    if (!signature) {
+      console.warn("[twilio-incoming-sms] missing X-Twilio-Signature header");
+      return new Response("Unauthorized", { status: 401 });
+    }
+
+    // The URL Twilio signed against is the EXACT URL configured in the
+    // Twilio Console, including query string. If you've put the function
+    // behind a custom domain or proxy, set TWILIO_WEBHOOK_URL_OVERRIDE
+    // to that public URL so the HMAC matches what Twilio computed.
+    const signedUrl = Deno.env.get("TWILIO_WEBHOOK_URL_OVERRIDE") ?? req.url;
+    const valid = await isValidTwilioSignature(signedUrl, form, signature, authToken);
+    if (!valid) {
+      console.warn("[twilio-incoming-sms] signature mismatch", { url: signedUrl, sigTail: signature.slice(-8) });
+      return new Response("Unauthorized", { status: 401 });
     }
 
     const from = form.get("From") ?? "";

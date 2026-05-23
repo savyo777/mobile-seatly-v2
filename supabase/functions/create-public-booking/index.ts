@@ -299,7 +299,13 @@ Deno.serve(async (req: Request) => {
       if (guestError) return jsonResponse({ error: `Guest: ${guestError.message}` }, 400);
       guestId = newGuest.id;
     } else {
-      await supabase.from("guests").update(guestFields).eq("id", guestId);
+      // Inspect .error so a partial schema mismatch / RLS rejection doesn't
+      // silently drop guest profile updates (allergies, seating prefs).
+      const guestUpd = await supabase.from("guests").update(guestFields).eq("id", guestId);
+      if (guestUpd.error) {
+        console.error("[create-public-booking] guests.update failed", { guestId, err: guestUpd.error.message });
+        return jsonResponse({ error: `Guest profile update failed: ${guestUpd.error.message}` }, 400);
+      }
     }
 
     const { data: existingReservation } = await supabase
@@ -806,7 +812,11 @@ Deno.serve(async (req: Request) => {
     }
 
     if (confirmationChannel) {
-      await supabase.from("communication_log").insert({
+      // Audit-trail row. Not user-blocking if it fails (the booking already
+      // exists in `reservations`), but log + continue rather than swallow
+      // silently — otherwise we lose the trace of which confirmations
+      // succeeded vs failed, breaking replay logic.
+      const commLogIns = await supabase.from("communication_log").insert({
         guest_id: guestId,
         restaurant_id: restaurantId,
         channel: confirmationChannel,
@@ -817,6 +827,9 @@ Deno.serve(async (req: Request) => {
         sent_at: confirmationStatus === "sent" ? new Date().toISOString() : null,
         campaign_id: reservationId,
       });
+      if (commLogIns.error) {
+        console.error("[create-public-booking] communication_log.insert failed", { reservationId, channel: confirmationChannel, err: commLogIns.error.message });
+      }
     }
 
     // Owner notification (fire-and-forget). Honors the owner's

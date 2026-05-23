@@ -142,11 +142,28 @@ Deno.serve(async (req: Request) => {
     // to refund even after the cancel SQL succeeds. Also guard against
     // refunding a hold that already converted (its PI now belongs to a
     // real reservation, not orphaned).
+    //
+    // Also pull user_profile_id so we can enforce ownership when auth
+    // IS provided (see ownership check below). We intentionally keep
+    // the function anon-callable so the navigator.sendBeacon page-close
+    // path still works (beacons can't reliably send auth headers), but
+    // when a real JWT IS attached we enforce hold ownership to block
+    // targeted abuse (attacker with their own JWT trying to cancel a
+    // stranger's hold by guessing the uuid).
     const { data: holdRow } = await supabaseAdmin
       .from("reservation_holds")
-      .select("id, status, stripe_payment_intent_id, converted_reservation_id")
+      .select("id, status, stripe_payment_intent_id, converted_reservation_id, user_profile_id")
       .eq("id", holdId)
       .maybeSingle();
+
+    if (userProfileId && holdRow?.user_profile_id && holdRow.user_profile_id !== userProfileId) {
+      // Authenticated user is trying to cancel a hold that belongs to
+      // someone else. Reject loudly. Random unauthenticated callers
+      // (beacons, anon clients) still fall through to the legacy path
+      // so we don't break that flow.
+      console.warn("[cancel-reservation-hold] ownership rejection", { holdId, requester: userProfileId });
+      return jsonResponse({ error: "Not your hold", unavailable_reason: "forbidden" }, 403);
+    }
 
     const { error } = await supabaseAdmin.rpc("cancel_reservation_hold", {
       p_hold_id: holdId,

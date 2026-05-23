@@ -2503,7 +2503,24 @@ async function confirmPendingAction(
   }
 
   if (pending.type === "cancel_reservation") {
-    await supabaseAdmin.from("reservations").update({ status: "cancelled" }).eq("id", reservationId);
+    // Critical: inspect .error so the voice assistant doesn't confidently
+    // tell the user "Cancelled" while the row is still active in the DB
+    // (restaurant double-books the table).
+    const cancelRes = await supabaseAdmin
+      .from("reservations")
+      .update({ status: "cancelled" })
+      .eq("id", reservationId);
+    if (cancelRes.error) {
+      console.error("[orchestrate] cancel_reservation failed", { reservationId, err: cancelRes.error.message });
+      return makeAssistantPayload({
+        conversationId: opts.conversationId,
+        spokenText: "I couldn't cancel that reservation. Please try again in a moment, or call the restaurant directly.",
+        intent: "reservation_cancel",
+        step: "done",
+        nextExpectedInput: "none",
+        booking: { pending_action: null },
+      });
+    }
     return makeAssistantPayload({
       conversationId: opts.conversationId,
       spokenText: "Cancelled. Your reservation has been marked cancelled.",
@@ -2521,7 +2538,22 @@ async function confirmPendingAction(
     if (typeof pending.payload.party_size === "number") patch.party_size = pending.payload.party_size;
     if (typeof pending.payload.special_request === "string") patch.special_request = pending.payload.special_request;
     if (Object.keys(patch).length) {
-      await supabaseAdmin.from("reservations").update(patch).eq("id", reservationId);
+      // Same defense as cancel above — surface DB failure instead of lying.
+      const modRes = await supabaseAdmin
+        .from("reservations")
+        .update(patch)
+        .eq("id", reservationId);
+      if (modRes.error) {
+        console.error("[orchestrate] modify_reservation failed", { reservationId, patchKeys: Object.keys(patch), err: modRes.error.message });
+        return makeAssistantPayload({
+          conversationId: opts.conversationId,
+          spokenText: "I couldn't update that reservation. Please try again in a moment, or call the restaurant directly.",
+          intent: "reservation_modify",
+          step: "done",
+          nextExpectedInput: "none",
+          booking: { pending_action: null },
+        });
+      }
     }
     return makeAssistantPayload({
       conversationId: opts.conversationId,
@@ -2542,7 +2574,21 @@ async function confirmPendingAction(
 
   if (pending.type === "late_note") {
     const note = typeof pending.payload.note === "string" ? pending.payload.note : "Guest is running late.";
-    await supabaseAdmin.from("reservations").update({ special_request: note }).eq("id", reservationId);
+    const noteRes = await supabaseAdmin
+      .from("reservations")
+      .update({ special_request: note })
+      .eq("id", reservationId);
+    if (noteRes.error) {
+      console.error("[orchestrate] late_note failed", { reservationId, err: noteRes.error.message });
+      return makeAssistantPayload({
+        conversationId: opts.conversationId,
+        spokenText: "I couldn't save that late-arrival note. Please call the restaurant directly to let them know.",
+        intent: "reservation_modify",
+        step: "done",
+        nextExpectedInput: "none",
+        booking: { pending_action: null },
+      });
+    }
     return makeAssistantPayload({
       conversationId: opts.conversationId,
       spokenText: "I added the late-arrival note. I still recommend calling the restaurant.",
@@ -5541,19 +5587,32 @@ Deno.serve(async (req) => {
                           metadata: { order_id, user_profile_id: userProfileId },
                         });
 
-                        await supabaseAdmin.from("orders").update({
+                        // Critical: surface DB write failures so we don't end up with
+                        // Stripe charged but our DB showing the order unpaid. Inspect
+                        // .error and throw so the outer try/catch surfaces a useful
+                        // toolResult to the model (which can apologize to the user
+                        // and trigger refund flow), not a silently-broken success.
+                        const orderUpd = await supabaseAdmin.from("orders").update({
                           tip_amount: tipAmt, total_amount: total,
                           payment_method: "stripe", status: "paid",
                           paid_at: paidAt, billed_at: paidAt,
                           stripe_payment_intent_id: paymentIntent.id,
                         }).eq("id", order_id);
+                        if (orderUpd.error) {
+                          console.error("[orchestrate] orders.update after Stripe charge failed", { order_id, pi: paymentIntent.id, err: orderUpd.error.message });
+                          throw new Error(`Order persistence failed after Stripe charge: ${orderUpd.error.message}`);
+                        }
 
-                        await supabaseAdmin.from("payments").insert({
+                        const paymentIns = await supabaseAdmin.from("payments").insert({
                           order_id, restaurant_id: order.restaurant_id,
                           user_profile_id: userProfileId,
                           stripe_payment_intent_id: paymentIntent.id,
                           amount: total, currency, status: "succeeded", payment_type: "stripe",
                         });
+                        if (paymentIns.error) {
+                          console.error("[orchestrate] payments.insert after Stripe charge failed", { order_id, pi: paymentIntent.id, err: paymentIns.error.message });
+                          throw new Error(`Payment record write failed after Stripe charge: ${paymentIns.error.message}`);
+                        }
 
                         toolResult = JSON.stringify({
                           success: true, total_charged: total, tip_amount: tipAmt,
@@ -5594,19 +5653,29 @@ Deno.serve(async (req) => {
                       .single();
                     const currency = (rest?.currency || DEFAULT_CURRENCY).toLowerCase();
                     const testId = `test_pi_${Math.random().toString(36).slice(2, 12)}`;
-                    await supabaseAdmin.from("orders").update({
+                    // Test-mode path. Less critical than live but still surface DB
+                    // errors so dev/staging environments don't quietly drift.
+                    const orderUpdT = await supabaseAdmin.from("orders").update({
                       tip_amount: tipAmt, total_amount: total,
                       payment_method: "card_test", status: "paid",
                       paid_at: paidAt, billed_at: paidAt,
                       stripe_payment_intent_id: testId,
                     }).eq("id", order_id);
+                    if (orderUpdT.error) {
+                      console.error("[orchestrate] orders.update (test mode) failed", { order_id, err: orderUpdT.error.message });
+                      throw new Error(`Order persistence failed (test mode): ${orderUpdT.error.message}`);
+                    }
 
-                    await supabaseAdmin.from("payments").insert({
+                    const paymentInsT = await supabaseAdmin.from("payments").insert({
                       order_id, restaurant_id: order.restaurant_id,
                       user_profile_id: userProfileId,
                       stripe_payment_intent_id: testId,
                       amount: total, currency, status: "succeeded", payment_type: "test",
                     });
+                    if (paymentInsT.error) {
+                      console.error("[orchestrate] payments.insert (test mode) failed", { order_id, err: paymentInsT.error.message });
+                      throw new Error(`Payment record write failed (test mode): ${paymentInsT.error.message}`);
+                    }
 
                     toolResult = JSON.stringify({
                       success: true, total_charged: total, tip_amount: tipAmt,
