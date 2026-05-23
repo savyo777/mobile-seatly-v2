@@ -54,6 +54,17 @@ type Props = {
    * Photo, grain, and vignette layers remain unclipped.
    */
   overlayInsets?: { top?: number; right?: number; bottom?: number; left?: number };
+  /**
+   * Letterbox the photo + overlays inside the frame. Values are FRACTIONS
+   * of frameH (e.g. 0.08 = 8% black bar). Opt-in: defaults to {0,0} so
+   * full-screen editor screens like styles.tsx render edge-to-edge on
+   * the user's device. The CAPTURE-TARGET wrapper in post-review/connect
+   * passes ~{top: 0.08, bottom: 0.04} so the snapped JPEG, when
+   * re-displayed on an iPhone story-style viewer, doesn't get its
+   * content clipped by the Dynamic Island (top) or Home Indicator
+   * (bottom). User-reported 2026-05-23 (image #58 reference).
+   */
+  safeAreaInsetRatio?: { top: number; bottom: number };
 };
 
 export function StoryFilterFrame({
@@ -69,12 +80,16 @@ export function StoryFilterFrame({
   area,
   containerStyle,
   overlayInsets,
+  safeAreaInsetRatio = { top: 0, bottom: 0 },
 }: Props) {
   const overlayTop = overlayInsets?.top ?? 0;
   const overlayRight = overlayInsets?.right ?? 0;
   const overlayBottom = overlayInsets?.bottom ?? 0;
   const overlayLeft = overlayInsets?.left ?? 0;
   const frameH = height ?? Math.round((width * 16) / 9);
+  const safeTop = Math.round(frameH * Math.max(0, safeAreaInsetRatio.top));
+  const safeBottom = Math.round(frameH * Math.max(0, safeAreaInsetRatio.bottom));
+  const innerH = Math.max(1, frameH - safeTop - safeBottom);
 
   const entry: StoryFilterEntry | null = filterId
     ? getStoryFilterById(filterId)
@@ -83,8 +98,14 @@ export function StoryFilterFrame({
   const ResolvedSource: ImageSourcePropType | undefined =
     photoSource ?? (photo ? { uri: photo } : undefined);
 
-  return (
-    <View style={[styles.frame, { width, height: frameH }, containerStyle]}>
+  // The inner-content area: photo + grain + vignette + overlay all live
+  // here. The outer frame's black background fills the top+bottom safe
+  // strips → that's the letterbox the user wanted (2026-05-23 request:
+  // shared snaps should not have the Dynamic Island or Home Indicator
+  // sitting over the photo content when re-displayed on iPhone story
+  // viewers).
+  const innerContent = (
+    <>
       {/* 1 · media layer */}
       {mediaSlot ? (
         <View style={StyleSheet.absoluteFill}>{mediaSlot}</View>
@@ -109,7 +130,10 @@ export function StoryFilterFrame({
         style={StyleSheet.absoluteFill}
       />
 
-      {/* 4 · the chosen overlay — clamped to the safe overlay region */}
+      {/* 4 · the chosen overlay — clamped to the safe overlay region.
+            overlayInsets here are relative to the INNER content area,
+            not the outer frame, so corner decorations stay flush to the
+            visible photo edges rather than the letterbox bars. */}
       {entry ? (
         <View
           pointerEvents="none"
@@ -123,7 +147,7 @@ export function StoryFilterFrame({
         >
           <entry.Component
             width={width - overlayLeft - overlayRight}
-            height={frameH - overlayTop - overlayBottom}
+            height={innerH - overlayTop - overlayBottom}
             capturedAt={capturedAt}
             restaurantName={restaurantName}
             city={city}
@@ -131,6 +155,26 @@ export function StoryFilterFrame({
           />
         </View>
       ) : null}
+    </>
+  );
+
+  return (
+    <View style={[styles.frame, { width, height: frameH }, containerStyle]}>
+      {safeTop > 0 || safeBottom > 0 ? (
+        <View
+          style={{
+            position: 'absolute',
+            top: safeTop,
+            bottom: safeBottom,
+            left: 0,
+            right: 0,
+          }}
+        >
+          {innerContent}
+        </View>
+      ) : (
+        innerContent
+      )}
     </View>
   );
 }

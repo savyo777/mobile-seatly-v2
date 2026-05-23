@@ -553,6 +553,12 @@ export default function SnapCaptionScreen() {
                   restaurantName={selectedRestaurantName}
                   city={selectedRestaurantCity}
                   area={selectedRestaurantArea}
+                  // Letterbox the captured composite so the JPEG that ships
+                  // to Instagram / story viewers has black bars where the
+                  // iPhone Dynamic Island (~8% top) and Home Indicator
+                  // (~4% bottom) would otherwise eat into the photo. The
+                  // user previews exactly what will be posted (WYSIWYG).
+                  safeAreaInsetRatio={{ top: 0.08, bottom: 0.04 }}
                   mediaSlot={
                     <Image
                       source={{ uri: decodedUri }}
