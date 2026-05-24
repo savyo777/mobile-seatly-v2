@@ -69,6 +69,19 @@ export interface SplitTenderCheckoutProps {
   diner: { name?: string; email?: string; phone?: string };
   onAllPaid: (result: { reservationId: string; confirmationCode: string }) => void;
   onCancel?: () => void;
+  /**
+   * Fires whenever the placeOrder pipeline starts (true) or finishes (false).
+   * Parent uses this to gate the Single/Split paymentMode toggle so the
+   * diner can't switch payment paths mid-checkout — that's the only
+   * remaining failure mode of the web playbook's "Split-tender UI
+   * form-state coordination" known bug after the mobile architecture
+   * already mutually-exclusively renders single vs split. If the diner
+   * toggles back to Single while a slot is mid-payment, this component
+   * would unmount with a PaymentIntent already in-flight on Stripe →
+   * orphan PI + orphan reservation row.
+   * Audit fix 2026-05-24 (playbook §5 / Bug catalog item).
+   */
+  onSubmittingChange?: (isSubmitting: boolean) => void;
 }
 
 const useStyles = createStyles((c) => ({
@@ -259,6 +272,7 @@ export function SplitTenderCheckout({
   holdId,
   diner,
   onAllPaid,
+  onSubmittingChange,
 }: SplitTenderCheckoutProps) {
   const { t } = useTranslation();
   const c = useColors();
@@ -277,6 +291,15 @@ export function SplitTenderCheckout({
   const [reservationId, setReservationId] = useState<string | null>(null);
   const [confirmationCode, setConfirmationCode] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
+
+  // Mirror `submitting` to the parent so it can disable the paymentMode
+  // pills + the "back" button while a payment is in flight. Without this
+  // the diner could toggle Single mid-payment → SplitTenderCheckout
+  // unmounts → orphan PI on Stripe + orphan reservation row in the DB.
+  // 2026-05-24 playbook §5 fix.
+  useEffect(() => {
+    onSubmittingChange?.(submitting);
+  }, [submitting, onSubmittingChange]);
 
   // Track latest state for the unmount-cleanup effect. useEffect's
   // cleanup captures the closure at mount time, so we need a ref that

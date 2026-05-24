@@ -216,6 +216,12 @@ export default function Step6Payment() {
   // Hidden when the deposit is $0 (no point splitting nothing) and when
   // partySize < 2. Per CLAUDE_SKILLS.md (Split-tender §1).
   const [paymentMode, setPaymentMode] = useState<'single' | 'split'>('single');
+  // Tracks whether SplitTenderCheckout's placeOrder pipeline is mid-flight.
+  // While true, the Single/Split toggle pills are disabled so the diner can't
+  // accidentally unmount SplitTenderCheckout (which would orphan an in-flight
+  // PaymentIntent on Stripe + the reservation row that was just created on
+  // the server). 2026-05-24 Stripe playbook §5 fix.
+  const [splitSubmitting, setSplitSubmitting] = useState(false);
   const [taxRate, setTaxRate] = useState(0);
   const [taxProvince, setTaxProvince] = useState<string | null>(null);
   const [depositTiers, setDepositTiers] = useState<DepositTier[] | undefined>(undefined);
@@ -672,8 +678,14 @@ export default function Step6Payment() {
           <View style={styles.modeToggleRow}>
             <TouchableOpacity
               onPress={() => setPaymentMode('single')}
-              style={[styles.modePill, paymentMode === 'single' && styles.modePillActive]}
+              disabled={splitSubmitting}
+              style={[
+                styles.modePill,
+                paymentMode === 'single' && styles.modePillActive,
+                splitSubmitting && { opacity: 0.4 },
+              ]}
               accessibilityRole="button"
+              accessibilityState={{ disabled: splitSubmitting }}
             >
               <Text style={[styles.modePillLabel, paymentMode === 'single' && styles.modePillLabelActive]}>
                 {t('booking.paymentSplitSingle')}
@@ -681,8 +693,14 @@ export default function Step6Payment() {
             </TouchableOpacity>
             <TouchableOpacity
               onPress={() => setPaymentMode('split')}
-              style={[styles.modePill, paymentMode === 'split' && styles.modePillActive]}
+              disabled={splitSubmitting}
+              style={[
+                styles.modePill,
+                paymentMode === 'split' && styles.modePillActive,
+                splitSubmitting && { opacity: 0.4 },
+              ]}
               accessibilityRole="button"
+              accessibilityState={{ disabled: splitSubmitting }}
             >
               <Text style={[styles.modePillLabel, paymentMode === 'split' && styles.modePillLabelActive]}>
                 {t('booking.paymentSplitMulti')}
@@ -737,6 +755,7 @@ export default function Step6Payment() {
                   `&split=1`,
               );
             }}
+            onSubmittingChange={setSplitSubmitting}
           />
         ) : (
           <>
