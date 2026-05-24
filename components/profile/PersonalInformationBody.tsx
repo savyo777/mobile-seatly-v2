@@ -205,6 +205,19 @@ const useStyles = createStyles((c) => ({
   },
 }));
 
+// Derive a default username from the user's email prefix. The
+// user_profiles table doesn't have a `username` column yet (planned for
+// v1.1 when we support custom handles), so until then we use the
+// portion of the email before "@" as the visible handle. Falls back to
+// empty string if email is missing. 2026-05-23 fix: was hardcoded to
+// 'alexj' (a demo placeholder that leaked into real users' Edit Profile
+// screens).
+function emailToUsername(email: string | null | undefined): string {
+  if (!email) return '';
+  const at = email.indexOf('@');
+  return at > 0 ? email.slice(0, at) : '';
+}
+
 export function PersonalInformationBody() {
   const c = useColors();
   const styles = useStyles();
@@ -212,8 +225,8 @@ export function PersonalInformationBody() {
   const [avatarUri, setAvatarUri] = useState(initialAvatarUri);
   const { values, set, isDirty, reset } = useForm({
     displayName: mockCustomer.fullName,
-    username: 'alexj',
-    bio: 'Chasing great meals across the city.',
+    username: emailToUsername(mockCustomer.email),
+    bio: '',
     email: mockCustomer.email,
     phone: mockCustomer.phone,
   });
@@ -227,8 +240,8 @@ export function PersonalInformationBody() {
         if (!active || !profile) return;
         reset({
           displayName: profile.fullName,
-          username: 'alexj',
-          bio: 'Chasing great meals across the city.',
+          username: emailToUsername(profile.email),
+          bio: '',
           email: profile.email,
           phone: profile.phone,
         });
