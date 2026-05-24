@@ -1012,6 +1012,12 @@ export function CenaivaVoiceShell({ onClose }: { onClose?: () => void }) {
           autoFocusRegionDelta={CENAIVA_EAGLE_REGION_DELTA}
           autoFocusResetKey={mapFocusResetKey}
           focusSelectedWithUser={Boolean(state.booking.restaurant_id)}
+          // Push the Relocate chip below the X close button at top-left.
+          // Close button sits at top: max(insets.top, spacing.lg); the
+          // chip needs +44pt clearance to clear the 36pt close circle +
+          // a small gap. User-reported 2026-05-24 (the two were
+          // overlapping in the Hey Cenaiva map view).
+          relocateTopOffset={Math.max(insets.top, spacing.lg) + 50}
         />
 
         {showSelectedDistance && chosenRestaurant && selectedDistance ? (

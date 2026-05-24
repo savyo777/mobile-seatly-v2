@@ -226,6 +226,7 @@ export function RestaurantDiscoveryMap({
   focusSelectedWithUser = false,
   recenterRegionDelta = DEFAULT_RECENTER_REGION_DELTA,
   contentBottomInset = 0,
+  relocateTopOffset,
 }: RestaurantDiscoveryMapProps) {
   const c = useColors();
   const styles = useStyles();
@@ -618,6 +619,7 @@ export function RestaurantDiscoveryMap({
           latitude: DEFAULT_MAP_CENTER.latitude,
           longitude: DEFAULT_MAP_CENTER.longitude,
         }}
+        topOffset={relocateTopOffset}
       />
     </View>
   );

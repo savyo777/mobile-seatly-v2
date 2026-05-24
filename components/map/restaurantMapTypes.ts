@@ -37,4 +37,11 @@ export type RestaurantDiscoveryMapProps = {
    * Tab screens already sit above the tab bar — do not add tab bar height again.
    */
   contentBottomInset?: number;
+  /**
+   * Override the Relocate-chip's top position. Defaults to insets.top +
+   * spacing.sm. The Hey Cenaiva voice shell renders an X close button
+   * at the same top-left corner, so it passes a larger value to push the
+   * chip down below the close button. User-reported 2026-05-24.
+   */
+  relocateTopOffset?: number;
 };
