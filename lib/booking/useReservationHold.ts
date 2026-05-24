@@ -136,6 +136,22 @@ export function useReservationHold(args: UseReservationHoldArgs): UseReservation
 
   const createInflightRef = useRef(false);
   const hydratedRef = useRef(false);
+  // Tracks the (restaurantId, shiftId, dateTime, partySize) of the LAST
+  // successfully-created hold. The recreate-on-drift effect below uses
+  // this to detect when the diner changed party / time / shift mid-flow
+  // and the server-side hold is now stale. Web sister-repo bug #77
+  // (2026-05-23 fix): without this, the diner could change party 2→4
+  // on step4, see the deposit show up in the UI, pay party-4 deposit at
+  // checkout, but the booking would convert on the stale party-2 hold
+  // (no deposit owed) — restaurant gets a party-2 with $0 deposit,
+  // diner gets charged $12 for nothing.
+  const lastSyncedInputsRef = useRef<{
+    restaurantId: string;
+    shiftId: string;
+    dateTime: string;
+    partySize: number;
+  } | null>(null);
+  const recreateDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const persistedKey = restaurantId && dateTime ? storageKey(restaurantId, dateTime) : null;
 
@@ -285,6 +301,10 @@ export function useReservationHold(args: UseReservationHoldArgs): UseReservation
       });
       await persistHold(stored);
       transitionToActive(resp, stored);
+      // Seed the input-drift tracker so the recreate-on-drift effect
+      // below knows the server is in sync with the inputs that produced
+      // this hold. See web bug #77 fix notes on lastSyncedInputsRef.
+      lastSyncedInputsRef.current = { restaurantId, shiftId, dateTime, partySize };
       return { holdId: resp.hold_id, expiresAt: resp.expires_at };
     } catch (error) {
       const reason = error instanceof HoldApiError ? error.reason : 'unknown';
@@ -346,6 +366,71 @@ export function useReservationHold(args: UseReservationHoldArgs): UseReservation
       cancelled = true;
     };
   }, [enabled, restaurantId, shiftId, dateTime, partySize, createHold]);
+
+  // Recreate-on-drift effect. PORT of web sister-repo bug #77 fix
+  // (2026-05-23). When the diner changes party size / shift / time on
+  // step4 while a hold is ALREADY active, the server-side hold stays
+  // stale and the booking converts on the old inputs (wrong deposit,
+  // potentially wrong table). Detect drift via lastSyncedInputsRef +
+  // debounce 400ms (so rapidly-tapping the party picker doesn't fire N
+  // cancel+create churns), then cancel the stale hold + clear the
+  // tracker + let the auto-create effect above pick up the new inputs
+  // on the next render.
+  //
+  // Why we don't just call createHold() directly: createHold's guard
+  // returns null when status is 'active' (which it still is at this
+  // point — the cancelReservationHold response hasn't been waited on,
+  // and stateRef.current may lag the React setState commit). Setting
+  // stateRef directly to 'idle' lets createHold's guard pass on the
+  // immediate next call.
+  useEffect(() => {
+    if (!enabled || !isHoldsEnabled()) return;
+    if (!restaurantId || !shiftId || !dateTime || partySize <= 0) return;
+    const last = lastSyncedInputsRef.current;
+    if (!last) return;
+    const current = stateRef.current;
+    if (current.status !== 'active') return;
+    const drift =
+      last.restaurantId !== restaurantId ||
+      last.shiftId !== shiftId ||
+      last.dateTime !== dateTime ||
+      last.partySize !== partySize;
+    if (!drift) return;
+
+    if (recreateDebounceRef.current) clearTimeout(recreateDebounceRef.current);
+    recreateDebounceRef.current = setTimeout(() => {
+      void (async () => {
+        const cur = stateRef.current;
+        if (cur.status !== 'active') return;
+        // eslint-disable-next-line no-console
+        console.log('[hold] recreate-on-drift firing', {
+          holdId: cur.holdId,
+          from: last,
+          to: { restaurantId, shiftId, dateTime, partySize },
+        });
+        try {
+          await cancelReservationHold(cur.holdId);
+        } catch {
+          /* best effort — server-side TTL or the upcoming createHold
+             will resolve any orphan hold */
+        }
+        await clearPersistedHold();
+        lastSyncedInputsRef.current = null;
+        // Force stateRef into 'idle' synchronously so createHold's guard
+        // (which checks stateRef.current.status) doesn't bounce.
+        stateRef.current = { status: 'idle' };
+        setState({ status: 'idle' });
+        void createHold();
+      })();
+    }, 400);
+
+    return () => {
+      if (recreateDebounceRef.current) {
+        clearTimeout(recreateDebounceRef.current);
+        recreateDebounceRef.current = null;
+      }
+    };
+  }, [enabled, restaurantId, shiftId, dateTime, partySize, clearPersistedHold, createHold]);
 
   // Countdown ticker — only runs while active and foregrounded.
   useEffect(() => {

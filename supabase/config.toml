@@ -43,6 +43,103 @@ verify_jwt = false
 [functions.register-restaurant-owner]
 verify_jwt = false
 
+# Reservation-hold lifecycle. All anon-callable by design — the booking
+# page must work for guests (no JWT). Gateway lets them through; each fn
+# self-gates as needed (cancel-reservation-hold requires a Bearer token
+# in-fn for ownership check; the create/update/heartbeat fns accept
+# anonymous calls so the hold can survive page reloads for guest diners).
+# Web sister-repo bug fix 2026-05-23: without these declarations a fresh
+# `supabase functions deploy` defaults to verify_jwt=true and anonymous
+# diners hit 401 → can't book at all. Don't remove these entries.
+[functions.create-reservation-hold]
+verify_jwt = false
+
+[functions.update-reservation-hold]
+verify_jwt = false
+
+[functions.heartbeat-reservation-hold]
+verify_jwt = false
+
+[functions.cancel-reservation-hold]
+verify_jwt = false
+
+# Booking-flow Stripe endpoints called from the public booking page.
+# Anon by design — diner pays without signing in. Each fn does its own
+# row-level auth in-handler.
+[functions.create-public-payment-intent]
+verify_jwt = false
+
+[functions.confirm-hold-paid]
+verify_jwt = false
+
+[functions.cancel-reservation]
+verify_jwt = false
+
+[functions.modify-reservation]
+verify_jwt = false
+
+[functions.find-reservation]
+verify_jwt = false
+
+[functions.refund-payment-intent]
+verify_jwt = false
+
+[functions.notify-deposit-payers-refunded]
+verify_jwt = false
+
+# Stripe webhook receiver. Signature-validated against
+# STRIPE_WEBHOOK_SECRET; gateway JWT would block legit Stripe calls.
+[functions.stripe-webhook]
+verify_jwt = false
+
+# Post-meal pay-the-bill path (diner-side OR staff-triggered).
+[functions.stripe-charge-order]
+verify_jwt = false
+
+# Diner saved-card management called from the mobile app. Anon-tolerant
+# at the gateway; auth enforced in-handler via Bearer token.
+[functions.stripe-setup-intent]
+verify_jwt = false
+
+[functions.stripe-list-methods]
+verify_jwt = false
+
+[functions.stripe-attach-payment-method]
+verify_jwt = false
+
+[functions.stripe-detach-method]
+verify_jwt = false
+
+[functions.get-deposit-payment-context]
+verify_jwt = false
+
+# Owner-side Stripe surfaces. Some are owner-auth-required (handled
+# in-handler via Bearer token); the ones with verify_jwt=true at the
+# gateway are listed at the bottom of this file.
+[functions.create-stripe-account]
+verify_jwt = false
+
+[functions.save-subscription-payment-method]
+verify_jwt = false
+
+[functions.get-restaurant-payment-method]
+verify_jwt = false
+
+[functions.list-stripe-invoices]
+verify_jwt = false
+
+[functions.list-stripe-payouts]
+verify_jwt = false
+
+[functions.request-refund]
+verify_jwt = false
+
+[functions.refund-deposit-on-arrival]
+verify_jwt = false
+
+[functions.auto-complete-stale-reservations]
+verify_jwt = false
+
 # send-reservation-reminders is invoked by pg_cron (no JWT available) and
 # gates itself with the X-Cron-Secret header against
 # RESERVATION_REMINDER_CRON_SECRET. send-waitlist-ready-sms requires a
