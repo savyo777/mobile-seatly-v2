@@ -148,7 +148,13 @@ export function normalizeUrlInput(value: string): string | null {
 }
 
 export function sanitizeSearchInput(value: string): string {
-  return normalizeTextInput(value, { maxLength: 120 });
+  // Do NOT use normalizeTextInput — its trailing .trim() strips spaces
+  // mid-typing, so the user can never type a space in the search box
+  // ("STK " becomes "STK" on every keystroke → space bar appears broken).
+  // Use the raw sanitizer (strips control chars, caps length) and let the
+  // search-execution layer trim/normalize when it actually queries data.
+  // User-reported 2026-05-24.
+  return sanitizeTextInput(value, { maxLength: 120 });
 }
 
 export function sanitizeOtpInput(value: string): string {
