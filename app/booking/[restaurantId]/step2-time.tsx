@@ -708,8 +708,6 @@ export default function Step2Time() {
                 >
                   <Text
                     numberOfLines={1}
-                    adjustsFontSizeToFit
-                    minimumFontScale={0.9}
                     style={[
                       styles.slotText,
                       isSelected && styles.slotTextSelected,
