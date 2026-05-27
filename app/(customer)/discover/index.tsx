@@ -17,6 +17,7 @@ import { DiscoverHeroFeatured } from '@/components/discover/DiscoverHeroFeatured
 import { DiscoverHorizontalSection } from '@/components/discover/DiscoverHorizontalSection';
 import { DiscoverMapView } from '@/components/discover/DiscoverMapView';
 import { useAuthSession } from '@/lib/auth/AuthContext';
+import { requireAuthOrPromptLogin } from '@/lib/auth/requireAuthOrPromptLogin';
 import { resolveAuthDisplayProfile } from '@/lib/auth/displayProfile';
 import type { DiscoverCategorySlug } from '@/lib/discover/discoverCategories';
 import { getTorontoGreetingPeriod } from '@/lib/discover/torontoTime';
@@ -295,7 +296,7 @@ export default function DiscoverScreen() {
   const [refreshing, setRefreshing] = useState(false);
   const [viewMode, setViewMode] = useState<ViewMode>('list');
   const [searchMode, setSearchMode] = useState<SearchMode>('restaurants');
-  const { user } = useAuthSession();
+  const { user, isAuthenticated } = useAuthSession();
   const currentUserId = user?.id ?? '';
   const [rawRestaurants, setRawRestaurants] = useState<Restaurant[]>(() => (isDemoModeEnabled() ? mockRestaurants : []));
   const location = useLocation();
@@ -497,8 +498,13 @@ export default function DiscoverScreen() {
   }, [router]);
 
   const reserveRestaurant = useCallback((r: Restaurant) => {
-    router.push(`/booking/${r.id}/step2-time` as Href);
-  }, [router]);
+    requireAuthOrPromptLogin({
+      isAuthenticated,
+      router,
+      returnTo: `/(customer)/discover/${r.id}`,
+      onAuthed: () => router.push(`/booking/${r.id}/step2-time` as Href),
+    });
+  }, [isAuthenticated, router]);
 
   const goCategory = useCallback((slug: DiscoverCategorySlug) => {
     router.push(`/(customer)/discover/category/${slug}` as Href);
