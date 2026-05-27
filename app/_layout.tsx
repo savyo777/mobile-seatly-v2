@@ -124,6 +124,7 @@ if (sentryDsn && sentryDsnLooksValid) {
   }
 }
 import { AuthProvider, useAuthSession } from '@/lib/auth/AuthContext';
+import { isPublicCustomerRoute } from '@/lib/auth/publicRoutes';
 import { ThemeProvider, useColors } from '@/lib/theme';
 import { MenuProvider } from '@/lib/context/MenuContext';
 import { ExpensesProvider } from '@/lib/context/ExpensesContext';
@@ -133,7 +134,6 @@ import { CenaivaAssistantProvider } from '@/lib/cenaiva/CenaivaAssistantProvider
 import { CenaivaVoicePreferenceProvider } from '@/lib/cenaiva/voice/CenaivaVoicePreferenceProvider';
 import { clearPersistedSupabaseSession, clearSupabaseStorageOnly, getSupabase } from '@/lib/supabase/client';
 import { isUnusablePersistedSupabaseAuthError } from '@/lib/supabase/authErrors';
-import { CookieConsentBanner } from '@/components/cookie-consent/CookieConsentBanner';
 import { KeyboardDoneBar } from '@/components/ui/KeyboardDoneBar';
 import { PostTurnPromptHost } from '@/components/postVisit/PostTurnPromptHost';
 import { NotificationHandler } from '@/components/notifications/NotificationHandler';
@@ -380,7 +380,11 @@ function ThemedRootShell() {
     }
 
     // Unauthenticated user on a protected screen → send to auth welcome.
+    // (customer) browse surfaces (discover/*, map) stay public per Apple
+    // 5.1.1(v) — see isPublicCustomerRoute. Per-action gates inside those
+    // screens prompt sign-in when the user taps Book/Save/Review.
     if (!isAuthenticated && (seg0 === '(customer)' || seg0 === '(staff)')) {
+      if (seg0 === '(customer)' && isPublicCustomerRoute(segments)) return;
       router.replace('/(auth)/welcome' as never);
     }
   }, [loading, isAuthenticated, role, isStaffLike, needsLegalConsent, segments, router]);
@@ -402,7 +406,6 @@ function ThemedRootShell() {
           <Stack.Screen name="auth-callback" options={{ animation: 'none' }} />
         </Stack>
         <PostTurnPromptHost />
-        <CookieConsentBanner />
         <KeyboardDoneBar />
       </AppErrorBoundary>
     </>

@@ -148,8 +148,12 @@ export function DiscoverCompactList({ title, data, onPressRow }: Props) {
                   <Text style={styles.reviews}>
                     {t('discover.reviewsCount', { count: item.totalReviews })}
                   </Text>
-                  <Text style={styles.dot}>·</Text>
-                  <Text style={styles.dist}>{t('discover.kmAway', { distance: item.distanceKm.toFixed(1) })}</Text>
+                  {item.distanceKm != null ? (
+                    <>
+                      <Text style={styles.dot}>·</Text>
+                      <Text style={styles.dist}>{t('discover.kmAway', { distance: item.distanceKm.toFixed(1) })}</Text>
+                    </>
+                  ) : null}
                 </View>
                 <Text style={styles.cuisine} numberOfLines={1}>
                   {item.cuisineType}

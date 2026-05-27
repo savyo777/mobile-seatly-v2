@@ -93,6 +93,7 @@ export default {
     welcomeSignUpPrompt: 'New to Cenaiva?',
     welcomeSignUpCta: 'Create an account',
     welcomeAudience: 'For customers and restaurant owners.',
+    browseWithoutAccount: 'Browse without an account',
     welcomeBrandFooter: 'CENAIVA · YOUR TABLE AWAITS',
     keepSignedIn: 'Keep me signed in',
     rememberDevice: 'Remember device',

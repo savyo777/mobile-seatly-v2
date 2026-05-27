@@ -147,7 +147,8 @@ export function FeedHero({ restaurant, onPressCard, onPressReserve }: Props) {
 
           <View style={styles.bottom}>
             <Text style={styles.cuisine}>
-              {restaurant.cuisineType.toUpperCase()} · {restaurantPriceLabel(restaurant.priceRange)} · {restaurant.distanceKm.toFixed(1)} km
+              {restaurant.cuisineType.toUpperCase()} · {restaurantPriceLabel(restaurant.priceRange)}
+              {restaurant.distanceKm != null ? ` · ${restaurant.distanceKm.toFixed(1)} km` : ''}
             </Text>
             <Text style={styles.name} numberOfLines={2}>{restaurant.name}</Text>
             <Text style={styles.ambiance} numberOfLines={1}>{restaurant.ambiance}</Text>

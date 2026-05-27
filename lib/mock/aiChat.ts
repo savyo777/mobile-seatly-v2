@@ -21,7 +21,7 @@ export function restaurantToChatCard(r: Restaurant): AiChatRestaurant {
     name: r.name,
     cuisine: r.cuisineType,
     rating: r.avgRating,
-    distance: `${r.distanceKm.toFixed(1)} km`,
+    distance: r.distanceKm != null ? `${r.distanceKm.toFixed(1)} km` : '',
   };
 }
 
@@ -99,7 +99,11 @@ export function pickRestaurantsForQuery(query: string): AiChatRestaurant[] {
   } else if (q.includes('cheap') || q.includes('budget') || q.includes('$')) {
     pool = pool.filter((r) => r.priceRange <= 2);
   } else if (q.includes('near me') || q.includes('nearby') || q.includes('close')) {
-    pool = [...pool].sort((a, b) => a.distanceKm - b.distanceKm);
+    pool = [...pool].sort((a, b) => {
+      const da = a.distanceKm ?? Infinity;
+      const db = b.distanceKm ?? Infinity;
+      return da - db;
+    });
   } else {
     pool = [...pool].sort((a, b) => (b.avgRating ?? 0) - (a.avgRating ?? 0));
   }

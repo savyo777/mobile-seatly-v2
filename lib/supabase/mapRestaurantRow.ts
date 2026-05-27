@@ -156,7 +156,11 @@ export function mapRestaurantRowToRestaurant(row: RestaurantRow): Restaurant {
       intOrNull(row.total_reviews) ??
       (typeof settings?.total_reviews === 'number' ? settings!.total_reviews : 0),
     priceRange,
-    distanceKm: typeof settings?.distance_km === 'number' ? settings!.distance_km : 1,
+    // Distance is computed at fetch time from the user's live location
+    // via lib/geo/haversine. settings_json.distance_km is honored only
+    // when explicitly set (legacy/server-precomputed); otherwise null so
+    // the discover cards render no km label until location resolves.
+    distanceKm: typeof settings?.distance_km === 'number' ? settings!.distance_km : null,
     availability,
     ambiance: typeof settings?.ambiance === 'string' ? settings.ambiance : '',
     tags: tags.length ? tags : ['Dining'],

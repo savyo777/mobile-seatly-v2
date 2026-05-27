@@ -127,8 +127,12 @@ export function SavedRestaurantCard({ restaurant, onPress }: Props) {
           {restaurant.cuisineType}
         </Text>
         <View style={styles.metaRow}>
-          <Text style={styles.distance}>{restaurant.distanceKm.toFixed(1)} km</Text>
-          <Text style={styles.dot}>·</Text>
+          {restaurant.distanceKm != null ? (
+            <>
+              <Text style={styles.distance}>{restaurant.distanceKm.toFixed(1)} km</Text>
+              <Text style={styles.dot}>·</Text>
+            </>
+          ) : null}
           <Text style={styles.desc} numberOfLines={2}>
             {restaurant.description}
           </Text>

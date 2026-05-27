@@ -7,6 +7,30 @@ import {
   deriveRestaurantPriceRangeFromMenuItems,
   type RestaurantMenuPriceItem,
 } from '@/lib/restaurants/pricing';
+import { haversineKm } from '@/lib/geo/haversine';
+
+export type UserLocation = { lat: number; lng: number } | null;
+
+/**
+ * Compute distanceKm for each restaurant from the user's live location.
+ * Returns the list unchanged when location is null (e.g. permission denied
+ * or not yet resolved), or when a restaurant has no coords. Discover cards
+ * conditionally render the km label based on distanceKm != null, so a
+ * missing distance just hides the label rather than fabricating a number.
+ */
+export function applyDistancesToRestaurants(
+  restaurants: Restaurant[],
+  userLocation: UserLocation,
+): Restaurant[] {
+  if (!userLocation) return restaurants;
+  return restaurants.map((restaurant) => {
+    if (restaurant.lat == null || restaurant.lng == null) return restaurant;
+    return {
+      ...restaurant,
+      distanceKm: haversineKm(userLocation.lat, userLocation.lng, restaurant.lat, restaurant.lng),
+    };
+  });
+}
 
 export type MenuPriceRow = RestaurantMenuPriceItem & {
   restaurant_id: string | null;

@@ -206,7 +206,10 @@ export function DiscoverEnhancedCard({
           style={[styles.meta, compact && { fontSize: 12 }]}
           numberOfLines={1}
         >
-          {restaurant.cuisineType} · {restaurantPriceLabel(restaurant.priceRange)} · {t('discover.kmAway', { distance: restaurant.distanceKm.toFixed(1) })}
+          {restaurant.cuisineType} · {restaurantPriceLabel(restaurant.priceRange)}
+          {restaurant.distanceKm != null
+            ? ` · ${t('discover.kmAway', { distance: restaurant.distanceKm.toFixed(1) })}`
+            : ''}
         </Text>
         <Text style={styles.tag} numberOfLines={1}>
           {tag}

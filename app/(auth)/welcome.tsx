@@ -83,6 +83,18 @@ const useStyles = createStyles((c) => ({
     textAlign: 'center',
     marginTop: spacing.sm,
   },
+  guestLinkBtn: {
+    alignSelf: 'center',
+    paddingVertical: spacing.sm,
+    paddingHorizontal: spacing.md,
+    marginTop: spacing.xs,
+  },
+  guestLinkText: {
+    ...typography.body,
+    color: c.textSecondary,
+    fontWeight: '600',
+    textDecorationLine: 'underline',
+  },
 }));
 
 export default function WelcomeScreen() {
@@ -126,6 +138,14 @@ export default function WelcomeScreen() {
           >
             <Ionicons name="person-add-outline" size={20} color={c.gold} />
             <Text style={styles.secondaryActionText}>{t('auth.createAccount')}</Text>
+          </Pressable>
+          <Pressable
+            onPress={() => router.replace('/(customer)/discover')}
+            accessibilityRole="button"
+            hitSlop={8}
+            style={({ pressed }) => [styles.guestLinkBtn, pressed && styles.actionPressed]}
+          >
+            <Text style={styles.guestLinkText}>{t('auth.browseWithoutAccount')}</Text>
           </Pressable>
           <Text style={styles.audienceText}>{t('auth.welcomeAudience')}</Text>
         </View>

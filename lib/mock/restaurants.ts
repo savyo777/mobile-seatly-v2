@@ -52,7 +52,8 @@ export interface Restaurant {
   avgRating: number | null;
   totalReviews: number;
   priceRange: RestaurantPriceTier;
-  distanceKm: number;
+  /** Null when user location is unavailable / restaurant has no coords. */
+  distanceKm: number | null;
   availability: 'Available Tonight' | 'Popular' | 'Top Rated';
   ambiance: string;
   tags: string[];

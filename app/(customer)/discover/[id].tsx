@@ -7,6 +7,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Button, Badge, ScreenWrapper } from '@/components/ui';
 import { StoryFilterFrame } from '@/components/storyFilters/StoryFilterFrame';
 import { useAuthSession } from '@/lib/auth/AuthContext';
+import { requireAuthOrPromptLogin } from '@/lib/auth/requireAuthOrPromptLogin';
 import { mockRestaurants as DEMO_RESTAURANTS } from '@/lib/mock/restaurants';
 import { mockMenuItems as DEMO_MENU_ITEMS, type MenuItem as MockMenuItem } from '@/lib/mock/menuItems';
 import { isDemoModeEnabled } from '@/lib/config/demoMode';
@@ -1247,7 +1248,14 @@ export default function RestaurantDetailScreen() {
       <View style={[styles.footer, { paddingBottom: Math.max(insets.bottom, spacing.md) }]}>
         <Button
           title={t('restaurant.bookTable')}
-          onPress={() => router.push(`/booking/${restaurant.id}/step2-time`)}
+          onPress={() =>
+            requireAuthOrPromptLogin({
+              isAuthenticated,
+              router,
+              returnTo: `/(customer)/discover/${restaurant.id}`,
+              onAuthed: () => router.push(`/booking/${restaurant.id}/step2-time`),
+            })
+          }
         />
       </View>
     </View>

@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useMemo } from 'react';
 import { ActivityIndicator, Pressable, StyleSheet, View } from 'react-native';
-import { Tabs, useRouter, usePathname, Href } from 'expo-router';
+import { Tabs, useRouter, usePathname, useSegments, Href } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
 import * as Haptics from 'expo-haptics';
@@ -9,6 +9,8 @@ import { AiChatFab } from '@/components/ai/AiChatFab';
 import { ShellErrorBoundary } from '@/components/ui/ShellErrorBoundary';
 import { useColors, createStyles } from '@/lib/theme';
 import { useAuthSession } from '@/lib/auth/AuthContext';
+import { isPublicCustomerRoute } from '@/lib/auth/publicRoutes';
+import { requireAuthOrPromptLogin } from '@/lib/auth/requireAuthOrPromptLogin';
 
 const HIDE_FAB_ROUTES = ['/ai-chat', '/post-review', '/camera', '/booking', '/checkout', '/register-restaurant'];
 
@@ -57,6 +59,8 @@ export default function CustomerTabsLayout() {
   const styles = useStyles();
   const insets = useSafeAreaInsets();
   const { loading, isAuthenticated, role } = useAuthSession();
+  const segments = useSegments() as string[];
+  const isOnPublicRoute = isPublicCustomerRoute(segments);
 
   const hideTabChrome = HIDE_FAB_ROUTES.some((route) => pathname?.includes(route));
   // Tab bar = ~56pt of touch chrome stacked over the device's bottom safe-area
@@ -134,7 +138,17 @@ export default function CustomerTabsLayout() {
     [c.bgBase, router, styles.centerBtn, styles.centerBtnActive, styles.centerBtnWrapper],
   );
 
-  if (loading || !isAuthenticated || role === null) {
+  // Auth-loading splash. Unauthenticated users are allowed through on
+  // public browse routes (discover/*, map) per Apple 5.1.1(v); the root
+  // _layout will have bounced them already if they're on a protected one.
+  if (loading || (isAuthenticated && role === null)) {
+    return (
+      <View style={[styles.root, { alignItems: 'center', justifyContent: 'center' }]}>
+        <ActivityIndicator color={c.gold} />
+      </View>
+    );
+  }
+  if (!isAuthenticated && !isOnPublicRoute) {
     return (
       <View style={[styles.root, { alignItems: 'center', justifyContent: 'center' }]}>
         <ActivityIndicator color={c.gold} />

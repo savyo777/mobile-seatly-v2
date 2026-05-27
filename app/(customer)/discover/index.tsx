@@ -21,6 +21,8 @@ import { resolveAuthDisplayProfile } from '@/lib/auth/displayProfile';
 import type { DiscoverCategorySlug } from '@/lib/discover/discoverCategories';
 import { getTorontoGreetingPeriod } from '@/lib/discover/torontoTime';
 import { loadRestaurantsForDiscover } from '@/lib/data/restaurantCatalog';
+import { applyDistancesToRestaurants } from '@/lib/supabase/fetchRestaurants';
+import { useLocation } from '@/lib/location/useLocation';
 import { fetchCurrentUserProfile } from '@/lib/services/userProfile';
 import { isDemoModeEnabled } from '@/lib/config/demoMode';
 import { isCompactDiscoverEnabled } from '@/lib/config/discoverDensity';
@@ -295,7 +297,15 @@ export default function DiscoverScreen() {
   const [searchMode, setSearchMode] = useState<SearchMode>('restaurants');
   const { user } = useAuthSession();
   const currentUserId = user?.id ?? '';
-  const [baseRestaurants, setBaseRestaurants] = useState<Restaurant[]>(() => (isDemoModeEnabled() ? mockRestaurants : []));
+  const [rawRestaurants, setRawRestaurants] = useState<Restaurant[]>(() => (isDemoModeEnabled() ? mockRestaurants : []));
+  const location = useLocation();
+  const userLatLng = location.source === 'live'
+    ? { lat: location.lat, lng: location.lng }
+    : null;
+  const baseRestaurants = useMemo(
+    () => applyDistancesToRestaurants(rawRestaurants, userLatLng),
+    [rawRestaurants, userLatLng?.lat, userLatLng?.lng],
+  );
   const [unreadCount, setUnreadCount] = useState(() => (isDemoModeEnabled() ? getUnreadCount(currentUserId) : 0));
   // The diner's "Places" picks (business_type values) — drives the
   // "Based on your taste" recommendation section below.
@@ -313,7 +323,7 @@ export default function DiscoverScreen() {
     useCallback(() => {
       let cancelled = false;
       loadRestaurantsForDiscover().then(({ list }) => {
-        if (!cancelled) setBaseRestaurants(list);
+        if (!cancelled) setRawRestaurants(list);
       });
       return () => {
         cancelled = true;
@@ -390,7 +400,14 @@ export default function DiscoverScreen() {
     }
 
     if (quickFilter === 'nearMe') {
-      list = [...list].sort((a, b) => a.distanceKm - b.distanceKm);
+      // Restaurants with no distance (location not yet resolved or no
+      // restaurant coords) sort to the end rather than scrambling the
+      // list with NaN comparisons.
+      list = [...list].sort((a, b) => {
+        const da = a.distanceKm ?? Infinity;
+        const db = b.distanceKm ?? Infinity;
+        return da - db;
+      });
     }
 
     const q = query.trim().toLowerCase();
@@ -469,7 +486,7 @@ export default function DiscoverScreen() {
   const onRefresh = useCallback(() => {
     setRefreshing(true);
     loadRestaurantsForDiscover()
-      .then(({ list }) => setBaseRestaurants(list))
+      .then(({ list }) => setRawRestaurants(list))
       .finally(() => {
         setRefreshing(false);
       });
