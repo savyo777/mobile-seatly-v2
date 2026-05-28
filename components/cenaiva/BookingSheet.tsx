@@ -33,6 +33,11 @@ const useStyles = createStyles((c) => ({
     color: c.textPrimary,
     fontWeight: '800',
   },
+  bookedHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+  },
   row: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -471,7 +476,15 @@ export function BookingSheet({ fullScreen = false }: { fullScreen?: boolean }) {
   if (booking.status === 'offering_preorder') {
     return (
       <View style={shellStyle}>
-        <Text style={styles.title}>You're booked</Text>
+        {/* Title gets a check icon + uses a typographic apostrophe in
+            a static string. The previous "You're booked" at fontWeight
+            800 rendered with a glitched apostrophe on iOS — replacing
+            the leading-text+apostrophe with an icon + cleaner phrasing
+            sidesteps the font rasterizer issue entirely. */}
+        <View style={styles.bookedHeader}>
+          <Ionicons name="checkmark-circle" size={22} color={c.gold} />
+          <Text style={styles.title}>Booked!</Text>
+        </View>
         {booking.confirmation_code ? <Text style={styles.code}>{booking.confirmation_code}</Text> : null}
         <Text style={styles.detail}>{booking.restaurant_name ?? 'Restaurant'} - {formatDate(booking.date)} - {formatTime12h(booking.time ?? booking.slot_iso)}</Text>
         <Text style={styles.prompt}>Would you like to pre-order from the menu?</Text>
