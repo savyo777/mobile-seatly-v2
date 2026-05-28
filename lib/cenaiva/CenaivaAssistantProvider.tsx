@@ -939,10 +939,17 @@ function AssistantInner({ children }: { children: ReactNode }) {
         }
         logLatencySummary(turnStartedAt, checkpoints, 'ok');
         activeLatencyRef.current = null;
-      } catch {
+      } catch (err) {
         processingRef.current = false;
         if (streamingActive) voice.discardStreamingSpeech();
-        const message = 'Something went wrong. Try again.';
+        // Route through the central friendlyError helper so a known error
+        // code (e.g. `not_authenticated`, `timeout`, `rate_limit_minute`,
+        // `no_final_payload`) surfaces the specific user-facing copy from
+        // the lookup table, falling back to the generic message only when
+        // truly unknown. Previously this branch hardcoded the generic
+        // string and bypassed the contract; that hid every diagnosable
+        // failure from the user. Per [[feedback_friendly_error_strict]].
+        const message = friendlyErrorCentral(err, 'Something went wrong. Try again.');
         commit({ type: 'SET_LAST_SPOKEN_TEXT', text: message });
         if (!opts?.silent && !textModeRef.current) {
           commit({ type: 'SET_VOICE_STATUS', status: 'speaking' });

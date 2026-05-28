@@ -54,13 +54,30 @@ const USER_CANCELLATION_MARKER = '';
 // ────────────────────────────────────────────────────────────────────────────
 
 // Hey Cenaiva / paid-AI codes (hoisted from CenaivaAssistantProvider.tsx).
+//
+// Note on the alias entries (`auth_required`, `invalid_token`, etc.): the
+// cenaiva-orchestrate edge function emits server-side error frames with
+// these specific message strings (see supabase/functions/cenaiva-orchestrate
+// index.ts). Each must resolve to the same user-facing copy as the legacy
+// code names so a server-side message change doesn't regress the mobile UX.
 const CENAIVA_MESSAGES: Record<string, string> = {
   not_authenticated: 'Please sign in to continue.',
+  auth_required: 'Please sign in to continue.',
+  invalid_token: 'Please sign in again to continue.',
+  'User profile not found': 'Please sign in to continue.',
   timeout: 'The assistant is taking a while. Try again.',
   rate_limit_minute: 'Slow down for a moment and try again.',
   rate_limit_day: "You've used Hey Cenaiva a lot today. Try again tomorrow.",
   paid_usage_budget_exceeded:
     "You've used Hey Cenaiva a lot today. Try again tomorrow.",
+  not_configured:
+    "Cenaiva isn't set up on this device. Please reinstall the app.",
+  no_final_payload:
+    "Cenaiva didn't finish that one. Please try again.",
+  validation_failed:
+    "Cenaiva couldn't understand that request. Please try again.",
+  event_source_unavailable:
+    "Voice service is unavailable on this device right now.",
 };
 
 // Cenaiva voice-specific codes (hoisted from CenaivaAssistantProvider.tsx).
@@ -275,9 +292,19 @@ export function friendlyError(err: unknown, fallback?: string): string {
   // User cancellation comes first — return empty so the call site can suppress.
   if (looksLikeUserCancellation(err)) return USER_CANCELLATION_MARKER;
 
-  // Code-based lookup across all known tables.
-  const candidates = extractCandidateCodes(err);
-  for (const code of candidates) {
+  // Bare-string input is treated as a candidate code. The orchestrator hooks
+  // (useCenaivaOrchestrator, useReservationHold) store the error as a string
+  // code in their ref and pass it directly to friendlyError. Without this
+  // branch every Hey Cenaiva error fell through to the generic fallback even
+  // though the code (`not_authenticated`, `timeout`, `no_final_payload`, etc.)
+  // is a perfect match for one of the lookup tables below. Bug introduced when
+  // CenaivaAssistantProvider was migrated to the central friendlyError helper
+  // — `extractCandidateCodes` only inspects object fields, not raw strings.
+  const codeCandidates = typeof err === 'string'
+    ? [err.trim()]
+    : extractCandidateCodes(err);
+  for (const code of codeCandidates) {
+    if (!code) continue;
     if (code in CENAIVA_MESSAGES) return CENAIVA_MESSAGES[code];
     if (code in CENAIVA_VOICE_MESSAGES) return CENAIVA_VOICE_MESSAGES[code];
     if (code in HOLD_MESSAGES) return HOLD_MESSAGES[code];
@@ -300,6 +327,23 @@ export function friendlyError(err: unknown, fallback?: string): string {
   }
   if (text.includes('abort')) {
     return 'That took too long. Please try again.';
+  }
+  // cenaiva-orchestrate (and similar paid-AI edge fns) emit a plain
+  // human-readable rate-limit string without a `code` field, so we can't
+  // route it through the lookup table. Substring-detect it before the
+  // generic fallback so the diner sees a useful rate-limit message
+  // instead of "Something went wrong".
+  if (text.includes('too many requests') || text.includes('rate limit')) {
+    return 'Slow down for a moment and try again.';
+  }
+  // Mobile fallback for in-band SSE errors that surface as `http_<status>`
+  // strings (see useCenaivaOrchestrator readEventSourceBody fallback at
+  // line 102). Most useful for the 5xx case.
+  if (text.startsWith('http_')) {
+    const status = parseInt(text.slice(5), 10);
+    if (status === 401 || status === 403) return CENAIVA_MESSAGES.not_authenticated;
+    if (status === 429) return 'Slow down for a moment and try again.';
+    if (status >= 500) return 'Cenaiva is having trouble right now. Please try again in a moment.';
   }
   // Common Supabase Edge Functions error when the function returns non-2xx
   // and the JS client wraps it — totally useless for users.
