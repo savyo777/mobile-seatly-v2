@@ -213,6 +213,25 @@ function formatDate(value: string | null) {
   }
 }
 
+// Convert a 24-hour "HH:MM" stamp (the orchestrator's canonical
+// time field) into a 12-hour "h:MM AM/PM" display string. Falls
+// back to whatever the caller passed if it doesn't look like
+// HH:MM (e.g. an already-formatted "8:30 PM" or a slot_iso).
+// User-reported 2026-05-28: the Confirm sheet showed "20:30"
+// instead of "8:30 PM" — every other timestamp surface in the app
+// uses 12-hour, the BookingSheet was the outlier.
+function formatTime12h(value: string | null) {
+  if (!value) return 'Time pending';
+  const match = /^(\d{1,2}):(\d{2})$/.exec(value.trim());
+  if (!match) return value;
+  const hh = parseInt(match[1], 10);
+  const mm = match[2];
+  if (Number.isNaN(hh) || hh < 0 || hh > 23) return value;
+  const period = hh >= 12 ? 'PM' : 'AM';
+  const display = hh % 12 === 0 ? 12 : hh % 12;
+  return `${display}:${mm} ${period}`;
+}
+
 function money(value: number) {
   return `$${value.toFixed(2)}`;
 }
@@ -307,7 +326,7 @@ export function BookingSheet({ fullScreen = false }: { fullScreen?: boolean }) {
     return (
       <View style={shellStyle}>
         <Text style={styles.title}>Time selected</Text>
-        <Text style={styles.detail}>{booking.restaurant_name ?? 'Restaurant'} - {formatDate(booking.date)} - {booking.time ?? booking.slot_iso}</Text>
+        <Text style={styles.detail}>{booking.restaurant_name ?? 'Restaurant'} - {formatDate(booking.date)} - {formatTime12h(booking.time ?? booking.slot_iso)}</Text>
       </View>
     );
   }
@@ -330,7 +349,7 @@ export function BookingSheet({ fullScreen = false }: { fullScreen?: boolean }) {
         </View>
         <View style={styles.row}>
           <Ionicons name="time-outline" size={18} color={c.gold} />
-          <Text style={styles.detail}>{booking.time ?? booking.slot_iso ?? 'Time pending'}</Text>
+          <Text style={styles.detail}>{formatTime12h(booking.time ?? booking.slot_iso)}</Text>
         </View>
         <View style={styles.actions}>
           <View style={styles.half}>
@@ -356,7 +375,7 @@ export function BookingSheet({ fullScreen = false }: { fullScreen?: boolean }) {
       <View style={shellStyle}>
         <Text style={styles.title}>You're booked</Text>
         {booking.confirmation_code ? <Text style={styles.code}>{booking.confirmation_code}</Text> : null}
-        <Text style={styles.detail}>{booking.restaurant_name ?? 'Restaurant'} - {formatDate(booking.date)} - {booking.time ?? booking.slot_iso}</Text>
+        <Text style={styles.detail}>{booking.restaurant_name ?? 'Restaurant'} - {formatDate(booking.date)} - {formatTime12h(booking.time ?? booking.slot_iso)}</Text>
         <Text style={styles.prompt}>Would you like to pre-order from the menu?</Text>
         <View style={styles.actions}>
           <View style={styles.half}>
