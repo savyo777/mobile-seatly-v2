@@ -227,12 +227,16 @@ const useStyles = createStyles(() => ({
   spokenBubble: {
     width: '85%',
     maxWidth: 384,
+    maxHeight: 220,
     borderRadius: borderRadius.xl,
     backgroundColor: 'rgba(0,0,0,0.70)',
     borderWidth: 1,
     borderColor: 'rgba(255,255,255,0.10)',
     paddingHorizontal: spacing.lg,
     paddingVertical: 10,
+  },
+  spokenScroll: {
+    flexGrow: 0,
   },
   spokenText: {
     ...typography.body,
@@ -1197,9 +1201,22 @@ export function CenaivaVoiceShell({ onClose }: { onClose?: () => void }) {
         ) : null}
 
         {state.lastSpokenText ? (
-          <View style={styles.spokenWrap} pointerEvents="none">
+          <View style={styles.spokenWrap}>
             <View style={styles.spokenBubble}>
-              <Text style={styles.spokenText} numberOfLines={3}>{state.lastSpokenText}</Text>
+              {/* Scrollable so long responses (deposit/explanation copy,
+                  list-style answers) stay fully readable without
+                  truncating with "…". The previous numberOfLines={3}
+                  hid content past line 3, which a non-mic user could
+                  never recover — the user has to be able to read the
+                  whole conversation. maxHeight on the bubble keeps it
+                  visually bounded; ScrollView handles overflow. */}
+              <ScrollView
+                style={styles.spokenScroll}
+                showsVerticalScrollIndicator={false}
+                contentContainerStyle={{ flexGrow: 1 }}
+              >
+                <Text style={styles.spokenText}>{state.lastSpokenText}</Text>
+              </ScrollView>
             </View>
           </View>
         ) : null}
