@@ -481,12 +481,14 @@ function AssistantInner({ children }: { children: ReactNode }) {
 
         const responseStatus = stateRef.current.booking.status;
         const skipRelisten = NO_AUTO_RELISTEN_STATUSES.has(responseStatus);
+        // Mirror of the main response handler: always flip to idle
+        // before scheduling the relisten setTimeout so the loading
+        // indicator clears the instant the response is delivered.
+        commit({ type: 'SET_VOICE_STATUS', status: 'idle' });
         if (isOpenRef.current && !textModeRef.current && !skipRelisten) {
           setTimeout(() => {
             if (isOpenRef.current && !textModeRef.current) void startListeningRef.current();
           }, RELISTEN_AFTER_RESPONSE_MS);
-        } else {
-          commit({ type: 'SET_VOICE_STATUS', status: 'idle' });
         }
         logLatencySummary(turnStartedAt, checkpoints, outcome);
         activeLatencyRef.current = null;
@@ -947,8 +949,16 @@ function AssistantInner({ children }: { children: ReactNode }) {
             if (streamingActive) voice.discardStreamingSpeech();
             void voice.speak(spokenText).catch(() => undefined);
           } else if (streamingActive && normalize(serverStreamedText) && normalize(serverStreamedText) === normalize(spokenText)) {
-            applyFinalResponse();
+            // Streamed chunks already rendered text + played audio in
+            // sync (each chunk's speakStreamingChunk → onFirstAudioStart
+            // dispatches SET_LAST_SPOKEN_TEXT). We must NOT fire the
+            // final APPLY_RESPONSE before the queued audio finishes, or
+            // ui_actions / booking-state changes land in the chat
+            // bubble seconds before the last audio sample plays — that's
+            // the "text first, audio later" gap the user reported.
+            // Drain first, apply second.
             await voice.drainStreamingSpeech();
+            applyFinalResponse();
           } else if (streamingActive && (fillerQueued || fillerWasStarted) && !normalize(serverStreamedText)) {
             await voice.drainStreamingSpeech();
             await speakWithSyncedApply(spokenText, 'speech playback requested', applyFinalResponse);
@@ -968,12 +978,19 @@ function AssistantInner({ children }: { children: ReactNode }) {
           uiTypes.includes('show_menu') ||
           NO_AUTO_RELISTEN_STATUSES.has(responseStatus);
 
+        // Always flip voiceStatus to 'idle' on response delivery. The
+        // streaming-matched path (~line 949) and other paths that
+        // bypass speakWithSyncedApply previously left status at
+        // 'processing' from line 396, so the "Thinking…" copy lingered
+        // through the entire ~3–8 s Deepgram-token / mic-setup window
+        // of auto-relisten. The phase-mirror at line 284 will overwrite
+        // status='listening' once the mic is actually recording; until
+        // then the user sees the correct idle placeholder.
+        commit({ type: 'SET_VOICE_STATUS', status: 'idle' });
         if (isOpenRef.current && !textModeRef.current && !skipRelisten) {
           setTimeout(() => {
             if (isOpenRef.current && !textModeRef.current) void startListeningRef.current();
           }, RELISTEN_AFTER_RESPONSE_MS);
-        } else {
-          commit({ type: 'SET_VOICE_STATUS', status: 'idle' });
         }
         logLatencySummary(turnStartedAt, checkpoints, 'ok');
         activeLatencyRef.current = null;
