@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { ActivityIndicator, Pressable, ScrollView, Text, View } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { format } from 'date-fns';
 import { useRouter } from 'expo-router';
@@ -58,12 +59,25 @@ const useStyles = createStyles((c) => ({
     alignItems: 'center',
     justifyContent: 'space-between',
     gap: spacing.sm,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.md,
+    borderBottomWidth: 1,
+    borderBottomColor: c.border,
+  },
+  flowHeaderCenter: {
+    flex: 1,
+    alignItems: 'center',
   },
   flowTitle: {
     ...typography.h3,
     color: c.textPrimary,
     fontWeight: '800',
-    flex: 1,
+    textAlign: 'center',
+  },
+  flowSubtitle: {
+    ...typography.bodySmall,
+    color: c.textMuted,
+    marginTop: 2,
   },
   headerIconBtn: {
     width: 40,
@@ -85,6 +99,89 @@ const useStyles = createStyles((c) => ({
     ...typography.bodySmall,
     color: c.gold,
     fontWeight: '800',
+  },
+  reviewBody: {
+    flex: 1,
+    paddingHorizontal: spacing.md,
+    paddingTop: spacing.md,
+    paddingBottom: spacing.lg,
+    gap: spacing.md,
+  },
+  reviewCard: {
+    borderRadius: borderRadius.lg,
+    backgroundColor: c.bgElevated,
+    borderWidth: 1,
+    borderColor: c.border,
+    overflow: 'hidden',
+  },
+  reviewLine: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    gap: spacing.md,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.md,
+  },
+  reviewLineDivider: {
+    borderTopWidth: 1,
+    borderTopColor: c.border,
+  },
+  reviewLineQty: {
+    ...typography.label,
+    color: c.gold,
+    fontWeight: '900',
+    marginRight: spacing.sm,
+    minWidth: 28,
+  },
+  reviewLineName: {
+    ...typography.body,
+    color: c.textPrimary,
+    flex: 1,
+    fontWeight: '600',
+  },
+  reviewLinePrice: {
+    ...typography.body,
+    color: c.textPrimary,
+    fontWeight: '700',
+  },
+  reviewSubtotalRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.md,
+    backgroundColor: 'rgba(201,168,76,0.08)',
+    borderTopWidth: 1,
+    borderTopColor: c.border,
+  },
+  reviewSubtotalLabel: {
+    ...typography.bodySmall,
+    color: c.textSecondary,
+    fontWeight: '800',
+    letterSpacing: 0.5,
+    textTransform: 'uppercase',
+  },
+  reviewSubtotalValue: {
+    ...typography.h2,
+    color: c.textPrimary,
+    fontWeight: '900',
+  },
+  reviewPrompt: {
+    ...typography.h3,
+    color: c.textPrimary,
+    fontWeight: '800',
+    marginTop: spacing.md,
+  },
+  reviewPromptSub: {
+    ...typography.bodySmall,
+    color: c.textMuted,
+    marginTop: 2,
+    marginBottom: spacing.sm,
+  },
+  reviewActions: {
+    flexDirection: 'row',
+    gap: spacing.sm,
+    marginTop: spacing.sm,
   },
   actions: {
     flexDirection: 'row',
@@ -253,6 +350,7 @@ export function BookingSheet({ fullScreen = false }: { fullScreen?: boolean }) {
   const assistant = useCenaivaAssistant();
   const { state, dispatch } = useAssistantStore();
   const { booking } = state;
+  const insets = useSafeAreaInsets();
   const shellStyle = [styles.shell, fullScreen && styles.shellFullScreen];
   const [menuStep, setMenuStep] = useState<'browsing' | 'review'>('browsing');
   const [prepayBusy, setPrepayBusy] = useState(false);
@@ -492,9 +590,14 @@ export function BookingSheet({ fullScreen = false }: { fullScreen?: boolean }) {
   }
 
   if (booking.status === 'browsing_menu' && menuStep === 'review') {
+    const itemCount = booking.cart.reduce((sum, item) => sum + item.qty, 0);
     return (
       <View style={shellStyle}>
-        <View style={styles.flowHeader}>
+        {/* Header — clears the status bar via safe-area inset so the
+            title doesn't render under the time/wifi icons. Bottom
+            border separates it from the order body. Subtitle gives
+            the item count at a glance. */}
+        <View style={[styles.flowHeader, { paddingTop: Math.max(insets.top, spacing.md) }]}>
           <Pressable
             accessibilityRole="button"
             accessibilityLabel="Back to menu"
@@ -509,7 +612,12 @@ export function BookingSheet({ fullScreen = false }: { fullScreen?: boolean }) {
           >
             <Ionicons name="chevron-back" size={22} color={c.gold} />
           </Pressable>
-          <Text style={styles.flowTitle}>Review your order</Text>
+          <View style={styles.flowHeaderCenter}>
+            <Text style={styles.flowTitle}>Review your order</Text>
+            <Text style={styles.flowSubtitle}>
+              {itemCount} {itemCount === 1 ? 'item' : 'items'} · {booking.restaurant_name ?? 'Pre-order'}
+            </Text>
+          </View>
           <Pressable
             accessibilityRole="button"
             accessibilityLabel="Nevermind, skip prepay"
@@ -525,39 +633,56 @@ export function BookingSheet({ fullScreen = false }: { fullScreen?: boolean }) {
             <Text style={styles.headerText}>Nevermind</Text>
           </Pressable>
         </View>
-        {booking.cart.map((item) => (
-          <View key={item.menu_item_id} style={styles.line}>
-            <Text style={styles.lineName}>{item.qty}x {item.name}</Text>
-            <Text style={styles.linePrice}>{money(item.qty * item.unit_price)}</Text>
+
+        <ScrollView contentContainerStyle={styles.reviewBody} showsVerticalScrollIndicator={false}>
+          {/* Items card — each row separated by an inset divider for
+              clear scannability. Quantity is highlighted gold so the
+              user can verify counts at a glance. */}
+          <View style={styles.reviewCard}>
+            {booking.cart.map((item, idx) => (
+              <View
+                key={item.menu_item_id}
+                style={[styles.reviewLine, idx > 0 && styles.reviewLineDivider]}
+              >
+                <Text style={styles.reviewLineQty}>{item.qty}×</Text>
+                <Text style={styles.reviewLineName} numberOfLines={2}>{item.name}</Text>
+                <Text style={styles.reviewLinePrice}>{money(item.qty * item.unit_price)}</Text>
+              </View>
+            ))}
+            {/* Subtotal lives inside the card with a tinted background
+                so it reads as a single grouped element. */}
+            <View style={styles.reviewSubtotalRow}>
+              <Text style={styles.reviewSubtotalLabel}>Subtotal</Text>
+              <Text style={styles.reviewSubtotalValue}>{money(booking.cart_subtotal)}</Text>
+            </View>
           </View>
-        ))}
-        <View style={styles.totalRow}>
-          <Text style={styles.totalLabel}>Subtotal</Text>
-          <Text style={styles.totalValue}>{money(booking.cart_subtotal)}</Text>
-        </View>
-        <Button title="Edit items" variant="outlined" onPress={() => setMenuStep('browsing')} />
-        <Text style={styles.prompt}>Would you like to prepay now?</Text>
-        <Text style={styles.muted}>Optional. You can also pay at the table.</Text>
-        {prepayError ? <Text style={styles.error}>{prepayError}</Text> : null}
-        <View style={styles.actions}>
-          <View style={styles.half}>
-            <Button
-              title="No, pay at table"
-              variant="outlined"
-              disabled={prepayBusy}
-              onPress={exitPreorderFlow}
-            />
+
+          <Button title="Edit items" variant="outlined" onPress={() => setMenuStep('browsing')} />
+
+          <Text style={styles.reviewPrompt}>Would you like to prepay now?</Text>
+          <Text style={styles.reviewPromptSub}>Optional. You can also pay at the table.</Text>
+          {prepayError ? <Text style={styles.error}>{prepayError}</Text> : null}
+
+          <View style={styles.reviewActions}>
+            <View style={styles.half}>
+              <Button
+                title="No, pay at table"
+                variant="outlined"
+                disabled={prepayBusy}
+                onPress={exitPreorderFlow}
+              />
+            </View>
+            <View style={styles.half}>
+              <Button
+                title={prepayBusy ? 'Opening checkout...' : 'Yes, prepay'}
+                loading={prepayBusy}
+                onPress={() => {
+                  void createCheckout();
+                }}
+              />
+            </View>
           </View>
-          <View style={styles.half}>
-            <Button
-              title={prepayBusy ? 'Opening checkout...' : 'Yes, prepay'}
-              loading={prepayBusy}
-              onPress={() => {
-                void createCheckout();
-              }}
-            />
-          </View>
-        </View>
+        </ScrollView>
       </View>
     );
   }
