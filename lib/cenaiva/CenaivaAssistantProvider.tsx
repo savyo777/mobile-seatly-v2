@@ -434,29 +434,32 @@ function AssistantInner({ children }: { children: ReactNode }) {
           return;
         }
 
-        // Render the response text + UI actions IMMEDIATELY and drop the
-        // loading indicator. We do NOT pass through the 'speaking' status
-        // anymore: that state was visually indistinguishable from
-        // 'processing' to the user (both look like the assistant is
-        // working), and keeping it on for the entire TTS playback
-        // duration is what produced the "still thinking after a minute"
-        // complaint. TTS still plays in the background (awaited below
-        // so auto-relisten timing is preserved), but the UI returns to
-        // idle the moment the response is in hand.
-        applyOnce();
-        commit({ type: 'SET_VOICE_STATUS', status: 'idle' });
+        // Sync text-render and TTS-start to the same instant. The user
+        // wants the spoken voice to begin AT the moment the text appears,
+        // not ~500 ms later (which is how long ElevenLabs takes to deliver
+        // its first audio chunk). To do that we keep the loading indicator
+        // up for the TTS fetch and fire applyOnce + status='idle' inside
+        // onFirstAudioStart — the text bubble pops in and the speaker
+        // starts in the same frame. The await on voice.speak is preserved
+        // so auto-relisten still waits for audio to finish; the trailing
+        // applyOnce() is a belt-and-suspenders fallback if the first-audio
+        // callback never fires (TTS failure path).
         checkpoints.playbackRequestedAt = Date.now();
         debugTiming(debugEvent, {
           elapsedMs: Date.now() - turnStartedAt,
         });
+        const onFirstAudio = () => {
+          applyOnce();
+          commit({ type: 'SET_VOICE_STATUS', status: 'idle' });
+        };
         if (preparedAudio?.audio_base64) {
-          await voice.speakPreparedAudio(spokenText, preparedAudio, { onFirstAudioStart: applyOnce });
+          await voice.speakPreparedAudio(spokenText, preparedAudio, { onFirstAudioStart: onFirstAudio });
         } else if (options.useFreeSpeechFallback) {
-          await voice.speakFallback(spokenText, { onFirstAudioStart: applyOnce });
+          await voice.speakFallback(spokenText, { onFirstAudioStart: onFirstAudio });
         } else {
-          await voice.speak(spokenText, { onFirstAudioStart: applyOnce });
+          await voice.speak(spokenText, { onFirstAudioStart: onFirstAudio });
         }
-        applyOnce();
+        onFirstAudio();
       };
 
       const finishLocalResponse = async (
