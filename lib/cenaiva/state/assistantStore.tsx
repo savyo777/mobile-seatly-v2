@@ -103,6 +103,32 @@ function computeCartSubtotal(cart: CartItem[]): number {
   return Math.round(cart.reduce((sum, item) => sum + item.unit_price * item.qty, 0) * 100) / 100;
 }
 
+// Status values that are AT or BEYOND 'collecting_minimum_fields' —
+// if a start_booking action arrives mid-flow (the server re-emits it
+// on every turn for the same restaurant), we must NOT downgrade the
+// booking back to 'collecting_minimum_fields'. Doing so wipes the
+// 'confirming' status set by the same response's booking patch (the
+// reducer applies booking patch BEFORE ui_actions), which makes the
+// BookingSheet's Confirm button disappear and forces the user to
+// type "yes confirm" — and when they do, the server receives
+// status='collecting_minimum_fields' and asks them to fill the
+// fields over again. User-reported regression 2026-05-28.
+const ADVANCED_BOOKING_STATUSES: BookingState['status'][] = [
+  'collecting_minimum_fields',
+  'loading_availability',
+  'awaiting_time_selection',
+  'confirming',
+  'offering_preorder',
+  'browsing_menu',
+  'reviewing_cart',
+  'choosing_tip_timing',
+  'choosing_tip_amount',
+  'choosing_payment_split',
+  'charging',
+  'paid',
+  'post_booking',
+];
+
 function beginBookingForRestaurant(
   booking: BookingState,
   restaurantId: string,
@@ -110,13 +136,21 @@ function beginBookingForRestaurant(
 ): BookingState {
   const sameRestaurant = booking.restaurant_id === restaurantId;
   const preserveCollectedFields = sameRestaurant || booking.restaurant_id == null;
+  // Preserve an already-advanced status (e.g. 'confirming' just set
+  // by the server's booking patch in this same APPLY_RESPONSE). Only
+  // reset to 'collecting_minimum_fields' when we're starting from
+  // 'idle' — i.e. this really is a brand-new booking session.
+  const nextStatus: BookingState['status'] =
+    sameRestaurant && ADVANCED_BOOKING_STATUSES.includes(booking.status)
+      ? booking.status
+      : 'collecting_minimum_fields';
 
   if (preserveCollectedFields) {
     return {
       ...booking,
       restaurant_id: restaurantId,
       ...(restaurantName != null ? { restaurant_name: restaurantName } : {}),
-      status: 'collecting_minimum_fields',
+      status: nextStatus,
     };
   }
 
