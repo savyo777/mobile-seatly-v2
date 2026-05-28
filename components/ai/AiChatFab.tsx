@@ -5,11 +5,14 @@ import {
   View,
   type ViewStyle,
 } from 'react-native';
+import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { CenaivaAssistantBoundary } from '@/components/cenaiva/CenaivaAssistantBoundary';
 import { CenaivaVoiceShell } from '@/components/cenaiva/CenaivaVoiceShell';
 import { useCenaivaAssistant } from '@/lib/cenaiva/CenaivaAssistantProvider';
 import { useAssistantStore } from '@/lib/cenaiva/state/assistantStore';
+import { useAuthSession } from '@/lib/auth/AuthContext';
+import { requireAuthOrPromptLogin } from '@/lib/auth/requireAuthOrPromptLogin';
 import { useColors, createStyles, spacing } from '@/lib/theme';
 
 const FAB_SIZE = 58;
@@ -44,14 +47,28 @@ type Props = {
 export const AiChatFab = React.memo(function AiChatFab({ bottomOffset = 100, style }: Props) {
   const c = useColors();
   const styles = useStyles();
+  const router = useRouter();
   const assistant = useCenaivaAssistant();
   const { state } = useAssistantStore();
+  const { isAuthenticated } = useAuthSession();
   const open = state.isOpen;
 
   return (
     <>
       <Pressable
-        onPress={() => assistant.open()}
+        onPress={() => {
+          // Hey Cenaiva is an account-based feature — bounce unauth users
+          // straight to welcome with a returnTo instead of letting them
+          // open the assistant shell and immediately hit the
+          // not_authenticated error. Apple 5.1.1(v) compliance preserves
+          // discover/menu as public; the assistant stays gated.
+          requireAuthOrPromptLogin({
+            isAuthenticated,
+            router,
+            returnTo: '/(customer)/discover',
+            onAuthed: () => assistant.open(),
+          });
+        }}
         accessibilityRole="button"
         accessibilityLabel="Open AI assistant"
         style={({ pressed }) => [
