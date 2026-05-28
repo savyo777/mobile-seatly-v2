@@ -882,25 +882,39 @@ function AssistantInner({ children }: { children: ReactNode }) {
               commit({ type: 'CLOSE' });
               router.push(action.path as never);
             }
-            // CLAUDE_SKILLS.md (Stripe section) §17 voice-booking wire (added
-            // 2026-05-21). The cenaiva-orchestrate edge fn already emits
-            // these actions when the user completes a guided booking via
-            // text/voice; without these handlers mobile would silently
-            // drop them. start_booking → open the date/time picker for
-            // that restaurant so the diner can finish payment in the
-            // visual flow. show_confirmation → jump to the bookings tab
-            // so the diner sees their new reservation.
-            if (action.type === 'start_booking') {
-              voice.stopSpeaking();
-              voice.stopListening();
-              commit({ type: 'CLOSE' });
-              router.push(`/booking/${action.restaurant_id}/step2-time` as never);
-            }
+            // start_booking is NOT a navigation event. It signals that the
+            // assistant has begun collecting booking details (restaurant
+            // pre-selected). The reducer at assistantStore.tsx:226 updates
+            // internal `booking` state; the assistant stays open and the
+            // orchestrator asks for date / party_size / time via chat
+            // turns. The previous behavior closed the modal + pushed to
+            // step2-time, which ejected the user out of the conversational
+            // flow into the manual booking screens — explicitly against
+            // the "fully voice/text automated" requirement.
+            //
+            // For deposit-required restaurants (where the conversational
+            // complete_booking tool can't take a card), the orchestrator
+            // emits `fallback_to_manual` to explicitly punt to the manual
+            // flow — handled below.
             if (action.type === 'show_confirmation') {
               voice.stopSpeaking();
               voice.stopListening();
               commit({ type: 'CLOSE' });
               router.push(`/(customer)/bookings` as never);
+            }
+            // Explicit escape hatch from the conversational flow. The
+            // orchestrator emits this when it can't complete a booking
+            // in chat (currently: deposit-required restaurants where the
+            // server-side complete_booking can't mint a Stripe PI). Reads
+            // booking state to know which restaurant to deep-link.
+            if (action.type === 'fallback_to_manual') {
+              const restaurantId = stateRef.current.booking.restaurant_id;
+              if (restaurantId) {
+                voice.stopSpeaking();
+                voice.stopListening();
+                commit({ type: 'CLOSE' });
+                router.push(`/booking/${restaurantId}/step2-time` as never);
+              }
             }
           }
         };
