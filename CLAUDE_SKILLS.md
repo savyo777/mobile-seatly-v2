@@ -43,11 +43,9 @@ applicationFee = cenaivaFee                      // routes to Cenaiva via Stripe
 | $20 | $22.04   | $1.10 | $0.94 |
 | $40 | $43.77   | $2.20 | $1.57 |
 
-**The two gotchas that broke this session:**
+**The gotcha that broke this session:**
 
 1. **Send BASE to the server, not the gross-up.** Mobile cart computes the gross-up for display, but `create-public-payment-intent` expects `amount_cents = base` and grosses up server-side. Sending the grossed amount returns `amount_mismatch` 400. Fixed in `1bfe859`.
-
-2. **For split-tender, the per-slot PI uses the SHARE base (not the full deposit base).** Mobile sends `amount_cents: shareCents` (`deposit / N`), the server's hold-aware branch validates against `hold.deposit_amount_cents` (the FULL deposit) and rejects. Solution: do NOT send `hold_id` on per-slot split-tender PI mints. The server falls back to the deposit-row validation path which checks `row.amount_cents` (the SHARE). Fixed in `dc659bf`.
 
 **Cart UI**: displays 3 line items always — Deposit / Platform fee (5.5%) / Processing fee — plus Total. Disclosure: "Platform fee and processing fee are non-refundable. Your CA$X deposit is fully refundable when the restaurant marks you seated."
 
@@ -69,38 +67,19 @@ applicationFee = cenaivaFee                      // routes to Cenaiva via Stripe
 
 2. **Heartbeat response ignored**. The `.then(resp)` was missing — `expires_at` never flowed back into state. Restored in `b787c33`.
 
-3. **Hold + split-tender conflict**. The hold's `expires_at` validation collides with split-tender's per-slot share amounts. Don't send `hold_id` on split-tender PIs (see §2).
-
 **Persistence**: the hook persists to AsyncStorage so the diner can resume after backgrounding. Key derived from `restaurantId + dateTime`. Storage prefix is `@cenaiva/` (the legacy `@seatly/...` prefix is auto-migrated on cold start via `lib/storage/migrate.ts`).
 
 **Dev-only instrumentation**: `console.log('[hold] …')` at three transition points (heartbeat extension, client-tick expired, transitionToActive). Keep these — they paid for themselves diagnosing the May 21 incident.
 
 ---
 
-## 4. Split-tender — gotchas you WILL hit
+## 4. Split-tender — REMOVED from mobile on 2026-05-28
 
-Mobile must mirror the deployed web sister repo's behavior exactly. Currently both gate on `depositAmountCents > 0` (the toggle is hidden for pre-order-only carts). **Don't extend mobile beyond web's behavior** without explicit user direction (`feedback_mirror_web_for_split_tender` memory).
+The split-tender feature (one party splitting a deposit across N cards) was removed from mobile checkout on 2026-05-28 — the complexity wasn't worth the diner usage (5 bugs fixed since launch, plus a mid-submit race). The mobile checkout now only supports single-pay.
 
-**The end-to-end flow that works:**
-1. `createPublicBooking({ split_tender_payers: N, ...payload, payment_method: 'split' })` — server atomically creates the reservation row in `pending_payment` status + N `reservation_deposit_payments` rows. Returns `split_tender_deposit_row_ids: string[]`.
-2. For each row, mint a PI: `createHoldPaymentIntent({ amount_cents: shareCents, deposit_payment_ids: [rowId], idempotency_key: secureRandomUuidV4() })` — **no `hold_id`** (see §2).
-3. Present Stripe PaymentSheet per slot.
-4. On success per slot: `confirmDepositPaid({ payment_id: rowId, payment_intent_id: piId })` (with 3 retries).
-5. When all N rows charge → the `reservation_deposit_settle` DB trigger flips reservation to `'confirmed'`.
+**Server contract still exists** for the web sister repo. `create-public-booking` still accepts `split_tender_payers` and inserts `reservation_deposit_payments` rows; `reservation_deposit_settle` trigger still flips reservation to `'confirmed'` when all rows charge. If web also removes split-tender later, follow up with a PR to delete the server-side branch.
 
-**Five bugs we fixed (each is a separate failure mode you'll see if anything regresses):**
-
-A. **Two versions of `book_reservation` DB function**. The 17-arg variant accepted `pending_payment`; the 20-arg variant (event/promotion-aware, created later) didn't. Every split-tender attempt with events/promotions threw `invalid_status`. Fixed by migration `fix_book_reservation_v2_accept_pending_payment` — added `'pending_payment'` to the status whitelist + overlap-detection queries + cover-cap query in the 20-arg variant.
-
-B. **`reservation_deposit_payments_payer_required` CHECK constraint silently rejected inserts**. The deployed `create-public-booking` was inserting rows with NULL payer info. PostgreSQL 23514 violation, but the edge fn's catch block just `console.error`'d → returned 200 with empty rows array → mobile threw "0 split_tender_deposit_row_ids returned" → orphan reservation blocked the slot. Fixed by deploying `create-public-booking` v105 with `payer_email + payer_full_name + payer_user_profile_id` populated (booking diner is row 0, others get `payer-{i+1}+{reservationId.slice(0,8)}@cenaiva.test` placeholders).
-
-C. **Hold `amount_mismatch` on slot 0** (see §2.2 above).
-
-D. **Orphan reservations on partial flows**. User opens split-tender, dismisses PaymentSheet on slot 0 without paying anything → reservation sits in `pending_payment` forever → next booking attempt at same slot returns 409 diner_double_book. Fixed in `2bdaf14`: `SplitTenderCheckout.tsx` now has a true-unmount `useEffect` (deps: `[]`) that auto-cancels the reservation when `anyPaid === false` at unmount time. If anyPaid >= 1, do NOT cancel — diner committed money, they can still finish the remaining payers.
-
-E. **Stale "Retry 1 declined card1}" button**. ICU plural template (`{{count, plural, one {} other {s}}}`) doesn't render in this i18next config — leaks the trailing `}` literally. Replaced with two count-aware strings: `paymentSplitRetryFailed: 'Try again'` and `paymentSplitRetryFailedWithCount: 'Try again ({{count}} left)'`. Switch on `failedCount > 1`.
-
-**friendlyError() bypass for split-tender catch**: server returns real Error.message strings like "You already have a reservation at this restaurant during that window." `friendlyError`'s code-table lookup falls through and uses the generic fallback, hiding the diagnostic. Bypass it when err.message looks user-facing (>10 chars, not all-caps, not a code identifier, not network-shaped). See `SplitTenderCheckout.tsx` catch block.
+**Do not re-introduce on mobile** without an explicit product decision.
 
 ---
 
@@ -118,7 +97,7 @@ catch (err) {
 }
 ```
 
-When you need the raw `err.message` (e.g. split-tender's server-returned overlap message), bypass deliberately + add a comment explaining why. See §4 above.
+When you need the raw `err.message` (e.g. a server-returned overlap message), bypass deliberately + add a comment explaining why.
 
 ---
 
@@ -341,8 +320,6 @@ When a plan / change touches anything shared with the web sister repo, produce `
 
 ## 16. Mirror web for parity-sensitive features
 
-**Split-tender**: mobile must mirror web exactly. Both currently gate on `depositAmountCents > 0`. Don't propose pre-order or hold-only split UNLESS web ships it first. (Saved in `feedback_mirror_web_for_split_tender`.)
-
 **Fee math**: mobile must MATCH web exactly. Stripe rejects PIs with mismatched amounts. (See §2.)
 
 **Verify web's behavior before mobile extension**:
@@ -418,7 +395,7 @@ Live at `~/.claude/projects/-Users-stevengeorgy-mobile-seatly-v2-5/memory/`. The
 | `feedback_friendly_error_strict` | Every error/warning Alert routes through `friendlyError()`. Never append codes to user-visible text. |
 | `feedback_complete_dont_stop` | For long/resumed work, skip plan→approval→execute and run scan→execute→push→next-tier. Use subagents + background shells liberally. |
 | `feedback_web_handoff_doc` | Produce `docs/WEB_APP_HANDOFF.md` for cross-surface changes (see §15). |
-| `feedback_mirror_web_for_split_tender` | Split-tender mirrors web exactly. Don't extend mobile beyond web's behavior. |
+| `feedback_mirror_web_for_split_tender` | OBSOLETE — split-tender was removed from mobile on 2026-05-28. Memory now records the removal, kept as a historical signal. |
 
 Future AI: read these before starting work. They encode hours of user preference.
 

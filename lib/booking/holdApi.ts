@@ -198,9 +198,9 @@ export function confirmHoldPaid(
 export type CreateHoldPaymentIntentRequest = {
   /**
    * Hold-aware atomic conversion. Pass to convert a reservation_holds
-   * row into a confirmed reservation as part of the same PI flow.
-   * Omit for split-tender slots 1..N (slot 0 may still pass it) and
-   * for the magic-link / deposit-only flows where no hold exists.
+   * row into a confirmed reservation as part of the same PI flow. The
+   * mobile single-pay path always provides this; omit only for the
+   * magic-link / deposit-only flows where no hold exists.
    */
   hold_id?: string;
   restaurant_id: string;
@@ -220,18 +220,6 @@ export type CreateHoldPaymentIntentRequest = {
    * 'OffSession' in step6-payment.tsx.
    */
   save_card?: boolean;
-  /**
-   * Split-tender per-slot: the deposit-row UUID(s) this PI is settling.
-   * The server stamps `pi.metadata.deposit_payment_ids` with these so
-   * `confirm-deposit-paid` can do its strict Vuln 2 cross-check (the
-   * deposit row's id must be in that metadata to settle). Per
-   * CLAUDE_SKILLS.md (Split-tender) §2.2 + CLAUDE_SKILLS.md (Security) §2a.
-   * Mobile passes exactly one id per slot's PI; the field accepts an
-   * array because the magic-link / pre-paid flows can group rows.
-   * Omit for single-pay (no deposit) and for the holds path (which
-   * uses `metadata.hold_id` instead).
-   */
-  deposit_payment_ids?: string[];
   /**
    * Per-booking-attempt idempotency key (UUID v4). Required to fix
    * Bug #110 (PI reuse across same-amount bookings with same saved

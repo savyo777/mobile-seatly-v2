@@ -27,7 +27,6 @@ import { friendlyError, isUserCancellation } from '@/lib/errors/friendlyError';
 import { useCurrentUserId } from '@/lib/auth/currentUserId';
 import { stripeAttachPaymentMethod } from '@/lib/stripe/stripeAttachPaymentMethod';
 import { usePreventScreenCapture } from '@/lib/security/usePreventScreenCapture';
-import { SplitTenderCheckout } from '@/components/booking/SplitTenderCheckout';
 import { computeDinerCharge } from '@/lib/stripe/stripeFee';
 import { canadianTaxLabel } from '@/lib/billing/canadianTax';
 
@@ -61,35 +60,6 @@ const useStyles = createStyles((c) => ({
   lineLabelMuted: { flex: 1, fontSize: 13, color: c.textMuted, fontStyle: 'italic' },
   lineValueMuted: { fontSize: 13, color: c.textMuted, fontStyle: 'italic' },
   sectionTitle: { fontSize: 16, fontWeight: '600', color: c.textPrimary, marginTop: 24, marginBottom: 12 },
-  modeToggleRow: {
-    flexDirection: 'row',
-    backgroundColor: c.bgSurface,
-    borderRadius: borderRadius.md,
-    borderWidth: 1,
-    borderColor: c.border,
-    padding: 4,
-    marginTop: 20,
-    marginBottom: 12,
-    gap: 4,
-  },
-  modePill: {
-    flex: 1,
-    paddingVertical: 10,
-    borderRadius: borderRadius.sm,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  modePillActive: {
-    backgroundColor: 'rgba(201, 168, 76, 0.16)',
-  },
-  modePillLabel: {
-    fontSize: 14,
-    color: c.textSecondary,
-    fontWeight: '600',
-  },
-  modePillLabelActive: {
-    color: c.gold,
-  },
   methodCard: { flexDirection: 'row', alignItems: 'center', padding: 16, backgroundColor: c.bgSurface, borderRadius: borderRadius.md, borderWidth: 1, borderColor: c.border, marginBottom: 10, gap: 14 },
   methodCardSelected: { borderColor: c.gold, backgroundColor: 'rgba(201, 168, 76, 0.08)' },
   methodLabel: { flex: 1, fontSize: 15, color: c.textPrimary },
@@ -211,17 +181,6 @@ export default function Step6Payment() {
   const c = useColors();
   const styles = useStyles();
   const [selectedMethod, setSelectedMethod] = useState<PaymentMethod>('card');
-  // Single-pay (the current flow, one card covers the whole deposit) vs
-  // split-tender (N people pay their share on the same device, sequentially).
-  // Hidden when the deposit is $0 (no point splitting nothing) and when
-  // partySize < 2. Per CLAUDE_SKILLS.md (Split-tender §1).
-  const [paymentMode, setPaymentMode] = useState<'single' | 'split'>('single');
-  // Tracks whether SplitTenderCheckout's placeOrder pipeline is mid-flight.
-  // While true, the Single/Split toggle pills are disabled so the diner can't
-  // accidentally unmount SplitTenderCheckout (which would orphan an in-flight
-  // PaymentIntent on Stripe + the reservation row that was just created on
-  // the server). 2026-05-24 Stripe playbook §5 fix.
-  const [splitSubmitting, setSplitSubmitting] = useState(false);
   const [taxRate, setTaxRate] = useState(0);
   const [taxProvince, setTaxProvince] = useState<string | null>(null);
   const [depositTiers, setDepositTiers] = useState<DepositTier[] | undefined>(undefined);
@@ -268,28 +227,6 @@ export default function Step6Payment() {
   const baseTotalCents = Math.round(baseTotalDue * 100);
   const dinerCharge = computeDinerCharge(baseTotalCents);
   const totalDue = dinerCharge.dinerTotalCents / 100;
-  // Split-tender is offered ONLY when there's a deposit + party >= 2.
-  //
-  // Why not also for pre-order-only carts? The deployed server-side
-  // create-public-booking edge fn gates split-tender row creation on
-  // `depositAmountCents > 0` — it only inserts N
-  // reservation_deposit_payments rows when there's a deposit to
-  // split. A pre-order-only request with split_tender_payers: N
-  // returns 200 + a reservation row + ZERO deposit rows → mobile
-  // throws "0 split_tender_deposit_row_ids returned" and the orphan
-  // reservation blocks the slot.
-  //
-  // The diner-friendly fix would be a SEPARATE server feature: split
-  // an `orders` row across N payers. Until that ships, we hide the
-  // toggle for pre-order-only carts to avoid a confusing failure.
-  // The single-pay flow charges the full pre-order amount through
-  // the diner running checkout, which is the only path the server
-  // currently supports.
-  //
-  // When the server gains pre-order split support, change this gate
-  // to `(hasDeposit || hasPreorder) && partySizeNum >= 2` AND update
-  // the server-side handler to accept the `orders` split case.
-  const canSplit = hasDeposit && partySizeNum >= 2;
   const qpBase = [
     `date=${encodeURIComponent(date ?? '')}`,
     `time=${encodeURIComponent(time ?? '')}`,
@@ -674,91 +611,6 @@ export default function Step6Payment() {
           ) : null}
         </Card>
 
-        {canSplit ? (
-          <View style={styles.modeToggleRow}>
-            <TouchableOpacity
-              onPress={() => setPaymentMode('single')}
-              disabled={splitSubmitting}
-              style={[
-                styles.modePill,
-                paymentMode === 'single' && styles.modePillActive,
-                splitSubmitting && { opacity: 0.4 },
-              ]}
-              accessibilityRole="button"
-              accessibilityState={{ disabled: splitSubmitting }}
-            >
-              <Text style={[styles.modePillLabel, paymentMode === 'single' && styles.modePillLabelActive]}>
-                {t('booking.paymentSplitSingle')}
-              </Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              onPress={() => setPaymentMode('split')}
-              disabled={splitSubmitting}
-              style={[
-                styles.modePill,
-                paymentMode === 'split' && styles.modePillActive,
-                splitSubmitting && { opacity: 0.4 },
-              ]}
-              accessibilityRole="button"
-              accessibilityState={{ disabled: splitSubmitting }}
-            >
-              <Text style={[styles.modePillLabel, paymentMode === 'split' && styles.modePillLabelActive]}>
-                {t('booking.paymentSplitMulti')}
-              </Text>
-            </TouchableOpacity>
-          </View>
-        ) : null}
-
-        {paymentMode === 'split' ? (
-          <SplitTenderCheckout
-            restaurantId={restaurantId}
-            partySize={partySizeNum}
-            // canSplit gate guarantees depositCents > 0 — server only
-            // seeds split_tender rows from the deposit amount, not
-            // from preorder + tax. See the canSplit comment above
-            // for context on why pre-order split isn't supported yet.
-            totalDepositCents={depositCents}
-            bookingPayload={{
-              restaurant_id: restaurantId,
-              shift_id: shiftId ?? '',
-              date_time: slotDateTime ?? '',
-              party_size: partySizeNum,
-              guest_name: name ?? '',
-              guest_email: email ?? '',
-              guest_phone: phone ?? null,
-              allergies: notes ?? null,
-              seating_preference: seatingPreference ?? null,
-              occasion: occasion ?? null,
-              cart_items: cart,
-              subtotal: preorderTotal,
-              tax_amount: taxAmount,
-              tip_amount: 0,
-              total_amount: totalDue,
-              discount_amount: null,
-              discount_reason: null,
-              promotion_id: null,
-              // NOTE: do NOT pass hold_id here. Per CLAUDE_SKILLS.md (Split-tender)
-              // §10.4, split-tender uses the hold ONLY on slot 0's
-              // create-public-payment-intent (server consumes it atomically
-              // during PI mint). If we ALSO pass it to create-public-booking,
-              // book_reservation rejects with "Reservation: invalid_status"
-              // when the hold gets converted server-side from slot 0's PI
-              // before the booking row finishes inserting.
-              hold_id: null,
-            }}
-            holdId={hold.state.status === 'active' ? hold.state.holdId : null}
-            diner={{ name, email, phone }}
-            onAllPaid={({ reservationId, confirmationCode }) => {
-              goToConfirmation(
-                `paid=1&reservationId=${encodeURIComponent(reservationId)}` +
-                  `&confirmationCode=${encodeURIComponent(confirmationCode)}` +
-                  `&split=1`,
-              );
-            }}
-            onSubmittingChange={setSplitSubmitting}
-          />
-        ) : (
-          <>
         <Text style={styles.sectionTitle}>Payment Method</Text>
         {paymentMethods.map((method) => (
           <TouchableOpacity
@@ -812,11 +664,8 @@ export default function Step6Payment() {
         <Text style={styles.secureText}>
           <Ionicons name="lock-closed" size={12} color={c.textMuted} /> Secured by Stripe. Your payment information is encrypted.
         </Text>
-          </>
-        )}
       </ScrollView>
 
-      {paymentMode === 'single' ? (
       <View style={[styles.footer, { paddingBottom: insets.bottom + 16 }]}>
         <Button
           title={paying ? t('common.loading', 'Please wait…') as string : `${t('booking.confirmBooking')} · ${formatCurrency(totalDue)}`}
@@ -824,7 +673,6 @@ export default function Step6Payment() {
           disabled={paying}
         />
       </View>
-      ) : null}
 
       <Modal
         visible={pendingRetry !== null}

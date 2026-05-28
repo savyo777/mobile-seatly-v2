@@ -47,21 +47,11 @@ export type PublicBookingPayload = {
   discount_amount: number | null;
   discount_reason: string | null;
   promotion_id: string | null;
-  payment_method: 'card' | 'split';
+  payment_method: 'card';
   // When set and the server's CENAIVA_HOLDS_ENABLED flag is on, the booking
   // is created by converting an existing reservation_holds row. Otherwise the
   // legacy book_reservation path runs unchanged.
   hold_id?: string | null;
-  /**
-   * Split-tender: the diner is splitting the deposit across N cards on
-   * the same device. The server creates the reservation in
-   * `pending_payment` status + N `reservation_deposit_payments` rows in
-   * `pending` status. The response includes
-   * `split_tender_deposit_row_ids` (length === split_tender_payers).
-   * Per CLAUDE_SKILLS.md (Split-tender) §2.1. Valid range: 2..10.
-   * Omit / set null for the single-pay flow.
-   */
-  split_tender_payers?: number | null;
 };
 
 export type PublicBookingResponse = {
@@ -76,14 +66,6 @@ export type PublicBookingResponse = {
   deposit_required?: boolean;
   deposit_amount_cents?: number;
   deposit_status?: DepositStatus;
-  /**
-   * Present when the request set `split_tender_payers`. One UUID per
-   * payer share, in the order the server created them. Length matches
-   * the requested `split_tender_payers`. Pass each id to
-   * create-public-payment-intent's `deposit_payment_ids: [rowId]`
-   * field, then to confirm-deposit-paid's `payment_id`.
-   */
-  split_tender_deposit_row_ids?: string[];
   error?: string;
 };
 
@@ -466,16 +448,13 @@ export async function prepareDeposit(params: {
   payers: DepositPayer[];
   /**
    * Optional. When the caller has already minted a PaymentIntent for
-   * this deposit (e.g. the inline split-pay flow charges BEFORE rows
-   * exist), pass it here so the server stamps
+   * this deposit, pass it here so the server stamps
    * `pi.metadata.deposit_payment_ids` with the freshly inserted row
    * IDs. confirm-deposit-paid validates that metadata, so missing it
    * would otherwise force the legacy less-strict restaurant_id check.
    *
    * Mobile holds path doesn't use this (the holds flow charges via
    * confirm-hold-paid which validates `pi.metadata.hold_id` instead).
-   * Added for parity with CLAUDE_SKILLS.md (Security) §2b on
-   * 2026-05-20.
    */
   payment_intent_id?: string;
 }): Promise<PrepareDepositResponse> {
