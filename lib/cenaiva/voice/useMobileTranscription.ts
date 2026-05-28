@@ -25,13 +25,24 @@ const DEEPGRAM_LANGUAGE = process.env.EXPO_PUBLIC_DEEPGRAM_LANGUAGE?.trim() || '
 const DEEPGRAM_LIVE_TOKEN_ENABLED =
   (process.env.EXPO_PUBLIC_DEEPGRAM_LIVE_TOKEN ?? '').trim().toLowerCase() === 'true';
 const MAX_KEYTERMS = 12;
-const SILENCE_TIMEOUT_MS = 320;
-const NO_SPEECH_TIMEOUT_MS = 3_000;
+// Silence/endpointing tuning — user-reported 2026-05-28: mic was
+// turning on/off mid-sentence because the silence window was 320 ms.
+// Natural between-sentence pauses are 400–800 ms, mid-sentence
+// breath/thought pauses can be 300–600 ms. Raising to 1400 ms gives
+// the user room to finish a thought without the recorder bailing.
+const SILENCE_TIMEOUT_MS = 1_400;
+const NO_SPEECH_TIMEOUT_MS = 6_000;
 const TURN_TIMEOUT_MS = 30_000;
-const NATIVE_TURN_TIMEOUT_MS = 12_000;
-const NATIVE_INTERIM_STABLE_MS = 650;
-const METERING_SPEECH_DB = -24;
-const MIN_RECORDING_MS = 650;
+const NATIVE_TURN_TIMEOUT_MS = 18_000;
+// Matches SILENCE_TIMEOUT_MS in spirit: how long the interim text has
+// to stay stable before the native fallback ends the turn. 650 ms was
+// also clipping the user mid-thought.
+const NATIVE_INTERIM_STABLE_MS = 1_300;
+// Slightly more sensitive — -24 dB only caught firm-volume speech and
+// missed softer sentence starts ("um, can you book…"). -30 dB still
+// rejects steady-state room noise on a typical phone mic.
+const METERING_SPEECH_DB = -30;
+const MIN_RECORDING_MS = 800;
 const RECORDING_MONITOR_INTERVAL_MS = 80;
 const IS_IOS_SIMULATOR = Platform.OS === 'ios' && Device.isDevice === false;
 const CENAIVA_STT_RECORDING_OPTIONS = {
