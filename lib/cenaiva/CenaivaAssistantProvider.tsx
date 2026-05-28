@@ -435,6 +435,15 @@ function AssistantInner({ children }: { children: ReactNode }) {
         }
 
         commit({ type: 'SET_VOICE_STATUS', status: 'speaking' });
+        // Render the response text + UI actions IMMEDIATELY rather than
+        // waiting for ElevenLabs' first-audio callback. The previous
+        // sequencing kept the chat bubble empty for the 300–800 ms it
+        // took TTS to produce its first audio chunk, which the user
+        // perceived as "still loading" even though the orchestrator had
+        // already responded. TTS continues to play (it's awaited below
+        // for the orb animation + auto-relisten timing), but the visible
+        // UI no longer blocks on it.
+        applyOnce();
         checkpoints.playbackRequestedAt = Date.now();
         debugTiming(debugEvent, {
           elapsedMs: Date.now() - turnStartedAt,
