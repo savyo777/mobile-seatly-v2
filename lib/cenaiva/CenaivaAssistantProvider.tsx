@@ -912,10 +912,24 @@ function AssistantInner({ children }: { children: ReactNode }) {
             // emits `fallback_to_manual` to explicitly punt to the manual
             // flow — handled below.
             if (action.type === 'show_confirmation') {
-              voice.stopSpeaking();
-              voice.stopListening();
-              commit({ type: 'CLOSE' });
-              router.push(`/(customer)/bookings` as never);
+              // If the orchestrator has also asked the post-confirm
+              // pre-order question (booking.status === 'offering_preorder'),
+              // do NOT close the assistant and navigate away — the
+              // BookingSheet needs to render the Skip / View Menu UI so
+              // the user can decide. Only auto-close + route to
+              // /(customer)/bookings when the booking flow is fully
+              // terminal (post_booking) and there's nothing left to
+              // ask the user inside the assistant.
+              const postStatus = stateRef.current.booking.status;
+              if (postStatus === 'offering_preorder' || postStatus === 'browsing_menu') {
+                // Stay in the assistant; BookingSheet renders the
+                // preorder offer next.
+              } else {
+                voice.stopSpeaking();
+                voice.stopListening();
+                commit({ type: 'CLOSE' });
+                router.push(`/(customer)/bookings` as never);
+              }
             }
             // Explicit escape hatch from the conversational flow. The
             // orchestrator emits this when it can't complete a booking
