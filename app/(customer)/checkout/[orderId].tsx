@@ -328,7 +328,22 @@ export default function CenaivaCheckoutScreen() {
       setProcessingPayment(false);
       setPaymentComplete(true);
       setNotice('Payment confirmed. Your pre-pay receipt is saved with your booking.');
-      Alert.alert('Payment confirmed', 'Your pre-pay receipt is saved with your booking.');
+      // Stage-3 round-trip: after the Hey Cenaiva preorder → prepay
+      // flow lands here and succeeds, take the user to the Bookings
+      // tab where they can see the reservation + the prepaid receipt
+      // attached. Previously we just alerted and left them stranded
+      // on the checkout screen; the assistant was already closed
+      // (BookingSheet calls assistant.close before pushing here).
+      Alert.alert(
+        'Payment confirmed',
+        'Your pre-pay receipt is saved with your booking.',
+        [
+          {
+            text: 'See booking',
+            onPress: () => router.replace('/(customer)/bookings' as never),
+          },
+        ],
+      );
     }, 450);
   };
 
