@@ -922,7 +922,18 @@ function AssistantInner({ children }: { children: ReactNode }) {
         if (spokenText && !opts?.silent) {
           const normalize = (value: string) =>
             value.replace(/\s+/g, ' ').replace(/[.!?,\s]+$/, '').trim().toLowerCase();
-          if (streamingActive && normalize(serverStreamedText) && normalize(serverStreamedText) === normalize(spokenText)) {
+          if (textModeRef.current) {
+            // Text-mode UX: render the response NOW and start TTS in the
+            // background. The previous behavior awaited voice.speak() before
+            // releasing the UI, which kept "Thinking…" up for the entire
+            // TTS round-trip (orchestrator ~1s + ElevenLabs ~2-5s). User
+            // wants the loading indicator to stop the moment the assistant
+            // is ready to answer, so we skip the await + suppress the
+            // 'speaking' status flicker in chat mode.
+            applyFinalResponse();
+            if (streamingActive) voice.discardStreamingSpeech();
+            void voice.speak(spokenText).catch(() => undefined);
+          } else if (streamingActive && normalize(serverStreamedText) && normalize(serverStreamedText) === normalize(spokenText)) {
             applyFinalResponse();
             await voice.drainStreamingSpeech();
           } else if (streamingActive && (fillerQueued || fillerWasStarted) && !normalize(serverStreamedText)) {
