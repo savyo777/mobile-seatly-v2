@@ -301,8 +301,8 @@ export default function OwnerMenuScreen() {
           accessibilityRole="button"
           accessibilityLabel={t('owner.menuAddButton')}
         >
-          <Ionicons name="add" size={18} color={ownerColors.gold} />
-          <Text style={styles.floatingAddText}>Add</Text>
+          <Ionicons name="create-outline" size={18} color={ownerColors.bg} />
+          <Text style={styles.floatingAddText}>{t('owner.menuEditFab')}</Text>
         </Pressable>
       </Animated.View>
       ) : null}
@@ -659,23 +659,22 @@ const useStyles = createStyles((c) => {
   floatingAddBtn: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 5,
-    paddingVertical: 10,
-    paddingHorizontal: 14,
+    gap: 6,
+    paddingVertical: 12,
+    paddingHorizontal: 18,
     borderRadius: 999,
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: ownerColors.goldMuted,
-    backgroundColor: ownerColors.bgSurface,
-    shadowColor: '#000',
-    shadowOpacity: 0.18,
-    shadowRadius: 12,
+    backgroundColor: ownerColors.gold,
+    shadowColor: ownerColors.gold,
+    shadowOpacity: 0.35,
+    shadowRadius: 14,
     shadowOffset: { width: 0, height: 6 },
-    elevation: 6,
+    elevation: 8,
   },
   floatingAddText: {
     fontSize: 14,
-    fontWeight: '700',
-    color: ownerColors.gold,
+    fontWeight: '800',
+    color: ownerColors.bg,
+    letterSpacing: 0.2,
   },
   actionsModalRoot: {
     flex: 1,
