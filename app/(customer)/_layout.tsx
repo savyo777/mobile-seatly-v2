@@ -200,6 +200,26 @@ export default function CustomerTabsLayout() {
               title: t('tabs.profile'),
               tabBarIcon: ({ color, size }) => <Ionicons name="person-outline" size={size} color={color} />,
             }}
+            listeners={({ navigation }) => ({
+              // Force the Profile tab to always land on /(customer)/profile/index
+              // when tapped from the bottom tab bar. Without this, the profile
+              // stack restores wherever it was last left — so if the user
+              // ever navigated to /(customer)/profile/register-restaurant
+              // (from staff Settings → Add restaurant, or a deep link), the
+              // next Profile-tab tap would re-open that page instead of the
+              // diner profile. User-reported 2026-05-29.
+              tabPress: (event) => {
+                const state = navigation.getState();
+                const profileTab = state.routes.find((r: { name: string }) => r.name === 'profile') as
+                  | { state?: { routes?: Array<{ name: string }>; index?: number } }
+                  | undefined;
+                const stackRoutes = profileTab?.state?.routes ?? [];
+                const onIndex = stackRoutes.length <= 1 || (profileTab?.state?.index ?? 0) === 0;
+                if (onIndex) return; // already on profile root — let default behavior run
+                event.preventDefault();
+                navigation.navigate('profile', { screen: 'index' });
+              },
+            })}
           />
           <Tabs.Screen name="feed" options={{ href: null }} />
           <Tabs.Screen name="map" options={{ href: null }} />
