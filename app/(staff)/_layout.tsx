@@ -39,6 +39,13 @@ const QUICK_ACTIONS: { id: string; icon: IoniconName; label: string; sub: string
     route: '/(staff)/waitlist',
   },
   {
+    id: 'menu',
+    icon: 'restaurant-outline',
+    label: 'Menu',
+    sub: 'Edit items, prices, and categories',
+    route: '/(staff)/menu',
+  },
+  {
     id: 'promo',
     icon: 'pricetag-outline',
     label: 'Post promotion',
