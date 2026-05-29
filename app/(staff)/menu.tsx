@@ -172,6 +172,49 @@ export default function OwnerMenuScreen() {
           </Animated.View>
         </Animated.View>
 
+        {/* Onboarding mode: when the restaurant has NO menu items yet,
+            show a prominent setup card with the AI Menu Scanner as the
+            primary path + manual add as fallback. Hide the search +
+            category filters since there's nothing to filter. As soon as
+            the owner adds their first item (via scan or manual), the
+            normal menu UI takes over. This keeps the scanner discoverable
+            during onboarding without cluttering the day-to-day dashboard. */}
+        {items.length === 0 ? (
+          <Animated.View entering={FadeInDown.delay(70).duration(240)} style={styles.onboardingWrap}>
+            <View style={styles.onboardingHero}>
+              <Ionicons name="restaurant-outline" size={28} color={ownerColors.gold} />
+              <Text style={styles.onboardingTitle}>{t('owner.menuOnboardingTitle')}</Text>
+              <Text style={styles.onboardingBody}>{t('owner.menuOnboardingBody')}</Text>
+            </View>
+            <Pressable
+              style={({ pressed }) => [styles.onboardingPrimary, pressed && { opacity: 0.85 }]}
+              onPress={() => router.push('/(staff)/menu-scan' as never)}
+              accessibilityRole="button"
+              accessibilityLabel={t('owner.menuActionImportMenu')}
+            >
+              <Ionicons name="scan-outline" size={22} color={ownerColors.bg} />
+              <View style={styles.onboardingPrimaryBody}>
+                <Text style={styles.onboardingPrimaryTitle}>{t('owner.menuOnboardingScanTitle')}</Text>
+                <Text style={styles.onboardingPrimarySub}>{t('owner.menuOnboardingScanSub')}</Text>
+              </View>
+              <Ionicons name="chevron-forward" size={18} color={ownerColors.bg} />
+            </Pressable>
+            <Pressable
+              style={({ pressed }) => [styles.onboardingSecondary, pressed && { opacity: 0.78 }]}
+              onPress={openAddItemForm}
+              accessibilityRole="button"
+              accessibilityLabel={t('owner.menuAddItem')}
+            >
+              <Ionicons name="create-outline" size={20} color={ownerColors.text} />
+              <View style={styles.onboardingPrimaryBody}>
+                <Text style={styles.onboardingSecondaryTitle}>{t('owner.menuOnboardingManualTitle')}</Text>
+                <Text style={styles.onboardingSecondarySub}>{t('owner.menuOnboardingManualSub')}</Text>
+              </View>
+              <Ionicons name="chevron-forward" size={18} color={ownerColors.textMuted} />
+            </Pressable>
+          </Animated.View>
+        ) : (
+          <>
         <Animated.View entering={FadeInDown.delay(70).duration(240)} style={styles.toolbar}>
           <View style={styles.searchWrap}>
             <Ionicons name="search-outline" size={18} color={ownerColors.textMuted} style={styles.searchIcon} />
@@ -245,9 +288,12 @@ export default function OwnerMenuScreen() {
             ))}
           </View>
         )}
+          </>
+        )}
 
         <View style={{ height: ownerSpace.md }} />
       </OwnerScreen>
+      {items.length > 0 ? (
       <Animated.View entering={FadeIn.delay(160).duration(180)} style={styles.floatingAddWrap}>
         <Pressable
           onPress={() => setActionsMenuOpen(true)}
@@ -259,6 +305,7 @@ export default function OwnerMenuScreen() {
           <Text style={styles.floatingAddText}>Add</Text>
         </Pressable>
       </Animated.View>
+      ) : null}
       </Animated.View>
       ) : null}
 
@@ -294,18 +341,6 @@ export default function OwnerMenuScreen() {
               >
                 <Ionicons name="create-outline" size={22} color={ownerColors.gold} />
                 <Text style={styles.actionRowText}>{t('owner.menuActionEditCategories')}</Text>
-                <Ionicons name="chevron-forward" size={18} color={ownerColors.textMuted} style={styles.actionChevron} />
-              </Pressable>
-              <View style={styles.actionDivider} />
-              <Pressable
-                style={({ pressed }) => [styles.actionRow, pressed && styles.rowPressed]}
-                onPress={() => {
-                  closeActionsMenu();
-                  setTimeout(() => router.push('/(staff)/menu-scan' as never), MODAL_EXIT_MS + 30);
-                }}
-              >
-                <Ionicons name="scan-outline" size={22} color={ownerColors.gold} />
-                <Text style={styles.actionRowText}>{t('owner.menuActionImportMenu')}</Text>
                 <Ionicons name="chevron-forward" size={18} color={ownerColors.textMuted} style={styles.actionChevron} />
               </Pressable>
             </Animated.View>
@@ -514,6 +549,67 @@ const useStyles = createStyles((c) => {
     color: ownerColors.textMuted,
     padding: ownerSpace.lg,
     fontSize: 15,
+  },
+  onboardingWrap: {
+    paddingHorizontal: ownerSpace.sm,
+    paddingTop: ownerSpace.md,
+    gap: ownerSpace.md,
+  },
+  onboardingHero: {
+    alignItems: 'flex-start',
+    gap: ownerSpace.xs,
+    marginBottom: ownerSpace.sm,
+  },
+  onboardingTitle: {
+    color: ownerColors.text,
+    fontSize: 22,
+    fontWeight: '800',
+    marginTop: ownerSpace.xs,
+  },
+  onboardingBody: {
+    color: ownerColors.textSecondary,
+    fontSize: 14,
+    lineHeight: 20,
+  },
+  onboardingPrimary: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: ownerSpace.md,
+    padding: ownerSpace.md,
+    borderRadius: ownerRadii.xl,
+    backgroundColor: ownerColors.gold,
+  },
+  onboardingPrimaryBody: { flex: 1 },
+  onboardingPrimaryTitle: {
+    color: ownerColors.bg,
+    fontSize: 16,
+    fontWeight: '800',
+  },
+  onboardingPrimarySub: {
+    color: ownerColors.bg,
+    fontSize: 13,
+    opacity: 0.75,
+    marginTop: 2,
+  },
+  onboardingSecondary: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: ownerSpace.md,
+    padding: ownerSpace.md,
+    borderRadius: ownerRadii.xl,
+    backgroundColor: ownerColors.bgElevated,
+    borderWidth: 1,
+    borderColor: ownerColors.border,
+  },
+  onboardingSecondaryTitle: {
+    color: ownerColors.text,
+    fontSize: 16,
+    fontWeight: '700',
+  },
+  onboardingSecondarySub: {
+    color: ownerColors.textSecondary,
+    fontSize: 13,
+    marginTop: 2,
   },
   backdropFallback: {
     backgroundColor: 'rgba(0,0,0,0.72)',

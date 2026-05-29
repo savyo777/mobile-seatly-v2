@@ -373,6 +373,9 @@ export default function OwnerTabsLayout() {
         <Tabs.Screen name="menu-manage" options={{ href: null, tabBarStyle: { display: 'none' } }} />
         <Tabs.Screen name="menu-categories" options={{ href: null, tabBarStyle: { display: 'none' } }} />
         <Tabs.Screen name="menu-item-edit" options={{ href: null, tabBarStyle: { display: 'none' } }} />
+        <Tabs.Screen name="menu-scan" options={{ href: null, tabBarStyle: { display: 'none' } }} />
+        <Tabs.Screen name="menu-scan-camera" options={{ href: null, tabBarStyle: { display: 'none' } }} />
+        <Tabs.Screen name="menu-scan-review" options={{ href: null, tabBarStyle: { display: 'none' } }} />
         </Tabs>
 
         {/* Persistent FAB — visible on main tabs only */}

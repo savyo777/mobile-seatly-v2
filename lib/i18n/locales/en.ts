@@ -752,6 +752,13 @@ export default {
     menuActionImportMenu: 'Scan menu',
     menuCategoryComingSoon: 'Category management is coming soon.',
     menuImportComingSoon: 'Menu import will be available in a future update.',
+    // Menu onboarding (empty-state on /(staff)/menu when restaurant has no items yet)
+    menuOnboardingTitle: 'Set up your menu',
+    menuOnboardingBody: "Get your menu live in seconds. Snap a photo of your printed menu and the AI drafts every item for you — or add them one by one.",
+    menuOnboardingScanTitle: 'Scan your menu (recommended)',
+    menuOnboardingScanSub: 'Camera, library, or file. Takes about a minute.',
+    menuOnboardingManualTitle: 'Add items one at a time',
+    menuOnboardingManualSub: 'Type each item in by hand.',
     // Menu scanner (owner-side AI vision flow)
     menuScanTitle: 'Scan a menu',
     menuScanSubtitle: 'Snap, pick, or upload a photo of your menu and the AI will draft the items for you.',
