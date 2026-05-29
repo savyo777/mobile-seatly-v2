@@ -59,6 +59,23 @@ export const CENAIVA_LIMITS = {
       windowSeconds: DAY_SECONDS,
     },
   },
+  // Vision-based menu OCR for owner onboarding. Each call ingests a full
+  // menu page (higher token usage than a receipt) and returns N items, so
+  // we cap tighter than receipts. 5/min lets an owner scan a multi-page
+  // menu without hammering us; 30/day covers a full restaurant menu
+  // onboarding session plus retries / second restaurants.
+  scanMenu: {
+    minute: {
+      scope: "scan-menu:min" as const,
+      limit: envInt("CENAIVA_SCAN_MENU_MINUTE_LIMIT", 5),
+      windowSeconds: MIN_SECONDS,
+    },
+    day: {
+      scope: "scan-menu:day" as const,
+      limit: envInt("CENAIVA_SCAN_MENU_DAILY_LIMIT", 30),
+      windowSeconds: DAY_SECONDS,
+    },
+  },
   // ElevenLabs TTS is the priciest per-call service we use. 12/day covers
   // several normal meal sessions while the paid budget guard remains the hard
   // profit ceiling. Cached clips and native speech fallback keep the experience

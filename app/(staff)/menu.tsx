@@ -301,10 +301,10 @@ export default function OwnerMenuScreen() {
                 style={({ pressed }) => [styles.actionRow, pressed && styles.rowPressed]}
                 onPress={() => {
                   closeActionsMenu();
-                  setTimeout(() => Alert.alert(t('owner.menuActionImportMenu'), t('owner.menuImportComingSoon')), MODAL_EXIT_MS + 40);
+                  setTimeout(() => router.push('/(staff)/menu-scan' as never), MODAL_EXIT_MS + 30);
                 }}
               >
-                <Ionicons name="download-outline" size={22} color={ownerColors.gold} />
+                <Ionicons name="scan-outline" size={22} color={ownerColors.gold} />
                 <Text style={styles.actionRowText}>{t('owner.menuActionImportMenu')}</Text>
                 <Ionicons name="chevron-forward" size={18} color={ownerColors.textMuted} style={styles.actionChevron} />
               </Pressable>
