@@ -19,6 +19,8 @@ import {
   writeReservationSettings,
   type ReservationSettings,
 } from '@/lib/owner/reservationSettings';
+import { readDepositTiersForRestaurant, saveDepositTiers } from '@/lib/owner/depositTiersSettings';
+import { type DepositTier } from '@/lib/booking/depositTiers';
 import { borderRadius, createStyles, spacing, typography, useColors } from '@/lib/theme';
 import { friendlyError } from '@/lib/errors/friendlyError';
 
@@ -242,27 +244,37 @@ export default function ReservationSettingsScreen() {
   const { isAll, selectedRestaurantId, hasMultiple } = useOwnerScope();
 
   const [acceptingBookings, setAcceptingBookings] = useState(true);
-  const [largePartyDeposit, setLargePartyDeposit] = useState(true);
   const [autoConfirm, setAutoConfirm] = useState(true);
   const [allowSpecialRequests, setAllowSpecialRequests] = useState(true);
 
   const [settings, setSettings] = useState<ReservationSettings>(DEFAULT_RESERVATION_SETTINGS);
+  const [depositTiers, setDepositTiers] = useState<DepositTier[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
 
   useEffect(() => {
     if (isAll || !selectedRestaurantId) {
       setSettings(DEFAULT_RESERVATION_SETTINGS);
+      setDepositTiers([]);
       return;
     }
     let active = true;
     setIsLoading(true);
     void (async () => {
       try {
-        const loaded = await readReservationSettings(selectedRestaurantId);
-        if (active) setSettings(loaded);
+        const [loaded, tiers] = await Promise.all([
+          readReservationSettings(selectedRestaurantId),
+          readDepositTiersForRestaurant(selectedRestaurantId),
+        ]);
+        if (active) {
+          setSettings(loaded);
+          setDepositTiers(tiers);
+        }
       } catch (err) {
-        if (active) setSettings(DEFAULT_RESERVATION_SETTINGS);
+        if (active) {
+          setSettings(DEFAULT_RESERVATION_SETTINGS);
+          setDepositTiers([]);
+        }
       } finally {
         if (active) setIsLoading(false);
       }
@@ -279,11 +291,22 @@ export default function ReservationSettingsScreen() {
     setSettings((prev) => ({ ...prev, [key]: value }));
   };
 
+  const updateTier = (index: number, patch: Partial<DepositTier>) =>
+    setDepositTiers((prev) => prev.map((t, i) => (i === index ? { ...t, ...patch } : t)));
+  const addTier = () =>
+    setDepositTiers((prev) => {
+      const maxMin = prev.reduce((m, t) => Math.max(m, t.min_party_size), 1);
+      return [...prev, { min_party_size: maxMin + 1, amount_per_person_cents: 1000 }];
+    });
+  const removeTier = (index: number) =>
+    setDepositTiers((prev) => prev.filter((_, i) => i !== index));
+
   const handleSave = async () => {
     if (!selectedRestaurantId || isAll) return;
     setIsSaving(true);
     try {
       await writeReservationSettings(selectedRestaurantId, settings);
+      await saveDepositTiers(selectedRestaurantId, depositTiers);
       Alert.alert('Saved', 'Reservation settings updated.');
     } catch (err) {
       Alert.alert('Save failed', friendlyError(err, 'Could not save reservation settings.'));
@@ -459,24 +482,79 @@ export default function ReservationSettingsScreen() {
             </View>
           </View>
 
+          <Text style={styles.sectionLabel}>DEPOSITS</Text>
+          <View style={styles.card}>
+            <View style={[styles.row, { flexDirection: 'column', alignItems: 'flex-start', gap: spacing.xs }]}>
+              <Text style={styles.rowDesc}>
+                Hold a refundable card at booking. The highest tier a party qualifies for
+                applies, charged per guest. Leave empty to never require a deposit.
+              </Text>
+            </View>
+            {depositTiers.length === 0 ? (
+              <View style={[styles.row, styles.rowDivider]}>
+                <View style={styles.iconWrap}>
+                  <Ionicons name="card-outline" size={18} color={c.textMuted} />
+                </View>
+                <Text style={styles.rowDesc}>No deposit required for any party size.</Text>
+              </View>
+            ) : (
+              depositTiers.map((tier, index) => (
+                <View
+                  key={index}
+                  style={[styles.row, styles.rowDivider, { flexDirection: 'column', alignItems: 'flex-start', gap: spacing.sm }]}
+                >
+                  <View style={{ flexDirection: 'row', alignItems: 'center', alignSelf: 'stretch', gap: spacing.md }}>
+                    <View style={styles.iconWrap}>
+                      <Ionicons name="card-outline" size={18} color={c.gold} />
+                    </View>
+                    <View style={styles.rowLabel}>
+                      <Text style={styles.rowTitle}>${Math.round(tier.amount_per_person_cents / 100)} / guest</Text>
+                      <Text style={styles.rowDesc}>for parties of {tier.min_party_size}+</Text>
+                    </View>
+                    <Pressable onPress={() => removeTier(index)} hitSlop={8} accessibilityLabel="Remove deposit tier">
+                      <Ionicons name="trash-outline" size={18} color={c.danger} />
+                    </Pressable>
+                  </View>
+                  <View style={{ flexDirection: 'row', gap: spacing.lg, alignSelf: 'stretch' }}>
+                    <View style={{ gap: 4 }}>
+                      <Text style={styles.rowDesc}>Min party</Text>
+                      <Stepper
+                        value={tier.min_party_size}
+                        min={1}
+                        max={MAX_ONLINE_PARTY_SIZE}
+                        onChange={(v) => updateTier(index, { min_party_size: v })}
+                      />
+                    </View>
+                    <View style={{ gap: 4 }}>
+                      <Text style={styles.rowDesc}>$ / guest</Text>
+                      <Stepper
+                        value={Math.round(tier.amount_per_person_cents / 100)}
+                        min={0}
+                        max={500}
+                        step={5}
+                        onChange={(v) => updateTier(index, { amount_per_person_cents: Math.round(v) * 100 })}
+                      />
+                    </View>
+                  </View>
+                </View>
+              ))
+            )}
+            <Pressable
+              onPress={addTier}
+              style={({ pressed }) => [styles.row, styles.rowDivider, pressed && { opacity: 0.7 }]}
+              accessibilityRole="button"
+              accessibilityLabel="Add deposit tier"
+            >
+              <View style={styles.iconWrap}>
+                <Ionicons name="add-circle-outline" size={18} color={c.gold} />
+              </View>
+              <Text style={[styles.rowTitle, { color: c.gold }]}>Add a deposit tier</Text>
+            </Pressable>
+          </View>
+
           <Text style={styles.sectionLabel}>POLICIES</Text>
           <View style={styles.card}>
             <View style={styles.row}>
-              <View style={styles.iconWrap}>
-                <Ionicons name="people-circle-outline" size={18} color={c.gold} />
-              </View>
-              <View style={styles.rowLabel}>
-                <Text style={styles.rowTitle}>Deposit for parties of 8+</Text>
-                <Text style={styles.rowDesc}>Hold a card only for larger groups.</Text>
-              </View>
-              <Switch
-                value={largePartyDeposit}
-                onValueChange={setLargePartyDeposit}
-                trackColor={{ true: c.gold, false: c.border }}
-                thumbColor="#fff"
-              />
-            </View>
-            <View style={[styles.row, styles.rowDivider]}>
               <View style={styles.iconWrap}>
                 <Ionicons name="chatbubble-ellipses-outline" size={18} color={c.gold} />
               </View>
