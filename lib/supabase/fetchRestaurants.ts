@@ -150,16 +150,21 @@ export async function fetchRestaurantsFromSupabase(): Promise<Restaurant[]> {
   const supabase = getSupabase();
   if (!supabase) return [];
 
+  // Gate the diner catalog server-side, same as web (useRestaurant.ts): only
+  // active AND published restaurants are discoverable. Previously this fetched
+  // everything and only dropped is_active===false client-side, which leaked
+  // unpublished (draft / mid-onboarding) restaurants to real users.
   const { data, error } = await supabase
     .from('restaurants')
-    .select('*');
+    .select('*')
+    .eq('is_active', true)
+    .eq('is_published', true);
 
   if (error) throw error;
   const rows = (data ?? []) as RestaurantRow[];
-  const activeRows = rows.filter((row) => row.is_active !== false);
-  const restaurants = activeRows.map(mapRestaurantRowToRestaurant);
+  const restaurants = rows.map(mapRestaurantRowToRestaurant);
   const explicitPriceRangesById = new Map<string, unknown>(
-    activeRows.map((row) => [row.id, row.price_range]),
+    rows.map((row) => [row.id, row.price_range]),
   );
   try {
     const priced = await applyMenuDerivedPriceRanges(supabase, restaurants, explicitPriceRangesById);

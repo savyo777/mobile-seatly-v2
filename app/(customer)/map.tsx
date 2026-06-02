@@ -20,6 +20,7 @@ import { RestaurantDiscoveryMap } from '@/components/map/RestaurantDiscoveryMap'
 import { MapRestaurantPopup } from '@/components/map/MapRestaurantPopup';
 import { mockMapRestaurants as DEMO_MAP_RESTAURANTS } from '@/lib/mock/mapRestaurants';
 import { isDemoModeEnabled } from '@/lib/config/demoMode';
+import { fetchRestaurantsFromSupabase } from '@/lib/supabase/fetchRestaurants';
 
 const mockMapRestaurants: typeof DEMO_MAP_RESTAURANTS = isDemoModeEnabled() ? DEMO_MAP_RESTAURANTS : [];
 import {
@@ -229,6 +230,10 @@ export default function MapScreen() {
   const carouselRef = useRef<FlatList<RestaurantWithDistance>>(null);
 
   const [filter, setFilter] = useState<MapFilterId>('nearby');
+  // Real published restaurants in production; the mock list only when demo mode
+  // is on (it's empty otherwise). Same source the Discover tab uses.
+  const [liveRestaurants, setLiveRestaurants] =
+    useState<Awaited<ReturnType<typeof fetchRestaurantsFromSupabase>>>([]);
   const [focusedId, setFocusedId] = useState<string | null>(null);
   const [sheetRestaurantId, setSheetRestaurantId] = useState<string | null>(null);
   const [userCoords, setUserCoords] = useState<{ lat: number; lng: number }>({
@@ -284,16 +289,33 @@ export default function MapScreen() {
     };
   }, []);
 
+  useEffect(() => {
+    if (isDemoModeEnabled()) return;
+    let cancelled = false;
+    void fetchRestaurantsFromSupabase()
+      .then((rows) => {
+        if (!cancelled) setLiveRestaurants(rows);
+      })
+      .catch(() => {
+        if (!cancelled) setLiveRestaurants([]);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  const sourceRestaurants = isDemoModeEnabled() ? mockMapRestaurants : liveRestaurants;
+
   const hasReliableUserLocation =
     locationMode === 'live' && isMapLocationInDemoRegion(userCoords.lat, userCoords.lng);
   const anchorLat = hasReliableUserLocation ? userCoords.lat : DEFAULT_MAP_CENTER.latitude;
   const anchorLng = hasReliableUserLocation ? userCoords.lng : DEFAULT_MAP_CENTER.longitude;
 
   const withDist = useMemo(
-    () => withDistances(mockMapRestaurants, anchorLat, anchorLng, {
+    () => withDistances(sourceRestaurants, anchorLat, anchorLng, {
       distanceAvailable: hasReliableUserLocation,
     }),
-    [anchorLat, anchorLng, hasReliableUserLocation],
+    [sourceRestaurants, anchorLat, anchorLng, hasReliableUserLocation],
   );
 
   const filtered = useMemo(() => applyMapFilter(withDist, filter), [withDist, filter]);
