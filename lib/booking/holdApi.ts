@@ -217,6 +217,13 @@ export type CreateHoldPaymentIntentRequest = {
    * `tax_cents === 0` on the deposit-amount match branch).
    */
   tax_cents?: number;
+  /**
+   * reservation_deposit_payments row IDs to bind this PaymentIntent to. The
+   * server stamps `pi.metadata.deposit_payment_ids` so confirm-deposit-paid's
+   * strict metadata check passes. Used by the no-hold / activity deposit flow
+   * (PI-first); the holds flow binds via `hold_id` instead.
+   */
+  deposit_payment_ids?: string[];
   currency?: string;
   customer_email?: string | null;
   customer_name?: string | null;

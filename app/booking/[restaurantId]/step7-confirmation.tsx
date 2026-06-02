@@ -22,14 +22,14 @@ import {
 import { parseDateKeyLocal } from '@/lib/booking/dateUtils';
 import {
   cartSubtotal,
-  confirmDepositPaid,
   createPublicBooking,
   parseBookingCartParam,
-  prepareDeposit,
   type PublicBookingResponse,
 } from '@/lib/booking/publicBookingApi';
 import { previewDepositCents } from '@/lib/booking/depositTiers';
 import { normalizePhoneInput } from '@/lib/validation/input';
+import { useStripe } from '@stripe/stripe-react-native';
+import { payReservationDeposit } from '@/lib/booking/payReservationDeposit';
 import { addBookingToCalendar } from '@/lib/booking/addToCalendar';
 import { formatCurrency } from '@/lib/utils/formatCurrency';
 import { useColors, createStyles, spacing, borderRadius, shadows } from '@/lib/theme';
@@ -303,6 +303,7 @@ export default function Step7Confirmation() {
   const c = useColors();
   const styles = useStyles();
   const { t } = useTranslation();
+  const { initPaymentSheet, presentPaymentSheet } = useStripe();
   const rid = restaurantId ?? '';
 
   const hold = useReservationHoldContext();
@@ -425,18 +426,14 @@ export default function Step7Confirmation() {
 
         // Deposit handling: when the holds path ran (the production flow),
         // step6 already minted a PaymentIntent, presented Stripe PaymentSheet,
-        // and the confirm-hold-paid edge fn atomically created this
-        // reservation with the deposit already 'charged'. Re-running the
-        // prepareDeposit chain here would be a no-op at best, or worse,
-        // double-charge. Only the no-hold path needs to chase the deposit
-        // post-booking — and even then, we must use confirm-deposit-paid
-        // (real PI) not confirm-deposit-stub (dev-only fake).
+        // and the confirm-hold-paid edge fn atomically created this reservation
+        // with the deposit already 'charged'. Re-running the deposit chain here
+        // would double-charge — so only the no-hold path collects post-booking.
         //
-        // In the no-hold path, the booking doesn't actually have a PI yet
-        // (no Stripe call ever happened upstream), so confirm-deposit-paid
-        // will reject for lack of payment_intent_id. That's the correct
-        // failure — the diner sees "Deposit could not be charged" instead
-        // of a silently-uncollected confirmation. Don't paper over it.
+        // PI-first (mirrors web's DepositPayPage): prepare-deposit → create a PI
+        // bound via deposit_payment_ids → Stripe PaymentSheet → confirm-deposit-paid.
+        // (The old code assumed prepare-deposit returns a PI id — it never does —
+        // so this branch always threw "Could not start the deposit charge.")
         if (
           !activeHoldId
           && result.deposit_required
@@ -444,25 +441,20 @@ export default function Step7Confirmation() {
           && result.deposit_amount_cents > 0
         ) {
           try {
-            const { payments } = await prepareDeposit({
-              reservation_id: result.reservation_id,
-              payers: [{
-                email,
-                full_name: name,
-                amount_cents: result.deposit_amount_cents,
-              }],
+            const outcome = await payReservationDeposit({
+              reservationId: result.reservation_id,
+              restaurantId: rid,
+              amountCents: result.deposit_amount_cents,
+              email,
+              fullName: name,
+              phone: normalizedPhone,
+              initPaymentSheet,
+              presentPaymentSheet,
             });
-            for (const payment of payments) {
-              if (cancelled) return;
-              // payment.stripe_payment_intent_id should be set by
-              // prepare-deposit when STRIPE_SECRET_KEY is configured.
-              // If it isn't, confirm-deposit-paid will reject — surface
-              // that to the diner instead of swallowing it.
-              const pi = (payment as { stripe_payment_intent_id?: string | null }).stripe_payment_intent_id;
-              if (!pi) {
-                throw new Error('Could not start the deposit charge. Please try again.');
-              }
-              await confirmDepositPaid({ payment_id: payment.id, payment_intent_id: pi });
+            if (!cancelled && outcome === 'cancelled') {
+              setDepositPendingError(
+                'Your table is reserved, but the deposit wasn’t completed. You can pay it from your bookings.',
+              );
             }
           } catch (depositError) {
             if (cancelled) return;

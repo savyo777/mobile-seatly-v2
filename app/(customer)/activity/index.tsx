@@ -24,10 +24,10 @@ import { mockRestaurants } from '@/lib/mock/restaurants';
 import { fetchMyBookingItems, type MyBookingItem } from '@/lib/booking/myReservations';
 import {
   cancelReservation,
-  confirmDepositPaid,
-  prepareDeposit,
   type DepositStatus,
 } from '@/lib/booking/publicBookingApi';
+import { payReservationDeposit } from '@/lib/booking/payReservationDeposit';
+import { useStripe } from '@stripe/stripe-react-native';
 import { getSupabase } from '@/lib/supabase/client';
 import { formatCurrency } from '@/lib/utils/formatCurrency';
 import { isDemoModeEnabled } from '@/lib/config/demoMode';
@@ -353,6 +353,7 @@ export default function ActivityScreen() {
   const insets = useSafeAreaInsets();
   const c = useColors();
   const styles = useStyles();
+  const { initPaymentSheet, presentPaymentSheet } = useStripe();
   const [segment, setSegment] = useState<SegmentKey>('upcoming');
   const [refreshKey, refreshList] = useReducer((n: number) => n + 1, 0);
   const seenReservationsVersionRef = useRef(getMockReservationsVersion());
@@ -437,29 +438,27 @@ export default function ActivityScreen() {
     try {
       const { data: sessionData } = await supabase.auth.getSession();
       const user = sessionData.session?.user;
-      const { payments } = await prepareDeposit({
-        reservation_id: item.id,
-        payers: [{
-          email: user?.email ?? '',
-          full_name: (user?.user_metadata?.full_name as string | undefined) ?? '',
-          amount_cents: item.depositAmountCents,
-        }],
+      // PI-first deposit collection (mirrors web's DepositPayPage): prepare →
+      // create PI bound via deposit_payment_ids → Stripe PaymentSheet → confirm.
+      const outcome = await payReservationDeposit({
+        reservationId: item.id,
+        restaurantId: item.restaurantId,
+        amountCents: item.depositAmountCents,
+        email: user?.email ?? '',
+        fullName: (user?.user_metadata?.full_name as string | undefined) ?? '',
+        initPaymentSheet,
+        presentPaymentSheet,
       });
-      for (const payment of payments) {
-        const pi = (payment as { stripe_payment_intent_id?: string | null }).stripe_payment_intent_id;
-        if (!pi) {
-          throw new Error('Could not start the deposit charge. Please try again.');
-        }
-        await confirmDepositPaid({ payment_id: payment.id, payment_intent_id: pi });
+      if (outcome === 'paid') {
+        await reloadLiveBookings();
+        void Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
       }
-      await reloadLiveBookings();
-      void Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
     } catch (error) {
       Alert.alert('Payment failed', friendlyError(error, 'Could not charge the deposit.'));
     } finally {
       setPayingDepositId(null);
     }
-  }, [reloadLiveBookings]);
+  }, [reloadLiveBookings, initPaymentSheet, presentPaymentSheet]);
 
   const promptCancelBooking = useCallback((item: BookingItem) => {
     const hadDeposit =
