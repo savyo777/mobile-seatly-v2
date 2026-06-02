@@ -573,12 +573,6 @@ export default function BookingDetailScreen() {
 
       {showActions ? (
         <View style={[styles.actions, { paddingBottom: Math.max(insets.bottom, spacing.md) }]}>
-          {livePreorder && livePreorder.status !== 'paid' && livePreorder.total_amount > 0 ? (
-            <Button
-              title="Pay your bill"
-              onPress={() => router.push(`/(customer)/orders/pay/${livePreorder.id}` as Href)}
-            />
-          ) : null}
           {canModify ? (
             <Button title={t('bookings.modifyBooking')} onPress={handleModify} variant="outlined" />
           ) : null}

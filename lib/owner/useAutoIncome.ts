@@ -6,8 +6,8 @@
  *   1. `reservation_deposit_payments` where status='charged' AND
  *      paid_at IS NOT NULL — diner-paid deposits via
  *      `create-public-payment-intent` + `confirm-deposit-paid`
- *   2. `orders` where paid_at IS NOT NULL — post-meal "pay the bill"
- *      charges via `stripe-charge-order` + `mark-order-paid`
+ *   2. `orders` where paid_at IS NOT NULL — pre-order-at-booking
+ *      charges settled via `mark-order-paid`
  *
  * The hook returns a unified `AutoIncomeRow[]` (sorted desc by paid_at)
  * plus a total in CAD cents. Wires the owner's Expenses page so

@@ -11,7 +11,6 @@ export default function OrdersStackLayout() {
     >
       <Stack.Screen name="index" />
       <Stack.Screen name="[id]" />
-      <Stack.Screen name="pay/[orderId]" />
     </Stack>
   );
 }

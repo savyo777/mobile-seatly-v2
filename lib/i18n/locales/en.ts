@@ -332,7 +332,6 @@ export default {
     serviceFeeNote: 'Includes {{fee}} Cenaiva service fee (5.5%) that the restaurant pays out of your total — the restaurant keeps the remainder.',
     platformFeeLabel: 'Platform fee (5.5%)',
     feeDisclosureV2: 'Platform and processing fees are non-refundable. Your CA${{depositAmount}} deposit is fully refundable when the restaurant marks you seated.',
-    payTheBillFeeNote: 'Platform fee covers Cenaiva\'s marketplace cost. Processing fee covers Stripe\'s per-transaction charge. Both are non-refundable.',
     modifyFeePreviewTitle: 'Confirm party-size change',
     modifyFeePreviewBody: 'New deposit CA${{newBase}}. Additional charge today: CA${{deltaTotal}} (platform fee CA${{deltaPlatform}}, processing fee CA${{deltaProcessing}}).',
     modifyNoCardPreviewBody: 'New deposit will be CA${{newBase}} (plus platform + processing fees, non-refundable). Add a card to continue.',
