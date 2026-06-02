@@ -3,6 +3,7 @@ import { useAuthSession } from '@/lib/auth/AuthContext';
 import { isDemoModeEnabled } from '@/lib/config/demoMode';
 import { useOwnerScope } from '@/hooks/useOwnerScope';
 import { getSupabase } from '@/lib/supabase/client';
+import { fetchOrderedCategoryNames, syncOrderedCategories } from '@/lib/owner/menuCategoriesStore';
 import { menuCategories, mockMenuItems, type MenuItem } from '@/lib/mock/menuItems';
 
 type CategoryWriteResult = { ok: boolean; reason?: 'empty' | 'duplicate' };
@@ -99,6 +100,13 @@ function categoriesFromItems(items: MenuItem[]): string[] {
   ];
 }
 
+// Declared (persisted, ordered) categories take precedence; any category that
+// only exists on items (e.g. a brand-new dish) is appended after, case-insensitively.
+function mergeCategoryOrder(declared: string[], derived: string[]): string[] {
+  const seen = new Set(declared.map((c) => c.toLowerCase()));
+  return [...declared, ...derived.filter((c) => !seen.has(c.toLowerCase()))];
+}
+
 export function MenuProvider({ children }: { children: React.ReactNode }) {
   const { user, isStaffLike } = useAuthSession();
   const { selectedRestaurant, isAll } = useOwnerScope();
@@ -149,7 +157,12 @@ export function MenuProvider({ children }: { children: React.ReactNode }) {
         if (cancelled) return;
         const next = ((data ?? []) as Record<string, unknown>[]).map(mapRowToMenuItem);
         setItems(next);
-        setCategories(categoriesFromItems(next));
+        // Prefer the owner's persisted category order (menu_categories); fall
+        // back to item-derived names for anything not yet declared. Best-effort:
+        // fetchOrderedCategoryNames returns [] on any failure → identical to before.
+        const declared = await fetchOrderedCategoryNames(ownerRestaurantId);
+        if (cancelled) return;
+        setCategories(mergeCategoryOrder(declared, categoriesFromItems(next)));
       } catch {
         if (!cancelled) {
           setItems([]);
@@ -167,9 +180,10 @@ export function MenuProvider({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     setCategories((prev) => {
-      const derived = categoriesFromItems(items);
-      const seen = new Set(derived);
-      const next = [...derived, ...prev.filter((item) => !seen.has(item))];
+      // Preserve the existing (persisted/declared) order; only append genuinely
+      // new item-derived categories at the end. Previously this re-sorted
+      // item-derived names to the front, which would clobber a saved order.
+      const next = mergeCategoryOrder(prev, categoriesFromItems(items));
       return next.join('|') === prev.join('|') ? prev : next;
     });
   }, [items]);
@@ -224,7 +238,8 @@ export function MenuProvider({ children }: { children: React.ReactNode }) {
 
   const reorderCategories = useCallback((next: string[]) => {
     setCategories(next);
-  }, []);
+    if (ownerRestaurantId) void syncOrderedCategories(ownerRestaurantId, next);
+  }, [ownerRestaurantId]);
 
   const addCategory = useCallback<MenuContextValue['addCategory']>((name) => {
     const trimmed = name.trim();
@@ -232,9 +247,11 @@ export function MenuProvider({ children }: { children: React.ReactNode }) {
     if (categories.some((category) => category.toLowerCase() === trimmed.toLowerCase())) {
       return { ok: false, reason: 'duplicate' };
     }
-    setCategories((prev) => [...prev, trimmed]);
+    const next = [...categories, trimmed];
+    setCategories(next);
+    if (ownerRestaurantId) void syncOrderedCategories(ownerRestaurantId, next);
     return { ok: true };
-  }, [categories]);
+  }, [categories, ownerRestaurantId]);
 
   const renameCategory = useCallback<MenuContextValue['renameCategory']>((from, to) => {
     const trimmed = to.trim();
@@ -245,7 +262,8 @@ export function MenuProvider({ children }: { children: React.ReactNode }) {
     ) {
       return { ok: false, reason: 'duplicate' };
     }
-    setCategories((prev) => prev.map((category) => (category === from ? trimmed : category)));
+    const nextCategories = categories.map((category) => (category === from ? trimmed : category));
+    setCategories(nextCategories);
     setItems((prev) => prev.map((item) => (item.category === from ? { ...item, category: trimmed } : item)));
     const supabase = getSupabase();
     if (supabase && ownerRestaurantId) {
@@ -257,13 +275,16 @@ export function MenuProvider({ children }: { children: React.ReactNode }) {
         .then(({ error }) => {
           if (error && __DEV__) console.warn('[menu] renameCategory failed', error);
         });
+      void syncOrderedCategories(ownerRestaurantId, nextCategories);
     }
     return { ok: true };
   }, [categories, ownerRestaurantId]);
 
   const removeCategory = useCallback((name: string) => {
-    setCategories((prev) => prev.filter((category) => category !== name));
-  }, []);
+    const next = categories.filter((category) => category !== name);
+    setCategories(next);
+    if (ownerRestaurantId) void syncOrderedCategories(ownerRestaurantId, next);
+  }, [categories, ownerRestaurantId]);
 
   const value = useMemo<MenuContextValue>(
     () => ({
