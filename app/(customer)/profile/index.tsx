@@ -16,7 +16,7 @@ import { resolveAuthDisplayProfile, initialsFromDisplayName } from '@/lib/auth/d
 import { restaurantPriceLabel } from '@/lib/restaurants/pricing';
 import { useColors, useTheme, createStyles, spacing, borderRadius } from '@/lib/theme';
 import { useAuthSession } from '@/lib/auth/AuthContext';
-import { deleteAccount } from '@/lib/services/accountSecurity';
+import { DeleteAccountDialog } from '@/components/account/DeleteAccountDialog';
 import { friendlyError } from '@/lib/errors/friendlyError';
 import { fetchMyBookingItems, type MyBookingItem } from '@/lib/booking/myReservations';
 import { isDemoModeEnabled } from '@/lib/config/demoMode';
@@ -623,30 +623,8 @@ export default function ProfileScreen() {
     }
   }
 
-  const handleDeleteAccount = () => {
-    Alert.alert(
-      'Delete account',
-      'This action is permanent and cannot be undone. Your account, reservations, reviews, and saved data will be removed.',
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Delete account',
-          style: 'destructive',
-          onPress: async () => {
-            try {
-              await deleteAccount();
-              router.replace('/onboarding');
-            } catch (e: any) {
-              Alert.alert(
-                'Delete failed',
-                friendlyError(e, 'Could not delete your account. Please try again.'),
-              );
-            }
-          },
-        },
-      ],
-    );
-  };
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const handleDeleteAccount = () => setShowDeleteDialog(true);
 
   const dinnersCount = recentVisits.length;
   const citiesCount = new Set(recentVisits.map((visit) => visit.restaurantName)).size;
@@ -950,6 +928,11 @@ export default function ProfileScreen() {
           <Text style={styles.deleteAccountText}>Delete account</Text>
         </Pressable>
       </ScrollView>
+      <DeleteAccountDialog
+        visible={showDeleteDialog}
+        onClose={() => setShowDeleteDialog(false)}
+        onDeleted={() => router.replace('/onboarding')}
+      />
     </View>
   );
 }

@@ -16,7 +16,8 @@ import { ChevronGlyph } from '@/components/ui/ChevronGlyph';
 import { useColors, createStyles, spacing, borderRadius, typography } from '@/lib/theme';
 import { useAuthSession } from '@/lib/auth/AuthContext';
 import { resolveAuthDisplayProfile } from '@/lib/auth/displayProfile';
-import { deleteAccount, signOutAllDevices } from '@/lib/services/accountSecurity';
+import { signOutAllDevices } from '@/lib/services/accountSecurity';
+import { DeleteAccountDialog } from '@/components/account/DeleteAccountDialog';
 import { friendlyError } from '@/lib/errors/friendlyError';
 import { fetchCurrentUserProfile, type AppUserProfile } from '@/lib/services/userProfile';
 import { fetchCurrentOwnerRestaurant } from '@/lib/services/ownerRestaurant';
@@ -508,30 +509,8 @@ export default function SettingsScreen() {
     );
   };
 
-  const handleDeleteAccount = () => {
-    Alert.alert(
-      'Delete account',
-      'This action is permanent and cannot be undone. Your account and data will be deleted.',
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Delete account',
-          style: 'destructive',
-          onPress: async () => {
-            try {
-              await deleteAccount();
-              router.replace('/onboarding');
-            } catch (e: any) {
-              Alert.alert(
-                'Delete failed',
-                friendlyError(e, 'Could not delete your account. Please try again.'),
-              );
-            }
-          },
-        },
-      ],
-    );
-  };
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const handleDeleteAccount = () => setShowDeleteDialog(true);
 
   const handleBack = useCallback(() => {
     if (navigation.canGoBack()) {
@@ -653,6 +632,11 @@ export default function SettingsScreen() {
           <Text style={styles.deleteText}>Delete account</Text>
         </Pressable>
       </ScrollView>
+      <DeleteAccountDialog
+        visible={showDeleteDialog}
+        onClose={() => setShowDeleteDialog(false)}
+        onDeleted={() => router.replace('/onboarding')}
+      />
     </View>
   );
 }

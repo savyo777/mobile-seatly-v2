@@ -54,6 +54,13 @@ function friendlyDeleteAccountError(rawMessage?: string, code?: string): string 
 
   const message = rawMessage ?? '';
   const normalized = message.toLowerCase();
+  // Canonical delete-account returns plain (codeless) messages for these:
+  if (normalized.includes('email confirmation does not match')) {
+    return 'The email you entered doesn’t match the email on your account.';
+  }
+  if (normalized.includes('delete your restaurants first')) {
+    return 'Remove your restaurants before deleting this owner account.';
+  }
   if (
     normalized.includes('non-2xx') ||
     normalized.includes('function not found') ||
@@ -212,19 +219,35 @@ export async function revokeSession(sessionId: string): Promise<void> {
   void sessionId;
 }
 
+export type DeleteAccountResult = {
+  /** Upcoming reservations the server auto-cancelled (and refunded) before deletion. */
+  cancelledReservationIds: string[];
+  /** Total refunded across those cancellations, in CAD cents. */
+  refundTotalCents: number;
+};
+
 // Permanently deletes the current user's auth account and signs them out.
-// Uses the `delete-account` Edge Function (service-role) since admin APIs
-// must not be called from the client.
-export async function deleteAccount(): Promise<void> {
+// Uses the canonical `delete-account` Edge Function (service-role) since admin
+// APIs must not be called from the client. The canonical fn requires an
+// `email_confirmation` that matches the auth email (the type-to-confirm safety
+// net), refunds + cancels upcoming reservations first, then de-identifies
+// legally-retained records (CRA / Law 25) and hard-deletes the rest.
+export async function deleteAccount(emailConfirmation: string): Promise<DeleteAccountResult> {
   const supabase = requireSupabase();
   const { data, error: invokeError, response } = await supabase.functions.invoke<{
+    ok?: boolean;
     deleted?: boolean;
     error?: string;
     code?: string;
+    cancelled_reservation_ids?: string[];
+    refund_total_cents?: number;
   }>('delete-account', {
     method: 'POST',
+    body: { email_confirmation: emailConfirmation },
   });
-  if (invokeError || data?.error || data?.deleted === false) {
+  // Canonical returns { ok: true, ... }; tolerate the legacy { deleted: true }.
+  const succeeded = !invokeError && !data?.error && (data?.ok === true || data?.deleted === true);
+  if (!succeeded) {
     const errorBody = data ?? await readFunctionErrorBody(response ?? invokeError?.context);
     throw new Error(
       friendlyDeleteAccountError(errorBody?.error ?? invokeError?.message, errorBody?.code),
@@ -243,6 +266,10 @@ export async function deleteAccount(): Promise<void> {
       // best-effort
     }
   }
+  return {
+    cancelledReservationIds: data?.cancelled_reservation_ids ?? [],
+    refundTotalCents: data?.refund_total_cents ?? 0,
+  };
 }
 
 export async function removeRestaurants(
