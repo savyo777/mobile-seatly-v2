@@ -1,4 +1,4 @@
-import React, { useCallback, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   View,
   Text,
@@ -23,6 +23,11 @@ import type { DiscoverCategorySlug } from '@/lib/discover/discoverCategories';
 import { getTorontoGreetingPeriod } from '@/lib/discover/torontoTime';
 import { loadRestaurantsForDiscover } from '@/lib/data/restaurantCatalog';
 import { applyDistancesToRestaurants } from '@/lib/supabase/fetchRestaurants';
+import {
+  fetchAvailableRestaurantIds,
+  nowTimeLabel24h,
+  todayDateKeyLocal,
+} from '@/lib/customer/discoverAvailability';
 import { useLocation } from '@/lib/location/useLocation';
 import { fetchCurrentUserProfile } from '@/lib/services/userProfile';
 import { isDemoModeEnabled } from '@/lib/config/demoMode';
@@ -307,6 +312,28 @@ export default function DiscoverScreen() {
     () => applyDistancesToRestaurants(rawRestaurants, userLatLng),
     [rawRestaurants, userLatLng?.lat, userLatLng?.lng],
   );
+
+  // Lazily fetch real availability the first time the diner taps "Available
+  // tonight" (one batch RPC for all active cards). Best-effort; failures leave
+  // availableIds empty so the chip shows nothing rather than erroring.
+  useEffect(() => {
+    if (quickFilter !== 'availableNow' || isDemoModeEnabled()) return;
+    const ids = baseRestaurants.filter((r) => r.isActive).map((r) => r.id);
+    if (ids.length === 0) {
+      setAvailableIds(new Set());
+      return;
+    }
+    let cancelled = false;
+    void fetchAvailableRestaurantIds(ids, todayDateKeyLocal(), nowTimeLabel24h()).then((set) => {
+      if (!cancelled) setAvailableIds(set);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [quickFilter, baseRestaurants]);
+  // Real "Available tonight": ids with a slot today (production). null = not yet
+  // fetched. Demo mode keeps using the mock `availability` field instead.
+  const [availableIds, setAvailableIds] = useState<Set<string> | null>(null);
   const [unreadCount, setUnreadCount] = useState(() => (isDemoModeEnabled() ? getUnreadCount(currentUserId) : 0));
   // The diner's "Places" picks (business_type values) — drives the
   // "Based on your taste" recommendation section below.
@@ -395,7 +422,13 @@ export default function DiscoverScreen() {
     if (quickFilter === 'dateNight') {
       list = list.filter((r) => r.featuredIn.includes('date-night-picks'));
     } else if (quickFilter === 'availableNow') {
-      list = list.filter((r) => r.availability === 'Available Tonight');
+      // Production: real slots-today set (null until the RPC returns → show
+      // nothing briefly). Demo: the seeded `availability` field.
+      list = isDemoModeEnabled()
+        ? list.filter((r) => r.availability === 'Available Tonight')
+        : availableIds
+          ? list.filter((r) => availableIds.has(r.id))
+          : [];
     } else if (quickFilter === 'cheapEats') {
       list = list.filter((r) => r.priceRange <= 2);
     }
@@ -420,7 +453,7 @@ export default function DiscoverScreen() {
     }
 
     return list;
-  }, [baseRestaurants, query, filter, quickFilter]);
+  }, [baseRestaurants, query, filter, quickFilter, availableIds]);
 
   const featured = useMemo(
     () => pickFeaturedRestaurant(filteredRestaurants),
