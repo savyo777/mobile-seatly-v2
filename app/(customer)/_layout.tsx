@@ -214,7 +214,14 @@ export default function CustomerTabsLayout() {
                   | { state?: { routes?: Array<{ name: string }>; index?: number } }
                   | undefined;
                 const stackRoutes = profileTab?.state?.routes ?? [];
-                const onIndex = stackRoutes.length <= 1 || (profileTab?.state?.index ?? 0) === 0;
+                // Reset unless the CURRENT route is actually `index`. Checking the
+                // route NAME (not just stackRoutes.length <= 1) fixes the case where
+                // the profile stack's only route is register-restaurant — pushed
+                // cross-group from staff Settings → "Add restaurant" without index
+                // below it. The old length<=1 heuristic treated that as "on index"
+                // and left the diner stranded on the registration screen.
+                const currentRoute = stackRoutes[profileTab?.state?.index ?? stackRoutes.length - 1];
+                const onIndex = !currentRoute || currentRoute.name === 'index';
                 if (onIndex) return; // already on profile root — let default behavior run
                 event.preventDefault();
                 navigation.navigate('profile', { screen: 'index' });
