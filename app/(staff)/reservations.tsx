@@ -881,6 +881,13 @@ type ReservationExtras = {
   source: string | null;
   specialRequest: string | null;
   assignedTableIds: string[];
+  // Embedded detail (present only when the rich select resolves):
+  depositAmountCents: number | null;
+  depositPaymentStatus: string | null;
+  orderTotal: number | null;
+  orderStatus: string | null;
+  eventName: string | null;
+  promotionLabel: string | null;
 };
 
 function formatTimeOfDay(iso: string): string {
@@ -941,14 +948,36 @@ export default function OwnerReservationsScreen() {
       setReservationExtras({});
       return;
     }
-    const { data, error } = await supabase
+    const THIN_SELECT =
+      'id,guest_id,party_size,reserved_at,status,special_request,no_show_risk_score,confirmation_code,deposit_status,source,guest_full_name,guests:guests(full_name)';
+    // Embed orders / deposit payments / event / promotion (same relationship hints
+    // web's useReservations uses) so the detail card can show them. If any embed
+    // can't resolve on this DB the whole query 400s — so on error we fall back to
+    // the thin select and the screen still works, just without the extra rows.
+    const RICH_SELECT =
+      THIN_SELECT +
+      ',orders!orders_reservation_id_fkey(id,status,total_amount,is_preorder,paid_at)' +
+      ',reservation_deposit_payments(id,amount_cents,status)' +
+      ',event:events(id,name)' +
+      ',promotion:promotions(id,title,promo_code)';
+    let data: Array<Record<string, unknown>> | null = null;
+    const richRes = await supabase
       .from('reservations')
-      .select(
-        'id,guest_id,party_size,reserved_at,status,special_request,no_show_risk_score,confirmation_code,deposit_status,source,guest_full_name,guests:guests(full_name)',
-      )
+      .select(RICH_SELECT)
       .in('restaurant_id', ids)
       .order('reserved_at', { ascending: true });
-    if (error || !data) return;
+    if (richRes.error) {
+      const thinRes = await supabase
+        .from('reservations')
+        .select(THIN_SELECT)
+        .in('restaurant_id', ids)
+        .order('reserved_at', { ascending: true });
+      if (thinRes.error || !thinRes.data) return;
+      data = thinRes.data as unknown as Array<Record<string, unknown>>;
+    } else {
+      if (!richRes.data) return;
+      data = richRes.data as unknown as Array<Record<string, unknown>>;
+    }
     const reservationIds = data.map((row) => String((row as Record<string, unknown>).id ?? '')).filter(Boolean);
     const tableAssignments = new Map<string, string[]>();
     const tableLabelById = new Map<string, string>();
@@ -1002,6 +1031,30 @@ export default function OwnerReservationsScreen() {
       const risk = typeof row.no_show_risk_score === 'number' ? row.no_show_risk_score : null;
       const assignedIds = tableAssignments.get(id) ?? [];
       const tableLabel = assignedIds.map((tid) => tableLabelById.get(tid) ?? '').filter(Boolean).join(', ') || undefined;
+
+      // Embedded detail (undefined on the thin-fallback path → all null).
+      const ordersArr = Array.isArray(row.orders) ? (row.orders as Array<Record<string, unknown>>) : [];
+      const order = ordersArr.find((o) => o.is_preorder === true) ?? ordersArr[0];
+      const orderTotal = order && typeof order.total_amount === 'number' ? (order.total_amount as number) : null;
+      const orderStatus = order && typeof order.status === 'string' ? (order.status as string) : null;
+      const depRows = Array.isArray(row.reservation_deposit_payments)
+        ? (row.reservation_deposit_payments as Array<Record<string, unknown>>)
+        : [];
+      const dep = depRows.find((d) => d.status === 'charged') ?? depRows[0];
+      const depositAmountCents = dep && typeof dep.amount_cents === 'number' ? (dep.amount_cents as number) : null;
+      const depositPaymentStatus = dep && typeof dep.status === 'string' ? (dep.status as string) : null;
+      const eventObj = Array.isArray(row.event) ? row.event[0] : row.event;
+      const eventName =
+        eventObj && typeof eventObj === 'object' && typeof (eventObj as Record<string, unknown>).name === 'string'
+          ? ((eventObj as Record<string, unknown>).name as string)
+          : null;
+      const promoObj = Array.isArray(row.promotion) ? row.promotion[0] : row.promotion;
+      const promoRec = promoObj && typeof promoObj === 'object' ? (promoObj as Record<string, unknown>) : null;
+      const promotionLabel = promoRec
+        ? (typeof promoRec.title === 'string' && promoRec.title) ||
+          (typeof promoRec.promo_code === 'string' && promoRec.promo_code) ||
+          null
+        : null;
       slots.push({
         id,
         startTime: reservedAt ? formatTimeOfDay(reservedAt) : '—',
@@ -1020,6 +1073,12 @@ export default function OwnerReservationsScreen() {
         source: typeof row.source === 'string' ? (row.source as string) : null,
         specialRequest: typeof row.special_request === 'string' ? (row.special_request as string) : null,
         assignedTableIds: assignedIds,
+        depositAmountCents,
+        depositPaymentStatus,
+        orderTotal,
+        orderStatus,
+        eventName,
+        promotionLabel,
       };
     }
     setReservations(slots);
@@ -1726,8 +1785,25 @@ export default function OwnerReservationsScreen() {
                     if (ex?.confirmationCode) {
                       rows.push({ label: 'Code', value: ex.confirmationCode });
                     }
-                    if (ex?.depositStatus) {
+                    if (ex?.depositAmountCents != null) {
+                      rows.push({
+                        label: 'Deposit',
+                        value: `$${(ex.depositAmountCents / 100).toFixed(2)}${ex.depositPaymentStatus ? ` · ${ex.depositPaymentStatus}` : ''}`,
+                      });
+                    } else if (ex?.depositStatus) {
                       rows.push({ label: 'Deposit', value: ex.depositStatus });
+                    }
+                    if (ex?.orderTotal != null) {
+                      rows.push({
+                        label: 'Pre-order',
+                        value: `$${ex.orderTotal.toFixed(2)}${ex.orderStatus ? ` · ${ex.orderStatus}` : ''}`,
+                      });
+                    }
+                    if (ex?.eventName) {
+                      rows.push({ label: 'Event', value: ex.eventName });
+                    }
+                    if (ex?.promotionLabel) {
+                      rows.push({ label: 'Promotion', value: ex.promotionLabel });
                     }
                     if (ex?.source && !selected.walkIn) {
                       rows.push({ label: 'Source', value: ex.source });
