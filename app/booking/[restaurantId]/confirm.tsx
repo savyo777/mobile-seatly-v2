@@ -355,7 +355,10 @@ export default function ConfirmScreen() {
     }
     const cleanedName = normalizeName(name);
     const cleanedEmail = normalizeEmail(email);
-    const cleanedPhone = normalizePhoneInput(phone) ?? normalizeTextInput(phone, { maxLength: 32 });
+    // E.164 only — create-public-booking requires a non-null E.164 phone. The
+    // old raw-text fallback let malformed numbers (or empty strings) through,
+    // which the server rejected with a 400 at booking time.
+    const cleanedPhone = normalizePhoneInput(phone);
     const cleanedNotes = normalizeTextInput(notes, { maxLength: 1000, multiline: true });
     if (!cleanedName) {
       setContactError(friendlyError(undefined, 'Enter the guest name.'));
@@ -363,6 +366,10 @@ export default function ConfirmScreen() {
     }
     if (!cleanedEmail || !isValidEmail(cleanedEmail)) {
       setContactError(friendlyError(undefined, 'Enter a valid email address.'));
+      return;
+    }
+    if (!cleanedPhone) {
+      setContactError(friendlyError(undefined, 'Enter a valid phone number, e.g. +1 416 555 0123.'));
       return;
     }
     setContactError('');

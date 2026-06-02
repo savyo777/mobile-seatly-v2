@@ -29,6 +29,7 @@ import {
   type PublicBookingResponse,
 } from '@/lib/booking/publicBookingApi';
 import { previewDepositCents } from '@/lib/booking/depositTiers';
+import { normalizePhoneInput } from '@/lib/validation/input';
 import { addBookingToCalendar } from '@/lib/booking/addToCalendar';
 import { formatCurrency } from '@/lib/utils/formatCurrency';
 import { useColors, createStyles, spacing, borderRadius, shadows } from '@/lib/theme';
@@ -356,7 +357,11 @@ export default function Step7Confirmation() {
       }
       setRestaurant(currentRestaurant);
       if (!currentRestaurant) return;
-      if (!shiftId || !slotDateTime || !name || !email) {
+      // E.164 only — create-public-booking requires a non-null E.164 guest_phone.
+      // confirm.tsx already gates on this; re-validate here so any other entry
+      // path (deep link, book-again) can't send null/garbage to the server.
+      const normalizedPhone = normalizePhoneInput(phone ?? '');
+      if (!shiftId || !slotDateTime || !name || !email || !normalizedPhone) {
         savedReservationRef.current = true;
         Alert.alert(
           'Missing booking details',
@@ -397,7 +402,7 @@ export default function Step7Confirmation() {
           party_size: guests,
           guest_name: name,
           guest_email: email,
-          guest_phone: phone || null,
+          guest_phone: normalizedPhone,
           allergies: notes || null,
           seating_preference: seatingPreference || null,
           occasion: occasion || null,
