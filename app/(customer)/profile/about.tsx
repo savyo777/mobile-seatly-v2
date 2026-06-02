@@ -122,6 +122,11 @@ export default function AboutScreen() {
         <Text style={styles.linkText}>Privacy Policy</Text>
         <Ionicons name="chevron-forward" size={16} color={c.textMuted} />
       </Pressable>
+      <Pressable style={styles.linkRow} onPress={() => goTo('/(customer)/profile/legal/refund-policy')}>
+        <Ionicons name="cash-outline" size={20} color={c.gold} />
+        <Text style={styles.linkText}>Refund Policy</Text>
+        <Ionicons name="chevron-forward" size={16} color={c.textMuted} />
+      </Pressable>
       <Pressable style={styles.linkRow} onPress={() => goTo('/(customer)/profile/legal/partner-agreement')}>
         <Ionicons name="business-outline" size={20} color={c.gold} />
         <Text style={styles.linkText}>Restaurant Partner Agreement</Text>

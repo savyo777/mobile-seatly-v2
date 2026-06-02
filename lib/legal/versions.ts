@@ -11,13 +11,13 @@
 // shows. New users start with `tos_version IS NULL` and hit the gate
 // immediately after signup.
 
-export const TERMS_VERSION = '2026-05-21';
+export const TERMS_VERSION = '2026-05-30';
 export const TERMS_EFFECTIVE_DATE = 'May 10, 2026';
-export const TERMS_LAST_UPDATED = 'May 21, 2026';
+export const TERMS_LAST_UPDATED = 'May 30, 2026';
 
-export const PRIVACY_VERSION = '1.1';
-export const PRIVACY_EFFECTIVE_DATE = 'May 21, 2026';
-export const PRIVACY_LAST_UPDATED = 'May 21, 2026';
+export const PRIVACY_VERSION = '1.2';
+export const PRIVACY_EFFECTIVE_DATE = 'May 30, 2026';
+export const PRIVACY_LAST_UPDATED = 'May 30, 2026';
 
 /**
  * The exact agreement text written to the immutable `diner_consent_log` audit
@@ -27,13 +27,13 @@ export const PRIVACY_LAST_UPDATED = 'May 21, 2026';
  * these alongside the version stamps above.
  */
 export const DINER_TERMS_DISCLOSURE =
-  'I agree to the Cenaiva Terms of Service (effective 2026-05-10, last updated 2026-05-21).';
+  'I agree to the Cenaiva Terms of Service (effective 2026-05-10, last updated 2026-05-30).';
 export const DINER_PRIVACY_DISCLOSURE =
-  'I agree to the Cenaiva Privacy Policy (v1.1, effective 2026-05-21).';
+  'I agree to the Cenaiva Privacy Policy (v1.2, effective 2026-05-30).';
 
-export const PARTNER_AGREEMENT_VERSION = '2.1';
-export const PARTNER_AGREEMENT_EFFECTIVE_DATE = 'May 21, 2026';
-export const PARTNER_AGREEMENT_LAST_UPDATED = 'May 21, 2026';
+export const PARTNER_AGREEMENT_VERSION = '2.2';
+export const PARTNER_AGREEMENT_EFFECTIVE_DATE = 'May 30, 2026';
+export const PARTNER_AGREEMENT_LAST_UPDATED = 'May 30, 2026';
 
 /**
  * Single consent stamp written to user_profiles.tos_version when the
@@ -41,7 +41,7 @@ export const PARTNER_AGREEMENT_LAST_UPDATED = 'May 21, 2026';
  * we re-gate on either change. Format: YYYY-MM-DD of the most recent
  * Terms or Privacy update.
  */
-export const LATEST_LEGAL_VERSION = '2026-05-21';
+export const LATEST_LEGAL_VERSION = '2026-05-30';
 
 /**
  * The minimum age in Cenaiva's Terms §1 ("Eligibility"). Used by the

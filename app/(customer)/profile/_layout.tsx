@@ -22,6 +22,7 @@ export default function ProfileStackLayout() {
       <Stack.Screen name="language" />
       <Stack.Screen name="legal/terms" />
       <Stack.Screen name="legal/privacy-policy" />
+      <Stack.Screen name="legal/refund-policy" />
       <Stack.Screen name="legal/licenses" />
       <Stack.Screen name="notifications" />
       <Stack.Screen name="payment" />
