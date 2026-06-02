@@ -1,8 +1,17 @@
-import React, { useEffect, useState } from 'react';
-import { View, Text, ScrollView, Pressable, StyleSheet } from 'react-native';
+import React, { useCallback, useEffect, useState } from 'react';
+import { View, Text, ScrollView, Pressable, StyleSheet, Alert } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useColors, createStyles, spacing, borderRadius } from '@/lib/theme';
+import { friendlyError } from '@/lib/errors/friendlyError';
+import {
+  deleteEvent,
+  deletePromotion,
+  fetchEventAttendees,
+  fetchPromotionRedemptions,
+  setPromotionActive,
+  type EventGuest,
+} from '@/lib/owner/eventPromoManage';
 // Importing only the shared types from the mock module — no mock data on
 // the Promote screen anymore. Lists render from the live promotions /
 // events queries, or stay empty.
@@ -187,27 +196,111 @@ export default function OwnerPromoteScreen() {
   const [events, setEvents] = useState<OwnerEventRow[]>([]);
   const [promos, setPromos] = useState<OwnerPromotion[]>([]);
 
-  useEffect(() => {
+  const reload = useCallback(async () => {
     if (restaurantIds.length === 0) {
       setEvents([]);
       setPromos([]);
       return;
     }
-    let active = true;
-    void (async () => {
-      const [evRows, prRows] = await Promise.all([
-        fetchUpcomingEvents({ restaurantIds, includePrivate: true }).catch(() => [] as EventRow[]),
-        fetchActivePromotions({ restaurantIds, includePrivate: true }).catch(() => [] as PromotionRow[]),
-      ]);
-      if (!active) return;
-      setEvents(evRows.map(mapEventRow));
-      setPromos(prRows.map(mapPromotionRow));
-    })();
-    return () => {
-      active = false;
-    };
+    const [evRows, prRows] = await Promise.all([
+      fetchUpcomingEvents({ restaurantIds, includePrivate: true }).catch(() => [] as EventRow[]),
+      fetchActivePromotions({ restaurantIds, includePrivate: true }).catch(() => [] as PromotionRow[]),
+    ]);
+    setEvents(evRows.map(mapEventRow));
+    setPromos(prRows.map(mapPromotionRow));
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [restaurantIdsKey]);
+
+  useEffect(() => {
+    void reload();
+  }, [reload]);
+
+  const showGuestList = useCallback(async (title: string, fetcher: Promise<EventGuest[]>, noun: string) => {
+    const list = await fetcher;
+    if (list.length === 0) {
+      Alert.alert(title, `No ${noun} yet.`);
+      return;
+    }
+    const lines = list.slice(0, 12).map((g) => {
+      let timeLabel = '';
+      if (g.reservedAt) {
+        try {
+          timeLabel = ` · ${new Date(g.reservedAt).toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' })}`;
+        } catch {
+          timeLabel = '';
+        }
+      }
+      return `• ${g.guestName} · party ${g.partySize}${timeLabel}`;
+    });
+    const more = list.length > 12 ? `\n…and ${list.length - 12} more` : '';
+    Alert.alert(`${title} · ${list.length} ${noun}`, lines.join('\n') + more);
+  }, []);
+
+  const handleEventPress = useCallback((ev: OwnerEventRow) => {
+    Alert.alert(ev.title, ev.dateLabel || undefined, [
+      { text: 'View attendees', onPress: () => void showGuestList(ev.title, fetchEventAttendees(ev.id), 'attendees') },
+      {
+        text: 'Delete event',
+        style: 'destructive',
+        onPress: () =>
+          Alert.alert('Delete event?', `Permanently delete "${ev.title}"? This can't be undone.`, [
+            { text: 'Cancel', style: 'cancel' },
+            {
+              text: 'Delete',
+              style: 'destructive',
+              onPress: async () => {
+                try {
+                  await deleteEvent(ev.id);
+                  await reload();
+                } catch (e) {
+                  Alert.alert('Could not delete', friendlyError(e, 'It may have reservations attached. Please try again.'));
+                }
+              },
+            },
+          ]),
+      },
+      { text: 'Cancel', style: 'cancel' },
+    ]);
+  }, [reload, showGuestList]);
+
+  const handlePromoPress = useCallback((promo: OwnerPromotion) => {
+    const isLive = promo.status === 'live';
+    Alert.alert(promo.name, promo.description || undefined, [
+      { text: 'View redemptions', onPress: () => void showGuestList(promo.name, fetchPromotionRedemptions(promo.id), 'redemptions') },
+      {
+        text: isLive ? 'Pause' : 'Resume',
+        onPress: async () => {
+          try {
+            await setPromotionActive(promo.id, !isLive);
+            await reload();
+          } catch (e) {
+            Alert.alert('Could not update', friendlyError(e, 'Please try again.'));
+          }
+        },
+      },
+      {
+        text: 'Delete promotion',
+        style: 'destructive',
+        onPress: () =>
+          Alert.alert('Delete promotion?', `Permanently delete "${promo.name}"? This can't be undone.`, [
+            { text: 'Cancel', style: 'cancel' },
+            {
+              text: 'Delete',
+              style: 'destructive',
+              onPress: async () => {
+                try {
+                  await deletePromotion(promo.id);
+                  await reload();
+                } catch (e) {
+                  Alert.alert('Could not delete', friendlyError(e, 'Please try again.'));
+                }
+              },
+            },
+          ]),
+      },
+      { text: 'Cancel', style: 'cancel' },
+    ]);
+  }, [reload, showGuestList]);
 
   return (
     <View style={styles.root}>
@@ -236,7 +329,13 @@ export default function OwnerPromoteScreen() {
             {events.map((ev, i) => {
               const sc = eventStatusColors(ev.status);
               return (
-                <View key={ev.id} style={[styles.eventRow, i > 0 && styles.eventDivider]}>
+                <Pressable
+                  key={ev.id}
+                  onPress={() => handleEventPress(ev)}
+                  style={({ pressed }) => [styles.eventRow, i > 0 && styles.eventDivider, pressed && { opacity: 0.6 }]}
+                  accessibilityRole="button"
+                  accessibilityLabel={`${ev.title} — manage`}
+                >
                   <Ionicons name="ticket-outline" size={20} color={c.gold} />
                   <View style={styles.eventInfo}>
                     <Text style={styles.eventTitle}>{ev.title}</Text>
@@ -247,7 +346,7 @@ export default function OwnerPromoteScreen() {
                       {ev.status.replace('_', ' ').charAt(0).toUpperCase() + ev.status.replace('_', ' ').slice(1)}
                     </Text>
                   </View>
-                </View>
+                </Pressable>
               );
             })}
           </View>
@@ -260,7 +359,13 @@ export default function OwnerPromoteScreen() {
             {promos.map((promo, i) => {
               const sc = promoStatusColors(promo.status);
               return (
-                <View key={promo.id} style={[styles.promoRow, i > 0 && styles.promoDivider]}>
+                <Pressable
+                  key={promo.id}
+                  onPress={() => handlePromoPress(promo)}
+                  style={({ pressed }) => [styles.promoRow, i > 0 && styles.promoDivider, pressed && { opacity: 0.6 }]}
+                  accessibilityRole="button"
+                  accessibilityLabel={`${promo.name} — manage`}
+                >
                   <Ionicons name="megaphone-outline" size={20} color={c.gold} />
                   <View style={styles.promoInfo}>
                     <Text style={styles.promoName}>{promo.name}</Text>
@@ -280,7 +385,7 @@ export default function OwnerPromoteScreen() {
                       </View>
                     )}
                   </View>
-                </View>
+                </Pressable>
               );
             })}
           </View>
