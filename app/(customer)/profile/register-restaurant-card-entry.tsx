@@ -17,7 +17,7 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useStripe } from '@stripe/stripe-react-native';
 import { useColors } from '@/lib/theme';
-import { OWNER_TRIAL_MONTHS } from '@/lib/owner/trialPolicy';
+import { OWNER_TRIAL_DAYS, ownerTrialEndDate } from '@/lib/owner/trialPolicy';
 import { clearPendingOwnerReferral, readPendingOwnerReferral } from '@/lib/owner/pendingReferral';
 import { getSupabase } from '@/lib/supabase/client';
 import { friendlyError, isUserCancellation } from '@/lib/errors/friendlyError';
@@ -42,11 +42,6 @@ function formatTrialEnd(date: Date): string {
   return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
 }
 
-function addMonths(d: Date, months: number): Date {
-  const out = new Date(d);
-  out.setMonth(out.getMonth() + months);
-  return out;
-}
 
 function formatBrand(brand: string | null): string {
   if (!brand) return 'Card';
@@ -129,7 +124,7 @@ export default function RegisterRestaurantCardEntryScreen() {
   }, []);
 
   const trialEndsLabel = useMemo(
-    () => formatTrialEnd(addMonths(new Date(), OWNER_TRIAL_MONTHS)),
+    () => formatTrialEnd(ownerTrialEndDate()),
     [],
   );
 
@@ -140,7 +135,7 @@ export default function RegisterRestaurantCardEntryScreen() {
     () =>
       [
         `By saving this card, ${restaurantName.trim() || 'your restaurant'} agrees to start a Cenaiva subscription.`,
-        `${OWNER_TRIAL_MONTHS}-month free trial ends ${trialEndsLabel}.`,
+        `${OWNER_TRIAL_DAYS}-day free trial ends ${trialEndsLabel}.`,
         `After the trial, ${MONTHLY_FEE_LABEL} (CAD) will be charged automatically to this card.`,
         'Cancel any time from Account → Subscription. Per-booking fees may apply during paid months.',
         pendingReferralCode ? `Referral code applied: ${pendingReferralCode}.` : '',
@@ -305,7 +300,7 @@ export default function RegisterRestaurantCardEntryScreen() {
               <Text style={[s.titleItalic, { color: c.gold }]}>quietly</Text> on file.
             </Text>
             <Text style={[s.subtitle, { color: c.textSecondary }]}>
-              {`${OWNER_TRIAL_MONTHS === 1 ? 'One month' : `${OWNER_TRIAL_MONTHS} months`} on us. After that, ${MONTHLY_FEE_SHORT} / month — cancel anytime.`}
+              {`${OWNER_TRIAL_DAYS} days on us. After that, ${MONTHLY_FEE_SHORT} / month — cancel anytime.`}
             </Text>
             {pendingReferralCode ? (
               <View style={[s.referralChip, { borderColor: c.gold }]}>

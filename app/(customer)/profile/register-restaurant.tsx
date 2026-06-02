@@ -8,10 +8,10 @@ import { borderRadius, createStyles, spacing, typography, useColors } from '@/li
 import { useAuthSession } from '@/lib/auth/AuthContext';
 import { fetchCurrentOwnerRestaurant } from '@/lib/services/ownerRestaurant';
 import { setAppShellPreference } from '@/lib/navigation/appShellPreference';
-import { OWNER_TRIAL_MONTHS } from '@/lib/owner/trialPolicy';
+import { OWNER_TRIAL_DAYS } from '@/lib/owner/trialPolicy';
 import { ownerMonthlyPriceShort } from '@/lib/owner/ownerPricing';
 
-const TRIAL_LABEL = OWNER_TRIAL_MONTHS === 1 ? '1 month free' : `${OWNER_TRIAL_MONTHS} months free`;
+const TRIAL_LABEL = `${OWNER_TRIAL_DAYS} days free`;
 
 const useStyles = createStyles((c) => ({
   scroll: { flex: 1 },
