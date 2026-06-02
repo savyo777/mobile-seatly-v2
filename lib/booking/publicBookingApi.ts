@@ -751,6 +751,8 @@ export function slotConflictsWithWindows(
 export type CancelReservationPayload = {
   reservation_id: string;
   confirmation_code?: string;
+  /** Omit (or 'diner') for a diner-initiated cancel; 'owner' for staff-initiated. */
+  actor?: 'diner' | 'owner';
 };
 
 export type CancelReservationResponse = {
@@ -766,7 +768,13 @@ export async function cancelReservation(
 ): Promise<CancelReservationResponse> {
   const { url, anonKey } = assertConfigured();
   const token = await getAccessToken();
-  if (!token && !payload.confirmation_code) {
+  const isOwner = payload.actor === 'owner';
+  if (isOwner && !token) {
+    const error = new Error('Sign in as restaurant staff to cancel this reservation.');
+    (error as Error & { status?: number }).status = 401;
+    throw error;
+  }
+  if (!isOwner && !token && !payload.confirmation_code) {
     const error = new Error('Sign in or supply a confirmation code to cancel.');
     (error as Error & { status?: number }).status = 401;
     throw error;
@@ -804,9 +812,11 @@ export async function cancelReservation(
     const fallback =
       response.status === 401
         ? 'Sign in to cancel this reservation.'
-        : response.status === 429 || body.unavailable_reason === 'rate_limited'
-          ? 'Too many requests — please wait a minute.'
-          : 'Could not cancel the reservation.';
+        : response.status === 403
+          ? 'You do not have permission to cancel this reservation.'
+          : response.status === 429 || body.unavailable_reason === 'rate_limited'
+            ? 'Too many requests — please wait a minute.'
+            : 'Could not cancel the reservation.';
     const error = new Error(coerceErrorMessage(body.error, fallback));
     (error as Error & { status?: number; unavailable_reason?: string }).status = response.status;
     if (body.unavailable_reason) {
@@ -822,6 +832,20 @@ export async function cancelReservation(
     notification_delivery: body.notification_delivery,
     notification_delivery_channel: body.notification_delivery_channel,
   };
+}
+
+/**
+ * Owner/staff-initiated cancellation. Routes through the canonical `cancel-reservation`
+ * edge fn with `actor:"owner"` so deposit/pre-order refunds (reverse_transfer), the guest
+ * cancellation notification, and the `cancellation_reason` stamp all run. The server
+ * authorizes the caller via their `user_restaurant_roles` row (Bearer token required).
+ * Do NOT use `update_staff_reservation_status('cancelled')` for this — that legacy RPC
+ * raw-flips the status and silently skips every refund.
+ */
+export function cancelReservationAsOwner(
+  reservationId: string,
+): Promise<CancelReservationResponse> {
+  return cancelReservation({ reservation_id: reservationId, actor: 'owner' });
 }
 
 export async function fetchBookingProfile(): Promise<BookingProfile | null> {

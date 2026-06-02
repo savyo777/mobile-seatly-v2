@@ -39,6 +39,7 @@ import {
   seatStaffReservation,
   updateStaffReservationStatus,
 } from '@/lib/staff/staffServices';
+import { cancelReservationAsOwner } from '@/lib/booking/publicBookingApi';
 import { subscribeToAvailability } from '@/lib/realtime/availabilityRegistry';
 import { friendlyError } from '@/lib/errors/friendlyError';
 
@@ -1205,11 +1206,29 @@ export default function OwnerReservationsScreen() {
             setSelected(null);
             if (!isDemoModeEnabled()) {
               void (async () => {
-                await updateStaffReservationStatus({ reservationId: res.id, status: 'cancelled' });
-                if (restaurantIds.length) await loadReservations(restaurantIds);
+                try {
+                  // Route through cancel-reservation (actor:"owner") so any deposit /
+                  // pre-order payment is refunded (reverse_transfer) and the guest is
+                  // notified — the legacy update_staff_reservation_status RPC skips all of that.
+                  await cancelReservationAsOwner(res.id);
+                  if (restaurantIds.length) await loadReservations(restaurantIds);
+                  Alert.alert(
+                    'Cancelled',
+                    `${res.guestName}'s reservation was cancelled. Any deposit or pre-order payment has been refunded.`,
+                  );
+                } catch (err) {
+                  // Revert the optimistic override so the row reappears in its real state.
+                  setStatusOverrides((prev) => {
+                    const next = { ...prev };
+                    delete next[res.id];
+                    return next;
+                  });
+                  Alert.alert('Could not cancel', friendlyError(err));
+                }
               })();
+            } else {
+              Alert.alert('Cancelled', `${res.guestName}'s reservation was cancelled.`);
             }
-            Alert.alert('Cancelled', `${res.guestName}'s reservation was cancelled.`);
           },
         },
       ],
