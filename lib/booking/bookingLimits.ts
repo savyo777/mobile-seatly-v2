@@ -1,5 +1,10 @@
 export const MAX_ONLINE_PARTY_SIZE = 150;
 
+// Per-line cart-item quantity cap. Mirrors the server's `PositiveInt(50)` in
+// supabase/functions/_shared/validation/booking.ts — a higher client value is
+// rejected with a 400, so clamp before sending.
+export const MAX_CART_ITEM_QUANTITY = 50;
+
 export const BOOKING_WINDOW_MIN_DAYS = 7;
 export const BOOKING_WINDOW_MAX_DAYS = 182;
 export const BOOKING_WINDOW_STEP_DAYS = 7;

@@ -5,6 +5,7 @@ import { mockRestaurants } from '@/lib/mock/restaurants';
 import { getCachedRestaurantById } from '@/lib/data/restaurantCatalog';
 import { makeConfirmationCode } from '@/lib/booking/confirmationCode';
 import { bookingDepositsEnabled } from '@/lib/config/bookingDeposits';
+import { MAX_CART_ITEM_QUANTITY } from '@/lib/booking/bookingLimits';
 
 export type AvailabilitySlot = {
   shift_id: string;
@@ -399,7 +400,7 @@ export async function createPublicBooking(
         discount_amount: payload.discount_amount == null ? null : roundMoney(payload.discount_amount),
         cart_items: payload.cart_items.map((item) => ({
           ...item,
-          quantity: Math.max(1, Math.floor(item.quantity)),
+          quantity: Math.min(MAX_CART_ITEM_QUANTITY, Math.max(1, Math.floor(item.quantity))),
           unit_price: roundMoney(item.unit_price),
         })),
       }),
@@ -636,6 +637,18 @@ const MODIFY_REASON_MESSAGES: Record<string, string> = {
   no_floor_capacity: 'This restaurant has no available tables.',
 };
 
+/**
+ * The server validates confirmation codes against /^[A-Z0-9-]{4,20}$/. Uppercase
+ * + trim so a code the diner typed in lower case (or pasted with stray
+ * whitespace) still matches before we send it to cancel/modify. Empty → undefined
+ * so JSON.stringify drops the key and the token-only auth path is used.
+ */
+function normalizeConfirmationCode(code?: string): string | undefined {
+  if (typeof code !== 'string') return undefined;
+  const trimmed = code.trim().toUpperCase();
+  return trimmed.length > 0 ? trimmed : undefined;
+}
+
 export async function modifyReservation(
   payload: ModifyReservationPayload,
 ): Promise<ModifyReservationResponse> {
@@ -659,7 +672,10 @@ export async function modifyReservation(
         'Content-Type': 'application/json',
         ...(token ? { Authorization: `Bearer ${token}` } : {}),
       },
-      body: JSON.stringify(payload),
+      body: JSON.stringify({
+        ...payload,
+        confirmation_code: normalizeConfirmationCode(payload.confirmation_code),
+      }),
     });
   } catch (error) {
     if (isAbortError(error)) {
@@ -792,7 +808,10 @@ export async function cancelReservation(
         'Content-Type': 'application/json',
         ...(token ? { Authorization: `Bearer ${token}` } : {}),
       },
-      body: JSON.stringify(payload),
+      body: JSON.stringify({
+        ...payload,
+        confirmation_code: normalizeConfirmationCode(payload.confirmation_code),
+      }),
     });
   } catch (error) {
     if (isAbortError(error)) {
@@ -891,7 +910,7 @@ export function parseBookingCartParam(value: string | string[] | undefined): Pub
       return [{
         menu_item_id: typeof row.menu_item_id === 'string' ? row.menu_item_id : null,
         name,
-        quantity: Math.max(1, Math.floor(quantity)),
+        quantity: Math.min(MAX_CART_ITEM_QUANTITY, Math.max(1, Math.floor(quantity))),
         unit_price: unitPrice,
       }];
     });
