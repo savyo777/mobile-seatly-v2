@@ -12,7 +12,13 @@ import { isUnusablePersistedSupabaseAuthError } from '@/lib/supabase/authErrors'
 import { clearAppShellPreference } from '@/lib/navigation/appShellPreference';
 import { resolveIsStaffLike } from '@/lib/auth/roles';
 import { clearPushTokenForCurrentUser, registerPushTokenForCurrentUser } from '@/lib/notifications/pushToken';
-import { LATEST_LEGAL_VERSION } from '@/lib/legal/versions';
+import {
+  DINER_PRIVACY_DISCLOSURE,
+  DINER_TERMS_DISCLOSURE,
+  LATEST_LEGAL_VERSION,
+  PRIVACY_VERSION,
+  TERMS_VERSION,
+} from '@/lib/legal/versions';
 
 type AuthCtx = {
   session: Session | null;
@@ -323,6 +329,33 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       throw new Error(error.message ?? 'Could not record consent.');
     }
     setTosVersion(LATEST_LEGAL_VERSION);
+
+    // Also write the immutable audit rows (terms + privacy) to diner_consent_log
+    // via the canonical edge fn — the mutable user_profiles.tos_version stamp
+    // above is NOT an auditable consent trail (PIPEDA / Quebec Law 25 / CASL).
+    // Fire-and-forget: the consent gate must release even if the log write
+    // fails, exactly as web does. The session JWT is auto-attached by invoke.
+    void supabase.functions
+      .invoke('log-diner-consent', {
+        body: {
+          source: 'mobile_consent_gate',
+          consents: [
+            {
+              consent_type: 'terms_of_service',
+              agreement_version: TERMS_VERSION,
+              disclosure_text: DINER_TERMS_DISCLOSURE,
+            },
+            {
+              consent_type: 'privacy_policy',
+              agreement_version: PRIVACY_VERSION,
+              disclosure_text: DINER_PRIVACY_DISCLOSURE,
+            },
+          ],
+        },
+      })
+      .catch(() => {
+        // best-effort audit write; never block the consent gate
+      });
   }, [session?.user]);
 
   const user = session?.user ?? null;

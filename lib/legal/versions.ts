@@ -19,6 +19,18 @@ export const PRIVACY_VERSION = '1.1';
 export const PRIVACY_EFFECTIVE_DATE = 'May 21, 2026';
 export const PRIVACY_LAST_UPDATED = 'May 21, 2026';
 
+/**
+ * The exact agreement text written to the immutable `diner_consent_log` audit
+ * trail (PIPEDA / Quebec Law 25 / CASL) via the `log-diner-consent` edge fn.
+ * Kept verbatim-identical to the web app's RegisterPage disclosures so a diner's
+ * consent rows read the same regardless of which client they accepted on. Bump
+ * these alongside the version stamps above.
+ */
+export const DINER_TERMS_DISCLOSURE =
+  'I agree to the Cenaiva Terms of Service (effective 2026-05-10, last updated 2026-05-21).';
+export const DINER_PRIVACY_DISCLOSURE =
+  'I agree to the Cenaiva Privacy Policy (v1.1, effective 2026-05-21).';
+
 export const PARTNER_AGREEMENT_VERSION = '2.1';
 export const PARTNER_AGREEMENT_EFFECTIVE_DATE = 'May 21, 2026';
 export const PARTNER_AGREEMENT_LAST_UPDATED = 'May 21, 2026';
