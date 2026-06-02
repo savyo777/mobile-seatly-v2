@@ -23,6 +23,7 @@ import {
 import { isDemoModeEnabled } from '@/lib/config/demoMode';
 import { isLoyaltyEnabled } from '@/lib/config/loyaltyFeature';
 import { getSupabase } from '@/lib/supabase/client';
+import { fetchCrmGuestRows } from '@/lib/staff/staffServices';
 import { fetchCurrentUserProfile } from '@/lib/services/userProfile';
 import { fetchLoyaltyTransactionsForGuests } from '@/lib/loyalty/getLoyaltyTransactions';
 import { sanitizeSearchInput } from '@/lib/validation/input';
@@ -88,13 +89,18 @@ function mapDbGuestRow(row: Record<string, unknown>): OwnerGuest {
 export async function fetchOwnerGuests(restaurantId: string): Promise<OwnerGuest[]> {
   const supabase = getSupabase();
   if (!supabase) return [];
-  const { data, error } = await supabase
-    .from('guests')
-    .select('*')
-    .eq('restaurant_id', restaurantId)
-    .order('lifetime_value_score', { ascending: false });
-  if (error || !data) return [];
-  return (data as Array<Record<string, unknown>>).map(mapDbGuestRow);
+  // Canonical crm_guest_rows RPC (same source web uses): returns REAL computed
+  // stats (visits, spend, no-shows, opt-ins) joined onto the guest profile.
+  // The old `.from('guests').select('*')` read denormalized columns that aren't
+  // maintained in prod — fabricated LTV/churn numbers. Fields the RPC doesn't
+  // compute (e.g. lifetime_value_score) now honestly read 0 rather than faked.
+  try {
+    const { data, error } = await fetchCrmGuestRows(restaurantId);
+    if (error || !data) return [];
+    return data.map(mapDbGuestRow);
+  } catch {
+    return [];
+  }
 }
 
 export async function hydrateGuestRelations(guest: OwnerGuest): Promise<OwnerGuest> {
@@ -393,7 +399,7 @@ export default function OwnerGuestsScreen() {
         g.email.toLowerCase().includes(q) ||
         g.phone.replace(/\s|[()-]/g, '').includes(q.replace(/\s|[()-]/g, ''))
       );
-    }).sort((a, b) => b.lifetimeValueScore - a.lifetimeValueScore);
+    }).sort((a, b) => b.totalSpend - a.totalSpend);
   }, [filter, query, guests]);
 
   return (

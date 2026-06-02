@@ -231,6 +231,17 @@ export default function OwnerOrdersKdsScreen() {
       Alert.alert("Couldn't sync ticket", friendlyError(error, 'The order update did not save. Tap the ticket again or refresh.'));
       return false;
     }
+    // Keep order_items.status in sync with the ticket so the per-item view and
+    // the reservation-detail embed (which reads order_items.status) reflect the
+    // same kitchen state. Non-fatal: the order-level status is the source of
+    // truth for the line, so a failed item sync only logs — we don't revert.
+    const { error: itemsError } = await supabase
+      .from('order_items')
+      .update({ status })
+      .eq('order_id', id);
+    if (itemsError) {
+      console.log('[KDS] order_items status sync failed', itemsError.message);
+    }
     return true;
   }, []);
 
