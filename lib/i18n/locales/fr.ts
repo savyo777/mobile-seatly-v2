@@ -334,7 +334,7 @@ export default {
     amountChangedCancel: 'Annuler',
     amountChangedRefundNote: "Vous verrez brièvement l'ancien montant sur votre relevé — il sera remboursé automatiquement sous environ 3 jours ouvrables.",
     amountChangedAgainFallback: 'un montant mis à jour',
-    platformFeeLabel: 'Frais de plateforme (5,5 %)',
+    platformFeeLabel: 'Frais de plateforme (2 %)',
     feeDisclosureV2: 'Les frais de plateforme et de traitement ne sont pas remboursables. Votre acompte de {{depositAmount}} $ CA est entièrement remboursable lorsque le restaurant vous attribue votre table.',
     modifyFeePreviewTitle: 'Confirmer la modification du nombre de convives',
     modifyFeePreviewBody: 'Nouvel acompte {{newBase}} $ CA. Montant à charger aujourd’hui : {{deltaTotal}} $ CA (frais de plateforme {{deltaPlatform}} $ CA, frais de traitement {{deltaProcessing}} $ CA).',

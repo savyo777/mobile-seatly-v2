@@ -204,7 +204,19 @@ export type CreateHoldPaymentIntentRequest = {
    */
   hold_id?: string;
   restaurant_id: string;
+  /**
+   * The FOOD-only portion in cents (pre-order subtotal + deposit). Tax must NOT
+   * be folded in here — pass it separately as `tax_cents`. The server takes its
+   * 2% commission on `amount_cents` only, and validates
+   * `(amount_cents + tax_cents) === hold.total_amount_cents` for cart holds.
+   */
   amount_cents: number;
+  /**
+   * The tax (HST/GST) portion in cents. Passes through to the restaurant with no
+   * Cenaiva commission. Omit / 0 for deposit-only holds (the server requires
+   * `tax_cents === 0` on the deposit-amount match branch).
+   */
+  tax_cents?: number;
   currency?: string;
   customer_email?: string | null;
   customer_name?: string | null;

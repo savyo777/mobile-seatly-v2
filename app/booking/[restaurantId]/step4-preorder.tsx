@@ -124,6 +124,7 @@ export default function Step4Preorder() {
   const [liveMenuItems, setLiveMenuItems] = useState<LiveMenuItem[]>([]);
   const [liveMenuLoading, setLiveMenuLoading] = useState(!isDemoModeEnabled());
   const [depositTiers, setDepositTiers] = useState<DepositTier[] | undefined>(undefined);
+  const [taxRate, setTaxRate] = useState(0);
   const partySizeNum = Math.max(1, parseInt(partySize ?? '1', 10) || 1);
   const depositCents = previewDepositCents(depositTiers, partySizeNum);
   const hasDeposit = depositCents > 0;
@@ -161,7 +162,9 @@ export default function Step4Preorder() {
     if (!restaurantId) return;
     let active = true;
     void loadRestaurantForBooking(restaurantId).then((restaurant) => {
-      if (active) setDepositTiers(restaurant?.depositTiers);
+      if (!active) return;
+      setDepositTiers(restaurant?.depositTiers);
+      setTaxRate(restaurant?.taxRate ?? 0);
     });
     return () => {
       active = false;
@@ -193,20 +196,29 @@ export default function Step4Preorder() {
     if (hold.state.status !== 'active') return;
     if (cart.length === 0) return;
     const timer = setTimeout(() => {
-      const cartSnapshot = {
-        items: cart.map((item) => ({
-          menu_item_id: item.menuItemDbId,
-          name: item.name,
-          quantity: item.quantity,
-          unit_price: item.price,
-        })),
-        subtotal: cart.reduce((sum, item) => sum + item.price * item.quantity, 0),
-      };
-      const totalAmountCents = Math.round(cartSnapshot.subtotal * 100);
+      const items = cart.map((item) => ({
+        menu_item_id: item.menuItemDbId,
+        name: item.name,
+        quantity: item.quantity,
+        unit_price: item.price,
+      }));
+      // Use the shared cartSubtotal (roundMoney) so this matches step6's
+      // preorderTotal byte-for-byte.
+      const subtotal = cartSubtotal(items);
+      const cartSnapshot = { items, subtotal };
+      // Hold total = food + tax, computed the SAME way step6 sends
+      // amount_cents + tax_cents — the server enforces exact integer equality
+      // `(amount_cents + tax_cents) === total_amount_cents` on the cart-hold
+      // branch of create-public-payment-intent. "food" is the commission base
+      // (pre-order subtotal + deposit); tax passes through with no commission.
+      // Computing per-component (not round(sum)) avoids ±1¢ drift vs step6.
+      const foodCents = Math.round((subtotal + depositCents / 100) * 100);
+      const taxCents = Math.round(subtotal * taxRate * 100);
+      const totalAmountCents = foodCents + taxCents;
       void hold.updateCart(cartSnapshot, totalAmountCents);
     }, 500);
     return () => clearTimeout(timer);
-  }, [cart, hold]);
+  }, [cart, hold, depositCents, taxRate]);
 
   const liveCategoryNameById = useMemo(
     () => new Map(liveCategories.map((category) => [category.id, category.name])),

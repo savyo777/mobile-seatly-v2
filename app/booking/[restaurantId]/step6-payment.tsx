@@ -217,15 +217,15 @@ export default function Step6Payment() {
   const depositCents = previewDepositCents(depositTiers, partySizeNum);
   const depositAmount = depositCents / 100;
   const hasDeposit = depositCents > 0;
-  const baseTotalDue = preorderTotal + taxAmount + depositAmount;
-  // Apply Stripe's gross-up policy so the displayed Total matches what
-  // the diner's card actually gets charged. For < $12 the diner covers
-  // the Stripe processing fee on top; for $12+ Cenaiva absorbs it.
-  // The 5.5% application_fee is taken from the restaurant's payout —
-  // NOT added to the diner's total. We surface it as a disclosure
-  // note under the breakdown so there are no hidden fees.
-  const baseTotalCents = Math.round(baseTotalDue * 100);
-  const dinerCharge = computeDinerCharge(baseTotalCents);
+  // Option B fee split (mirror web): "food" is the commission base
+  // (pre-order subtotal + deposit); tax passes through to the restaurant
+  // with no Cenaiva commission. These are sent to the server as
+  // `amount_cents` (food) and `tax_cents` (tax) separately — folding tax
+  // into the food base over-commissions the restaurant AND trips the
+  // server's `(amount_cents + tax_cents) === hold.total_amount_cents` guard.
+  const foodCents = Math.round((preorderTotal + depositAmount) * 100);
+  const taxCents = Math.round(taxAmount * 100);
+  const dinerCharge = computeDinerCharge(foodCents, taxCents);
   const totalDue = dinerCharge.dinerTotalCents / 100;
   const qpBase = [
     `date=${encodeURIComponent(date ?? '')}`,
@@ -421,21 +421,20 @@ export default function Step6Payment() {
     setPaying(true);
     let createdPaymentIntentId: string | null = null;
     try {
-      // CRITICAL: send the BASE amount (preorder + tax + deposit, no
-      // gross-up) — the server computes the platform fee + Stripe
-      // gross-up itself when it mints the PaymentIntent. If we sent
-      // the grossed-up `totalDue` here, the server would reject with
-      // `amount_mismatch` because the PI amount wouldn't match the
-      // hold's deposit_amount_cents + total_amount_cents.
-      // The cart UI still displays the grossed-up `totalDue` and the
-      // "Confirm Booking · $X" CTA matches what Stripe's PaymentSheet
-      // shows — the diner is charged the grossed-up amount; we just
-      // don't quote that number to the API, the server derives it.
-      const baseAmountCents = Math.max(50, baseTotalCents);
+      // CRITICAL: send the FOOD amount + TAX separately (no gross-up) — the
+      // server computes the 2% platform fee + Stripe gross-up itself when it
+      // mints the PaymentIntent. If we sent the grossed-up `totalDue` here, or
+      // folded tax into `amount_cents`, the server would reject with
+      // `amount_mismatch` (it validates `(amount_cents + tax_cents)` against the
+      // hold's deposit_amount_cents / total_amount_cents) and would commission
+      // the tax. The cart UI still displays the grossed-up `totalDue` and the
+      // "Confirm Booking · $X" CTA matches what Stripe's PaymentSheet shows —
+      // the diner is charged the grossed-up amount; the server derives it.
       const intent = await createHoldPaymentIntent({
         hold_id: holdId,
         restaurant_id: restaurantId,
-        amount_cents: baseAmountCents,
+        amount_cents: foodCents,
+        tax_cents: taxCents,
         currency: 'cad',
         customer_email: email || null,
         customer_name: name || null,
@@ -453,11 +452,12 @@ export default function Step6Payment() {
         // Refresh the PI with the corrected amount and surface a confirm modal.
         // New UUID for the refresh: this is a SEPARATE PI from the
         // pre-refresh attempt and must dedup independently.
-        // Same as above: send the BASE; server grosses up.
+        // Same as above: send food + tax separately; server grosses up.
         const refreshed = await createHoldPaymentIntent({
           hold_id: holdId,
           restaurant_id: restaurantId,
-          amount_cents: baseAmountCents,
+          amount_cents: foodCents,
+          tax_cents: taxCents,
           currency: 'cad',
           customer_email: email || null,
           customer_name: name || null,
@@ -466,7 +466,7 @@ export default function Step6Payment() {
         });
         setPendingRetry({
           holdId,
-          oldAmountCents: baseAmountCents,
+          oldAmountCents: foodCents,
           newAmountCents: refreshed.amount_cents,
           clientSecret: refreshed.client_secret,
           paymentIntentId: refreshed.payment_intent_id,
@@ -546,12 +546,11 @@ export default function Step6Payment() {
         <Text style={styles.title}>{t('booking.step6Title')}</Text>
 
         <Card style={styles.breakdownCard}>
-          {/* Web parity (Option B, CLAUDE_SKILLS.md (Stripe updates) 2026-05-21):
-              Pre-Order Subtotal → Deposit → Platform fee (5.5%, bold)
-              → Tax → Processing fee → Total → disclosure copy. The
-              Platform fee was previously rendered as a muted "(included)"
-              line; web flipped to a bold standalone item for refund
-              transparency. Mobile follows. */}
+          {/* Web parity (Option B): Pre-Order Subtotal → Deposit → Platform
+              fee (2% of food, bold) → Tax → Processing fee → Total →
+              disclosure copy. The Platform fee line is the Cenaiva commission
+              (cenaivaFeeCents) shown separately from the Stripe processing fee;
+              the two must not be combined or the breakdown double-counts. */}
           {hasPreorder && (
             <View style={styles.lineItem}>
               <Text style={styles.lineLabel}>Pre-Order Subtotal</Text>
@@ -570,10 +569,10 @@ export default function Step6Payment() {
               <Text style={styles.lineValue}>No payment due now</Text>
             </View>
           )}
-          {(hasDeposit || hasPreorder) && dinerCharge.applicationFeeCents > 0 ? (
+          {(hasDeposit || hasPreorder) && dinerCharge.cenaivaFeeCents > 0 ? (
             <View style={styles.lineItem}>
               <Text style={styles.lineLabel}>{t('booking.platformFeeLabel') as string}</Text>
-              <Text style={styles.lineValue}>{formatCurrency(dinerCharge.applicationFeeCents / 100)}</Text>
+              <Text style={styles.lineValue}>{formatCurrency(dinerCharge.cenaivaFeeCents / 100)}</Text>
             </View>
           ) : null}
           {hasPreorder && (
@@ -592,13 +591,13 @@ export default function Step6Payment() {
             <Text style={styles.totalLabel}>{t('orders.total')}</Text>
             <Text style={styles.totalValue}>{formatCurrency(totalDue)}</Text>
           </View>
-          {hasDeposit && dinerCharge.applicationFeeCents > 0 ? (
+          {hasDeposit && dinerCharge.cenaivaFeeCents > 0 ? (
             <Text style={styles.feeDisclosure}>
               {t('booking.feeDisclosureV2', {
                 depositAmount: depositAmount.toFixed(2),
               }) as string}
             </Text>
-          ) : (hasPreorder && dinerCharge.applicationFeeCents > 0) ? (
+          ) : (hasPreorder && dinerCharge.cenaivaFeeCents > 0) ? (
             // Pre-order-only carts: no deposit base to refund, but the
             // platform + processing fees are still non-refundable per
             // Option B. Use a tailored disclosure that doesn't mention

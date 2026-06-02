@@ -1,99 +1,104 @@
 /**
- * Stripe fee math — mobile mirror of the backend canonical implementation.
+ * Stripe fee math — mobile mirror of the canonical "Option B" diner-charge model.
  *
- * Source of truth: `supabase/functions/_shared/stripe-fee.ts` (web sister
- * repo). Per CLAUDE_SKILLS.md (Stripe) §3.1 the math is Option B:
+ * SOURCE OF TRUTH (keep this byte-for-byte equivalent — do not let it drift):
+ *   - server: supabase/functions/_shared/stripe-fee.ts
+ *   - shared: packages/mobile-shared/src/pricing/dinerCharge.ts (web ↔ mobile mirror)
+ *   - web UI: apps/web/src/lib/stripe-fee.ts (re-exports the shared package)
  *
- *   const cenaivaFeeCents = ceil(base * 0.055);
- *   const subtotal        = base + cenaivaFeeCents;
- *   const dinerTotalCents = ceil((subtotal + 30) / 0.971);
- *   const processingFee   = dinerTotalCents - subtotal;
- *   const applicationFee  = cenaivaFeeCents;  // routes to platform
+ * The diner pays the deposit / pre-order PLUS two visible add-on fees:
+ *   1. Cenaiva platform fee — 2% of FOOD only (not tax, not tip)
+ *   2. Stripe processing fee — 2.9% + 30¢ CAD, grossed up off the top
  *
- * Every diner-facing PI passes through this exact formula on both
- * client and server. If they diverge, Stripe rejects the PaymentIntent
- * with "amount does not match" — and even if it didn't reject,
- * MOBILE_STRIPE_TRANSFER.md §17.5 makes drift a launch-blocker because
- * diners see different prices on web vs mobile for the same booking.
+ * Total charged = food + tax + cenaivaFee + processingFee.
+ *   cenaivaFee     = max(round(foodCents * 0.02), 1)   // commission on food only
+ *   subtotal       = foodCents + taxCents + cenaivaFee
+ *   dinerTotal     = ceil((subtotal + 30) / 0.971)      // grossed up for Stripe
+ *   processingFee  = dinerTotal − subtotal
+ *   applicationFee = cenaivaFee + processingFee         // application_fee_amount on the PI
  *
- * **No "absorb above $12 threshold" anymore.** The earlier mobile
- * implementation kept that policy when web moved to Option B; this file
- * was the drift. As of 2026-05-21, mobile always shows three line items:
- * Deposit · Platform fee (5.5%) · Processing fee · Total, with the
- * disclosure that platform + processing fees are non-refundable.
+ * Restaurant nets food + tax (100%); Cenaiva nets exactly cenaivaFee.
  *
- * Worked examples (from CLAUDE_SKILLS.md (Stripe updates)):
- *   $5 base   → diner pays $5.84  (platform $0.28, processing $0.56)
- *   $10 base  → diner pays $11.18 (platform $0.55, processing $0.63)
- *   $20 base  → diner pays $22.05 (platform $1.10, processing $0.95)
- *   $40 base  → diner pays $43.77 (platform $2.20, processing $1.57)
- *   $80 base  → diner pays $87.21 (platform $4.40, processing $2.81)
- *   $100 base → diner pays $108.96 (platform $5.50, processing $3.46)
+ * Note: on the holds happy-path the SERVER recomputes this and binds via hold_id,
+ * so these client-side values are display-only there. Callers MUST still send
+ * `amount_cents = food` and `tax_cents` separately so the server can split them —
+ * folding tax into the food base over-commissions the restaurant and trips the
+ * server's `amount_mismatch` guard.
+ *
+ * Worked examples (food base, tax = 0):
+ *   $20 food → diner pays $21.32 (platform $0.40, processing $0.92)
+ *   $40 food → diner pays $42.33 (platform $0.80, processing $1.53)
+ *   $100 food → diner pays $105.36 (platform $2.00, processing $3.36)
  */
 
-/** Stripe's per-charge percent fee. 0.971 = 1 - 0.029 (the gross-up denominator). */
+/** Stripe's per-charge percent fee. 1 - 0.029 = 0.971 (the gross-up denominator). */
 export const STRIPE_FEE_PERCENT = 0.029;
-/** Stripe's flat per-charge fee in cents. */
+/** Stripe's flat per-charge fee in cents ($0.30 CAD). */
 export const STRIPE_FEE_FIXED_CENTS = 30;
-/** Cenaiva's platform fee — 5.5% of the BASE amount. */
-export const CENAIVA_APPLICATION_FEE_PERCENT = 0.055;
-
-/**
- * Retained for legacy callers ONLY — Option B does not use a threshold.
- * Anything that branches on this constant is using the old absorption
- * model and should be updated to always show the 3-line cart.
- *
- * @deprecated removed in the Option B alignment 2026-05-21; kept
- * exported as 0 so existing imports don't break.
- */
-export const ABSORB_FEE_THRESHOLD_CENTS = 0;
+/** Cenaiva's platform fee — 2% of the FOOD portion only (not tax, not tip). */
+export const PLATFORM_FEE_PERCENT = 0.02;
 
 export interface DinerCharge {
-  /** Original base (deposit / preorder total / order subtotal+tax+tip). */
+  /** Food-only portion (commission base: pre-order subtotal + deposit). */
+  foodCents: number;
+  /** Tax portion (passes through to the restaurant, no commission). */
+  taxCents: number;
+  /** Restaurant's net = foodCents + taxCents. */
   baseCents: number;
-  /** What the diner actually pays — base + platform fee + Stripe gross-up. */
-  dinerTotalCents: number;
-  /** Stripe's percent + flat fee, grossed up so the merchant nets `base`. */
+  /** Cenaiva platform fee — 2% of food only. Visible line item. */
+  cenaivaFeeCents: number;
+  /** Stripe processing fee — visible line item. */
   processingFeeCents: number;
-  /** Cenaiva's cut. Always 5.5% of BASE (not the grossed-up total). */
+  /** What the diner's card is charged: food + tax + cenaivaFee + processingFee. */
+  dinerTotalCents: number;
+  /** `application_fee_amount` on the PaymentIntent = cenaivaFee + processingFee. */
   applicationFeeCents: number;
-  /**
-   * Always true under Option B — the diner always covers both fees.
-   * Retained for callers that hide the Processing fee line when 0.
-   */
+  /** Always true under Option B — kept for callers/UI that check the flag. */
   dinerPaysFee: boolean;
 }
 
-export function computeDinerCharge(baseCents: number): DinerCharge {
-  if (!Number.isFinite(baseCents) || baseCents <= 0) {
+/**
+ * Compute the diner-pays-all-fees charge.
+ *
+ * @param foodCents the commission-bearing portion (pre-order subtotal + deposit)
+ * @param taxCents  the HST/GST that passes through to the restaurant (no commission)
+ *
+ * Caller passes `dinerTotalCents` as the PaymentIntent `amount` and
+ * `applicationFeeCents` as `application_fee_amount`. The cart UI shows four
+ * lines (food · tax · cenaivaFeeCents · processingFeeCents) summing to
+ * `dinerTotalCents`.
+ */
+export function computeDinerCharge(foodCents: number, taxCents: number = 0): DinerCharge {
+  const food = Math.max(0, Math.round(Number.isFinite(foodCents) ? foodCents : 0));
+  const tax = Math.max(0, Math.round(Number.isFinite(taxCents) ? taxCents : 0));
+  if (food + tax <= 0) {
     return {
+      foodCents: 0,
+      taxCents: 0,
       baseCents: 0,
-      dinerTotalCents: 0,
+      cenaivaFeeCents: 0,
       processingFeeCents: 0,
+      dinerTotalCents: 0,
       applicationFeeCents: 0,
       dinerPaysFee: false,
     };
   }
-
-  const base = Math.max(0, Math.round(baseCents));
-  // ceil(base * 0.055) — diner sees the platform fee rounded UP so the
-  // restaurant always nets exactly `base` after the application fee.
-  // Floor at 1¢ so a $0.01 base still routes a non-zero app fee.
-  const applicationFee = Math.max(Math.ceil(base * CENAIVA_APPLICATION_FEE_PERCENT), 1);
-
-  // Subtotal = base + platform fee. This is what gets grossed up so
-  // BOTH fees survive the Stripe per-charge deduction; without the
-  // gross-up Stripe takes its cut out of (base + platform fee), which
-  // would either shortchange the restaurant or eat the platform fee.
-  const subtotal = base + applicationFee;
+  // Stripe rejects application_fee_amount < 1¢; clamp at 1¢ for tiny food bases.
+  const cenaivaFee = food > 0 ? Math.max(Math.round(food * PLATFORM_FEE_PERCENT), 1) : 0;
+  const subtotal = food + tax + cenaivaFee;
+  // Gross up so Stripe's 2.9% + 30¢ comes off the top of dinerTotal, leaving
+  // exactly `subtotal` (= food + tax + cenaivaFee) to settle to the restaurant.
   const dinerTotal = Math.ceil((subtotal + STRIPE_FEE_FIXED_CENTS) / (1 - STRIPE_FEE_PERCENT));
   const processingFee = dinerTotal - subtotal;
 
   return {
-    baseCents: base,
-    dinerTotalCents: dinerTotal,
+    foodCents: food,
+    taxCents: tax,
+    baseCents: food + tax,
+    cenaivaFeeCents: cenaivaFee,
     processingFeeCents: processingFee,
-    applicationFeeCents: applicationFee,
+    dinerTotalCents: dinerTotal,
+    applicationFeeCents: cenaivaFee + processingFee,
     dinerPaysFee: true,
   };
 }

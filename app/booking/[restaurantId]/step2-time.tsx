@@ -549,7 +549,7 @@ export default function Step2Time() {
               // (deposit + fees grossed up).
               Alert.alert(
                 'Reservation updated',
-                `Your party size increased. We charged ${formatCents(adjustment.amount_cents)} to your card on file (includes Cenaiva platform fee 5.5% + Stripe processing fee, both non-refundable). The base deposit portion refunds in full when the restaurant marks you seated.`,
+                `Your party size increased. We charged ${formatCents(adjustment.amount_cents)} to your card on file (includes Cenaiva platform fee 2% + Stripe processing fee, both non-refundable). The base deposit portion refunds in full when the restaurant marks you seated.`,
               );
             } else if (adjustment.kind === 'refunded') {
               Alert.alert(
@@ -571,12 +571,12 @@ export default function Step2Time() {
             // Per doc §7 + Option B (CLAUDE_SKILLS.md (Stripe updates) 2026-05-21):
             // 402 means the bigger deposit needs a card on file.
             // Disclose that the additional charge will include the
-            // Platform fee (5.5%) + processing fee, both non-refundable,
+            // Platform fee (2%) + processing fee, both non-refundable,
             // so the diner knows what they're agreeing to before they
             // add a card.
             Alert.alert(
               'Add a card first',
-              'Increasing your party size needs a card on file. The additional charge will include the deposit for the extra seats plus a Cenaiva platform fee (5.5%) and Stripe processing fee — both non-refundable. The deposit portion refunds in full when you’re seated. Add a card now, then try the change again.',
+              'Increasing your party size needs a card on file. The additional charge will include the deposit for the extra seats plus a Cenaiva platform fee (2%) and Stripe processing fee — both non-refundable. The deposit portion refunds in full when you’re seated. Add a card now, then try the change again.',
               [
                 { text: 'Not now', style: 'cancel' },
                 {

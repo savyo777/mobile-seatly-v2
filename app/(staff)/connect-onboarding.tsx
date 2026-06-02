@@ -108,7 +108,7 @@ export default function ConnectOnboardingScreen() {
             Stripe handles payouts to your business bank account. You’ll complete a short Stripe form (business details, bank info, identity verification) — your account is needed before you can accept deposits or charge bills.
           </Text>
           <Text style={styles.bullet}>• Payouts arrive in your linked account every 2 business days</Text>
-          <Text style={styles.bullet}>• Cenaiva’s 5.5% application fee is deducted from each charge</Text>
+          <Text style={styles.bullet}>• Diners pay Cenaiva’s 2% platform fee on top of each charge — you keep 100% of the base</Text>
           <Text style={styles.bullet}>• Cancel anytime from the Stripe dashboard</Text>
         </Card>
 

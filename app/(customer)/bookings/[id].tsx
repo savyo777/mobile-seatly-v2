@@ -362,13 +362,13 @@ export default function BookingDetailScreen() {
     if (!reservation) return;
     // ToS §10.3 + CLAUDE_SKILLS.md (Stripe updates) Option B commitment:
     //   1. 5-business-day refund window for the deposit BASE
-    //   2. The Cenaiva platform fee (5.5%) + Stripe processing fee
+    //   2. The Cenaiva platform fee (2%) + Stripe processing fee
     //      paid at booking are NON-REFUNDABLE (disclosed at checkout)
     // Suppress both lines for free bookings to avoid confusing wording.
     const depositCharged = liveDepositStatus === 'charged';
     const baseMessage = t('bookings.cancelConfirmMessage') as string;
     const refundLine = depositCharged
-      ? '\n\nIf the deposit was charged, the deposit base will be refunded to your original card and appear on your statement within 5 business days. The Cenaiva platform fee (5.5%) and Stripe processing fee you paid at booking are non-refundable (this was disclosed at checkout).'
+      ? '\n\nIf the deposit was charged, the deposit base will be refunded to your original card and appear on your statement within 5 business days. The Cenaiva platform fee (2%) and Stripe processing fee you paid at booking are non-refundable (this was disclosed at checkout).'
       : '';
     Alert.alert(
       t('bookings.cancelBooking'),

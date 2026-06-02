@@ -305,7 +305,7 @@ export default function RegisterRestaurantConnectScreen() {
           </View>
           <View style={styles.bulletRow}>
             <Text style={styles.bulletDot}>•</Text>
-            <Text style={styles.bulletText}>Cenaiva&apos;s 5.5% application fee is deducted from each diner charge.</Text>
+            <Text style={styles.bulletText}>Diners pay Cenaiva&apos;s 2% platform fee on top — you keep 100% of each diner charge.</Text>
           </View>
           <View style={styles.bulletRow}>
             <Text style={styles.bulletDot}>•</Text>
