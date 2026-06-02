@@ -18,8 +18,7 @@ import { SubpageHeader } from '@/components/owner/SubpageHeader';
 import { useColors, useTheme, createStyles, spacing, borderRadius, withAlpha, type ThemeMode } from '@/lib/theme';
 import { useAuthSession } from '@/lib/auth/AuthContext';
 import { compactNameLabel, resolveAuthDisplayProfile } from '@/lib/auth/displayProfile';
-import { removeRestaurants, signOutAllDevices } from '@/lib/services/accountSecurity';
-import { DeleteAccountDialog } from '@/components/account/DeleteAccountDialog';
+import { deleteAccount, removeRestaurants, signOutAllDevices } from '@/lib/services/accountSecurity';
 import { setAppShellPreference } from '@/lib/navigation/appShellPreference';
 import { withOwnerReturnTarget } from '@/lib/navigation/ownerReturnTargets';
 import { getStoredRestaurantPaymentCards } from '@/lib/storage/restaurantPaymentMethod';
@@ -566,12 +565,10 @@ function SettingsSection({
   section,
   restaurantCount,
   onOpenRestaurantRemoval,
-  onOpenDeleteAccount,
 }: {
   section: Section;
   restaurantCount: number;
   onOpenRestaurantRemoval: () => void;
-  onOpenDeleteAccount: () => void;
 }) {
   const styles = useStyles();
   const router = useRouter();
@@ -632,7 +629,28 @@ function SettingsSection({
         );
         return;
       }
-      onOpenDeleteAccount();
+      Alert.alert(
+        'Delete account',
+        'This action is permanent and cannot be undone. Your account and data will be deleted.',
+        [
+          { text: 'Cancel', style: 'cancel' },
+          {
+            text: 'Delete account',
+            style: 'destructive',
+            onPress: async () => {
+              try {
+                await deleteAccount();
+                router.replace('/onboarding' as never);
+              } catch (e: any) {
+                Alert.alert(
+                  'Delete failed',
+                  friendlyError(e, 'Could not delete your account. Please try again.'),
+                );
+              }
+            },
+          },
+        ],
+      );
     } else if (item.label === 'Appearance') {
       setAppearanceOpen((open) => !open);
     } else if (item.label === 'Currency') {
@@ -704,7 +722,6 @@ export default function OwnerSettingsScreen() {
   const currencyLabel = (selectedRestaurant?.currency ?? 'CAD').toUpperCase();
   const [restaurantRemovalOpen, setRestaurantRemovalOpen] = React.useState(false);
   const [restaurantRemovalIds, setRestaurantRemovalIds] = React.useState<string[]>([]);
-  const [showDeleteDialog, setShowDeleteDialog] = React.useState(false);
   const [restaurantRemovalConfirmation, setRestaurantRemovalConfirmation] = React.useState('');
   const [removingRestaurants, setRemovingRestaurants] = React.useState(false);
 
@@ -1100,7 +1117,6 @@ export default function OwnerSettingsScreen() {
           section={s}
           restaurantCount={restaurants.length}
           onOpenRestaurantRemoval={openRestaurantRemoval}
-          onOpenDeleteAccount={() => setShowDeleteDialog(true)}
         />
       ))}
 
@@ -1231,12 +1247,6 @@ export default function OwnerSettingsScreen() {
         onConfirm={confirmRestaurantRemoval}
         onToggle={toggleRestaurantRemoval}
         onConfirmationChange={setRestaurantRemovalConfirmation}
-      />
-
-      <DeleteAccountDialog
-        visible={showDeleteDialog}
-        onClose={() => setShowDeleteDialog(false)}
-        onDeleted={() => router.replace('/onboarding' as never)}
       />
     </OwnerScreen>
   );

@@ -232,8 +232,16 @@ export type DeleteAccountResult = {
 // `email_confirmation` that matches the auth email (the type-to-confirm safety
 // net), refunds + cancels upcoming reservations first, then de-identifies
 // legally-retained records (CRA / Law 25) and hard-deletes the rest.
-export async function deleteAccount(emailConfirmation: string): Promise<DeleteAccountResult> {
+export async function deleteAccount(emailConfirmation?: string): Promise<DeleteAccountResult> {
   const supabase = requireSupabase();
+  // The canonical delete-account fn validates email_confirmation against the
+  // auth email. Callers may pass it explicitly, but default to the signed-in
+  // user's email so a plain confirm dialog (no type-to-confirm) still satisfies it.
+  let email = emailConfirmation?.trim();
+  if (!email) {
+    const { data: sessionData } = await supabase.auth.getSession();
+    email = sessionData.session?.user?.email ?? '';
+  }
   const { data, error: invokeError, response } = await supabase.functions.invoke<{
     ok?: boolean;
     deleted?: boolean;
@@ -243,7 +251,7 @@ export async function deleteAccount(emailConfirmation: string): Promise<DeleteAc
     refund_total_cents?: number;
   }>('delete-account', {
     method: 'POST',
-    body: { email_confirmation: emailConfirmation },
+    body: { email_confirmation: email },
   });
   // Canonical returns { ok: true, ... }; tolerate the legacy { deleted: true }.
   const succeeded = !invokeError && !data?.error && (data?.ok === true || data?.deleted === true);

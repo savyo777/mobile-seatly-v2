@@ -11,7 +11,7 @@ import { requestMyDataExport } from '@/lib/privacy/dataExport';
 import { friendlyError } from '@/lib/errors/friendlyError';
 import { getAnalyticsOptIn, setAnalyticsOptIn } from '@/lib/analytics/privacyPrefs';
 import { setPosthogEnabled } from '@/lib/analytics/posthog';
-import { DeleteAccountDialog } from '@/components/account/DeleteAccountDialog';
+import { deleteAccount } from '@/lib/services/accountSecurity';
 
 const useStyles = createStyles((c) => ({
   group: {
@@ -34,7 +34,6 @@ export default function PrivacyScreen() {
   const [analytics, setAnalytics] = useState(true);
   const [recommendations, setRecommendations] = useState(true);
   const [exporting, setExporting] = useState(false);
-  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
 
   // Build 3e — hydrate the persisted analytics-opt-in preference on mount,
   // then keep PostHog SDK in sync whenever the user flips the toggle.
@@ -157,15 +156,31 @@ export default function PrivacyScreen() {
           onPress={handleDeleteAccount}
         />
       </View>
-      <DeleteAccountDialog
-        visible={showDeleteDialog}
-        onClose={() => setShowDeleteDialog(false)}
-        onDeleted={() => router.replace('/onboarding' as never)}
-      />
     </ProfileStackScreen>
   );
 
   function handleDeleteAccount() {
-    setShowDeleteDialog(true);
+    Alert.alert(
+      'Delete account',
+      'This is irreversible. Your account, bookings, conversations, photos, and any unredeemed rewards or wallet balance will be permanently deleted. We recommend withdrawing or using any remaining balance before continuing.',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Delete account',
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              await deleteAccount();
+              router.replace('/onboarding' as never);
+            } catch (e: any) {
+              Alert.alert(
+                'Delete failed',
+                friendlyError(e, 'Could not delete your account. Please try again.'),
+              );
+            }
+          },
+        },
+      ],
+    );
   }
 }
